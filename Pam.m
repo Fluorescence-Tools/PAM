@@ -2809,7 +2809,7 @@ switch e.Key
             UserValues.Detector.Det(end+1)=str2double(Input{1});
             UserValues.Detector.Rout(end+1)=str2double(Input{2});
             UserValues.Detector.Use(end+1)=str2double(Input{3});
-            UserValues.Detector.Color(end+1,:)=str2double(Input{4});  
+            UserValues.Detector.Color(end+1,:)=str2num(Input{4});  
             UserValues.Detector.Shift{end+1}=zeros(400,1);
             %%% Updates microtime channels list
             Update_Detector_Channels(2);
