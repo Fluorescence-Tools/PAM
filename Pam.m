@@ -2574,6 +2574,7 @@ switch e.Key
         %% Exports macrotime and microtime as one vector for each PIE channel
         h.Progress_Text.String = 'Exporting';
         h.Progress_Axes.Color=[1 0 0];
+        drawnow;
         for i=Sel
             Det=UserValues.PIE.Detector(i);
             Rout=UserValues.PIE.Router(i);
@@ -2590,6 +2591,7 @@ switch e.Key
         %% Exports macrotime and microtime as a cell for each PIE channel
         h.Progress_Text.String = 'Exporting';
         h.Progress_Axes.Color=[1 0 0];
+        drawnow;
         for i=Sel
             Det=UserValues.PIE.Detector(i);
             Rout=UserValues.PIE.Router(i);
@@ -2620,6 +2622,7 @@ switch e.Key
         %% Plots image and exports it into workspace
         h.Progress_Text.String = 'Exporting';
         h.Progress_Axes.Color=[1 0 0];
+        drawnow;
         for i=Sel
             %%% Exports intensity image
             if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 2
@@ -2640,6 +2643,7 @@ switch e.Key
         %% Exports image stack into workspace
         h.Progress_Text.String = 'Exporting';
         h.Progress_Axes.Color=[1 0 0];
+        drawnow;
         for i=Sel
             %%% Gets the photons
             Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
@@ -2668,6 +2672,7 @@ switch e.Key
         if all(Path~=0)
             h.Progress_Text.String = 'Exporting';
             h.Progress_Axes.Color=[1 0 0];
+            drawnow;
             UserValues.File.ExportPath=Path;
             LSUserValues(1);
             for i=Sel
@@ -3090,7 +3095,7 @@ switch type
 end
 
 Det = UserValues.PIE.Detector(PIEchannel);
-Rout = UserValues.PIE.Routing(PIEchannel);
+Rout = UserValues.PIE.Router(PIEchannel);
 From = UserValues.PIE.From(PIEchannel);
 To = UserValues.PIE.To(PIEchannel);
 
@@ -3108,7 +3113,7 @@ elseif nargin == 3 %%% read only the specified block
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= Times(block) &...
-            TcspcData.MT{Det1(l),Rout1(l)} < Times(block+1));
+            TcspcData.MT{Det,Rout} < Times(block+1));
     end
 elseif nargin == 4 %%% read only the specified chunk
     %%% define the chunk start and stop time based on chunksize and measurement
@@ -3675,7 +3680,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_BurstGUI(obj,~)
 global UserValues
@@ -3758,6 +3763,10 @@ else %change in edit boxes
         str2double(h.BurstParameter5_Edit.String)];
 end
 LSUserValues(1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Performs a Burst Search  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_BurstSearch()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
