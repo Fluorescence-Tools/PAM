@@ -841,6 +841,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'String',{'Both';'Intensity';'Mean arrival time'},...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
+        'Value',2,...
         'Position',[0.28 0.43 0.28 0.06]);
     h.MT_Image_Export=handle(MT_Image_Export);
     
@@ -980,7 +981,13 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Tag','PIE_Export_Image_File',...
         'Callback',@PIE_List_Functions);
     h.PIE_Export_Image_File=handle(PIE_Export_Image_File);
-        
+    PIE_Export_Image_Tiff = uimenu(...
+        'Parent',PIE_Export,...
+        'Label','...image (as .tiff)',...
+        'Tag','PIE_Export_Image_Tiff',...
+        'Callback',@PIE_List_Functions);
+    h.PIE_Export_Image_Tiff=handle(PIE_Export_Image_Tiff);
+    
     %%% PIE Channel list
     PIE_List = uicontrol(...
         'Parent',PIE_Panel,...
@@ -2413,6 +2420,8 @@ if ~strcmp(ed.EventName,'KeyPress')
         e.Key='Export_Image_Total';
     elseif obj == h.PIE_Export_Image_File
         e.Key='Export_Image_File';
+    elseif obj == h.PIE_Export_Image_Tiff
+        e.Key='Export_Image_Tiff';
     elseif obj == h.PIE_Combine
         e.Key='Combine';
     else
@@ -2563,6 +2572,8 @@ switch e.Key
         end
     case 'Export_Raw_Total'
         %% Exports macrotime and microtime as one vector for each PIE channel
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
         for i=Sel
             Det=UserValues.PIE.Detector(i);
             Rout=UserValues.PIE.Router(i);
@@ -2577,6 +2588,8 @@ switch e.Key
         end
     case 'Export_Raw_File'        
         %% Exports macrotime and microtime as a cell for each PIE channel
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
         for i=Sel
             Det=UserValues.PIE.Detector(i);
             Rout=UserValues.PIE.Router(i);
@@ -2605,6 +2618,8 @@ switch e.Key
         end 
     case 'Export_Image_Total'
         %% Plots image and exports it into workspace
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
         for i=Sel
             %%% Exports intensity image
             if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 2
@@ -2623,6 +2638,8 @@ switch e.Key
         figure(h.Pam);
     case 'Export_Image_File'
         %% Exports image stack into workspace
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
         for i=Sel
             %%% Gets the photons
             Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
@@ -2644,6 +2661,42 @@ switch e.Key
             Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
             %%% Exports matrix to workspace
             assignin('base',[UserValues.PIE.Name{i} '_Images'],Stack);            
+        end
+    case 'Export_Image_Tiff'
+        %% Exports image stack into workspace
+        Path=uigetdir(UserValues.File.ExportPath,'Select folder to save TIFFs');
+        if all(Path~=0)
+            h.Progress_Text.String = 'Exporting';
+            h.Progress_Axes.Color=[1 0 0];
+            UserValues.File.ExportPath=Path;
+            LSUserValues(1);
+            for i=Sel
+                %%% Gets the photons
+                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+                
+                %%% Calculates pixel times for each line and file
+                Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+                for j=1:FileInfo.NumberOfFiles
+                    for k=1:FileInfo.Lines
+                        Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                        Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+                    end
+                end
+                
+                %%% Histograms photons to pixels
+                Stack=uint16(histc(Stack,Pixeltimes(:)));
+                %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+                Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+                
+                File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
+                imwrite(Stack(:,:,1),File,'tif','Compression','lzw');
+                for j=2:size(Stack,3)
+                    imwrite(Stack(:,:,j),File,'tif','WriteMode','append','Compression','lzw');
+                end
+            end
+            Progress((i-1)/numel(Sel),h.Progress_Axes,h.Progress_Text,'Exporting:')
         end
     case 'Combine'
         %% Generates a combined PIE channel from existing PIE channels
@@ -2669,6 +2722,8 @@ switch e.Key
     otherwise
         e.Key='';
 end
+h.Progress_Text.String = FileInfo.FileName{1};
+h.Progress_Axes.Color=UserValues.Look.Control;
 %% Only saves user values, if one of the function was used
 if ~isempty(e.Key)
     LSUserValues(1);    
@@ -3205,7 +3260,8 @@ h.Progress_Text.String='Opening matlabpool';
 drawnow;
 gcp;
 
-
+h.Progress_Text.String = 'Correlating';
+h.Progress_Axes.Color=[1 0 0];
 %%% Finds the right combinations to correlate
 [Cor_A,Cor_B]=find(h.Cor_Table.Data(1:end-1,1:end-1));
 %%% Calculates the maximum inter-photon time in clock ticks
@@ -3219,7 +3275,6 @@ drawnow;
 %%% For every active combination
 for i=1:numel(Cor_A)
     %% Initializes data
-    
     %%% Initializes data cells
     Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
     Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
@@ -3250,7 +3305,6 @@ for i=1:numel(Cor_A)
           
     %% Assigns photons and does correlation
     %%% Starts progressbar
-    Progress((i-1)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')
     k=1;
     Counts1=0;
     Counts2=0;
@@ -3396,6 +3450,7 @@ for i=1:numel(Cor_A)
     end
 
     Progress(1);
+    Progress((i)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')
 end
 Update_Display([],[],1);
 
