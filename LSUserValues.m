@@ -207,7 +207,7 @@ if Mode==0
     %%% (This field contains the PIEChannel Selection (as a number) for every
     %%% Burst Search Method)
     if ~isfield (S.BurstSearch,'PIEChannelSelection')
-        dummy = UserValues.PIE.Name{1};
+        dummy = S.PIE.Name{1};
         S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy}};
         disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');    
     end
