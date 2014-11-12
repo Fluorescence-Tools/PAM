@@ -3062,6 +3062,72 @@ end
 guidata(gcf,h)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for extracting Macro- and Microtimes of PIE channels  %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [Photons_PIEchannel] = Get_Photons_from_PIEChannel(PIEchannel,type,block,chunk)
+%%% PIEchannel: Specifies the PIE channel as name or as number
+%%% type:       Specifies the type of Photons to be extracted
+%%%             (can be 'Macrotimes' or 'Microtimes')
+%%% block:      specifies the number of the Block for FCS ErrorBar Calcula-
+%%%             tion
+%%%             (leave empty for loading whole measurement)
+%%% chunk:      defines the chunk size that is used for processing the data
+%%%             in steps (in minutes)
+%%%             (if chunk is specified, block specifies instead the chunk
+%%%             number
+global UserValues TcspcData PamMeta FileInfo
+%%% convert the PIEchannel to a number if a string was specified
+if ischar(PIEchannel)
+    PIEchannel = find(strcmp(UserValues.PIE.Name,PIEchannel));
+end
+
+%%% define which photons to use
+switch type
+    case 'Macrotimes'
+        Photons = TcspcData.MT;
+    case 'Microtimes'
+        Photons = TcspcData.MI;
+end
+
+Det = UserValues.PIE.Detector(PIEchannel);
+Rout = UserValues.PIE.Routing(PIEchannel);
+From = UserValues.PIE.From(PIEchannel);
+To = UserValues.PIE.To(PIEchannel);
+
+if nargin == 2 %%% read whole photon stream
+    if ~isempty(Photons{Det,Rout})
+        Photons_PIEchannel = Photons{Det,Rout}(...
+            TcspcData.MI{Det,Rout} >= From &...
+            TcspcData.MI{Det,Rout} <= To);
+    end
+elseif nargin == 3 %%% read only the specified block
+    %%% Calculates the block start times in clock ticks
+    Times=ceil(PamMeta.MT_Patch_Times/FileInfo.RepRate);
+    if ~isempty(Photons{Det,Rout})
+        Photons_PIEchannel = Photons{Det,Rout}(...
+            TcspcData.MI{Det,Rout} >= From &...
+            TcspcData.MI{Det,Rout} <= To &...
+            TcspcData.MT{Det,Rout} >= Times(block) &...
+            TcspcData.MT{Det1(l),Rout1(l)} < Times(block+1));
+    end
+elseif nargin == 4 %%% read only the specified chunk
+    %%% define the chunk start and stop time based on chunksize and measurement
+    %%% time
+    %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
+    %%% (defined in minutes)
+    LimitLow = (block-1)*chunk*60*FileInfo.RepRate+1;
+    LimitHigh = ChunkNumber*ChunkSize*60*FileInfo.RepRate;
+    if ~isempty(Photons{Det,Rout})
+        Photons_PIEchannel = Photons{Det,Rout}(...
+            TcspcData.MI{Det,Rout} >= From &...
+            TcspcData.MI{Det,Rout} <= To &...
+            TcspcData.MT{Det,Rout} >= LimitLow &...
+            TcspcData.MT{Det1(l),Rout1(l)} < LimitHigh);
+    end
+end           
+
+        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function generating deleting and selecting profiles  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% "+"-Key or Add menu: Generate new profile
