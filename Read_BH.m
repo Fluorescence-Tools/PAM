@@ -1,4 +1,4 @@
-function [MT, MI, PLF] = Read_BH(FileName,NoE,Scanner)
+function [MT, MI, PLF, SyncRate] = Read_BH(FileName,NoE,Scanner)
 
 %%% Input parameters: 
 %%% Filename: Full filename
@@ -24,7 +24,9 @@ clear FileID;
 if numel(ByteRecord) < 2 % Even empty file will contain sync rate
     msgbox(['Empty file: ', FullFileName]);
 else
-
+    %the sync rate is contained in the first 3 bytes of the first byte
+    %record in units of 100 ps
+    SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
     ByteRecord(1)=[]; %%% Delete Header entry
     
     Rout=uint8(bitand(bitshift(ByteRecord, - 8), 240)); % Loads Routing bits

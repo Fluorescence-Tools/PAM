@@ -1427,7 +1427,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Preview',...
-        'Callback',@BurstSearchPreview,...
+        'Callback',@BurstSearch_Preview,...
         'Position',[0.88 0 0.12 0.05],...
         'TooltipString',sprintf('Update the preview display.'));
     h.BurstSearchPreview_Button=handle(BurstSearchPreview_Button);
@@ -1441,7 +1441,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','>',...
-        'Callback',@BurstSearchPreviewShift,...
+        'Callback',@BurstSearch_Preview,...
         'Position',[0.85 0 0.029 0.05],...
         'TooltipString',sprintf(''));
     h.BurstSearchPreview_Forward_Button=handle(BurstSearchPreview_Forward_Button);
@@ -1454,7 +1454,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','<',...
-        'Callback',@BurstSearchPreviewShift,...
+        'Callback',@BurstSearch_Preview,...
         'Position',[0.82 0 0.029 0.05],...
         'TooltipString',sprintf(''));
     h.BurstSearchPreview_Backward_Button=handle(BurstSearchPreview_Backward_Button);
@@ -1714,7 +1714,7 @@ FileInfo=[];
 FileInfo.MI_Bins=4096;
 FileInfo.NumberOfFiles=1;
 FileInfo.Type=1;
-FileInfo.ImageTime=1;
+FileInfo.MeasurementTime=1;
 FileInfo.RepRate=1;
 FileInfo.Lines=1;
 FileInfo.Pixels=1;
@@ -1722,10 +1722,10 @@ FileInfo.FileName={'Nothing loaded'};
 
 PamMeta=[];
 PamMeta.MI_Hist=repmat({zeros(4096,1)},numel(UserValues.Detector.Use),1);
-PamMeta.Trace=repmat({0:0.01:(FileInfo.NumberOfFiles*FileInfo.ImageTime)},numel(UserValues.PIE.Name),1);
+PamMeta.Trace=repmat({0:0.01:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)},numel(UserValues.PIE.Name),1);
 PamMeta.Image=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
-PamMeta.TimeBins=0:0.01:(FileInfo.NumberOfFiles*FileInfo.ImageTime);
+PamMeta.TimeBins=0:0.01:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime);
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Applied_Shift=cell(1);
@@ -1801,7 +1801,7 @@ end
 %% Creates trace and image plots
 
 %%% Creates macrotime bins for traces (currently fixed 10ms)
-PamMeta.TimeBins=0:str2double(h.MT_Binning.String)/1000:(FileInfo.NumberOfFiles*FileInfo.ImageTime);
+PamMeta.TimeBins=0:str2double(h.MT_Binning.String)/1000:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime);
 %%% Creates a intensity trace and image for each non-combined PIE channel
 if ~isempty(PIE)
     for i=PIE
@@ -1820,7 +1820,7 @@ if ~isempty(PIE)
             %% Calculates image
             if h.MT_Use_Image.Value
                 %%% Goes back from total microtime to file microtime
-                PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
+                PIE_MT=mod(PIE_MT,FileInfo.MeasurementTime);
                 %%% Calculates Pixel vector
                 Pixeltimes=0;
                 for j=1:FileInfo.Lines
@@ -1867,8 +1867,8 @@ if ~isempty(PIE)
             PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
             PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i});
             clear Image_Sum;
-            PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/(FileInfo.NumberOfFiles*FileInfo.ImageTime)/1000;
-            PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/(FileInfo.NumberOfFiles*FileInfo.ImageTime)/1000;
+            PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
+            PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
         else
             %%% Creates a 0 trace for empty/nonexistent detector/routing pairs
             PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
@@ -2329,9 +2329,9 @@ end
 if any(mode==2)
     %%% Calculates the borders of the trace patches
     if h.MT_Trace_Sectioning.Value==1
-        PamMeta.MT_Patch_Times=linspace(0,FileInfo.ImageTime*FileInfo.NumberOfFiles,UserValues.Settings.Pam.MT_Number_Section+1);
+        PamMeta.MT_Patch_Times=linspace(0,FileInfo.MeasurementTime*FileInfo.NumberOfFiles,UserValues.Settings.Pam.MT_Number_Section+1);
     else
-        PamMeta.MT_Patch_Times=0:UserValues.Settings.Pam.MT_Time_Section:(FileInfo.ImageTime*FileInfo.NumberOfFiles);
+        PamMeta.MT_Patch_Times=0:UserValues.Settings.Pam.MT_Time_Section:(FileInfo.MeasurementTime*FileInfo.NumberOfFiles);
     end
     %%% Adjusts trace patches number to needed number
     %%% Deletes all patches if none are needed
@@ -2610,7 +2610,7 @@ switch e.Key
                         MI{j}=TcspcData.MI{Det,Rout}(FileInfo.LastPhoton{Det,Rout,j-1}:FileInfo.LastPhoton{Det,Rout,j});
                         MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
                         MT{j}=TcspcData.MT{Det,Rout}(FileInfo.LastPhoton{Det,Rout,j-1}:FileInfo.LastPhoton{Det,Rout,j});
-                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.ImageTime/FileInfo.RepRate);
+                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.RepRate);
                     end
                 end
                 assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
@@ -3089,9 +3089,9 @@ end
 %%% define which photons to use
 switch type
     case 'Macrotimes'
-        Photons = TcspcData.MT;
+        type = 'MT';
     case 'Microtimes'
-        Photons = TcspcData.MI;
+        type = 'MI';
 end
 
 Det = UserValues.PIE.Detector(PIEchannel);
@@ -3100,16 +3100,16 @@ From = UserValues.PIE.From(PIEchannel);
 To = UserValues.PIE.To(PIEchannel);
 
 if nargin == 2 %%% read whole photon stream
-    if ~isempty(Photons{Det,Rout})
-        Photons_PIEchannel = Photons{Det,Rout}(...
+    if ~isempty(TcspcData.(type){Det,Rout})
+        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To);
     end
 elseif nargin == 3 %%% read only the specified block
     %%% Calculates the block start times in clock ticks
     Times=ceil(PamMeta.MT_Patch_Times/FileInfo.RepRate);
-    if ~isempty(Photons{Det,Rout})
-        Photons_PIEchannel = Photons{Det,Rout}(...
+    if ~isempty(TcspcData.(type){Det,Rout})
+        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= Times(block) &...
@@ -3122,12 +3122,12 @@ elseif nargin == 4 %%% read only the specified chunk
     %%% (defined in minutes)
     LimitLow = (block-1)*chunk*60*FileInfo.RepRate+1;
     LimitHigh = ChunkNumber*ChunkSize*60*FileInfo.RepRate;
-    if ~isempty(Photons{Det,Rout})
-        Photons_PIEchannel = Photons{Det,Rout}(...
+    if ~isempty(TcspcData.(type){Det,Rout})
+        Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= LimitLow &...
-            TcspcData.MT{Det1(l),Rout1(l)} < LimitHigh);
+            TcspcData.MT{Det,Rout} < LimitHigh);
     end
 end           
 
@@ -3482,7 +3482,7 @@ for i=1:numel(Cor_A)
         end
         
         Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}];
-        Counts = [Counts1 Counts2]/FileInfo.ImageTime/FileInfo.NumberOfFiles/1000;
+        Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
         save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
         
         
@@ -3606,7 +3606,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         
         %%% Selects and sorts photons;
         Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.RepRate;        
-        [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
+        [Photons,Index]=sort(mod(Photons,FileInfo.MeasurementTime));
         Index=uint32(Index);
         
         %%% Calculates Pixel vector
@@ -3662,7 +3662,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Frames=FileInfo.NumberOfFiles;
         FileNames=FileInfo.FileName;
         Path=FileInfo.Path;
-        Imagetime=FileInfo.ImageTime;
+        Imagetime=FileInfo.MeasurementTime;
         Lines=FileInfo.Lines;
         Fi=PamMeta.Fi;
         M=PamMeta.M;
@@ -3750,7 +3750,7 @@ h.BurstParameter3_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{
 h.BurstParameter4_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(4));
 h.BurstParameter5_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(5));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function for updating BurstSearch Parameters in UserValues  %%%%%%%%%%%
+%%% Function for updating BurstSearch Parameters in UserValues %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstSearchParameterUpdate(obj,~)
 global UserValues
@@ -3764,9 +3764,157 @@ else %change in edit boxes
 end
 LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Performs a Burst Search  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_BurstSearch()
+function Do_BurstAnalysis()
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [start, stop, Number_of_Photons] = Perform_BurstSearch(Photons,Channel,type)
+global UserValues FileInfo
+switch type
+    case 'APBS'
+        %All-Photon Burst Search
+        valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6*FileInfo.SyncRate;
+
+        % and find start and stop of bursts
+        start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
+        stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
+
+        clear valid;
+
+        if numel(start) < numel(stop)
+            stop(1) = [];
+        elseif numel(start) > numel(stop)
+            start(end) = [];
+        end
+
+        if numel(start) ~= 0 && numel(stop) ~=0
+            if start(1) > stop(1)
+                stop(1)=[];
+                start(end) = [];
+            end
+        end
+        % and ignore bursts with less than L photons
+        %only cut if L is specified (it is not for DCBS sub-searches)
+
+        Number_of_Photons = stop-start+1;
+        if nargin > 3
+        start(Number_of_Photons<L)=[];
+        stop(Number_of_Photons<L)=[];
+        Number_of_Photons(Number_of_Photons<L)=[];
+        end
+    case 'DCBS'
+        %Dual Channel Burst Search
+        %Get GX and RR photon streams
+        %1,2 = GG12
+        %3,4 = GR12
+        %5,6 = RR12
+        PhotonsD = Photons(Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4);
+        PhotonsA = Photons(Channel == 5 | Channel == 6);
+        indexD = find((Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4));
+        indexA = find((Channel == 5 | Channel == 6));
+
+        %do burst search on each channel
+        T = UserValues.Burst.binning(UserValues.BAMethod);
+        MD = UserValues.Burst.parameter_2(UserValues.BAMethod);
+        MA = UserValues.Burst.parameter_3(UserValues.BAMethod);
+        L = UserValues.Burst.parameter_1(UserValues.BAMethod);
+        %ACBS(Photons,T,M,L), don't specify L for no cutting!
+        [startD, stopD, Number_of_PhotonsD] = ACBS(PhotonsD,T,MD);
+        [startA, stopA, Number_of_PhotonsA] = ACBS(PhotonsA,T,MA);
+
+        startD = indexD(startD);
+        stopD = indexD(stopD);
+        startA = indexA(startA);
+        stopA = indexA(stopA);
+
+        validA = zeros(1,numel(startA));
+        for i = 1:numel(startA)
+            current = find(stopD-startA(i) > 0,1,'first');
+            if startD(current) < stopA(i)
+                startA(i) = max([startD(current) startA(i)]);
+                stopA(i) = min([stopD(current) stopA(i)]);
+                validA(i) = 1;
+            end
+        end
+        start = startA(validA == 1);
+        stop = stopA(validA == 1);
+
+        Number_of_Photons = stop-start+1;
+        start(Number_of_Photons<L)=[];
+        stop(Number_of_Photons<L)=[];
+        Number_of_Photons(Number_of_Photons<L)=[];
+    case 'TCBS'
+        %Triple Channel Burst Search
+        %Get BX, GX and RR photon streams
+        %1,2 = BB12
+        %3,4 = BG12
+        %5,6 = BR12
+        %7,8 = GG12
+        %9,10 = GR12
+        %11,12 = RR 12
+        PhotonsB = Photons(Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4| Channel == 5 | Channel == 6);
+        PhotonsG = Photons(Channel == 7 | Channel == 8 | Channel == 9 | Channel == 10);
+        PhotonsR = Photons(Channel == 11 | Channel == 12);
+        indexB = find((Channel == 1 | Channel == 2 | Channel == 3 | Channel == 4| Channel == 5 | Channel == 6));
+        indexG = find((Channel == 7 | Channel == 8 | Channel == 9 | Channel == 10));
+        indexR = find((Channel == 11 | Channel == 12));
+
+        %do burst search on each channel
+        T = UserValues.Burst.binning(UserValues.BAMethod);
+        MB = UserValues.Burst.parameter_2(UserValues.BAMethod);
+        MG = UserValues.Burst.parameter_3(UserValues.BAMethod);
+        MR = UserValues.Burst.parameter_3(UserValues.BAMethod);
+        L = UserValues.Burst.parameter_1(UserValues.BAMethod);
+        %ACBS(Photons,T,M,L), don't specify L for no cutting!
+        [startB, stopB, Number_of_PhotonsB] = ACBS(PhotonsB,T,MB);
+        [startG, stopG, Number_of_PhotonsG] = ACBS(PhotonsG,T,MG);
+        [startR, stopR, Number_of_PhotonsR] = ACBS(PhotonsR,T,MR);
+
+        startR = indexR(startR);
+        stopR = indexR(stopR);
+        startG = indexG(startG);
+        stopG = indexG(stopG);
+        startB = indexB(startB);
+        stopB = indexB(stopB);
+
+        validR = zeros(numel(startR),1);
+
+        for i = 1:numel(startR)
+        current = find(stopG-startR(i) > 0,1,'first');
+            if startG(current) < stopR(i)
+                startR(i) = max([startG(current) startR(i)]);
+                stopR(i) = min([stopG(current) stopR(i)]);
+                validR(i) = 1;
+            end
+        end
+        start = startR(validR == 1);
+        stop = stopR(validR == 1);
+
+
+        validB = zeros(numel(start),1);
+
+        for i = 1:numel(start)
+        current = find(stopB-start(i) > 0,1,'first');
+            if startB(current) < stop(i)
+                start(i) = max([startB(current) start(i)]);
+                stop(i) = min([stopB(current) stop(i)]);
+                validB(i) = 1;
+            end
+        end
+        start = start(validB == 1);
+        stop = stop(validB == 1);
+
+        Number_of_Photons = stop-start+1;
+        start(Number_of_Photons<L)=[];
+        stop(Number_of_Photons<L)=[];
+        Number_of_Photons(Number_of_Photons<L)=[];
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function BurstSearch_Preview(obj,~)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
