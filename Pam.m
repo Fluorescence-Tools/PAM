@@ -1012,7 +1012,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_List=handle(PIE_List);
     
     %%% Text
-    uicontrol(...
+    h.Text.PIE_channel_name = uicontrol(...
         'Parent',PIE_Panel,...
         'Style','text',...
         'Units','normalized',...
@@ -1037,7 +1037,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_Name=handle(PIE_Name);
     
     %%% Text
-    uicontrol(...
+    h.Text.Detector_Name = uicontrol(...
         'Parent',PIE_Panel,...
         'Style','text',...
         'Units','normalized',...
@@ -1062,7 +1062,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_Detector=handle(PIE_Detector);
     
     %%% Text
-    uicontrol(...
+    h.Text.Routing = uicontrol(...
         'Parent',PIE_Panel,...
         'Style','text',...
         'Units','normalized',...
@@ -1087,7 +1087,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_Routing=handle(PIE_Routing);
     
     %%% Text
-    uicontrol(...
+    h.Text.From = uicontrol(...
         'Parent',PIE_Panel,...
         'Style','text',...
         'Units','normalized',...
@@ -1112,7 +1112,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_From=handle(PIE_From);
     
     %%% Text
-    uicontrol(...
+    h.Text.To = uicontrol(...
         'Parent',PIE_Panel,...
         'Style','text',...
         'Units','normalized',...
@@ -1137,7 +1137,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
     h.PIE_To=handle(PIE_To);
     
     %%% Text
-    uicontrol(...
+    h.Text.PIE_Info = uicontrol(...
         'Parent',PIE_Panel,...
         'Tag','PIE_Info',...
         'Style','text',...
@@ -1374,7 +1374,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',[],...
         'Position',[0.891 0.76 0.05 0.07],...
         'TooltipString',sprintf('Specify the Time Constant for Filter Calculation'));
-    h.NirFilter_Text=handle(NirFilter_Text);
+    h.Text.NirFilter_Text=handle(NirFilter_Text);
     
     %%%Table for PIE channel assignment
     BurstPIE_Table = uitable(...
@@ -1506,7 +1506,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',@BurstSearchParameterUpdate,...
         'Position',[0.28 0.85 0.34 0.05],...
         'TooltipString',sprintf(''));
-    h.BurstParameter1_Text=handle(BurstParameter1_Text);
+    h.Text.BurstParameter1_Text=handle(BurstParameter1_Text);
     
     %%% Edit Box for Parameter2 (Time Window)
     BurstParameter2_Edit = uicontrol(...
@@ -1537,7 +1537,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',@BurstSearchParameterUpdate,...
         'Position',[0.28 0.79 0.34 0.05],...
         'TooltipString',sprintf(''));
-    h.BurstParameter2_Text=handle(BurstParameter2_Text);
+    h.Text.BurstParameter2_Text=handle(BurstParameter2_Text);
     
     %%% Edit Box for Parameter3 (Photons per Time Window Threshold 1)
     BurstParameter3_Edit = uicontrol(...
@@ -1568,7 +1568,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',@BurstSearchParameterUpdate,...
         'Position',[0.28 0.73 0.34 0.05],...
         'TooltipString',sprintf(''));
-    h.BurstParameter3_Text=handle(BurstParameter3_Text);
+    h.Text.BurstParameter3_Text=handle(BurstParameter3_Text);
     
     %%% Edit Box for Parameter4 (Photons per Time Window Threshold 2)
     BurstParameter4_Edit = uicontrol(...
@@ -1599,7 +1599,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',@BurstSearchParameterUpdate,...
         'Position',[0.28 0.67 0.34 0.05],...
         'TooltipString',sprintf(''));
-    h.BurstParameter4_Text=handle(BurstParameter4_Text);
+    h.Text.BurstParameter4_Text=handle(BurstParameter4_Text);
     
     %%% Edit Box for Parameter5 (Photons per Time Window Threshold 3)
     BurstParameter5_Edit = uicontrol(...
@@ -1630,7 +1630,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Callback',@BurstSearchParameterUpdate,...
         'Position',[0.28 0.61 0.34 0.05],...
         'TooltipString',sprintf(''));
-    h.BurstParameter5_Text=handle(BurstParameter5_Text);
+    h.Text.BurstParameter5_Text=handle(BurstParameter5_Text);
     %% Profiles tab
     Profiles_Tab= uitab(...
         'Parent',Var_Tab,...
@@ -1710,7 +1710,25 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.415 0.01 0.575 0.98]);
     h.Profiles_Description=handle(Profiles_Description);
-        
+
+%% Mac upscaling of Font Sizes
+if ismac
+    scale_factor = 1.2;
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if isprop(h.(fields{i}),'FontSize')
+            h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
+        end
+    end
+    
+    %%% loop through h.Text structure containing only static text boxes
+    fields = fieldnames(h.Text);
+    for i = 1:numel(fields)
+        if isprop(h.Text.(fields{i}),'FontSize')
+            h.Text.(fields{i}).FontSize = (h.Text.(fields{i}).FontSize)*scale_factor;
+        end
+    end
+end
 %% Global variable initialization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 FileInfo=[];
@@ -3714,37 +3732,37 @@ h.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
 
 switch BAMethod %%% define which Burst Search Parameters are to be displayed
     case 'APBS_twocolorMFD'
-        h.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstParameter4_Text.Visible = 'off';
+        h.Text.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.Text.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstParameter5_Text.Visible = 'off';
+        h.Text.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'DCBS_twocolorMFD'
-        h.BurstParameter3_Text.String = 'Photons per Time Window GX:';
-        h.BurstParameter4_Text.Visible = 'on';
-        h.BurstParameter4_Text.String = 'Photons per Time Window RR:';
+        h.Text.BurstParameter3_Text.String = 'Photons per Time Window GX:';
+        h.Text.BurstParameter4_Text.Visible = 'on';
+        h.Text.BurstParameter4_Text.String = 'Photons per Time Window RR:';
         h.BurstParameter4_Edit.Visible = 'on';
-        h.BurstParameter5_Text.Visible = 'off';
+        h.Text.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'APBS_threecolorMFD'
-        h.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstParameter4_Text.Visible = 'off';
+        h.Text.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.Text.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstParameter5_Text.Visible = 'off';
+        h.Text.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'TCBS_threecolorMFD'
-        h.BurstParameter3_Text.String = 'Photons per Time Window BX:';
-        h.BurstParameter4_Text.Visible = 'on';
-        h.BurstParameter4_Text.String = 'Photons per Time Window GX.';
+        h.Text.BurstParameter3_Text.String = 'Photons per Time Window BX:';
+        h.Text.BurstParameter4_Text.Visible = 'on';
+        h.Text.BurstParameter4_Text.String = 'Photons per Time Window GX.';
         h.BurstParameter4_Edit.Visible = 'on';
-        h.BurstParameter5_Text.Visible = 'on';
-        h.BurstParameter5_Text.String = 'Photons per Time Window RR:';
+        h.Text.BurstParameter5_Text.Visible = 'on';
+        h.Text.BurstParameter5_Text.String = 'Photons per Time Window RR:';
         h.BurstParameter5_Edit.Visible = 'on';
     case 'APBS_twocolornoMFD'
-        h.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstParameter4_Text.Visible = 'off';
+        h.Text.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.Text.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstParameter5_Text.Visible = 'off';
+        h.Text.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
 end
 
