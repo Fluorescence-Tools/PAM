@@ -3945,7 +3945,10 @@ end
 function BurstSearch_Preview(obj,~)
 global FileInfo UserValues PamMeta
 h = guidata(gcf);
-
+%%% Set Progress Bar
+h.Progress_Text.String = 'Calculating Burst Search Preview...';
+h.Progress_Axes.Color=[1 0 0];
+drawnow;
 
 if obj ==  h.BurstSearchPreview_Button %%% recalculate the preview
     %bintime for display, based on the time window used for the burst analysis
@@ -4138,7 +4141,8 @@ else %%% < or > was pressed
     %%% Update the x-axis limits of Burst_Axes
     h.Burst_Axes.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 end
-
+%%% Update Display
+Update_Display([],[],1);
 
 function Update_BurstSearch_Preview(obj,~)
 global TcspcData;

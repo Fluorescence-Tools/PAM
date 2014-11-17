@@ -51,7 +51,6 @@ if iscell(FileName) || ~all(FileName==0)
             Totaltime=0;
             %%% Reads all selected files
             for i=1:numel(FileName)               
-                Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,'Loading:');
                 %%% Calculates Imagetime in clock ticks for concaternating
                 %%% files                
                 Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
@@ -67,7 +66,10 @@ if iscell(FileName) || ~all(FileName==0)
                 
                 Linetimes=[];
                 %%% Reads data for each tcspc card
-                for j=card                   
+                for j=card
+                    %%% Update Progress
+                    Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
+                    
                     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
                     [MT, MI, PLF,~] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0]);
                     %%% Finds, which routing bits to use
@@ -128,26 +130,24 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Pixels=1;   
             FileInfo.FileName=FileName;
             FileInfo.Path=Path;
-            %%% Initializes microtime and macrotime arrays
-            TcspcData.MT=cell(6,16);
-            TcspcData.MI=cell(6,16);  
+            
+            %%% Initializes microtime and macotime arrays
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
             
             %%% Reads all selected files
             for i=1:numel(FileName)
                 %%% there are a number of *_m(i).spc files associated with the
                 %%% *_m1.spc file
-                %%% find out the number of files
-                FullFileName = {};
-                card_found = 1;
-                card = 0;
-                while card_found == 1
-                    if exist(fullfile(Path,[FileName{i}(1:end-5) num2str(card+1) '.spc']),'file')
-                        FullFileName{card+1} = fullfile(Path,[FileName{i}(1:end-5) num2str(card+1) '.spc']);
-                        card = card+1;
-                    else
-                        card_found = 0;
+                
+                %%% Checks, which cards to load
+                card=unique(UserValues.Detector.Det);
+                %%% Checks, which and how many card exist for each file
+                for j=card;
+                    if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),'file')
+                        card(card==j)=[];
                     end
-                end
+                end      
                 Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,'Loading:');           
                 
                 %%% if multiple files are loaded, consecutive files need to
@@ -157,16 +157,20 @@ if iscell(FileName) || ~all(FileName==0)
                     MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
                 end
                 %%% Reads data for each tcspc card
-                for j=1:card                   
+                for j=card    
+                    %%% Update Progress
+                    Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                    [MT, MI, ~, SyncRate] = Read_BH(FullFileName{j},Inf,[0 0 0]);
+                    [MT, MI, ~, SyncRate] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),Inf,[0 0 0]);
                     
                     if isempty(FileInfo.SyncPeriod)
                         FileInfo.SyncPeriod = 1/SyncRate;
                     end
+                    %%% Finds, which routing bits to use
+                    Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    Rout(Rout>numel(MI))=[];
                     %%% Concaternates data to previous files and adds Imagetime
                     %%% to consecutive files
-                    Rout = ~cellfun(@isempty,MI);
                     if any(~cellfun(@isempty,MI))
                         for k=Rout
                             TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
