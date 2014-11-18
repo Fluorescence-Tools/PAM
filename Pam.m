@@ -2794,7 +2794,7 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         Update_Display([],[],[1,2,3,5]);
     end
 end
-
+Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2878,7 +2878,7 @@ switch e.Key
             UserValues.Detector.Det(end+1)=str2double(Input{1});
             UserValues.Detector.Rout(end+1)=str2double(Input{2});
             UserValues.Detector.Use(end+1)=str2double(Input{3});
-            UserValues.Detector.Color(end+1,:)=str2num(Input{4});  
+            UserValues.Detector.Color(end+1,:)=str2num(Input{4});   %#ok<ST2NM>
             UserValues.Detector.Shift{end+1}=zeros(400,1);
             %%% Updates microtime channels list
             Update_Detector_Channels(2);
@@ -3121,38 +3121,40 @@ Det = UserValues.PIE.Detector(PIEchannel);
 Rout = UserValues.PIE.Router(PIEchannel);
 From = UserValues.PIE.From(PIEchannel);
 To = UserValues.PIE.To(PIEchannel);
-
-if nargin == 2 %%% read whole photon stream
-    if ~isempty(TcspcData.(type){Det,Rout})
+if ~isempty(TcspcData.(type){Det,Rout})
+    if nargin == 2 %%% read whole photon stream
+        
         Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To);
-    end
-elseif nargin == 3 %%% read only the specified block
-    %%% Calculates the block start times in clock ticks
-    Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
-    if ~isempty(TcspcData.(type){Det,Rout})
+        
+    elseif nargin == 3 %%% read only the specified block
+        %%% Calculates the block start times in clock ticks
+        Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
+        
         Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= Times(block) &...
             TcspcData.MT{Det,Rout} < Times(block+1));
-    end
-elseif nargin == 4 %%% read only the specified chunk
-    %%% define the chunk start and stop time based on chunksize and measurement
-    %%% time
-    %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
-    %%% (defined in minutes)
-    LimitLow = (block-1)*chunk*60/FileInfo.SyncPeriod+1;
-    LimitHigh = block*chunk*60/FileInfo.SyncPeriod;
-    if ~isempty(TcspcData.(type){Det,Rout})
+        
+    elseif nargin == 4 %%% read only the specified chunk
+        %%% define the chunk start and stop time based on chunksize and measurement
+        %%% time
+        %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
+        %%% (defined in minutes)
+        LimitLow = (block-1)*chunk*60/FileInfo.SyncPeriod+1;
+        LimitHigh = block*chunk*60/FileInfo.SyncPeriod;
+        
         Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= LimitLow &...
             TcspcData.MT{Det,Rout} < LimitHigh);
     end
-end           
+else %%% PIE channel contains no photons
+    Photons_PIEchannel = [];
+end
 
         
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3170,7 +3172,7 @@ if isempty(obj)
     load([pwd filesep 'profiles' filesep 'profile.mat']);    
     for i=1:numel(h.Profiles_List.String)
         %%% Looks for current profile in profiles list
-        if strcmp(h.Profiles_List.String{i}, Profile)
+        if strcmp(h.Profiles_List.String{i}, Profile) %#ok<NODEF>
             %%% Changes color to indicate current profile
             h.Profiles_List.String{i}=['<HTML><FONT color=FF0000>' h.Profiles_List.String{i} '</Font></html>'];
             return
@@ -3794,7 +3796,6 @@ function Do_BurstAnalysis()
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [start, stop, Number_of_Photons] = Perform_BurstSearch(Photons,Channel,type,T,M,L)
-global UserValues FileInfo
 
 switch type
     case 'APBS'
@@ -4050,7 +4051,7 @@ if obj ==  h.BurstSearchPreview_Button %%% recalculate the preview
     end
     
     %prepare trace for display
-    xout = [0:Bin_Time:T_preview];
+    xout = 0:Bin_Time:T_preview;
     switch BAMethod %make histograms for lower display with binning T_classic
         case {1,2}    % 2 color, MFD
             [ch1] = hist([Photons{1}; Photons{2}; Photons{3}; Photons{4}], xout);
@@ -4143,26 +4144,6 @@ else %%% < or > was pressed
 end
 %%% Update Display
 Update_Display([],[],1);
-
-function Update_BurstSearch_Preview(obj,~)
-global TcspcData;
-global UserValues;
-
-
-xlabel(handles.axes1, 'Macrotime [ms]');
-ylabel(handles.axes1, 'Photons per bin');
-
-%find first and last burst in second
-first = find(AllPhotons(start)>=TcspcData.Header.SyncRate*second,1,'first');
-last = find(AllPhotons(stop)<=TcspcData.Header.SyncRate*(second+1),1,'last');
-for i=first:last
-    plot(handles.axes1, xout(starttime(i):stoptime(i))/(1e-3*TcspcData.Header.SyncRate),ch1(starttime(i):stoptime(i)),'og');
-    plot(handles.axes1, xout(starttime(i):stoptime(i))/(1e-3*TcspcData.Header.SyncRate),ch2(starttime(i):stoptime(i)),'or');
-    if isfield(handles.data,'ch3')
-        plot(handles.axes1, xout(starttime(i):stoptime(i))/(1e-3*TcspcData.Header.SyncRate),ch3(starttime(i):stoptime(i)),'ob');
-    end
-end
-axis(handles.axes1, 'tight');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
