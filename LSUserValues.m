@@ -204,7 +204,7 @@ if Mode==0
         disp('UserValues.BurstSearch.Method was incomplete');    
     end
     %%% Checks, if BurstSearch.PIEChannelSelection exists
-    %%% (This field contains the PIEChannel Selection (as a number) for every
+    %%% (This field contains the PIEChannel Selection (as a String) for every
     %%% Burst Search Method)
     if ~isfield (S.BurstSearch,'PIEChannelSelection')
         dummy = S.PIE.Name{1};
@@ -218,6 +218,21 @@ if Mode==0
         S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
     end
+    %% TauFit
+    %%% Checks, if TauFit subfield exists
+    if ~isfield (S,'TauFit')
+        S.TauFit=[];
+        disp('UserValues.TauFit was incomplete');    
+    end
+    %%% Checks, if TauFit.PIEChannelSelection exists
+    %%% (This field contains the PIE Channel Selection as String/Name for
+    %%% Parallel and Perpendicular Channel)
+    if ~isfield (S.TauFit,'PIEChannelSelection')
+        dummy = S.PIE.Name{1};
+        S.TauFit.PIEChannelSelection={dummy,dummy};
+            disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
+    end
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=S;
     Mode=1;
