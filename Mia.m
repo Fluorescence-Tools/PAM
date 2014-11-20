@@ -145,9 +145,10 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Callback',{@Mia_Frame,2,i},...
+            'Callback',{@Mia_Frame,2,i},...    
             'Position',[0.11 1.3-0.49*i, 0.09 0.03]);
-        h.Mia_Frame_Listener(i)=addlistener(h.Mia_Frame_Slider(i),'Value','PostSet',@Mia_Frame);
+        h.Mia_Frame_Listener(i)=addlistener(h.Mia_Frame_Slider(i),'Value','PostSet',@Mia_Frame);    
+
         %%% Text
         h.Text{end+1} = uicontrol(...
             'Parent',h.Mia_Image_Panel,...
@@ -171,6 +172,25 @@ if isempty(h.Mia)
             'Callback',{@Update_Plots,1,i},...
             'Value',2,...
             'String',{'Original','Dynamic','Static'});
+        
+        %%% Checkbox to link channels
+        if i==1
+            h.Mia_Image_Link = uicontrol(...
+                'Parent',h.Mia_Image_Panel,...
+                'Style','checkbox',...
+                'Units','normalized',...
+                'FontSize',14,...
+                'Callback',{@Mia_Frame,5,1},...
+                'BackgroundColor', Look.Back,...
+                'ForegroundColor', Look.Fore,...
+                'Position',[0.01 0.73, 0.15 0.03],...
+                'Value',1,...
+                'String','Link channels');
+        end
+        %%% Image frames link
+        if i==2;
+            h.Mia_Frame_Link=linkprop([],'Value');
+        end
         
         
         %%% Axes to display images
@@ -536,128 +556,199 @@ if isempty(h.Mia)
         'ShadowColor', Look.Shadow,...
         'Position',[0 0 1 1]);
     
-    for i=1:3
-        %%% Text
-        h.Text{end+1} = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','text',...
-            'Units','normalized',...
-            'FontSize',14,...
-            'FontWeight','Bold',...
-            'HorizontalAlignment','left',...
-            'BackgroundColor', Look.Back,...
-            'ForegroundColor', Look.Fore,...
-            'Position',[0.01 1.28-0.33*i, 0.06 0.03]);
-        switch i
-            case 1
-                h.Text{end}.String='ACF 1:';
-            case 2
-                h.Text{end}.String='CCF:';
-            case 3
-                h.Text{end}.String='ACF 2:';
-        end
-                
-        %%% Colormap selection for correlations
-        h.Cor_Colormap(i) = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','popupmenu',...
-            'Units','normalized',...
-            'FontSize',12,...
-            'UserData',[mod(i-1,2) mod(i,2) 0],...
-            'Callback',{@Update_Plots,2,i},...
-            'ButtonDownFcn',{@Mia_Color,i},...
-            'BackgroundColor', Look.Control,...
-            'ForegroundColor', Look.Fore,...
-            'Value',2,...
-            'Position',[0.1 1.28-0.33*i, 0.08 0.03],...
-            'String',{'Gray','Jet','Hot','HSV','Custom'});
-        
-        %%% Text
-        h.Text{end+1} = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','text',...
-            'Units','normalized',...
-            'FontSize',14,...
-            'HorizontalAlignment','left',...
-            'BackgroundColor', Look.Back,...
-            'ForegroundColor', Look.Fore,...
-            'Position',[0.01 1.24-0.33*i, 0.045 0.03],...
-            'String','Frame:');
-        %%% Editbox for frame
-        h.Mia_Cor_Frame(i) = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','edit',...
-            'Units','normalized',...
-            'FontSize',12,...
-            'BackgroundColor', Look.Control,...
-            'ForegroundColor', Look.Fore,...
-            'Callback',{@Mia_Frame,3,i},...
-            'Position',[0.06 1.24-0.33*i, 0.03 0.03],...
-            'String','1');
-        %%% Slider for frame
-        h.Mia_Cor_Frame_Slider(i) = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','slider',...
-            'Units','normalized',...
-            'FontSize',12,...
-            'BackgroundColor', Look.Control,...
-            'ForegroundColor', Look.Fore,...
-            'Callback',{@Mia_Frame,4,i},...
-            'Position',[0.1 1.24-0.33*i, 0.08 0.03]);
-        h.Mia_Cor_Frame_Listener(i)=addlistener(h.Mia_Cor_Frame_Slider(i),'Value','PostSet',@Mia_Frame);
-        %%% Text
-        h.Text{end+1} = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','text',...
-            'Units','normalized',...
-            'FontSize',14,...
-            'HorizontalAlignment','left',...
-            'BackgroundColor', Look.Back,...
-            'ForegroundColor', Look.Fore,...
-            'Position',[0.01 1.2-0.33*i, 0.045 0.03],...
-            'String','Size');
-        %%% Editbox for frame
-        h.Mia_Cor_Size(i) = uicontrol(...
-            'Parent',h.Mia_Cor_Panel,...
-            'Style','edit',...
-            'Units','normalized',...
-            'FontSize',12,...
-            'BackgroundColor', Look.Control,...
-            'ForegroundColor', Look.Fore,...
-            'Callback',{@Update_Plots,2,i},...
-            'Position',[0.06 1.2-0.33*i, 0.03 0.03],...
-            'String','21');
-        
-        
-        
+    %%% Text
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.95, 0.045 0.03],...
+        'String','Size');
+    %%% Editbox for correlation size
+    h.Mia_Cor_Size = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Update_Plots,2,1:3},...
+        'Position',[0.06 0.95, 0.03 0.03],...
+        'String','31');    
+    %%% Colormap selection for correlations
+    h.Cor_Colormap = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','popupmenu',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'UserData',[1 0 0],...
+        'Callback',{@Update_Plots,2,1:3},...
+        'ButtonDownFcn',{@Mia_Color,1},...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Value',2,...
+        'Position',[0.1 0.95, 0.08 0.03],...
+        'String',{'Gray','Jet','Hot','HSV','Custom'});
+    %%% Text
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.91, 0.045 0.03],...
+        'String','Frame:');
+    %%% Editbox for frame
+    h.Mia_Cor_Frame = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Mia_Frame,3,1:3},...
+        'Position',[0.06 0.91, 0.03 0.03],...
+        'String','0');
+    %%% Slider for frame
+    h.Mia_Cor_Frame_Slider = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','slider',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Mia_Frame,4,1:3},...
+        'Position',[0.1 0.91, 0.08 0.03]);
+    h.Mia_Cor_Frame_Listener=addlistener(h.Mia_Cor_Frame_Slider,'Value','PostSet',@Mia_Frame);
+    
+    %%% RICS Fit table
+    h.Mia_Cor_Fit_Table = uitable(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',8,...
+        'BackgroundColor', [Look.Axes;Look.Fore],...
+        'ForegroundColor', Look.Disabled,...
+        'ColumnName',{'ACF1','CCF','ACF2'},...
+        'ColumnWidth',num2cell([40,40,40]),...
+        'ColumnEditable',true,...
+        'RowName',{'N';'Fix';'D [µm²/s]';'Fix';'w_r [µm]';'Fix';'w_z [µm]';'Fix';'y0';'Fix';'P Size [nm]';'Fix';'P Time [µs]';'Fix';'L Time [ms]';'Fix'},...
+        'CellEditCallback',{@Update_Plots,2,1:3},...
+        'Position',[0.01 0.5, 0.2 0.4]);
+    Data=cell(16,3);
+    Data(1,:)={'1'};
+    Data(3,:)={'10'};
+    Data(5,:)={'0.2'};
+    Data(7,:)={'1'};
+    Data(9,:)={'0'};
+    Data(11,:)={'40'};
+    Data(13,:)={'11.11'};
+    Data(15,:)={'3.33'};
+    Data([2 4],:)={false};
+    Data(6:2:16,:)={true};
+    h.Mia_Cor_Fit_Table.Data=Data;
+    
+    %%% Buttons to fit correlation
+    h.Mia_Cor_Fit(1) = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','push',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Fit ACF1',...
+        'Callback',{@Do_RICS_Fit,1},...
+        'Position',[0.01 0.46, 0.06 0.03]);
+    h.Mia_Cor_Fit(2) = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','push',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Fit CCF',...
+        'Callback',{@Do_RICS_Fit,2},...
+        'Position',[0.08 0.46, 0.06 0.03]);
+    h.Mia_Cor_Fit(3) = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','push',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Fit ACF2',...
+        'Callback',{@Do_RICS_Fit,3},...
+        'Position',[0.15 0.46, 0.06 0.03]);
+    %%% Pupupmenu, to select, what fit to plot
+    h.Mia_Cor_Fit_Type = uicontrol(...
+        'Parent',h.Mia_Cor_Panel,...
+        'Style','popupmenu',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String',{'Fit surf','Residuals surf','Fit/Residuals'},...
+        'Callback',{@Update_Plots,2,1:3},...
+        'Position',[0.01 0.42, 0.1 0.03]);
+
+    for i=1:3  
         %%% Axes to display correlation images
         h.Mia_Cor_Axes(i,1)= axes(...
             'Parent',h.Mia_Cor_Panel,...
             'Units','normalized',...
-            'Position',[0.2 1-0.33*i 0.22 0.32]);
+            'Visible','off',...
+            'Position',[0.02+0.25*i 0.67 0.22 0.32]);
         %%% Axes to display correlation surface
         h.Mia_Cor_Axes(i,2)= axes(...
             'Parent',h.Mia_Cor_Panel,...
             'Units','normalized',...
-            'Position',[0.44 1-0.33*i 0.22 0.32]);
-        
+            'Visible','off',...
+            'Color',(Look.Back+0.1)/1.1,...
+            'Position',[0.02+0.25*i 0.34 0.22 0.32]);
+        %%% Axes to display correlation fit surface
+        h.Mia_Cor_Axes(i,3)= axes(...
+            'Parent',h.Mia_Cor_Panel,...
+            'Units','normalized',...
+            'Visible','off',...
+            'Color',(Look.Back+0.1)/1.1,...
+            'Position',[0.02+0.25*i 0.01 0.22 0.32]);        
+        linkaxes(h.Mia_Cor_Axes(i,:), 'xy');
         %%% Initializes empty plots
         h.Plots.Cor(i,1)=image(zeros(1,1,3),...
             'Parent',h.Mia_Cor_Axes(i,1));
+        h.Mia_Cor_Axes(i,1).Color=[0 0 0];
+        h.Mia_Cor_Axes(i,1).Visible='off';
+        h.Plots.Cor(i,1).Visible='off';
         h.Mia_Cor_Axes(i,1).DataAspectRatio=[1 1 1];
         h.Mia_Cor_Axes(i,1).XTick=[];
         h.Mia_Cor_Axes(i,1).YTick=[];
         h.Plots.Cor(i,2)=surf(zeros(2),zeros(2,2,3),...
             'Parent',h.Mia_Cor_Axes(i,2));
+        h.Mia_Cor_Axes(i,2).Visible='off';
+        h.Plots.Cor(i,2).Visible='off';
+        h.Mia_Cor_Axes(i,2).Color=(Look.Back+0.1)/1.1;
         h.Mia_Cor_Axes(i,2).XTick=[];
         h.Mia_Cor_Axes(i,2).YTick=[];
+        h.Plots.Cor(i,3)=surf(zeros(2),zeros(2,2,3),...
+            'Parent',h.Mia_Cor_Axes(i,3));
+        h.Mia_Cor_Axes(i,3).Visible='off';
+        h.Plots.Cor(i,3).Visible='off';
+        h.Mia_Cor_Axes(i,3).Color=(Look.Back+0.1)/1.1;
+        h.Mia_Cor_Axes(i,3).XTick=[];
+        h.Mia_Cor_Axes(i,3).YTick=[];
     end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 
 %% Initializes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 MIAData=[];
 MIAData.Data=[];
+MIAData.Cor=cell(3,2);
 guidata(h.Mia,h); 
 else
      figure(h.Mia); % Gives focus to Pam figure 
@@ -686,60 +777,105 @@ global MIAData UserValues
 h = guidata(gcf);
 
 switch mode
-    case 1
-    %% Loads single color TIFFs
-    [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', UserValues.File.PhasorPath, 'MultiSelect', 'on');
-    if all(Path1==0)
-        return
-    else
-        [FileName2,Path2] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', Path1, 'MultiSelect', 'on');
-    end
-    
-    
-    if ~iscell(FileName1)
-        FileName1={FileName1};
-    end
-    if ~iscell(FileName2)
-        FileName2={FileName2};
-    end
-    
-    MIAData.Data=[];
-    MIAData.Data{1,1}=int16.empty(0,0,0);
-    for i=1:numel(FileName1)
-        FileInfo=imfinfo(fullfile(Path1,FileName1{i}));
-        for j=1:numel(FileInfo)
-            MIAData.Data{1,1}(:,:,end+1)=int16(imread(fullfile(Path1,FileName1{i}),'TIFF','Index',j));
+    case 1 %%% Loads single color TIFFs
+        [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', UserValues.File.PhasorPath, 'MultiSelect', 'on');
+        
+        if all(Path1==0)
+            return
+        else
+            [FileName2,Path2] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', Path1, 'MultiSelect', 'on');
         end
-    end
-    h.Mia_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
-    h.Mia_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
-    h.Mia_Frame_Slider(1).Value=1;
-    h.Mia_Frame_Slider(1).Min=1;
-    h.Mia_Frame(1).String='1';
-
-    if all(Path2==0)
-        Mia_ROI([],[],1)        
-        return
-    end
-    
-    MIAData.Data{2,1}=int16.empty(0,0,0);
-    for i=1:numel(FileName2)
-        FileInfo=imfinfo(fullfile(Path2,FileName2{i}));
-        for j=1:numel(FileInfo)
-            MIAData.Data{2,1}(:,:,end+1)=int16(imread(fullfile(Path2,FileName2{i}),'TIFF','Index',j));
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName1)
+            FileName1={FileName1};
         end
-    end
-    h.Mia_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
-    h.Mia_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
-    h.Mia_Frame_Slider(2).Value=1;
-    h.Mia_Frame_Slider(2).Min=1;
-    h.Mia_Frame(2).String='1';
-    h.Plots.ROI(2).Position=[10 10 200 200];
-    Mia_ROI([],[],1) 
-    
+        if ~iscell(FileName2)
+            FileName2={FileName2};
+        end
+        
+        MIAData.Data=[];
+        %%% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_Cor_Axes(i,1).Visible='off';
+            h.Mia_Cor_Axes(i,2).Visible='off';
+            h.Mia_Cor_Axes(i,3).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+        end
+        h.Mia_Cor_Frame_Slider.Min=0;
+        h.Mia_Cor_Frame_Slider.Max=0;
+        h.Mia_Cor_Frame_Slider.SliderStep=[1 1];
+        h.Mia_Cor_Frame_Slider.Value=0;
+        MIAData.Data{1,1}=int16.empty(0,0,0);
+        %%% Loads all frames for channel 1
+        for i=1:numel(FileName1)
+            FileInfo=imfinfo(fullfile(Path1,FileName1{i}));
+            for j=1:numel(FileInfo)
+                MIAData.Data{1,1}(:,:,end+1)=int16(imread(fullfile(Path1,FileName1{i}),'TIFF','Index',j));
+            end
+        end
+        %%% Updates frame settings for channel 1
+        h.Mia_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Frame_Slider(1).Value=1;
+        h.Mia_Frame_Slider(1).Min=1;
+        h.Mia_Frame(1).String='1';
+        
+        %%% Clears channel 2 if only one channel was loaded
+        %%% Stops function, if only one channel was loaded
+        if all(Path2==0) 
+            %%% Unlinks framses
+            while ~isempty(h.Mia_Frame_Link.Targets)
+                removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
+            end
+            %%% Clears images
+            h.Plots.Image(2,1).CData=zeros(1,1,3);
+            h.Mia_Image_Axes(2,1).XLim=[0 1]+0.5;
+            h.Mia_Image_Axes(2,1).YLim=[0 1]+0.5;
+            h.Plots.Image(2,2).CData=zeros(1,1,3);
+            h.Mia_Image_Axes(2,2).XLim=[0 1]+0.5;
+            h.Mia_Image_Axes(2,2).YLim=[0 1]+0.5;
+            %%% Resets slider
+            h.Mia_Frame_Slider(2).SliderStep=[1 1];
+            h.Mia_Frame_Slider(2).Max=1;
+            h.Mia_Frame_Slider(2).Value=1;
+            h.Mia_Frame_Slider(2).Min=1;
+            h.Mia_Frame(2).String='1';
+            %%% Updates plot
+            Mia_ROI([],[],1)
+            return
+        end
+        
+        MIAData.Data{2,1}=int16.empty(0,0,0);
+        %%% Loads all frames for channel 2
+        for i=1:numel(FileName2)
+            FileInfo=imfinfo(fullfile(Path2,FileName2{i}));
+            for j=1:numel(FileInfo)
+                MIAData.Data{2,1}(:,:,end+1)=int16(imread(fullfile(Path2,FileName2{i}),'TIFF','Index',j));
+            end
+        end
+        %%% Updates frame settings for channel 2
+        h.Mia_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
+        h.Mia_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
+        h.Mia_Frame_Slider(2).Value=1;
+        h.Mia_Frame_Slider(2).Min=1;
+        h.Mia_Frame(2).String='1';
+        h.Plots.ROI(2).Position=[10 10 200 200];
+        
+        %%% Links frames
+        if h.Mia_Image_Link.Value
+            addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
+            addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
+        end
+        %%% Updates plots
+        Mia_ROI([],[],1)
+        
 end
-
-
 
 
 
@@ -814,64 +950,130 @@ end
 
 %% Plots correlations
 if any(mode==2)
+    %%% Selects colormap
+    switch h.Cor_Colormap.Value
+        case 1
+            Colormap=gray(64);
+            h.Cor_Colormap.BackgroundColor=UserValues.Look.Control;
+        case 2
+            Colormap=jet(64);
+            h.Cor_Colormap.BackgroundColor=UserValues.Look.Control;
+        case 3
+            Colormap=hot(64);
+            h.Cor_Colormap.BackgroundColor=UserValues.Look.Control;
+        case 4
+            Colormap=hsv(64);
+            h.Cor_Colormap.BackgroundColor=UserValues.Look.Control;
+        case 5
+            Colormap=gray(64).*repmat(h.Cor_Colormap.UserData,[64,1]);
+            h.Cor_Colormap.BackgroundColor=h.Cor_Colormap.UserData;
+    end
+    %%% Determins frame to plot            
+    Frame=h.Mia_Cor_Frame_Slider.Value; 
+    %%% Determins correlation size to plot
+    Size=str2double(h.Mia_Cor_Size.String);    
+    %%% Updates correlationplots 
     for i=channel
-        if i<=size(MIAData.Cor,2) && ~isempty(MIAData.Cor{i})
-            %% Selects colormap
-            switch h.Cor_Colormap(i).Value
-                case 1
-                    Colormap=gray(64);
-                    h.Cor_Colormap(i).BackgroundColor=UserValues.Look.Control;
-                case 2
-                    Colormap=jet(64);
-                    h.Cor_Colormap(i).BackgroundColor=UserValues.Look.Control;
-                case 3
-                    Colormap=hot(64);
-                    h.Cor_Colormap(i).BackgroundColor=UserValues.Look.Control;
-                case 4
-                    Colormap=hsv(64);
-                    h.Cor_Colormap(i).BackgroundColor=UserValues.Look.Control;
-                case 5
-                    Colormap=gray(64).*repmat(h.Cor_Colormap(i).UserData,[64,1]);
-                    h.Cor_Colormap(i).BackgroundColor=h.Cor_Colormap(i).UserData;
-            end
-            
-            %%% Plots correlation image
-            Frame=h.Mia_Cor_Frame_Slider(i).Value;
-            
-            Size=str2double(h.Mia_Cor_Size(i).String);
+        if ~isempty(MIAData.Cor{i,1})
+            %%% Forces Size into bounds
             if Size>size(MIAData.Cor{i},1) || Size>size(MIAData.Cor{i},2)
                 Size=min([size(MIAData.Cor{i},1),size(MIAData.Cor{i},2)]);
-                h.Mia_Cor_Size(i).String=num2str(Size);
+                h.Mia_Cor_Size.String=num2str(Size);
             end
             %%% Determines center of correlation
-            X(1)=ceil(size(MIAData.Cor{i},1)/2-Size/2)+1;
-            X(2)=ceil(size(MIAData.Cor{i},1)/2+Size/2);
-            Y(1)=ceil(size(MIAData.Cor{i},2)/2-Size/2)+1;
-            Y(2)=ceil(size(MIAData.Cor{i},2)/2+Size/2);
+            X(1)=ceil(floor(size(MIAData.Cor{i,1},1)/2)-Size/2)+1;
+            X(2)=ceil(floor(size(MIAData.Cor{i,1},1)/2)+Size/2);
+            Y(1)=ceil(floor(size(MIAData.Cor{i,1},2)/2)-Size/2)+1;
+            Y(2)=ceil(floor(size(MIAData.Cor{i,1},2)/2)+Size/2);
             %%% Plots average correlation, if frame 0 was selected
             if Frame==0
-                Image=mean(double(MIAData.Cor{i}(X(1):X(2),Y(1):Y(2),:)),3);
-                h.Plots.Cor(i,2).ZData=mean(double(MIAData.Cor{i}(X(1):X(2),Y(1):Y(2),:)),3);
+                Image=mean(double(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),:)),3);
             else
-                Image=double(MIAData.Cor{i}(X(1):X(2),Y(1):Y(2),Frame));
-                h.Plots.Cor(i,2).ZData=double(MIAData.Cor{i}(X(1):X(2),Y(1):Y(2),Frame));
+                Image=double(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frame));               
             end
+            %%% Plots surface plot of correlation
+            h.Plots.Cor(i,2).ZData=Image;
+            %%% Resizes correlation and plots it as RGB
             Image=round(63*(Image-min(min(Image)))/(max(max(Image))-min(min(Image))))+1;
             Image=reshape(Colormap(Image,:),[size(Image,1),size(Image,2),3]);
             h.Plots.Cor(i,1).CData=Image;
             h.Mia_Cor_Axes(i,1).XLim=[0 size(Image,2)]+0.5;
             h.Mia_Cor_Axes(i,1).YLim=[0 size(Image,1)]+0.5;
             
-            %%% Plots correlation surface
-            h.Plots.Cor(i,2).CData=Image;
-
-            h.Mia_Cor_Axes(i,2).XLim=[0 size(Image,2)]+0.5;
-            h.Mia_Cor_Axes(i,2).YLim=[0 size(Image,1)]+0.5;
-        end
+            %%% Calculate average of verteces surrounding the face in surf plot
+            Image_Surf=h.Plots.Cor(i,2).ZData;
+            Image_Surf=Image_Surf...
+                +circshift(Image_Surf,[-1  0 0])...
+                +circshift(Image_Surf,[-1 -1 0])...
+                +circshift(Image_Surf,[ 0 -1 0]);
+            %%% Resizes face intenity and plots it as RGB
+            Image_Surf=round(63*(Image_Surf-min(min(Image_Surf)))/(max(max(Image_Surf))-min(min(Image_Surf))))+1;
+            Image_Surf=reshape(Colormap(Image_Surf,:),[size(Image_Surf,1),size(Image_Surf,2),3]);
+            h.Plots.Cor(i,2).CData=Image_Surf;
+                      
+            %%% Calculates fit from table values
+            Fit=reshape(Calc_RICS_Fit(i),[Size,Size]);
+            %%% Determins fit plot type
+            switch h.Mia_Cor_Fit_Type.Value
+                case 1 %%% Plots fit surf plot
+                    %%% Calculate average of verteces surrounding the face in fit surf plot
+                    Fit_Faces=(Fit+circshift(Fit,[-1 0 0])+circshift(Fit,[-1 -1 0])+circshift(Fit,[0 -1 0]))/4;
+                    %%% Resizes fit face intenity and applies colormap
+                    Fit_Faces=round(63*(Fit_Faces-min(min(Fit_Faces)))/(max(max(Fit_Faces))-min(min(Fit_Faces))))+1;
+                    Fit_Faces=reshape(Colormap(Fit_Faces,:),[size(Fit_Faces,1),size(Fit_Faces,2),3]);
+                    %%% Links fit z-axes to data axes
+                    h.Mia_Cor_Axes(i,3).ZLim=h.Mia_Cor_Axes(i,2).ZLim;
+                case 2 %%% Plots fit residual surf plot
+                    %%% Calculates standard error of mean or uses one
+                    if str2double(h.Mia_Cor_Frame.String)==0
+                        SEM=std(double(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),:)),0,3)/sqrt(size(MIAData.Cor{i,1},3));
+                    else
+                        SEM=ones(size(Fit,1),size(Fit,2));
+                    end 
+                    %%% Calculates weighted residuals
+                    Fit=(h.Plots.Cor(i,2).ZData-Fit)./SEM;
+                    %%% Calculate average of verteces surrounding the face in residual surf plot
+                    Fit_Faces=(Fit+circshift(Fit,[-1 0 0])+circshift(Fit,[-1 -1 0])+circshift(Fit,[0 -1 0]))/4;
+                    %%% Resizes residual face intenity and applies colormap
+                    Fit_Faces=round(63*(Fit_Faces-min(min(Fit_Faces)))/(max(max(Fit_Faces))-min(min(Fit_Faces))))+1;
+                    Fit_Faces=reshape(Colormap(Fit_Faces,:),[size(Fit_Faces,1),size(Fit_Faces,2),3]);
+                    %%% Autosets z axes
+                    h.Mia_Cor_Axes(i,3).ZLimMode='auto';
+                case 3 %%% Plots fit surf plot with residuals as blue (neg), red(pos) and gray(neutal)
+                    %%% Calculates standard error of mean or uses one
+                    if str2double(h.Mia_Cor_Frame.String)==0
+                        SEM=std(double(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),:)),0,3)/sqrt(size(MIAData.Cor{i,1},3));
+                    else
+                        SEM=ones(size(Fit,1),size(Fit,2));
+                    end 
+                    if any(any(SEM==0));
+                        SEM=1;
+                    end
+                    %%% Calculates weighted residuals
+                    Residuals=(h.Plots.Cor(i,2).ZData-Fit)./SEM;
+                    %%% Calculate average of verteces surrounding the face in fit/residual surf plot
+                    Residuals=(Residuals+circshift(Residuals,[-1 0 0])+circshift(Residuals,[-1 -1 0])+circshift(Residuals,[0 -1 0]))/4;
+                    %%% Generates colormap blue-gray-red
+                    Errormap=zeros(64,3);
+                    Errormap(:,1)=[linspace(0,0.8,32), repmat(0.8,[1,32])]; 
+                    Errormap(:,2)=[linspace(0,0.8,32), linspace(0.8,0,32)]; 
+                    Errormap(:,3)=[repmat(0.8,[1,32]), linspace(0.8,0,32)];
+                    %%% Applies colormap to residuals from -3 to +3
+                    Residuals=round((Residuals+3)/6*64);
+                    Residuals(Residuals<1)=1;
+                    Residuals(Residuals>64)=64;
+                    Fit_Faces=reshape(Errormap(Residuals(:),:),[size(Fit,1),size(Fit,2),3]);
+                    %%% Links fit z-axes to data axes
+                    h.Mia_Cor_Axes(i,3).ZLim=h.Mia_Cor_Axes(i,2).ZLim;
+            end
+            %%% Plots fit and applies face color
+            h.Plots.Cor(i,3).ZData=Fit;
+            h.Plots.Cor(i,3).CData=Fit_Faces;            
+        end        
     end
+
 end
-
-
+    
 
 
 
@@ -903,37 +1105,52 @@ switch mode
              h.Mia_Frame(channel).String=num2str(Frame);
         end
         h.Mia_Frame_Slider(channel).Value=Frame;
+        Update_Plots([],[],1,channel);
     case 2 %%% Image frames slider changed
         Frame=h.Mia_Frame_Slider(channel).Value;
         if mod(Frame,1)~=0
             Frame=round(Frame);
             h.Mia_Frame_Slider(channel).Value=Frame;
         end
-        h.Mia_Frame(channel).String=num2str(Frame);        
+        h.Mia_Frame(channel).String=num2str(Frame); 
+        Update_Plots([],[],1,channel);
     case 3 %%% Cor frames editbox changed
-        Frame=str2double(h.Mia_Cor_Frame(channel).String);
+        Frame=str2double(h.Mia_Cor_Frame.String);
+        i=find(~cellfun(@isempty,MIAData.Cor),1,'first');
         %%% Forces frame into bounds
-        if Frame<1;
-            Frame=1;
-            h.Mia_Cor_Frame(channel).String='1';
-        elseif Frame>size(MIAData.Cor{channel},3)
-            Frame=size(MIAData.Cor{channel},3);
-            h.Mia_Cor_Frame(channel).String=num2str(size(MIAData.Cor{channel},3));
+        if Frame<0;
+            Frame=0;
+            h.Mia_Cor_Frame.String='1';
+        elseif Frame>size(MIAData.Cor{i},3)
+            Frame=size(MIAData.Cor{i},3);
+            h.Mia_Cor_Frame.String=num2str(size(MIAData.Cor{i},3));
         elseif  mod(Frame,1)~=0
             Frame=round(Frame);
-            h.Mia_Cor_Frame(channel).String=num2str(Frame);
+            h.Mia_Cor_Frame.String=num2str(Frame);
         end
-        h.Mia_Cor_Frame_Slider(channel).Value=Frame;
+        h.Mia_Cor_Frame_Slider.Value=Frame;
+        Update_Plots([],[],2,1:3);
     case 4 %%% Cor frames slider changed
-        Frame=h.Mia_Cor_Frame_Slider(channel).Value;
+        Frame=h.Mia_Cor_Frame_Slider.Value;
         if mod(Frame,1)~=0
             Frame=round(Frame);
-            h.Mia_Cor_Frame_Slider(channel).Value=Frame;
+            h.Mia_Cor_Frame_Slider.Value=Frame;
         end
-        h.Mia_Cor_Frame(channel).String=num2str(Frame);   
+        h.Mia_Cor_Frame.String=num2str(Frame);  
+        Update_Plots([],[],2,1:3);
+    case 5 %%% Links frames of image for both channels
+        if h.Mia_Image_Link.Value
+            if size(MIAData.Data,1)==2
+                addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
+                addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
+            end
+        else %%% Unlinks
+            while ~isempty(h.Mia_Frame_Link.Targets)
+                removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
+            end
+        end
+        Update_Plots([],[],2,1:2);
 end
-%%% Updates plots
-Update_Plots([],[],round(mode/2),channel);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1215,12 +1432,34 @@ if ~isempty(MIAData.Data)
 end
 
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_2D_XCor(~,~)
 h = guidata(gcf);
 global MIAData
+
+%%% Clears correlation data and plots
+MIAData.Cor=cell(3,2);
+for i=1:3
+    h.Plots.Cor(i,1).CData=zeros(1,1,3);
+    h.Plots.Cor(i,2).ZData=zeros(1);
+    h.Plots.Cor(i,2).CData=zeros(1,1,3);    
+    h.Mia_Cor_Axes(i,1).Visible='off';
+    h.Mia_Cor_Axes(i,2).Visible='off';
+    h.Mia_Cor_Axes(i,3).Visible='off';
+    h.Plots.Cor(i,1).Visible='off';
+    h.Plots.Cor(i,2).Visible='off';
+    h.Plots.Cor(i,3).Visible='off';   
+end
+h.Mia_Cor_Frame_Slider.Min=0;
+h.Mia_Cor_Frame_Slider.Max=0;
+h.Mia_Cor_Frame_Slider.SliderStep=[1 1];
+h.Mia_Cor_Frame_Slider.Value=0;
+
+
 
 %%% Determins, which correlations to perform
 if h.Mia_Correlation_Type.Value==3
@@ -1231,13 +1470,17 @@ else
     channel=floor(Auto*1.5);
 end
 
-MIAData.Cor=[];
+
 %%% Performs autocorrelation
 for i=Auto
     MIAData.Cor{floor(i*1.5)}=zeros(size(MIAData.Data{1,2}));
     for j=1:size(MIAData.Data{1,2},3)
         Image=double(MIAData.Data{i,2}(:,:,j));
+        %%% Actual correlation
         MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(fft2(Image).*conj(fft2(Image)))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
+        %%% Center point is average of x neighbors to remove noise peak
+        center=[floor(size(MIAData.Cor{floor(i*1.5)},1)/2)+1,floor(size(MIAData.Cor{floor(i*1.5)},2)/2)+1];
+        MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;
     end
     clear Image;
 end
@@ -1247,19 +1490,30 @@ if Cross
     for j=1:size(MIAData.Data{1,2},3)
         Image{1}=double(MIAData.Data{1,2}(:,:,j));
         Image{2}=double(MIAData.Data{2,2}(:,:,j));
+        %%% Actual correlation
         MIAData.Cor{2}(:,:,j)=(fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2})*size(Image{1},1)*size(Image{1},2))) - 1;
+        %%% Center point is average of x neighbors to remove noise peak
+        center=[floor(size(MIAData.Cor{2},1)/2)+1,floor(size(MIAData.Cor{2},2)/2)+1];
+        MIAData.Cor{2}(center(1),center(2),j)=(MIAData.Cor{2}(center(1),center(2)-1,j)+MIAData.Cor{2}(center(1),center(2)+1,j))/2;
     end
     clear Image;
 end
 
+for i=channel
+    h.Mia_Cor_Axes(i,1).Visible='on';
+    h.Mia_Cor_Axes(i,2).Visible='on';
+    h.Mia_Cor_Axes(i,3).Visible='on';
+    h.Plots.Cor(i,1).Visible='on';
+    h.Plots.Cor(i,2).Visible='on';
+    h.Plots.Cor(i,3).Visible='on';
+end
 
 %%% Updates correlation frame slider
-for i=channel
-    h.Mia_Cor_Frame_Slider(i).Min=0;
-    h.Mia_Cor_Frame_Slider(i).Max=size(MIAData.Cor{i},3);
-    h.Mia_Cor_Frame_Slider(i).SliderStep=[1./(size(MIAData.Cor{i},3)+1),10/(size(MIAData.Cor{i},3)+1)];
-    h.Mia_Cor_Frame_Slider(i).Value=0;
-end
+i=channel(1);
+h.Mia_Cor_Frame_Slider.Min=0;
+h.Mia_Cor_Frame_Slider.Max=size(MIAData.Cor{i},3);
+h.Mia_Cor_Frame_Slider.SliderStep=[1./(size(MIAData.Cor{i},3)+1),10/(size(MIAData.Cor{i},3)+1)];
+h.Mia_Cor_Frame_Slider.Value=0;
 
 %%% Updates correlation plots
 Update_Plots([],[],2,channel);
@@ -1268,3 +1522,79 @@ Update_Plots([],[],2,channel);
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Peforms rics fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_RICS_Fit(~,~,mode)
+global MIAData
+h = guidata(gcf);
+
+%%% Extracts parameters and data
+NotFixed=find(~cell2mat(h.Mia_Cor_Fit_Table.Data(2:2:end,mode)));
+Params=cellfun(@str2double,h.Mia_Cor_Fit_Table.Data(1:2:end,mode));
+Fit_Params=Params(NotFixed);
+YData=h.Plots.Cor(mode,2).ZData;
+Size=str2double(h.Mia_Cor_Size.String);  
+if str2double(h.Mia_Cor_Frame.String)==0
+    %%% Calculate borders
+    X(1)=ceil(floor(size(MIAData.Cor{mode,1},1)/2)-Size/2)+1;
+    X(2)=ceil(floor(size(MIAData.Cor{mode,1},1)/2)+Size/2);
+    Y(1)=ceil(floor(size(MIAData.Cor{mode,1},2)/2)-Size/2)+1;
+    Y(2)=ceil(floor(size(MIAData.Cor{mode,1},2)/2)+Size/2);
+    %%% calculates SEM
+    SEM=std(double(MIAData.Cor{mode,1}(X(1):X(2),Y(1):Y(2),:)),0,3)/sqrt(size(MIAData.Cor{mode,1},3));
+else
+    SEM=ones(size(YData));
+end
+if any(any(SEM==0));
+    SEM=1;
+end
+
+
+%%% Performas fit
+[Fitted_Params,~,~,~]=lsqcurvefit(@Fit_RICS,Fit_Params,{Params,NotFixed,Size,SEM(:)},YData(:)./SEM(:));
+%%% Updates parameters and table
+Params(NotFixed)=Fitted_Params;
+h.Mia_Cor_Fit_Table.Data(1:2:end,mode)=deal(cellfun(@num2str,num2cell(Params),'UniformOutput',false));
+%%% Calculates fit function
+Calc_RICS_Fit(mode);
+%%% Updates correlation plots
+Update_Plots([],[],2,mode);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% RICS fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [OUT]=Fit_RICS(Fit_Params,Data)
+
+Shift=floor(Data{3}/2)+1;
+[X,Y]=meshgrid(1:Data{3},1:Data{3});
+X=X(:); Y=Y(:);
+SEM=Data{4};
+
+P=Data{1};
+P(Data{2})=Fit_Params;
+
+OUT= P(5) + 2.^(-3./2)./P(1).... %%% Amplitude
+    .*(1+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3)/(P(3)*10^-6)^2).^(-1)... %%% XY Diffusion
+    .*(1+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3)/(P(4)*10^-6)^2).^(-0.5)... %%% Z Diffusion
+    .*exp(-(P(6)*10^-9)^2*((X-Shift).^2+(Y-Shift).^2)./((P(3)*10^-6)^2+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3))); %%% Scanning
+OUT((Shift-1)*(Data{3}+1)+1)=(OUT((Shift-1)*(Data{3}-1))+OUT(Shift*(Data{3}+1)))/2;
+OUT=OUT./SEM;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Calculates fit function without fitting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
+function [OUT]=Calc_RICS_Fit(mode)
+global MIAData
+h = guidata(gcf);
+P=cellfun(@str2double,h.Mia_Cor_Fit_Table.Data(1:2:end,mode));
+Size=str2double(h.Mia_Cor_Size.String);
+
+Shift=floor(Size/2)+1;
+[X,Y]=meshgrid(1:Size,1:Size);
+X=X(:); Y=Y(:);
+
+OUT= P(5) + 2.^(-3./2)./P(1).... %%% Amplitude
+    .*(1+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3)/(P(3)*10^-6)^2).^(-1)... %%% XY Diffusion
+    .*(1+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3)/(P(4)*10^-6)^2).^(-0.5)... %%% Z Diffusion
+    .*exp(-(P(6)*10^-9)^2*((X-Shift).^2+(Y-Shift).^2)./((P(3)*10^-6)^2+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3))); %%% Scanning
+OUT((Shift-1)*(Size+1)+1)=(OUT((Shift-1)*(Size-1))+OUT(Shift*(Size+1)))/2;
+MIAData.Cor{mode,2}=reshape(OUT,[Size,Size]);
