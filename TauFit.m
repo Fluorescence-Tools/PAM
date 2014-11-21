@@ -100,29 +100,29 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     %%% 5) IRF length to consider
     %%%
     %%% Slider for Selection of Start
-    h.Start_Slider = uicontrol(...
+    h.StartPar_Slider = uicontrol(...
         'Style','slider',...
         'Parent',h.Slider_Panel,...
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.2 0.84 0.8 0.1],...
-        'Tag','Start_Slider',...
-        'Callback',@Slider_Callback);
+        'Tag','StartPar_Slider',...
+        'Callback',@Update_Plots);
     
-    h.Start_Edit = uicontrol(...
+    h.StartPar_Edit = uicontrol(...
         'Parent',h.Slider_Panel,...
         'Style','edit',...
-        'Tag','Start_Edit',...
+        'Tag','StartPar_Edit',...
         'Units','normalized',...
         'Position',[0.15 0.85 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'FontSize',10,...
-        'Callback',@EditChange_Callback);
+        'Callback',@Update_Plots);
     
-    h.Start_Text = uicontrol(...
+    h.StartPar_Text = uicontrol(...
         'Style','text',...
         'Parent',h.Slider_Panel,...
         'Units','normalized',...
@@ -133,7 +133,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'String','Start Parallel',...
         'TooltipString','Start Value for the Parallel Channel',...
         'Position',[0.01 0.85 0.14 0.1],...
-        'Tag','Start_Text');
+        'Tag','StartPar_Text');
     
     %%% Slider for Selection of Length
     h.Length_Slider = uicontrol(...
@@ -144,7 +144,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.2 0.64 0.8 0.1],...
         'Tag','Length_Slider',...
-        'Callback',@Slider_Callback);
+        'Callback',@Update_Plots);
     
     h.Length_Edit = uicontrol(...
         'Parent',h.Slider_Panel,...
@@ -156,7 +156,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'FontSize',10,...
-        'Callback',@EditChange_Callback);
+        'Callback',@Update_Plots);
     
     h.Length_Text = uicontrol(...
         'Style','text',...
@@ -172,29 +172,29 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Tag','Length_Text');
     
     %%% Slider for Selection of Perpendicular Shift
-    h.PerpShift_Slider = uicontrol(...
+    h.ShiftPer_Slider = uicontrol(...
         'Style','slider',...
         'Parent',h.Slider_Panel,...
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.2 0.44 0.8 0.1],...
-        'Tag','PerpShift_Slider',...
-        'Callback',@Slider_Callback);
+        'Tag','ShiftPer_Slider',...
+        'Callback',@Update_Plots);
     
-    h.PerpShift_Edit = uicontrol(...
+    h.ShiftPer_Edit = uicontrol(...
         'Parent',h.Slider_Panel,...
         'Style','edit',...
-        'Tag','PerpShift_Edit',...
+        'Tag','ShiftPer_Edit',...
         'Units','normalized',...
         'Position',[0.15 0.45 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'FontSize',10,...
-        'Callback',@EditChange_Callback);
+        'Callback',@Update_Plots);
     
-    h.PerpShift_Text = uicontrol(...
+    h.ShiftPer_Text = uicontrol(...
         'Style','text',...
         'Parent',h.Slider_Panel,...
         'Units','normalized',...
@@ -205,7 +205,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'String','Perpendicular Shift',...
         'TooltipString','Shift of the Perpendicular Channel',...
         'Position',[0.01 0.45 0.14 0.1],...
-        'Tag','PerpShift_Text');
+        'Tag','ShiftPer_Text');
     
     %%% Slider for Selection of IRF Shift
     h.IRFShift_Slider = uicontrol(...
@@ -216,7 +216,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.2 0.24 0.8 0.1],...
         'Tag','IRFShift_Slider',...
-        'Callback',@Slider_Callback);
+        'Callback',@Update_Plots);
     
     h.IRFShift_Edit = uicontrol(...
         'Parent',h.Slider_Panel,...
@@ -228,7 +228,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'FontSize',10,...
-        'Callback',@EditChange_Callback);
+        'Callback',@Update_Plots);
     
     h.IRFShift_Text = uicontrol(...
         'Style','text',...
@@ -252,7 +252,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.2 0.04 0.8 0.1],...
         'Tag','IRFLength_Slider',...
-        'Callback',@Slider_Callback);
+        'Callback',@Update_Plots);
     
     h.IRFLength_Edit = uicontrol(...
         'Parent',h.Slider_Panel,...
@@ -264,7 +264,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'FontSize',10,...
-        'Callback',@EditChange_Callback);
+        'Callback',@Update_Plots);
     
     h.IRFLength_Text = uicontrol(...
         'Style','text',...
@@ -280,11 +280,11 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Tag','IRFLength_Text');
     
     %%% Add listeners to sliders for continuous update
-    addlistener(h.Start_Slider, 'Value', 'PostSet', @Slider_Continuous_Callback);
-    addlistener(h.Length_Slider, 'Value', 'PostSet', @Slider_Continuous_Callback);
-    addlistener(h.PerpShift_Slider, 'Value', 'PostSet', @Slider_Continuous_Callback);
-    addlistener(h.IRFShift_Slider, 'Value', 'PostSet', @Slider_Continuous_Callback);
-    addlistener(h.IRFLength_Slider, 'Value', 'PostSet', @Slider_Continuous_Callback);
+    %addlistener(h.Start_Slider, 'Value', 'PostSet', @Update_Plots);
+    %addlistener(h.Length_Slider, 'Value', 'PostSet', @Update_Plots);
+    %addlistener(h.PerpShift_Slider, 'Value', 'PostSet', @Update_Plots);
+    %addlistener(h.IRFShift_Slider, 'Value', 'PostSet', @Update_Plots);
+    %addlistener(h.IRFLength_Slider, 'Value', 'PostSet', @Update_Plots);
     %% PIE Channel Selection and general Buttons
     h.PIEChannel_Panel = uibuttongroup(...
         'Parent',h.TauFit,...
@@ -379,7 +379,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.05 0.4 0.2 0.2],...
         'String','Load Data',...
-        'Callback',@Load_Data);
+        'Callback',@Update_Plots);
     %%% Button for loading an additional IRF measurement
     h.LoadIRF_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -390,7 +390,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Position',[0.25 0.4 0.2 0.2],...
         'String','Load IRF',...
-        'Callback',@Load_IRF);
+        'Callback',@Update_Plots);
     %%% Button to start fitting
     h.Fit_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -463,39 +463,370 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         end
     end
 end
-%% Initialize global Parameters
-TauFitData.DataLoaded = 0;
-TauFitData.ChannelChanged = [1 1];
+%% Initialize Parameters
+TauFitData.Length = 1;
+TauFitData.StartPar = 0;
+TauFitData.ShiftPer = 0;
+TauFitData.IRFLength = 1;
+TauFitData.IRFShift = 0;
+
 guidata(gcf,h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Load the Microtime Histogram of selected PIE Channels %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(~,~)
-global TcspcData UserValues TauFitData
-
+global UserValues TauFitData PamMeta FileInfo
+h = guidata(gcf);
 %%% find the number of the selected PIE channels
 PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
 PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
 
+%%% Microtime Histogram of Parallel Channel
+TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
+    UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par) );
+%%% Microtime Histogram of Perpendicular Channel
+TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
+    UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per) );
 
-%%% Better: User the Information already calculated in PamMeta!!!
+TauFitData.XData_Par = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+%%% Plot the Data
 
-%%% Extract the Microtimes of the PIE channels
-if TauFitData.ChannelChanged(1) == 1 %%% only then recalculate
-    Microtime_Par = TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
-            TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)} >= UserValues.PIE.From(PIEChannel_Par) &...
-            TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)} <= UserValues.PIE.To(PIEChannel_Par));
-    %%% Reset the channel changed variable
-    TauFitData.ChannelChanged(1) = 0;
+h.Plots.Decay_Par.XData = TauFitData.XData_Par;
+h.Plots.Decay_Per.XData = TauFitData.XData_Per;
+h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
+h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
+h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_Plots(obj,~)
+global UserValues TauFitData PamMeta FileInfo
+h = guidata(gcf);
+
+%%% Cases to consider:
+%%% obj is empty or is Button for LoadData/LoadIRF
+%%% Data has been changed (PIE Channel changed, IRF loaded...)
+if isempty(obj) || obj == h.LoadData_Button || obj == h.LoadIRF_Button
+    %%% find the number of the selected PIE channels
+    PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
+    PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
+    
+    %%% Microtime Histogram of Parallel Channel
+    TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
+        UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par) );
+    %%% Microtime Histogram of Perpendicular Channel
+    TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
+        UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per) );
+    %%% Generate XData
+    TauFitData.XData_Par = UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par);
+    TauFitData.XData_Per = UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per);
+    
+    %%% Plot the Data
+    h.Plots.Decay_Par.XData = TauFitData.XData_Par;
+    h.Plots.Decay_Per.XData = TauFitData.XData_Per;
+    h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
+    h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
+    h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
+    h.Microtime_Plot.YLimMode = 'auto';
+    %%% Define the Slider properties
+    %%% Values to consider:
+    %%% The length of the shortest PIE channel
+    TauFitData.MaxLength = min([numel(TauFitData.hMI_Par) numel(TauFitData.hMI_Per)]);
+    %%% The Length Slider defaults to the length of the shortest PIE
+    %%% channel and should not assume larger values
+    h.Length_Slider.Min = 1;
+    h.Length_Slider.Max = TauFitData.MaxLength;
+    h.Length_Slider.Value = TauFitData.MaxLength;
+    TauFitData.Length = TauFitData.MaxLength;
+    h.Length_Edit.String = num2str(TauFitData.Length);
+    %%% Start Parallel Slider can assume values from 0 (no shift) up to the
+    %%% length of the shortest PIE channel minus the set length
+    h.StartPar_Slider.Min = 0;
+    h.StartPar_Slider.Max = TauFitData.MaxLength;
+    h.StartPar_Slider.Value = 0;
+    TauFitData.StartPar = 0;
+    h.StartPar_Edit.String = num2str(TauFitData.StartPar);
+    %%% Shift Perpendicular Slider can assume values from the difference in
+    %%% start point between parallel and perpendicular up to the difference
+    %%% between the end point of the parallel channel and the start point
+    %%% of the perpendicular channel
+    h.ShiftPer_Slider.Min = (-1)*max([0 TauFitData.XData_Per(1)-TauFitData.XData_Par(1)]);
+    h.ShiftPer_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_Per(1)]);
+    h.ShiftPer_Slider.Value = 0;
+    TauFitData.ShiftPer = 0;
+    h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
+    if obj == h.LoadIRF_Button
+        %%% IRF has to be loaded, set IRF related sliders
+        [TauFitData.hIRF_Par, TauFitData.hIRF_Per] = Load_IRF(PIEChannel_Par,PIEChannel_Per);
+        %%% IRF Length has the same limits as the Length property
+        h.IRFLength_Slider.Min = 1;
+        h.IRFLength_Slider.Max = TauFitData.MaxLength;
+        h.IRFLength_Slider.Value = TauFitData.MaxLength;
+        %%% IRF Shift has the same limits as the perp shift property
+    end
 end
-if TauFitData.ChannelChanged(2) == 1 %%% only then recalculate
-    Microtime_Per = TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
-            TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)} >= UserValues.PIE.From(PIEChannel_Per) &...
-            TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)} <= UserValues.PIE.To(PIEChannel_Per));  
-    %%% Reset the channel changed variable
-    TauFitData.ChannelChanged(2) = 0;
+
+%%% Update Values
+switch obj
+    case {h.StartPar_Slider, h.StartPar_Edit}
+        if obj == h.StartPar_Slider
+            TauFitData.StartPar = floor(obj.Value);
+        elseif obj == h.StartPar_Edit
+            TauFitData.StartPar = str2double(obj.String);
+        end
+    case {h.Length_Slider, h.Length_Edit}
+        %%% Update Value
+        if obj == h.Length_Slider
+            TauFitData.Length = floor(obj.Value);
+        elseif obj == h.Length_Edit
+            TauFitData.Length = str2double(obj.String);
+        end
+    case {h.ShiftPer_Slider, h.ShiftPer_Edit}
+        %%% Update Value
+        if obj == h.ShiftPer_Slider
+            TauFitData.ShiftPer = floor(obj.Value);
+        elseif obj == h.ShiftPer_Edit
+            TauFitData.ShiftPer = str2double(obj.String);
+        end
+    case {h.IRFLength_Slider, h.IRFLength_Edit}
+        %%% Update Value
+        if obj == h.IRFLength_Slider
+            TauFitData.IRFLength = floor(obj.Value);
+        elseif obj == h.IRFLength_Edit
+            TauFitData.IRFLength = str2double(obj.String);
+        end
+    case {h.IRFShift_Slider, h.IRFShift_Edit}
+        %%% Update Value
+        if obj == h.IRFShift_Slider
+            TauFitData.IRFShift = floor(obj.Value);
+        elseif obj == h.IRFShift_Edit
+            TauFitData.IRFShift = str2double(obj.String);
+        end
 end
+%%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
+switch obj.Style
+    case 'slider'
+        h.StartPar_Edit.String = num2str(TauFitData.StartPar);
+        h.Length_Edit.String = num2str(TauFitData.Length);
+        h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
+        h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
+        h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+    case 'edit'
+        h.StartPar_Slider.Value = TauFitData.StartPar;
+        h.Length_Slider.Value = TauFitData.Length;
+        h.ShiftPer_Slider.Value = TauFitData.ShiftPer;
+        h.IRFLength_Slider.Value = TauFitData.IRFLength;
+        h.IRFShift_Slider.Value = TauFitData.IRFShift;
+end
+%%% Update Plot
+%%% Apply the shift to the parallel channel
+h.Plots.Decay_Par.XData = TauFitData.XData_Par(1:TauFitData.Length)-TauFitData.StartPar;
+h.Plots.Decay_Par.YData = TauFitData.hMI_Par(1:TauFitData.Length);
+%h.Plots.Decay_Par.YData = TauFitData.hMI_Par(TauFitData.StartPar:(TauFitData.Length-TauFitData.StartPar));
+%%% Apply the shift to the perpendicular channel
+h.Plots.Decay_Per.XData = TauFitData.XData_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.ShiftPer);
+h.Plots.Decay_Per.YData = TauFitData.hMI_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Function for loading the IRF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [hIRF_Par,hIRF_Per] = Load_IRF(PIEChannel1,PIEChannel2)
+global UserValues
+
+%%% Dialog box for selecting files to be loaded
+[FileName, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+                                    '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file for IRF',UserValues.File.Path,'MultiSelect', 'on');
+
+%%% Only execues if any file was selected
+if iscell(FileName) || ~all(FileName==0)    
+    %%% Transforms FileName into cell, if it is not already
+    %%%(e.g. when only one file was selected)
+    if ~iscell(FileName)
+        FileName={FileName};
+    end
+    %%% Sorts FileName by alphabetical order
+    FileName=sort(FileName);
+    %%% Clears previously loaded data
+    FileInfo=[];
+    MT=cell(1,1);
+    MI=cell(1,1);
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Checks which file type was selected
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    switch (Type)        
+        case 1 
+            %% 1: .spc Files generated with Fabsurf    
+            FileType = 'FabsurfSPC';
+            %%% Reads info file generated by Fabsurf
+            Fabsurf=FabsurfInfo(fullfile(Path,FileName{1}));
+            %%% General FileInfo
+            NumberOfFiles=numel(FileName);
+            Type=Type;
+            MI_Bins=4096;
+            MeasurementTime=Fabsurf.Imagetime/1000;
+            SyncPeriod=Fabsurf.RepRate/1000;
+            Lines=Fabsurf.Imagelines;
+            LineTimes=zeros(Lines+1,numel(FileName));
+            Pixels=Fabsurf.Imagelines^2;   
+            FileName=FileName;
+            Path=Path;
+            %%% Initializes microtime and macotime arrays
+            MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
+            
+            Totaltime=0;
+            %%% Reads all selected files
+            for i=1:numel(FileName)               
+                %%% Calculates Imagetime in clock ticks for concaternating
+                %%% files                
+                Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
+                Imagetime=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
+                %%% Checks, which cards to load
+                card=unique(UserValues.Detector.Det);
+                %%% Checks, which and how many card exist for each file
+                for j=card;
+                    if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),'file')
+                        card(card==j)=[];
+                    end
+                end                
+                
+                Linetimes=[];
+                %%% Reads data for each tcspc card
+                for j=card
+                    %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
+                    [MT, MI, PLF,~] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0]);
+                    %%% Finds, which routing bits to use
+                    Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    Rout(Rout>numel(MI))=[];
+                    %%% Concaternates data to previous files and adds Imagetime
+                    %%% to consecutive files
+                    if any(~cellfun(@isempty,MI))
+                        for k=Rout
+                            %%% Removes photons detected after "official"
+                            %%% end of file are discarded
+                            MI{k}(MT{k}>Imagetime)=[];
+                            MT{k}(MT{k}>Imagetime)=[];
+                            MT{j,k}=[MT{j,k}; Totaltime + MT{k}];   MT{k}=[];
+                            MI{j,k}=[MI{j,k}; MI{k}];   MI{k}=[];
+                        end
+                    end
+                    %%% Determines last photon for each file
+                    for k=find(~cellfun(@isempty,MT(j,:)));
+                        LastPhoton{j,k}(i)=numel(MT{j,k});
+                    end
+                    
+                    %%% Determines, if linesync was used
+                    if isempty(Linetimes) && ~isempty(PLF{1})
+                        Linetimes=[0 PLF{1}];
+                    elseif isempty(Linetimes) && ~isempty(PLF{2})
+                        Linetimes=[0 PLF{2}];
+                    elseif isempty(Linetimes) && ~isempty(PLF{3})
+                        Linetimes=[0 PLF{3}];
+                    end
+                end 
+                %%% Creates linebreak entries
+                if isempty(Linetimes)
+                    LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
+                elseif numel(Linetimes)==FileInfo.Lines+1
+                    LineTimes(:,i)=Linetimes+Totaltime;                    
+                elseif numel(Linetimes)<FileInfo.Lines+1
+                    %%% I was to lazy to program this case out yet
+                end
+                %%% Calculates total time to get one trace from several
+                %%% files
+                Totaltime=Totaltime + Imagetime;
+
+            end
+        case 2
+            %% 2: .spc Files generated with B&H Software
+            %%% Usually, here no Imaging Information is needed
+            FileType = 'SPC';           
+            %%% General FileInfo
+            NumberOfFiles=numel(FileName);
+            Type=Type;
+            MI_Bins=4096;
+            MeasurementTime=[];
+            SyncPeriod= [];
+            TACRange = [];
+            Lines=1;
+            LineTimes=[];
+            Pixels=1;   
+            FileName=FileName;
+            Path=Path;
+            
+            %%% Initializes microtime and macotime arrays
+            MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
+            
+            %%% Reads all selected files
+            for i=1:numel(FileName)
+                %%% there are a number of *_m(i).spc files associated with the
+                %%% *_m1.spc file
+                
+                %%% Checks, which cards to load
+                card=unique(UserValues.Detector.Det);
+                %%% Checks, which and how many card exist for each file
+                for j=card;
+                    if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),'file')
+                        card(card==j)=[];
+                    end
+                end      
+                %%% if multiple files are loaded, consecutive files need to
+                %%% be offset in time with respect to the previous file
+                MaxMT = 0;
+                if any(~cellfun(@isempty,MT))
+                    MaxMT = max(cellfun(@max,MT(~cellfun(@isempty,MT))));
+                end
+                %%% Reads data for each tcspc card
+                for j=card    
+                      %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
+                    [MT_dummy, MI_dummy, ~, SyncRate] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),Inf,[0 0 0]);
+                    
+                    if ~exist('SyncPeriod','var')
+                        SyncPeriod = 1/SyncRate;
+                    end
+                    %%% Finds, which routing bits to use
+                    Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    Rout(Rout>numel(MI))=[];
+                    %%% Concaternates data to previous files and adds Imagetime
+                    %%% to consecutive files
+                    if any(~cellfun(@isempty,MI_dummy))
+                        for k=Rout
+                            MT{j,k}=[MT{j,k}; MaxMT + MT_dummy{k}];   MT_dummy{k}=[];
+                            MI{j,k}=[MI{j,k}; MI_dummy{k}];   MI_dummy{k}=[];
+                        end
+                    end
+                    %%% Determines last photon for each file
+                    for k=find(~cellfun(@isempty,MT(j,:)));
+                        LastPhoton{j,k}(i)=numel(MT{j,k});
+                    end
+                end
+            end
+            MeasurementTime = max(cellfun(@max,MT(~cellfun(@isempty,MT))))*SyncPeriod;
+            LineTimes = [0 MeasurementTime];
+            try 
+                %%% try to read the TACRange from the *_m1.set file
+                TACRange = GetTACrange(fullfile(FileInfo.Path,[FileName{1}(1:end-3) 'set']));
+            catch 
+                %%% instead, approximate the TAC range from the microtime
+                %%% range and Repetition Rate
+                MicrotimeRange = double(max(cellfun(@(x) max(x)-min(x),MI(~cellfun(@isempty,MI)))));
+                TACRange = (MI_Bins/MicrotimeRange)*SyncPeriod;
+            end
+    end
+%%% Applies detector shift immediately after loading data    
+%Calibrate_Detector([],[],0) 
+end
+%%% Prepare the histoograms
+hIRF_Par = histc(MI{UserValues.PIE.Detector(PIEChannel1),UserValues.PIE.Router(PIEChannel1)},0:(MI_Bins-1));
+hIRF_Par = hIRF_Par(UserValues.PIE.From(PIEChannel1):UserValues.PIE.To(PIEChannel1));
+
+hIRF_Per = histc(MI{UserValues.PIE.Detector(PIEChannel2),UserValues.PIE.Router(PIEChannel2)},0:(MI_Bins-1));
+hIRF_Per = hIRF_Per(UserValues.PIE.From(PIEChannel2):UserValues.PIE.To(PIEChannel2));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Saves the changed PIEChannel Selection to UserValues %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
