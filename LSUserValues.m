@@ -232,6 +232,12 @@ if Mode==0
         S.TauFit.PIEChannelSelection={dummy,dummy};
             disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
     end
+    %%% Checks, if TauFit.IRF exists
+    %%% (This fields stores the Microtime Pattern of an IRF measurement)
+    if ~isfield (S.TauFit,'IRF')
+        S.TauFit.IRF=[];
+            disp('UserValues.TauFit.IRF was incomplete');    
+    end
     
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=S;

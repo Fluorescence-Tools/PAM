@@ -380,17 +380,6 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Position',[0.05 0.4 0.2 0.2],...
         'String','Load Data',...
         'Callback',@Update_Plots);
-    %%% Button for loading an additional IRF measurement
-    h.LoadIRF_Button = uicontrol(...
-        'Parent',h.PIEChannel_Panel,...
-        'Style','pushbutton',...
-        'Tag','LoadIRF_Button',...
-        'Units','normalized',...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.25 0.4 0.2 0.2],...
-        'String','Load IRF',...
-        'Callback',@Update_Plots);
     %%% Button to start fitting
     h.Fit_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -509,7 +498,7 @@ h = guidata(gcf);
 %%% Cases to consider:
 %%% obj is empty or is Button for LoadData/LoadIRF
 %%% Data has been changed (PIE Channel changed, IRF loaded...)
-if isempty(obj) || obj == h.LoadData_Button || obj == h.LoadIRF_Button
+if isempty(obj) || obj == h.LoadData_Button
     %%% find the number of the selected PIE channels
     PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
     PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
@@ -520,15 +509,25 @@ if isempty(obj) || obj == h.LoadData_Button || obj == h.LoadIRF_Button
     %%% Microtime Histogram of Perpendicular Channel
     TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
         UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per) );
+    %%% Read out the Microtime Histograms of the IRF for the two channels
+    TauFitData.hIRF_Par = UserValues.TauFit.IRF(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par));
+    TauFitData.hIRF_Per = UserValues.TauFit.IRF(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per));
+    %%% Normalize IRF for better Visibility
+    TauFitData.hIRF_Par = (TauFitData.hIRF_Par./max(TauFitData.hIRF_Par)).*max(TauFitData.hMI_Par);
+    TauFitData.hIRF_Per = (TauFitData.hIRF_Per./max(TauFitData.hIRF_Per)).*max(TauFitData.hMI_Per);
     %%% Generate XData
-    TauFitData.XData_Par = UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par);
-    TauFitData.XData_Per = UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per);
-    
+    TauFitData.XData_Par = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
+    TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
+
     %%% Plot the Data
     h.Plots.Decay_Par.XData = TauFitData.XData_Par;
     h.Plots.Decay_Per.XData = TauFitData.XData_Per;
+    h.Plots.IRF_Par.XData = TauFitData.XData_Par;
+    h.Plots.IRF_Per.XData = TauFitData.XData_Per;
     h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
     h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
+    h.Plots.IRF_Par.YData = TauFitData.hIRF_Par;
+    h.Plots.IRF_Per.YData = TauFitData.hIRF_Per;
     h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
     h.Microtime_Plot.YLimMode = 'auto';
     %%% Define the Slider properties
@@ -553,20 +552,28 @@ if isempty(obj) || obj == h.LoadData_Button || obj == h.LoadIRF_Button
     %%% start point between parallel and perpendicular up to the difference
     %%% between the end point of the parallel channel and the start point
     %%% of the perpendicular channel
-    h.ShiftPer_Slider.Min = (-1)*max([0 TauFitData.XData_Per(1)-TauFitData.XData_Par(1)]);
-    h.ShiftPer_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_Per(1)]);
+    %h.ShiftPer_Slider.Min = (-1)*max([0 TauFitData.XData_Per(1)-TauFitData.XData_Par(1)]);
+    %h.ShiftPer_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_Per(1)]);
+    h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength/10);
+    h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength/10);
     h.ShiftPer_Slider.Value = 0;
     TauFitData.ShiftPer = 0;
     h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
-    if obj == h.LoadIRF_Button
-        %%% IRF has to be loaded, set IRF related sliders
-        [TauFitData.hIRF_Par, TauFitData.hIRF_Per] = Load_IRF(PIEChannel_Par,PIEChannel_Per);
-        %%% IRF Length has the same limits as the Length property
-        h.IRFLength_Slider.Min = 1;
-        h.IRFLength_Slider.Max = TauFitData.MaxLength;
-        h.IRFLength_Slider.Value = TauFitData.MaxLength;
-        %%% IRF Shift has the same limits as the perp shift property
-    end
+
+    %%% IRF Length has the same limits as the Length property
+    h.IRFLength_Slider.Min = 1;
+    h.IRFLength_Slider.Max = TauFitData.MaxLength;
+    h.IRFLength_Slider.Value = TauFitData.MaxLength;
+    TauFitData.IRFLength = TauFitData.MaxLength;
+    h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
+    %%% IRF Shift has the same limits as the perp shift property
+    %h.IRFShift_Slider.Min = (-1)*max([0 TauFitData.XData_IRFPar(1)-TauFitData.XData_Par(1)]);
+    %h.IRFShift_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_IRFPar(1)]);
+    h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength/10);
+    h.IRFShift_Slider.Max = floor(TauFitData.MaxLength/10);
+    h.IRFShift_Slider.Value = 0;
+    TauFitData.IRFShift = 0;
+    h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
 end
 
 %%% Update Values
@@ -584,6 +591,10 @@ switch obj
         elseif obj == h.Length_Edit
             TauFitData.Length = str2double(obj.String);
         end
+        %%% Correct if IRFLength exceeds the Length
+        if TauFitData.IRFLength > TauFitData.Length
+            TauFitData.IRFLength = TauFitData.Length;
+        end
     case {h.ShiftPer_Slider, h.ShiftPer_Edit}
         %%% Update Value
         if obj == h.ShiftPer_Slider
@@ -597,6 +608,10 @@ switch obj
             TauFitData.IRFLength = floor(obj.Value);
         elseif obj == h.IRFLength_Edit
             TauFitData.IRFLength = str2double(obj.String);
+        end
+        %%% Correct if IRFLength exceeds the Length
+        if TauFitData.IRFLength > TauFitData.Length
+            TauFitData.IRFLength = TauFitData.Length;
         end
     case {h.IRFShift_Slider, h.IRFShift_Edit}
         %%% Update Value
@@ -625,10 +640,16 @@ end
 %%% Apply the shift to the parallel channel
 h.Plots.Decay_Par.XData = TauFitData.XData_Par(1:TauFitData.Length)-TauFitData.StartPar;
 h.Plots.Decay_Par.YData = TauFitData.hMI_Par(1:TauFitData.Length);
-%h.Plots.Decay_Par.YData = TauFitData.hMI_Par(TauFitData.StartPar:(TauFitData.Length-TauFitData.StartPar));
 %%% Apply the shift to the perpendicular channel
 h.Plots.Decay_Per.XData = TauFitData.XData_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.ShiftPer);
 h.Plots.Decay_Per.YData = TauFitData.hMI_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]));
+%%% Apply the shift to the parallel IRF channel
+h.Plots.IRF_Par.XData = TauFitData.XData_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]))-(TauFitData.StartPar+TauFitData.IRFShift);
+h.Plots.IRF_Par.YData = TauFitData.hIRF_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]));
+%%% Apply the shift to the perpendicular IRF channel
+h.Plots.IRF_Per.XData = TauFitData.XData_Per((1+max([0 (TauFitData.ShiftPer + TauFitData.IRFShift)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.IRFShift+TauFitData.ShiftPer);
+h.Plots.IRF_Per.YData = TauFitData.hIRF_Per((1+max([0 (TauFitData.IRFShift + TauFitData.ShiftPer)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Function for loading the IRF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
