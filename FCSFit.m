@@ -979,21 +979,17 @@ end
 %%% Generates figure legend entries
 Active=find(Active);
 LegendString=cell(numel(Active)*2,1);
+LegendUse=h.FCS_Axes.Children(1:numel(Active)*2);
 for i=1:numel(Active)
     LegendString{2*i-1}=['Data: ' FCSData.FileName{Active(i)}];
     LegendString{2*i}  =['Fit:  ' FCSData.FileName{Active(i)}];
+    LegendUse(2*i-1)=FCSMeta.Plots{Active(i),1};
+    LegendUse(2*i)=FCSMeta.Plots{Active(i),2};
 end
 if ~isempty(LegendString)
-    %% Active legend
-    if ~isfield(h,'FCS_Legend')
-        %%% Create new legend
-        h.FCS_Legend=legend(h.FCS_Axes,LegendString,'Interpreter','none');
-        guidata(h.FCSFit,h);
-    else
-        %%% Updates legend to new settings
-        h.FCS_Legend.Visible='on';
-        h.FCS_Legend.String=LegendString;
-    end    
+    %% Active legend    
+    h.FCS_Legend=legend(h.FCS_Axes,LegendUse,LegendString,'Interpreter','none');
+    guidata(h.FCSFit,h);
 else
     %% Hides legend for empty plot
     h.FCS_Legend.Visible='off';
