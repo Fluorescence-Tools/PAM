@@ -1887,7 +1887,7 @@ if ~isempty(PIE)
             
             %% Calculates photons and countrate for PIE channel
             PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
-            PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i});
+            PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*10;
             clear Image_Sum;
             PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
             PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
@@ -2307,7 +2307,7 @@ if any(mode==4) || any(mode==5)
                 %%% Resets used patches
                 for j=1:numel(h.Plots.PIE_Patches{i})
                     YData=h.MI_Tab{Channel(j),3}.YLim;
-                    h.Plots.PIE_Patches{i}{k}.XData=[From From To To];
+                    h.Plots.PIE_Patches{i}{j}.XData=[From From To To];
                     h.Plots.PIE_Patches{i}{j}.YData=[YData(2) YData(1) YData(1) YData(2)];
                     h.Plots.PIE_Patches{i}{j}.Parent=h.MI_Tab{Channel(j),3};
                     uistack(h.Plots.PIE_Patches{i}{j},'bottom');
@@ -3247,7 +3247,7 @@ switch e.Key
             Profile=h.Profiles_List.String{Sel};
             save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
-            LSUserValues(1);
+            LSUserValues(0);
             %%% Changes color to indicate current profile
             h.Profiles_List.String{Sel}=['<HTML><FONT color=FF0000>' h.Profiles_List.String{Sel} '</Font></html>']; 
             
@@ -3707,6 +3707,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     h.Progress_Text.String = FileInfo.FileName{1};
     h.Progress_Axes.Color=UserValues.Look.Control;
 end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4870,6 +4872,9 @@ else %%% < or > was pressed
 end
 %%% Update Display
 Update_Display([],[],1);
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
