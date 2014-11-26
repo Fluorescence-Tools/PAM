@@ -1365,7 +1365,7 @@ if any(FileName{1}~=0)
         PhasorData.Selected_Region{end+1}=false(size(PhasorData.Data{end}.g));
         %%% Uses file for phasor calculation
         PhasorData.Selected(end+1)=1;
-        if sum(PhasorData.Plot~=0)<9
+        if sum(PhasorData.Plot~=0)<=9
             %%% Plots file in first free image plot
             free(end+1)=find(PhasorData.Plot==0,1,'first');
             PhasorData.Plot(free(end))=numel(PhasorData.Data);
@@ -1414,7 +1414,7 @@ if ~isempty(h.List.String) && any(strcmp(e.Key,{'delete','rightarrow','leftarrow
         switch e.Key
             case 'delete' 
                 %% Deletes files
-                plotted=find(PhasorData.Plot==i,1,'first');
+                plotted=find(PhasorData.Plot(1:9)==i,1,'first');
                 %%% Removes plot
                 if ~isempty(plotted)
                     h.Image_Plot(plotted,2).CData=zeros(1,1,3);
@@ -1446,7 +1446,7 @@ if ~isempty(h.List.String) && any(strcmp(e.Key,{'delete','rightarrow','leftarrow
                 end
             case 'leftarrow' 
                 %% Unselects file
-                plotted=find(PhasorData.Plot==i,1,'first');
+                plotted=find(PhasorData.Plot(1:9)==i,1,'first');
                 %%% Removes plot
                 if ~isempty(plotted)
                     h.Image_Plot(plotted,2).CData=zeros(1,1,3);
@@ -1460,7 +1460,7 @@ if ~isempty(h.List.String) && any(strcmp(e.Key,{'delete','rightarrow','leftarrow
                 PhasorData.List{i}=PhasorData.Files{i,1};                
             case 'add'
                 %% Uses file for phasor plot, but not for plotting
-                plotted=find(PhasorData.Plot==i,1,'first');
+                plotted=find(PhasorData.Plot(1:9)==i,1,'first');
                 %%% Removes plot
                 if ~isempty(plotted)
                     h.Image_Plot(plotted,2).CData=zeros(1,1,3);
