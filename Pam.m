@@ -1761,17 +1761,18 @@ guidata(Figure,h);
 
 %% Initializes to UserValues
 Update_to_UserValues;
-
-else % If a Pam figure exists already    
-    figure(h.Pam); % Gives focus to Pam figure    
-end 
-h.Pam.Visible='on';
 %%% Initializes Profiles List
 Update_Profiles([],[])
 %%% Initializes detector/routing list
 Update_Detector_Channels(1);
 %%% Initializes plots
 Update_Data([],[],0,0);
+
+h.Pam.Visible='on';
+else % If a Pam figure exists already    
+    figure(h.Pam); % Gives focus to Pam figure    
+end 
+
 
 
 
