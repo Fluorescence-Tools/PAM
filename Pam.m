@@ -3593,13 +3593,13 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     Det=UserValues.Detector.Det(h.MI_Phasor_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI_Phasor_Det.Value);
     %%% Selects filename to save
-    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',UserValues.File.Path);
+    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data',UserValues.File.PhasorPath);
     
     if ~all(FileName==0)
         Progress(0,h.Progress_Axes, h.Progress_Text,'Calculating Phasor Data:');
         
         %%% Saves pathname
-        UserValues.File.Path=PathName;
+        UserValues.File.PhasorPath=PathName;
         LSUserValues(1);
 
         Shift=h.MI_Phasor_Slider.Value;
