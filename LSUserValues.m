@@ -2,8 +2,7 @@ function  [Profiles,Current] = LSUserValues(Mode)
 global UserValues
 
 
-if Mode==0
-    %% Loads user values
+if Mode==0 %%% Loads user values    
     %% Identifying current profile
     %%% Current profiles directory
     Profiledir = [pwd filesep 'profiles'];
@@ -119,6 +118,9 @@ if Mode==0
     if ~isfield(S.File, 'FCSPath')
         S.File.FCSPath=pwd;
     end
+    if ~isfield(S.File, 'MIAPath')
+        S.File.MIAPath=pwd;
+    end 
     
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
@@ -247,10 +249,8 @@ else
     Current=[];
 end
 
-if Mode==1
-    %% Saves user values
-    Profiledir = [pwd filesep 'profiles'];
-    
+if Mode==1 %%% Saves user values    
+    Profiledir = [pwd filesep 'profiles'];    
     if ~isempty(Current) %% Saves loaded profile
         Profile=Current;
         save(fullfile(Profiledir,'Profile.mat'),'Profile');
@@ -258,8 +258,7 @@ if Mode==1
     else
         load([Profiledir filesep 'Profile.mat']); %% Saves current profile
         save(fullfile(Profiledir,Profile),'-struct','UserValues');
-    end
-    
+    end    
 end
 
 
