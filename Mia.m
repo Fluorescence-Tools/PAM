@@ -2,6 +2,8 @@ function Mia
 global UserValues MIAData
 h.Mia=findobj('Tag','Mia');
 
+% Waldi ist ein zwei drei
+
 if isempty(h.Mia)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
