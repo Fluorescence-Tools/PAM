@@ -1,9 +1,12 @@
-function LoadTcspc(~,~,Update_Data,Calibrate_Detector,Caller)
+function LoadTcspc(~,~,Update_Data,Calibrate_Detector,Caller,FileName,Type)
 global UserValues TcspcData FileInfo
 
-%%% Dialog box for selecting files to be loaded
-[FileName, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-                                    '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+if nargin<6 %%% Opens Dialog box for selecting new files to be loaded
+    [FileName, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+                                        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+else %%% Loads predifined Files
+    Path=UserValues.File.Path;
+end
 %%% Only execues if any file was selected
 if iscell(FileName) || ~all(FileName==0)    
     %%% Transforms FileName into cell, if it is not already

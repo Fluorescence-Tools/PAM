@@ -2455,8 +2455,8 @@ for i=Auto
     MIAData.NB.Int{floor(i*1.5)}=imfilter(MIAData.NB.Int{floor(i*1.5)},Filter,'symmetric');
     MIAData.NB.Std{floor(i*1.5)}=imfilter(MIAData.NB.Std{floor(i*1.5)},Filter,'symmetric');
     %%% Calculates number and brightness for each pixel
-    MIAData.NB.Num{floor(i*1.5)}=MIAData.NB.Int{floor(i*1.5)}.^2./(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)});
-    MIAData.NB.Eps{floor(i*1.5)}=(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})./MIAData.NB.Int{floor(i*1.5)};
+    MIAData.NB.Num{floor(i*1.5)}=MIAData.NB.Int{floor(i*1.5)}.^2./(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})/sqrt(8);
+    MIAData.NB.Eps{floor(i*1.5)}=(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})./MIAData.NB.Int{floor(i*1.5)}*sqrt(8);
    
 end
 

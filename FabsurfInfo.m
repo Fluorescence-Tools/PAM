@@ -129,29 +129,32 @@ if  ~exist('ToRead','var')
 end
 
 %%% Checks if and which infofile belongs to filename
-fid1 = fopen([FullFileName(1:end-9) '_info' FullFileName(end-8:end-6) '.txt']);
-fid2 = fopen([FullFileName(1:end-9) '_MeasureCursor_info' FullFileName(end-8:end-6) '.txt']);
-fid3 = fopen([FullFileName(1:end-9) '_Scanning_info' FullFileName(end-8:end-6) '.txt']);
-fid4 = fopen([FullFileName(1:end-9) '_Track_info' FullFileName(end-8:end-6) '.txt']);
-fid5 = fopen([FullFileName(1:end-9) '_MeasureCursorSeries_info' FullFileName(end-8:end-6) '.txt']);
-fid6 = fopen([FullFileName(1:end-10) '_info' FullFileName(end-9:end-6) '.txt']);
-fid7 = fopen([FullFileName(1:end-10) '_MeasureCursor_info' FullFileName(end-9:end-6) '.txt']);
-fid8 = fopen([FullFileName(1:end-10) '_Scanning_info' FullFileName(end-9:end-6) '.txt']);
-fid9 = fopen([FullFileName(1:end-10) '_Track_info' FullFileName(end-9:end-6) '.txt']);
-fid10 = fopen([FullFileName(1:end-10) '_MeasureCursorSeries_info' FullFileName(end-9:end-6) '.txt']);
-fid11 = fopen([FullFileName(1:end-10) '_ZScan_info' FullFileName(end-9:end-6) '.txt']);
-fid12 = fopen([FullFileName(1:end-10) '_ZTrack_info' FullFileName(end-9:end-6) '.txt']);
+fid(1) = fopen([FullFileName(1:end-9) '_info' FullFileName(end-8:end-6) '.txt']);
+fid(2) = fopen([FullFileName(1:end-9) '_MeasureCursor_info' FullFileName(end-8:end-6) '.txt']);
+fid(3) = fopen([FullFileName(1:end-9) '_Scanning_info' FullFileName(end-8:end-6) '.txt']);
+fid(4) = fopen([FullFileName(1:end-9) '_Track_info' FullFileName(end-8:end-6) '.txt']);
+fid(5) = fopen([FullFileName(1:end-9) '_MeasureCursorSeries_info' FullFileName(end-8:end-6) '.txt']);
+fid(6) = fopen([FullFileName(1:end-10) '_info' FullFileName(end-9:end-6) '.txt']);
+fid(7) = fopen([FullFileName(1:end-10) '_MeasureCursor_info' FullFileName(end-9:end-6) '.txt']);
+fid(8) = fopen([FullFileName(1:end-10) '_Scanning_info' FullFileName(end-9:end-6) '.txt']);
+fid(9) = fopen([FullFileName(1:end-10) '_Track_info' FullFileName(end-9:end-6) '.txt']);
+fid(10) = fopen([FullFileName(1:end-10) '_MeasureCursorSeries_info' FullFileName(end-9:end-6) '.txt']);
+fid(11) = fopen([FullFileName(1:end-10) '_ZScan_info' FullFileName(end-9:end-6) '.txt']);
+fid(12) = fopen([FullFileName(1:end-10) '_ZTrack_info' FullFileName(end-9:end-6) '.txt']);
 i=1;
-fid=-1;
+FID=-1;
 while i<13
-    eval(['if fid' num2str(i) '~=-1; fid=fid' num2str(i) '; i=12;end;']);
+    if fid(i)~=-1; 
+        FID=fid(i); 
+        i=12;
+    end;
     i=i+1;
 end
 
 %%% Looks for Parameters defined in Params and saves string in Output
 Output=cell(26,1);
-if fid ~= -1
-    T=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
+if FID ~= -1
+    T=textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
     T=T{1};
     for i=ToRead;
         if any(ToRead==i)
@@ -164,35 +167,38 @@ if fid ~= -1
                 j=j+1;
             end
         end
-    end  
+    end 
+    %%% Writes value of Output into Header fieldnames defined by Outputname
+    Header=struct;
+    for i=[1:13 15:25]
+        if strfind(Output{i},',')
+            Output{i} = strrep(Output{i},',','.');
+        end
+        
+        if ~isempty(Output{i})
+            eval(['Header.' Outputname{i} '= str2double(Output{' num2str(i) '});']);
+        else
+            eval(['Header.' Outputname{i} '= [];']);
+            %eval(['Header.' Outputname{i} '= str2double(Replace{' num2str(i) '});']);
+        end
+        
+    end
+    
+    %%% Writes string of Output into Header fieldnames defined by Outputname
+    for i=[14 26]
+        if ~isempty(Output{i})
+            eval(['Header.' Outputname{i} '= Output{' num2str(i) '};']);
+        else
+            eval(['Header.' Outputname{i} '= [];']);
+            %         eval(['Header.' Outputname{i} '= Replace{' num2str(i) '};']);
+        end
+    end
+    try
+        fclose('all');
+    end
 else 
+    Header=[];
     disp('ERROR: Could not find info txt file');
 end
 
-%%% Writes value of Output into Header fieldnames defined by Outputname
-Header=struct;
-for i=[1:13 15:25]
-    if strfind(Output{i},',')
-        Output{i} = strrep(Output{i},',','.');
-    end
-        
-    if ~isempty(Output{i})
-        eval(['Header.' Outputname{i} '= str2double(Output{' num2str(i) '});']);
-    else
-        eval(['Header.' Outputname{i} '= [];']);
-        %eval(['Header.' Outputname{i} '= str2double(Replace{' num2str(i) '});']);
-    end
-        
-end
-%%% Writes string of Output into Header fieldnames defined by Outputname
-for i=[14 26]
-    if ~isempty(Output{i})
-        eval(['Header.' Outputname{i} '= Output{' num2str(i) '};']);
-    else
-        eval(['Header.' Outputname{i} '= [];']);
-%         eval(['Header.' Outputname{i} '= Replace{' num2str(i) '};']);
-    end
-end
-try
-    fclose('all');
-end
+
