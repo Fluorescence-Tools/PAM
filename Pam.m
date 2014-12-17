@@ -1224,13 +1224,13 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Parent',Cor_Panel,...
         'Tag','Cor_Button',...
         'Units','normalized',...
-        'FontSize',14,...
+        'FontSize',12,...
         'FontWeight','bold',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Correlate',...
         'Callback',{@Correlate,1},...
-        'Position',[0.005 0.01 0.16 0.09],...
+        'Position',[0.005 0.01 0.12 0.09],...
         'TooltipString',sprintf('Correlates loaded data for selected PIE channel pairs;'));
     h.Cor_Button=handle(Cor_Button);
     
@@ -1239,13 +1239,13 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'Parent',Cor_Panel,...
         'Tag','Cor_Multi_Button',...
         'Units','normalized',...
-        'FontSize',14,...
+        'FontSize',12,...
         'FontWeight','bold',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'String','Multi-Cor',...
+        'String','Multiple',...
         'Callback',{@Correlate,2},...
-        'Position',[0.17 0.01 0.16 0.09],...
+        'Position',[0.13 0.01 0.12 0.09],...
         'TooltipString',sprintf('Load multiple files and individually correlates them'));
     h.Cor_Multi_Button=handle(Cor_Multi_Button);   
     
@@ -1259,9 +1259,67 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String',{'Matlab file (.mcor)';'Text file (.cor)'; 'both'},... 
-        'Position',[0.34 0 0.22 0.09],...
+        'Position',[0.26 0 0.22 0.09],...
         'Style','popupmenu',...
         'TooltipString',sprintf('Select fileformat for saving correlation files'));
+    %%% Determines correlation type
+    h.Cor_Type = uicontrol(...
+        'Parent',Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',10,...
+        'FontWeight','bold',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String',{'Point';'Pair'},... 
+        'Position',[0.49 0 0.1 0.09],...
+        'Style','popupmenu',...
+        'TooltipString',sprintf('Choose between point and pair correlation'));
+    
+    %%% Text
+    uicontrol(...
+        'Parent',Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','#Bins:',...
+        'HorizontalAlignment','left',...
+        'Position',[0.6 0 0.07 0.09]);
+    %%% Sets number of bins for pair correlation
+    h.Cor_Pair_Bins = uicontrol(...
+        'Parent',Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','edit',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','50',...
+        'Position',[0.67 0.01 0.06 0.09],...
+        'TooltipString',sprintf('Select number of bins for pair correlation'));
+    
+    %%% Text
+    uicontrol(...
+        'Parent',Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','Distance:',...
+        'HorizontalAlignment','left',...
+        'Position',[0.74 0 0.10 0.09]);
+    %%% Sets bin distances to correlatie
+    h.Cor_Pair_Dist = uicontrol(...
+        'Parent',Cor_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','edit',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','1:50',...
+        'Position',[0.84 0.01 0.06 0.09],...
+        'TooltipString',sprintf('Select bin distances to calculate for pair correlation'));
     %% Burst tab
     Burst_Tab = uitab(...
         'Parent',Var_Tab,...
@@ -3385,10 +3443,10 @@ else %%% Single File correlation
     NCors=1;
 end
 
-for l=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)
+for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)
     
     if mode==2 %%% Loads new file
-        LoadTcspc([],[],@Update_Data,@Calibrate_Detector,h.Pam,File{l},Type);
+        LoadTcspc([],[],@Update_Data,@Calibrate_Detector,h.Pam,File{m},Type);
     end
     
     %%% Finds the right combinations to correlate
@@ -3402,12 +3460,7 @@ for l=NCors %%% Goes through every File selected (multiple correlation) or just 
     drawnow;
     
     %%% For every active combination
-    for i=1:numel(Cor_A)
-        %% Initializes data
-        %%% Initializes data cells
-        Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
-        Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
-        
+    for i=1:numel(Cor_A)      
         %%% Findes all needed PIE channels
         if UserValues.PIE.Detector(Cor_A(i))==0
             Det1=UserValues.PIE.Detector(UserValues.PIE.Combined{Cor_A(i)});
@@ -3432,154 +3485,270 @@ for l=NCors %%% Goes through every File selected (multiple correlation) or just 
             From2=UserValues.PIE.From(Cor_B(i));
         end
         
-        %% Assigns photons and does correlation
-        %%% Starts progressbar
-        k=1;
-        Counts1=0;
-        Counts2=0;
-        Valid=find(PamMeta.Selected_MT_Patches)';
-        %%% Seperate calculation for each block
-        for j=find(PamMeta.Selected_MT_Patches)'
-            Data1{k}=[];
-            %%% Combines all photons to one vector
-            for l=1:numel(Det1)
-                if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
-                    Data1{k}=[Data1{k};...
-                        TcspcData.MT{Det1(l),Rout1(l)}(...
-                        TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
-                        TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
-                        TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
-                        TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
-                end
-            end
-            %%% Calculates total photons
-            Counts1=Counts1+numel(Data1{k});
-            
-            %%% Only executes if channel1 is not empty
-            if ~isempty(Data1{k})
-                Data2{k}=[];
-                %%% Combines all photons to one vector
-                for l=1:numel(Det2)
-                    if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
-                        Data2{k}=[Data2{k};...
-                            TcspcData.MT{Det2(l),Rout2(l)}(...
-                            TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
-                            TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
-                            TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
-                            TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
+        switch h.Cor_Type.Value %%% Assigns photons and does correlation
+            case 1 %%% Point correlation
+                %%% Initializes data cells
+                Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
+                Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
+                k=1;
+                Counts1=0;
+                Counts2=0;
+                Valid=find(PamMeta.Selected_MT_Patches)';
+                %%% Seperate calculation for each block
+                for j=find(PamMeta.Selected_MT_Patches)'
+                    Data1{k}=[];
+                    %%% Combines all photons to one vector
+                    for l=1:numel(Det1)
+                        if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
+                            Data1{k}=[Data1{k};...
+                                TcspcData.MT{Det1(l),Rout1(l)}(...
+                                TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                                TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
+                                TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
+                                TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
+                        end
+                    end
+                    %%% Calculates total photons
+                    Counts1=Counts1+numel(Data1{k});
+                    
+                    %%% Only executes if channel1 is not empty
+                    if ~isempty(Data1{k})
+                        Data2{k}=[];
+                        %%% Combines all photons to one vector
+                        for l=1:numel(Det2)
+                            if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
+                                Data2{k}=[Data2{k};...
+                                    TcspcData.MT{Det2(l),Rout2(l)}(...
+                                    TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
+                                    TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
+                                    TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
+                                    TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
+                            end
+                        end
+                        %%% Calculates total photons
+                        Counts2=Counts2+numel(Data2{k});
+                    end
+                    
+                    %%% Only takes non empty channels as valid
+                    if ~isempty(Data2{k})
+                        Data1{k}=sort(Data1{k});
+                        Data2{k}=sort(Data2{k});
+                        k=k+1;
+                    else
+                        Valid(k)=[];
                     end
                 end
-                %%% Calculates total photons
-                Counts2=Counts2+numel(Data2{k});
-            end
-            
-            %%% Only takes non empty channels as valid
-            if ~isempty(Data2{k})
-                Data1{k}=sort(Data1{k});
-                Data2{k}=sort(Data2{k});
-                k=k+1;
-            else
-                Valid(k)=[];
-            end
-        end
-        %%% Deletes empty and invalid channels
-        if k<=numel(Data1)
-            Data1(k:end)=[];
-            Data2(k:end)=[];
-        end
-        
-        
-        %%% Applies divider to data
-        for j=1:numel(Data1)
-            Data1{j}=floor(Data1{j}/UserValues.Settings.Pam.Cor_Divider);
-            Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
-        end
-        
-        %%% Actually calculates the crosscorrelation
-        [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-        Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
-        %%% Calculates average and standard error of mean (without tinv_table yet
-        if numel(Cor_Array)>1
-            Cor_Average=mean(Cor_Array,2);
-            %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-            %%% Averages files before saving to reduce errorbars
-            Amplitude=sum(Cor_Array,1);
-            Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-            Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-            
-        else
-            Cor_Average=Cor_Array{1};
-            Cor_SEM=Cor_Array{1};
-        end
-        
-        %% Saves data
-        
-        %%% Removes Comb.: from Name of combined channels
-        PIE_Name1=UserValues.PIE.Name{Cor_A(i)};
-        if ~isempty(strfind(PIE_Name1,'Comb'))
-            PIE_Name1=PIE_Name1(8:end);
-        end
-        PIE_Name2=UserValues.PIE.Name{Cor_B(i)};
-        if ~isempty(strfind(PIE_Name2,'Comb'))
-            PIE_Name2=PIE_Name2(8:end);
-        end
-        
-        if any(h.Cor_Format.Value == [1 3])
-            %%% Generates filename
-            Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-5) num2str(k) '.mcor'];
-                %%% Increases counter, until no file is fount
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                %%% Deletes empty and invalid channels
+                if k<=numel(Data1)
+                    Data1(k:end)=[];
+                    Data2(k:end)=[];
                 end
-            end
-            
-            Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}];
-            Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
-            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-            
-            
-        end
-        
-        if any(h.Cor_Format.Value == [2 3])
-            %%% Generates filename
-            Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.cor']);
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-4) num2str(k) '.cor'];
-                %%% Increases counter, until no file is fount
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(4+numel(num2str(k-1)))) num2str(k) '.cor'];
+                
+                
+                %%% Applies divider to data
+                for j=1:numel(Data1)
+                    Data1{j}=floor(Data1{j}/UserValues.Settings.Pam.Cor_Divider);
+                    Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
                 end
-            end
-            
-            %%% Creates new correlation file
-            FileID=fopen(Current_FileName,'w');
-            
-            %%% Writes Heater
-            fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
-            fprintf(FileID, ['Countrate channel 1 [kHz]: ' num2str(Counts1/1000, '%12.2f') '\n']);
-            fprintf(FileID, ['Countrate channel 2 [kHz]: ' num2str(Counts2/1000, '%12.2f') '\n']);
-            fprintf(FileID, ['Valid bins: ' num2str(Valid) '\n']);
-            fprintf(FileID, ['Used  bins: ' num2str(1,ones(numel(Valid))) '\n']);
-            %%% Indicates start of data
-            fprintf(FileID, ['Data starts here: ' '\n']);
-            
-            %%% Writes data as columns: Time    Averaged    SEM     Individual bins
-            fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
-            fclose(FileID);
+                
+                %%% Actually calculates the crosscorrelation
+                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
+                %%% Calculates average and standard error of mean (without tinv_table yet
+                if numel(Cor_Array)>1
+                    Cor_Average=mean(Cor_Array,2);
+                    %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+                    %%% Averages files before saving to reduce errorbars
+                    Amplitude=sum(Cor_Array,1);
+                    Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+                    Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+                    
+                else
+                    Cor_Average=Cor_Array{1};
+                    Cor_SEM=Cor_Array{1};
+                end
+                
+                %% Saves data
+                
+                %%% Removes Comb.: from Name of combined channels
+                PIE_Name1=UserValues.PIE.Name{Cor_A(i)};
+                if ~isempty(strfind(PIE_Name1,'Comb'))
+                    PIE_Name1=PIE_Name1(8:end);
+                end
+                PIE_Name2=UserValues.PIE.Name{Cor_B(i)};
+                if ~isempty(strfind(PIE_Name2,'Comb'))
+                    PIE_Name2=PIE_Name2(8:end);
+                end
+                
+                if any(h.Cor_Format.Value == [1 3])
+                    %%% Generates filename
+                    Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-5) num2str(k) '.mcor'];
+                        %%% Increases counter, until no file is fount
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        end
+                    end
+                    
+                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}];
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
+                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                    
+                    
+                end
+                
+                if any(h.Cor_Format.Value == [2 3])
+                    %%% Generates filename
+                    Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.cor']);
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-4) num2str(k) '.cor'];
+                        %%% Increases counter, until no file is fount
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(4+numel(num2str(k-1)))) num2str(k) '.cor'];
+                        end
+                    end
+                    
+                    %%% Creates new correlation file
+                    FileID=fopen(Current_FileName,'w');
+                    
+                    %%% Writes Heater
+                    fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
+                    fprintf(FileID, ['Countrate channel 1 [kHz]: ' num2str(Counts1/1000, '%12.2f') '\n']);
+                    fprintf(FileID, ['Countrate channel 2 [kHz]: ' num2str(Counts2/1000, '%12.2f') '\n']);
+                    fprintf(FileID, ['Valid bins: ' num2str(Valid) '\n']);
+                    fprintf(FileID, ['Used  bins: ' num2str(1,ones(numel(Valid))) '\n']);
+                    %%% Indicates start of data
+                    fprintf(FileID, ['Data starts here: ' '\n']);
+                    
+                    %%% Writes data as columns: Time    Averaged    SEM     Individual bins
+                    fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
+                    fclose(FileID);
+                end
+                
+                Progress(1);
+                Progress((i)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')
+                
+            case 2 %%% Pair correlation
+                Bins=str2double(h.Cor_Pair_Bins.String);
+                Dist=[0,str2num(h.Cor_Pair_Dist.String)];
+                
+                %% Channel 1 calculations
+                Data=[];
+                %%% Combines all photons to one vector for channel 1
+                for l=1:numel(Det1)
+                    if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
+                        Data=TcspcData.MT{Det1(l),Rout1(l)}(...
+                            TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                            TcspcData.MI{Det1(l),Rout1(l)}<=To1(l));
+                    end
+                end
+                %%% Sorts photons into spatial bins
+                Data=sort(Data);
+                Data=Data*FileInfo.SyncPeriod*FileInfo.ScanFreq; 
+                Maxtime=Data(end)-Data(1);
+                Data1=cell(Bins,1);
+                for j=1:Bins
+                    Data1{j}=ceil(Data(mod(Data,1)<=j/Bins));
+                    Data=Data(mod(Data,1)>j/Bins);
+                end               
+                %% Channel 2 calculations
+                Data=[];
+                %%% Combines all photons to one vector for channel 2
+                for l=1:numel(Det2)
+                    if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
+                        Data=TcspcData.MT{Det2(l),Rout2(l)}(...
+                            TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
+                            TcspcData.MI{Det2(l),Rout2(l)}<=To2(l));
+                    end
+                end
+                %%% Sorts photons into spatial bins
+                Data=sort(Data);
+                Data=Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                Maxtime=max([Maxtime,Data(end)-Data(1)]);
+                Data2=cell(Bins,1);
+                for j=1:Bins
+                    Data2{j}=ceil(Data(mod(Data,1)<=j/Bins));
+                    Data=Data(mod(Data,1)>j/Bins);
+                end
+                %% Actually calculates the crosscorrelation
+                PairCor=cell(Bins,max(Dist),2);
+                PairInfo.Time=[];
+                for j=1:Bins %%% Goes through every bin
+                    for l=Dist %%% Goes throu every selected bin distance
+                        if (l+j)<Bins %%% Checks if bin distance is valid
+                            %%% Ch1xCh2
+                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1(j),Data2(j+l),Maxtime);
+                            %%% Adjusts correlation times to longest
+                            PairCor{j,l+1,1}=Cor_Array;
+                            if numel(PairInfo.Time)<Cor_Times
+                                PairInfo.Time=Cor_Times;
+                            end
+                            %%% Ch2xCh1
+                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1(j+l),Data2(j),Maxtime);
+                            %%% Adjusts correlation times to longest
+                            PairCor{j,l+1,2}=Cor_Array;
+                            if numel(PairInfo.Time)<Cor_Times
+                                PairInfo.Time=Cor_Times;
+                            end
+                        end                        
+                    end
+                end
+                %%% Fills all empty bins with zeros
+                MaxLength=max(max(max(cellfun(@numel,PairCor))));
+                for j=1:numel(PairCor)
+                    if numel(PairCor{j})<MaxLength
+                        PairCor{j}(MaxLength,1)=0;
+                    end
+                end             
+                %% Transforms Data and Saves
+                %%% Transforms cell array to 4D matrix (Time,Bins,Dist,Dir)
+                PairCor=reshape(cell2mat(PairCor),[MaxLength,size(PairCor)]);
+                %%% Calculates Intensity traces
+                for j=1:Bins
+                    PairInt{1}(:,j)=histc(Data1{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{2}(:,j)=histc(Data2{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                end
+                %%% Combines information
+                PairInfo.Dist=Dist;
+                PairInfo.Bins=Dins;
+                %%% Transforms time lag to real time
+                PairInfo.Time=PairInfo.Time/FileInfo.SyncPeriod/FileInfo.ScanFreq;                
+                %% Save Data
+                %%% Removes Comb.: from Name of combined channels
+                PIE_Name1=UserValues.PIE.Name{Cor_A(i)};
+                if ~isempty(strfind(PIE_Name1,'Comb'))
+                    PIE_Name1=PIE_Name1(8:end);
+                end
+                PIE_Name2=UserValues.PIE.Name{Cor_B(i)};
+                if ~isempty(strfind(PIE_Name2,'Comb'))
+                    PIE_Name2=PIE_Name2(8:end);
+                end
+                %%% Generates filename
+                    Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.pcor']);
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-5) num2str(k) '.pcor'];
+                        %%% Increases counter, until no file is fount
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        end
+                        %%% Saves File
+                        save(Current_FileName,'PairInfo','PairInt','PairCor');                        
+                    end
+                
         end
-        
-        Progress(1);
-        Progress((i)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')
     end
     Update_Display([],[],1);
 end

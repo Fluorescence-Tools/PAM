@@ -45,6 +45,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
             FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
             FileInfo.Pixels=FileInfo.Fabsurf.Imagelines^2;   
+            FileInfo.ScanFreq=FileInfo.Fabsurf.ScanFreqCorrected;
             FileInfo.FileName=FileName;
             FileInfo.Path=Path;
             %%% Initializes microtime and macotime arrays
@@ -131,6 +132,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Lines=1;
             FileInfo.LineTimes=[];
             FileInfo.Pixels=1;   
+            FileInfo.ScanFreq=1000;
             FileInfo.FileName=FileName;
             FileInfo.Path=Path;
             
