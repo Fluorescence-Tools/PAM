@@ -29,7 +29,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     %%% Changes background; must be called after whitebg
     h.TauFit.Color=Look.Back;
     %% Main Fluorescence Decay Plot
-    %%% Panel containing phasor plot and information
+    %%% Panel containing decay plot and information
     h.TauFit_Panel = uibuttongroup(...
         'Parent',h.TauFit,...
         'Units','normalized',...
@@ -462,6 +462,8 @@ TauFitData.StartPar = 0;
 TauFitData.ShiftPer = 0;
 TauFitData.IRFLength = 1;
 TauFitData.IRFShift = 0;
+TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
+TauFitData.FitMethods = FitMethods;
 
 guidata(gcf,h);
 
@@ -880,6 +882,12 @@ if isempty(Pam) && isempty(FCSFit)
     clear global -regexp UserValues
 end
 delete(gcf);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Executes on Method selection change %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Method_Selection(obj,~)
+global TauFitData
+TauFitData.FitType = obj.String{obj.Value};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Fit the Data with selected Model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -887,44 +895,60 @@ delete(gcf);
 function Start_Fit(obj,~)
 global TauFitData FileInfo
 h = guidata(gcf);
-%%% Read out the data from the plots
-TauFitData.FitData.XData = h.Plots.Decay_Par.XData(h.Plots.Decay_Par.XData >= 0);
-TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData(h.Plots.Decay_Par.XData >= 0);
-TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData(h.Plots.Decay_Per.XData >= 0);
-TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData(h.Plots.IRF_Par.XData >= 0);
-TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData(h.Plots.IRF_Per.XData >= 0);
+%% Read out the data from the plots
+xmin_decay = max([1 h.Plots.Decay_Par.XData(1) h.Plots.Decay_Per.XData(1)]);
+xmax_decay = min([h.Plots.Decay_Par.XData(end) h.Plots.Decay_Per.XData(end)]);
+TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
+TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
+%%% read out the scatter pattern (i.e. the total IRF without
+%%% restricting the IRF length)
+TauFitData.FitData.Scatter_Par = circshift(TauFitData.hIRF_Par,[0, -TauFitData.IRFShift]);
+TauFitData.FitData.Scatter_Par = TauFitData.FitData.Scatter_Par((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
+TauFitData.FitData.Scatter_Per = circshift(TauFitData.hIRF_Per,[0, -(TauFitData.IRFShift + TauFitData.ShiftPer)]);
+TauFitData.FitData.Scatter_Per = TauFitData.FitData.Scatter_Per((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
+
+xmin_irf = max([1 h.Plots.IRF_Par.XData(1) h.Plots.IRF_Per.XData(1)]);
+xmax_irf = min([h.Plots.IRF_Par.XData(end) h.Plots.IRF_Per.XData(end)]);
+TauFitData.FitData.IRF_Par = zeros(1,numel(TauFitData.FitData.Scatter_Par));
+TauFitData.FitData.IRF_Par((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay+1)) = h.Plots.IRF_Par.YData((h.Plots.IRF_Par.XData >= xmin_irf & h.Plots.IRF_Par.XData <= xmax_irf & h.Plots.IRF_Par.XData >= xmin_decay & h.Plots.IRF_Par.XData <= xmax_decay));
+TauFitData.FitData.IRF_Per = zeros(1,numel(TauFitData.FitData.Scatter_Per));
+TauFitData.FitData.IRF_Per((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay)) = h.Plots.IRF_Per.YData((h.Plots.IRF_Per.XData >= xmin_irf & h.Plots.IRF_Per.XData <= xmax_irf & h.Plots.IRF_Per.XData >= xmin_decay & h.Plots.IRF_Per.XData <= xmax_decay));
+
 
 %%% initialize inputs for fit
 Decay = TauFitData.FitData.Decay_Par+2*TauFitData.FitData.Decay_Per;
 Irf = TauFitData.FitData.IRF_Par+2*TauFitData.FitData.IRF_Per;
-Irf = Irf-min(Irf);
+Irf = Irf-min(Irf(Irf~=0));
 Irf = Irf./sum(Irf);
 Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
 TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
 TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+Scatter = TauFitData.FitData.Scatter_Par + 2*TauFitData.FitData.Scatter_Per;
 
-%[c, offset, A, tau, dc, dtau, irs, zz, t, chi] = Fluofit(Irf, Decay, TauFitData.TACRange, TauFitData.TACChannelWidth)
-%%% Parameter:
-%%% gamma   - Constant Background
-%%% scatter - Scatter Background (IRF pattern)
-%%% taus    - Lifetimes
-x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
-shift_range = -20:20;
-%%% fit for different IRF offsets and compare the results
-count = 1;
-for i = shift_range
-    [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,4096,Decay,i},Decay);
-    count = count +1;
+switch TauFitData.FitType
+    case 'Single Exponential'
+        %%% Parameter:
+        %%% gamma   - Constant Background
+        %%% scatter - Scatter Background (IRF pattern)
+        %%% taus    - Lifetimes
+        x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
+        shift_range = -20:20;
+        %%% fit for different IRF offsets and compare the results
+        count = 1;
+        for i = shift_range
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,Scatter,4096,Decay,i},Decay);
+            count = count +1;
+        end
+        ignore = 0;
+        chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = lsfit(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit)});
+        figure;plot(Decay);hold on;plot(FitFun);
 end
-ignore = 0;
-chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
-[~,best_fit] = min(chi2);
-FitFun = lsfit(x{best_fit},{Irf,4096,Decay,shift_range(best_fit)});
-figure;plot(Decay);hold on;plot(FitFun);
-%[cx, tau, offset, csh, z, t, err] = DistFluofit(Irf, Decay, TauFitData.TACRange, TauFitData.TACChannelWidth,[-10,10]);
 
-%function [Chi2, wres, Model] = lsfit(param,Irf,Data)
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [cx, tau, offset, csh, z, t, err] = DistFluofit(irf, y, p, dt, shift, flag, bild, N)
 % The function DistFluofit performs a fit of a distributed decay curve.
 % It is called by: 
@@ -1436,9 +1460,10 @@ function [z] = lsfit(param, xdata)
 %	y is the measured fluorescence decay curve.
 %	p is the time between to laser excitations (in number of TCSPC channels).
 irf = xdata{1};
-p = xdata{2};
-y = xdata{3};
-c = xdata{4};
+bg = xdata{2};
+p = xdata{3};
+y = xdata{4};
+c = xdata{5};
 
 n = length(irf);
 t = 1:n;
@@ -1447,10 +1472,11 @@ gamma = param(1);
 scatter = param(2);
 tau = param(3:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
+%irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
+irs = circshift(irf,[0 c]);
 z = convol(irs, x);
 z = z./sum(z);
-z = (1-scatter).*z + scatter*irs';
+z = (1-scatter).*z + scatter*bg';
 z = (1-gamma).*z+gamma;
 z = z.*sum(y);
 z=z';
