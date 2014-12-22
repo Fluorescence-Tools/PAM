@@ -89,6 +89,7 @@ if isempty(hfig)
     % for right click selection to work, we need to access the underlying
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
+    drawnow;
     jScrollPane = findjobj(h.SpeciesList);
     jSpeciesList = jScrollPane.getViewport.getComponent(0);
     jSpeciesList = handle(jSpeciesList, 'CallbackProperties');
@@ -143,7 +144,7 @@ if isempty(hfig)
     % for right click selection to work, we need to access the underlying
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
-    jScrollPaneX = findjobj(h.ParameterListX);
+    drawnow;
     jScrollPaneX = findjobj(h.ParameterListX); %%% Execute twice because it fails to work on the first call
     jScrollPaneY = findjobj(h.ParameterListY);
     jParameterListX = jScrollPaneX.getViewport.getComponent(0);
@@ -581,38 +582,29 @@ end
 %%% plot
 imagesc(xbins,ybins,zz);
 set(gca,'YDir','normal');
-
 set(gca,'FontSize',20);
-
-%plot 1D hists
-%xbins1d=linspace(min(datatoplot(:,x)),max(datatoplot(:,x)),50)+(max(datatoplot(:,x))-min(datatoplot(:,x)))/100;
-%ybins1d=linspace(min(datatoplot(:,y)),max(datatoplot(:,y)),50)+(max(datatoplot(:,y))-min(datatoplot(:,y)))/100;
-%xbins1d=linspace(x_boundaries(1),x_boundaries(2),50)+(x_boundaries(2)-x_boundaries(1))/100;
-%ybins1d=linspace(y_boundaries(1),y_boundaries(2),50)+(y_boundaries(2)-y_boundaries(1))/100;
 
 axes(h.axes_1d_x);
 cla(gca);
 %plot first histogram
-hx = hist(datatoplot{1}(:,x),xbins_hist);
+hx = histc(datatoplot{1}(:,x),xbins_hist);
 hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 %normalize
-hx = hx./sum(hx);
-% transform to area plot to enable alpha property
-%[xx, hxx] = stairs([0 xbins+min(diff(xbins))/2],[hx, hx(end)]);
+hx = hx./sum(hx); hx = hx';
 %barx(1) = bar(xbins,hx,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
-stairsx(1) = stairs([0 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
+stairsx(1) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
 hold on;
 %plot rest of histograms
 color = {[1 0 0], [0 1 0]};
 for i = 2:num_species
-    hx = hist(datatoplot{i}(:,x),xbins_hist);
+    hx = histc(datatoplot{i}(:,x),xbins_hist);
     hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
     %normalize
-    hx = hx./sum(hx);
+    hx = hx./sum(hx); hx = hx';
     if i == 2 %%% plot red
-        stairsx(i) = stairs([0 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','r','LineWidth',2);
+        stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','r','LineWidth',2);
     elseif i == 3 %%% plot green
-        stairsx(i) = stairs([0 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','g','LineWidth',2);
+        stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','g','LineWidth',2);
     end
     %barx(i) =bar(xbins,hx,'BarWidth',1,'FaceColor',color{i-1},'EdgeColor',color{i-1});
 end
@@ -625,26 +617,24 @@ set(gca,'YTick',ylabel(2:end));
 axes(h.axes_1d_y);
 cla(gca);
 %plot first histogram
-hy = hist(datatoplot{1}(:,y),ybins_hist);
+hy = histc(datatoplot{1}(:,y),ybins_hist);
 hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 %normalize
-hy = hy./sum(hy);
-%%% transform to area plot to enable alpha property
-%[yy, hy] = stairs([0 ybins+min(diff(ybins))/2],[hy, hy(end)]);
+hy = hy./sum(hy); hy = hy';
 %bary(1) = bar(ybins,hy,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
-stairsy(1) = stairs([0 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
+stairsy(1) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
 hold on;
 %plot rest of histograms
 for i = 2:num_species
-    hy = hist(datatoplot{i}(:,y),ybins_hist);
+    hy = histc(datatoplot{i}(:,y),ybins_hist);
     hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
     %normalize
-    hy = hy./sum(hy);
+    hy = hy./sum(hy); hy = hy';
     %bary(i) = bar(ybins,hy,'BarWidth',1,'FaceColor',color{i-1},'EdgeColor',color{i-1});
     if i == 2 %%% plot red
-        stairsy(i) = stairs([0 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','r','LineWidth',2);
+        stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','r','LineWidth',2);
     elseif i == 3 %%% plot green
-        stairsy(i) = stairs([0 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','g','LineWidth',2);
+        stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','g','LineWidth',2);
     end
 end
 axis('tight');
@@ -654,13 +644,14 @@ ylabel = get(gca,'YTick');
 set(gca,'YTick',ylabel(2:end));
 
 %set transparency of bar plots
+% drawnow;
 % for i = 1:num_species
-%     dummy_x = allchild(barx(i));
-%     dummy_y = allchild(bary(i));
-%     set(dummy_x,'FaceAlpha',0.33);
-%     set(dummy_y,'FaceAlpha',0.33);
+%     barx(i).Face.ColorType = 'truecoloralpha';
+%     barx(i).Face.ColorData = uint8(255*[barx(i).FaceColor 1/num_species])';
+%     bary(i).Face.ColorType = 'truecoloralpha';
+%     bary(i).Face.ColorData = uint8(255*[bary(i).FaceColor 1/num_species])';
 % end
-
+        
 function ManualCut(~,~)
 
 h = guidata(gcbo);
@@ -766,11 +757,11 @@ UpdateCuts();
 UpdatePlot;
 
 function PlotCorrections(~,~)
-h = guidata(findobj('Tag','Bowser'));
+h = guidata(findobj('Tag','BurstBrowser'));
 global BurstData
 S = find(strcmp(BurstData.NameArray,'Stoichiometry'));
 E = find(strcmp(BurstData.NameArray,'Efficiency'));
-T_threshold = 0.2;
+T_threshold = 0.1;
 
 cutT = 1;
 if cutT == 0
@@ -780,7 +771,7 @@ elseif cutT == 1
     valid = (BurstData.DataArray(:,T) < T_threshold);
     data_for_corrections = BurstData.DataArray(valid,:);
 end
-%plot raw Efficiency for S>0.9
+%% plot raw Efficiency for S>0.9
 Smin = 0.9;
 S_threshold = (data_for_corrections(:,S)>Smin);
 x_axis = linspace(0,0.3,50);
@@ -793,7 +784,7 @@ axis tight;
 mean_ct = GaussianFit(x_axis',BurstData.Corrections.histE_donly,1,1);
 BurstData.Corrections.CrossTalk = mean_ct./(1-mean_ct);
 
-%plot raw data for S > 0.3 for direct excitation
+%% plot raw data for S > 0.3 for direct excitation
 Smax = 0.2;
 S_threshold = (data_for_corrections(:,S)<Smax);
 x_axis = linspace(0,Smax,20);
@@ -806,7 +797,7 @@ axis tight;
 mean_de = GaussianFit(x_axis',BurstData.Corrections.histS_aonly,2,1);
 BurstData.Corrections.DirectExcitation = mean_de./(1-mean_de);
 
-%plot TFRET-TRED (or ALEX_2CDE)
+%% plot TFRET-TRED (or ALEX_2CDE)
 T = find(strcmp(BurstData.NameArray,'|TGX-TRR| Filter'));
 x_axis = linspace(0,1,50);
 BurstData.Corrections.histTFRET = histc(BurstData.DataArray(:,T),x_axis);
@@ -820,7 +811,20 @@ bar(x_axis(x_threshold+1:end), BurstData.Corrections.histTFRET(x_threshold+1:end
 hold off;
 axis tight;
 
-%plot gamma plot for two populations (or lifetime versus E)
+%% plot gamma plot for two populations (or lifetime versus E)
+axes(h.axes_gamma);cla(gca);
+%%% get E-S values between 0.3 and 0.8;
+S_threshold = ( (data_for_corrections(:,S) > 0.3) & (data_for_corrections(:,S) < 0.8) );
+[H xbins_hist ybins_hist] = hist2d([data_for_corrections(S_threshold,E) data_for_corrections(S_threshold,S)],51, 51, [0 1], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+
 
 function [mean] = GaussianFit(x_data,y_data,N_gauss,display,start_param)
 if N_gauss == 1

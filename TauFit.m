@@ -643,19 +643,36 @@ switch obj.Style
         h.IRFShift_Slider.Value = TauFitData.IRFShift;
 end
 %%% Update Plot
-%%% Apply the shift to the parallel channel
-h.Plots.Decay_Par.XData = TauFitData.XData_Par(1:TauFitData.Length)-TauFitData.StartPar;
-h.Plots.Decay_Par.YData = TauFitData.hMI_Par(1:TauFitData.Length);
-%%% Apply the shift to the perpendicular channel
-h.Plots.Decay_Per.XData = TauFitData.XData_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.ShiftPer);
-h.Plots.Decay_Per.YData = TauFitData.hMI_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]));
-%%% Apply the shift to the parallel IRF channel
-h.Plots.IRF_Par.XData = TauFitData.XData_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]))-(TauFitData.StartPar+TauFitData.IRFShift);
-h.Plots.IRF_Par.YData = TauFitData.hIRF_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]));
-%%% Apply the shift to the perpendicular IRF channel
-h.Plots.IRF_Per.XData = TauFitData.XData_Per((1+max([0 (TauFitData.ShiftPer + TauFitData.IRFShift)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.IRFShift+TauFitData.ShiftPer);
-h.Plots.IRF_Per.YData = TauFitData.hIRF_Per((1+max([0 (TauFitData.IRFShift + TauFitData.ShiftPer)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]));
+% %%% Apply the shift to the parallel channel
+% h.Plots.Decay_Par.XData = TauFitData.XData_Par(1:TauFitData.Length)-TauFitData.StartPar;
+% h.Plots.Decay_Par.YData = TauFitData.hMI_Par(1:TauFitData.Length);
+% %%% Apply the shift to the perpendicular channel
+% h.Plots.Decay_Per.XData = TauFitData.XData_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.ShiftPer);
+% h.Plots.Decay_Per.YData = TauFitData.hMI_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]));
+% %%% Apply the shift to the parallel IRF channel
+% h.Plots.IRF_Par.XData = TauFitData.XData_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]))-(TauFitData.StartPar+TauFitData.IRFShift);
+% h.Plots.IRF_Par.YData = TauFitData.hIRF_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]));
+% %%% Apply the shift to the perpendicular IRF channel
+% h.Plots.IRF_Per.XData = TauFitData.XData_Per((1+max([0 (TauFitData.ShiftPer + TauFitData.IRFShift)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.IRFShift+TauFitData.ShiftPer);
+% h.Plots.IRF_Per.YData = TauFitData.hIRF_Per((1+max([0 (TauFitData.IRFShift + TauFitData.ShiftPer)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]));
 
+%%% Apply the shift to the parallel channel
+h.Plots.Decay_Par.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+h.Plots.Decay_Par.YData = TauFitData.hMI_Par((TauFitData.StartPar+1):TauFitData.Length)';
+%%% Apply the shift to the perpendicular channel
+h.Plots.Decay_Per.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+hMI_Per_Shifted = circshift(TauFitData.hMI_Per,[TauFitData.ShiftPer,0])';
+h.Plots.Decay_Per.YData = hMI_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length);
+%%% Apply the shift to the parallel IRF channel
+h.Plots.IRF_Par.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
+hIRF_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
+h.Plots.IRF_Par.YData = hIRF_Par_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
+%%% Apply the shift to the perpendicular IRF channel
+h.Plots.IRF_Per.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
+hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
+h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
+
+axis('tight');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Function for loading the IRF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -896,25 +913,32 @@ function Start_Fit(obj,~)
 global TauFitData FileInfo
 h = guidata(gcf);
 %% Read out the data from the plots
-xmin_decay = max([1 h.Plots.Decay_Par.XData(1) h.Plots.Decay_Per.XData(1)]);
-xmax_decay = min([h.Plots.Decay_Par.XData(end) h.Plots.Decay_Per.XData(end)]);
-TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
-TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
-%%% read out the scatter pattern (i.e. the total IRF without
-%%% restricting the IRF length)
-TauFitData.FitData.Scatter_Par = circshift(TauFitData.hIRF_Par,[0, -TauFitData.IRFShift]);
-TauFitData.FitData.Scatter_Par = TauFitData.FitData.Scatter_Par((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
-TauFitData.FitData.Scatter_Per = circshift(TauFitData.hIRF_Per,[0, -(TauFitData.IRFShift + TauFitData.ShiftPer)]);
-TauFitData.FitData.Scatter_Per = TauFitData.FitData.Scatter_Per((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
-
-xmin_irf = max([1 h.Plots.IRF_Par.XData(1) h.Plots.IRF_Per.XData(1)]);
-xmax_irf = min([h.Plots.IRF_Par.XData(end) h.Plots.IRF_Per.XData(end)]);
-TauFitData.FitData.IRF_Par = zeros(1,numel(TauFitData.FitData.Scatter_Par));
-TauFitData.FitData.IRF_Par((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay+1)) = h.Plots.IRF_Par.YData((h.Plots.IRF_Par.XData >= xmin_irf & h.Plots.IRF_Par.XData <= xmax_irf & h.Plots.IRF_Par.XData >= xmin_decay & h.Plots.IRF_Par.XData <= xmax_decay));
-TauFitData.FitData.IRF_Per = zeros(1,numel(TauFitData.FitData.Scatter_Per));
-TauFitData.FitData.IRF_Per((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay)) = h.Plots.IRF_Per.YData((h.Plots.IRF_Per.XData >= xmin_irf & h.Plots.IRF_Per.XData <= xmax_irf & h.Plots.IRF_Per.XData >= xmin_decay & h.Plots.IRF_Per.XData <= xmax_decay));
-
-
+% xmin_decay = max([1 h.Plots.Decay_Par.XData(1) h.Plots.Decay_Per.XData(1)]);
+% xmax_decay = min([h.Plots.Decay_Par.XData(end) h.Plots.Decay_Per.XData(end)]);
+% TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
+% TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
+% %%% read out the scatter pattern (i.e. the total IRF without
+% %%% restricting the IRF length)
+% TauFitData.FitData.Scatter_Par = circshift(TauFitData.hIRF_Par,[0, -TauFitData.IRFShift]);
+% TauFitData.FitData.Scatter_Par = TauFitData.FitData.Scatter_Par((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
+% TauFitData.FitData.Scatter_Per = circshift(TauFitData.hIRF_Per,[0, -(TauFitData.IRFShift + TauFitData.ShiftPer)]);
+% TauFitData.FitData.Scatter_Per = TauFitData.FitData.Scatter_Per((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
+% 
+% xmin_irf = max([1 h.Plots.IRF_Par.XData(1) h.Plots.IRF_Per.XData(1)]);
+% xmax_irf = min([h.Plots.IRF_Par.XData(end) h.Plots.IRF_Per.XData(end)]);
+% TauFitData.FitData.IRF_Par = zeros(1,numel(TauFitData.FitData.Scatter_Par));
+% TauFitData.FitData.IRF_Par((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay+1)) = h.Plots.IRF_Par.YData((h.Plots.IRF_Par.XData >= xmin_irf & h.Plots.IRF_Par.XData <= xmax_irf & h.Plots.IRF_Par.XData >= xmin_decay & h.Plots.IRF_Par.XData <= xmax_decay));
+% TauFitData.FitData.IRF_Per = zeros(1,numel(TauFitData.FitData.Scatter_Per));
+% TauFitData.FitData.IRF_Per((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay)) = h.Plots.IRF_Per.YData((h.Plots.IRF_Per.XData >= xmin_irf & h.Plots.IRF_Per.XData <= xmax_irf & h.Plots.IRF_Per.XData >= xmin_decay & h.Plots.IRF_Per.XData <= xmax_decay));
+TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
+TauFitData.FitData.Decay_Per = h.Plots.Decay_Par.YData;
+TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
+TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
+%%% Read out the shifted scatter pattern
+Scatter_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
+TauFitData.FitData.Scatter_Par = Scatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
+Scatter_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift + TauFitData.ShiftPer])';
+TauFitData.FitData.Scatter_Per = Scatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
 %%% initialize inputs for fit
 Decay = TauFitData.FitData.Decay_Par+2*TauFitData.FitData.Decay_Per;
 Irf = TauFitData.FitData.IRF_Par+2*TauFitData.FitData.IRF_Per;
@@ -924,6 +948,7 @@ Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
 TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
 TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
 Scatter = TauFitData.FitData.Scatter_Par + 2*TauFitData.FitData.Scatter_Per;
+Scatter = Scatter./sum(Scatter);
 
 switch TauFitData.FitType
     case 'Single Exponential'
@@ -1474,6 +1499,7 @@ tau = param(3:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
 %irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
 irs = circshift(irf,[0 c]);
+scatter = circshift(scatter,[0 c]);
 z = convol(irs, x);
 z = z./sum(z);
 z = (1-scatter).*z + scatter*bg';
