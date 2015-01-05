@@ -240,7 +240,122 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRF=[];
             disp('UserValues.TauFit.IRF was incomplete');    
     end
+    %% BurstBrowser
+    %%% Checks, if BurstBrowser subfield exists
+    if ~isfield (S,'BurstBrowser')
+        S.BurstBrowser=[];
+        disp('UserValues.BurstBrowser was incomplete');    
+    end
     
+    %%% Checks, if BurstBrowser.Corrections subfield exists
+    %%% Here the correction factors are stored
+    if ~isfield (S.BurstBrowser,'Corrections')
+        S.BurstBrowser.Corrections=[];
+        disp('UserValues.BurstBrowser.Corrections was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.CrossTalk_GR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_GR')
+        S.BurstBrowser.Corrections.CrossTalk_GR=0;
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_GR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.CrossTalk_BG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_BG')
+        S.BurstBrowser.Corrections.CrossTalk_BG=0;
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BG was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.CrossTalk_BR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_BR')
+        S.BurstBrowser.Corrections.CrossTalk_BR=0;
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.DirectExcitation_GR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_GR')
+        S.BurstBrowser.Corrections.DirectExcitation_GR=0;
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_GR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.DirectExcitation_BG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_BG')
+        S.BurstBrowser.Corrections.DirectExcitation_BG=0;
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BG was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.DirectExcitation_BR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_BR')
+        S.BurstBrowser.Corrections.DirectExcitation_BR=0;
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Gamma_GR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Gamma_GR')
+        S.BurstBrowser.Corrections.Gamma_GR=1;
+        disp('UserValues.BurstBrowser.Corrections.Gamma_GR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Gamma_BG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Gamma_BG')
+        S.BurstBrowser.Corrections.Gamma_BG=1;
+        disp('UserValues.BurstBrowser.Corrections.Gamma_BG was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Gamma_BR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Gamma_BR')
+        S.BurstBrowser.Corrections.Gamma_BR=1;
+        disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_GG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GG')
+        S.BurstBrowser.Corrections.Background_GG=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GG was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_GR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GR')
+        S.BurstBrowser.Corrections.Background_GR=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_RR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_RR')
+        S.BurstBrowser.Corrections.Background_RR=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_RR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BB subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BB')
+        S.BurstBrowser.Corrections.Background_BB=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BB was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BG')
+        S.BurstBrowser.Corrections.Background_BG=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BG was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BR')
+        S.BurstBrowser.Corrections.Background_BR=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BR was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Display subfield exists
+    %%% Here the display options are stored
+    if ~isfield (S.BurstBrowser,'Display')
+        S.BurstBrowser.Display=[];
+        disp('UserValues.BurstBrowser.Display was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Display.NumberOfBins subfield exists
+    if ~isfield (S.BurstBrowser.Display,'NumberOfBins')
+        S.BurstBrowser.Display.NumberOfBins=50;
+        disp('UserValues.BurstBrowser.Display.NumberOfBins was incomplete');    
+    end
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=S;
     Mode=1;

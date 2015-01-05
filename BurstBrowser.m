@@ -1,7 +1,8 @@
 function BurstBrowser %Burst Browser
 
 hfig=findobj('Name','BurstBrowser');
-global BurstData
+global BurstData UserValues
+LSUserValues(0);
 
 if isempty(hfig)
     h.AxesColor = [0.5 0.5 0.5];
@@ -13,7 +14,7 @@ if isempty(hfig)
     h.ForeColor = [1 1 1];    
     h.Int=1;
     
-    %define main window
+    %% define main window
     h.Figure = figure(...
     'Units','normalized',...
     'Name','Bowser',...
@@ -44,17 +45,20 @@ if isempty(hfig)
 
     h.Main_Tab_General = uitab(h.Main_Tab,...
     'title','General',...
-    'Tag','Main_Tab_General'); 
+    'Tag','Main_Tab_General',...
+    'BackgroundColor',h.BackColorTabs); 
 
     h.Main_Tab_Corrections= uitab(h.Main_Tab,...
     'title','Corrections',...
-    'Tag','Main_Tab_Corrections'); 
+    'Tag','Main_Tab_Corrections',...
+    'BackgroundColor',h.BackColorTabs); 
 
     h.Main_Tab_Lifetime= uitab(h.Main_Tab,...
     'title','Lifetime',...
-    'Tag','Main_Tab_Lifetime'); 
+    'Tag','Main_Tab_Lifetime',...
+    'BackgroundColor',h.BackColorTabs); 
     
-    %secondary tab
+    %% secondary tab selection gui
     h.Secondary_Tab = uitabgroup(...
     'Parent',h.Figure,...
     'Tag','Secondary_Tab',...
@@ -63,15 +67,18 @@ if isempty(hfig)
 
     h.Secondary_Tab_Selection = uitab(h.Secondary_Tab,...
     'title','Selection',...
-    'Tag','Secondary_Tab_Selection'); 
+    'Tag','Secondary_Tab_Selection',...
+    'BackgroundColor',h.BackColorTabs); 
 
     h.Secondary_Tab_Corrections= uitab(h.Secondary_Tab,...
     'title','Correction factors',...
-    'Tag','Secondary_Tab_Corrections'); 
+    'Tag','Secondary_Tab_Corrections',...
+    'BackgroundColor',h.BackColorTabs); 
 
     h.Secondary_Tab_DisplayOptions= uitab(h.Secondary_Tab,...
     'title','Display Options',...
-    'Tag','Secondary_Tab_DisplayOptions'); 
+    'Tag','Secondary_Tab_DisplayOptions',...
+    'BackgroundColor',h.BackColorTabs); 
 
     %define species list
     h.SpeciesList = uicontrol(...
@@ -201,22 +208,85 @@ if isempty(hfig)
     'String','Add Species',...
     'Callback',@add_species);
 
-    %%%buttons in correction tab
-    h.PlotCorrections = uicontrol(...
+    %% secondary tab corrections
+    %%% Buttons
+    %%% Button to determine CrossTalk and DirectExcitation
+    h.DetermineCorrectionsButton = uicontrol(...
     'Parent',h.Secondary_Tab_Corrections,...
     'Units','normalized',...
     'BackgroundColor', h.AxesColor,...
     'ForegroundColor', h.ForeColor,...
-    'Position',[0 0.91 0.2 0.03],...
+    'Position',[0 0.91 0.4 0.03],...
     'Style','pushbutton',...
-    'Tag','PlotCorrectionsButton',...
-    'String','Plot Corrections',...
-    'Callback',@PlotCorrections);
+    'Tag','DetermineCorrectionsButton',...
+    'String','Determine Corrections',...
+    'Callback',@DetermineCorrections);
 
+    %%% Button for manual gamma determination
+    h.DetermineGammaManuallyButton = uicontrol(...
+    'Parent',h.Secondary_Tab_Corrections,...
+    'Units','normalized',...
+    'BackgroundColor', h.AxesColor,...
+    'ForegroundColor', h.ForeColor,...
+    'Position',[0 0.86 0.4 0.03],...
+    'Style','pushbutton',...
+    'Tag','DetermineGammaManuallyButton',...
+    'String','Determine Gamma Manually',...
+    'Callback',@DetermineGammaManually);
+
+    %%% Button to apply custom correction factors
+    h.ApplyCorrectionsButton = uicontrol(...
+    'Parent',h.Secondary_Tab_Corrections,...
+    'Units','normalized',...
+    'BackgroundColor', h.AxesColor,...
+    'ForegroundColor', h.ForeColor,...
+    'Position',[0 0.81 0.4 0.03],...
+    'Style','pushbutton',...
+    'Tag','ApplyCorrectionsButton',...
+    'String','Apply Corrections',...
+    'Callback',@ApplyCorrections);
+    %%% Table for Corrections factors
+    Corrections_Rownames = {'Gamma','Crosstalk','Direct Exc.','BG GG','BG GR','BG RR'};
+    Corrections_Columnnames = {'Correction Factors'};
+    Corrections_Editable = [true];
+    Corrections_Data = {1;0;0;0;0;0};
+    Corrections_Columnformat = {'numeric'};
+    h.CorrectionsTable = uitable(...
+        'Parent',h.Secondary_Tab_Corrections,...
+        'Units','normalized',...
+        'Tag','CorrectionsTable',...
+        'Position',[0 0.56 0.7 0.2],...
+        'Data',Corrections_Data,...
+        'RowName',Corrections_Rownames,...
+        'ColumnName',Corrections_Columnnames,...
+        'ColumnEditable',Corrections_Editable,...
+        'ColumnFormat',Corrections_Columnformat,...
+        'ColumnWidth','auto',...
+        'CellEditCallback',@UpdateCorrections);
+    %% secondary tab display options
+    %%% Specify the Number of Bins
+    uicontrol('Style','text',...
+        'Parent',h.Secondary_Tab_DisplayOptions,...
+        'String','Number of Bins',...
+        'Tag','Text_Number_of_Bins',...
+        'Units','normalized',...
+        'Position',[0 0.90 0.4 0.02],...
+        'FontSize',14,...
+        'BackgroundColor',h.BackColorTabs,...
+        'ForegroundColor', h.ForeColor);
     
-    
-    
-    %%%define axes in main_tab_general
+    h.NumberOfBinsEdit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.Secondary_Tab_DisplayOptions,...
+        'BackgroundColor',h.BackColorTabs,...
+        'ForegroundColor', h.ForeColor,...
+        'Units','normalized',...
+        'Position',[0.4 0.90 0.2 0.02],...
+        'FontSize',14,...
+        'Tag','NumberOfBinsEdit',...
+        'String',UserValues.BurstBrowser.Display.NumberOfBins...
+        );
+    %% define axes in main_tab_general
     %define 2d axis
     h.axes_general =  axes(...
     'Parent',h.Main_Tab_General,...
@@ -252,7 +322,7 @@ if isempty(hfig)
     'ButtonDownFcn',@SetAxes,...
     'View',[90 90]);
     
-    %%%define axes in Corrections tab
+    %% define axes in Corrections tab
     h.axes_crosstalk =  axes(...
     'Parent',h.Main_Tab_Corrections,...
     'Units','normalized',...
@@ -296,7 +366,8 @@ if isempty(hfig)
     guidata(h.Figure,h);    
     %set(Figure,'WindowButtonMotionFcn',@Update_Position);
     colormap(hot);
-
+    %% set UserValues in GUI
+    UpdateCorrections([],[]);
 else
     figure(h);
 end
@@ -332,6 +403,8 @@ if ~isfield(BurstData,'PlotType')
     BurstData.PlotType = 1;
 end
 
+BurstData.DataCut = BurstData.DataArray;
+UpdateCorrections([],[]);
 UpdatePlot();
 
 function ParameterList_KeyPressFcn(hObject,eventdata)
@@ -372,7 +445,11 @@ if strcmpi(clickType,'Right-click')
     BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
     UpdateCutTable(h);
     UpdateCuts();
-    UpdateCorrections;
+    %UpdateCorrections;
+elseif strcmpi(clickType,'Left-click') %%% Update Plot
+    %%% Update selected value
+    hListbox.Value = clickedIndex;
+    UpdatePlot();
 end
 
 function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
@@ -437,11 +514,14 @@ axes(h.axes_general);
 cla(gca);
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
-if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{BurstData.SelectedSpecies})
-    datatoplot = BurstData.DataArray;
-elseif isfield(BurstData,'Cut')
-    datatoplot = BurstData.DataCut;
-end
+
+% if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{BurstData.SelectedSpecies})
+%     datatoplot = BurstData.DataArray;
+% elseif isfield(BurstData,'Cut')
+%     datatoplot = BurstData.DataCut;
+% end
+
+datatoplot = BurstData.DataCut;
 
 [H xbins_hist ybins_hist] = hist2d([datatoplot(:,x) datatoplot(:,y)],51, 51, [min(datatoplot(:,x)) max(datatoplot(:,x))], [min(datatoplot(:,y)) max(datatoplot(:,y))]);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
@@ -642,15 +722,6 @@ set(gca,'View',[90 90],'XDir','reverse');
 set(gca,'XAxisLocation','top','FontSize',20)
 ylabel = get(gca,'YTick');
 set(gca,'YTick',ylabel(2:end));
-
-%set transparency of bar plots
-% drawnow;
-% for i = 1:num_species
-%     barx(i).Face.ColorType = 'truecoloralpha';
-%     barx(i).Face.ColorData = uint8(255*[barx(i).FaceColor 1/num_species])';
-%     bary(i).Face.ColorType = 'truecoloralpha';
-%     bary(i).Face.ColorData = uint8(255*[bary(i).FaceColor 1/num_species])';
-% end
         
 function ManualCut(~,~)
 
@@ -756,13 +827,19 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot;
 
-function PlotCorrections(~,~)
+function DetermineCorrections(~,~)
+global BurstData UserValues
+LSUserValues(0);
 h = guidata(findobj('Tag','BurstBrowser'));
-global BurstData
-S = find(strcmp(BurstData.NameArray,'Stoichiometry'));
-E = find(strcmp(BurstData.NameArray,'Efficiency'));
-T_threshold = 0.1;
 
+indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
+indE = find(strcmp(BurstData.NameArray,'Efficiency'));
+indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
+indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
+indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
+indNRR = find(strcmp(BurstData.NameArray,'Number of Photons (RR)'));
+
+T_threshold = 0.1;
 cutT = 1;
 if cutT == 0
     data_for_corrections = BurstData.DataArray;
@@ -773,29 +850,36 @@ elseif cutT == 1
 end
 %% plot raw Efficiency for S>0.9
 Smin = 0.9;
-S_threshold = (data_for_corrections(:,S)>Smin);
+S_threshold = (data_for_corrections(:,indS)>Smin);
 x_axis = linspace(0,0.3,50);
-BurstData.Corrections.histE_donly = histc(data_for_corrections(S_threshold,E),x_axis);
+NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
+E_raw = NGR./(NGR+NGG);
+BurstData.Corrections.histE_donly = histc(E_raw,x_axis);
 axes(h.axes_crosstalk);
 cla(gca);
 bar(x_axis, BurstData.Corrections.histE_donly,'BarWidth',1);
 axis tight;
 %fit single gaussian
 mean_ct = GaussianFit(x_axis',BurstData.Corrections.histE_donly,1,1);
-BurstData.Corrections.CrossTalk = mean_ct./(1-mean_ct);
+UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
 
 %% plot raw data for S > 0.3 for direct excitation
 Smax = 0.2;
-S_threshold = (data_for_corrections(:,S)<Smax);
+S_threshold = (data_for_corrections(:,indS)<Smax);
 x_axis = linspace(0,Smax,20);
-BurstData.Corrections.histS_aonly = histc(data_for_corrections(S_threshold,S),x_axis);
+NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - UserValues.BurstBrowser.Corrections.Background_RR.*data_for_corrections(S_threshold,indDur);
+S_raw = (NGG+NGR)./(NGG+NGR+NRR);
+BurstData.Corrections.histS_aonly = histc(S_raw,x_axis);
 axes(h.axes_direct_excitation);
 cla(gca);
 bar(x_axis, BurstData.Corrections.histS_aonly,'BarWidth',1);
 axis tight;
 %fit single gaussian
-mean_de = GaussianFit(x_axis',BurstData.Corrections.histS_aonly,2,1);
-BurstData.Corrections.DirectExcitation = mean_de./(1-mean_de);
+mean_de = GaussianFit(x_axis',BurstData.Corrections.histS_aonly,1,1);
+UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
 
 %% plot TFRET-TRED (or ALEX_2CDE)
 T = find(strcmp(BurstData.NameArray,'|TGX-TRR| Filter'));
@@ -812,10 +896,18 @@ hold off;
 axis tight;
 
 %% plot gamma plot for two populations (or lifetime versus E)
-axes(h.axes_gamma);cla(gca);
+axes(h.axes_gamma);cla(gca);legend('off');
 %%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,S) > 0.3) & (data_for_corrections(:,S) < 0.8) );
-[H xbins_hist ybins_hist] = hist2d([data_for_corrections(S_threshold,E) data_for_corrections(S_threshold,S)],51, 51, [0 1], [0 1]);
+S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
+%%% Calculate "raw" E and S with gamma = 1, but still apply direct
+%%% excitation,crosstalk, and background corrections!
+NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - UserValues.BurstBrowser.Corrections.Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+E_raw = NGR./(NGR+NGG);
+S_raw = (NGG+NGR)./(NGG+NGR+NRR);
+[H xbins_hist ybins_hist] = hist2d([E_raw 1./S_raw],51, 51, [0 1], [min(1./S_raw) max(1./S_raw)]);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
 l = H>0;
@@ -824,7 +916,24 @@ ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 im = imagesc(xbins,ybins,H./max(max(H)));
 set(im,'AlphaData',l);
 set(gca,'YDir','normal');
-
+BurstData.Plots.GammaPlot = im;
+BurstData.Corrections.E_raw = E_raw;
+BurstData.Corrections.S_raw = S_raw;
+%%% Fit linearly
+GammaFit = fit(E_raw,1./S_raw,'poly1');
+hold on;
+pgamma = plot(GammaFit);
+set(pgamma,'LineWidth',2);
+BurstData.Plots.GammaFit = pgamma;
+%%% Determine Gamma and Beta
+coeff = coeffvalues(GammaFit); m = coeff(1); b = coeff(2);
+UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
 
 function [mean] = GaussianFit(x_data,y_data,N_gauss,display,start_param)
 if N_gauss == 1
@@ -899,8 +1008,27 @@ UpdatePlot;
 
 function List_KeyPressFcn(hObject,eventdata)
 
-function UpdateCorrections()
-global BurstData
+function UpdateCorrections(obj,e)
+global BurstData UserValues
+
+if isempty(obj) %%% Just change the data to what is stored in UserValues
+    h = guidata(gcf);
+    h.CorrectionsTable.Data = {UserValues.BurstBrowser.Corrections.Gamma_GR;...
+        UserValues.BurstBrowser.Corrections.CrossTalk_GR;...
+        UserValues.BurstBrowser.Corrections.DirectExcitation_GR;...
+        UserValues.BurstBrowser.Corrections.Background_GG;...
+        UserValues.BurstBrowser.Corrections.Background_GR;...
+        UserValues.BurstBrowser.Corrections.Background_RR};
+else %%% Update UserValues with new values
+    LSUserValues(0);
+    UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
+    UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{2};
+    UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{3};
+    UserValues.BurstBrowser.Corrections.Background_GG= obj.Data{4};
+    UserValues.BurstBrowser.Corrections.Background_GR= obj.Data{5};
+    UserValues.BurstBrowser.Corrections.Background_RR= obj.Data{6};
+    LSUserValues(1);
+end
 
 function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
 %HIST2D 2D histogram
@@ -1113,3 +1241,86 @@ function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
         xlabel x;
         ylabel y;
     end
+    
+%%% Applies Corrections to data 
+function ApplyCorrections(~,~)
+global BurstData UserValues
+%%% Read out indices of parameters
+indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
+indE = find(strcmp(BurstData.NameArray,'Efficiency'));
+indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
+indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
+indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
+indNRR = find(strcmp(BurstData.NameArray,'Number of Photons (RR)'));
+
+%%% Read out photons counts and duration
+NGG = BurstData.DataArray(:,indNGG);
+NGR = BurstData.DataArray(:,indNGR);
+NRR = BurstData.DataArray(:,indNRR);
+Dur = BurstData.DataArray(:,indDur);
+
+%%% Read out corrections
+LSUserValues(0);
+gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
+ct_gr = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+de_gr = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+BG_GG = UserValues.BurstBrowser.Corrections.Background_GG;
+BG_GR = UserValues.BurstBrowser.Corrections.Background_GR;
+BG_RR = UserValues.BurstBrowser.Corrections.Background_RR;
+
+%%% Apply Background corrections
+NGG = NGG - Dur.*BG_GG;
+NGR = NGR - Dur.*BG_GR;
+NRR = NRR - Dur.*BG_RR;
+
+%%% Apply CrossTalk and DirectExcitation Corrections
+NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
+
+%%% Recalculate Efficiency and Stoichiometry
+E = NGR./(NGR + gamma_gr.*NGG);
+S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
+
+%%% Update Values in the DataArray
+BurstData.DataArray(:,indE) = E;
+BurstData.DataArray(:,indS) = S;
+
+%%% Update Display
+UpdateCuts;
+UpdatePlot;
+
+%%% Manual gamma determination by selecting the mid-point of the two (or
+%%% more) populations
+function DetermineGammaManually(~,~)
+global BurstData UserValues
+h = guidata(gcf);
+
+%%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
+cla(h.axes_gamma);
+axes(h.axes_gamma);
+[H xbins_hist ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+BurstData.Plots.GammaPlot = im;
+
+[e, s] = ginput(2);
+hold on;
+scatter(e,s,1000,'o','LineWidth',4,'MarkerEdgeColor','b');
+scatter(e,s,1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b');
+s = 1./s;
+m = (s(2)-s(1))./(e(2)-e(1));
+b = s(2) - m.*e(2);
+
+UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
