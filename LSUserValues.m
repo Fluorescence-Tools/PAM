@@ -308,40 +308,104 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_GG subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_GG')
-        S.BurstBrowser.Corrections.Background_GG=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GG was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_GGpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GGpar')
+        S.BurstBrowser.Corrections.Background_GGpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GGpar was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_GR subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_GR')
-        S.BurstBrowser.Corrections.Background_GR=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GR was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_GGperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GGperp')
+        S.BurstBrowser.Corrections.Background_GGperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GGperp was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_RR subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_RR')
-        S.BurstBrowser.Corrections.Background_RR=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_RR was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_GRpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GRpar')
+        S.BurstBrowser.Corrections.Background_GRpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GRpar was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_BB subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_BB')
-        S.BurstBrowser.Corrections.Background_BB=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BB was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_GRperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_GRperp')
+        S.BurstBrowser.Corrections.Background_GRperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_GRperp was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_BG subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_BG')
-        S.BurstBrowser.Corrections.Background_BG=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BG was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_RRpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_RRpar')
+        S.BurstBrowser.Corrections.Background_RRpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_RRpar was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Corrections.Background_BR subfield exists
-    if ~isfield (S.BurstBrowser.Corrections,'Background_BR')
-        S.BurstBrowser.Corrections.Background_BR=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BR was incomplete');    
+    %%% Checks, if BurstBrowser.Corrections.Background_RRperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_RRperp')
+        S.BurstBrowser.Corrections.Background_RRperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_RRperp was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BBpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BBpar')
+        S.BurstBrowser.Corrections.Background_BBpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BBpar was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BBperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BBperp')
+        S.BurstBrowser.Corrections.Background_BBperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BBperp was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BGpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BGpar')
+        S.BurstBrowser.Corrections.Background_BGpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BGpar was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BGperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BGperp')
+        S.BurstBrowser.Corrections.Background_BGperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BGperp was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BRpar subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BRpar')
+        S.BurstBrowser.Corrections.Background_BRpar=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BRpar was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.Background_BRperp subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Background_BRperp')
+        S.BurstBrowser.Corrections.Background_BRperp=0;
+        disp('UserValues.BurstBrowser.Corrections.Background_BRperp was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.GfactorGreen subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'GfactorGreen')
+        S.BurstBrowser.Corrections.GfactorGreen=1;
+        disp('UserValues.BurstBrowser.Corrections.GfactorGreen was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.GfactorRed subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'GfactorRed')
+        S.BurstBrowser.Corrections.GfactorRed=1;
+        disp('UserValues.BurstBrowser.Corrections.GfactorRed was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.l1 subfield exists
+    %%% This is the first corrections factor accounting for polarization
+    %%% mixing caused by the high N.A. objective lense
+    if ~isfield (S.BurstBrowser.Corrections,'l1')
+        S.BurstBrowser.Corrections.l1=0;
+        disp('UserValues.BurstBrowser.Corrections.l1 was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.l2 subfield exists
+    %%% This is the second corrections factor accounting for polarization
+    %%% mixing caused by the high N.A. objective lense
+    if ~isfield (S.BurstBrowser.Corrections,'l2')
+        S.BurstBrowser.Corrections.l2=0;
+        disp('UserValues.BurstBrowser.Corrections.l2 was incomplete');    
     end
     
     %%% Checks, if BurstBrowser.Display subfield exists

@@ -4666,7 +4666,7 @@ BurstData.fFCS.To = UserValues.PIE.To(PIEChannels);
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 
-BurstData.FileName = FileName; %%% The Name without extension
+BurstData.FileNameSPC = FileName; %%% The Name without extension
 BurstData.PathName = FileInfo.Path;
 
 if ~exist([pathstr filesep FileName],'dir')
@@ -4711,6 +4711,8 @@ end
 %%% Save the Burst Data
 BurstFileName = [FullFileName '.bur'];
 save(GenerateName(BurstFileName),'BurstData');
+%%% Store the FileName of the *.bur file
+BurstData.FileName = GenerateName(BurstFileName);
 
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
