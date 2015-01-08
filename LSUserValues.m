@@ -220,6 +220,15 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
     end
+    
+    %%% Checks, if BurstSearch.IRF exists
+    %%% (This field contains the IRF pattern used for burstwise lifetime
+    %%% fitting)
+    if ~isfield (S.BurstSearch,'IRF')
+        S.BurstSearch.IRF=[];
+        disp('UserValues.BurstSearch.IRF was incomplete');    
+    end
+    
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
