@@ -420,6 +420,18 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Display.NumberOfBins=50;
         disp('UserValues.BurstBrowser.Display.NumberOfBins was incomplete');    
     end
+    
+    %%% Checks, if BurstBrowser.Display.PlotType subfield exists
+    if ~isfield (S.BurstBrowser.Display,'PlotType')
+        S.BurstBrowser.Display.PlotType='Image';
+        disp('UserValues.BurstBrowser.Display.PlotType was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Display.ColorMap subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorMap')
+        S.BurstBrowser.Display.ColorMap='hot';
+        disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');    
+    end
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=S;
     Mode=1;

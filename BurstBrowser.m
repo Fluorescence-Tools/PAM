@@ -9,7 +9,7 @@ if isempty(hfig)
     %% define main window
     h.Figure = figure(...
     'Units','normalized',...
-    'Name','Bowser',...
+    'Name','BurstBrowser',...
     'MenuBar','none',...
     'OuterPosition',[0.01 0.05 0.98 0.95],...
     'UserData',[],...
@@ -140,7 +140,28 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','SecondaryTabOptionsPanel');
     
-    %define species list
+    %%% Species List Right-click Menu
+    h.SpeciesListMenu = uicontextmenu;
+    
+    h.AddSpeciesMenuItem = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Add Species',...
+        'Tag','AddSpeciesMenuItem',...
+        'Callback',@AddSpecies);
+    
+    h.RemoveSpeciesMenuItem = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Remove Species',...
+        'Tag','RemoveSpeciesMenuItem',...
+        'Callback',@RemoveSpecies);
+    
+    h.RenameSpeciesMenuItem = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Rename Species',...
+        'Tag','RenameSpeciesMenuItem',...
+        'Callback',@RenameSpecies);
+    
+    %%% Define Species List
     h.SpeciesList = uicontrol(...
     'Parent',h.SecondaryTabSelectionPanel,...
     'Units','normalized',...
@@ -150,7 +171,8 @@ if isempty(hfig)
     'Max',5,...
     'Position',[0 0 1 0.2],...
     'Style','listbox',...
-    'Tag','SpeciesList'); 
+    'Tag','SpeciesList',...
+    'UIContextMenu',h.SpeciesListMenu); 
     %'ButtonDownFcn',@List_ButtonDownFcn,...
     %'CallBack',@List_ButtonDownFcn,...
     % for right click selection to work, we need to access the underlying
@@ -221,27 +243,17 @@ if isempty(hfig)
     set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
     set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
     
-    %define plot button
-    h.PlotButton = uicontrol(...
-    'Parent',h.SecondaryTabSelectionPanel,...
-    'Units','normalized',...
-    'BackgroundColor', Look.Control,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0 0.51 0.2 0.03],...
-    'Style','pushbutton',...
-    'Tag','PlotButton',...
-    'String','Plot',...
-    'Callback',@UpdatePlot);
-
+    %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
     'Parent',h.SecondaryTabSelectionPanel,...
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.2 0.51 0.2 0.03],...
+    'Position',[0 0.51 0.3 0.03],...
     'Style','pushbutton',...
     'Tag','MutliPlotButton',...
     'String','Plot multiple species',...
+    'FontSize',14,...
     'Callback',@MultiPlot);
 
     %define manual cut button
@@ -254,19 +266,8 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','CutButton',...
     'String','Manual Cut',...
+    'FontSize',14,...
     'Callback',@ManualCut);
-
-    %define add species button
-     h.CutButton = uicontrol(...
-    'Parent',h.SecondaryTabSelectionPanel,...
-    'Units','normalized',...
-    'BackgroundColor', Look.Control,...
-    'ForegroundColor', Look.Fore,...
-    'Position',[0.8 0.51 0.2 0.03],...
-    'Style','pushbutton',...
-    'Tag','AddSpeciesButton',...
-    'String','Add Species',...
-    'Callback',@add_species);
 
     %% secondary tab corrections
     %%% Buttons
@@ -280,6 +281,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','DetermineCorrectionsButton',...
     'String','Determine Corrections',...
+    'FontSize',14,...
     'Callback',@DetermineCorrections);
 
     %%% Button for manual gamma determination
@@ -292,6 +294,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','DetermineGammaManuallyButton',...
     'String','Determine Gamma Manually',...
+    'FontSize',14,...
     'Callback',@DetermineGammaManually);
 
     %%% Button to apply custom correction factors
@@ -304,6 +307,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','ApplyCorrectionsButton',...
     'String','Apply Corrections',...
+    'FontSize',14,...
     'Callback',@ApplyCorrections);
 
     %%% Table for Corrections factors
@@ -318,7 +322,7 @@ if isempty(hfig)
         'Parent',h.SecondaryTabCorrectionsPanel,...
         'Units','normalized',...
         'Tag','CorrectionsTable',...
-        'Position',[0 0.46 0.7 0.3],...
+        'Position',[0 0.36 0.7 0.4],...
         'Data',Corrections_Data,...sdfgh
         'RowName',Corrections_Rownames,...
         'ColumnName',Corrections_Columnnames,...
@@ -329,6 +333,25 @@ if isempty(hfig)
         'BackgroundColor',[Look.Axes;Look.Fore],...
         'ForegroundColor',Look.Disabled);
     
+    uicontrol('Style','text',...
+        'Tag','T_Threshold_Text',...
+        'String','Threshold |TGX-TRR| for Corrections',...
+        'FontSize',14,...
+        'Units','normalized',...
+        'Parent',h.SecondaryTabCorrectionsPanel,...
+        'Position',[0.45 0.91 0.35 0.03],...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore);
+    
+    h.T_Threshold_Edit =  uicontrol('Style','edit',...
+        'Tag','T_Threshold_Edit',...
+        'String','0.1',...
+        'FontSize',14,...
+        'Units','normalized',...
+        'Parent',h.SecondaryTabCorrectionsPanel,...
+        'Position',[0.8 0.91 0.15 0.03],...
+        'BackgroundColor',Look.Control,...
+        'ForegroundColor',Look.Fore);
     %% secondary tab options
     
     %%% Display Options Panel
@@ -348,7 +371,7 @@ if isempty(hfig)
         'String','Number of Bins',...
         'Tag','Text_Number_of_Bins',...
         'Units','normalized',...
-        'Position',[0 0.85 0.4 0.05],...
+        'Position',[0 0.85 0.4 0.07],...
         'FontSize',14,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -359,18 +382,70 @@ if isempty(hfig)
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'Position',[0.4 0.85 0.2 0.05],...
+        'Position',[0.4 0.85 0.2 0.07],...
         'FontSize',14,...
         'Tag','NumberOfBinsEdit',...
-        'String',UserValues.BurstBrowser.Display.NumberOfBins...
+        'String',UserValues.BurstBrowser.Display.NumberOfBins,...
+        'Callback',@UpdatePlot...
         );
     
+    %%% Specify the Plot Type
+    uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Plot Type',...
+        'Tag','Text_Plot_Type',...
+        'Units','normalized',...
+        'Position',[0 0.75 0.4 0.07],...
+        'FontSize',14,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+    PlotType_String = {'Image','Contour'};
+    h.PlotTypePopumenu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Disabled,...
+        'Units','normalized',...
+        'Position',[0.4 0.75 0.2 0.07],...
+        'FontSize',14,...
+        'Tag','PlotTypePopupmenu',...
+        'String',PlotType_String,...
+        'Value',find(strcmp(PlotType_String,UserValues.BurstBrowser.Display.PlotType)),...
+        'Callback',@UpdatePlot...
+        );
+    
+    %%% Specify the colormap
+    uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Colormap',...
+        'Tag','Text_ColorMap',...
+        'Units','normalized',...
+        'Position',[0 0.65 0.4 0.07],...
+        'FontSize',14,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+    Colormaps_String = {'jet','hot','bone','gray'};
+    h.ColorMapPopupmenu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Disabled,...
+        'Units','normalized',...
+        'Position',[0.4 0.65 0.2 0.07],...
+        'FontSize',14,...
+        'Tag','ColorMapPopupmenu',...
+        'String',Colormaps_String,...
+        'Value',find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap)),...
+        'Callback',@UpdatePlot...
+        );
     %% define axes in main_tab_general
     %define 2d axis
     h.axes_general =  axes(...
     'Parent',h.MainTabGeneralPanel,...
     'Units','normalized',...
-    'Position',[0.05 0.05 0.75 0.75],...
+    'Position',[0.07 0.06 0.73 0.75],...
     'Box','on',...
     'Tag','Axes_General',...
     'FontSize',20,...
@@ -381,7 +456,7 @@ if isempty(hfig)
     h.axes_1d_x =  axes(...
     'Parent',h.MainTabGeneralPanel,...
     'Units','normalized',...
-    'Position',[0.05 0.8 0.75, 0.15],...
+    'Position',[0.07 0.81 0.73, 0.15],...
     'Box','on',...
     'Tag','Axes_1D_X',...
     'FontSize',20,...
@@ -392,7 +467,7 @@ if isempty(hfig)
     h.axes_1d_y =  axes(...
     'Parent',h.MainTabGeneralPanel,...
     'Units','normalized',...
-    'Position',[0.8 0.05 0.15, 0.75],...
+    'Position',[0.8 0.06 0.15, 0.74],...
     'Tag','Main_Tab_General_Plot',...
     'Box','on',...
     'Tag','Axes_1D_Y',...
@@ -493,7 +568,7 @@ end
 UpdateCorrections([],[]);
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot();
+UpdatePlot([]);
 
 function ParameterList_KeyPressFcn(hObject,eventdata)
 
@@ -538,7 +613,7 @@ elseif strcmpi(clickType,'Left-click') %%% Update Plot
     %%% Update selected value
     hListbox.Value = clickedIndex;
 end
-UpdatePlot();
+UpdatePlot([]);
 
 function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % Determine the click type
@@ -554,29 +629,34 @@ end
 % Remember: Java index starts at 0, Matlab at 1
 mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
 clickedIndex = jListbox.locationToIndex(mousePos) + 1;
+
 listValues = get(hListbox,'string');
+if isempty(listValues)
+    return;
+end
+
 clickedString = listValues{clickedIndex};
 
 h = guidata(hListbox);
 global BurstData
 if strcmpi(clickType,'Right-click')
-    if numel(get(hListbox,'String')) > 1 %remove selected field
-        val = clickedIndex;
-        BurstData.SpeciesNames(val) = [];
-        set(hListbox,'Value',val-1);
-        set(hListbox,'String',BurstData.SpeciesNames); 
-    end
+%     if numel(get(hListbox,'String')) > 1 %remove selected field
+%         val = clickedIndex;
+%         BurstData.SpeciesNames(val) = [];
+%         set(hListbox,'Value',val-1);
+%         set(hListbox,'String',BurstData.SpeciesNames); 
+%     end
 else %leftclick
     set(hListbox,'Value',clickedIndex);
     BurstData.SelectedSpecies = clickedIndex;
 end
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot;
+UpdatePlot([]);
 
-function add_species(~,~)
+function AddSpecies(~,~)
 global BurstData
-h= guidata(gcbo);
+h = guidata(gcbo);
 hListbox = h.SpeciesList;
 %add a species to the list
 BurstData.SpeciesNames{end+1} = ['Species ' num2str(numel(get(hListbox,'String')))];
@@ -592,26 +672,69 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot;
 
-%plots in the main axes
-function UpdatePlot(~,~)
+function RemoveSpecies(obj,~)
+global BurstData
+h = guidata(obj);
+if numel(get(h.SpeciesList,'String')) > 1 %remove selected field
+    val = h.SpeciesList.Value;
+    BurstData.SpeciesNames(val) = [];
+    set(h.SpeciesList,'Value',val-1);
+    set(h.SpeciesList,'String',BurstData.SpeciesNames); 
+end
 
+function RenameSpecies(obj,~)
+global BurstData
+h = guidata(obj);
+SelectedSpecies = h.SpeciesList.Value;
+SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
+NewName = inputdlg('Specify the new species name','Rename Species',[1 50],{SelectedSpeciesName},'on');
+
+if ~isempty(NewName)
+    BurstData.SpeciesNames{SelectedSpecies} = NewName{1};
+    set(h.SpeciesList,'String',BurstData.SpeciesNames); 
+end
+
+%plots in the main axes
+function UpdatePlot(obj,~)
+%% Preparation
 h = guidata(gcf);
 global BurstData UserValues
+LSUserValues(1);
+%%% Change focus to GeneralTab
+h.Main_Tab.SelectedTab = h.Main_Tab_General;
+%%% If a display option was changed, update the UserValues!
+if obj == h.NumberOfBinsEdit
+    nbins = str2double(h.NumberOfBinsEdit.String);
+    if ~isnan(nbins)
+        if nbins > 0
+            UserValues.BurstBrowser.Display.NumberOfBins = nbins;
+        else
+            h.NumberOfBinsEdit.String = UserValues.BurstBrowser.Display.NumberOfBins;
+        end
+    else
+        h.NumberOfBinsEdit.String = UserValues.BurstBrowser.Display.NumberOfBins;
+    end
+end
 
+if obj == h.PlotTypePopumenu
+    UserValues.BurstBrowser.Display.PlotType = h.PlotTypePopumenu.String{h.PlotTypePopumenu.Value};
+end
+
+if obj == h.ColorMapPopupmenu
+    UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
+end
 axes(h.axes_general);
 cla(gca);
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 
-% if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{BurstData.SelectedSpecies})
-%     datatoplot = BurstData.DataArray;
-% elseif isfield(BurstData,'Cut')
-%     datatoplot = BurstData.DataCut;
-% end
+%%% Read out the Number of Bins
+nbins = UserValues.BurstBrowser.Display.NumberOfBins + 1;
 
+%% Update Plot
 datatoplot = BurstData.DataCut;
 
-[H xbins_hist ybins_hist] = hist2d([datatoplot(:,x) datatoplot(:,y)],51, 51, [min(datatoplot(:,x)) max(datatoplot(:,x))], [min(datatoplot(:,y)) max(datatoplot(:,y))]);
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,x) datatoplot(:,y)],nbins, nbins, [min(datatoplot(:,x)) max(datatoplot(:,x))], [min(datatoplot(:,y)) max(datatoplot(:,y))]);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
 l = H>0;
@@ -620,21 +743,22 @@ ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 %xbins1d=linspace(min(datatoplot(:,x)),max(datatoplot(:,x)),50)+(max(datatoplot(:,x))-min(datatoplot(:,x)))/100;
 %ybins1d=linspace(min(datatoplot(:,y)),max(datatoplot(:,y)),50)+(max(datatoplot(:,y))-min(datatoplot(:,y)))/100;
 
-switch BurstData.PlotType
-    case 1 %%%image plot
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Image' %%%image plot
         BurstData.PlotHandle = imagesc(xbins,ybins,H./max(max(H)));
         set(BurstData.PlotHandle,'AlphaData',l);
         set(gca,'YDir','normal');
-    case 2 %%%contour plot
+    case 'Contour' %%%contour plot
         zc=linspace(1, ceil(max(max(H))),20);
         set(gca,'CLim',[0 ceil(2*max(max(H)))]);
         H(H==0) = NaN;
         [~, BurstData.PlotHandle]=contourf(xbins,ybins,H,[0 zc]);
         set(BurstData.PlotHandle,'EdgeColor','none');
-        colormap(hot);
 end
 axis('tight');
 set(gca,'FontSize',20);
+xlabel(h.ParameterListX.String{x});
+ylabel(h.ParameterListY.String{y});
 
 %plot 1D hists    
 axes(h.axes_1d_x);
@@ -643,9 +767,9 @@ hx = histc(datatoplot(:,x),xbins_hist);
 hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 bar(xbins,hx,'BarWidth',1);
 axis('tight');
-set(gca,'XAxisLocation','top','FontSize',20)
-ylabel = get(gca,'YTick');
-set(gca,'YTick',ylabel(2:end));
+set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
+yticks= get(gca,'YTick');
+set(gca,'YTick',yticks(2:end));
 
 axes(h.axes_1d_y);
 cla(gca);
@@ -654,9 +778,11 @@ hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 bar(ybins,hy,'BarWidth',1);
 axis('tight');
 set(gca,'View',[90 90],'XDir','reverse');
-set(gca,'XAxisLocation','top','FontSize',20)
-ylabel = get(gca,'YTick');
-set(gca,'YTick',ylabel(2:end));
+set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
+yticks = get(gca,'YTick');
+set(gca,'YTick',yticks(2:end));
+
+eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 
 function MultiPlot(~,~)
 h = guidata(gcf);
@@ -668,14 +794,21 @@ cla(gca);
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 
-num_species = numel(get(h.SpeciesList,'String'));
+%%% Read out the Number of Bins
+nbins = UserValues.BurstBrowser.Display.NumberOfBins + 1;
+
+num_species = numel(get(h.SpeciesList,'String')) - 1;
+if num_species == 1
+    return;
+end
 if num_species > 3
     num_species = 3;
 end
 
+datatoplot = cell(num_species,1);
 for i = 1:num_species
-    UpdateCuts(i);
-    if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{i})
+    UpdateCuts(i+1);
+    if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{i+1})
         datatoplot{i} = BurstData.DataArray;
     elseif isfield(BurstData,'Cut')
         datatoplot{i} = BurstData.DataCut;
@@ -683,22 +816,22 @@ for i = 1:num_species
 end
 
 %find data ranges
-minx = [];
-miny = [];
-maxx = [];
-maxy = [];
+minx = zeros(num_species,1);
+miny = zeros(num_species,1);
+maxx = zeros(num_species,1);
+maxy = zeros(num_species,1);
 for i = 1:num_species
-    minx = [minx min(datatoplot{i}(:,x))];
-    miny = [miny min(datatoplot{i}(:,y))];
-    maxx = [maxx max(datatoplot{i}(:,x))];
-    maxy = [maxy max(datatoplot{i}(:,y))];
+    minx(i) = min(datatoplot{i}(:,x));
+    miny(i) = min(datatoplot{i}(:,y));
+    maxx(i) = max(datatoplot{i}(:,x));
+    maxy(i) = max(datatoplot{i}(:,y));
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
 
 H = cell(num_species,1);
 for i = 1:num_species
-    [H{i} xbins_hist ybins_hist] = hist2d([datatoplot{i}(:,x) datatoplot{i}(:,y)],50, 50, x_boundaries, y_boundaries);
+    [H{i}, xbins_hist, ybins_hist] = hist2d([datatoplot{i}(:,x) datatoplot{i}(:,y)],nbins, nbins, x_boundaries, y_boundaries);
     H{i}(H{i}==0) = NaN;
     H{i}(:,end-1) = H{i}(:,end-1) + H{i}(:,end); H{i}(:,end) = [];
     H{i}(end-1,:) = H{i}(end-1,:) + H{i}(end-1,:); H{i}(end,:) = [];
@@ -751,6 +884,8 @@ end
 imagesc(xbins,ybins,zz);
 set(gca,'YDir','normal');
 set(gca,'FontSize',20);
+xlabel(h.ParameterListX.String{x});
+ylabel(h.ParameterListY.String{y});
 
 axes(h.axes_1d_x);
 cla(gca);
@@ -760,10 +895,11 @@ hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 %normalize
 hx = hx./sum(hx); hx = hx';
 %barx(1) = bar(xbins,hx,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
+stairsx = zeros(num_species,1);
 stairsx(1) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
 hold on;
 %plot rest of histograms
-color = {[1 0 0], [0 1 0]};
+%color = {[1 0 0], [0 1 0]};
 for i = 2:num_species
     hx = histc(datatoplot{i}(:,x),xbins_hist);
     hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
@@ -778,9 +914,9 @@ for i = 2:num_species
 end
 
 axis('tight');
-set(gca,'XAxisLocation','top','FontSize',20)
-ylabel = get(gca,'YTick');
-set(gca,'YTick',ylabel(2:end));
+set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
+yticks = get(gca,'YTick');
+set(gca,'YTick',yticks(2:end));
 
 axes(h.axes_1d_y);
 cla(gca);
@@ -790,6 +926,7 @@ hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 %normalize
 hy = hy./sum(hy); hy = hy';
 %bary(1) = bar(ybins,hy,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
+stairsy = zeros(num_species,1);
 stairsy(1) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
 hold on;
 %plot rest of histograms
@@ -806,15 +943,15 @@ for i = 2:num_species
     end
 end
 axis('tight');
-set(gca,'View',[90 90],'XDir','reverse');
+set(gca,'View',[90 90],'XDir','reverse','YTickMode','auto');
 set(gca,'XAxisLocation','top','FontSize',20)
-ylabel = get(gca,'YTick');
-set(gca,'YTick',ylabel(2:end));
+yticks = get(gca,'YTick');
+set(gca,'YTick',yticks(2:end));
         
 function ManualCut(~,~)
 
 h = guidata(gcbo);
-global BurstData UserValues
+global BurstData
 set(gcf,'Pointer','cross');
 k = waitforbuttonpress;
 point1 = get(gca,'CurrentPoint');    % button down detected
@@ -825,7 +962,7 @@ point1 = point1(1,1:2);
 point2 = point2(1,1:2);
 
 if (all(point1(1:2) == point2(1:2)))
-    'error'
+    disp('error');
     return;
 end
     
@@ -863,17 +1000,19 @@ end
 set(h.CutTable,'Data',data,'RowName',rownames);
 
 function UpdateCuts(species)
-
 global BurstData
+%%% If no species is specified, read out selected species.
 if nargin < 1
     species = BurstData.SelectedSpecies;
 end
+
+%%% If no Cuts are specified yet, return.
 if ~isfield(BurstData,'Cut')
     return;
 end
 
 CutState = vertcat(BurstData.Cut{species}{:});
-Valid = logical(ones(size(BurstData.DataArray,1),1));
+Valid = true(size(BurstData.DataArray,1),1);
 if ~isempty(CutState) %%% only procede if there are elements in the CutTable
     for i = 1:size(CutState,1)
         Index = find(strcmp(CutState(i,1),BurstData.NameArray));
@@ -888,10 +1027,12 @@ axes(hObject);
 
 function CutTableChange(hObject,eventdata)
 %this executes if a value in the CutTable is changed
-h = guidata(gcbo);
+h = guidata(hObject);
 global BurstData
 %check which cell was changed
 index = eventdata.Indices;
+%read out the parameter name
+ChangedParameterName = BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1};
 %change value in structure
 NewData = eventdata.NewData;
 switch index(2)
@@ -912,6 +1053,33 @@ if index(2) ~= 4
 elseif index(2) == 4 %delete this entry
     BurstData.Cut{BurstData.SelectedSpecies}(index(1)) = [];
 end
+
+%%% If a change was made to the GlobalCuts Species, update all other
+%%% existent species with the changes
+if BurstData.SelectedSpecies == 1
+    if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+        %%% cycle through the number of other species
+        for j = 2:numel(BurstData.Cut)
+            %%% Check if the parameter already exists in the species j
+            ParamList = vertcat(BurstData.Cut{j}{:});
+            ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+            CheckParam = strcmp(ParamList,ChangedParameterName);
+            if any(CheckParam)
+                %%% Check wheter do delete or change the parameter
+                if index(2) ~= 4 %%% Parameter added or changed
+                    %%% Override the parameter with GlobalCut
+                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(index(1));
+                elseif index(2) == 4 %%% Parameter was deleted
+                    BurstData.Cut{j}(CheckParam) = [];
+                end
+            else %%% Parameter is new to GlobalCut
+                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
+            end
+        end
+    end
+end
+
+%%% Update GUI elements
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot;
@@ -921,6 +1089,9 @@ global BurstData UserValues
 LSUserValues(0);
 h = guidata(gcbo);
 
+%%% Change focus to CorrectionsTab
+h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+
 indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
 indE = find(strcmp(BurstData.NameArray,'Efficiency'));
 indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
@@ -928,7 +1099,10 @@ indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
 indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
 indNRR = find(strcmp(BurstData.NameArray,'Number of Photons (RR)'));
 
-T_threshold = 0.1;
+T_threshold = str2double(h.T_Threshold_Edit.String);
+if isnan(T_threshold)
+    T_threshold = 0.1;
+end
 cutT = 1;
 if cutT == 0
     data_for_corrections = BurstData.DataArray;
@@ -937,12 +1111,18 @@ elseif cutT == 1
     valid = (BurstData.DataArray(:,T) < T_threshold);
     data_for_corrections = BurstData.DataArray(valid,:);
 end
+
+%%% Read out corrections
+Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
+Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+
 %% plot raw Efficiency for S>0.9
 Smin = 0.9;
 S_threshold = (data_for_corrections(:,indS)>Smin);
 x_axis = linspace(0,0.3,50);
-NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
-NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
 E_raw = NGR./(NGR+NGG);
 BurstData.Corrections.histE_donly = histc(E_raw,x_axis);
 axes(h.axes_crosstalk);
@@ -952,14 +1132,16 @@ axis tight;
 %fit single gaussian
 mean_ct = GaussianFit(x_axis',BurstData.Corrections.histE_donly,1,1);
 UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
-
+xlabel('Proximity Ratio');
+ylabel('#');
+title('Proximity Ratio of Donor only');
 %% plot raw data for S > 0.3 for direct excitation
 Smax = 0.2;
 S_threshold = (data_for_corrections(:,indS)<Smax);
 x_axis = linspace(0,Smax,20);
-NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
-NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
-NRR = data_for_corrections(S_threshold,indNRR) - UserValues.BurstBrowser.Corrections.Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
 BurstData.Corrections.histS_aonly = histc(S_raw,x_axis);
 axes(h.axes_direct_excitation);
@@ -969,7 +1151,9 @@ axis tight;
 %fit single gaussian
 mean_de = GaussianFit(x_axis',BurstData.Corrections.histS_aonly,1,1);
 UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
-
+xlabel('Stoiciometry (raw)');
+ylabel('#');
+title('Raw Stoichiometry of Acceptor only');
 %% plot TFRET-TRED (or ALEX_2CDE)
 T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
 x_axis = linspace(0,1,50);
@@ -983,16 +1167,18 @@ hold on;
 bar(x_axis(x_threshold+1:end), BurstData.Corrections.histTFRET(x_threshold+1:end),'BarWidth',1,'FaceColor',[1 1 1]);
 hold off;
 axis tight;
-
+xlabel('|TGX-TRR| (normalized)');
+ylabel('#');
+title('|TGX-TRR| Distribution');
 %% plot gamma plot for two populations (or lifetime versus E)
 axes(h.axes_gamma);cla(gca);legend('off');
 %%% get E-S values between 0.3 and 0.8;
 S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
 %%% Calculate "raw" E and S with gamma = 1, but still apply direct
 %%% excitation,crosstalk, and background corrections!
-NGR = data_for_corrections(S_threshold,indNGR) - UserValues.BurstBrowser.Corrections.Background_GR.*data_for_corrections(S_threshold,indDur);
-NGG = data_for_corrections(S_threshold,indNGG) - UserValues.BurstBrowser.Corrections.Background_GG.*data_for_corrections(S_threshold,indDur);
-NRR = data_for_corrections(S_threshold,indNRR) - UserValues.BurstBrowser.Corrections.Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
@@ -1013,6 +1199,9 @@ GammaFit = fit(E_raw,1./S_raw,'poly1');
 hold on;
 pgamma = plot(GammaFit);
 set(pgamma,'LineWidth',2);
+xlabel('Efficiency');
+ylabel('1/Stoichiometry');
+title('1/Stoichiometry vs. Efficiency for gamma = 1');
 BurstData.Plots.GammaFit = pgamma;
 %%% Determine Gamma and Beta
 coeff = coeffvalues(GammaFit); m = coeff(1); b = coeff(2);
@@ -1455,6 +1644,11 @@ set(gca,'YDir','normal');
 axis('tight');
 BurstData.Plots.GammaPlot = im;
 
+%%% Update Axis Labels
+xlabel('Efficiency');
+ylabel('Stoichiometry');
+title('Stoichiometry vs. Efficiency for gamma = 1');
+
 [e, s] = ginput(2);
 hold on;
 scatter(e,s,1000,'o','LineWidth',4,'MarkerEdgeColor','b');
@@ -1464,6 +1658,8 @@ m = (s(2)-s(1))./(e(2)-e(1));
 b = s(2) - m.*e(2);
 
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+
+
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
