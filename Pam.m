@@ -1488,7 +1488,7 @@ if isempty(h.Pam) % Creates new figure, if none exists
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', [1 0 0],...
-        'String','Save IRF',...
+        'String','Save IRF/Background',...
         'Callback',@SaveIRF,...
         'Position',[0.75 0.60 0.24 0.07],...
         'TooltipString',sprintf('Use loaded measurement as IRF and Background estimate'));
@@ -4670,7 +4670,8 @@ end
 BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
-
+%%% Store also the FileInfo in BurstData
+BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later
 %%% Read out the selected PIE Channels
 PIEChannels = cellfun(@(x) find(strcmp(UserValues.PIE.Name,x)),UserValues.BurstSearch.PIEChannelSelection{BAMethod});
@@ -4741,11 +4742,20 @@ BurstData.FileName = GenerateName(BurstFileName);
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
 
 save(GenerateName(PhotonsFileName),'Macrotime','Microtime','Channel');
+global TauFitBurstData
+TauFitBurstData.Microtime = Microtime;
+TauFitBurstData.Macrotime = Macrotime;
+TauFitBurstData.Channel = Channel;
 
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
 %%% a burst search has been done
 h.Burst_Button.ForegroundColor = [0 1 0];
+%%% Enable Lifetime and 2CDE Button
+h.BurstLifetime_Button.Enable = 'on';
+h.BurstLifetime_Button.ForegroundColor = [1 0 0];
+h.NirFilter_Button.Enable = 'on';
+h.NirFilter_Button.ForegroundColor = [1 0 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4893,6 +4903,11 @@ if nargin > 3
     stop(Number_of_Photons<L)=[];
     Number_of_Photons(Number_of_Photons<L)=[];
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Calculate_NirFilter(~,~)
+global UserValues BurstData
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5131,7 +5146,60 @@ UserValues.BurstBrowser.Corrections.Background_RRperp = ...
 
 LSUserValues(1);
 h.SaveIRF_Button.ForegroundColor = [0 1 0];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Open TauFitBurst Window for Burstwise Lifetime Fitting %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function BurstLifetime(~,~)
+global UserValues BurstData TauFitBurstData
+%% Prepare the data for lifetime fitting
+%%% Get total vector of microtime and channel
+Microtime = vertcat(TauFitBurstData.Microtime{:});
+Channel = horzcat(TauFitBurstData.Channel{:});Channel = Channel';
+%%% Calculate the total Microtime Histogram per Color from all bursts
+switch BurstData.BAMethod
+    case {1,2} %two color MFD  
+        %%% Read out the indices of the PIE channels
+        idx_GGpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
+        idx_GGperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
+        idx_RRpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1},UserValues.PIE.Name));
+        idx_RRperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
+        
+        %%% Calculate the MI histograms
+        GGpar = histc(Microtime(Channel == 1), (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)));
+        GGperp = histc(Microtime(Channel == 2), (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)));
+        RRpar = histc(Microtime(Channel == 5), (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)));
+        RRperp = histc(Microtime(Channel == 6), (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)));
+        %%% Store Histograms in TauFitBurstData
+        TauFitBurstData.hMI_Par{1} = GGpar;
+        TauFitBurstData.hMI_Per{1} = GGperp;
+        TauFitBurstData.hMI_Par{2} = RRpar;
+        TauFitBurstData.hMI_Per{2} = RRperp;
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        hIRF_GGpar = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_GGpar),UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar));
+        hIRF_GGperp = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_GGperp),UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp));
+        hIRF_RRpar = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_RRpar),UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar));
+        hIRF_RRperp = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_RRperp),UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp));
+        
+        TauFitBurstData.hIRF_Par{1} = hIRF_GGpar;
+        TauFitBurstData.hIRF_Par{2} = hIRF_RRpar;
+        TauFitBurstData.hIRF_Per{1} = hIRF_GGperp;
+        TauFitBurstData.hIRF_Per{2} = hIRF_RRperp;
+        %%% Normalize IRF for better Visibility
+        for i = 1:2
+            TauFitBurstData.hIRF_Par{i} = (TauFitBurstData.hIRF_Par{i}./max(TauFitBurstData.hIRF_Par{i})).*max(TauFitBurstData.hMI_Par{i});
+            TauFitBurstData.hIRF_Per{i} = (TauFitBurstData.hIRF_Per{i}./max(TauFitBurstData.hIRF_Per{i})).*max(TauFitBurstData.hMI_Per{i});
+        end
+        %%% Generate XData
+        TauFitBurstData.XData_Par{1} = (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)) - UserValues.PIE.From(idx_GGpar);
+        TauFitBurstData.XData_Per{1} = (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)) - UserValues.PIE.From(idx_GGperp);
+        TauFitBurstData.XData_Par{2} = (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)) - UserValues.PIE.From(idx_RRpar);
+        TauFitBurstData.XData_Per{2} = (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)) - UserValues.PIE.From(idx_RRperp);
+end
+%%% Read out relevant parameters
+TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/BurstData.FileInfo.MI_Bins;
+TauFitBurstData.BAMethod = BurstData.BAMethod;
 
+TauFitBurst();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

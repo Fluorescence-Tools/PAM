@@ -249,6 +249,35 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRF=[];
             disp('UserValues.TauFit.IRF was incomplete');    
     end
+    
+    %%% Checks, if TauFit.Ggreen exists
+    %%% (Gfactor for the green channels)
+    if ~isfield (S.TauFit,'Ggreen')
+        S.TauFit.Ggreen=1;
+            disp('UserValues.TauFit.Ggreen was incomplete');    
+    end
+    
+    %%% Checks, if TauFit.Gred exists
+    %%% (Gfactor for the red channels)
+    if ~isfield (S.TauFit,'Gred')
+        S.TauFit.Gred=1;
+            disp('UserValues.TauFit.Gred was incomplete');    
+    end
+    
+    %%% Checks, if TauFit.l1 exists
+    %%% (First of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
+    if ~isfield (S.TauFit,'l1')
+        S.TauFit.l1=0;
+            disp('UserValues.TauFit.l1 was incomplete');    
+    end
+    
+    %%% Checks, if TauFit.l2 exists
+    %%% (Second of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
+    if ~isfield (S.TauFit,'l2')
+        S.TauFit.l2=0;
+            disp('UserValues.TauFit.l2 was incomplete');    
+    end
+    
     %% BurstBrowser
     %%% Checks, if BurstBrowser subfield exists
     if ~isfield (S,'BurstBrowser')
