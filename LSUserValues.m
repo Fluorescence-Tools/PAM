@@ -228,7 +228,7 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.IRF=[];
         disp('UserValues.BurstSearch.IRF was incomplete');    
     end
-    
+
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')

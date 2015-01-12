@@ -25,7 +25,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'CloseRequestFcn',@Close_TauFit,...
         'Visible','on');
     %%% Sets background of axes and other things
-    whitebg(Look.Fore);
+    whitebg(Look.Axes);
     %%% Changes background; must be called after whitebg
     h.TauFit.Color=Look.Back;
     %% Main Fluorescence Decay Plot
@@ -98,7 +98,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'Box','on',...
-        'Visible','off');
+        'Visible','on');
     
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
@@ -114,6 +114,14 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
     h.Plots.DecayResult = plot([0 1],[0 0],'--k');
     h.Plots.FitResult = plot([0 1],[0 0],'k');
     
+    %%% dummy panel to hide plots
+    h.HidePanel = uibuttongroup(...
+        'Visible','off',...
+        'Parent',h.TauFit_Panel,...
+        'Tag','HidePanel');
+    
+    %%% Hide Result Plot
+    h.Result_Plot.Parent = h.HidePanel;
     %% Sliders
     %%% Define the container
     h.Slider_Panel = uibuttongroup(...
@@ -581,6 +589,8 @@ TauFitBurstData.IRFShift{2} = 0;
 h.IRFShift_Edit.String = num2str(TauFitBurstData.IRFShift{1});
     
 guidata(gcf,h);
+Update_Plots(h.ChannelSelect_Popupmenu,[]);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
@@ -716,8 +726,10 @@ end
 % h.Plots.IRF_Per.YData = TauFitBurstData.hIRF_Per((1+max([0 (TauFitBurstData.IRFShift + TauFitBurstData.ShiftPer)])):min([TauFitBurstData.MaxLength (TauFitBurstData.IRFLength+TauFitBurstData.IRFShift+TauFitBurstData.ShiftPer)]));
 
 %%% Make the Microtime Adjustment Plot Visible, hide Result
-h.Microtime_Plot.Visible = 'on';
-h.Result_Plot.Visible = 'off';
+%h.Microtime_Plot.Visible = 'on';
+%h.Result_Plot.Visible = 'off';
+h.Microtime_Plot.Parent = h.TauFit_Panel;
+h.Result_Plot.Parent = h.HidePanel;
 %%% Apply the shift to the parallel channel
 h.Plots.Decay_Par.XData = (TauFitBurstData.StartPar{chan}:(TauFitBurstData.Length{chan}-1)) - TauFitBurstData.StartPar{chan};
 h.Plots.Decay_Par.YData = TauFitBurstData.hMI_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
@@ -766,6 +778,7 @@ delete(gcf);
 function Start_Fit(~,~)
 global TauFitBurstData FileInfo
 h = guidata(gcf);
+chan = h.ChannelSelect_Popupmenu.Value;
 %% Read out the data from the plots
 % xmin_decay = max([1 h.Plots.Decay_Par.XData(1) h.Plots.Decay_Per.XData(1)]);
 % xmax_decay = min([h.Plots.Decay_Par.XData(end) h.Plots.Decay_Per.XData(end)]);
@@ -784,45 +797,45 @@ h = guidata(gcf);
 % TauFitBurstData.FitData.IRF_Par((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay+1)) = h.Plots.IRF_Par.YData((h.Plots.IRF_Par.XData >= xmin_irf & h.Plots.IRF_Par.XData <= xmax_irf & h.Plots.IRF_Par.XData >= xmin_decay & h.Plots.IRF_Par.XData <= xmax_decay));
 % TauFitBurstData.FitData.IRF_Per = zeros(1,numel(TauFitBurstData.FitData.Scatter_Per));
 % TauFitBurstData.FitData.IRF_Per((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay)) = h.Plots.IRF_Per.YData((h.Plots.IRF_Per.XData >= xmin_irf & h.Plots.IRF_Per.XData <= xmax_irf & h.Plots.IRF_Per.XData >= xmin_decay & h.Plots.IRF_Per.XData <= xmax_decay));
-TauFitBurstData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
-TauFitBurstData.FitData.Decay_Per = h.Plots.Decay_Par.YData;
-TauFitBurstData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
-TauFitBurstData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
+TauFitBurstData.FitData.Decay_Par{chan} = h.Plots.Decay_Par.YData;
+TauFitBurstData.FitData.Decay_Per{chan} = h.Plots.Decay_Par.YData;
+TauFitBurstData.FitData.IRF_Par{chan} = h.Plots.IRF_Par.YData;
+TauFitBurstData.FitData.IRF_Per{chan} = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
-Scatter_Par_Shifted = circshift(TauFitBurstData.hIRF_Par,[0,TauFitBurstData.IRFShift])';
-TauFitBurstData.FitData.Scatter_Par = Scatter_Par_Shifted((TauFitBurstData.StartPar+1):TauFitBurstData.Length)';
-Scatter_Per_Shifted = circshift(TauFitBurstData.hIRF_Per,[0,TauFitBurstData.IRFShift + TauFitBurstData.ShiftPer])';
-TauFitBurstData.FitData.Scatter_Per = Scatter_Per_Shifted((TauFitBurstData.StartPar+1):TauFitBurstData.Length)';
+Scatter_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+Scatter_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
+TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
 %%% initialize inputs for fit
-Decay = TauFitBurstData.FitData.Decay_Par+2*TauFitBurstData.FitData.Decay_Per;
-Irf = TauFitBurstData.FitData.IRF_Par+2*TauFitBurstData.FitData.IRF_Per;
+Decay = TauFitBurstData.FitData.Decay_Par{chan}+2*TauFitBurstData.FitData.Decay_Per{chan};
+Irf = TauFitBurstData.FitData.IRF_Par{chan}+2*TauFitBurstData.FitData.IRF_Per{chan};
 Irf = Irf-min(Irf(Irf~=0));
 Irf = Irf./sum(Irf);
 Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
 TauFitBurstData.TACRange = FileInfo.SyncPeriod*1E9;
 TauFitBurstData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
-Scatter = TauFitBurstData.FitData.Scatter_Par + 2*TauFitBurstData.FitData.Scatter_Per;
+Scatter = TauFitBurstData.FitData.Scatter_Par{chan} + 2*TauFitBurstData.FitData.Scatter_Per{chan};
 Scatter = Scatter./sum(Scatter);
 
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
-switch TauFitBurstData.FitType
-    case 'Single Exponential'
+%switch TauFitBurstData.FitType
+    %case 'Single Exponential'
         %%% Parameter:
         %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
         x0 = [0.1,0.1,round(4/TauFitBurstData.TACChannelWidth)];
-        shift_range = -20:20;
+        shift_range = -10:10;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,Scatter,4096,Decay,i},Decay);
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,Scatter,4096,Decay,i},Decay,[0 0 0],[0.0001 0.0001 Inf]);
             count = count +1;
         end
-        ignore = 200;
+        ignore = 100;
         chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
         [~,best_fit] = min(chi2);
         FitFun = lsfit(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit)});
@@ -832,23 +845,28 @@ switch TauFitBurstData.FitType
 %         subplot(4,1,4);
 %         plot((Decay-FitFun)./sqrt(Decay));
         wres = (Decay-FitFun)./sqrt(Decay);
-end
+%end
 
 %%% Reset Progressbar
 h.Progress_Text.String = 'Fit done';
 %%% Update Plot
-h.Microtime_Plot.Visible = 'off';
-h.Result_Plot.Visible = 'on';
+%h.Microtime_Plot.Visible = 'off';
+%h.Result_Plot.Visible = 'on';
+h.Microtime_Plot.Parent = h.HidePanel;
+h.Result_Plot.Parent = h.TauFit_Panel;
 h.Plots.DecayResult.XData = h.Plots.Decay_Par.XData;
 h.Plots.DecayResult.YData = Decay;
 h.Plots.FitResult.XData = h.Plots.Decay_Par.XData;
 h.Plots.FitResult.YData = FitFun;
-axis('tight');
+axis(h.Result_Plot,'tight');
 h.Plots.Residuals.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
 
+TauFitBurstData.Scatter_Contribution = x{best_fit}(2);
+TauFitBurstData.Background_Contribution = x{best_fit}(1);
+TauFitBurstData.Additional_IRFshift = shift_range(best_fit);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

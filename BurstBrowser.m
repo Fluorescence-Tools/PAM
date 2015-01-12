@@ -442,14 +442,14 @@ if isempty(hfig)
         );
     
     %%% Data Processing Options Panel
-    h.DisplayOptionsPanel = uipanel(...
+    h.DataProcessingPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
         'Units','normalized',...
-        'Position',[0 0.6 1 0.4],...
-        'Tag','DisplayOptionsPanel',...
+        'Position',[0 0.2 1 0.4],...
+        'Tag','DataProcessingPanel',...
         'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore,...
-        'Title','Display Options',...
+        'Title','Data Processing Options',...
         'FontSize',14);
     %% define axes in main_tab_general
     %define 2d axis
@@ -709,8 +709,10 @@ function UpdatePlot(obj,~)
 h = guidata(gcf);
 global BurstData UserValues
 LSUserValues(1);
-%%% Change focus to GeneralTab
-h.Main_Tab.SelectedTab = h.Main_Tab_General;
+if gcbo ~= h.DetermineCorrectionsButton
+    %%% Change focus to GeneralTab
+    h.Main_Tab.SelectedTab = h.Main_Tab_General;
+end
 %%% If a display option was changed, update the UserValues!
 if obj == h.NumberOfBinsEdit
     nbins = str2double(h.NumberOfBinsEdit.String);
@@ -1631,7 +1633,7 @@ BurstData.DataArray(:,ind_rRR) = rRR;
 
 %%% Update Display
 UpdateCuts;
-UpdatePlot;
+UpdatePlot([],[]);
 
 %%% Manual gamma determination by selecting the mid-point of the two (or
 %%% more) populations

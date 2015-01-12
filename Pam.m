@@ -4218,7 +4218,7 @@ for i = 1:Number_of_Chunks
     for j = 1:numel(Number_of_Photons)
         Macrotime_dummy{i}{j} = AllPhotons(start(j):stop(j));
         Microtime_dummy{i}{j} = AllPhotons_Microtime(start(j):stop(j));
-        Channel_dummy{i}{j} = Channel(start(j):stop(j));
+        Channel_dummy{i}{j} = Channel(start(j):stop(j))';
     end
 end
 %%% Concatenate data from chunks
@@ -4733,15 +4733,16 @@ end
 
 %%% Save the Burst Data
 BurstFileName = [FullFileName '.bur'];
-save(GenerateName(BurstFileName),'BurstData');
+BurstFileName = GenerateName(BurstFileName);
+save(BurstFileName,'BurstData');
 %%% Store the FileName of the *.bur file
-BurstData.FileName = GenerateName(BurstFileName);
+BurstData.FileName = BurstFileName;
 
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
-
-save(GenerateName(PhotonsFileName),'Macrotime','Microtime','Channel');
+PhotonsFileName = GenerateName(PhotonsFileName);
+save(PhotonsFileName,'Macrotime','Microtime','Channel');
 global TauFitBurstData
 TauFitBurstData.Microtime = Microtime;
 TauFitBurstData.Macrotime = Macrotime;
@@ -4906,8 +4907,99 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Calculate_NirFilter(~,~)
+function NirFilter(obj,~)
 global UserValues BurstData
+h = guidata(obj);
+tau_2CDE = str2double(h.NirFilter_Edit.String);
+
+if isnan(tau_2CDE)
+    h.NirFilter_Edit.String =  '100';
+    return;
+end
+
+%%% Load associated Macro- and Microtimes
+[Path,File,~] = fileparts(BurstData.FileName);
+load(fullfile(Path,[File '.bps']),'-mat');
+if any(BurstData.BAMethod == [1,2]) %2 Color Data
+        h.Progress_Text.String = 'Calculating 2CDE Filter...';
+        
+        FRET_2CDE = zeros(numel(Macrotime),1);
+        ALEX_2CDE = zeros(numel(Macrotime),1);
+
+        tau = tau_2CDE*1E-6/BurstData.SyncPeriod;
+        
+        %%% Split into 10 parts to display progress
+        parts = (floor(linspace(1,numel(Macrotime),11)));
+        tic
+        for j = 1:10
+            parfor i = parts(j):parts(j+1)
+                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i},Channel{i},tau);
+            end
+            Progress((j-1)/10,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
+        end
+        toc
+        idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
+        idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
+        BurstData.DataArray(idx_ALEX2CDE) = ALEX_2CDE;
+        BurstData.DataArray(idx_FRET2CDE) = FRET_2CDE;
+
+        save(BurstData.FileName,'BurstData');
+
+        close(hw);
+elseif any(Data.BAMethod == [3,4]) %3 Color Data
+    if sum(strcmp(Data.NameArray,'FRET_2CDE BG'))==1
+        choice = find(strcmp({'Yes','Cancel'},questdlg('Overwrite?', ...
+        '2CDE has already been calculated...', ...
+        'Yes','Cancel','Yes')));
+        overwrite = 1;
+    else
+        choice = 1;
+        overwrite = 0;
+    end
+    
+    if choice == 1 %calculate
+        hw = waitbar(0,'Calculating 2CDE Filter...')
+
+        FRET_2CDE = zeros(numel(Data.Macrotime),3);
+        ALEX_2CDE = zeros(numel(Data.Macrotime),3);
+
+        tau = tau_2CDE*1E-6*Data.SyncRate;
+        %[FRET_2CDE, ALEX_2CDE] = cellfun(@(x,y) KDE(x,y,tau),Data.Macrotime,Data.Channel);
+        Macrotime = Data.Macrotime;
+        Channel = Data.Channel;
+        tic
+        parfor i = 1:numel(Data.Macrotime)
+            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i},Channel{i},tau);
+        end
+        toc
+        if overwrite == 1
+            index = find(strcmp(Data.NameArray,'FRET_2CDE BG'));
+            Data.DataArray(:,index:index+5) = [FRET_2CDE ALEX_2CDE];
+        else %append data
+            Data.DataArray = [Data.DataArray...
+                    FRET_2CDE...
+                    ALEX_2CDE];
+            Data.NameArray = [Data.NameArray...
+                            {'FRET_2CDE BG'...
+                            'FRET_2CDE BR'...
+                            'FRET_2CDE GR'...
+                            'ALEX_2CDE BG'...
+                            'ALEX_2CDE BR'...
+                            'ALEX_2CDE GR'}];
+        end
+        DataArray = Data.DataArray;
+        NameArray = Data.NameArray;
+
+        %save tau value
+        Data.tau_2CDE = tau_2CDE;
+        if ismac
+        save_mac(Data.FileName,Data,DataArray,NameArray);
+        else %windows
+        save(Data.FileName,'Data','DataArray','NameArray');
+        end
+        close(hw);
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5154,7 +5246,7 @@ global UserValues BurstData TauFitBurstData
 %% Prepare the data for lifetime fitting
 %%% Get total vector of microtime and channel
 Microtime = vertcat(TauFitBurstData.Microtime{:});
-Channel = horzcat(TauFitBurstData.Channel{:});Channel = Channel';
+Channel = vertcat(TauFitBurstData.Channel{:});
 %%% Calculate the total Microtime Histogram per Color from all bursts
 switch BurstData.BAMethod
     case {1,2} %two color MFD  
@@ -5200,6 +5292,197 @@ TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/BurstData.FileInfo.MI_
 TauFitBurstData.BAMethod = BurstData.BAMethod;
 
 TauFitBurst();
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function related to 2CDE filter calculation (Nir-Filter) %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [KDE]= kernel_density_estimate(A,B,tau) %KDE of B around A
+if nargin == 3
+    M = abs(ones(numel(B),1)*A - B'*ones(1,numel(A)));
+    M(M>5*tau) = 0;
+    E = exp(-M./tau);
+    E(M==0) = 0;
+    KDE = sum(E,1)';
+elseif nargin == 2
+    tau = B;
+    M = abs(ones(numel(A),1)*A - A'*ones(1,numel(A)));
+    M(M>5*tau) = 0;
+    E = exp(-M./tau);
+    E(M==0) = 0;
+    KDE = sum(E,1)'+1;
+end
+function [KDE]= nb_kernel_density_estimate(B,tau) %non biased KDE of B around B
+M = abs(ones(numel(B),1)*B - B'*ones(1,numel(B)));
+M(M>5*tau) = 0;
+E = exp(-M./tau);
+E(M==0) = 0;
+KDE = sum(E,1)';
+KDE = (1+2/numel(B)).*KDE;
+function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau)
+
+if numel(Trace) < 10000
+T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
+T_GR = Trace(Chan_Trace == 3 | Chan_Trace == 4);
+T_RR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
+T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4);
+%tau = 100E-6; standard value
+%KDE calculation
+
+%KDE of A(GR) around D (GG)
+KDE_GR_GG = kernel_density_estimate(T_GG,T_GR,tau);
+%KDE of D(GG) around D (GG)
+KDE_GG_GG = nb_kernel_density_estimate(T_GG,tau);
+%KDE of A(GR) around A (GR)
+KDE_GR_GR = nb_kernel_density_estimate(T_GR,tau);
+%KDE of D(GG) around A(GR)
+KDE_GG_GR = kernel_density_estimate(T_GR,T_GG,tau);
+%KDE of D(GX) around D (GX)
+KDE_GX_GX = kernel_density_estimate(T_GX,tau);
+%KDE of A(RR) around A(RR)
+KDE_RR_RR = kernel_density_estimate(T_RR,tau);
+%KDE of A(RR) around D (GX)
+KDE_RR_GX = kernel_density_estimate(T_GX,T_RR,tau);
+%KDE of D(GX) around A (RR)
+KDE_GX_RR = kernel_density_estimate(T_RR,T_GX,tau);
+%calculate FRET-2CDE
+%(E)_D
+%check for case of denominator == 0!
+valid = (KDE_GR_GG+KDE_GG_GG) ~= 0;
+E_D = (1/(numel(T_GG)-sum(~valid))).*sum(KDE_GR_GG(valid)./(KDE_GR_GG(valid)+KDE_GG_GG(valid)));
+%(1-E)_A
+%check for case of denominator == 0!
+valid = (KDE_GG_GR+KDE_GR_GR) ~= 0;
+E_A = (1/(numel(T_GR)-sum(~valid))).*sum(KDE_GG_GR(valid)./(KDE_GG_GR(valid)+KDE_GR_GR(valid)));
+FRET_2CDE = 110 - 100*(E_D+E_A);
+
+%calculate ALEX / PIE 2CDE
+%Brightness ratio Dex
+BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
+%Brightness ration Aex
+BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
+ALEX_2CDE = 100-50*(BR_D+BR_A);
+else 
+    FRET_2CDE = NaN;
+    ALEX_2CDE = NaN;
+end
+function [FRET_2CDE, ALEX_2CDE] = KDE_3C(Trace,Chan_Trace,tau)
+if numel(Trace) < 10000  %necessary to prevent memory overrun in matlab 64bit which occured in a test sample for a burst with 400000 photons to maintain usability on systems with only 12 GB Ram the threshold is set to 10000 but might be changed if necessary
+    
+    %Trace(i) and Chan_Trace(i) are referring to the burstsearc
+    %internal sorting and not related to the channel mapping in the
+    %pam and Burstsearch GUI, they originate from the row th data is
+    %imported at hte begining of this function
+    
+    T_BB = Trace(Chan_Trace == 1 | Chan_Trace == 2);
+    T_BG = Trace(Chan_Trace == 3 | Chan_Trace == 4);
+    T_BR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
+    T_GG = Trace(Chan_Trace == 7 | Chan_Trace == 8);
+    T_GR = Trace(Chan_Trace == 9 | Chan_Trace == 10);
+    T_RR = Trace(Chan_Trace == 11 | Chan_Trace == 12);
+    T_BX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4 | Chan_Trace == 5 | Chan_Trace == 6);
+    T_GX = Trace(Chan_Trace == 7 | Chan_Trace == 8 | Chan_Trace == 9 | Chan_Trace == 10);
+    
+    %tau = 100E-6; fallback value
+    
+    %KDE calculation for FRET_2CDE
+    
+    %KDE of BB around BB
+    KDE_BB_BB = nb_kernel_density_estimate(T_BB,tau);
+    %KDE of BG around BG
+    KDE_BG_BG = nb_kernel_density_estimate(T_BG,tau);
+    %KDE of BR around BR
+    KDE_BR_BR = nb_kernel_density_estimate(T_BR,tau);
+    %KDE of BG around BB
+    KDE_BG_BB = kernel_density_estimate(T_BB,T_BG,tau);
+    %KDE of BR around BB
+    KDE_BR_BB = kernel_density_estimate(T_BB,T_BR,tau);
+    %KDE of BB around BG
+    KDE_BB_BG = kernel_density_estimate(T_BG,T_BB,tau);
+    %KDE of BB around BR
+    KDE_BB_BR = kernel_density_estimate(T_BR,T_BB,tau);
+    %KDE of A(GR) around D (GG)
+    KDE_GR_GG = kernel_density_estimate(T_GG,T_GR,tau);
+    %KDE of D(GG) around D (GG)
+    KDE_GG_GG = nb_kernel_density_estimate(T_GG,tau);
+    %KDE of A(GR) around A (GR)
+    KDE_GR_GR = nb_kernel_density_estimate(T_GR,tau);
+    %KDE of D(GG) around A(GR)
+    KDE_GG_GR = kernel_density_estimate(T_GR,T_GG,tau);
+    
+    %KDE for ALEX_2CDE
+    
+    %KDE of BX around BX
+    KDE_BX_BX = kernel_density_estimate(T_BX,tau);
+    %KDE of GX around BX
+    KDE_GX_BX = kernel_density_estimate(T_BX,T_GX,tau);
+    %KDE of BX around GX
+    KDE_BX_GX = kernel_density_estimate(T_GX,T_BX,tau);
+    %KDE of A(RR) around D (BX)
+    KDE_RR_BX = kernel_density_estimate(T_BX,T_RR,tau);
+    %KDE of BX around RR
+    KDE_BX_RR = kernel_density_estimate(T_RR,T_BX,tau);
+    %KDE of D(GX) around D (GX)
+    KDE_GX_GX = kernel_density_estimate(T_GX,tau);
+    %KDE of A(RR) around A(RR)
+    KDE_RR_RR = kernel_density_estimate(T_RR,tau);
+    %KDE of A(RR) around D (GX)
+    KDE_RR_GX = kernel_density_estimate(T_GX,T_RR,tau);
+    %KDE of D(GX) around A (RR)
+    KDE_GX_RR = kernel_density_estimate(T_RR,T_GX,tau);
+    
+    %calculate FRET-2CDE based on proximity ratio for BG,BR
+    
+    %BG
+    %(E)_D
+    %check for case of denominator == 0!
+    valid = (KDE_BG_BB+KDE_BB_BB) ~= 0;
+    E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BG_BB(valid)./(KDE_BG_BB(valid)+KDE_BB_BB(valid)));
+    %(1-E)_A
+    valid = (KDE_BB_BG+KDE_BG_BG) ~= 0;
+    E_A = (1/(numel(T_BG)-sum(~valid))).*sum(KDE_BB_BG(valid)./(KDE_BB_BG(valid)+KDE_BG_BG(valid)));
+    FRET_2CDE(1,1) = 110 - 100*(E_D+E_A);
+    %BR
+    valid = (KDE_BR_BB+KDE_BB_BB) ~= 0;
+    E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BR_BB(valid)./(KDE_BR_BB(valid)+KDE_BB_BB(valid)));
+    %(1-E)_A
+    valid = (KDE_BB_BR+KDE_BR_BR) ~= 0;
+    E_A = (1/(numel(T_BR)-sum(~valid))).*sum(KDE_BB_BR(valid)./(KDE_BB_BR(valid)+KDE_BR_BR(valid)));
+    FRET_2CDE(1,2) = 110 - 100*(E_D+E_A);
+    %GR
+    %(E)_D
+    valid = (KDE_GR_GG+KDE_GG_GG) ~= 0;
+    E_D = (1/(numel(T_GG)-sum(~valid))).*sum(KDE_GR_GG(valid)./(KDE_GR_GG(valid)+KDE_GG_GG(valid)));
+    %(1-E)_A
+    valid = (KDE_GG_GR+KDE_GR_GR) ~= 0;
+    E_A = (1/(numel(T_GR)-sum(~valid))).*sum(KDE_GG_GR(valid)./(KDE_GG_GR(valid)+KDE_GR_GR(valid)));
+    FRET_2CDE(1,3) = 110 - 100*(E_D+E_A);
+    
+    %calculate ALEX / PIE 2CDE
+    
+    %BG
+    %Brightness ratio Dex
+    BR_D = (1/numel(T_GX)).*sum(KDE_GX_BX./KDE_BX_BX);
+    %Brightness ration Aex
+    BR_A =(1/numel(T_BX)).*sum(KDE_BX_GX./KDE_GX_GX);
+    ALEX_2CDE(1,1) = 100-50*(BR_D+BR_A);
+    
+    %BR
+    %Brightness ratio Dex
+    BR_D = (1/numel(T_RR)).*sum(KDE_RR_BX./KDE_BX_BX);
+    %Brightness ration Aex
+    BR_A =(1/numel(T_BX)).*sum(KDE_BX_RR./KDE_RR_RR);
+    ALEX_2CDE(1,2) = 100-50*(BR_D+BR_A);
+    
+    %GR
+    %Brightness ratio Dex
+    BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
+    %Brightness ration Aex
+    BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
+    ALEX_2CDE(1,3) = 100-50*(BR_D+BR_A);
+else
+    FRET_2CDE(1,1:3) = NaN;
+    ALEX_2CDE(1,1:3) = NaN;
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5279,6 +5562,7 @@ if isfield(PamMeta.Det_Calib,'Shift')
     Calibrate_Detector([],[],Det,Rout);
 end
 LSUserValues(1)
+
 
 
 
