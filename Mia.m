@@ -1659,6 +1659,8 @@ if any(mode==2)
                     else
                         SEM=ones(size(Fit,1),size(Fit,2));
                     end 
+                    
+                    
                     %%% Calculates weighted residuals
                     Fit=(h.Plots.Cor(i,2).ZData-Fit)./SEM;
                     %%% Calculate average of verteces surrounding the face in residual surf plot

@@ -74,13 +74,14 @@ if Mode==0 %%% Loads user values
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Checks, if all fields exist and redefines them
-    if ~isfield (S, 'Detector') || any(~isfield(S.Detector, {'Det';'Rout';'Use';'Color';'Shift'}));
+    if ~isfield (S, 'Detector') || any(~isfield(S.Detector, {'Det';'Rout';'Color';'Shift';'Name';'Plots'}));
         S.Detector=[];
         S.Detector.Det=1;
         S.Detector.Rout=1;
-        S.Detector.Use=1;
         S.Detector.Color=[1 0 0];
         S.Detector.Shift={zeros(400,1)};
+        S.Detector.Name={'1'};
+        S.Detector.Plots=1;
         disp('UserValues.Detector was incomplete');
     end
     
