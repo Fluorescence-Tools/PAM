@@ -4097,6 +4097,7 @@ for i = 1:Number_of_Chunks
         chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))...
             4*ones(1,numel(Photons{4})) 5*ones(1,numel(Photons{5})) 6*ones(1,numel(Photons{6}))]);
         Channel = chan_temp(index);
+        Channel = Channel';
         clear chan_temp
         
         %%% read out microtimes for all channels
@@ -4146,6 +4147,7 @@ for i = 1:Number_of_Chunks
             7*ones(1,numel(Photons{7})) 8*ones(1,numel(Photons{8})) 9*ones(1,numel(Photons{9}))...
             10*ones(1,numel(Photons{10})) 11*ones(1,numel(Photons{11})) 12*ones(1,numel(Photons{12}))]);
         Channel = chan_temp(index);
+        Channel = Channel';
         clear chan_temp
         
         %%% read out microtimes
@@ -4193,6 +4195,7 @@ for i = 1:Number_of_Chunks
         %get colors of photons
         chan_temp = uint8([1*ones(1,numel(Photons{1})) 2*ones(1,numel(Photons{2})) 3*ones(1,numel(Photons{3}))]);
         Channel = chan_temp(index);
+        Channel = Channel';
         clear chan_temp
         
         %%%read out microtimes
@@ -4218,7 +4221,7 @@ for i = 1:Number_of_Chunks
     for j = 1:numel(Number_of_Photons)
         Macrotime_dummy{i}{j} = AllPhotons(start(j):stop(j));
         Microtime_dummy{i}{j} = AllPhotons_Microtime(start(j):stop(j));
-        Channel_dummy{i}{j} = Channel(start(j):stop(j))';
+        Channel_dummy{i}{j} = Channel(start(j):stop(j));
     end
 end
 %%% Concatenate data from chunks
@@ -4743,10 +4746,6 @@ BurstData.FileName = BurstFileName;
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
 PhotonsFileName = GenerateName(PhotonsFileName);
 save(PhotonsFileName,'Macrotime','Microtime','Channel');
-global TauFitBurstData
-TauFitBurstData.Microtime = Microtime;
-TauFitBurstData.Macrotime = Macrotime;
-TauFitBurstData.Channel = Channel;
 
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
@@ -4908,98 +4907,67 @@ end
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function NirFilter(obj,~)
-global UserValues BurstData
+global BurstData
 h = guidata(obj);
 tau_2CDE = str2double(h.NirFilter_Edit.String);
 
 if isnan(tau_2CDE)
     h.NirFilter_Edit.String =  '100';
-    return;
+    tau_2CDE = 100;
 end
 
-%%% Load associated Macro- and Microtimes
+%%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
+
+h.Progress_Text.String = 'Calculating 2CDE Filter...';
+drawnow;
+
 if any(BurstData.BAMethod == [1,2]) %2 Color Data
-        h.Progress_Text.String = 'Calculating 2CDE Filter...';
-        
-        FRET_2CDE = zeros(numel(Macrotime),1);
-        ALEX_2CDE = zeros(numel(Macrotime),1);
-
-        tau = tau_2CDE*1E-6/BurstData.SyncPeriod;
-        
-        %%% Split into 10 parts to display progress
-        parts = (floor(linspace(1,numel(Macrotime),11)));
-        tic
-        for j = 1:10
-            parfor i = parts(j):parts(j+1)
-                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i},Channel{i},tau);
-            end
-            Progress((j-1)/10,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
-        end
-        toc
-        idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
-        idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
-        BurstData.DataArray(idx_ALEX2CDE) = ALEX_2CDE;
-        BurstData.DataArray(idx_FRET2CDE) = FRET_2CDE;
-
-        save(BurstData.FileName,'BurstData');
-
-        close(hw);
-elseif any(Data.BAMethod == [3,4]) %3 Color Data
-    if sum(strcmp(Data.NameArray,'FRET_2CDE BG'))==1
-        choice = find(strcmp({'Yes','Cancel'},questdlg('Overwrite?', ...
-        '2CDE has already been calculated...', ...
-        'Yes','Cancel','Yes')));
-        overwrite = 1;
-    else
-        choice = 1;
-        overwrite = 0;
-    end
+    FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
+    ALEX_2CDE = zeros(numel(Macrotime),1);
     
-    if choice == 1 %calculate
-        hw = waitbar(0,'Calculating 2CDE Filter...')
-
-        FRET_2CDE = zeros(numel(Data.Macrotime),3);
-        ALEX_2CDE = zeros(numel(Data.Macrotime),3);
-
-        tau = tau_2CDE*1E-6*Data.SyncRate;
-        %[FRET_2CDE, ALEX_2CDE] = cellfun(@(x,y) KDE(x,y,tau),Data.Macrotime,Data.Channel);
-        Macrotime = Data.Macrotime;
-        Channel = Data.Channel;
-        tic
-        parfor i = 1:numel(Data.Macrotime)
-            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i},Channel{i},tau);
+    tau = tau_2CDE*1E-6/BurstData.SyncPeriod;
+    
+    %%% Split into 10 parts to display progress
+    parts = (floor(linspace(1,numel(Macrotime),11)));
+    tic
+    for j = 1:10
+        Progress((j-1)/10,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
+        parfor i = parts(j):parts(j+1)
+            [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau); %#ok<USENS,PFIIN>
         end
-        toc
-        if overwrite == 1
-            index = find(strcmp(Data.NameArray,'FRET_2CDE BG'));
-            Data.DataArray(:,index:index+5) = [FRET_2CDE ALEX_2CDE];
-        else %append data
-            Data.DataArray = [Data.DataArray...
-                    FRET_2CDE...
-                    ALEX_2CDE];
-            Data.NameArray = [Data.NameArray...
-                            {'FRET_2CDE BG'...
-                            'FRET_2CDE BR'...
-                            'FRET_2CDE GR'...
-                            'ALEX_2CDE BG'...
-                            'ALEX_2CDE BR'...
-                            'ALEX_2CDE GR'}];
-        end
-        DataArray = Data.DataArray;
-        NameArray = Data.NameArray;
-
-        %save tau value
-        Data.tau_2CDE = tau_2CDE;
-        if ismac
-        save_mac(Data.FileName,Data,DataArray,NameArray);
-        else %windows
-        save(Data.FileName,'Data','DataArray','NameArray');
-        end
-        close(hw);
     end
+    Progress(1,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
+    toc
+    idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
+    idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
+    
+elseif any(Data.BAMethod == [3,4]) %3 Color Data
+    FRET_2CDE = zeros(numel(Macrotime),3);
+    ALEX_2CDE = zeros(numel(Macrotime),3);
+    
+    tau = tau_2CDE*1E-6*Data.SyncRate;
+    
+    %%% Split into 10 parts to display progress
+    parts = (floor(linspace(1,numel(Macrotime),11)));
+    tic
+    for j = 1:10
+        parfor i = parts(j):parts(j+1)
+            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau);
+        end
+    end
+    toc
+    
+    idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
+    idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
 end
+BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
+BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+
+save(BurstData.FileName,'BurstData');
+Update_Display([],[],1);
+h.NirFilter_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5244,9 +5212,14 @@ h.SaveIRF_Button.ForegroundColor = [0 1 0];
 function BurstLifetime(~,~)
 global UserValues BurstData TauFitBurstData
 %% Prepare the data for lifetime fitting
+%%% Load associated Macro- and Microtimes from *.bps file
+[Path,File,~] = fileparts(BurstData.FileName);
+load(fullfile(Path,[File '.bps']),'-mat');
 %%% Get total vector of microtime and channel
-Microtime = vertcat(TauFitBurstData.Microtime{:});
-Channel = vertcat(TauFitBurstData.Channel{:});
+Microtime = vertcat(Microtime{:});
+Channel = vertcat(Channel{:});
+TauFitBurstData.Microtime = Microtime;
+TauFitBurstData.Channel = Channel;
 %%% Calculate the total Microtime Histogram per Color from all bursts
 switch BurstData.BAMethod
     case {1,2} %two color MFD  
@@ -5257,6 +5230,11 @@ switch BurstData.BAMethod
         idx_RRperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
         
         %%% Calculate the MI histograms
+        GGpar = histc(Microtime(Channel == 1), (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)));
+        GGperp = histc(Microtime(Channel == 2), (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)));
+        RRpar = histc(Microtime(Channel == 5), (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)));
+        RRperp = histc(Microtime(Channel == 6), (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)));
+        
         GGpar = histc(Microtime(Channel == 1), (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)));
         GGperp = histc(Microtime(Channel == 2), (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)));
         RRpar = histc(Microtime(Channel == 5), (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)));

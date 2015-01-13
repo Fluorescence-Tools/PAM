@@ -1008,8 +1008,9 @@ else %data has been deleted, reset to default values
     data = {'','',false,false};
     rownames = {''};
 end
-    
+
 set(h.CutTable,'Data',data,'RowName',rownames);
+
 
 function UpdateCuts(species)
 global BurstData
