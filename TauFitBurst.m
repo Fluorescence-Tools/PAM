@@ -971,6 +971,7 @@ function Start_Fit(obj,~)
 global TauFitBurstData BurstData UserValues
 h = guidata(obj);
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
+drawnow;
 %% Read out corrections
 G{1} = UserValues.TauFit.Ggreen;
 G{2} = UserValues.TauFit.Gred;
@@ -1072,11 +1073,9 @@ for chan = 1:2
         model_dummy(:,i) = accumarray(bin',model(:,i)');
     end
     model = model_dummy;
-    tic;
     parfor i = 1:numel(Mic{chan})
         [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},IRF{chan},T,model,range);
     end
-    toc
 end
 
 %% Save the result

@@ -554,7 +554,7 @@ load('-mat',fullfile(PathName,FileName));
 %find positions of Efficiency and Stoichiometry in NameArray
 posE = find(strcmp(BurstData.NameArray,'Efficiency'));
 if sum(strcmp(BurstData.NameArray,'Stoichiometry')) == 0
-    BurstData.NameArray{find(strcmp(BurstData.NameArray,'Stochiometry'))} = 'Stoichiometry';
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Stochiometry')} = 'Stoichiometry';
 end
 posS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
 
@@ -564,11 +564,18 @@ set(h.ParameterListX, 'Value', posE);
 set(h.ParameterListY, 'String', BurstData.NameArray);
 set(h.ParameterListY, 'Value', posS);
 
-if ~isfield(BurstData,'PlotType')
-    BurstData.PlotType = 1;
+if ~isfield(BurstData,'Cut')
+    %initialize Cut Cell Array
+    BurstData.Cut{1} = {};
+    %add species to list
+    BurstData.SpeciesNames{1} = 'Global Cuts';
+    %update species list
+    set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
+    BurstData.SelectedSpecies = 1;
 end
-
+    
 BurstData.DataCut = BurstData.DataArray;
+
 if isfield(BurstData,'SpeciesNames') %%% Previous Cuts exist
     if ~isempty(BurstData.SpeciesNames)
         %%% Update the Species List
