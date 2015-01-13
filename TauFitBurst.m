@@ -863,7 +863,7 @@ LSUserValues(1);
 %%% Closes TauFit and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_TauFit(~,~)
-%clear global -regexp TauFitBurstData
+clear global -regexp TauFitBurstData
 Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
 if isempty(Pam) && isempty(FCSFit)
@@ -970,6 +970,7 @@ end
 function Start_Fit(obj,~)
 global TauFitBurstData BurstData UserValues
 h = guidata(obj);
+h.Progress_Text.String = 'Preparing Lifetime Fit...';
 %% Read out corrections
 G{1} = UserValues.TauFit.Ggreen;
 G{2} = UserValues.TauFit.Gred;
@@ -1030,38 +1031,71 @@ for chan = 1:2
     Per{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan}),Per{chan},'UniformOutput',false);
     %%% Construct total Microtime Histogram
     Mic{chan} = cellfun(@(x,y) (1-3*l2)*G{chan}*x+(2-3*l1)*y,Par{chan},Per{chan},'UniformOutput',false);
+    Length{chan} = numel(Mic{chan}{1})-1;
+    %%% Rebin to improve speed
+    [~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
+    bin(end) = 256;
+    Mic{chan} = cellfun(@(x) accumarray(bin',x'),Mic{chan},'UniformOutput',false);
 end
-
+%%% Preallocate fit outputs
+lifetime = zeros(numel(Mic),2);
 %%% Prepare the fit inputs
-mean_tau = 5e-9;
-range_tau = 9.98e-9;
+mean_tau = 5;
+range_tau = 9.98;
 steps_tau = 2111;
 range = mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2;
-[tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:length);
-
-
 for chan = 1:2
-    length = numel(Mic{chan}{1});
-    T = TauFitBurstData.TACChannelWidth*length;
+    %%% Update Progress
+    Progress((chan-1)/2,h.Progress_Axes,h.Progress_Text,['Fitting Channel ' num2str(chan) ' of 2...']);
+    
+    [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
+    T = TauFitBurstData.TACChannelWidth*Length{chan};
     GAMMA = T./tau;
-    p = exp(-i.*GAMMA/length).*(exp(GAMMA/length)-1)./(1-exp(-GAMMA));
+    p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
     %p = p(1:length+1,:);
-    c = convnfft(p,IRF(ones(steps_tau+1,1),:)', 'full', 1);
+    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);
     c(c<0) = 0;
     z = sum(c,1);
     c = c./z(ones(size(c,1),1),:);
-    c = c(1:length+1,:);
-    model = (1-gamma)*c + gamma * IRF(ones(steps_tau+1,1),:)';
+    c = c(1:Length{chan}+1,:);
+    model = (1-background{chan})*c + background{chan};
     z = sum(model,1);
     model = model./z(ones(size(model,1),1),:);
-    parfor i = 1:numel(Mic)
-        [lifetime(i,chan),Istar(i,chan)] = LifetimeFit(Mic{i},IRF,T,scatter,gamma,model,range);
+    model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+    z = sum(model,1);
+    model = model./z(ones(size(model,1),1),:);
+    %%% rebin to 256 bins to improve speed
+    [~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
+    bin(end) = 256;
+    model_dummy = zeros(256,size(model,2));
+    for i = 1:size(model,2)
+        model_dummy(:,i) = accumarray(bin',model(:,i)');
     end
+    model = model_dummy;
+    tic;
+    parfor i = 1:numel(Mic{chan})
+        [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},IRF{chan},T,model,range);
+    end
+    toc
 end
+
+%% Save the result
+Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+BurstData.DataArray(:,idx_tauGG) = lifetime(:,1);
+BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
+
+save(BurstData.FileName,'BurstData');
+Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
+%%% Change the Color of the Button in Pam
+hPam = findobj('Tag','Pam');
+handlesPam = guidata(hPam);
+handlesPam.BurstLifetime_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [tau,Istar] = LifetimeFitMLE(SIG,IRF,T,gamma,model,range)
+function [tau,Istar] = LifetimeFitMLE(SIG,~,~,model,range)
 
 k=numel(SIG);
 SIG = SIG/sum(SIG);
@@ -1071,7 +1105,7 @@ for i=1:3
     
     Range=range(MIN:div:(MIN+20*div));
     Model=model(:,MIN:div:(MIN+20*div));
-    temp=bsxfun(@times,log(bsxfun(@ldivide,Model,SIG')),SIG');  
+    temp=bsxfun(@times,log(bsxfun(@ldivide,Model,SIG)),SIG);  
     temp(isnan(temp))=0;
     temp(~isfinite(temp)) = 0;
     KL = (1/(k-1-2))*sum(temp,1);  
@@ -1092,18 +1126,7 @@ for i=1:3
     
 end
 
-
-GAMMA = T/mean_tau;
-i=0:k;
-p = exp(-i*GAMMA/k)*(exp(GAMMA/k)-1)/(1-exp(-GAMMA));
-p = p(1:numel(SIG));
-c = conv(p,IRF);
-c = c/sum(c);
-c = c(1:numel(SIG));% temp = coeffvalues(fit(SIG'-c',IRF'-c', 'poly1'));
-% gamma = temp(1);
-
 tau=mean_tau;
-model = (1-gamma)*c + gamma * IRF;
 model = model/sum(model);
 temp = SIG.*log(SIG./model);
 Istar = (2/(numel(SIG)-1-2))*sum(temp(~isnan(temp)));
