@@ -999,7 +999,7 @@ end
 load(fullfile(Path,[File '.bps']),'-mat');
 
 %%% Determine bin width for coarse binning
-bin_width = floor(0.2/TauFitBurstData.TACChannelWidth);
+new_bin_width = floor(0.2/TauFitBurstData.TACChannelWidth);
 
 %% Prepare the data
 for chan = 1:2
@@ -1037,9 +1037,10 @@ for chan = 1:2
     Mic{chan} = cellfun(@(x,y) (1-3*l2)*G{chan}*x+(2-3*l1)*y,Par{chan},Per{chan},'UniformOutput',false);
     Length{chan} = numel(Mic{chan}{1})-1;
     %%% Rebin to improve speed
-    [~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
-    bin(end) = 256;
-    Mic{chan} = cellfun(@(x) accumarray(bin',x'),Mic{chan},'UniformOutput',false);
+    %[~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
+    %bin(end) = 256;
+    %Mic{chan} = cellfun(@(x) accumarray(bin',x'),Mic{chan},'UniformOutput',false);
+    Mic{chan} = cellfun(@(x) downsamplebin(x,new_bin_width),Mic{chan},'UniformOutput',false);
 end
 %%% Preallocate fit outputs
 lifetime = zeros(numel(Mic),2);
@@ -1069,11 +1070,15 @@ for chan = 1:2
     z = sum(model,1);
     model = model./z(ones(size(model,1),1),:);
     %%% rebin to 256 bins to improve speed
-    [~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
-    bin(end) = 256;
-    model_dummy = zeros(256,size(model,2));
+    %[~,bin] = histc(1:(Length{chan}+1),linspace(1,(Length{chan}+1),256+1));
+    %bin(end) = 256;
+    %model_dummy = zeros(256,size(model,2));
+    %for i = 1:size(model,2)
+    %    model_dummy(:,i) = accumarray(bin',model(:,i)');
+    %end
+    model_dummy = zeros(numel(Mic{chan}{1}),size(model,2));
     for i = 1:size(model,2)
-        model_dummy(:,i) = accumarray(bin',model(:,i)');
+        model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
     end
     model = model_dummy;
     parfor i = 1:numel(Mic{chan})
@@ -1132,6 +1137,14 @@ tau=mean_tau;
 model = model/sum(model);
 temp = SIG.*log(SIG./model);
 Istar = (2/(numel(SIG)-1-2))*sum(temp(~isnan(temp)));
+
+function [outv] = downsamplebin(invec,newbin)
+%%% treat case where mod(numel/newbin) =/= 0
+if mod(numel(invec),newbin) ~= 0
+    %%% Discard the last bin
+    invec = invec(1:(floor(numel(invec)/newbin)*newbin));
+end
+outv = sum(reshape(invec,newbin,numel(invec)/newbin),1)';
 
 function [cx, tau, offset, csh, z, t, err] = DistFluofit(irf, y, p, dt, shift, flag, bild, N)
 % The function DistFluofit performs a fit of a distributed decay curve.
