@@ -1663,10 +1663,9 @@ if ismac
     end
     
     %%% loop through h.Text structure containing only static text boxes
-    fields = fieldnames(h.BurstText);
-    for i = 1:numel(fields)
-        if isprop(h.BurstText.(fields{i}),'FontSize')
-            h.BurstText.(fields{i}).FontSize = (h.BurstText.(fields{i}).FontSize)*scale_factor;
+    for i = 1:numel(h.Text)
+        if isprop(h.Text{i},'FontSize')
+            h.Text{i}.FontSize = (h.Text{i}.FontSize)*scale_factor;
         end
     end
 end
@@ -2227,11 +2226,11 @@ if any(mode==5)
         Channel=intersect(Channel1,Channel2);
         Valid=[];
         %%% Finds microtime plots containing PIE channel
-        for j=Channel
-           Valid=[Valid find(UserValues.Detector.Plots==j)];
+        for j=Channel(:)'
+           Valid=[Valid find(UserValues.Detector.Plots(:)==j)];
         end
         %%% For all microtime plots containing PIE channel
-        for j=Valid
+        for j=Valid(:)'
             x=mod(j-1,size(UserValues.Detector.Plots,1))+1;
             y=2+2*ceil(j/size(UserValues.Detector.Plots,1))-1;
             %%% Creates a new patch object

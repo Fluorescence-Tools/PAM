@@ -998,6 +998,9 @@ end
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
 
+%%% Determine bin width for coarse binning
+bin_width = floor(0.2/TauFitBurstData.TACChannelWidth);
+
 %% Prepare the data
 for chan = 1:2
     %%% Read out the shifted scatter pattern
