@@ -41,7 +41,8 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Tag','Main_Tab',...
         'Units','normalized',...
-        'Position',[0 0.01 0.65 0.98]);
+        'Position',[0 0.01 0.65 0.98],...
+        'SelectionChangedFcn',@MainTabSelectionChange);
 
     h.Main_Tab_General = uitab(h.Main_Tab,...
         'title','General',...
@@ -111,7 +112,7 @@ if isempty(hfig)
         'Tag','SecondaryTabSelectionPanel');
     
     h.Secondary_Tab_Corrections= uitab(h.Secondary_Tab,...
-        'title','Correction factors',...
+        'title','Corrections/Fitting',...
         'Tag','Secondary_Tab_Corrections'...
         ); 
     
@@ -352,6 +353,20 @@ if isempty(hfig)
         'Position',[0.8 0.91 0.15 0.03],...
         'BackgroundColor',Look.Control,...
         'ForegroundColor',Look.Fore);
+    
+    %%% Button to fit lifetime-related quantities
+    h.FitLifetimeRelatedButton = uicontrol(...
+    'Parent',h.SecondaryTabCorrectionsPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0 0.21 0.4 0.03],...
+    'Style','pushbutton',...
+    'Tag','FitLifetimeRelatedButton',...
+    'String','Add Fits to Lifetime Plots',...
+    'FontSize',14,...
+    'Callback',@UpdateLifetimePlots);
+
     %% secondary tab options
     
     %%% Display Options Panel
@@ -478,7 +493,7 @@ if isempty(hfig)
     h.axes_1d_y =  axes(...
     'Parent',h.MainTabGeneralPanel,...
     'Units','normalized',...
-    'Position',[0.8 0.06 0.15, 0.74],...
+    'Position',[0.8 0.06 0.15, 0.75],...
     'Tag','Main_Tab_General_Plot',...
     'Box','on',...
     'Tag','Axes_1D_Y',...
@@ -527,6 +542,46 @@ if isempty(hfig)
     'FontSize',20,...
     'ButtonDownFcn',@SetAxes,...
     'View',[0 90]);
+    %% Define Axes in Lifetime Tab
+    h.axes_EvsTauGG =  axes(...
+    'Parent',h.MainTabLifetimePanel,...
+    'Units','normalized',...
+    'Position',[0.05 0.55 0.4 0.4],...
+    'Tag','Main_Tab_Corrections_Plot_EvsTauGG',...
+    'Box','on',...
+    'FontSize',20,...
+    'ButtonDownFcn',@SetAxes,...
+    'View',[0 90]);
+    
+    h.axes_EvsTauRR =  axes(...
+    'Parent',h.MainTabLifetimePanel,...
+    'Units','normalized',...
+    'Position',[0.55 0.55 0.4 0.4],...
+    'Tag','Main_Tab_Corrections_Plot_EvsTauRR',...
+    'Box','on',...
+    'FontSize',20,...
+    'ButtonDownFcn',@SetAxes,...
+    'View',[0 90]);
+
+    h.axes_rGGvsTauGG =  axes(...
+    'Parent',h.MainTabLifetimePanel,...
+    'Units','normalized',...
+    'Position',[0.05 0.05 0.4 0.4],...
+    'Tag','Main_Tab_Corrections_Plot_rGGvsTauGG',...
+    'Box','on',...
+    'FontSize',20,...
+    'ButtonDownFcn',@SetAxes,...
+    'View',[0 90]);
+
+    h.axes_rRRvsTauRR=  axes(...
+    'Parent',h.MainTabLifetimePanel,...
+    'Units','normalized',...
+    'Position',[0.55 0.05 0.4 0.4],...
+    'Tag','Main_Tab_Corrections_Plot_rRRvsTauRR',...
+    'Box','on',...
+    'FontSize',20,...
+    'ButtonDownFcn',@SetAxes,...
+    'View',[0 90]);
 
     guidata(h.BurstBrowser,h);    
     %set(Figure,'WindowButtonMotionFcn',@Update_Position);
@@ -534,7 +589,7 @@ if isempty(hfig)
     %% set UserValues in GUI
     UpdateCorrections([],[]);
 else
-    figure(h);
+    figure(hfig);
 end
 
 
@@ -583,10 +638,12 @@ if isfield(BurstData,'SpeciesNames') %%% Previous Cuts exist
         h.SpeciesList.Value = BurstData.SelectedSpecies;
     end
 end
+ 
 UpdateCorrections([],[]);
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([]);
+UpdateLifetimePlots([],[]);
 
 function ParameterList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % Determine the click type
@@ -630,6 +687,7 @@ elseif strcmpi(clickType,'Left-click') %%% Update Plot
     hListbox.Value = clickedIndex;
 end
 UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % Determine the click type
@@ -668,7 +726,7 @@ else %leftclick
 end
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot([]);
+UpdatePlot(hListbox);
 
 function AddSpecies(~,~)
 global BurstData
@@ -686,7 +744,8 @@ BurstData.Cut{BurstData.SelectedSpecies} = BurstData.Cut{1};
 
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot;
+UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 function RemoveSpecies(obj,~)
 global BurstData
@@ -713,10 +772,15 @@ end
 %plots in the main axes
 function UpdatePlot(obj,~)
 %% Preparation
-h = guidata(gcf);
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
+
 global BurstData UserValues
-LSUserValues(1);
-if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton)
+LSUserValues(0);
+if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
 end
@@ -741,6 +805,8 @@ end
 if obj == h.ColorMapPopupmenu
     UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
 end
+LSUserValues(1);
+
 axes(h.axes_general);
 cla(gca);
 x = get(h.ParameterListX,'Value');
@@ -1001,7 +1067,8 @@ BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value
 
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot;
+UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 function UpdateCutTable(h)
 global BurstData
@@ -1105,6 +1172,7 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 function DetermineCorrections(~,~)
 global BurstData UserValues
@@ -1204,7 +1272,7 @@ NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_correct
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-[H xbins_hist ybins_hist] = hist2d([E_raw 1./S_raw],51, 51, [0 1], [min(1./S_raw) max(1./S_raw)]);
+[H, xbins_hist, ybins_hist] = hist2d([E_raw 1./S_raw],51, 51, [0 1], [min(1./S_raw) max(1./S_raw)]);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
 l = H>0;
@@ -1304,7 +1372,8 @@ elseif strcmpi(get(h.BurstBrowser,'SelectionType'),'alt')
 end
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot;
+UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 function List_KeyPressFcn(hObject,eventdata)
 
@@ -1644,6 +1713,7 @@ BurstData.DataArray(:,ind_rRR) = rRR;
 %%% Update Display
 UpdateCuts;
 UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 %%% Manual gamma determination by selecting the mid-point of the two (or
 %%% more) populations
@@ -1654,7 +1724,7 @@ h = guidata(gcf);
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
 cla(h.axes_gamma);
 axes(h.axes_gamma);
-[H xbins_hist ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
+[H, xbins_hist, ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
 l = H>0;
@@ -1694,3 +1764,127 @@ function Save_Analysis_State_Callback(~,~)
 global BurstData
 
 save(BurstData.FileName,'BurstData');
+
+%%% Updates (and fits) lifetime-related plots in Lifetime Tab
+function UpdateLifetimePlots(obj,~)
+global BurstData
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
+%%% Use the current cut Data (of the selected species) for plots
+datatoplot = BurstData.DataCut;
+%%% read out the indices of the parameters to plot
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
+idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
+idxE = strcmp('Efficiency',BurstData.NameArray);
+%% Plot E vs. tauGG in first plot
+cla(h.axes_EvsTauGG);
+axes(h.axes_EvsTauGG);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idxE)],51, 51, [0 5], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+ylabel('Efficiency');
+xlabel('Lifetime GG [ns]');
+title('Efficiency vs. Lifetime GG');
+%% Plot E vs. tauRR in second plot
+cla(h.axes_EvsTauRR);
+axes(h.axes_EvsTauRR);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR),datatoplot(:,idxE)],51, 51, [0 6], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime RR [ns]');
+ylabel('Efficiency');
+title('Efficiency vs. Lifetime RR');
+%% Plot rGG vs. tauGG in third plot
+cla(h.axes_rGGvsTauGG);
+axes(h.axes_rGGvsTauGG);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)],51, 51, [0 5], [-0.1 0.5]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime GG [ns]');
+ylabel('Anisotropy GG');
+title('Anisotropy GG vs. Lifetime GG');
+%% Plot rRR vs. tauRR in third plot
+cla(h.axes_rRRvsTauRR);
+axes(h.axes_rRRvsTauRR);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)],51, 51, [0 6], [-0.1 0.5]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime RR [ns]');
+ylabel('Anisotropy RR');
+title('Anisotropy RR vs. Lifetime RR');
+%% Add Fits
+if obj == h.FitLifetimeRelatedButton
+    %%% Process fits for the individual plots also
+    %% Add a static FRET line to first plot
+    %% Add Perrin Fits to Anisotropy Plot
+    %%% GG
+    r0 = 0.4;
+    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoin',1);
+    axes(h.axes_rGGvsTauGG);
+    hold on;
+    plotPerrinGG = plot(PerrinFitGG);
+    plotPerrinGG.Color = [0 0 1];
+    plotPerrinGG.LineWidth = 3;
+    BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
+    title(['rhoGG = ' num2str(BurstData.Parameters.rhoGG)]);
+    %% RR
+    r0 = 0.4;
+    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoin',1);
+    axes(h.axes_rRRvsTauRR);
+    hold on;
+    plotPerrinRR = plot(PerrinFitRR);
+    plotPerrinRR.Color = [0 0 1];
+    plotPerrinRR.LineWidth = 3;
+    BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
+    title(['rhoRR = ' num2str(BurstData.Parameters.rhoRR)]);
+end
+
+function MainTabSelectionChange(obj,e)
+h = guidata(obj);
+if e.NewValue == h.Main_Tab_Lifetime
+    %%% Update Lifetime Plots
+    UpdateLifetimePlots(obj,[]);
+end

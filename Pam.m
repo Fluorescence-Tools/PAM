@@ -1660,6 +1660,12 @@ if ismac
         if isprop(h.(fields{i}),'FontSize')
             h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
         end
+        if isprop(h.(fields{i}),'Style')
+            if strcmp(h.(fields{i}).Style,'popupmenu')
+                h.(fields{i}).BackgroundColor = Look.Fore;
+                h.(fields{i}).ForegroundColor = Look.Back;
+            end
+        end
     end
     
     %%% loop through h.Text structure containing only static text boxes
@@ -1668,6 +1674,7 @@ if ismac
             h.Text{i}.FontSize = (h.Text{i}.FontSize)*scale_factor;
         end
     end
+    
 end
 %% Global variable initialization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1775,7 +1782,7 @@ if ~isempty(PIE)
             %% Calculates trace
             %%% Takes PIE channel macrotimes
             PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.SyncPeriod;
-            %%% Calculate intensity trace for PIE channel (currently with 10ms bins)
+            %%% Calculate intensity trace for PIE channel (currently with 100 ms bins)
             PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT_Binning.String);
             
             %% Calculates image
@@ -1826,7 +1833,7 @@ if ~isempty(PIE)
             
             %% Calculates photons and countrate for PIE channel
             PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
-            PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*10;
+            PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*str2double(h.MT_Binning.String);
             clear Image_Sum;
             PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
             PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
@@ -2910,6 +2917,10 @@ if any(mode==1);
                 'Value',UserValues.Detector.Plots(i,j),...
                 'Callback',{@Update_Detector_Channels,0},...
                 'Position',[0.78 j*(0.98/NPlots)-0.03 0.2 0.03]);
+            if ismac %%% Change colors for readability on Mac
+                h.MI_Individual{i,2*(1+j)}.BackgroundColor = UserValues.Look.Fore;
+                h.MI_Individual{i,2*(1+j)}.ForegroundColor = UserValues.Look.Back;
+            end
             h.Plots.MI_Ind{i,j}=line(...
                 'Parent',h.MI_Individual{i,2*(1+j)-1},...
                 'Color',UserValues.Detector.Color(UserValues.Detector.Plots(i,j),:),...
@@ -4239,7 +4250,7 @@ end
 
 Countrate = Number_of_Photons./Duration;
 
-Progress(1,h.Progress_Axes, h.Progress_Text, 'Saving...');
+Progress(0.95,h.Progress_Axes, h.Progress_Text, 'Saving...');
 
 %% Save BurstSearch Results
 %%% The result is saved in a simple data array with dimensions
@@ -4948,22 +4959,22 @@ end
 BAMethod = UserValues.BurstSearch.Method;
 UserValues.BurstBrowser.Corrections.Background_GGpar = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
 UserValues.BurstBrowser.Corrections.Background_GGperp = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
 UserValues.BurstBrowser.Corrections.Background_GRpar = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
 UserValues.BurstBrowser.Corrections.Background_GRperp = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
 UserValues.BurstBrowser.Corrections.Background_RRpar = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
 UserValues.BurstBrowser.Corrections.Background_RRperp = ...
     PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(3);
+    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
 
 LSUserValues(1);
 h.SaveIRF_Button.ForegroundColor = [0 1 0];
@@ -4973,6 +4984,7 @@ h.SaveIRF_Button.ForegroundColor = [0 1 0];
 function BurstLifetime(~,~)
 global UserValues BurstData TauFitBurstData
 %% Prepare the data for lifetime fitting
+h.Progress_Text.String = 'Preparing Data for Lifetime Fit...';
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
@@ -5032,7 +5044,7 @@ TauFitBurstData.BAMethod = BurstData.BAMethod;
 
 TauFitBurst();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function related to 2CDE filter calculation (Nir-Filter) %%%%%%%%%%%%%%
+%%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [KDE]= kernel_density_estimate(A,B,tau) %KDE of B around A
 if nargin == 3
@@ -5301,10 +5313,6 @@ if isfield(PamMeta.Det_Calib,'Shift')
     Calibrate_Detector([],[],Det,Rout);
 end
 LSUserValues(1)
-
-
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Generates windows-compatible file names and adds increment %%%%%%%%%%%%
