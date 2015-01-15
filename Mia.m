@@ -178,7 +178,20 @@ if isempty(h.Mia)
             'ForegroundColor', Look.Fore,...
             'Callback',{@Mia_Frame,2,i},...    
             'Position',[0.11 1.3-0.49*i, 0.09 0.03]);
-        h.Mia_Frame_Listener(i)=addlistener(h.Mia_Frame_Slider(i),'Value','PostSet',@Mia_Frame);    
+        h.Mia_Frame_Listener(i)=addlistener(h.Mia_Frame_Slider(i),'Value','PostSet',@Mia_Frame);  
+        %%% Editbox for frame
+        h.Mia_FrameUse(i) = uicontrol(...
+            'Parent',h.Mia_Image_Panel,...
+            'Style','checkbox',...
+            'Units','normalized',...
+            'FontSize',14,...
+            'BackgroundColor', Look.Back,...
+            'ForegroundColor', Look.Fore,...
+            'Callback',{@Mia_UseFrame,i},...
+            'Value',1,...
+            'Position',[0.205 1.3-0.49*i, 0.05 0.03],...
+            'String','Use');        
+        
 
         %%% Text
         h.Text{end+1} = uicontrol(...
@@ -285,8 +298,7 @@ if isempty(h.Mia)
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Position',[0 0 1 1]);
-    
-    
+       
         %%% Text
         h.Text{end+1} = uicontrol(...
             'Parent',h.Mia_Image_Settings_Panel,...
@@ -635,6 +647,34 @@ if isempty(h.Mia)
             'ForegroundColor', Look.Fore,...
             'Position',[0.02 0.84, 0.3 0.06],...
             'String',{'ACF1','ACF2','CCF'});
+        h.Text{end+1} = uicontrol(...
+            'Parent', h.Mia_Calculations_Cor_Panel,...
+            'Style','text',...
+            'Units','normalized',...
+            'FontSize',14,...
+            'HorizontalAlignment','left',...
+            'BackgroundColor', Look.Back,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.02 0.76, 0.5 0.06],...
+            'String','Frames to use:');
+        h.Mia_Correlation_Frames = uicontrol(...
+            'Parent', h.Mia_Calculations_Cor_Panel,...
+            'Style','edit',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'BackgroundColor', Look.Control,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.53 0.76, 0.3 0.06],...
+            'String','1');
+        h.Mia_Correlation_FramesUse = uicontrol(...
+            'Parent', h.Mia_Calculations_Cor_Panel,...
+            'Style','popupmenu',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'BackgroundColor', Look.Control,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.02 0.68, 0.96 0.06],...
+            'String',{'Use all frames','Use selected frames','Automatically unselect frames','Do arbitrary region ICS'});
             %% Perform N&B calculation tab
         %%% Tab and panel for perform correlation UIs
         h.Mia_Calculations_NB_Tab= uitab(...
@@ -1331,6 +1371,8 @@ if isempty(h.Mia)
 MIAData=[];
 MIAData.Data=[];
 MIAData.Cor=cell(3,2);
+MIAData.FileName=cell(0);
+MIAData.Use=ones(2,1);
 guidata(h.Mia,h); 
 else
      figure(h.Mia); % Gives focus to Pam figure 
@@ -1427,9 +1469,11 @@ switch mode
         %%% Updates frame settings for channel 1
         h.Mia_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Correlation_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
         h.Mia_Frame_Slider(1).Value=1;
         h.Mia_Frame_Slider(1).Min=1;
         h.Mia_Frame(1).String='1';
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
         
         %%% Clears channel 2 if only one channel was loaded
         %%% Stops function, if only one channel was loaded
@@ -1493,9 +1537,6 @@ end
 
 
 
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1532,7 +1573,7 @@ if any(mode==1)
         %% Plots main image
         if size(MIAData.Data,1)>=1
             if size(MIAData.Data,1)>=i
-                Frame=h.Mia_Frame_Slider(i).Value;
+                Frame=round(h.Mia_Frame_Slider(i).Value);
                 Image=double(MIAData.Data{i,1}(:,:,Frame));
                 Image=round(63*(Image-min(min(Image)))/(max(max(Image))-min(min(Image))))+1;
                 Image=reshape(Colormap(Image,:),[size(Image,1),size(Image,2),3]);
@@ -1545,7 +1586,7 @@ if any(mode==1)
         %% Plots second image
         if size(MIAData.Data,2)>=2
             if size(MIAData.Data,1)>=i
-                Frame=h.Mia_Frame_Slider(i).Value;
+                Frame=round(h.Mia_Frame_Slider(i).Value);
                 From=h.Plots.ROI(i).Position(1:2)+0.5;
                 To=From+h.Plots.ROI(i).Position(3:4)-1;
                 switch h.Mia_Second(i).Value
@@ -1861,10 +1902,14 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
         h.Mia_NB_Axes(5).YLim=[MinY MaxY]-(MaxY-MinY)/(2*BinY);        
     end
 end
-h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
+if size(MIAData.FileName)==2
+    h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
+elseif size(MIAData.FileName)==1
+    h.Mia_Progress_Text.String = MIAData.FileName{1}{1};  
+else
+    h.Mia_Progress_Text.String = 'Nothing loaded';
+end
 h.Mia_Progress_Axes.Color=UserValues.Look.Control;
-
-
 
 
 
@@ -1876,72 +1921,89 @@ function Mia_Frame(~,e,mode,channel)
 global MIAData
 h = guidata(gcf);
 
-%%% Determins slider in case of listener callback
-if nargin<4
-    mode=e.AffectedObject.Callback{2};
-    channel=e.AffectedObject.Callback{3};
-end
-%%% Updates UIs
-switch mode
-    case 1 %%% Image frames editbox changed
-        Frame=str2double(h.Mia_Frame(channel).String);
-        %%% Forces frame into bounds
-        if Frame<1;
-            Frame=1;
-            h.Mia_Frame(channel).String='1';
-        elseif Frame>size(MIAData.Data{channel,1},3)
-            Frame=size(MIAData.Data{channel,1},3);
-            h.Mia_Frame(channel).String=num2str(size(MIAData.Data{channel,1},3));
-        elseif  mod(Frame,1)~=0
-            Frame=round(Frame);
-             h.Mia_Frame(channel).String=num2str(Frame);
-        end
-        h.Mia_Frame_Slider(channel).Value=Frame;
-        Update_Plots([],[],1,channel);
-    case 2 %%% Image frames slider changed
-        Frame=h.Mia_Frame_Slider(channel).Value;
-        if mod(Frame,1)~=0
-            Frame=round(Frame);
+if size(MIAData.Data,1)>0
+    %%% Determins slider in case of listener callback
+    if nargin<4
+        mode=e.AffectedObject.Callback{2};
+        channel=e.AffectedObject.Callback{3};
+    end
+    %%% Updates UIs
+    switch mode
+        case 1 %%% Image frames editbox changed
+            Frame=str2double(h.Mia_Frame(channel).String);
+            %%% Forces frame into bounds
+            if Frame>size(MIAData.Data{channel,1},3)
+                Frame=size(MIAData.Data{channel,1},3);
+                h.Mia_Frame(channel).String=num2str(size(MIAData.Data{channel,1},3));
+            end
+            if mod(Frame,1)~=0
+                Frame=round(Frame);
+                h.Mia_Frame(channel).String=num2str(Frame);
+            end
+            if Frame<1;
+                Frame=1;
+                h.Mia_Frame(channel).String='1';
+            end
             h.Mia_Frame_Slider(channel).Value=Frame;
-        end
-        h.Mia_Frame(channel).String=num2str(Frame); 
-        Update_Plots([],[],1,channel);
-    case 3 %%% Cor frames editbox changed
-        Frame=str2double(h.Mia_Cor_Frame.String);
-        i=find(~cellfun(@isempty,MIAData.Cor),1,'first');
-        %%% Forces frame into bounds
-        if Frame<0;
-            Frame=0;
-            h.Mia_Cor_Frame.String='1';
-        elseif Frame>size(MIAData.Cor{i},3)
-            Frame=size(MIAData.Cor{i},3);
-            h.Mia_Cor_Frame.String=num2str(size(MIAData.Cor{i},3));
-        elseif  mod(Frame,1)~=0
-            Frame=round(Frame);
-            h.Mia_Cor_Frame.String=num2str(Frame);
-        end
-        h.Mia_Cor_Frame_Slider.Value=Frame;
-        Update_Plots([],[],2,1:3);
-    case 4 %%% Cor frames slider changed
-        Frame=h.Mia_Cor_Frame_Slider.Value;
-        if mod(Frame,1)~=0
-            Frame=round(Frame);
+            Update_Plots([],[],1,channel);
+        case 2 %%% Image frames slider changed
+            Frame=h.Mia_Frame_Slider(channel).Value;
+            if mod(Frame,1)~=0
+                Frame=round(Frame);
+                h.Mia_Frame_Slider(channel).Value=Frame;
+            end
+            if Frame<1
+                Frame=1;
+                h.Mia_Frame(channel).String=num2str(size(MIAData.Data{channel,1},3));
+            end
+            h.Mia_Frame(channel).String=num2str(Frame);
+            Update_Plots([],[],1,channel);
+        case 3 %%% Cor frames editbox changed
+            Frame=str2double(h.Mia_Cor_Frame.String);
+            i=find(~cellfun(@isempty,MIAData.Cor),1,'first');
+            %%% Forces frame into bounds
+            if Frame>size(MIAData.Cor{i},3)
+                Frame=size(MIAData.Cor{i},3);
+                h.Mia_Cor_Frame.String=num2str(size(MIAData.Cor{i},3));
+            end
+            if  mod(Frame,1)~=0
+                Frame=round(Frame);
+                h.Mia_Cor_Frame.String=num2str(Frame);
+            end
+            if Frame<0;
+                Frame=0;
+                h.Mia_Cor_Frame.String='1';
+            end
             h.Mia_Cor_Frame_Slider.Value=Frame;
-        end
-        h.Mia_Cor_Frame.String=num2str(Frame);  
-        Update_Plots([],[],2,1:3);
-    case 5 %%% Links frames of image for both channels
-        if h.Mia_Image_Link.Value
-            if size(MIAData.Data,1)==2
-                addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
-                addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
+            Update_Plots([],[],2,1:3);
+        case 4 %%% Cor frames slider changed
+            Frame=h.Mia_Cor_Frame_Slider.Value;
+            if mod(Frame,1)~=0
+                Frame=round(Frame);
+                h.Mia_Cor_Frame_Slider.Value=Frame;
             end
-        else %%% Unlinks
-            while ~isempty(h.Mia_Frame_Link.Targets)
-                removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
+            if Frame<0;
+                Frame=0;
+                h.Mia_Cor_Frame.String='1';
             end
-        end
-        Update_Plots([],[],2,1:2);
+            h.Mia_Cor_Frame.String=num2str(Frame);
+            Update_Plots([],[],2,1:3);
+        case 5 %%% Links frames of image for both channels
+            if h.Mia_Image_Link.Value
+                if size(MIAData.Data,1)==2
+                    addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
+                    addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
+                end
+            else %%% Unlinks
+                while ~isempty(h.Mia_Frame_Link.Targets)
+                    removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
+                end
+            end
+            Update_Plots([],[],2,1:2);
+    end
+    %%% Sets the frame use value
+    h.Mia_FrameUse(1).Value=MIAData.Use(1,str2double(h.Mia_Frame(1).String));
+    h.Mia_FrameUse(2).Value=MIAData.Use(2,str2double(h.Mia_Frame(2).String));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1952,6 +2014,20 @@ if numel(Color)
     Obj.UserData=Color;
 end
 Update_Plots([],[],1,mode);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Selects\Unselects frames %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Mia_UseFrame(~,~,mode)
+global MIAData
+h = guidata(gcf);
+if h.Mia_Image_Link.Value
+    MIAData.Use(1,str2double(h.Mia_Frame(mode).String))=h.Mia_FrameUse(mode).Value;
+    MIAData.Use(2,str2double(h.Mia_Frame(mode).String))=h.Mia_FrameUse(mode).Value;
+    h.Mia_FrameUse(mod(mode,2)+1).Value=h.Mia_FrameUse(mode).Value;
+else
+    MIAData.Use(mode,str2double(h.Mia_Frame(mode).String))=h.Mia_FrameUse(mode).Value;
+end
+h.Mia_Correlation_FramesUse.Value=2;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1986,12 +2062,12 @@ for i=1:2
         switch h.Mia_Add.Value
             case 1 %%% Do nothing
                 MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
-            case 2 %%% Frame ROI mean
+            case 2 %%% Total ROI mean
                 MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
-                                 +(mean(mean(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)))));
+                                 +(mean2(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)));
             case 3 %%% Frame ROI mean
                 MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
-                                 +(repmat(mean(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                                 +(repmat(mean(mean((MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 4 %%% Pixel mean
                 MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
                                  +(repmat(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:),3),[1,1,size(MIAData.Data{i,1},3)]));
@@ -2001,54 +2077,26 @@ for i=1:2
                 h.Mia_Add_Frames.Visible='on';
                 h.Mia_Add_Frames_Text.Visible='on';                
                 Box=[str2double(h.Mia_Add_Pixel.String), str2double(h.Mia_Add_Pixel.String), str2double(h.Mia_Add_Frames.String)];
+                
+                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);                 
                 %%% Forces averaging sizes into bounds
-                if any(Box<1) || any(Box>size(MIAData.Data{i,1}))
+                if any(Box<1) || any(Box>size(MIAData.Data{i,2}))
                     Box(Box<1)=1;
-                    if Box(1)>size(MIAData.Data{i,1},1)
-                        Box(1)=size(MIAData.Data{i,1},1);
+                    if Box(1)>size(MIAData.Data{i,2},1)
+                        Box(1)=size(MIAData.Data{i,2},1);
                     end
-                    if Box(2)>size(MIAData.Data{i,1},2)
-                        Box(2)=size(MIAData.Data{i,1},2);
+                    if Box(2)>size(MIAData.Data{i,2},2)
+                        Box(2)=size(MIAData.Data{i,2},2);
                     end
-                    if Box(3)>size(MIAData.Data{i,1},3)
-                        Box(3)=min(size(MIAData.Data{i,1},3));   
+                    if Box(3)>size(MIAData.Data{i,2},3)
+                        Box(3)=min(size(MIAData.Data{i,2},3));   
                     end 
                     h.Mia_Add_Pixel.String=num2str(Box(1));
                     h.Mia_Add_Frames.String=num2str(Box(3));
                 end
-                %%% Sums up all pixel for averaging
-                %%% Uses bigger original image for averaging
-                if     (From(2)-floor((Box(1)-1)/2))>=1 ...
-                    && (From(1)-floor((Box(2)-1)/2))>=1 ...
-                    && (To(2)+floor(Box(1)/2))<=size(MIAData.Data{i,1},1) ...
-                    && (To(1)+floor(Box(2)/2))<=size(MIAData.Data{i,1},2)
-                    data=MIAData.Data{i,1}(...
-                        (From(2)-floor((Box(1)-1)/2)):(To(2)+floor(Box(1)/2)),...
-                        (From(1)-floor((Box(2)-1)/2)):(To(1)+floor(Box(2)/2)),:);
-                    if Box(3)>1
-                       data(end,end,end+Box(3)-1)=0; 
-                    end
-                else 
-                    %%% Fills additional position with zeros, if on border
-                    %%% of original image                    
-                    data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
-                    data(end+Box(1)-1,end+Box(2)-1,end+Box(3)-1)=0;
-                    data=circshif(data,[floor((Box(1)-1)/2),floor((Box(2)-1)/2),0]);
-                end
-                Data=single(zeros(size(data)));
-                for j=1:Box(1)
-                    for k=1:Box(2);
-                        for l=1:Box(3);
-                            Data=Data+circshift(data,[j-1,k-1,l-1]);
-                        end
-                    end
-                end
-                clear data;
-                %%% Removes excess points
-                Data=Data((Box(1):end),...
-                          (Box(2):end),...
-                          (1+floor((Box(3)-1)/2):(end-floor(Box(3)/2))));    
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)+Data/(Box(1)*Box(2)*Box(3));  
+                %%% Calculates Filter
+                Filter=ones(Box)/prod(Box);
+                MIAData.Data{i,2}=MIAData.Data{i,2}+imfilter(MIAData.Data{i,2},Filter,'replicate');
         end
         %% Subtracts from image
         switch h.Mia_Subtract.Value
@@ -2065,54 +2113,25 @@ for i=1:2
                 h.Mia_Subtract_Frames.Visible='on';
                 h.Mia_Subtract_Frames_Text.Visible='on';
                 Box=[str2double(h.Mia_Subtract_Pixel.String), str2double(h.Mia_Subtract_Pixel.String), str2double(h.Mia_Subtract_Frames.String)];
+                 
                 %%% Forces averaging sizes into bounds
-                if any(Box<1) || any(Box>size(MIAData.Data{i,1}))
+                if any(Box<1) || any(Box>size(MIAData.Data{i,2}))
                     Box(Box<1)=1;
-                    if Box(1)>size(MIAData.Data{i,1},1)
-                        Box(1)=size(MIAData.Data{i,1},1);
+                    if Box(1)>size(MIAData.Data{i,2},1)
+                        Box(1)=size(MIAData.Data{i,2},1);
                     end
-                    if Box(2)>size(MIAData.Data{i,1},2)
-                        Box(2)=size(MIAData.Data{i,1},2);
+                    if Box(2)>size(MIAData.Data{i,2},2)
+                        Box(2)=size(MIAData.Data{i,2},2);
                     end
-                    if Box(3)>size(MIAData.Data{i,1},3)
-                        Box(3)=min(size(MIAData.Data{i,1},3));   
+                    if Box(3)>size(MIAData.Data{i,2},3)
+                        Box(3)=min(size(MIAData.Data{i,2},3));   
                     end 
                     h.Mia_Subtract_Pixel.String=num2str(Box(1));
                     h.Mia_Subtract_Frames.String=num2str(Box(3));
-                end
-                %%% Sums up all pixel for averaging
-                %%% Uses bigger original image for averaging
-                if     (From(2)-floor((Box(1)-1)/2))>=1 ...
-                    && (From(1)-floor((Box(2)-1)/2))>=1 ...
-                    && (To(2)+floor(Box(1)/2))<=size(MIAData.Data{i,1},1) ...
-                    && (To(1)+floor(Box(2)/2))<=size(MIAData.Data{i,1},2)
-                    data=MIAData.Data{i,1}(...
-                        (From(2)-floor((Box(1)-1)/2)):(To(2)+floor(Box(1)/2)),...
-                        (From(1)-floor((Box(2)-1)/2)):(To(1)+floor(Box(2)/2)),:);
-                    if Box(3)>1
-                       data(end,end,end+Box(3)-1)=0; 
-                    end
-                else 
-                    %%% Fills additional position with zeros, if on border
-                    %%% of original image                    
-                    data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
-                    data(end+Box(1)-1,end+Box(2)-1,end+Box(3)-1)=0;
-                    data=circshif(data,[floor((Box(1)-1)/2),floor((Box(2)-1)/2),0]);
-                end
-                Data=single(zeros(size(data)));
-                for j=1:Box(1)
-                    for k=1:Box(2);
-                        for l=1:Box(3);
-                            Data=Data+circshift(data,[j-1,k-1,l-1]);
-                        end
-                    end
-                end
-                clear data;
-                %%% Removes excess points
-                Data=Data((Box(1):end),...
-                          (Box(2):end),...
-                          (1+floor((Box(3)-1)/2):(end-floor(Box(3)/2))));    
-                MIAData.Data{i,2}=MIAData.Data{i,2}-Data/(Box(1)*Box(2)*Box(3));              
+                end 
+                %%% Calculates Filter
+                Filter=ones(Box)/prod(Box);
+                MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:),Filter,'replicate');    
         end
     end
 end
@@ -2262,8 +2281,6 @@ h.Mia_Cor_Frame_Slider.Max=0;
 h.Mia_Cor_Frame_Slider.SliderStep=[1 1];
 h.Mia_Cor_Frame_Slider.Value=0;
 
-
-
 %%% Determins, which correlations to perform
 if h.Mia_Correlation_Type.Value==3
     Auto=1:2; Cross=1;
@@ -2273,12 +2290,126 @@ else
     channel=floor(Auto*1.5);
 end
 
+%%% Determins, which frames to correlate
+Frames=str2num(h.Mia_Correlation_Frames.String); %%% Uses str2num, because the output is not scalar
+%%% Uses all Frames, if input was 0
+if all(Frames==0)
+    Frames=1:size(MIAData.Data{1,2},3);
+end
+%%% Remove all Frames<1 and >Movie size
+if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
+    Min=max(1,min(Frames)); Min=min(Min,size(MIAData.Data{1,2},3));   
+    Max=min(size(MIAData.Data{1,2},3),max(Frames)); Max=max(Max,1);
+    Frames=Min:Max;
+    h.Mia_Correlation_Frames.String=[num2str(Min) ':' num2str(Max)];
+end
+
+
+%%% Does arbitrary region ICS
+%%% Uses Intensity and Variance thesholding to remove bad pixels
+if h.Mia_Correlation_FramesUse.Value==4
+    %%% ROI borders
+    From=h.Plots.ROI(1).Position(1:2)+0.5;
+    To=From+h.Plots.ROI(1).Position(3:4)-1;
+    %%% Thresholding Parameters
+    Int_Max=1000;
+    Int_Min=10;
+    Int_Fold_Max=5;
+    Int_Fold_Min=5;
+    Var_Fold_Max=5;
+    Var_Fold_Min=5;
+    Var_Sub=9;
+    Var_SubSub=5;
+    
+    Use=cell(max(Auto),1);
+    for i=Auto
+        
+        %% Intensity thresholding for arbitrary region ICS
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% Because the intenities per pixel are very low, the tresholding
+        %%% works on the sum of the stack
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        %%% Thresholding operates on summed up, uncorrected data
+        Data=sum(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames));
+        %%% Logical array to determin which pixels to use
+        Use{i}=true(size(Data));
+        
+        %%% Removes pixel below an intensity threshold set in kHz
+        if Int_Min>0
+            Use{i}(Data<Int_Min)=false;
+        end
+        %%% Removes pixel above an intensity threshold set in kHz
+        if Int_Max>Int_Min
+            Use{i}(Data>Int_Max)=false;
+        end
+        %%% Turns unselected pixels into NaNs to not consider them further
+        Data(~Use{i})=NaN;
+        %%% Removes pixel below a fraction of the mean ROI intensity
+        if Int_Min>1
+            Use{i}(Data<(nanmean(nanmean(Data))/Int_Fold_Min))=false;
+        end
+        %%% Removes pixel above a multiple of the mean ROI intensity
+        if Int_Max>1
+            Use{i}(Data<(nanmean(nanmean(Data))*Int_Fold_Max))=false;
+        end
+        
+        %% Variance Thresholding
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% The variance in a small rectangular region is calculated and 
+        %%% compared to the variance in a bigger region
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        %%% Thresholding operates on uncorrected data
+        Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames);
+        %%% Exdents array to determin which pixels to use, because now
+        %%% every frame is calculated individually
+        Used{i}=repmat(Used{i},[1 1 size(Data,3)]);        
+        if Var_SubSub>1 && Var_Sub>Var_SubSub
+            Start=ceil(Var_Sub/2)-1;
+            Stop=floor(Var_Sub/2)-1;
+            for j=1:size(Data,3)
+                Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
+                Filter2=ones(Var_Sub)/(Var_Sub)^2;
+                %%% Calculates population variance for both subregions     (sample to population var)
+                Var1=(filter2(Filter1,Image.^2)-filter2(Filter1,Image).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
+                Var2=(filter2(Filter2,Image.^2)-filter2(Filter2,Image).^2)*(Var_Sub^2/(Var_Sub^2-1));
+                %%% Discards samples with too low\high variance
+                if Var_Fold_Max>1
+                    Used{i}(:,:,j)=Used{i}(:,:,j) & (Var1>(Var2*Var_Fold_Max));
+                end
+                if Var_Fold_Min>1
+                    Used{i}(:,:,j)=Used{i}(:,:,j) & (Var1<(Var2/Var_Fold_Min));
+                end
+                %%% Discards border pixels, where variance calculations were not calculated
+                Used{i}(1:Start,:)=false; Used{i}(:,1:Start)=false;
+                Used{i}(end-Stop:end,:)=false;Used{i}(:,end-Stop:end)=false;
+            end
+        end
+    end
+    
+end
+
+
+
+
+if h.Mia_Correlation_FramesUse.Value>1
+   if Cross
+      Active=find(prod(MIAData.Use));
+   else
+      Active=find(MIAData.Use(Auto,:));
+   end
+   Frames=intersect(Frames,Active);
+end
+
+
+
 
 %%% Performs autocorrelation
 for i=Auto
-    MIAData.Cor{floor(i*1.5)}=zeros(size(MIAData.Data{1,2}));
-    for j=1:size(MIAData.Data{1,2},3)
-        Image=double(MIAData.Data{i,2}(:,:,j));
+    MIAData.Cor{floor(i*1.5)}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
+    for j=1:numel(Frames)
+        Image=double(MIAData.Data{i,2}(:,:,Frames(j)));
         %%% Actual correlation
         MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(fft2(Image).*conj(fft2(Image)))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
         %%% Center point is average of x neighbors to remove noise peak
@@ -2289,10 +2420,10 @@ for i=Auto
 end
 %%% Performs crosscorrelation
 if Cross
-    MIAData.Cor{2}=zeros(size(MIAData.Data{1,2}));
-    for j=1:size(MIAData.Data{1,2},3)
-        Image{1}=double(MIAData.Data{1,2}(:,:,j));
-        Image{2}=double(MIAData.Data{2,2}(:,:,j));
+    MIAData.Cor{2}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
+    for j=i:numel(Frames)
+        Image{1}=double(MIAData.Data{1,2}(:,:,Frames(j)));
+        Image{2}=double(MIAData.Data{2,2}(:,:,Frames(j)));
         %%% Actual correlation
         MIAData.Cor{2}(:,:,j)=(fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2})*size(Image{1},1)*size(Image{1},2))) - 1;
         %%% Center point is average of x neighbors to remove noise peak
@@ -2301,6 +2432,34 @@ if Cross
     end
     clear Image;
 end
+
+%%% Corrects the amplitude changes due to temporal moving average addition/subtraction
+%%% The Formula assumes 2 or 3 species with different brightnesses and corrects the amplitude accordingly
+if h.Mia_Add.Value==5 && h.Mia_Subtract.Value==4 %%% Subtracts and Adds moving average
+    Sub=str2double(h.Mia_Subtract_Frames.String);
+    Add=str2double(h.Mia_Add_Frames.String);
+    if Sub~=Add %%% If Add==Sub, nothing was done        
+        Correct=1/((1+1/Add-1/Sub)^2+(1/Add-1/Sub)^2*(min(Add,Sub)-1)+(1/max(Add,Sub))^2*abs(Add-Sub));
+    else %%% If Add==Sub, nothing was done
+        Correct=1;
+    end
+elseif h.Mia_Add.Value==5
+    Add=str2double(h.Mia_Add_Frames.String); 
+    Correct=1/((1+1/Add)^2+(1/Add)^2*(Add-1));
+elseif h.Mia_Subtract.Value==4
+    Sub=str2double(h.Mia_Subtract_Frames.String);
+    Correct=1/((1-1/Sub)^2+(1/Sub)^2*(Sub-1));
+else
+    Correct=1;
+end
+%%% Applies amplidute correction
+for i=1:size(MIAData.Cor)
+    if ~isempty(MIAData.Cor{i})
+        MIAData.Cor{i}=MIAData.Cor{i}*Correct;
+    end
+end
+
+
 
 for i=channel
     h.Mia_Cor_Axes(i,1).Visible='on';
@@ -2405,6 +2564,8 @@ OUT= P(5) + 2.^(-3./2)./P(1).... %%% Amplitude
     .*exp(-(P(6)*10^-9)^2*((X-Shift).^2+(Y-Shift).^2)./((P(3)*10^-6)^2+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3))); %%% Scanning
 OUT((Shift-1)*(Size+1)+1)=(OUT((Shift-1)*(Size-1))+OUT(Shift*(Size+1)))/2;
 MIAData.Cor{mode,2}=reshape(OUT,[Size,Size]);
+
+
 
 
 
@@ -2519,7 +2680,6 @@ h.Mia_NB_Hist(3,3).String='50';
 
 %%% Updates N&B plots
 Update_Plots([],[],3,channel);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes 2D histogram background color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
