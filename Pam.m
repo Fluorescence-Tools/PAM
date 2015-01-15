@@ -3726,37 +3726,37 @@ h.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
 
 switch BAMethod %%% define which Burst Search Parameters are to be displayed
     case 'APBS_twocolorMFD'
-        h.BurstText.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstText.BurstParameter4_Text.Visible = 'off';
+        h.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstText.BurstParameter5_Text.Visible = 'off';
+        h.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'DCBS_twocolorMFD'
-        h.BurstText.BurstParameter3_Text.String = 'Photons per Time Window GX:';
-        h.BurstText.BurstParameter4_Text.Visible = 'on';
-        h.BurstText.BurstParameter4_Text.String = 'Photons per Time Window RR:';
+        h.BurstParameter3_Text.String = 'Photons per Time Window GX:';
+        h.BurstParameter4_Text.Visible = 'on';
+        h.BurstParameter4_Text.String = 'Photons per Time Window RR:';
         h.BurstParameter4_Edit.Visible = 'on';
-        h.BurstText.BurstParameter5_Text.Visible = 'off';
+        h.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'APBS_threecolorMFD'
-        h.BurstText.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstText.BurstParameter4_Text.Visible = 'off';
+        h.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstText.BurstParameter5_Text.Visible = 'off';
+        h.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
     case 'TCBS_threecolorMFD'
-        h.BurstText.BurstParameter3_Text.String = 'Photons per Time Window BX:';
-        h.BurstText.BurstParameter4_Text.Visible = 'on';
-        h.BurstText.BurstParameter4_Text.String = 'Photons per Time Window GX.';
+        h.BurstParameter3_Text.String = 'Photons per Time Window BX:';
+        h.BurstParameter4_Text.Visible = 'on';
+        h.BurstParameter4_Text.String = 'Photons per Time Window GX.';
         h.BurstParameter4_Edit.Visible = 'on';
-        h.BurstText.BurstParameter5_Text.Visible = 'on';
-        h.BurstText.BurstParameter5_Text.String = 'Photons per Time Window RR:';
+        h.BurstParameter5_Text.Visible = 'on';
+        h.BurstParameter5_Text.String = 'Photons per Time Window RR:';
         h.BurstParameter5_Edit.Visible = 'on';
     case 'APBS_twocolornoMFD'
-        h.BurstText.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.BurstText.BurstParameter4_Text.Visible = 'off';
+        h.BurstParameter3_Text.String = 'Photons per Time Window:';
+        h.BurstParameter4_Text.Visible = 'off';
         h.BurstParameter4_Edit.Visible = 'off';
-        h.BurstText.BurstParameter5_Text.Visible = 'off';
+        h.BurstParameter5_Text.Visible = 'off';
         h.BurstParameter5_Edit.Visible = 'off';
 end
 
