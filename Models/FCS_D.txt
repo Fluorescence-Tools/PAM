@@ -1,0 +1,18 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+Simple one component, 3D normal diffusion FCS model.
+Diffusion coefficient and focus size are both parameters
+One exponential triplet component
+
+    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offest|    
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): N             = 1
+Param(2): D[µm^2/s]     = 373   
+Param(3): w_r [µm]      = 0.2
+Param(4): w_z [µm]      = 1
+Param(5): tauT[µs]      = 1
+Param(6): Trip          = 0.01
+Param(7): y0            = 0
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/P(1); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=(1/sqrt(8))*(1/P(1)*(1+(P(6)/(1-P(6))))*exp(-x/P(5)*1e-6)).*(1./(1+4*(P(2)*1e-12)*x/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12)*x/(P(4)*1e-6)^2))+P(7);

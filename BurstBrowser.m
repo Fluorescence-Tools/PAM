@@ -7,7 +7,7 @@ Look=UserValues.Look;
 
 if isempty(hfig)
     %% define main window
-    h.Figure = figure(...
+    h.BurstBrowser = figure(...
     'Units','normalized',...
     'Name','BurstBrowser',...
     'MenuBar','none',...
@@ -17,20 +17,20 @@ if isempty(hfig)
     'Tag','BurstBrowser');
     %'WindowScrollWheelFcn',@Bowser_Wheel,...
     %'KeyPressFcn',@Bowser_KeyPressFcn,...
-    whitebg(h.Figure, Look.Fore);
-    set(h.Figure,'Color',Look.Back);
+    whitebg(h.BurstBrowser, Look.Fore);
+    set(h.BurstBrowser,'Color',Look.Back);
     
     %%% define menu items
     %%% Load Burst Data Callback
     h.Load_Bursts = uimenu(...
-    'Parent',h.Figure,...
+    'Parent',h.BurstBrowser,...
     'Label','Load Burst Data',...
     'Callback',@Load_Burst_Data_Callback,...
     'Tag','Load_Burst_Data');
     
     %%% Save Analysis State
      h.Load_Bursts = uimenu(...
-    'Parent',h.Figure,...
+    'Parent',h.BurstBrowser,...
     'Label','Save Analysis State',...
     'Callback',@Save_Analysis_State_Callback,...
     'Tag','Save_Analysis_State');
@@ -38,7 +38,7 @@ if isempty(hfig)
     %define tabs
     %main tab
     h.Main_Tab = uitabgroup(...
-        'Parent',h.Figure,...
+        'Parent',h.BurstBrowser,...
         'Tag','Main_Tab',...
         'Units','normalized',...
         'Position',[0 0.01 0.65 0.98]);
@@ -90,7 +90,7 @@ if isempty(hfig)
     
     %% secondary tab selection gui
     h.Secondary_Tab = uitabgroup(...
-    'Parent',h.Figure,...
+    'Parent',h.BurstBrowser,...
     'Tag','Secondary_Tab',...
     'Units','normalized',...
     'Position',[0.65 0.01 0.34 0.98]);
@@ -528,7 +528,7 @@ if isempty(hfig)
     'ButtonDownFcn',@SetAxes,...
     'View',[0 90]);
 
-    guidata(h.Figure,h);    
+    guidata(h.BurstBrowser,h);    
     %set(Figure,'WindowButtonMotionFcn',@Update_Position);
     colormap(hot);
     %% set UserValues in GUI
@@ -629,7 +629,7 @@ elseif strcmpi(clickType,'Left-click') %%% Update Plot
     %%% Update selected value
     hListbox.Value = clickedIndex;
 end
-UpdatePlot([]);
+UpdatePlot([],[]);
 
 function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % Determine the click type
@@ -716,7 +716,7 @@ function UpdatePlot(obj,~)
 h = guidata(gcf);
 global BurstData UserValues
 LSUserValues(1);
-if gcbo ~= h.DetermineCorrectionsButton
+if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
 end
@@ -767,7 +767,7 @@ switch UserValues.BurstBrowser.Display.PlotType
         set(BurstData.PlotHandle,'AlphaData',l);
         set(gca,'YDir','normal');
     case 'Contour' %%%contour plot
-        zc=linspace(1, ceil(max(max(H))),20);
+        zc=linspace(1, ceil(max(max(H))),10);
         set(gca,'CLim',[0 ceil(2*max(max(H)))]);
         H(H==0) = NaN;
         [~, BurstData.PlotHandle]=contourf(xbins,ybins,H,[0 zc]);
@@ -1035,8 +1035,10 @@ CutState = vertcat(BurstData.Cut{species}{:});
 Valid = true(size(BurstData.DataArray,1),1);
 if ~isempty(CutState) %%% only procede if there are elements in the CutTable
     for i = 1:size(CutState,1)
-        Index = find(strcmp(CutState(i,1),BurstData.NameArray));
-        Valid = Valid & (BurstData.DataArray(:,Index) >= CutState{i,2}) & (BurstData.DataArray(:,Index) <= CutState{i,3});
+        if CutState{i,4} == 1 %%% only if the Cut is set to "active"
+            Index = find(strcmp(CutState(i,1),BurstData.NameArray));
+            Valid = Valid & (BurstData.DataArray(:,Index) >= CutState{i,2}) & (BurstData.DataArray(:,Index) <= CutState{i,3});
+        end
     end
 end
 
@@ -1102,7 +1104,7 @@ end
 %%% Update GUI elements
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot;
+UpdatePlot([],[]);
 
 function DetermineCorrections(~,~)
 global BurstData UserValues
@@ -1287,12 +1289,12 @@ function List_ButtonDownFcn(hObject,eventdata)
 h = guidata(hObject);
 global BurstData
 
-if strcmpi(get(h.Figure,'SelectionType'),'open')
+if strcmpi(get(h.BurstBrowser,'SelectionType'),'open')
     %add a species to the list
     BurstData.SpeciesNames{end+1} = ['Species ' num2str(1+numel(get(hObject,'String')))];
     set(hObject,'String',BurstData.SpeciesNames);
     set(hObject,'Value',numel(get(hObject,'String')));
-elseif strcmpi(get(h.Figure,'SelectionType'),'alt')
+elseif strcmpi(get(h.BurstBrowser,'SelectionType'),'alt')
     if numel(get(hObject,'String')) > 1 %remove selected field
         val = get(hObject,'Value');
         BurstData.SpeciesNames(val) = [];
