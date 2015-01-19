@@ -447,6 +447,34 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.l2 was incomplete');    
     end
     
+    %%% Checks, if BurstBrowser.Corrections.DonorLifetime subfield exists
+    %%% This value stores the set Donor Lifetime
+    if ~isfield (S.BurstBrowser.Corrections,'DonorLifetime')
+        S.BurstBrowser.Corrections.DonorLifetime=3.8;
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetime was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.AcceptorLifetime subfield exists
+    %%% This value stores the set Acceptor Lifetime
+    if ~isfield (S.BurstBrowser.Corrections,'AcceptorLifetime')
+        S.BurstBrowser.Corrections.AcceptorLifetime=3.5;
+        disp('UserValues.BurstBrowser.Corrections.AcceptorLifetime was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.FoersterRadius subfield exists
+    %%% This value stores the set Foerster Radius
+    if ~isfield (S.BurstBrowser.Corrections,'FoersterRadius')
+        S.BurstBrowser.Corrections.FoersterRadius=59;
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadius was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Corrections.LinkerLength subfield exists
+    %%% This value stores the set Linker Length 
+    if ~isfield (S.BurstBrowser.Corrections,'LinkerLength')
+        S.BurstBrowser.Corrections.LinkerLength=5;
+        disp('UserValues.BurstBrowser.Corrections.LinkerLength was incomplete');    
+    end
+    
     %%% Checks, if BurstBrowser.Display subfield exists
     %%% Here the display options are stored
     if ~isfield (S.BurstBrowser,'Display')

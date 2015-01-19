@@ -291,12 +291,25 @@ if isempty(hfig)
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0 0.86 0.4 0.03],...
+    'Position',[0 0.86 0.5 0.03],...
     'Style','pushbutton',...
     'Tag','DetermineGammaManuallyButton',...
     'String','Determine Gamma Manually',...
     'FontSize',14,...
     'Callback',@DetermineGammaManually);
+    
+    %%% Button to determine gamma from lifetime
+    h.DetermineGammaLifetimeButton = uicontrol(...
+    'Parent',h.SecondaryTabCorrectionsPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.86 0.5 0.03],...
+    'Style','pushbutton',...
+    'Tag','DetermineGammaLifetimeButton',...
+    'String','Determine Gamma from Lifetime',...
+    'FontSize',14,...
+    'Callback',@DetermineGammaLifetime);
 
     %%% Button to apply custom correction factors
     h.ApplyCorrectionsButton = uicontrol(...
@@ -354,18 +367,158 @@ if isempty(hfig)
         'BackgroundColor',Look.Control,...
         'ForegroundColor',Look.Fore);
     
-    %%% Button to fit lifetime-related quantities
-    h.FitLifetimeRelatedButton = uicontrol(...
-    'Parent',h.SecondaryTabCorrectionsPanel,...
+    %%% Uipanel for fitting lifetime-related quantities
+    h.FitLifetimeRelatedPanel = uipanel(...
+        'Parent',h.SecondaryTabCorrectionsPanel,...
+        'Units','normalized',...
+        'Position',[0 0 1 0.3],...
+        'Tag','DisplayOptionsPanel',...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'Title','Lifetime Plots',...
+        'FontSize',14);
+    
+    h.FitAnisotropyButton = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0 0.21 0.4 0.03],...
+    'Position',[0 0.85 0.4 0.1],...
     'Style','pushbutton',...
-    'Tag','FitLifetimeRelatedButton',...
-    'String','Add Fits to Lifetime Plots',...
+    'Tag','FitAnisotropyButton',...
+    'String','Fit Anisotropy',...
     'FontSize',14,...
-    'Callback',@UpdateLifetimePlots);
+    'Callback',@UpdateLifetimeFits);
+
+    h.ManualAnisotropyButton = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0 0.75 0.4 0.1],...
+    'Style','pushbutton',...
+    'Tag','ManualAnisotropyButton',...
+    'String','Manual Perrin Fit',...
+    'FontSize',14,...
+    'Callback',@UpdateLifetimeFits);
+
+    h.PlotStaticFRETButton = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.85 0.4 0.1],...
+    'Style','pushbutton',...
+    'Tag','PlotStaticFRETButton',...
+    'String','Plot Static FRET Line',...
+    'FontSize',14,...
+    'Callback',@UpdateLifetimeFits);
+        
+    uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.75 0.35 0.07],...
+    'Style','text',...
+    'Tag','SelectDonorDyeText',...
+    'String','Donor Lifetime',...
+    'FontSize',14);
+    
+    h.DonorLifetimeEdit = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Fore,...
+    'ForegroundColor', Look.Back,...
+    'Position',[0.87 0.75 0.1 0.07],...
+    'Style','edit',...
+    'Tag','DonorLifetimeEdit',...
+    'String',num2str(UserValues.BurstBrowser.Corrections.DonorLifetime),...
+    'FontSize',14,...
+    'Callback',@UpdateCorrections);
+
+    uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.65 0.35 0.07],...
+    'Style','text',...
+    'Tag','SelectAcceptorDyeText',...
+    'String','Acceptor Lifetime',...
+    'FontSize',14);
+    
+    h.AcceptorLifetimeEdit = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Fore,...
+    'ForegroundColor', Look.Back,...
+    'Position',[0.87 0.65 0.1 0.07],...
+    'Style','edit',...
+    'Tag','AcceptorLifetimeEdit',...
+    'String',num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime),...
+    'FontSize',14,...
+    'Callback',@UpdateCorrections);
+
+    h.DonorLifetimeFromDataCheckbox = uicontrol(....
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.55 0.45 0.07],...
+    'Style','checkbox',...
+    'Tag','DonorLifetimeFromDataCheckbox',...
+    'String','Get Donor only Lifetime from Data',...
+    'Value',0,...
+    'enable','off',...
+    'FontSize',10,...
+    'Callback',@DonorOnlyLifetimeCallback);
+
+    uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.45 0.35 0.07],...
+    'Style','text',...
+    'Tag','F?rsterRadiusText',...
+    'String','F?rster Radius [A]',...
+    'FontSize',14);
+    
+    h.FoersterRadiusEdit = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Fore,...
+    'ForegroundColor', Look.Back,...
+    'Position',[0.87 0.45 0.1 0.07],...
+    'Style','edit',...
+    'Tag','F?rsterRadiusEdit',...
+    'String',num2str(UserValues.BurstBrowser.Corrections.FoersterRadius),...
+    'FontSize',14,...
+    'Callback',@UpdateCorrections);
+
+    uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.35 0.35 0.07],...
+    'Style','text',...
+    'Tag','LinkerLengthText',...
+    'String','Linker Length [A]',...
+    'FontSize',14);
+    
+    h.LinkerLengthEdit = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Fore,...
+    'ForegroundColor', Look.Back,...
+    'Position',[0.87 0.35 0.1 0.07],...
+    'Style','edit',...
+    'Tag','F?rsterRadiusEdit',...
+    'String',num2str(UserValues.BurstBrowser.Corrections.LinkerLength),...
+    'FontSize',14,...
+    'Callback',@UpdateCorrections);
 
     %% secondary tab options
     
@@ -501,7 +654,6 @@ if isempty(hfig)
     'XAxisLocation','top',...
     'ButtonDownFcn',@SetAxes,...
     'View',[90 90]);
-    
     %% define axes in Corrections tab
     h.axes_crosstalk =  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
@@ -523,25 +675,26 @@ if isempty(hfig)
     'ButtonDownFcn',@SetAxes,...
     'View',[0 90]);
 
-    h.axes_artifacts =  axes(...
-    'Parent',h.MainTabCorrectionsPanel,...
-    'Units','normalized',...
-    'Position',[0.05 0.05 0.4 0.4],...
-    'Tag','Main_Tab_Corrections_Plot_artifacts',...
-    'Box','on',...
-    'FontSize',20,...
-    'ButtonDownFcn',@SetAxes,...
-    'View',[0 90]);
-
     h.axes_gamma=  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
     'Units','normalized',...
-    'Position',[0.55 0.05 0.4 0.4],...
+    'Position',[0.05 0.05 0.4 0.4],...
     'Tag','Main_Tab_Corrections_Plot_gamma',...
     'Box','on',...
     'FontSize',20,...
     'ButtonDownFcn',@SetAxes,...
     'View',[0 90]);
+
+    h.axes_gamma_lifetime =  axes(...
+    'Parent',h.MainTabCorrectionsPanel,...
+    'Units','normalized',...
+    'Position',[0.55 0.05 0.4 0.4],...
+    'Tag','Main_Tab_Corrections_Plot_gamma_lifetime',...
+    'Box','on',...
+    'FontSize',20,...
+    'ButtonDownFcn',@SetAxes,...
+    'View',[0 90]);
+
     %% Define Axes in Lifetime Tab
     h.axes_EvsTauGG =  axes(...
     'Parent',h.MainTabLifetimePanel,...
@@ -606,6 +759,13 @@ UserValues.PathName=PathName;
 
 load('-mat',fullfile(PathName,FileName));
 
+%%% Determine if an APBS or DCBS file was loaded
+%%% This is important because for APBS, the donor only lifetime can be
+%%% determined from the measurement!
+if ~isempty(strfind(FileName,'APBS'))
+    %%% Enable the donor only lifetime checkbox
+    h.DonorLifetimeFromDataCheckbox.Enable = 'on';
+end
 %find positions of Efficiency and Stoichiometry in NameArray
 posE = find(strcmp(BurstData.NameArray,'Efficiency'));
 if sum(strcmp(BurstData.NameArray,'Stoichiometry')) == 0
@@ -780,7 +940,7 @@ end
 
 global BurstData UserValues
 LSUserValues(0);
-if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime)
+if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
 end
@@ -1172,7 +1332,7 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
+UpdateLifetimePlots(hObject,[]);
 
 function DetermineCorrections(~,~)
 global BurstData UserValues
@@ -1244,22 +1404,6 @@ UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
 xlabel('Stoiciometry (raw)');
 ylabel('#');
 title('Raw Stoichiometry of Acceptor only');
-%% plot TFRET-TRED (or ALEX_2CDE)
-T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-x_axis = linspace(0,1,50);
-BurstData.Corrections.histTFRET = histc(BurstData.DataArray(:,T),x_axis);
-
-x_threshold = find((x_axis-T_threshold)>0,1,'first');
-axes(h.axes_artifacts);
-cla(gca);
-bar(x_axis(1:x_threshold), BurstData.Corrections.histTFRET(1:x_threshold),'BarWidth',1,'FaceColor',[0 0 0]);
-hold on;
-bar(x_axis(x_threshold+1:end), BurstData.Corrections.histTFRET(x_threshold+1:end),'BarWidth',1,'FaceColor',[1 1 1]);
-hold off;
-axis tight;
-xlabel('|TGX-TRR| (normalized)');
-ylabel('#');
-title('|TGX-TRR| Distribution');
 %% plot gamma plot for two populations (or lifetime versus E)
 axes(h.axes_gamma);cla(gca);legend('off');
 %%% get E-S values between 0.3 and 0.8;
@@ -1288,6 +1432,8 @@ BurstData.Corrections.S_raw = S_raw;
 GammaFit = fit(E_raw,1./S_raw,'poly1');
 hold on;
 pgamma = plot(GammaFit);
+pgamma.Color = [0 0 1];
+pgamma.LineWidth = 3;
 set(pgamma,'LineWidth',2);
 xlabel('Efficiency');
 ylabel('1/Stoichiometry');
@@ -1353,30 +1499,6 @@ if display
     hold off; 
 end
 
-function List_ButtonDownFcn(hObject,eventdata)
-h = guidata(hObject);
-global BurstData
-
-if strcmpi(get(h.BurstBrowser,'SelectionType'),'open')
-    %add a species to the list
-    BurstData.SpeciesNames{end+1} = ['Species ' num2str(1+numel(get(hObject,'String')))];
-    set(hObject,'String',BurstData.SpeciesNames);
-    set(hObject,'Value',numel(get(hObject,'String')));
-elseif strcmpi(get(h.BurstBrowser,'SelectionType'),'alt')
-    if numel(get(hObject,'String')) > 1 %remove selected field
-        val = get(hObject,'Value');
-        BurstData.SpeciesNames(val) = [];
-        set(hObject,'Value',val-1);
-        set(hObject,'String',BurstData.SpeciesNames); 
-    end
-end
-UpdateCutTable(h);
-UpdateCuts();
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
-
-function List_KeyPressFcn(hObject,eventdata)
-
 function UpdateCorrections(obj,~)
 global UserValues
 
@@ -1396,20 +1518,48 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         UserValues.BurstBrowser.Corrections.l1;...
         UserValues.BurstBrowser.Corrections.l2};
 else %%% Update UserValues with new values
+    h = guidata(obj);
     LSUserValues(0);
-    UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
-    UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{2};
-    UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{3};
-    UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{4};
-    UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{5};
-    UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{6};
-    UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{7};
-    UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{8};
-    UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{9};
-    UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{10};
-    UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{11};
-    UserValues.BurstBrowser.Corrections.l1 = obj.Data{12};
-    UserValues.BurstBrowser.Corrections.l2 = obj.Data{13};
+    switch obj
+        case h.CorrectionsTable
+            UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
+            UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{2};
+            UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{3};
+            UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{4};
+            UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{5};
+            UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{6};
+            UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{7};
+            UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{8};
+            UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{9};
+            UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{10};
+            UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{11};
+            UserValues.BurstBrowser.Corrections.l1 = obj.Data{12};
+            UserValues.BurstBrowser.Corrections.l2 = obj.Data{13};
+        case h.DonorLifetimeEdit
+            if ~isnan(str2double(h.DonorLifetimeEdit.String))
+                UserValues.BurstBrowser.Corrections.DonorLifetime = str2double(h.DonorLifetimeEdit.String);
+            else %%% Reset value
+                h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
+            end
+        case h.AcceptorLifetimeEdit
+            if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
+                UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
+            else %%% Reset value
+                h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
+            end
+        case h.FoersterRadiusEdit
+            if ~isnan(str2double(h.FoersterRadiusEdit.String))
+                UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
+            else %%% Reset value
+                h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
+            end
+        case h.LinkerLengthEdit
+            if ~isnan(str2double(h.LinkerLengthEdit.String))
+                UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
+            else %%% Reset value
+                h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
+            end
+    end
     LSUserValues(1);
 end
 
@@ -1782,6 +1932,8 @@ idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = strcmp('Efficiency',BurstData.NameArray);
 %% Plot E vs. tauGG in first plot
+%%% Check, whether a static FRET line already existed
+StaticFRETexisted = ~isempty(findobj(h.axes_EvsTauGG.Children,'Type','Line'));
 cla(h.axes_EvsTauGG);
 axes(h.axes_EvsTauGG);
 legend('off');
@@ -1799,6 +1951,11 @@ axis('tight');
 ylabel('Efficiency');
 xlabel('Lifetime GG [ns]');
 title('Efficiency vs. Lifetime GG');
+ylim([0 1]);
+if StaticFRETexisted
+    %%% replot the static FRET line
+    UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
+end
 %% Plot E vs. tauRR in second plot
 cla(h.axes_EvsTauRR);
 axes(h.axes_EvsTauRR);
@@ -1853,38 +2010,266 @@ axis('tight');
 xlabel('Lifetime RR [ns]');
 ylabel('Anisotropy RR');
 title('Anisotropy RR vs. Lifetime RR');
+
+function UpdateLifetimeFits(obj,~)
+global BurstData UserValues
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
+%%% Use the current cut Data (of the selected species) for plots
+datatoplot = BurstData.DataCut;
+%%% read out the indices of the parameters to plot
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
+idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
+idxE = strcmp('Efficiency',BurstData.NameArray);
 %% Add Fits
-if obj == h.FitLifetimeRelatedButton
-    %%% Process fits for the individual plots also
-    %% Add a static FRET line to first plot
+if obj == h.PlotStaticFRETButton
+    %% Add a static FRET line EvsTau plots
+    haxes = h.axes_EvsTauGG;
+    axes(haxes);
+    %%% Calculate static FRET line in presence of linker fluctuations
+    tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+    staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+        tau);
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_EvsTauGG.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
+    hold on;
+    plot_staticFRETline = plot(tau,staticFRETline);
+    legend('off');
+    plot_staticFRETline.Color = [0 0 1];
+    plot_staticFRETline.LineWidth = 3;
+end
+if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %%% GG
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_rGGvsTauGG.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
     r0 = 0.4;
     fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
-    PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoin',1);
+    PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoint',1);
     axes(h.axes_rGGvsTauGG);
     hold on;
     plotPerrinGG = plot(PerrinFitGG);
+    legend('off');
     plotPerrinGG.Color = [0 0 1];
     plotPerrinGG.LineWidth = 3;
     BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
+    xlabel('Lifetime GG [ns]');
+    ylabel('Anisotropy GG');
     title(['rhoGG = ' num2str(BurstData.Parameters.rhoGG)]);
     %% RR
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_rRRvsTauRR.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
     r0 = 0.4;
     fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
-    PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoin',1);
+    PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoint',1);
     axes(h.axes_rRRvsTauRR);
     hold on;
     plotPerrinRR = plot(PerrinFitRR);
+    legend('off');
     plotPerrinRR.Color = [0 0 1];
     plotPerrinRR.LineWidth = 3;
     BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
+    xlabel('Lifetime RR [ns]');
+    ylabel('Anisotropy RR');
     title(['rhoRR = ' num2str(BurstData.Parameters.rhoRR)]);
+end
+%% Manual Perrin plots
+if obj == h.ManualAnisotropyButton
+    [x,y] = ginput(1);
+    if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
+        haxes = gca;
+        legend('off');
+        %%% find previous line plot if it exists
+        PreviousFit = findobj(haxes.Children,'Type','Line');
+        if ~isempty(PreviousFit)
+            delete(PreviousFit);
+        end
+        %%% Determine rho
+        r0 = 0.4;
+        rho = x/(r0/y - 1);
+        fitPerrin = @(x) r0./(1+x./rho);
+        %%% plot
+        hold on;
+        tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+        plotPerrin = plot(tau,fitPerrin(tau));
+        plotPerrin.Color = [0 0 1];
+        plotPerrin.LineWidth = 3;
+        switch haxes
+            case h.axes_rGGvsTauGG
+                title(['rhoGG = ' num2str(rho)]);
+            case h.axes_rRRvsTauRR
+                title(['rhoRR = ' num2str(rho)]);
+        end
+    end
 end
 
 function MainTabSelectionChange(obj,e)
 h = guidata(obj);
 if e.NewValue == h.Main_Tab_Lifetime
-    %%% Update Lifetime Plots
-    UpdateLifetimePlots(obj,[]);
+    if isempty(h.axes_EvsTauGG.Children)
+        %%% Update Lifetime Plots
+        UpdateLifetimePlots(obj,[]);
+    end
 end
+
+function DonorOnlyLifetimeCallback(obj,~)
+global BurstData UserValues
+h = guidata(obj);
+if obj.Value == 1 %%% Checkbox was clicked on
+    %%% Determine Donor Only lifetime from data with S > 0.98
+    idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
+    idxS = strcmp(BurstData.NameArray,'Stoichiometry');
+    valid = (BurstData.DataArray(:,idxS) > 0.98);
+    DonorOnlyLifetime = mean(BurstData.DataArray(valid,idx_tauGG));
+    %%% Update GUI
+    h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
+    h.DonorLifetimeEdit.Enable = 'off';
+    UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
+    LSUserValues(1);
+else
+    h.DonorLifetimeEdit.Enable = 'on';
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [out, coefficients] = conversion_tau(tauD,R0,s,xval)
+% s = 6;
+res = 1000;
+%range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
+R = linspace(0*R0,5*R0,res);
+
+%for every R calculate gaussian distribution
+p = zeros(numel(R),res);
+r = zeros(numel(R),res);
+for j = 1:numel(R)
+    x = linspace(R(j)-4*s,R(j)+4*s,res);
+    dummy = exp(-((x-R(j)).^2)./(2*s^2));
+    dummy(x < 0) = 0;
+    dummy = dummy./sum(dummy);
+    p(j,:) = dummy;
+    r(j,:) = x;
+end
+
+%calculate lifetime distribution
+tau = zeros(numel(R),res);
+for j = 1:numel(R)
+    tau(j,:) = tauD./(1+((R0./r(j,:)).^6));
+end
+
+%calculate species weighted taux
+taux = zeros(1,numel(R));
+for j = 1:numel(R)
+taux(j) = sum(p(j,:).*tau(j,:));
+end
+
+%calculate intensity weighted tauf
+tauf = zeros(1,numel(R));
+for j = 1:numel(R)
+tauf(j) = sum(p(j,:).*(tau(j,:).^2))./taux(j);
+end
+
+coefficients = polyfit(tauf,taux,3);
+
+out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+
+function DetermineGammaLifetime(obj,~)
+global BurstData UserValues
+h = guidata(obj);
+
+%%% Prepare photon counts
+%%% Change focus to CorrectionsTab
+h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+
+indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
+indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
+indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
+indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
+indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
+T_threshold = str2double(h.T_Threshold_Edit.String);
+if isnan(T_threshold)
+    T_threshold = 0.1;
+end
+cutT = 1;
+if cutT == 0
+    data_for_corrections = BurstData.DataArray;
+elseif cutT == 1
+    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
+    valid = (BurstData.DataArray(:,T) < T_threshold);
+    data_for_corrections = BurstData.DataArray(valid,:);
+end
+
+%%% Read out corrections
+Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
+Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+
+%%% get E-S values between 0.3 and 0.8;
+S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
+%%% Calculate "raw" E and S with gamma = 1, but still apply direct
+%%% excitation,crosstalk, and background corrections!
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+
+%%% Calculate static FRET line in presence of linker fluctuations
+tau = linspace(0,5,100);
+[~, coeff] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+    UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+    tau);
+staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
+%%% minimize deviation from static FRET line as a function of gamma
+dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_corrections(S_threshold,indTauGG) ) ).^2 );
+gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+E =  NGR./(gamma_fit.*NGG+NGR);
+%%% plot E versus tau with static FRET line
+cla(h.axes_gamma_lifetime);
+axes(h.axes_gamma_lifetime);
+[H, xbins_hist, ybins_hist] = hist2d([data_for_corrections(S_threshold,indTauGG) E],51, 51, [0 5], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+BurstData.Plots.GammaPlot = im;
+%%% add static FRET line
+tau = linspace(h.axes_gamma_lifetime.XLim(1),h.axes_gamma_lifetime.XLim(2),100);
+hold on;
+staticFRETplot = plot(tau,staticFRETline(tau));
+legend('off');
+staticFRETplot.Color = [0 0 1];
+staticFRETplot.LineWidth = 3;
+%%% Update Axis Labels
+xlabel('Lifetime GG [ns]');
+ylabel('Efficiency');
+title('Efficiency vs. Lifetime GG');
+ylim([0 1]);
+%%% Update UserValues
+UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
