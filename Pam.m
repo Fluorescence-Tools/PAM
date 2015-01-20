@@ -2710,18 +2710,22 @@ function MI_Axes_Menu(obj,~)
 h = guidata(gcf);
 if obj == h.MI_Log
     if strcmp(h.MI_Log.Checked,'off')
+        for i=1:(size(h.MI_Individual,2)/2-1)
+            for j=1:size(h.MI_Individual,1)
+                h.MI_Individual{j,2*i+1}.YScale='Log';
+            end
+        end       
         h.MI_All_Axes.YScale='Log';
-        for i=1:size(h.MI_Tab,1)
-            h.MI_Tab{i,3}.YScale='Log';
-        end
         h.MI_Phasor_Axes.YScale='Log';
         h.MI_Calib_Axes.YScale='Log';
         h.MI_Log.Checked='on';
     else
         h.MI_All_Axes.YScale='Linear';
-        for i=1:size(h.MI_Tab,1)
-            h.MI_Tab{i,3}.YScale='Linear';
-        end
+        for i=1:(size(h.MI_Individual,2)/2-1)
+            for j=1:size(h.MI_Individual,1)
+                h.MI_Individual{j,2*i+1}.YScale='Linear';
+            end
+        end  
         h.MI_Phasor_Axes.YScale='Linear';
         h.MI_Calib_Axes.YScale='Linear';
         h.MI_Log.Checked='off';
@@ -3573,9 +3577,8 @@ UserValues.Phasor.Reference(Det,:)=0;
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
 %%% Anders: Highjacking this to also save an IRF for Lifetime Fitting
-for i=UserValues.Detector.Det
-    UserValues.TauFit.IRF(i,1:numel(PamMeta.MI_Hist{i}))=PamMeta.MI_Hist{i};
-end
+UserValues.TauFit.IRF(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
+
 LSUserValues(1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5234,6 +5237,8 @@ else
     ALEX_2CDE(1,1:3) = NaN;
 end
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5313,6 +5318,8 @@ if isfield(PamMeta.Det_Calib,'Shift')
     Calibrate_Detector([],[],Det,Rout);
 end
 LSUserValues(1)
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Generates windows-compatible file names and adds increment %%%%%%%%%%%%

@@ -2,7 +2,6 @@ function Mia
 global UserValues MIAData
 h.Mia=findobj('Tag','Mia');
 
-% Waldi ist ein zwei drei
 
 if isempty(h.Mia)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -638,15 +637,6 @@ if isempty(h.Mia)
             'Position',[0.02 0.92, 0.96 0.06],...
             'Callback',@Do_2D_XCor,...
             'String','Correlate');
-        h.Mia_Correlation_Type = uicontrol(...
-            'Parent', h.Mia_Calculations_Cor_Panel,...
-            'Style','popupmenu',...
-            'Units','normalized',...
-            'FontSize',12,...
-            'BackgroundColor', Look.Control,...
-            'ForegroundColor', Look.Fore,...
-            'Position',[0.02 0.84, 0.3 0.06],...
-            'String',{'ACF1','ACF2','CCF'});
         h.Text{end+1} = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
             'Style','text',...
@@ -655,7 +645,7 @@ if isempty(h.Mia)
             'HorizontalAlignment','left',...
             'BackgroundColor', Look.Back,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.02 0.76, 0.5 0.06],...
+            'Position',[0.02 0.84, 0.5 0.06],...
             'String','Frames to use:');
         h.Mia_Correlation_Frames = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
@@ -664,8 +654,17 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.53 0.76, 0.3 0.06],...
+            'Position',[0.53 0.84, 0.3 0.06],...
             'String','1');
+        h.Mia_Correlation_Type = uicontrol(...
+            'Parent', h.Mia_Calculations_Cor_Panel,...
+            'Style','popupmenu',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'BackgroundColor', Look.Control,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.02 0.76, 0.3 0.06],...
+            'String',{'ACF1','ACF2','CCF'});
         h.Mia_Correlation_FramesUse = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
             'Style','popupmenu',...
@@ -673,8 +672,8 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.02 0.68, 0.96 0.06],...
-            'String',{'Use all frames','Use selected frames','Automatically unselect frames','Do arbitrary region ICS'});
+            'Position',[0.34 0.76, 0.64 0.06],...
+            'String',{'Use all frames','Use selected frames','Arbitrary region ICS'});
             %% Perform N&B calculation tab
         %%% Tab and panel for perform correlation UIs
         h.Mia_Calculations_NB_Tab= uitab(...
@@ -1629,7 +1628,7 @@ if any(mode==2)
             h.Cor_Colormap.BackgroundColor=h.Cor_Colormap.UserData;
     end
     %%% Determins frame to plot            
-    Frame=h.Mia_Cor_Frame_Slider.Value; 
+    Frame=round(h.Mia_Cor_Frame_Slider.Value); 
     %%% Determins correlation size to plot
     Size=str2double(h.Mia_Cor_Size.String);    
     %%% Updates correlationplots 
@@ -1651,12 +1650,13 @@ if any(mode==2)
                 Frames=Frames((Frames>0) & (Frames < size(MIAData.Cor{i,1},3)));
                 Image=mean(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frames),3);
             else
-                Image=MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frame);               
+                Image=MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frame);  
             end
             %%% Plots surface plot of correlation
             h.Plots.Cor(i,2).ZData=Image;
             %%% Resizes correlation and plots it as RGB
             Image=round(63*(Image-min(min(Image)))/(max(max(Image))-min(min(Image))))+1;
+            Image(isnan(Image))=1;
             Image=reshape(Colormap(Image,:),[size(Image,1),size(Image,2),3]);
             h.Plots.Cor(i,1).CData=Image;
             h.Mia_Cor_Axes(i,1).XLim=[0 size(Image,2)]+0.5;
@@ -1670,6 +1670,7 @@ if any(mode==2)
                 +circshift(Image_Surf,[ 0 -1 0]);
             %%% Resizes face intenity and plots it as RGB
             Image_Surf=round(63*(Image_Surf-min(min(Image_Surf)))/(max(max(Image_Surf))-min(min(Image_Surf))))+1;
+            Image_Surf(isnan(Image_Surf))=1;
             Image_Surf=reshape(Colormap(Image_Surf,:),[size(Image_Surf,1),size(Image_Surf,2),3]);
             h.Plots.Cor(i,2).CData=Image_Surf;
                       
@@ -2304,118 +2305,157 @@ if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
     h.Mia_Correlation_Frames.String=[num2str(Min) ':' num2str(Max)];
 end
 
-
-%%% Does arbitrary region ICS
-%%% Uses Intensity and Variance thesholding to remove bad pixels
-if h.Mia_Correlation_FramesUse.Value==4
-    %%% ROI borders
-    From=h.Plots.ROI(1).Position(1:2)+0.5;
-    To=From+h.Plots.ROI(1).Position(3:4)-1;
-    %%% Thresholding Parameters
-    Int_Max=1000;
-    Int_Min=10;
-    Int_Fold_Max=5;
-    Int_Fold_Min=5;
-    Var_Fold_Max=5;
-    Var_Fold_Min=5;
-    Var_Sub=9;
-    Var_SubSub=5;
-    
-    Use=cell(max(Auto),1);
-    for i=Auto
-        
-        %% Intensity thresholding for arbitrary region ICS
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%% Because the intenities per pixel are very low, the tresholding
-        %%% works on the sum of the stack
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        %%% Thresholding operates on summed up, uncorrected data
-        Data=sum(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames));
-        %%% Logical array to determin which pixels to use
-        Use{i}=true(size(Data));
-        
-        %%% Removes pixel below an intensity threshold set in kHz
-        if Int_Min>0
-            Use{i}(Data<Int_Min)=false;
+switch (h.Mia_Correlation_FramesUse.Value)
+    case 1
+    case 2
+        if Cross
+            Active=find(prod(MIAData.Use));
+        else
+            Active=find(MIAData.Use(Auto,:));
         end
-        %%% Removes pixel above an intensity threshold set in kHz
-        if Int_Max>Int_Min
-            Use{i}(Data>Int_Max)=false;
-        end
-        %%% Turns unselected pixels into NaNs to not consider them further
-        Data(~Use{i})=NaN;
-        %%% Removes pixel below a fraction of the mean ROI intensity
-        if Int_Min>1
-            Use{i}(Data<(nanmean(nanmean(Data))/Int_Fold_Min))=false;
-        end
-        %%% Removes pixel above a multiple of the mean ROI intensity
-        if Int_Max>1
-            Use{i}(Data<(nanmean(nanmean(Data))*Int_Fold_Max))=false;
-        end
+        Frames=intersect(Frames,Active);
+    case 3
+        %%% Does arbitrary region ICS
+        %%% Uses Intensity and Variance thesholding to remove bad pixels
+        %%% ROI borders
+        From=h.Plots.ROI(1).Position(1:2)+0.5;
+        To=From+h.Plots.ROI(1).Position(3:4)-1;
+        %%% Thresholding Parameters
+        Int_Max=0;
+        Int_Min=0;
+        Int_Fold_Max=1.5;
+        Int_Fold_Min=0.7;
+        Var_Fold_Max=1.2;
+        Var_Fold_Min=0.6;
+        Var_Sub=30;
+        Var_SubSub=10;
         
-        %% Variance Thresholding
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %%% The variance in a small rectangular region is calculated and 
-        %%% compared to the variance in a bigger region
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        %%% Thresholding operates on uncorrected data
-        Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames);
-        %%% Exdents array to determin which pixels to use, because now
-        %%% every frame is calculated individually
-        Used{i}=repmat(Used{i},[1 1 size(Data,3)]);        
-        if Var_SubSub>1 && Var_Sub>Var_SubSub
-            Start=ceil(Var_Sub/2)-1;
-            Stop=floor(Var_Sub/2)-1;
-            for j=1:size(Data,3)
-                Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
-                Filter2=ones(Var_Sub)/(Var_Sub)^2;
-                %%% Calculates population variance for both subregions     (sample to population var)
-                Var1=(filter2(Filter1,Image.^2)-filter2(Filter1,Image).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
-                Var2=(filter2(Filter2,Image.^2)-filter2(Filter2,Image).^2)*(Var_Sub^2/(Var_Sub^2-1));
-                %%% Discards samples with too low\high variance
-                if Var_Fold_Max>1
-                    Used{i}(:,:,j)=Used{i}(:,:,j) & (Var1>(Var2*Var_Fold_Max));
-                end
-                if Var_Fold_Min>1
-                    Used{i}(:,:,j)=Used{i}(:,:,j) & (Var1<(Var2/Var_Fold_Min));
-                end
-                %%% Discards border pixels, where variance calculations were not calculated
-                Used{i}(1:Start,:)=false; Used{i}(:,1:Start)=false;
-                Used{i}(end-Stop:end,:)=false;Used{i}(:,end-Stop:end)=false;
+        Use=cell(max(Auto),1);
+        for i=Auto
+            %% Static region intensity thresholding for arbitrary region ICS
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%% Because the intenities per pixel are very low, the tresholding
+            %%% works on the sum of the stack
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %%% Thresholding operates on summed up, uncorrected data
+            Data=sum(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames),3);
+            %%% Logical array to determin which pixels to use
+            Use{i}=true(size(Data));
+            
+            %%% Removes pixel below an intensity threshold set in kHz
+            if Int_Min>0
+                Use{i}(Data<Int_Min)=false;
             end
+            %%% Removes pixel above an intensity threshold set in kHz
+            if Int_Max>Int_Min
+                Use{i}(Data>Int_Max)=false;
+            end
+            
+            %% Sliding window thresholding for arbitrary region ICS
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%% The variance and itensity in a small rectangular region is
+            %%% calculated and compared to the variance in a bigger region
+            %%% around it
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %%% Thresholding operates on uncorrected data
+            Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames);
+            %%% Exdents array to determine which pixels to use, because now
+            %%% every frame is calculated individually
+            Use{i}=repmat(Use{i},[1 1 size(Data,3)]);
+            if Var_SubSub>1 && Var_Sub>Var_SubSub
+                Start=ceil(Var_Sub/2)-1;
+                Stop=floor(Var_Sub/2)-1;
+                for j=1:size(Data,3)
+                    Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
+                    Filter2=ones(Var_Sub)/(Var_Sub^2);
+                    %%% Calculates population variance for both subregions                  (sample2population var)
+                    Var1=(filter2(Filter1,Data(:,:,j).^2)-filter2(Filter1,Data(:,:,j)).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
+                    Var2=(filter2(Filter2,Data(:,:,j).^2)-filter2(Filter2,Data(:,:,j)).^2)*((Var_Sub^2)/(Var_Sub^2-1));
+                    %%% Calculates mean of both subregions
+                    Mean1=filter2(Filter1,Data(:,:,j));
+                    Mean2=filter2(Filter2,Data(:,:,j));
+                    %%% Discards samples with too low\high variance
+                    if Var_Fold_Max>1
+                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Var1<(Var2*Var_Fold_Max));
+                    end
+                    if Var_Fold_Min<1 && Var_Fold_Min>0
+                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Var1>(Var2*Var_Fold_Min));
+                    end
+                    %%% Discards samples with too low\high intensities
+                    if Int_Fold_Max>1
+                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Mean1<(Mean2*Int_Fold_Max));
+                    end
+                    if Int_Fold_Min<1 && Int_Fold_Min>0
+                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Mean1>(Mean2*Int_Fold_Min));
+                    end
+                end
+                %%% Discards border pixels, where variance and intensity were not calculated
+                Use{i}(1:Start,:,:)=false; Use{i}(:,1:Start,:)=false;
+                Use{i}(end-Stop:end,:,:)=false;Use{i}(:,end-Stop:end,:)=false;
+            end
+            
+            %%% Removes pixels, if invalid pixels were used for averaging
+            if h.Mia_Add.Value==5 || h.Mia_Subtract.Value==4
+                if h.Mia_Add.Value==5
+                    Box1=[str2double(h.Mia_Add_Pixel.String), str2double(h.Mia_Add_Frames.String)];
+                else
+                    Box1=[1 1];
+                end
+                if h.Mia_Subtract.Value==4
+                    Box2=[str2double(h.Mia_Subtract_Pixel.String), str2double(h.Mia_Subtract_Frames.String)];
+                else
+                    Box2=[1 1];
+                end                               
+                Box=max([Box1;Box2]);
+                Filter=ones(Box(1),Box(1),Box(2))/(Box(1)^2*Box(2));
+                Use{i}=logical(floor(imfilter(single(Use{i}),Filter,'replicate')));
+            end
+            
+            
         end
-    end
-    
+        
 end
-
-
-
-
-if h.Mia_Correlation_FramesUse.Value>1
-   if Cross
-      Active=find(prod(MIAData.Use));
-   else
-      Active=find(MIAData.Use(Auto,:));
-   end
-   Frames=intersect(Frames,Active);
-end
-
 
 
 
 %%% Performs autocorrelation
 for i=Auto
     MIAData.Cor{floor(i*1.5)}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
-    for j=1:numel(Frames)
+    tic
+    for j=1:numel(Frames)        
         Image=double(MIAData.Data{i,2}(:,:,Frames(j)));
-        %%% Actual correlation
-        MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(fft2(Image).*conj(fft2(Image)))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
+        
+        if h.Mia_Correlation_FramesUse.Value==3  %%% Arbitrary region ICS
+            
+            %%% Calculates normalization for zero regions            
+            Norm=fft2(Use{i}(:,:,j));
+            Norm=fftshift(ifft2(Norm.*conj(Norm)));
+            %%% Calculates fluctutation image
+            ImageFluct=Image-mean(Image(Use{i}(:,:,j)));
+            %%% Applies selected region
+            ImageFluct=ImageFluct.*Use{i}(:,:,j);
+            %%% Actual correlation
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(fft2(ImageFluct).*conj(fft2(ImageFluct)))))/(mean(Image(Use{i}(:,:,j)))^2);
+            %%% Corrects for shape of selected region
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=MIAData.Cor{floor(i*1.5)}(:,:,j)./Norm;
+            
+%             Lines to use with zero padding (no effect so far)
+%             nfft = size(Image)*2-1;
+%             Norm=fft2(Use{i}(:,:,j),nfft(1),nfft(2));
+%             Cor=fftshift(real(ifft2(fft2(ImageFluct,nfft(1),nfft(2)).*conj(fft2(ImageFluct,nfft(1),nfft(2))))))/(mean(Image(Use{i}(:,:,j)))^2);
+%             MIAData.Cor{floor(i*1.5)}(:,:,j)=Cor(ceil(size(Image,1)/2):ceil(size(Image,1)*1.5-1),ceil(size(Image,2)/2):ceil((size(Image,2)*1.5-1)));
+        else %%% Standard ICS
+            %%% Actual correlation
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(fft2(Image).*conj(fft2(Image)))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
+        end
         %%% Center point is average of x neighbors to remove noise peak
         center=[floor(size(MIAData.Cor{floor(i*1.5)},1)/2)+1,floor(size(MIAData.Cor{floor(i*1.5)},2)/2)+1];
         MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;
+        
     end
+    toc
     clear Image;
 end
 %%% Performs crosscorrelation
