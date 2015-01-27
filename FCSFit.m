@@ -370,6 +370,22 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     h.Residuals_Axes.YLabel.Color = Look.Fore;
     
     linkaxes([h.FCS_Axes h.Residuals_Axes],'x');
+%% Mac upscaling of Font Sizes
+if ismac
+    scale_factor = 1.2;
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if isprop(h.(fields{i}),'FontSize')
+            h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
+        end
+        if isprop(h.(fields{i}),'Style')
+            if strcmp(h.(fields{i}).Style,'popupmenu')
+                h.(fields{i}).BackgroundColor = Look.Fore;
+                h.(fields{i}).ForegroundColor = Look.Back;
+            end
+        end
+    end   
+end
     
 %% Initializes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     FCSData=[];
@@ -570,7 +586,7 @@ switch mode
             Columns{3*i+2}='F';
             Columns{3*i+3}='G';
         end
-        Columns{end}='Chi²';
+        Columns{end}='Chi?';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(4:3:end-1)=cellfun('length',FCSMeta.Model.Params).*7;
         ColumnWidth(ColumnWidth>0 & ColumnWidth<30)=45;

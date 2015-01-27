@@ -203,7 +203,7 @@ if Mode==0 %%% Loads user values
     end
     %%% Checks, if Pam.Cor_Divider subfield exists
     if ~isfield (S.Settings.Pam, 'Cor_Divider')
-        S.Settings.Pam.Cor_Divider='1';
+        S.Settings.Pam.Cor_Divider=1;
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
     end
     
