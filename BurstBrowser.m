@@ -746,17 +746,23 @@ else
 end
 
 
-%Load File
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(~,~)
 
 h = guidata(gcbo);
 global BurstData UserValues
 
 LSUserValues(0);
-[FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.Path, 'MultiSelect', 'off');
+[FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
-UserValues.PathName=PathName;
+if FileName == 0
+    return;
+end
 
+UserValues.File.BurstBrowserPath=PathName;
+LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
 
 %%% Determine if an APBS or DCBS file was loaded
@@ -818,8 +824,8 @@ end
 % Remember: Java index starts at 0, Matlab at 1
 mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
 clickedIndex = jListbox.locationToIndex(mousePos) + 1;
-listValues = get(hListbox,'string');
-clickedValue = listValues{clickedIndex};
+%listValues = get(hListbox,'string');
+%clickedValue = listValues{clickedIndex};
 
 h = guidata(hListbox);
 global BurstData
@@ -849,6 +855,11 @@ end
 UpdatePlot([],[]);
 UpdateLifetimePlots([],[]);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Mouse-click Callback for Species List       %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Left-click: Change plot to selected Species %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % Determine the click type
 % (can similarly test for CTRL/ALT/SHIFT-click)
@@ -887,7 +898,9 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot(hListbox);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function AddSpecies(~,~)
 global BurstData
 h = guidata(gcbo);
@@ -906,7 +919,9 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
 UpdateLifetimePlots([],[]);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Remove Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function RemoveSpecies(obj,~)
 global BurstData
 h = guidata(obj);
@@ -916,7 +931,9 @@ if numel(get(h.SpeciesList,'String')) > 1 %remove selected field
     set(h.SpeciesList,'Value',val-1);
     set(h.SpeciesList,'String',BurstData.SpeciesNames); 
 end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Rename Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function RenameSpecies(obj,~)
 global BurstData
 h = guidata(obj);
@@ -929,7 +946,9 @@ if ~isempty(NewName)
     set(h.SpeciesList,'String',BurstData.SpeciesNames); 
 end
 
-%plots in the main axes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdatePlot(obj,~)
 %% Preparation
 if ~isempty(obj)
@@ -1192,7 +1211,9 @@ set(gca,'View',[90 90],'XDir','reverse','YTickMode','auto');
 set(gca,'XAxisLocation','top','FontSize',20)
 yticks = get(gca,'YTick');
 set(gca,'YTick',yticks(2:end));
-        
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Manual Cut by selecting an area in the current selection  %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
 function ManualCut(~,~)
 
 h = guidata(gcbo);
@@ -1229,7 +1250,9 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
 UpdateLifetimePlots([],[]);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates/Initializes the Cut Table in GUI with stored Cuts  %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCutTable(h)
 global BurstData
 species = BurstData.SelectedSpecies;
@@ -1244,8 +1267,9 @@ else %data has been deleted, reset to default values
 end
 
 set(h.CutTable,'Data',data,'RowName',rownames);
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Applies Cuts to Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCuts(species)
 global BurstData
 %%% If no species is specified, read out selected species.
@@ -1270,10 +1294,15 @@ if ~isempty(CutState) %%% only procede if there are elements in the CutTable
 end
 
 BurstData.DataCut = BurstData.DataArray(Valid,:);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Axes Callback to set clicked axis to current axis %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SetAxes(hObject,~)
 axes(hObject);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Executes on change in the Cut Table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Cut Array and GUI/Plots     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function CutTableChange(hObject,eventdata)
 %this executes if a value in the CutTable is changed
 h = guidata(hObject);
@@ -1311,15 +1340,19 @@ if BurstData.SelectedSpecies == 1
         for j = 2:numel(BurstData.Cut)
             %%% Check if the parameter already exists in the species j
             ParamList = vertcat(BurstData.Cut{j}{:});
-            ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
-            CheckParam = strcmp(ParamList,ChangedParameterName);
-            if any(CheckParam)
-                %%% Check wheter do delete or change the parameter
-                if index(2) ~= 4 %%% Parameter added or changed
-                    %%% Override the parameter with GlobalCut
-                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(index(1));
-                elseif index(2) == 4 %%% Parameter was deleted
-                    BurstData.Cut{j}(CheckParam) = [];
+            if ~isempty(ParamList)
+                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                CheckParam = strcmp(ParamList,ChangedParameterName);
+                if any(CheckParam)
+                    %%% Check wheter do delete or change the parameter
+                    if index(2) ~= 4 %%% Parameter added or changed
+                        %%% Override the parameter with GlobalCut
+                        BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(index(1));
+                    elseif index(2) == 4 %%% Parameter was deleted
+                        BurstData.Cut{j}(CheckParam) = [];
+                    end
+                else %%% Parameter is new to GlobalCut
+                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
                 end
             else %%% Parameter is new to GlobalCut
                 BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
@@ -1333,7 +1366,9 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
 UpdateLifetimePlots(hObject,[]);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Determines the Correction Factors automatically  %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineCorrections(~,~)
 global BurstData UserValues
 LSUserValues(0);
@@ -1448,7 +1483,9 @@ LSUserValues(1);
 UpdateCorrections([],[]);
 %%% Apply Corrections
 ApplyCorrections;
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [mean] = GaussianFit(x_data,y_data,N_gauss,display,start_param)
 if N_gauss == 1
     Gauss = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
@@ -1499,6 +1536,9 @@ if display
     hold off; 
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCorrections(obj,~)
 global UserValues
 
@@ -1562,7 +1602,602 @@ else %%% Update UserValues with new values
     end
     LSUserValues(1);
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Applies Corrections to data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ApplyCorrections(~,~)
+global BurstData UserValues
+%% FRET and Stoichiometry Corrections
+%%% Read out indices of parameters
+indS = strcmp(BurstData.NameArray,'Stoichiometry');
+indE = strcmp(BurstData.NameArray,'Efficiency');
+indDur = strcmp(BurstData.NameArray,'Duration [ms]');
+indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
+indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
+indNRR = strcmp(BurstData.NameArray,'Number of Photons (RR)');
 
+%%% Read out photons counts and duration
+NGG = BurstData.DataArray(:,indNGG);
+NGR = BurstData.DataArray(:,indNGR);
+NRR = BurstData.DataArray(:,indNRR);
+Dur = BurstData.DataArray(:,indDur);
+
+%%% Read out corrections
+LSUserValues(0);
+gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
+ct_gr = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+de_gr = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+BG_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+BG_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
+BG_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+
+%%% Apply Background corrections
+NGG = NGG - Dur.*BG_GG;
+NGR = NGR - Dur.*BG_GR;
+NRR = NRR - Dur.*BG_RR;
+
+%%% Apply CrossTalk and DirectExcitation Corrections
+NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
+
+%%% Recalculate Efficiency and Stoichiometry
+E = NGR./(NGR + gamma_gr.*NGG);
+S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
+
+%%% Update Values in the DataArray
+BurstData.DataArray(:,indE) = E;
+BurstData.DataArray(:,indS) = S;
+
+%% Anisotropy Corrections
+%%% Read out indices of parameters
+ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
+ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
+indDur = strcmp(BurstData.NameArray,'Duration [ms]');
+indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
+indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
+indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
+indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
+
+%%% Read out photons counts and duration
+NGGpar = BurstData.DataArray(:,indNGGpar);
+NGGperp = BurstData.DataArray(:,indNGGperp);
+NRRpar = BurstData.DataArray(:,indNRRpar);
+NRRperp = BurstData.DataArray(:,indNRRperp);
+Dur = BurstData.DataArray(:,indDur);
+
+%%% Read out corrections
+LSUserValues(0);
+Ggreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+Gred = UserValues.BurstBrowser.Corrections.GfactorRed;
+l1 = UserValues.BurstBrowser.Corrections.l1;
+l2 = UserValues.BurstBrowser.Corrections.l2;
+BG_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+BG_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+BG_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+BG_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+
+%%% Apply Background corrections
+NGGpar = NGGpar - Dur.*BG_GGpar;
+NGGperp = NGGperp - Dur.*BG_GGperp;
+NRRpar = NRRpar - Dur.*BG_RRpar;
+NRRperp = NRRperp - Dur.*BG_RRperp;
+
+%%% Recalculate Anisotropies
+rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
+rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
+
+%%% Update Values in the DataArray
+BurstData.DataArray(:,ind_rGG) = rGG;
+BurstData.DataArray(:,ind_rRR) = rRR;
+
+%%% Update Display
+UpdateCuts;
+UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Manual gamma determination by selecting the mid-points %%%%%%%%%%%%
+%%%%%%% of two populations                                     %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DetermineGammaManually(~,~)
+global BurstData UserValues
+h = guidata(gcf);
+
+%%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
+cla(h.axes_gamma);
+axes(h.axes_gamma);
+[H, xbins_hist, ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+BurstData.Plots.GammaPlot = im;
+
+%%% Update Axis Labels
+xlabel('Efficiency');
+ylabel('Stoichiometry');
+title('Stoichiometry vs. Efficiency for gamma = 1');
+
+[e, s] = ginput(2);
+hold on;
+scatter(e,s,1000,'o','LineWidth',4,'MarkerEdgeColor','b');
+scatter(e,s,1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b');
+s = 1./s;
+m = (s(2)-s(1))./(e(2)-e(1));
+b = s(2) - m.*e(2);
+
+UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+
+
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Save_Analysis_State_Callback(~,~)
+global BurstData
+
+save(BurstData.FileName,'BurstData');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function UpdateLifetimePlots(obj,~)
+global BurstData
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
+%%% Use the current cut Data (of the selected species) for plots
+datatoplot = BurstData.DataCut;
+%%% read out the indices of the parameters to plot
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
+idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
+idxE = strcmp('Efficiency',BurstData.NameArray);
+%% Plot E vs. tauGG in first plot
+%%% Check, whether a static FRET line already existed
+StaticFRETexisted = ~isempty(findobj(h.axes_EvsTauGG.Children,'Type','Line'));
+cla(h.axes_EvsTauGG);
+axes(h.axes_EvsTauGG);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idxE)],51, 51, [0 5], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+ylabel('Efficiency');
+xlabel('Lifetime GG [ns]');
+title('Efficiency vs. Lifetime GG');
+ylim([0 1]);
+if StaticFRETexisted
+    %%% replot the static FRET line
+    UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
+end
+%% Plot E vs. tauRR in second plot
+cla(h.axes_EvsTauRR);
+axes(h.axes_EvsTauRR);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR),datatoplot(:,idxE)],51, 51, [0 6], [0 1]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime RR [ns]');
+ylabel('Efficiency');
+title('Efficiency vs. Lifetime RR');
+%% Plot rGG vs. tauGG in third plot
+cla(h.axes_rGGvsTauGG);
+axes(h.axes_rGGvsTauGG);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)],51, 51, [0 5], [-0.1 0.5]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime GG [ns]');
+ylabel('Anisotropy GG');
+title('Anisotropy GG vs. Lifetime GG');
+%% Plot rRR vs. tauRR in third plot
+cla(h.axes_rRRvsTauRR);
+axes(h.axes_rRRvsTauRR);
+legend('off');
+
+[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)],51, 51, [0 6], [-0.1 0.5]);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+im = imagesc(xbins,ybins,H./max(max(H)));
+set(im,'AlphaData',l);
+set(gca,'YDir','normal');
+axis('tight');
+xlabel('Lifetime RR [ns]');
+ylabel('Anisotropy RR');
+title('Anisotropy RR vs. Lifetime RR');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Fits/theoretical Curves in Lifetime Tab %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function UpdateLifetimeFits(obj,~)
+global BurstData UserValues
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
+%%% Use the current cut Data (of the selected species) for plots
+datatoplot = BurstData.DataCut;
+%%% read out the indices of the parameters to plot
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
+idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
+idxE = strcmp('Efficiency',BurstData.NameArray);
+%% Add Fits
+if obj == h.PlotStaticFRETButton
+    %% Add a static FRET line EvsTau plots
+    haxes = h.axes_EvsTauGG;
+    axes(haxes);
+    %%% Calculate static FRET line in presence of linker fluctuations
+    tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+    staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+        tau);
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_EvsTauGG.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
+    hold on;
+    plot_staticFRETline = plot(tau,staticFRETline);
+    legend('off');
+    plot_staticFRETline.Color = [0 0 1];
+    plot_staticFRETline.LineWidth = 3;
+end
+if obj == h.FitAnisotropyButton
+    %% Add Perrin Fits to Anisotropy Plot
+    %%% GG
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_rGGvsTauGG.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
+    r0 = 0.4;
+    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoint',1);
+    axes(h.axes_rGGvsTauGG);
+    hold on;
+    plotPerrinGG = plot(PerrinFitGG);
+    legend('off');
+    plotPerrinGG.Color = [0 0 1];
+    plotPerrinGG.LineWidth = 3;
+    BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
+    xlabel('Lifetime GG [ns]');
+    ylabel('Anisotropy GG');
+    title(['rhoGG = ' num2str(BurstData.Parameters.rhoGG) ' ns']);
+    %% RR
+    %%% find previous line plot if it exists
+    PreviousFit = findobj(h.axes_rRRvsTauRR.Children,'Type','Line');
+    if ~isempty(PreviousFit)
+        delete(PreviousFit);
+    end
+    r0 = 0.4;
+    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoint',1);
+    axes(h.axes_rRRvsTauRR);
+    hold on;
+    plotPerrinRR = plot(PerrinFitRR);
+    legend('off');
+    plotPerrinRR.Color = [0 0 1];
+    plotPerrinRR.LineWidth = 3;
+    BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
+    xlabel('Lifetime RR [ns]');
+    ylabel('Anisotropy RR');
+    title(['rhoRR = ' num2str(BurstData.Parameters.rhoRR) ' ns']);
+end
+%% Manual Perrin plots
+if obj == h.ManualAnisotropyButton
+    [x,y,button] = ginput(1);
+    if button == 1 %%% left mouse click, reset plot and plot one perrin line
+        if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
+            haxes = gca;
+            legend('off');
+            %%% find previous line plot if it exists
+            PreviousFit = findobj(haxes.Children,'Type','Line');
+            if ~isempty(PreviousFit)
+                delete(PreviousFit);
+            end
+            %%% Determine rho
+            r0 = 0.4;
+            rho = x/(r0/y - 1);
+            fitPerrin = @(x) r0./(1+x./rho);
+            %%% plot
+            hold on;
+            tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+            plotPerrin = plot(tau,fitPerrin(tau));
+            plotPerrin.Color = [0 0 1];
+            plotPerrin.LineWidth = 3;
+            switch haxes
+                case h.axes_rGGvsTauGG
+                    title(['rhoGG = ' num2str(rho)]);
+                case h.axes_rRRvsTauRR
+                    title(['rhoRR = ' num2str(rho)]);
+            end
+        end
+    elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
+        if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
+            haxes = gca;
+            legend('off');
+            %%% find previous line plot if it exists
+            PreviousFit = findobj(haxes.Children,'Type','Line');
+            if isempty(PreviousFit) %%% no plot exists, just add a plot as is the case for left click
+                %%% Determine rho
+                r0 = 0.4;
+                rho = x/(r0/y - 1);
+                fitPerrin = @(x) r0./(1+x./rho);
+                %%% plot
+                hold on;
+                tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+                plotPerrin = plot(tau,fitPerrin(tau));
+                plotPerrin.Color = [0 0 1];
+                plotPerrin.LineWidth = 3;
+                switch haxes
+                    case h.axes_rGGvsTauGG
+                        title(['rhoGG = ' num2str(rho) ' ns']);
+                    case h.axes_rRRvsTauRR
+                        title(['rhoRR = ' num2str(rho) ' ns']);
+                end
+            elseif ~isempty(PreviousFit)
+                %%% Determine second rho
+                r0 = 0.4;
+                rho = x/(r0/y - 1);
+                fitPerrin = @(x) r0./(1+x./rho);
+                %%% plot
+                hold on;
+                tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+                plotPerrin = plot(tau,fitPerrin(tau));
+                if numel(PreviousFit) == 1
+                    plotPerrin.Color = [0 1 0];
+                elseif numel(PerrinFit) == 2
+                    plotPerrin.Color = [1 1 0];
+                else
+                    plotPerrin.Color = [1 1 1];
+                end
+                plotPerrin.LineWidth = 3;
+                %%% add rho2 to title
+                new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                title(new_title);
+            end
+        end
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Executes on Tab-Change in Main Window and updates Plots %%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function MainTabSelectionChange(obj,e)
+h = guidata(obj);
+if e.NewValue == h.Main_Tab_Lifetime
+    if isempty(h.axes_EvsTauGG.Children)
+        %%% Update Lifetime Plots
+        UpdateLifetimePlots(obj,[]);
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Reads out the Donor only lifetime from Donor only bursts %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DonorOnlyLifetimeCallback(obj,~)
+global BurstData UserValues
+h = guidata(obj);
+if obj.Value == 1 %%% Checkbox was clicked on
+    %%% Determine Donor Only lifetime from data with S > 0.98
+    idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
+    idxS = strcmp(BurstData.NameArray,'Stoichiometry');
+    valid = (BurstData.DataArray(:,idxS) > 0.98);
+    DonorOnlyLifetime = mean(BurstData.DataArray(valid,idx_tauGG));
+    %%% Update GUI
+    h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
+    h.DonorLifetimeEdit.Enable = 'off';
+    UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
+    LSUserValues(1);
+else
+    h.DonorLifetimeEdit.Enable = 'on';
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [out, coefficients] = conversion_tau(tauD,R0,s,xval)
+% s = 6;
+res = 1000;
+%range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
+R = linspace(0*R0,5*R0,res);
+
+%for every R calculate gaussian distribution
+p = zeros(numel(R),res);
+r = zeros(numel(R),res);
+for j = 1:numel(R)
+    x = linspace(R(j)-4*s,R(j)+4*s,res);
+    dummy = exp(-((x-R(j)).^2)./(2*s^2));
+    dummy(x < 0) = 0;
+    dummy = dummy./sum(dummy);
+    p(j,:) = dummy;
+    r(j,:) = x;
+end
+
+%calculate lifetime distribution
+tau = zeros(numel(R),res);
+for j = 1:numel(R)
+    tau(j,:) = tauD./(1+((R0./r(j,:)).^6));
+end
+
+%calculate species weighted taux
+taux = zeros(1,numel(R));
+for j = 1:numel(R)
+taux(j) = sum(p(j,:).*tau(j,:));
+end
+
+%calculate intensity weighted tauf
+tauf = zeros(1,numel(R));
+for j = 1:numel(R)
+tauf(j) = sum(p(j,:).*(tau(j,:).^2))./taux(j);
+end
+
+coefficients = polyfit(tauf,taux,3);
+
+out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates the Gamma Factor using the lifetime information %%%%%%%%
+%%%%%%% by minimizing the deviation from the static FRET line      %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DetermineGammaLifetime(obj,~)
+global BurstData UserValues
+h = guidata(obj);
+
+%%% Prepare photon counts
+%%% Change focus to CorrectionsTab
+h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+
+indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
+indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
+indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
+indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
+indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
+T_threshold = str2double(h.T_Threshold_Edit.String);
+if isnan(T_threshold)
+    T_threshold = 0.1;
+end
+cutT = 1;
+if cutT == 0
+    data_for_corrections = BurstData.DataArray;
+elseif cutT == 1
+    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
+    valid = (BurstData.DataArray(:,T) < T_threshold);
+    data_for_corrections = BurstData.DataArray(valid,:);
+end
+
+%%% Read out corrections
+Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
+Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+
+%%% get E-S values between 0.3 and 0.8;
+S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
+%%% Calculate "raw" E and S with gamma = 1, but still apply direct
+%%% excitation,crosstalk, and background corrections!
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+
+%%% Calculate static FRET line in presence of linker fluctuations
+tau = linspace(0,5,100);
+[~, coeff] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+    UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+    tau);
+staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
+%%% minimize deviation from static FRET line as a function of gamma
+dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_corrections(S_threshold,indTauGG) ) ).^2 );
+gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+E =  NGR./(gamma_fit.*NGG+NGR);
+%%% plot E versus tau with static FRET line
+cla(h.axes_gamma_lifetime);
+axes(h.axes_gamma_lifetime);
+BurstData.Plots.GammaPlot = plot2dhist(data_for_corrections(S_threshold,indTauGG),E,[0 5],[-0.1 1]);
+
+%%% add static FRET line
+tau = linspace(h.axes_gamma_lifetime.XLim(1),h.axes_gamma_lifetime.XLim(2),100);
+hold on;
+staticFRETplot = plot(tau,staticFRETline(tau));
+legend('off');
+staticFRETplot.Color = [0 0 1];
+staticFRETplot.LineWidth = 3;
+%%% Update Axis Labels
+xlabel('Lifetime GG [ns]');
+ylabel('Efficiency');
+title('Efficiency vs. Lifetime GG');
+ylim([0 1]);
+%%% Update UserValues
+UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [plot_handle] = plot2dhist(x,y,limx,limy,nbins,haxes)
+global UserValues
+if nargin <2
+    return;
+end
+%%% if no limits are specified, set limits to min-max
+if nargin < 3
+    limx = [min(x) max(x)];
+    limy = [min(y) max(y)];
+end
+
+%%% if number of bins is not specified, read from UserValues struct
+if nargin < 5
+    nbins = UserValues.BurstBrowser.Display.NumberOfBins;
+end
+%%% set axes
+if nargin == 6
+    axes(haxes);
+end
+
+[H, xbins_hist, ybins_hist] = hist2d([x y], nbins, nbins, limx, limy);
+H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+l = H>0;
+xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
+ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+%%% determine the plot type
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Image' %%%image plot
+        plot_handle = imagesc(xbins,ybins,H./max(max(H)));
+        set(plot_handle,'AlphaData',l);
+        set(gca,'YDir','normal');
+    case 'Contour' %%%contour plot
+        zc=linspace(1, ceil(max(max(H))),10);
+        set(gca,'CLim',[0 ceil(2*max(max(H)))]);
+        H(H==0) = NaN;
+        [~, plot_handle]=contourf(xbins,ybins,H,[0 zc]);
+        set(plot_handle,'EdgeColor','none');
+end
+axis('tight');
 function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
 %HIST2D 2D histogram
 %
@@ -1774,502 +2409,3 @@ function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
         xlabel x;
         ylabel y;
     end
-    
-%%% Applies Corrections to data 
-function ApplyCorrections(~,~)
-global BurstData UserValues
-%% FRET and Stoichiometry Corrections
-%%% Read out indices of parameters
-indS = strcmp(BurstData.NameArray,'Stoichiometry');
-indE = strcmp(BurstData.NameArray,'Efficiency');
-indDur = strcmp(BurstData.NameArray,'Duration [ms]');
-indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
-indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
-indNRR = strcmp(BurstData.NameArray,'Number of Photons (RR)');
-
-%%% Read out photons counts and duration
-NGG = BurstData.DataArray(:,indNGG);
-NGR = BurstData.DataArray(:,indNGR);
-NRR = BurstData.DataArray(:,indNRR);
-Dur = BurstData.DataArray(:,indDur);
-
-%%% Read out corrections
-LSUserValues(0);
-gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
-ct_gr = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-de_gr = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
-BG_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-BG_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
-BG_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
-
-%%% Apply Background corrections
-NGG = NGG - Dur.*BG_GG;
-NGR = NGR - Dur.*BG_GR;
-NRR = NRR - Dur.*BG_RR;
-
-%%% Apply CrossTalk and DirectExcitation Corrections
-NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
-
-%%% Recalculate Efficiency and Stoichiometry
-E = NGR./(NGR + gamma_gr.*NGG);
-S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
-
-%%% Update Values in the DataArray
-BurstData.DataArray(:,indE) = E;
-BurstData.DataArray(:,indS) = S;
-
-%% Anisotropy Corrections
-%%% Read out indices of parameters
-ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
-ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
-indDur = strcmp(BurstData.NameArray,'Duration [ms]');
-indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
-indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
-indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
-indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
-
-%%% Read out photons counts and duration
-NGGpar = BurstData.DataArray(:,indNGGpar);
-NGGperp = BurstData.DataArray(:,indNGGperp);
-NRRpar = BurstData.DataArray(:,indNRRpar);
-NRRperp = BurstData.DataArray(:,indNRRperp);
-Dur = BurstData.DataArray(:,indDur);
-
-%%% Read out corrections
-LSUserValues(0);
-Ggreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
-Gred = UserValues.BurstBrowser.Corrections.GfactorRed;
-l1 = UserValues.BurstBrowser.Corrections.l1;
-l2 = UserValues.BurstBrowser.Corrections.l2;
-BG_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-BG_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-BG_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-BG_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
-
-%%% Apply Background corrections
-NGGpar = NGGpar - Dur.*BG_GGpar;
-NGGperp = NGGperp - Dur.*BG_GGperp;
-NRRpar = NRRpar - Dur.*BG_RRpar;
-NRRperp = NRRperp - Dur.*BG_RRperp;
-
-%%% Recalculate Anisotropies
-rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
-rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
-
-%%% Update Values in the DataArray
-BurstData.DataArray(:,ind_rGG) = rGG;
-BurstData.DataArray(:,ind_rRR) = rRR;
-
-%%% Update Display
-UpdateCuts;
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
-
-%%% Manual gamma determination by selecting the mid-point of the two (or
-%%% more) populations
-function DetermineGammaManually(~,~)
-global BurstData UserValues
-h = guidata(gcf);
-
-%%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
-cla(h.axes_gamma);
-axes(h.axes_gamma);
-[H, xbins_hist, ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-BurstData.Plots.GammaPlot = im;
-
-%%% Update Axis Labels
-xlabel('Efficiency');
-ylabel('Stoichiometry');
-title('Stoichiometry vs. Efficiency for gamma = 1');
-
-[e, s] = ginput(2);
-hold on;
-scatter(e,s,1000,'o','LineWidth',4,'MarkerEdgeColor','b');
-scatter(e,s,1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b');
-s = 1./s;
-m = (s(2)-s(1))./(e(2)-e(1));
-b = s(2) - m.*e(2);
-
-UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
-
-
-%%% Save UserValues
-LSUserValues(1);
-%%% Update Correction Table Data
-UpdateCorrections([],[]);
-%%% Apply Corrections
-ApplyCorrections;
-
-%%% Saves the state of the analysis to the .bur file
-function Save_Analysis_State_Callback(~,~)
-global BurstData
-
-save(BurstData.FileName,'BurstData');
-
-%%% Updates (and fits) lifetime-related plots in Lifetime Tab
-function UpdateLifetimePlots(obj,~)
-global BurstData
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
-%%% Use the current cut Data (of the selected species) for plots
-datatoplot = BurstData.DataCut;
-%%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
-idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
-idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = strcmp('Efficiency',BurstData.NameArray);
-%% Plot E vs. tauGG in first plot
-%%% Check, whether a static FRET line already existed
-StaticFRETexisted = ~isempty(findobj(h.axes_EvsTauGG.Children,'Type','Line'));
-cla(h.axes_EvsTauGG);
-axes(h.axes_EvsTauGG);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idxE)],51, 51, [0 5], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-ylabel('Efficiency');
-xlabel('Lifetime GG [ns]');
-title('Efficiency vs. Lifetime GG');
-ylim([0 1]);
-if StaticFRETexisted
-    %%% replot the static FRET line
-    UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
-end
-%% Plot E vs. tauRR in second plot
-cla(h.axes_EvsTauRR);
-axes(h.axes_EvsTauRR);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR),datatoplot(:,idxE)],51, 51, [0 6], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime RR [ns]');
-ylabel('Efficiency');
-title('Efficiency vs. Lifetime RR');
-%% Plot rGG vs. tauGG in third plot
-cla(h.axes_rGGvsTauGG);
-axes(h.axes_rGGvsTauGG);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)],51, 51, [0 5], [-0.1 0.5]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime GG [ns]');
-ylabel('Anisotropy GG');
-title('Anisotropy GG vs. Lifetime GG');
-%% Plot rRR vs. tauRR in third plot
-cla(h.axes_rRRvsTauRR);
-axes(h.axes_rRRvsTauRR);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)],51, 51, [0 6], [-0.1 0.5]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime RR [ns]');
-ylabel('Anisotropy RR');
-title('Anisotropy RR vs. Lifetime RR');
-
-function UpdateLifetimeFits(obj,~)
-global BurstData UserValues
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
-%%% Use the current cut Data (of the selected species) for plots
-datatoplot = BurstData.DataCut;
-%%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
-idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
-idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = strcmp('Efficiency',BurstData.NameArray);
-%% Add Fits
-if obj == h.PlotStaticFRETButton
-    %% Add a static FRET line EvsTau plots
-    haxes = h.axes_EvsTauGG;
-    axes(haxes);
-    %%% Calculate static FRET line in presence of linker fluctuations
-    tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-    staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
-        tau);
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_EvsTauGG.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
-    hold on;
-    plot_staticFRETline = plot(tau,staticFRETline);
-    legend('off');
-    plot_staticFRETline.Color = [0 0 1];
-    plot_staticFRETline.LineWidth = 3;
-end
-if obj == h.FitAnisotropyButton
-    %% Add Perrin Fits to Anisotropy Plot
-    %%% GG
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_rGGvsTauGG.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
-    r0 = 0.4;
-    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
-    PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoint',1);
-    axes(h.axes_rGGvsTauGG);
-    hold on;
-    plotPerrinGG = plot(PerrinFitGG);
-    legend('off');
-    plotPerrinGG.Color = [0 0 1];
-    plotPerrinGG.LineWidth = 3;
-    BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
-    xlabel('Lifetime GG [ns]');
-    ylabel('Anisotropy GG');
-    title(['rhoGG = ' num2str(BurstData.Parameters.rhoGG)]);
-    %% RR
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_rRRvsTauRR.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
-    r0 = 0.4;
-    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
-    PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoint',1);
-    axes(h.axes_rRRvsTauRR);
-    hold on;
-    plotPerrinRR = plot(PerrinFitRR);
-    legend('off');
-    plotPerrinRR.Color = [0 0 1];
-    plotPerrinRR.LineWidth = 3;
-    BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
-    xlabel('Lifetime RR [ns]');
-    ylabel('Anisotropy RR');
-    title(['rhoRR = ' num2str(BurstData.Parameters.rhoRR)]);
-end
-%% Manual Perrin plots
-if obj == h.ManualAnisotropyButton
-    [x,y] = ginput(1);
-    if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
-        haxes = gca;
-        legend('off');
-        %%% find previous line plot if it exists
-        PreviousFit = findobj(haxes.Children,'Type','Line');
-        if ~isempty(PreviousFit)
-            delete(PreviousFit);
-        end
-        %%% Determine rho
-        r0 = 0.4;
-        rho = x/(r0/y - 1);
-        fitPerrin = @(x) r0./(1+x./rho);
-        %%% plot
-        hold on;
-        tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-        plotPerrin = plot(tau,fitPerrin(tau));
-        plotPerrin.Color = [0 0 1];
-        plotPerrin.LineWidth = 3;
-        switch haxes
-            case h.axes_rGGvsTauGG
-                title(['rhoGG = ' num2str(rho)]);
-            case h.axes_rRRvsTauRR
-                title(['rhoRR = ' num2str(rho)]);
-        end
-    end
-end
-
-function MainTabSelectionChange(obj,e)
-h = guidata(obj);
-if e.NewValue == h.Main_Tab_Lifetime
-    if isempty(h.axes_EvsTauGG.Children)
-        %%% Update Lifetime Plots
-        UpdateLifetimePlots(obj,[]);
-    end
-end
-
-function DonorOnlyLifetimeCallback(obj,~)
-global BurstData UserValues
-h = guidata(obj);
-if obj.Value == 1 %%% Checkbox was clicked on
-    %%% Determine Donor Only lifetime from data with S > 0.98
-    idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
-    idxS = strcmp(BurstData.NameArray,'Stoichiometry');
-    valid = (BurstData.DataArray(:,idxS) > 0.98);
-    DonorOnlyLifetime = mean(BurstData.DataArray(valid,idx_tauGG));
-    %%% Update GUI
-    h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
-    h.DonorLifetimeEdit.Enable = 'off';
-    UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
-    LSUserValues(1);
-else
-    h.DonorLifetimeEdit.Enable = 'on';
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [out, coefficients] = conversion_tau(tauD,R0,s,xval)
-% s = 6;
-res = 1000;
-%range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
-R = linspace(0*R0,5*R0,res);
-
-%for every R calculate gaussian distribution
-p = zeros(numel(R),res);
-r = zeros(numel(R),res);
-for j = 1:numel(R)
-    x = linspace(R(j)-4*s,R(j)+4*s,res);
-    dummy = exp(-((x-R(j)).^2)./(2*s^2));
-    dummy(x < 0) = 0;
-    dummy = dummy./sum(dummy);
-    p(j,:) = dummy;
-    r(j,:) = x;
-end
-
-%calculate lifetime distribution
-tau = zeros(numel(R),res);
-for j = 1:numel(R)
-    tau(j,:) = tauD./(1+((R0./r(j,:)).^6));
-end
-
-%calculate species weighted taux
-taux = zeros(1,numel(R));
-for j = 1:numel(R)
-taux(j) = sum(p(j,:).*tau(j,:));
-end
-
-%calculate intensity weighted tauf
-tauf = zeros(1,numel(R));
-for j = 1:numel(R)
-tauf(j) = sum(p(j,:).*(tau(j,:).^2))./taux(j);
-end
-
-coefficients = polyfit(tauf,taux,3);
-
-out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
-
-function DetermineGammaLifetime(obj,~)
-global BurstData UserValues
-h = guidata(obj);
-
-%%% Prepare photon counts
-%%% Change focus to CorrectionsTab
-h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
-
-indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
-indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
-indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
-indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
-indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
-indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
-T_threshold = str2double(h.T_Threshold_Edit.String);
-if isnan(T_threshold)
-    T_threshold = 0.1;
-end
-cutT = 1;
-if cutT == 0
-    data_for_corrections = BurstData.DataArray;
-elseif cutT == 1
-    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-    valid = (BurstData.DataArray(:,T) < T_threshold);
-    data_for_corrections = BurstData.DataArray(valid,:);
-end
-
-%%% Read out corrections
-Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
-Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
-
-%%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
-%%% Calculate "raw" E and S with gamma = 1, but still apply direct
-%%% excitation,crosstalk, and background corrections!
-NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
-
-%%% Calculate static FRET line in presence of linker fluctuations
-tau = linspace(0,5,100);
-[~, coeff] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-    UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
-    tau);
-staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
-%%% minimize deviation from static FRET line as a function of gamma
-dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_corrections(S_threshold,indTauGG) ) ).^2 );
-gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-E =  NGR./(gamma_fit.*NGG+NGR);
-%%% plot E versus tau with static FRET line
-cla(h.axes_gamma_lifetime);
-axes(h.axes_gamma_lifetime);
-[H, xbins_hist, ybins_hist] = hist2d([data_for_corrections(S_threshold,indTauGG) E],51, 51, [0 5], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-BurstData.Plots.GammaPlot = im;
-%%% add static FRET line
-tau = linspace(h.axes_gamma_lifetime.XLim(1),h.axes_gamma_lifetime.XLim(2),100);
-hold on;
-staticFRETplot = plot(tau,staticFRETline(tau));
-legend('off');
-staticFRETplot.Color = [0 0 1];
-staticFRETplot.LineWidth = 3;
-%%% Update Axis Labels
-xlabel('Lifetime GG [ns]');
-ylabel('Efficiency');
-title('Efficiency vs. Lifetime GG');
-ylim([0 1]);
-%%% Update UserValues
-UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-%%% Save UserValues
-LSUserValues(1);
-%%% Update Correction Table Data
-UpdateCorrections([],[]);
-%%% Apply Corrections
-ApplyCorrections;

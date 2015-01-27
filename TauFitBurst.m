@@ -695,7 +695,7 @@ Update_Plots(h.ChannelSelect_Popupmenu,[]);
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~)
-global UserValues TauFitBurstData PamMeta
+global TauFitBurstData
 h = guidata(obj);
 chan = h.ChannelSelect_Popupmenu.Value;
 %%% Cases to consider:
@@ -1668,7 +1668,7 @@ tau = param(3:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
 %irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
 irs = circshift(irf,[0 c]);
-scatter = circshift(scatter,[0 c]);
+bg = circshift(bg,[0 c]);
 z = convol(irs, x);
 z = z./sum(z);
 z = (1-scatter).*z + scatter*bg';

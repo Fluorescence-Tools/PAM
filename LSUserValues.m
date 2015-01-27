@@ -122,6 +122,9 @@ if Mode==0 %%% Loads user values
     if ~isfield(S.File, 'MIAPath')
         S.File.MIAPath=pwd;
     end 
+    if ~isfield(S.File, 'BurstBrowserPath')
+        S.File.BurstBrowserPath=pwd;
+    end 
     
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
