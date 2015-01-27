@@ -1035,19 +1035,22 @@ switch TauFitData.FitType
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
         x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
-        shift_range = -5:5;
+        lb = [0 0 0];
+        ub = [1 1 Inf];
+        shift_range = 0:0;
+        ignore = 50;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_1exp,x0,{Irf,Scatter,4096,Decay,i},Decay);
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_1exp,x0,{Irf,Scatter,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub);
             count = count +1;
         end
-        ignore = 200;
-        chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
+        
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_1exp(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit)});
+        FitFun = fitfun_1exp(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
     case 'Biexponential'
         %%% Parameter:
@@ -1055,22 +1058,23 @@ switch TauFitData.FitType
         %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.5, 0.1,0.1,round(4/TauFitData.TACChannelWidth),round(4/TauFitData.TACChannelWidth)];
-        lb = [0 0 0 0 0];
+        x0 = [0.5, 0.1,0.1,round(2/TauFitData.TACChannelWidth),round(4/TauFitData.TACChannelWidth)];
+        lb = [0 0 0 round(0.5/TauFitData.TACChannelWidth) round(2/TauFitData.TACChannelWidth)];
         ub = [1 1 1 Inf Inf];
-        shift_range = -5:5;
+        shift_range = 0:0;
+        ignore = 50;
         %%% fit for different IRF offsets and compare the results
         count = 1;
+        options = optimoptions('lsqcurvefit','MaxFunEvals',1000);
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_2exp,x0,{Irf,Scatter,4096,Decay,i},Decay,lb,ub);
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_2exp,x0,{Irf,Scatter,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub,options);
             count = count +1;
         end
-        ignore = 200;
-        chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_2exp(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit)});
+        FitFun = fitfun_2exp(x{best_fit},{Irf,Scatter,4096,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
 end
@@ -1090,7 +1094,7 @@ h.Plots.Residuals.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
-disp(['Tau = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(3))]);
+disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(3))]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
@@ -1251,7 +1255,7 @@ function y = convol(irf, x)
 % function irf with the decay function x. Periodicity (=length(x)) is assumed.
 
 mm = mean(irf(end-10:end));
-if size(x,1)==1 | size(x,2)==1
+if size(x,1)==1 || size(x,2)==1
     irf = irf(:);
     x = x(:);
 end
@@ -1610,6 +1614,7 @@ bg = xdata{2};
 p = xdata{3};
 y = xdata{4};
 c = xdata{5};
+ignore = xdata{6};
 
 n = length(irf);
 t = 1:n;
@@ -1623,8 +1628,9 @@ irs = circshift(irf,[0 c]);
 bg = circshift(bg,[0 c]);
 z = convol(irs, x);
 z = z./sum(z);
-z = (1-scatter).*z + scatter*bg';
-z = (1-gamma).*z+gamma;
+z = (1-scatter).*z + scatter*bg';z = z./sum(z);
+z = (1-gamma).*z+gamma/numel(z);z = z./sum(z);
+z = z(ignore:end);z = z./sum(z);
 z = z.*sum(y);
 z=z';
 
@@ -1646,6 +1652,7 @@ bg = xdata{2};
 p = xdata{3};
 y = xdata{4};
 c = xdata{5};
+ignore = xdata{6};
 
 n = length(irf);
 t = 1:n;
@@ -1663,6 +1670,10 @@ z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A*z(:,1) + (1-A)*z(:,2);
 z = (1-scatter).*z + scatter*bg';
-z = (1-gamma).*z+gamma;
+z = z./sum(z);
+z = (1-gamma).*z+gamma/numel(z);
+z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
 z = z.*sum(y);
 z=z';

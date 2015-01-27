@@ -130,6 +130,29 @@ if Mode==0 %%% Loads user values
         S.File.FCS_Standard=[];
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%% %%%%%%%%%%%%%%%%% %%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % never change from here
+    if ~isfield(S.File, 'SPC_FileTypes')
+        disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
+        S.File.SPC_FileTypes = {'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'};
+    end
+    % to here
+
+    % to add filetypes, add 1 to the "currentnumber" and add the new filetype to the array below:
+    currentnumber = 2;
+    if numel(S.File.SPC_FileTypes) < 2*currentnumber
+        disp('WARNING: More file types were added to "UserValues.SPC_FileTypes"');
+        S.File.SPC_FileTypes = {'*1.spc', 'Becker&Hickl SPC 140/150 file (*1.spc)';...
+        '*.spc', 'Becker&Hickl SPC 140/150 file (*.spc)'};
+    end
+    
+    if ~isfield(S.File, 'OpenTCSPC_FilterIndex')
+        disp('WARNING: UserValues structure incomplete, field "OpenTCSPC_FilterIndex" missing');
+        S.File.OpenTCSPC_FilterIndex = 1;
+    end
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
     
     %%% Checks, if Settings field exists
