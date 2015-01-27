@@ -142,11 +142,12 @@ if Mode==0 %%% Loads user values
     % to here
 
     % to add filetypes, add 1 to the "currentnumber" and add the new filetype to the array below:
-    currentnumber = 2;
+    currentnumber = 3;
     if numel(S.File.SPC_FileTypes) < 2*currentnumber
         disp('WARNING: More file types were added to "UserValues.SPC_FileTypes"');
-        S.File.SPC_FileTypes = {'*1.spc', 'Becker&Hickl SPC 140/150 file (*1.spc)';...
-        '*.spc', 'Becker&Hickl SPC 140/150 file (*.spc)'};
+        S.File.SPC_FileTypes = {'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)';...
+        '*.ht3','HydraHarp400 TTTR file'};
     end
     
     if ~isfield(S.File, 'OpenTCSPC_FilterIndex')

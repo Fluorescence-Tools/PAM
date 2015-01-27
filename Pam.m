@@ -1942,7 +1942,7 @@ h = guidata(gcf);
 %%% 6: Phasor Plot
 %%% 7: Detector Calibration
 if nargin<3 || any(mode==0)
-    mode=[1:4, 6];
+    mode=[1:5, 6];
 end
 
 
@@ -2119,6 +2119,7 @@ if any(mode==4)
         cellfun(@delete,Unused)
     end
     axes(h.MI_All_Axes);
+    xlim([1 FileInfo.MI_Bins]);
     for i=1:numel(PamMeta.MI_Hist)
         %%% Checks, if lineseries already exists
         if ~isempty(h.Plots.MI_All{i})
@@ -2833,7 +2834,7 @@ end
 %%% Function for updating microtime channels list  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Detector_Channels(~,~,mode)
-global UserValues
+global UserValues FileInfo
 h = guidata(gcf);
 
 %% Updates number of microtime tabs and plots
@@ -2908,7 +2909,7 @@ if any(mode==1);
             h.MI_Individual{i,2*(1+j)-1}.XLabel.String = 'TAC channel';
             h.MI_Individual{i,2*(1+j)-1}.YLabel.String = 'Counts';
             h.MI_Individual{i,2*(1+j)-1}.YLabel.Color = UserValues.Look.Fore;
-            h.MI_Individual{i,2*(1+j)-1}.XLim=[1 4096];
+            h.MI_Individual{i,2*(1+j)-1}.XLim=[1 FileInfo.MI_Bins];
             %%% Individual microtime popup for channel selection
             h.MI_Individual{i,2*(1+j)} = uicontrol(...
                 'Parent',h.MI_Individual{i,2},...

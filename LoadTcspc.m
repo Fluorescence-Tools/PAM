@@ -13,7 +13,7 @@ end
 %%% Only execues if any file was selected
 if iscell(FileName) || ~all(FileName==0)
     %%% Update UserValues with last used FileType
-    [~, ~, UserValues.File.OpenTCSPC_FilterIndex] = RememberFileType(filetypes, 'after', UserValues.File.OpenTCSPC_FilterIndex, Type);
+    [~, FilterIndex, UserValues.File.OpenTCSPC_FilterIndex] = RememberFileType(filetypes, 'after', UserValues.File.OpenTCSPC_FilterIndex, Type);
     LSUserValues(1);
     %%% Transforms FileName into cell, if it is not already
     %%%(e.g. when only one file was selected)
@@ -36,7 +36,7 @@ if iscell(FileName) || ~all(FileName==0)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Checks which file type was selected
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    switch (Type)        
+    switch (FilterIndex)        
         case 1 
             %% 1: .spc Files generated with Fabsurf    
             FileInfo.FileType = 'FabsurfSPC';
@@ -205,6 +205,74 @@ if iscell(FileName) || ~all(FileName==0)
                 MicrotimeRange = double(max(cellfun(@(x) max(x)-min(x),TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
                 FileInfo.TACRange = (FileInfo.MI_Bins/MicrotimeRange)*FileInfo.SyncPeriod;
             end
+        case 3 
+            %%3 : *.ht3 files from HydraHarp400
+            %%% Usually, here no Imaging Information is needed
+            FileInfo.FileType = 'HydraHarp';           
+            %%% General FileInfo
+            FileInfo.NumberOfFiles=numel(FileName);
+            FileInfo.Type=Type;
+            FileInfo.MI_Bins=[];
+            FileInfo.MeasurementTime=[];
+            FileInfo.SyncPeriod= [];
+            FileInfo.Resolution = [];
+            FileInfo.TACRange = [];
+            FileInfo.Lines=1;
+            FileInfo.LineTimes=[];
+            FileInfo.Pixels=1;   
+            FileInfo.ScanFreq=1000;
+            FileInfo.FileName=FileName;
+            FileInfo.Path=Path;
+            
+            %%% Initializes microtime and macotime arrays
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
+            
+            %%% Reads all selected files
+            for i=1:numel(FileName)
+                Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);           
+                
+                %%% if multiple files are loaded, consecutive files need to
+                %%% be offset in time with respect to the previous file
+                MaxMT = 0;
+                if any(~cellfun(@isempty,TcspcData.MT))
+                    MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+                end
+                
+                %%% Update Progress
+                Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+                %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
+                [MT, MI, SyncRate,Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress_Axes,h.Progress_Text,i,numel(FileName));
+
+                if isempty(FileInfo.SyncPeriod)
+                    FileInfo.SyncPeriod = 1/SyncRate;
+                end
+                if isempty(FileInfo.Resolution)
+                    FileInfo.Resolution = Resolution;
+                end
+                %%% Finds, which routing bits to use
+                Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+                Rout(Rout>numel(MI))=[];
+                %%% Concaternates data to previous files and adds Imagetime
+                %%% to consecutive files
+                if any(~cellfun(@isempty,MI))
+                    for j = 1:size(MT,1)
+                        for k=Rout
+                            TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
+                            TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
+                        end
+                    end
+                end
+                %%% Determines last photon for each file
+                for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+                    FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+                end
+
+            end
+            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+            FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+            FileInfo.MI_Bins = max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))));
+            FileInfo.TACRange = FileInfo.SyncPeriod;
     end
 Progress(1,h.Progress_Axes, h.Progress_Text);
 %%% Applies detector shift immediately after loading data    
