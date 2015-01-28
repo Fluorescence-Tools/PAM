@@ -1,27 +1,22 @@
 function LoadTcspc(~,~,Update_Data,Calibrate_Detector,Caller,FileName,Type)
 global UserValues TcspcData FileInfo
-LSUserValues(0);
-%%% Read out the ordered list of filetypes (last used in first position)
-filetypes = UserValues.File.SPC_FileTypes;
-[filetypes, ~, ~] = RememberFileType(filetypes, 'before', UserValues.File.OpenTCSPC_FilterIndex);
 
 if nargin<6 %%% Opens Dialog box for selecting new files to be loaded
-    [FileName, Path, Type] = uigetfile(filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
-else %%% Loads predefined Files
-    Path=UserValues.File.Path;
+    [FileName, Path, Type] = uigetfile({'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
+                                        '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
+                                        '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+else %%% Loads predifined Files
+    Path = UserValues.File.Path;
 end
 %%% Only execues if any file was selected
-if iscell(FileName) || ~all(FileName==0)
-    %%% Update UserValues with last used FileType
-    [~, FilterIndex, UserValues.File.OpenTCSPC_FilterIndex] = RememberFileType(filetypes, 'after', UserValues.File.OpenTCSPC_FilterIndex, Type);
-    LSUserValues(1);
+if iscell(FileName) || ~all(FileName==0)    
     %%% Transforms FileName into cell, if it is not already
     %%%(e.g. when only one file was selected)
     if ~iscell(FileName)
-        FileName={FileName};
+        FileName = {FileName};
     end
     %%% Saves Path
-    UserValues.File.Path=Path;
+    UserValues.File.Path = Path;
     LSUserValues(1);
     %%% Sorts FileName by alphabetical order
     FileName=sort(FileName);
@@ -36,7 +31,7 @@ if iscell(FileName) || ~all(FileName==0)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Checks which file type was selected
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    switch (FilterIndex)        
+    switch (Type)        
         case 1 
             %% 1: .spc Files generated with Fabsurf    
             FileInfo.FileType = 'FabsurfSPC';
@@ -47,7 +42,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Type=Type;
             FileInfo.MI_Bins=4096;
             FileInfo.MeasurementTime=FileInfo.Fabsurf.Imagetime/1000;
-            FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
+            FileInfo.ClockPeriod=FileInfo.Fabsurf.RepRate/1000;
             FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
             FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
             FileInfo.Pixels=FileInfo.Fabsurf.Imagelines^2;   
@@ -64,31 +59,31 @@ if iscell(FileName) || ~all(FileName==0)
                 %%% Calculates Imagetime in clock ticks for concaternating
                 %%% files                
                 Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
-                Imagetime=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
+                Imagetime=round(Info.Imagetime/1000/FileInfo.ClockPeriod);
                 %%% Checks, which cards to load
-                card=unique(UserValues.Detector.Det);
+                card = unique(UserValues.Detector.Det);
+                
                 %%% Checks, which and how many card exist for each file
-                for j=card;
-                    if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),'file')
-                        card(card==j)=[];
+                    for j=card;
+                        if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),'file')
+                            card(card==j)=[];
+                        end
                     end
-                end                
                 
                 Linetimes=[];
                 %%% Reads data for each tcspc card
-                for j=card
+                for j = card
                     %%% Update Progress
                     Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
-                    
                     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                    [MT, MI, PLF,~] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0]);
+                    [MT, MI, PLF,~] = Read_BH(fullfile(Path, FileName{i}),Inf,[0 0 0]);
                     %%% Finds, which routing bits to use
-                    Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
-                    Rout(Rout>numel(MI))=[];
-                    %%% Concaternates data to previous files and adds Imagetime
+                    Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    Rout(Rout>numel(MI)) = [];
+                    %%% Concatenates data to previous files and adds Imagetime
                     %%% to consecutive files
                     if any(~cellfun(@isempty,MI))
-                        for k=Rout
+                        for k = Rout
                             %%% Removes photons detected after "official"
                             %%% end of file are discarded
                             MI{k}(MT{k}>Imagetime)=[];
@@ -110,41 +105,96 @@ if iscell(FileName) || ~all(FileName==0)
                     elseif isempty(Linetimes) && ~isempty(PLF{3})
                         Linetimes=[0 PLF{3}];
                     end
-                end 
+                end
                 %%% Creates linebreak entries
                 if isempty(Linetimes)
-                    FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
+                    FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.ClockPeriod,FileInfo.Lines+1)+Totaltime;
                 elseif numel(Linetimes)==FileInfo.Lines+1
-                    FileInfo.LineTimes(:,i)=Linetimes+Totaltime;                    
+                    FileInfo.LineTimes(:,i)=Linetimes+Totaltime;
                 elseif numel(Linetimes)<FileInfo.Lines+1
                     %%% I was to lazy to program this case out yet
                 end
                 %%% Calculates total time to get one trace from several
                 %%% files
                 Totaltime=Totaltime + Imagetime;
-
+                
             end
-        case 2
-            %% 2: .spc Files generated with B&H Software
+        case {2, 3}
+            %% 2: '*_m1.spc', 'Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)'
+            %  3: '*.spc',    'Single card B&H SPC files recorded with B&H-Software (*.spc)'
             %%% Usually, here no Imaging Information is needed
-            FileInfo.FileType = 'SPC';           
+            FileInfo.FileType = 'SPC';
             %%% General FileInfo
-            FileInfo.NumberOfFiles=numel(FileName);
-            FileInfo.Type=Type;
-            FileInfo.MI_Bins=4096;
-            FileInfo.MeasurementTime=[];
-            FileInfo.SyncPeriod= [];
-            FileInfo.TACRange = [];
-            FileInfo.Lines=1;
-            FileInfo.LineTimes=[];
-            FileInfo.Pixels=1;   
-            FileInfo.ScanFreq=1000;
-            FileInfo.FileName=FileName;
-            FileInfo.Path=Path;
+            FileInfo.NumberOfFiles = numel(FileName);
+            FileInfo.Type = Type;
+            
+            % Read .set file
+            setfile = fullfile(Path, [FileName{1}(1:end-3) 'set']);
+            try
+                fid = fopen(setfile, 'r');
+                
+                % no. TAC or ADC channels
+                c = [];
+                while isempty(c)
+                    a = fgetl(fid);
+                    c = strfind(a, 'SP_ADC_RE');
+                end
+                if strcmp(a(20:end-1), '256')
+                    MI_Bins = 256;
+                elseif strcmp(a(20:end-1), '4096')
+                    MI_Bins = 4096;
+                end
+                frewind(fid);
+
+                % spc module name
+                c = [];
+                while isempty(c)
+                    a = fgetl(fid);
+                    c = strfind(a, 'with module SPC-');
+                end
+                if strcmp(a(18:20), '630')
+                    if MI_Bins == 256
+                        Card = 'SPC-630 256chs';
+                    elseif MI_Bins == 4096
+                        Card = 'SPC-630 4096chs';
+                    end
+                else % SPC140/150 card
+                    Card = 'SPC-140/150';
+                end
+                frewind(fid);
+                
+                % TAC range in seconds
+                c = [];
+                while isempty(c)
+                    a = fgetl(fid);
+                    c = strfind(a, 'SP_TAC_R,');
+                end
+                TACRange = str2double(a(19:end-1));
+                fclose(fid);
+            catch %if there is no set file, the B&H software was likely not used
+                h = msgbox('Setup (.set) file not found!');
+                Card = 'SPC-140/150';
+                MI_Bins = 4096;
+                TACRange = [];
+                pause(1)
+                close(h)
+            end
+            
+            FileInfo.Card = Card;
+            FileInfo.MI_Bins = MI_Bins;
+            FileInfo.MeasurementTime = [];
+            FileInfo.ClockPeriod = [];
+            FileInfo.TACRange = TACRange; %in seconds
+            FileInfo.Lines = 1;
+            FileInfo.LineTimes = [];
+            FileInfo.Pixels = 1;
+            FileInfo.ScanFreq = 1000;
+            FileInfo.FileName = FileName;
+            FileInfo.Path = Path;
             
             %%% Initializes microtime and macotime arrays
             TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
             
             %%% Reads all selected files
             for i=1:numel(FileName)
@@ -152,13 +202,19 @@ if iscell(FileName) || ~all(FileName==0)
                 %%% *_m1.spc file
                 
                 %%% Checks, which cards to load
-                card=unique(UserValues.Detector.Det);
+                card = unique(UserValues.Detector.Det);
+                
                 %%% Checks, which and how many card exist for each file
-                for j=card;
-                    if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),'file')
-                        card(card==j)=[];
+                if Type == 2
+                    for j = card;
+                        if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),'file')
+                            card(card==j)=[];
+                        end
                     end
-                end      
+                else
+                    card = 1;
+                end
+                
                 Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,'Loading:');           
                 
                 %%% if multiple files are loaded, consecutive files need to
@@ -168,14 +224,16 @@ if iscell(FileName) || ~all(FileName==0)
                     MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
                 end
                 %%% Reads data for each tcspc card
-                for j=card    
+                for j = card    
                     %%% Update Progress
                     Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                    [MT, MI, ~, SyncRate] = Read_BH(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),Inf,[0 0 0]);
-                    
-                    if isempty(FileInfo.SyncPeriod)
-                        FileInfo.SyncPeriod = 1/SyncRate;
+                    if Type == 2
+                        FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
+                    end
+                    [MT, MI, ~, ClockRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], FileInfo.Card, FileInfo.MI_Bins);
+                    if isempty(FileInfo.ClockPeriod)
+                        FileInfo.ClockPeriod = 1/ClockRate;
                     end
                     %%% Finds, which routing bits to use
                     Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
@@ -183,7 +241,7 @@ if iscell(FileName) || ~all(FileName==0)
                     %%% Concaternates data to previous files and adds Imagetime
                     %%% to consecutive files
                     if any(~cellfun(@isempty,MI))
-                        for k=Rout
+                        for k=Rout'
                             TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
                             TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
                         end
@@ -194,85 +252,17 @@ if iscell(FileName) || ~all(FileName==0)
                     end
                 end
             end
-            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
             FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-            try 
-                %%% try to read the TACRange from the *_m1.set file
-                FileInfo.TACRange = GetTACrange(fullfile(FileInfo.Path,[FileInfo.FileName{1}(1:end-3) 'set']));
-            catch 
-                %%% instead, approximate the TAC range from the microtime
-                %%% range and Repetition Rate
-                MicrotimeRange = double(max(cellfun(@(x) max(x)-min(x),TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-                FileInfo.TACRange = (FileInfo.MI_Bins/MicrotimeRange)*FileInfo.SyncPeriod;
-            end
-        case 3 
-            %%3 : *.ht3 files from HydraHarp400
-            %%% Usually, here no Imaging Information is needed
-            FileInfo.FileType = 'HydraHarp';           
-            %%% General FileInfo
-            FileInfo.NumberOfFiles=numel(FileName);
-            FileInfo.Type=Type;
-            FileInfo.MI_Bins=[];
-            FileInfo.MeasurementTime=[];
-            FileInfo.SyncPeriod= [];
-            FileInfo.Resolution = [];
-            FileInfo.TACRange = [];
-            FileInfo.Lines=1;
-            FileInfo.LineTimes=[];
-            FileInfo.Pixels=1;   
-            FileInfo.ScanFreq=1000;
-            FileInfo.FileName=FileName;
-            FileInfo.Path=Path;
-            
-            %%% Initializes microtime and macotime arrays
-            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));  
-            
-            %%% Reads all selected files
-            for i=1:numel(FileName)
-                Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);           
-                
-                %%% if multiple files are loaded, consecutive files need to
-                %%% be offset in time with respect to the previous file
-                MaxMT = 0;
-                if any(~cellfun(@isempty,TcspcData.MT))
-                    MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
-                end
-                
-                %%% Update Progress
-                Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
-                %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, SyncRate,Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress_Axes,h.Progress_Text,i,numel(FileName));
-
-                if isempty(FileInfo.SyncPeriod)
-                    FileInfo.SyncPeriod = 1/SyncRate;
-                end
-                if isempty(FileInfo.Resolution)
-                    FileInfo.Resolution = Resolution;
-                end
-                %%% Finds, which routing bits to use
-                Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
-                Rout(Rout>numel(MI))=[];
-                %%% Concaternates data to previous files and adds Imagetime
-                %%% to consecutive files
-                if any(~cellfun(@isempty,MI))
-                    for j = 1:size(MT,1)
-                        for k=Rout
-                            TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
-                            TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
-                        end
-                    end
-                end
-                %%% Determines last photon for each file
-                for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
-                    FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
-                end
-
-            end
-            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
-            FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-            FileInfo.MI_Bins = max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))));
-            FileInfo.TACRange = FileInfo.SyncPeriod;
+%             try 
+%                 %%% try to read the TACRange from the *_m1.set file
+%                 FileInfo.TACRange = GetTACrange(fullfile(FileInfo.Path,[FileInfo.FileName{1}(1:end-3) 'set']));
+%             catch 
+%                 %%% instead, approximate the TAC range from the microtime
+%                 %%% range and Repetition Rate
+%                 MicrotimeRange = double(max(cellfun(@(x) max(x)-min(x),TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+%                 FileInfo.TACRange = (FileInfo.MI_Bins/MicrotimeRange)*FileInfo.ClockPeriod;
+%             end
     end
 Progress(1,h.Progress_Axes, h.Progress_Text);
 %%% Applies detector shift immediately after loading data    
@@ -281,9 +271,6 @@ Calibrate_Detector([],[],0)
 Update_Data([],[],0,0);  
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%% Reads out the TAC range from associated *.set file %%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [TACrange] = GetTACrange(FileName)
 %%% This functions reads out the set TAC range from the *.set file
 %%% generated by the B&H software
@@ -309,51 +296,4 @@ gain = str2double(gain(1:end-1));
 %calculate the TACrange
 TACrange = range/gain;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%% Remember the last used file type %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [filetypes, FilterIndex, UserValuesFilterIndex] = RememberFileType(filetypes, flag, UserValuesFilterIndex, FilterIndexNew)
-% create a Uservalues entry for your the filterindex of your uigetfile
-% feed the function filetypes, which is the (nx2) cell array with the extension and description of each filetype
-% see OpenTCSPC for an example on how and where to call
 
-switch flag
-    case 'before'
-        if ~(UserValuesFilterIndex == 1) %if it is 1, then do nothing
-            filetypes2 = filetypes;
-            for i = 1:2
-                filetypes2{1,i} = filetypes{UserValuesFilterIndex,i};
-                for j = 2:UserValuesFilterIndex
-                    filetypes2{j,i} = filetypes{j-1,i};
-                end
-                if ~(UserValuesFilterIndex == size(filetypes2,1)) %do only if UserValuesFilterIndex is not the last in the list
-                    for j = ((UserValuesFilterIndex+1):(size(filetypes,1)-UserValuesFilterIndex))
-                        filetypes2{j,i} = filetypes{j,i};
-                    end
-                end
-            end
-            filetypes = filetypes2;
-        end
-        FilterIndex = 0;%dummy
-    case 'after'
-        % go from the FilterIndexNew to the usual FilterIndex
-    if ~(UserValuesFilterIndex == 1)
-        if (FilterIndexNew < UserValuesFilterIndex+1)
-            if (FilterIndexNew == 1)
-                FilterIndex = UserValuesFilterIndex;
-            else
-                for i = 2:UserValuesFilterIndex
-                    if (FilterIndexNew == i)
-                        FilterIndex = FilterIndexNew-1;
-                    end
-                end
-            end
-        else
-            FilterIndex = FilterIndexNew; % if it is > UserValues.OpenTCSPC_FilterIndex, then nothing changes
-        end
-    else
-        FilterIndex = FilterIndexNew; % if it is 1 then nothing changes
-    end
-    % at this point, FilterIndex is again what it was in the original list of filetypes
-    UserValuesFilterIndex = FilterIndex;
-end
