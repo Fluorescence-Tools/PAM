@@ -3678,6 +3678,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         g=flip(g',1);s=flip(s',1);
         
+        neg=find(g<0 & s<0);
+        g(neg)=-g(neg);
+        s(neg)=-s(neg);
+        
         %%% Calculates additional data
         PamMeta.Fi=atan(s./g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
         PamMeta.M=sqrt(s.^2+g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
@@ -5262,6 +5266,8 @@ if nargin<3
         PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(400*FileInfo.MI_Bins-1));
     end
     PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,400);
+%     PamMeta.Det_Calib.Hist(1:50,:)=0;
+%     PamMeta.Det_Calib.Hist(3000:end,:)=0;
     
     [Counts,Index]=sort(PamMeta.Det_Calib.Hist);
     PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
