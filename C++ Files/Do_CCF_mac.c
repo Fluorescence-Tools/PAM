@@ -78,7 +78,7 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
                 limit_r= limit_l+nc;
                 
                 j=p;
-                while ((j<np2) && (t2[j]<=limit_r))
+                while ((j<np2) && (t2[j]<limit_r))
                 {
                     if (photons2[j]!=0)
                     {
