@@ -47,3 +47,7 @@ if min(Array_Length)~=max(Array_Length)
 end
 Cor_Array=cell2mat(Cor_Array');
 Timeaxis=Timeaxis(1:max(Array_Length));
+
+%%% Remove first bin since it is empty
+Cor_Array(1,:) = [];
+Timeaxis(1) = [];

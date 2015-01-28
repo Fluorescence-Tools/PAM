@@ -1758,6 +1758,11 @@ if ~isempty(obj)
 else
     h = guidata(gcf);
 end
+
+if isempty(BurstData)
+    return;
+end
+
 %%% Use the current cut Data (of the selected species) for plots
 datatoplot = BurstData.DataCut;
 %%% read out the indices of the parameters to plot

@@ -25,32 +25,32 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
     unsigned int im;
     
     //Initializes some parameters
-    __int64 maxmat;
-    __int64 index;
-    __int64 pw;
-    __int64 limit_l;
-    __int64 limit_r;
+    __int64_t maxmat;
+    __int64_t index;
+    __int64_t pw;
+    __int64_t limit_l;
+    __int64_t limit_r;
     
     // Photon weights; if several photons are in the same bin, intensities will be summed up to save calculation time (see below)
-    __int64 *photons1;         
-    __int64 *photons2;
+    __int64_t *photons1;         
+    __int64_t *photons2;
     
     // Since mt1 and mt2 should not be changed, here a new memoryblock and pointer is defined
-    __int64 *t1;
-    __int64 *t2;
+    __int64_t *t1;
+    __int64_t *t2;
     
     
     // Assigns each photon to different pointer to be able to change it
-    t1=(__int64*) mxCalloc(np1, sizeof(__int64));
-    t2=(__int64*) mxCalloc(np2, sizeof(__int64));
-    for(im=0;im<np1;im++) {t1[im]=(__int64) mt1[im];};
-    for(im=0;im<np2;im++) {t2[im]=(__int64) mt2[im];};
+    t1=(__int64_t*) mxCalloc(np1, sizeof(__int64_t));
+    t2=(__int64_t*) mxCalloc(np2, sizeof(__int64_t));
+    for(im=0;im<np1;im++) {t1[im]=(__int64_t) mt1[im];};
+    for(im=0;im<np2;im++) {t2[im]=(__int64_t) mt2[im];};
     
 
     // Initializes photon weights; currently all 1
-    photons1=(__int64*) mxCalloc(np1, sizeof(__int64));
+    photons1=(__int64_t*) mxCalloc(np1, sizeof(__int64_t));
     for(i=0;i<np1;i++) {photons1[i]=1;}
-    photons2=(__int64*) mxCalloc(np2, sizeof(__int64));
+    photons2=(__int64_t*) mxCalloc(np2, sizeof(__int64_t));
     for(i=0;i<np2;i++) {photons2[i]=1;}
     
     //determine max macro time
@@ -74,7 +74,7 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
             if (photons1[i]!=0)
             {
                 // Calculates minimal and maximal time for photons in second array
-                limit_l= (__int64)(xdat[k*nc]/pw+t1[i]);
+                limit_l= (__int64_t)(xdat[k*nc]/pw+t1[i]);
                 limit_r= limit_l+nc;
                 
                 j=p;
@@ -86,7 +86,7 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
                         if (t2[j]>=limit_l)
                         {
                             // Calculates time between two photons
-                            index=t2[j]-limit_l+(__int64)(k*nc);
+                            index=t2[j]-limit_l+(__int64_t)(k*nc);
                             // Adds one to correlation at the appropriate timelag
                             corrl[index]+=(double) (photons1[i]*photons2[j]);
                         }

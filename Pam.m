@@ -2142,6 +2142,8 @@ if any(mode==4)
             h.Plots.MI_Ind{i}.XData=1:numel(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
             h.Plots.MI_Ind{i}.YData=PamMeta.MI_Hist{UserValues.Detector.Plots(i)};
             h.Plots.MI_Ind{i}.Color=UserValues.Detector.Color(UserValues.Detector.Plots(i),:);
+            %%% Set XLim to Microtime Range
+            h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
         end
     end
     %%% Resets PIE patch scale
@@ -2375,6 +2377,8 @@ switch e.Key
         UserValues.PIE.To(end+1)=4096;
         UserValues.PIE.Name{end+1}='PIE Channel';
         UserValues.PIE.Duty_Cycle(end+1)=0;
+        %%% Reset Correlation Table Data Matrix
+        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
@@ -2392,6 +2396,8 @@ switch e.Key
         UserValues.PIE.To(Sel)=[];
         UserValues.PIE.Name(Sel)=[];
         UserValues.PIE.Duty_Cycle(Sel)=[];
+        %%% Reset Correlation Table Data Matrix
+        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
         %%% in Pam meta data
         PamMeta.Trace(Sel)=[];
         PamMeta.Image(Sel)=[];
@@ -2446,6 +2452,8 @@ switch e.Key
             UserValues.PIE.To([Sel(1)-1 Sel(1)])=UserValues.PIE.To([Sel(1) Sel(1)-1]);
             UserValues.PIE.Name([Sel(1)-1 Sel(1)])=UserValues.PIE.Name([Sel(1) Sel(1)-1]);
             UserValues.PIE.Duty_Cycle([Sel(1)-1 Sel(1)])=UserValues.PIE.Duty_Cycle([Sel(1) Sel(1)-1]);
+            %%% Reset Correlation Table Data Matrix
+            UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
             %%% Shifts Pam meta data
             PamMeta.Trace([Sel(1)-1 Sel(1)])=PamMeta.Trace([Sel(1) Sel(1)-1]);
             PamMeta.Image([Sel(1)-1 Sel(1)])=PamMeta.Image([Sel(1) Sel(1)-1]);
@@ -2479,6 +2487,8 @@ switch e.Key
             UserValues.PIE.To([Sel(1) Sel(1)+1])=UserValues.PIE.To([Sel(1)+1 Sel(1)]);
             UserValues.PIE.Name([Sel(1) Sel(1)+1])=UserValues.PIE.Name([Sel(1)+1 Sel(1)]);
             UserValues.PIE.Duty_Cycle([Sel(1) Sel(1)+1])=UserValues.PIE.Duty_Cycle([Sel(1)+1 Sel(1)]);
+            %%% Reset Correlation Table Data Matrix
+            UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
             %%% Shifts Pam meta data
             PamMeta.Trace([Sel(1) Sel(1)+1])=PamMeta.Trace([Sel(1)+1 Sel(1)]);
             PamMeta.Image([Sel(1) Sel(1)+1])=PamMeta.Image([Sel(1)+1 Sel(1)]);
@@ -2650,6 +2660,8 @@ switch e.Key
             end
             UserValues.PIE.Name{end}(end)=[];
             UserValues.PIE.Duty_Cycle(end+1)=0;
+            %%% Reset Correlation Table Data Matrix
+            UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
             Update_Data([],[],[],[])
             %%% Updates correlation table
             Update_Cor_Table(obj);
@@ -3147,6 +3159,7 @@ h.Cor_Table.ColumnEditable=true(numel(UserValues.PIE.Name)+1,1)';
 ColumnWidth=cellfun(@length,UserValues.PIE.Name).*6+16;
 ColumnWidth(end+1)=37; %%% Row = 3*8+16;
 h.Cor_Table.ColumnWidth=num2cell(ColumnWidth);
+h.Cor_Table.Data = UserValues.Settings.Pam.Cor_Selection;
 h.Cor_Multi_Menu.Checked=UserValues.Settings.Pam.Multi_Core;
 h.Cor_Divider_Menu.Label=['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)];
 
@@ -3164,6 +3177,7 @@ Update_BurstGUI([],[]);
 %%% Function for keeping correlation table updated  %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Cor_Table(obj,e)
+global UserValues
 h=guidata(gcf);
 
 %%% Is executed, if one of the checkboxes was clicked
@@ -3180,7 +3194,7 @@ if obj == h.Cor_Table
             h.Cor_Table.Data(i,i)=e.NewData;
         end
     
-    end  
+    end
 end
 
 %%% Activates/deactivates column/row/diagonal checkboxes
@@ -3202,6 +3216,13 @@ if any(~diag(h.Cor_Table.Data(1:end-1,1:end-1)))
 else
     h.Cor_Table.Data(end)=true;
 end
+
+if obj == h.Cor_Table
+    %%% Store Selection Change in UserValues
+    UserValues.Settings.Pam.Cor_Selection = h.Cor_Table.Data;
+end
+LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for correlating data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

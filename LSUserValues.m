@@ -207,7 +207,11 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
     end
     
-    
+    %%% Checksm if Pam.Cor_Selection subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Selection')
+        S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
+        disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
+    end
     
     %% Peripheral fields, that do not concern the main gui (like burst, phasor mia)
     %% Phasor
