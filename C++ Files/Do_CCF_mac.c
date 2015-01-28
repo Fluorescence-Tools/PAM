@@ -78,20 +78,36 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
                 limit_r= limit_l+nc;
                 
                 j=p;
-                while ((j<np2) && (t2[j]<limit_r))
+                while ((j<np2) && (t2[j]<=limit_r))
                 {
                     if (photons2[j]!=0)
                     {
-                        // If correlation time is positiv
-                        if (t2[j]>=limit_l)
-                        {
-                            // Calculates time between two photons
-                            index=t2[j]-limit_l+(__int64_t)(k*nc);
-                            // Adds one to correlation at the appropriate timelag
-                            corrl[index]+=(double) (photons1[i]*photons2[j]);
+                        if (k == 0) // Special Case for first round to include the zero time delay bin
+                            {
+                                // If correlation time is positiv OR equal
+                                if (t2[j]>=limit_l)
+                                {
+                                    // Calculates time between two photons
+                                    index=t2[j]-limit_l+(__int64_t)(k*nc);
+                                    // Adds one to correlation at the appropriate timelag
+                                    corrl[index]+=(double) (photons1[i]*photons2[j]);
+                                }
+                                // Increases starting photon in second array, to save time 
+                                else {p++;}
+                            }
+                        else
+                            {
+                            // If correlation time is positiv
+                            if (t2[j]>limit_l)
+                            {
+                                // Calculates time between two photons
+                                index=t2[j]-limit_l+(__int64_t)(k*nc);
+                                // Adds one to correlation at the appropriate timelag
+                                corrl[index]+=(double) (photons1[i]*photons2[j]);
+                            }
+                            // Increases starting photon in second array, to save time 
+                            else {p++;}
                         }
-                        // Increases starting photon in second array, to save time 
-                        else {p++;}
                     }
                     j++;
                 };                
