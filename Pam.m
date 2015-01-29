@@ -2129,7 +2129,7 @@ if any(mode==4)
             h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
         end
         %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
-        h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:);
+        h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:)./max(UserValues.Detector.Color(i,:));
     end
 end
 

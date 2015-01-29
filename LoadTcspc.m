@@ -349,5 +349,6 @@ if iscell(FileName) || ~all(FileName==0)
     Calibrate_Detector([],[],0)
     %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
     Update_Data([],[],0,0);
+    Update_Display([],[],0);
 end
 
