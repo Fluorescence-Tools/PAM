@@ -43,7 +43,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Type=Type;
             FileInfo.MI_Bins=4096;
             FileInfo.MeasurementTime=FileInfo.Fabsurf.Imagetime/1000;
-            FileInfo.ClockPeriod=FileInfo.Fabsurf.RepRate/1000;
+            FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
             FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
             FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
             FileInfo.Pixels=FileInfo.Fabsurf.Imagelines^2;
@@ -60,7 +60,7 @@ if iscell(FileName) || ~all(FileName==0)
                 %%% Calculates Imagetime in clock ticks for concaternating
                 %%% files
                 Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
-                Imagetime=round(Info.Imagetime/1000/FileInfo.ClockPeriod);
+                Imagetime=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
                 %%% Checks, which cards to load
                 card = unique(UserValues.Detector.Det);
                 
@@ -77,7 +77,7 @@ if iscell(FileName) || ~all(FileName==0)
                     %%% Update Progress
                     Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                    [MT, MI, PLF,~] = Read_BH(fullfile(Path, FileName{i}),Inf,[0 0 0]);
+                    [MT, MI, PLF,~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0]);
                     %%% Finds, which routing bits to use
                     Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
                     Rout(Rout>numel(MI)) = [];
@@ -109,7 +109,7 @@ if iscell(FileName) || ~all(FileName==0)
                 end
                 %%% Creates linebreak entries
                 if isempty(Linetimes)
-                    FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.ClockPeriod,FileInfo.Lines+1)+Totaltime;
+                    FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
                 elseif numel(Linetimes)==FileInfo.Lines+1
                     FileInfo.LineTimes(:,i)=Linetimes+Totaltime;
                 elseif numel(Linetimes)<FileInfo.Lines+1
@@ -195,7 +195,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Card = Card;
             FileInfo.MI_Bins = MI_Bins;
             FileInfo.MeasurementTime = [];
-            FileInfo.ClockPeriod = [];
+            FileInfo.SyncPeriod = [];
             FileInfo.TACRange = TACRange; %in seconds
             FileInfo.Lines = 1;
             FileInfo.LineTimes = [];
@@ -244,8 +244,8 @@ if iscell(FileName) || ~all(FileName==0)
                         FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                     end
                     [MT, MI, ~, ClockRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], FileInfo.Card, FileInfo.MI_Bins);
-                    if isempty(FileInfo.ClockPeriod)
-                        FileInfo.ClockPeriod = 1/ClockRate;
+                    if isempty(FileInfo.SyncPeriod)
+                        FileInfo.SyncPeriod = 1/ClockRate;
                     end
                     %%% Finds, which routing bits to use
                     Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
@@ -264,7 +264,7 @@ if iscell(FileName) || ~all(FileName==0)
                     end
                 end
             end
-            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+            FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
             FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
             %             try
             %                 %%% try to read the TACRange from the *_m1.set file
@@ -284,7 +284,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.Type=Type;
             FileInfo.MI_Bins=[];
             FileInfo.MeasurementTime=[];
-            FileInfo.ClockPeriod= [];
+            FileInfo.SyncPeriod= [];
             FileInfo.Resolution = [];
             FileInfo.TACRange = [];
             FileInfo.Lines=1;
@@ -314,8 +314,8 @@ if iscell(FileName) || ~all(FileName==0)
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
                 [MT, MI, ClockRate,Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress_Axes,h.Progress_Text,i,numel(FileName));
                 
-                if isempty(FileInfo.ClockPeriod)
-                    FileInfo.ClockPeriod = 1/ClockRate;
+                if isempty(FileInfo.SyncPeriod)
+                    FileInfo.SyncPeriod = 1/ClockRate;
                 end
                 if isempty(FileInfo.Resolution)
                     FileInfo.Resolution = Resolution;
