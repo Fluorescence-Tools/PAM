@@ -342,7 +342,7 @@ if iscell(FileName) || ~all(FileName==0)
             FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
             FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
             FileInfo.MI_Bins = max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))));
-            FileInfo.TACRange = FileInfo.SyncPer;
+            FileInfo.TACRange = FileInfo.SyncPeriod;
     end
     Progress(1,h.Progress_Axes, h.Progress_Text);
     %%% Applies detector shift immediately after loading data
