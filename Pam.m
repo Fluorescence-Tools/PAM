@@ -1863,8 +1863,6 @@ for  i=find(UserValues.PIE.Detector==0)
     end
 end
 
-%% Updates display
-Update_Display([],[],0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1922,7 +1920,8 @@ end
 LSUserValues(1);
 %%% Updates pam meta data, if Update_Data was not called
 if Display
-    Update_Data([],[],0,0)
+    Update_Data([],[],0,0);
+    Update_Display([],[],0);
 end
 
 
@@ -2130,7 +2129,7 @@ if any(mode==4)
             h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
         end
         %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
-        h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:)./max(UserValues.Detector.Color(i,:));
+        h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:);
     end
 end
 
@@ -2382,7 +2381,8 @@ switch e.Key
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
-        Update_Data([],[],[],numel(UserValues.PIE.Name))
+        Update_Data([],[],[],numel(UserValues.PIE.Name));
+        Update_Display([],[],0);
         %%% Updates correlation table
         Update_Cor_Table(obj);
     case {'delete';'subtract'} %%% Delete button or "del"-Key or "-"-Key 
@@ -2662,7 +2662,8 @@ switch e.Key
             UserValues.PIE.Duty_Cycle(end+1)=0;
             %%% Reset Correlation Table Data Matrix
             UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
-            Update_Data([],[],[],[])
+            Update_Data([],[],[],[]);
+            Update_Display([],[],0);
             %%% Updates correlation table
             Update_Cor_Table(obj);
         end        
@@ -2708,6 +2709,7 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
     %%% selected PIE channel
     if obj ~= h.PIE_Name        
         Update_Data([],[],[],Sel);
+        Update_Display([],[],0);
     %%% Only updates plots, if just the name was changed
     else
         Update_Display([],[],1);
@@ -2951,7 +2953,7 @@ if any(mode==2)
     List=cell(numel(UserValues.Detector.Name),1);
     for i=1:numel(List)
         %%% Calculates Hex code for detector color
-        Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
+        Hex_color=dec2hex(UserValues.Detector.Color(i,:)*255)';
         List{i}=['<HTML><FONT color=#' Hex_color(:)' '>'... Sets entry color in HTML
             UserValues.Detector.Name{i}... Detector Name
             ': Detector: ' num2str(UserValues.Detector.Det(i))... Detector Number
@@ -3109,6 +3111,7 @@ switch e.Key
                 h.Profiles_List.String{1}=['<HTML><FONT color=FF0000>' h.Profiles_List.String{1} '</Font></html>']; 
                 Update_Detector_Channels([],[],[1,2]);
                 Update_Data([],[],0,0);
+                Update_Display([],[],0);
             end  
             %%% Move selection to last entry
             if numel(h.Profiles_List.String) <Sel
@@ -3135,8 +3138,9 @@ switch e.Key
             
             %%% Resets applied shift to zero; might lead to overcorrection
             Update_to_UserValues;
-            Update_Detector_Channels([],[],[1,2]);
             Update_Data([],[],0,0);
+            Update_Detector_Channels([],[],[1,2]);
+            Update_Display([],[],0);
         end        
 end
 
