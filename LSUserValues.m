@@ -130,26 +130,31 @@ if Mode==0 %%% Loads user values
         S.File.FCS_Standard=[];
     end
     
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%% %%%%%%%%%%%%%%%%% %%%%%%%%%
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % never change from here
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% CurrentFileTypes is the list of the filetypes for the selection
+    %%% menu.
+    %%% You can edit it here if you want to change/add filetypes.
+    %%% The order of filetypes has to correspond to the order in
+    %%% LoadTcspc!
+    CurrentFileTypes = {'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
+            '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
+            '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
+            '*.ht3','HydraHarp400 TTTR file (*.ht3)'};
+
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
-        S.File.SPC_FileTypes = {'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'};
-    end
-    % to here
-
-    % to add filetypes, add 1 to the "currentnumber" and add the new filetype to the array below:
-    currentnumber = 3;
-    if numel(S.File.SPC_FileTypes) < 2*currentnumber
-        disp('WARNING: More file types were added to "UserValues.SPC_FileTypes"');
-        S.File.SPC_FileTypes = {'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)';...
-        '*.ht3','HydraHarp400 TTTR file'};
+        S.File.SPC_FileTypes = CurrentFileTypes;
     end
     
+    %%% Check for changes
+    if ~(isempty(setdiff(S.File.SPC_FileTypes,CurrentFileTypes)) && isempty(setdiff(CurrentFileTypes,S.File.SPC_FileTypes)) )
+        %%% overwrite loaded UserValues.File.SPC_FileTypes
+        S.File.SPC_FileTypes = CurrentFileTypes;
+    end
+    %%% Saves the current selected FileType with respect to the static
+    %%% FileType-List above
     if ~isfield(S.File, 'OpenTCSPC_FilterIndex')
         disp('WARNING: UserValues structure incomplete, field "OpenTCSPC_FilterIndex" missing');
         S.File.OpenTCSPC_FilterIndex = 1;

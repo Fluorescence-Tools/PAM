@@ -2,15 +2,24 @@ function LoadTcspc(~,~,Update_Data,Update_Display,Calibrate_Detector,Caller,File
 global UserValues TcspcData FileInfo
 
 if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
-    [FileName, Path, Type] = uigetfile({'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
-        '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
-        '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
-        '*.ht3','HydraHarp400 TTTR file (*.ht3)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+    %%% following code is for remembering the last used FileType
+    LSUserValues(0);
+    filetypes = UserValues.File.SPC_FileTypes;
+    [filetypes, ~, ~] = RememberFileType(filetypes, 'before', UserValues.File.OpenTCSPC_FilterIndex);
+    
+    [FileName, Path, Type] = uigetfile(filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+    %     [FileName, Path, Type] = uigetfile({'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
+    %         '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
+    %         '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
+    %         '*.ht3','HydraHarp400 TTTR file (*.ht3)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
 else %%% Loads predifined Files
     Path = UserValues.File.Path;
 end
 %%% Only execues if any file was selected
 if iscell(FileName) || ~all(FileName==0)
+    %%% Save the selected FileType
+    [~, Type, UserValues.File.OpenTCSPC_FilterIndex] = RememberFileType(filetypes, 'after', UserValues.File.OpenTCSPC_FilterIndex, Type);
+    LSUserValues(1);
     %%% Transforms FileName into cell, if it is not already
     %%%(e.g. when only one file was selected)
     if ~iscell(FileName)
@@ -351,4 +360,51 @@ if iscell(FileName) || ~all(FileName==0)
     Update_Data([],[],0,0);
     Update_Display([],[],0);
 end
+
+function [filetypes, FilterIndex, UserValuesFilterIndex] = RememberFileType(filetypes, flag, UserValuesFilterIndex, FilterIndexNew)
+% create a Uservalues entry for your the filterindex of your uigetfile
+% feed the function filetypes, which is the (nx2) cell array with the extension and description of each filetype
+% see OpenTCSPC for an example on how and where to call
+
+switch flag
+    case 'before'
+        if ~(UserValuesFilterIndex == 1) %if it is 1, then do nothing
+            filetypes2 = filetypes;
+            for i = 1:2
+                filetypes2{1,i} = filetypes{UserValuesFilterIndex,i};
+                for j = 2:UserValuesFilterIndex
+                    filetypes2{j,i} = filetypes{j-1,i};
+                end
+                if ~(UserValuesFilterIndex == size(filetypes2,1)) %do only if UserValuesFilterIndex is not the last in the list
+                    for j = ((UserValuesFilterIndex+1):(size(filetypes,1)-UserValuesFilterIndex))
+                        filetypes2{j,i} = filetypes{j,i};
+                    end
+                end
+            end
+            filetypes = filetypes2;
+        end
+        FilterIndex = 0;%dummy
+    case 'after'
+        % go from the FilterIndexNew to the usual FilterIndex
+    if ~(UserValuesFilterIndex == 1)
+        if (FilterIndexNew < UserValuesFilterIndex+1)
+            if (FilterIndexNew == 1)
+                FilterIndex = UserValuesFilterIndex;
+            else
+                for i = 2:UserValuesFilterIndex
+                    if (FilterIndexNew == i)
+                        FilterIndex = FilterIndexNew-1;
+                    end
+                end
+            end
+        else
+            FilterIndex = FilterIndexNew; % if it is > UserValues.OpenTCSPC_FilterIndex, then nothing changes
+        end
+    else
+        FilterIndex = FilterIndexNew; % if it is 1 then nothing changes
+    end
+    % at this point, FilterIndex is again what it was in the original list of filetypes
+    UserValuesFilterIndex = FilterIndex;
+end
+
 
