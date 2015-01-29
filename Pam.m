@@ -1,6 +1,6 @@
 function Pam
 global UserValues FileInfo PamMeta TcspcData
-h.Pam=findobj('Tag','Pam');eghdh
+h.Pam=findobj('Tag','Pam');
 
 if ~isempty(h.Pam) % Gives focus to Pam figure if it already exists
     figure(h.Pam); return;
