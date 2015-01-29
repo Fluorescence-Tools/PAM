@@ -139,7 +139,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String','0',...
+        'String',num2str(UserValues.Settings.FCSFit.Fit_Min),...
         'Callback',@Update_Plots,...
         'Position',[0.066 0.88 0.04 0.1]);
     h.Fit_Max = uicontrol(...
@@ -150,7 +150,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String','1',...
+        'String',num2str(UserValues.Settings.FCSFit.Fit_Max),...
         'Callback',@Update_Plots,...
         'Position',[0.11 0.88 0.04 0.1]);
     %%% Checkbox to toggle using weights
@@ -401,7 +401,7 @@ end
     FCSMeta.Plots=cell(0);
     FCSMeta.Model=[];
     FCSMeta.Fits=[];
-    FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 1 0; 1 0 1; 0 1 1];
+    FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
     
     
     guidata(h.FCSFit,h); 
@@ -904,10 +904,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(~,~)
 h = guidata(gcf);
-global FCSMeta FCSData
+global FCSMeta FCSData UserValues
 
 Min=str2double(h.Fit_Min.String);
 Max=str2double(h.Fit_Max.String);
+%%% store in UserValues
+UserValues.Settings.FCSFit.Fit_Min = Min;
+UserValues.Settings.FCSFit.Fit_Max = Max;
+LSUserValues(1);
+
 YMax=0; YMin=0; RMax=0; RMin=0;
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 for i=1:size(FCSMeta.Plots,1)

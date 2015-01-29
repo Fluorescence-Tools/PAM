@@ -205,12 +205,28 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.Settings.Pam, 'Cor_Divider')
         S.Settings.Pam.Cor_Divider=1;
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
-    end
-    
+    end   
     %%% Checksm if Pam.Cor_Selection subfield exists
     if ~isfield (S.Settings.Pam, 'Cor_Selection')
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
+    end
+    
+       
+    %%% Checks, if FCSFit subfield exists
+    if ~isfield (S.Settings, 'FCSFit')
+        S.Settings.FCSFit=[];
+        disp('UserValues.Settings.FCSFit was incomplete');
+    end
+    %%% Checks if FCSFit.Fit_Min subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Fit_Min')
+        S.Settings.FCSFit.Fit_Min=0;
+        disp('UserValues.Settings.FCSFit.Fit_Min was incomplete');
+    end
+    %%% Checks if FCSFit.Fit_Min subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Fit_Max')
+        S.Settings.FCSFit.Fit_Max=1;
+        disp('UserValues.Settings.FCSFit.Fit_Max was incomplete');
     end
     
     %% Peripheral fields, that do not concern the main gui (like burst, phasor mia)
