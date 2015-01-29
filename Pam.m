@@ -2129,8 +2129,8 @@ if any(mode==4)
             %%% Plots new lineseries, if none exists
             h.Plots.MI_All{i}=handle(plot(PamMeta.MI_Hist{i}));
         end
-        %%% Sets color of lineseries
-        h.Plots.MI_All{i}.Color=UserValues.Detector.Color(i,:);
+        %%% Sets color of lineseries (Divide by max to make 0 <= c <= 1
+        h.Plots.MI_All{i}.Color= UserValues.Detector.Color(i,:)./max(UserValues.Detector.Color(i,:));
     end
 end
 
@@ -2951,7 +2951,7 @@ if any(mode==2)
     List=cell(numel(UserValues.Detector.Name),1);
     for i=1:numel(List)
         %%% Calculates Hex code for detector color
-        Hex_color=dec2hex(UserValues.Detector.Color(i,:)*255)';
+        Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
         List{i}=['<HTML><FONT color=#' Hex_color(:)' '>'... Sets entry color in HTML
             UserValues.Detector.Name{i}... Detector Name
             ': Detector: ' num2str(UserValues.Detector.Det(i))... Detector Number
@@ -3135,8 +3135,8 @@ switch e.Key
             
             %%% Resets applied shift to zero; might lead to overcorrection
             Update_to_UserValues;
-            Update_Data([],[],0,0);
             Update_Detector_Channels([],[],[1,2]);
+            Update_Data([],[],0,0);
         end        
 end
 

@@ -243,7 +243,7 @@ if iscell(FileName) || ~all(FileName==0)
                     if Type == 2
                         FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                     end
-                    [MT, MI, ~, ClockRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], FileInfo.Card, FileInfo.MI_Bins);
+                    [MT, MI, ~, ClockRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0]);
                     if isempty(FileInfo.SyncPeriod)
                         FileInfo.SyncPeriod = 1/ClockRate;
                     end
