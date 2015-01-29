@@ -53,7 +53,7 @@ end
         'Parent', h.File,...
         'Tag','LoadTcspc',...
         'Label','Load Tcspc Data',...
-        'Callback',{@LoadTcspc,@Update_Data,@Calibrate_Detector,h.Pam});
+        'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Calibrate_Detector,h.Pam});
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1714,6 +1714,7 @@ Update_Profiles([],[])
 Update_Detector_Channels([],[],[1,2]);
 %%% Initializes plots
 Update_Data([],[],0,0);
+Update_Display([],[],0);
 
 h.Pam.Visible='on';  
     

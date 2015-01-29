@@ -1,7 +1,7 @@
-function LoadTcspc(~,~,Update_Data,Calibrate_Detector,Caller,FileName,Type)
+function LoadTcspc(~,~,Update_Data,Update_Display,Calibrate_Detector,Caller,FileName,Type)
 global UserValues TcspcData FileInfo
 
-if nargin<6 %%% Opens Dialog box for selecting new files to be loaded
+if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
     [FileName, Path, Type] = uigetfile({'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
         '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
         '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
