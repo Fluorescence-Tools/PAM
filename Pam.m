@@ -3576,6 +3576,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Update_Display([],[],1);
 end
 
+%%% Set FCSFit Path to FilePath
+UserValues.File.FCSPath = FileInfo.Path;
+LSUserValues(1);
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4550,6 +4554,10 @@ BurstData.FileName = BurstFileName;
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
 PhotonsFileName = GenerateName(PhotonsFileName);
 save(PhotonsFileName,'Macrotime','Microtime','Channel');
+
+%%% Set BurstBrowserPath Path to FilePath
+UserValues.File.BurstBrowserPath = FileInfo.Path;
+LSUserValues(1);
 
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that

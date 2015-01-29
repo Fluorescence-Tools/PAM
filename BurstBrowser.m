@@ -963,7 +963,7 @@ else
     h = guidata(gcf);
 end
 
-global BurstData UserValues
+global BurstData UserValues BurstMeta
 LSUserValues(0);
 if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
     %%% Change focus to GeneralTab
@@ -1009,8 +1009,6 @@ H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
 l = H>0;
 xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
 ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-%xbins1d=linspace(min(datatoplot(:,x)),max(datatoplot(:,x)),50)+(max(datatoplot(:,x))-min(datatoplot(:,x)))/100;
-%ybins1d=linspace(min(datatoplot(:,y)),max(datatoplot(:,y)),50)+(max(datatoplot(:,y))-min(datatoplot(:,y)))/100;
 
 switch UserValues.BurstBrowser.Display.PlotType
     case 'Image' %%%image plot
@@ -1025,6 +1023,7 @@ switch UserValues.BurstBrowser.Display.PlotType
         set(BurstData.PlotHandle,'EdgeColor','none');
 end
 axis('tight');
+
 set(gca,'FontSize',20);
 xlabel(h.ParameterListX.String{x});
 ylabel(h.ParameterListY.String{y});
@@ -1466,7 +1465,7 @@ NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_correct
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-BurstMeta.Plots.GammaPlot_Fit = plot2dhist(E_raw,1./S_raw,[0 1], [min(1./S_raw) max(1./S_raw)],51);
+BurstMeta.Plots.GammaPlot_Fit = plot2dhist(E_raw,1./S_raw,51,[0 1], [min(1./S_raw) max(1./S_raw)]);
 BurstMeta.Corrections.E_raw = E_raw;
 BurstMeta.Corrections.S_raw = S_raw;
 xlabel('Efficiency');
@@ -2146,7 +2145,7 @@ E =  NGR./(gamma_fit.*NGG+NGR);
 %%% plot E versus tau with static FRET line
 cla(h.axes_gamma_lifetime);
 axes(h.axes_gamma_lifetime);
-BurstData.Plots.GammaPlot = plot2dhist(data_for_corrections(S_threshold,indTauGG),E,[0 5],[-0.1 1]);
+BurstData.Plots.GammaPlot = plot2dhist(data_for_corrections(S_threshold,indTauGG),E,51,[0 5],[-0.1 1]);
 
 %%% add static FRET line
 tau = linspace(h.axes_gamma_lifetime.XLim(1),h.axes_gamma_lifetime.XLim(2),100);
@@ -2172,20 +2171,19 @@ ApplyCorrections;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [plot_handle] = plot2dhist(x,y,limx,limy,nbins,haxes)
+function [plot_handle] = plot2dhist(x,y,nbins,limx,limy,haxes)
 global UserValues
 if nargin <2
     return;
 end
-%%% if no limits are specified, set limits to min-max
+%%% if number of bins is not specified, read from UserValues struct
 if nargin < 3
+    nbins = UserValues.BurstBrowser.Display.NumberOfBins;
+end
+%%% if no limits are specified, set limits to min-max
+if nargin < 5
     limx = [min(x) max(x)];
     limy = [min(y) max(y)];
-end
-
-%%% if number of bins is not specified, read from UserValues struct
-if nargin < 5
-    nbins = UserValues.BurstBrowser.Display.NumberOfBins;
 end
 %%% set axes
 if nargin == 6
