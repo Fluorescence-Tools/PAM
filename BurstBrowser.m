@@ -14,7 +14,8 @@ if isempty(hfig)
     'OuterPosition',[0.01 0.05 0.98 0.95],...
     'UserData',[],...
     'Visible','on',...
-    'Tag','BurstBrowser');
+    'Tag','BurstBrowser',...
+    'CloseRequestFcn',@Close_BurstBrowser);
     %'WindowScrollWheelFcn',@Bowser_Wheel,...
     %'KeyPressFcn',@Bowser_KeyPressFcn,...
     whitebg(h.BurstBrowser, Look.Fore);
@@ -213,7 +214,7 @@ if isempty(hfig)
     'BackgroundColor', Look.Axes,...
     'ForegroundColor', Look.Disabled,...
     'Max',5,...
-    'Position',[0 0.55 0.5 0.3],...
+    'Position',[0 0.55 0.5 0.45],...
     'Style','listbox',...
     'Tag','ParameterListX',...
     'Enable','on');
@@ -224,7 +225,7 @@ if isempty(hfig)
     'BackgroundColor', Look.Axes,...
     'ForegroundColor', Look.Disabled,...
     'Max',5,...
-    'Position',[0.5 0.55 0.5 0.3],...
+    'Position',[0.5 0.55 0.5 0.45],...
     'Style','listbox',...
     'Tag','ParameterListY',...
     'Enable','on');
@@ -651,7 +652,8 @@ if isempty(hfig)
     'FontSize',20,...
     'XAxisLocation','top',...
     'nextplot','add',...
-    'View',[90 90]);
+    'View',[90 90],...
+    'XDir','reverse');
     %% define axes in Corrections tab
     h.axes_crosstalk =  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
@@ -662,6 +664,9 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
+    xlabel(h.axes_crosstalk,'Proximity Ratio');
+    ylabel(h.axes_crosstalk,'#');
+    title(h.axes_crosstalk,'Proximity Ratio of Donor only');
     
     h.axes_direct_excitation =  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
@@ -672,6 +677,9 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
+    xlabel(h.axes_direct_excitation,'Stoiciometry (raw)');
+    ylabel(h.axes_direct_excitation,'#');
+    title(h.axes_direct_excitation,'Raw Stoichiometry of Acceptor only');
 
     h.axes_gamma=  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
@@ -682,7 +690,10 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
-
+    xlabel(h.axes_gamma,'Efficiency');
+    ylabel(h.axes_gamma,'1/Stoichiometry');
+    title(h.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1');
+    
     h.axes_gamma_lifetime =  axes(...
     'Parent',h.MainTabCorrectionsPanel,...
     'Units','normalized',...
@@ -703,6 +714,9 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
+    ylabel(h.axes_EvsTauGG,'Efficiency');
+    xlabel(h.axes_EvsTauGG,'Lifetime GG [ns]');
+    title(h.axes_EvsTauGG,'Efficiency vs. Lifetime GG');
     
     h.axes_EvsTauRR =  axes(...
     'Parent',h.MainTabLifetimePanel,...
@@ -713,7 +727,10 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
-
+    ylabel(h.axes_EvsTauRR,'Efficiency');
+    xlabel(h.axes_EvsTauRR,'Lifetime RR [ns]');
+    title(h.axes_EvsTauRR,'Efficiency vs. Lifetime RR');
+    
     h.axes_rGGvsTauGG =  axes(...
     'Parent',h.MainTabLifetimePanel,...
     'Units','normalized',...
@@ -723,7 +740,10 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
-
+    ylabel(h.axes_rGGvsTauGG,'Anisotropy GG');
+    xlabel(h.axes_rGGvsTauGG,'Lifetime GG [ns]');
+    title(h.axes_rGGvsTauGG,'Anisotropx GG vs. Lifetime GG');
+    
     h.axes_rRRvsTauRR=  axes(...
     'Parent',h.MainTabLifetimePanel,...
     'Units','normalized',...
@@ -733,7 +753,10 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
-
+    ylabel(h.axes_rRRvsTauRR,'Anisotropy RR');
+    xlabel(h.axes_rRRvsTauRR,'Lifetime RR [ns]');
+    title(h.axes_rRRvsTauRR,'Anisotropx RR vs. Lifetime RR');
+    
     guidata(h.BurstBrowser,h);    
     %% Initialize Plots in Global Variable
     %%% Enables easy Updating later on
@@ -741,43 +764,72 @@ if isempty(hfig)
     %%% Main Tab
     BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
     BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
-    axes(h.axes_general);load clown;BurstMeta.Plots.Main_Plot = imagesc(flipud(X));axis('tight');
+    %%% Initialize both image AND contour plots in array
+    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general);axis(h.axes_general,'tight');
+    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');
+        %%% Main Tab multiple species (consider up to three)
+        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off');
     %%%Corrections Tab
     BurstMeta.Plots.histE_donly = bar(h.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
         %%%Consider fits also (three lines for 2 gauss fit)
-        BurstMeta.Plots.Fits.histE_donly(1) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.histE_donly(2) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
-        BurstMeta.Plots.Fits.histE_donly(3) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
+        BurstMeta.Plots.Fits.histE_donly(1) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histE_donly(2) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histE_donly(3) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
     BurstMeta.Plots.histS_aonly = bar(h.axes_direct_excitation,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
         %%%Consider fits also (three lines for 2 gauss fit)
-        BurstMeta.Plots.Fits.histS_aonly(1) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.histS_aonly(2) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
-        BurstMeta.Plots.Fits.histS_aonly(3) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
-    axes(h.axes_gamma);BurstMeta.Plots.gamma_fit = imagesc(flipud(X));axis('tight');
-        BurstMeta.Plots.Fits.gamma = plot(h.axes_gamma,[0 1],[0 0],'Color','b','LineStyle','-');
-    axes(h.axes_gamma_lifetime);BurstMeta.Plots.gamma_lifetime = imagesc(flipud(X));axis('tight');
-        BurstMeta.Plots.Fits.staticFRET_gamma_lifetime = plot(h.axes_gamma_lifetime,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
-    axes(h.axes_EvsTauGG);BurstMeta.Plots.EvsTauGG = imagesc(flipud(X));axis('tight');
-        BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
-    axes(h.axes_EvsTauRR);BurstMeta.Plots.EvsTauRR = imagesc(flipud(X));axis('tight');
-        BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color','b','LineStyle','-','Visible','off');
-    axes(h.axes_rGGvsTauGG);BurstMeta.Plots.rGGvsTauGG = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.histS_aonly(1) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histS_aonly(2) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histS_aonly(3) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.gamma_fit(1) = imagesc(zeros(2),'Parent',h.axes_gamma);axis(h.axes_gamma,'tight');
+    [~,BurstMeta.Plots.gamma_fit(2)] = contourf(zeros(2),10,'Parent',h.axes_gamma,'Visible','off');
+        BurstMeta.Plots.Fits.gamma = plot(h.axes_gamma,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3);  %Fit
+        BurstMeta.Plots.Fits.gamma_manual = scatter(h.axes_gamma,[0 1],[0 1],1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b','Visible','off');  %Manual
+    BurstMeta.Plots.gamma_lifetime(1) = imagesc(zeros(2),'Parent',h.axes_gamma_lifetime);axis(h.axes_gamma_lifetime,'tight');
+    [~,BurstMeta.Plots.gamma_lifetime(2)] = contourf(zeros(2),'Parent',h.axes_gamma_lifetime,'Visible','off');
+        BurstMeta.Plots.Fits.staticFRET_gamma_lifetime = plot(h.axes_gamma_lifetime,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.EvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauGG);axis(h.axes_EvsTauGG,'tight');
+    [~,BurstMeta.Plots.EvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauGG,'Visible','off');
+        BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.EvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauRR);axis(h.axes_EvsTauRR,'tight');
+    [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
+        BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.rGGvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_rGGvsTauGG);axis(h.axes_rGGvsTauGG,'tight');
+    [~,BurstMeta.Plots.rGGvsTauGG(1)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
         %%% Consider up to three Perrin lines
-        BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','g','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.PerrinGG(3) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
-    axes(h.axes_rRRvsTauRR);BurstMeta.Plots.rRRvsTauRR = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.PerrinGG(3) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.rRRvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_rRRvsTauRR);axis(h.axes_rRRvsTauRR,'tight');
+    [~,BurstMeta.Plots.rRRvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_rRRvsTauRR,'Visible','off');axis(h.axes_rRRvsTauRR,'tight');
         %%% Consider up to three Perrin lines
-        BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','g','LineStyle','-','Visible','off');
-        BurstMeta.Plots.Fits.PerrinRR(3) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
-    
+        BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.PerrinRR(3) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3,'Visible','off'); 
     %% set UserValues in GUI
     UpdateCorrections([],[]);
+    %%% Update ColorMap
+    eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 else
     figure(hfig);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Close_BurstBrowser(~,~)
+clear global -regexp BurstData BurstMeta
+Phasor=findobj('Tag','Phasor');
+Pam=findobj('Tag','Pam');
+if isempty(Phasor) && isempty(Pam)
+    clear global -regexp UserValues
+end
+delete(gcf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -838,14 +890,6 @@ if isfield(BurstData,'SpeciesNames') %%% Previous Cuts exist
     end
 end
 
-if ~isempty(BurstMeta.Plots)
-    %%% Clear Plots
-    plots = struct2cell(BurstMeta.Plots);
-    for i = 1:numel(plots)
-        delete(plots{i});
-    end
-    BurstMeta.Plots = [];
-end
 UpdateCorrections([],[]);
 UpdateCutTable(h);
 UpdateCuts();
@@ -992,14 +1036,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdatePlot(obj,~)
 %% Preparation
+global BurstData UserValues BurstMeta  
 if ~isempty(obj)
     h = guidata(obj);
 else
     h = guidata(gcf);
 end
-
-global BurstData UserValues BurstMeta
-LSUserValues(0);
 if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
@@ -1027,8 +1069,6 @@ if obj == h.ColorMapPopupmenu
 end
 LSUserValues(1);
 
-axes(h.axes_general);
-cla(gca);
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 
@@ -1036,64 +1076,63 @@ y = get(h.ParameterListY,'Value');
 nbins = UserValues.BurstBrowser.Display.NumberOfBins + 1;
 
 %% Update Plot
+%%% Disable/Enable respective plots
+BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+BurstMeta.Plots.Main_histX.Visible = 'on';
+BurstMeta.Plots.Main_histY.Visible = 'on';
+BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
+set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
+set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
+
 datatoplot = BurstData.DataCut;
 
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,x) datatoplot(:,y)],nbins, nbins, [min(datatoplot(:,x)) max(datatoplot(:,x))], [min(datatoplot(:,y)) max(datatoplot(:,y))]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+[H, xbins,ybins,xbins_1d, ybins_1d] = calc2dhist(datatoplot(:,x),datatoplot(:,y),nbins);
 
-switch UserValues.BurstBrowser.Display.PlotType
-    case 'Image' %%%image plot
-        BurstData.PlotHandle = imagesc(xbins,ybins,H./max(max(H)));
-        set(BurstData.PlotHandle,'AlphaData',l);
-        set(gca,'YDir','normal');
-    case 'Contour' %%%contour plot
-        zc=linspace(1, ceil(max(max(H))),10);
-        set(gca,'CLim',[0 ceil(2*max(max(H)))]);
-        H(H==0) = NaN;
-        [~, BurstData.PlotHandle]=contourf(xbins,ybins,H,[0 zc]);
-        set(BurstData.PlotHandle,'EdgeColor','none');
-end
-axis('tight');
+%%% Update Image Plot and Contour Plot
+BurstMeta.Plots.Main_Plot(1).XData = xbins;
+BurstMeta.Plots.Main_Plot(1).YData = ybins;
+BurstMeta.Plots.Main_Plot(1).CData = H;
+BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
+BurstMeta.Plots.Main_Plot(2).XData = xbins;
+BurstMeta.Plots.Main_Plot(2).YData = ybins;
+BurstMeta.Plots.Main_Plot(2).ZData = H;
+BurstMeta.Plots.Main_Plot(2).LevelList = linspace(1, max(max(H)),10);
 
-set(gca,'FontSize',20);
-xlabel(h.ParameterListX.String{x});
-ylabel(h.ParameterListY.String{y});
+axis(h.axes_general,'tight');
+%%% Update Labels
+xlabel(h.axes_general,h.ParameterListX.String{x});
+ylabel(h.axes_general,h.ParameterListY.String{y});
 
 %plot 1D hists    
-axes(h.axes_1d_x);
-cla(gca);
-hx = histc(datatoplot(:,x),xbins_hist);
+hx = histc(datatoplot(:,x),xbins_1d);
 hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
-bar(xbins,hx,'BarWidth',1);
-axis('tight');
-set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
-yticks= get(gca,'YTick');
-set(gca,'YTick',yticks(2:end));
+BurstMeta.Plots.Main_histX.XData = xbins;
+BurstMeta.Plots.Main_histX.YData = hx;
+yticks= get(h.axes_1d_x,'YTick');
+set(h.axes_1d_x,'YTick',yticks(2:end));
 
 axes(h.axes_1d_y);
-cla(gca);
-hy = hist(datatoplot(:,y),ybins_hist);
+hy = hist(datatoplot(:,y),ybins_1d);
 hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
-bar(ybins,hy,'BarWidth',1);
-axis('tight');
-set(gca,'View',[90 90],'XDir','reverse');
-set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
-yticks = get(gca,'YTick');
-set(gca,'YTick',yticks(2:end));
+BurstMeta.Plots.Main_histY.XData = ybins;
+BurstMeta.Plots.Main_histY.YData = hy;
+yticks = get(h.axes_1d_y,'YTick');
+set(h.axes_1d_y,'YTick',yticks(2:end));
 
+%%% tighten axes
+axis(h.axes_general,'tight');
+axis(h.axes_1d_x,'tight');
+axis(h.axes_1d_y,'tight');
 %%% Update ColorMap
 eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+drawnow;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MultiPlot(~,~)
 h = guidata(gcf);
-global BurstData UserValues
-
-axes(h.axes_general);
-cla(gca);
+global BurstData UserValues BurstMeta
 
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
@@ -1125,10 +1164,10 @@ miny = zeros(num_species,1);
 maxx = zeros(num_species,1);
 maxy = zeros(num_species,1);
 for i = 1:num_species
-    minx(i) = min(datatoplot{i}(:,x));
-    miny(i) = min(datatoplot{i}(:,y));
-    maxx(i) = max(datatoplot{i}(:,x));
-    maxy(i) = max(datatoplot{i}(:,y));
+    minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x)),x));
+    miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y)),y));
+    maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x)),x));
+    maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y)),y));
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
@@ -1185,72 +1224,67 @@ end
 
 
 %%% plot
-imagesc(xbins,ybins,zz);
-set(gca,'YDir','normal');
-set(gca,'FontSize',20);
-xlabel(h.ParameterListX.String{x});
-ylabel(h.ParameterListY.String{y});
+set(BurstMeta.Plots.Main_Plot,'Visible','off');
+BurstMeta.Plots.Main_histX.Visible = 'off';
+BurstMeta.Plots.Main_histY.Visible = 'off';
+BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'on';
 
-axes(h.axes_1d_x);
-cla(gca);
+BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
+BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
+BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
+
+xlabel(h.axes_general,h.ParameterListX.String{x});
+ylabel(h.axes_general,h.ParameterListY.String{y});
+
 %plot first histogram
 hx = histc(datatoplot{1}(:,x),xbins_hist);
 hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 %normalize
 hx = hx./sum(hx); hx = hx';
-%barx(1) = bar(xbins,hx,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
-stairsx = zeros(num_species,1);
-stairsx(1) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
-hold on;
+BurstMeta.Plots.Multi.Multi_histX(1).Visible = 'on';
+BurstMeta.Plots.Multi.Multi_histX(1).XData = [xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2];
+BurstMeta.Plots.Multi.Multi_histX(1).YData = [hx, hx(end)];
+%stairsx(1) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
 %plot rest of histograms
-%color = {[1 0 0], [0 1 0]};
 for i = 2:num_species
+    BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'on';
     hx = histc(datatoplot{i}(:,x),xbins_hist);
     hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
     %normalize
     hx = hx./sum(hx); hx = hx';
-    if i == 2 %%% plot red
-        stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','r','LineWidth',2);
-    elseif i == 3 %%% plot green
-        stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','g','LineWidth',2);
-    end
-    %barx(i) =bar(xbins,hx,'BarWidth',1,'FaceColor',color{i-1},'EdgeColor',color{i-1});
+    BurstMeta.Plots.Multi.Multi_histX(i).XData = [xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2];
+    BurstMeta.Plots.Multi.Multi_histX(i).YData = [hx, hx(end)];
+    %stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','r','LineWidth',2);
+    %stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','g','LineWidth',2);
 end
 
-axis('tight');
-set(gca,'XAxisLocation','top','FontSize',20,'YTickMode','auto')
-yticks = get(gca,'YTick');
-set(gca,'YTick',yticks(2:end));
+yticks = get(h.axes_1d_x,'YTick');
+set(h.axes_1d_x,'YTick',yticks(2:end));
 
-axes(h.axes_1d_y);
-cla(gca);
 %plot first histogram
 hy = histc(datatoplot{1}(:,y),ybins_hist);
 hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 %normalize
 hy = hy./sum(hy); hy = hy';
-%bary(1) = bar(ybins,hy,'BarWidth',1,'FaceColor',[0 0 1],'EdgeColor',[0 0 1]);
-stairsy = zeros(num_species,1);
-stairsy(1) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
-hold on;
+BurstMeta.Plots.Multi.Multi_histY(1).Visible = 'on';
+BurstMeta.Plots.Multi.Multi_histY(1).XData = [ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2];
+BurstMeta.Plots.Multi.Multi_histY(1).YData = [hy, hy(end)];
+%stairsy(1) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
 %plot rest of histograms
 for i = 2:num_species
+    BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'on';
     hy = histc(datatoplot{i}(:,y),ybins_hist);
     hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
     %normalize
     hy = hy./sum(hy); hy = hy';
-    %bary(i) = bar(ybins,hy,'BarWidth',1,'FaceColor',color{i-1},'EdgeColor',color{i-1});
-    if i == 2 %%% plot red
-        stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','r','LineWidth',2);
-    elseif i == 3 %%% plot green
-        stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','g','LineWidth',2);
-    end
+    BurstMeta.Plots.Multi.Multi_histY(i).XData = [ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2];
+    BurstMeta.Plots.Multi.Multi_histY(i).YData = [hy, hy(end)];
+    %stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','r','LineWidth',2);
+    %stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','g','LineWidth',2);
 end
-axis('tight');
-set(gca,'View',[90 90],'XDir','reverse','YTickMode','auto');
-set(gca,'XAxisLocation','top','FontSize',20)
-yticks = get(gca,'YTick');
-set(gca,'YTick',yticks(2:end));
+yticks = get(h.axes_1d_y,'YTick');
+set(h.axes_1d_y,'YTick',yticks(2:end));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Manual Cut by selecting an area in the current selection  %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
@@ -1413,7 +1447,7 @@ h = guidata(gcbo);
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 
 indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
-indE = find(strcmp(BurstData.NameArray,'Efficiency'));
+%indE = find(strcmp(BurstData.NameArray,'Efficiency'));
 indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
 indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
 indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
@@ -1438,58 +1472,41 @@ Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValue
 Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
 
 %% plot raw Efficiency for S>0.9
-%%% check if plot exists
 x_axis = linspace(0,0.3,50);
-axes(h.axes_crosstalk);
-if ~isfield(BurstMeta.Plots,'histE_donly')
-    Smin = 0.9;
-    S_threshold = (data_for_corrections(:,indS)>Smin);
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    E_raw = NGR./(NGR+NGG);
-    BurstData.Corrections.histE_donly = histc(E_raw,x_axis);
-    BurstMeta.Plots.histE_donly = bar(x_axis, BurstData.Corrections.histE_donly,'BarWidth',1);
-    axis tight;
-    xlabel('Proximity Ratio');
-    ylabel('#');
-    title('Proximity Ratio of Donor only');
-end
-%%% check if fit exists
-if isfield(BurstMeta.Plots,'FitCrosstalk')
-    delete(BurstMeta.Plots.FitCrosstalk);
-end
+Smin = 0.9;
+S_threshold = (data_for_corrections(:,indS)>Smin);
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+E_raw = NGR./(NGR+NGG);
+histE_donly = histc(E_raw,x_axis);
+BurstMeta.Plots.histE_donly.XData = x_axis;
+BurstMeta.Plots.histE_donly.YData = histE_donly;
+axis(h.axes_crosstalk,'tight');
+
 %fit single gaussian
-[mean_ct, BurstMeta.Plots.FitCrosstalk] = GaussianFit(x_axis',BurstData.Corrections.histE_donly,1,1);
+[mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly,1);
+BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
+BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
-%% plot raw data for S > 0.3 for direct excitation
+%% plot raw data for S < 0.2 for direct excitation
 %%% check if plot exists
 Smax = 0.2;
 x_axis = linspace(0,Smax,20);
-axes(h.axes_direct_excitation);
-if ~isfield(BurstMeta.Plots,'histS_aonly')
-    S_threshold = (data_for_corrections(:,indS)<Smax);
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-    S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    BurstData.Corrections.histS_aonly = histc(S_raw,x_axis);
-    BurstMeta.Plots.histS_aonly = bar(x_axis, BurstData.Corrections.histS_aonly,'BarWidth',1);
-    axis tight;
-    xlabel('Stoiciometry (raw)');
-    ylabel('#');
-    title('Raw Stoichiometry of Acceptor only');
-end
-%%% check if fit exists
-if isfield(BurstMeta.Plots,'FitDirectExcitation')
-    delete(BurstMeta.Plots.FitDirectExcitation);
-end
+S_threshold = (data_for_corrections(:,indS)<Smax);
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+S_raw = (NGG+NGR)./(NGG+NGR+NRR);
+histS_aonly = histc(S_raw,x_axis);
+BurstMeta.Plots.histS_aonly.XData = x_axis;
+BurstMeta.Plots.histS_aonly.YData = histS_aonly;
+axis(h.axes_direct_excitation,'tight');
 %fit single gaussian
-[mean_de, BurstMeta.Plots.FitDirectExcitation] = GaussianFit(x_axis',BurstData.Corrections.histS_aonly,1,1);
+[mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly,1);
+BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
+BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
 %% plot gamma plot for two populations (or lifetime versus E)
-axes(h.axes_gamma);
-%%% clear previous plot
-delete(h.axes_gamma.Children);
 %%% get E-S values between 0.3 and 0.8;
 S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
 %%% Calculate "raw" E and S with gamma = 1, but still apply direct
@@ -1500,23 +1517,27 @@ NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_correct
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-BurstMeta.Plots.GammaPlot_Fit = plot2dhist(E_raw,1./S_raw,51,[0 1], [min(1./S_raw) max(1./S_raw)]);
-BurstMeta.Corrections.E_raw = E_raw;
-BurstMeta.Corrections.S_raw = S_raw;
-xlabel('Efficiency');
-ylabel('1/Stoichiometry');
-title('1/Stoichiometry vs. Efficiency for gamma = 1');
-
-%%% check if fit exists
-if isfield(BurstMeta.Plots,'GammaFit')
-    delete(BurstMeta.Plots.GammaFit);
-end
+[H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,51,[0 1], [min(1./S_raw) max(1./S_raw)]);
+BurstMeta.Plots.gamma_fit(1).XData= xbins;
+BurstMeta.Plots.gamma_fit(1).YData= ybins;
+BurstMeta.Plots.gamma_fit(1).CData= H;
+BurstMeta.Plots.gamma_fit(1).AlphaData= (H>0);
+BurstMeta.Plots.gamma_fit(2).XData= xbins;
+BurstMeta.Plots.gamma_fit(2).YData= ybins;
+BurstMeta.Plots.gamma_fit(2).ZData= H;
+%%% Update/Reset Axis Labels
+xlabel(h.axes_gamma,'Efficiency');
+ylabel(h.axes_gamma,'1/Stoichiometry');
+title(h.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1');
+%%% store for later use
+BurstMeta.Data.E_raw = E_raw;
+BurstMeta.Data.S_raw = S_raw;
 %%% Fit linearly
-fitGamma = fit(BurstMeta.Corrections.E_raw,1./BurstMeta.Corrections.S_raw,'poly1');
-BurstMeta.Plots.GammaFit = plot(fitGamma);legend('off');
-BurstMeta.Plots.GammaFit.Color = [0 0 1];
-BurstMeta.Plots.GammaFit.LineWidth = 3;
-set(BurstMeta.Plots.GammaFit,'LineWidth',2);
+fitGamma = fit(E_raw,1./S_raw,'poly1');
+BurstMeta.Plots.Fits.gamma.Visible = 'on';
+BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
+BurstMeta.Plots.Fits.gamma.XData = E_raw;
+BurstMeta.Plots.Fits.gamma.YData = fitGamma(E_raw);
 %%% Determine Gamma and Beta
 coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
@@ -1529,7 +1550,15 @@ ApplyCorrections;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [mean,plot_handles] = GaussianFit(x_data,y_data,N_gauss,display,start_param)
+function [mean,GaussFun,Gauss1,Gauss2] = GaussianFit(x_data,y_data,N_gauss)
+%%% Inputs:
+%%% xdata/ydata     :   Data to Fit
+%%% N_gauss         :   Number of Gauss Funktions (1 or 2)
+%%%
+%%% Outputs:
+%%% mean            : Determined Mean Value
+%%% GaussFun        : The Values of the FitFunction at xdata
+%%% Gauss1/2        : The Values of Gauss1/2 at xdata for multi-Gauss fit
 if N_gauss == 1
     Gauss = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
     if nargin <5 %no start parameters specified
@@ -1542,6 +1571,7 @@ if N_gauss == 1
     gauss = fit(x_data,y_data,Gauss,'StartPoint',param);
     coefficients = coeffvalues(gauss);
     mean = coefficients(2);
+    GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
 elseif N_gauss == 2
     Gauss = @(A1,m1,s1,A2,m2,s2,b,x) A1*exp(-(x-m1).^2./s1^2)+A2*exp(-(x-m2).^2./s2^2)+b;
     if nargin <5 %no start parameters specified
@@ -1563,21 +1593,12 @@ elseif N_gauss == 2
     elseif Amax == 2
         mean = coefficients(5);
     end
+    GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
+    G1 = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
+    Gauss1 = G1(coefficients(1),coefficients(2),coefficients(3),coefficients(7)/2,x_data);
+    Gauss2 = G1(coefficients(4),coefficients(5),coefficients(6),coefficients(7)/2,x_data);
 end
-if display
-    axes(gca);
-    pfit = plot(gauss);
-    set(pfit,'LineWidth',2);
-    plot_handles = pfit;
-    if N_gauss == 2
-        Gauss1 = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
-        G1 = Gauss1(coefficients(1),coefficients(2),coefficients(3),coefficients(7),x_data);
-        G2 = Gauss1(coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
-        plot_handles(2) = plot(x_data,G1,'LineStyle','--','Color','r');
-        plot_handles(3) = plot(x_data,G2,'LineStyle','--','Color','r');
-    end
-    legend('off');
-end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
@@ -1742,33 +1763,27 @@ UpdateLifetimePlots([],[]);
 %%%%%%% of two populations                                     %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineGammaManually(~,~)
-global BurstData UserValues BurstMeta
+global UserValues BurstMeta
 h = guidata(gcf);
-%%% Delete Previous Plot
-delete(h.axes_gamma.Children);
+BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
-axes(h.axes_gamma);
-[H, xbins_hist, ybins_hist] = hist2d([BurstData.Corrections.E_raw BurstData.Corrections.S_raw],51, 51, [0 1], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-BurstData.Plots.GammaPlot = im;
+[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,51, [0 1], [0 1]);
+BurstMeta.Plots.gamma_fit(1).XData = xbins;
+BurstMeta.Plots.gamma_fit(1).YData = ybins;
+BurstMeta.Plots.gamma_fit(1).CData = H;
+BurstMeta.Plots.gamma_fit(1).AlphaData = (H>0);
+axis(h.axes_gamma,'tight');
 
 %%% Update Axis Labels
-xlabel('Efficiency');
-ylabel('Stoichiometry');
-title('Stoichiometry vs. Efficiency for gamma = 1');
-
+xlabel(h.axes_gamma,'Efficiency');
+ylabel(h.axes_gamma,'Stoichiometry');
+title(h.axes_gamma,'Stoichiometry vs. Efficiency for gamma = 1');
+%%% Hide Fit
+BurstMeta.Plots.Fits.gamma.Visible = 'off';
 [e, s] = ginput(2);
-hold on;
-scatter(e,s,1000,'o','LineWidth',4,'MarkerEdgeColor','b');
-scatter(e,s,1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b');
+BurstMeta.Plots.Fits.gamma_manual.XData = e;
+BurstMeta.Plots.Fits.gamma_manual.YData = s;
+BurstMeta.Plots.Fits.gamma_manual.Visible = 'on';
 s = 1./s;
 m = (s(2)-s(1))./(e(2)-e(1));
 b = s(2) - m.*e(2);
@@ -1795,7 +1810,7 @@ save(BurstData.FileName,'BurstData');
 %%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimePlots(obj,~)
-global BurstData
+global BurstData BurstMeta
 if ~isempty(obj)
     h = guidata(obj);
 else
@@ -1816,88 +1831,45 @@ idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = strcmp('Efficiency',BurstData.NameArray);
 %% Plot E vs. tauGG in first plot
 %%% Check, whether a static FRET line already existed
-StaticFRETexisted = ~isempty(findobj(h.axes_EvsTauGG.Children,'Type','Line'));
-cla(h.axes_EvsTauGG);
-axes(h.axes_EvsTauGG);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idxE)],51, 51, [0 5], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-ylabel('Efficiency');
-xlabel('Lifetime GG [ns]');
-title('Efficiency vs. Lifetime GG');
-ylim([0 1]);
-if StaticFRETexisted
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),51, [0 5], [0 1]);
+BurstMeta.Plots.EvsTauGG(1).XData = xbins;
+BurstMeta.Plots.EvsTauGG(1).YData = ybins;
+BurstMeta.Plots.EvsTauGG(1).CData = H;
+BurstMeta.Plots.EvsTauGG(1).AlphaData = (H>0);
+axis(h.axes_EvsTauGG,'tight');
+ylim(h.axes_EvsTauGG,[0 1]);
+if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-cla(h.axes_EvsTauRR);
-axes(h.axes_EvsTauRR);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR),datatoplot(:,idxE)],51, 51, [0 6], [0 1]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime RR [ns]');
-ylabel('Efficiency');
-title('Efficiency vs. Lifetime RR');
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),51, [0 6], [0 1]);
+BurstMeta.Plots.EvsTauRR(1).XData = xbins;
+BurstMeta.Plots.EvsTauRR(1).YData = ybins;
+BurstMeta.Plots.EvsTauRR(1).CData = H;
+BurstMeta.Plots.EvsTauRR(1).AlphaData = (H>0);
+axis(h.axes_EvsTauRR,'tight');
+ylim(h.axes_EvsTauRR,[0 1]);
+axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
-cla(h.axes_rGGvsTauGG);
-axes(h.axes_rGGvsTauGG);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)],51, 51, [0 5], [-0.1 0.5]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime GG [ns]');
-ylabel('Anisotropy GG');
-title('Anisotropy GG vs. Lifetime GG');
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),51, [0 5], [-0.1 0.5]);
+BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
+BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
+BurstMeta.Plots.rGGvsTauGG(1).CData = H;
+BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
+axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
-cla(h.axes_rRRvsTauRR);
-axes(h.axes_rRRvsTauRR);
-legend('off');
-
-[H, xbins_hist, ybins_hist] = hist2d([datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)],51, 51, [0 6], [-0.1 0.5]);
-H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-im = imagesc(xbins,ybins,H./max(max(H)));
-set(im,'AlphaData',l);
-set(gca,'YDir','normal');
-axis('tight');
-xlabel('Lifetime RR [ns]');
-ylabel('Anisotropy RR');
-title('Anisotropy RR vs. Lifetime RR');
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),51, [0 6], [-0.1 0.5]);
+BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
+BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
+BurstMeta.Plots.rRRvsTauRR(1).CData = H;
+BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
+axis(h.axes_rRRvsTauRR,'tight');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Fits/theoretical Curves in Lifetime Tab %%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimeFits(obj,~)
-global BurstData UserValues
+global BurstData UserValues BurstMeta
 if ~isempty(obj)
     h = guidata(obj);
 else
@@ -2206,7 +2178,11 @@ ApplyCorrections;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [plot_handle] = plot2dhist(x,y,nbins,limx,limy,haxes)
+function [H,xbins,ybins,xbins_hist,ybins_hist] = calc2dhist(x,y,nbins,limx,limy,haxes)
+%%% ouput arguments:
+%%% H:                      Image Data
+%%% xbins/ybins:            corrected xbins for image plot
+%%% xbins_hist/ybins_hist:  use these x/y values for 1d-bar plots
 global UserValues
 if nargin <2
     return;
@@ -2217,8 +2193,8 @@ if nargin < 3
 end
 %%% if no limits are specified, set limits to min-max
 if nargin < 5
-    limx = [min(x) max(x)];
-    limy = [min(y) max(y)];
+    limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
+    limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
 %%% set axes
 if nargin == 6
@@ -2228,23 +2204,9 @@ end
 [H, xbins_hist, ybins_hist] = hist2d([x y], nbins, nbins, limx, limy);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
-l = H>0;
 xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
 ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-%%% determine the plot type
-switch UserValues.BurstBrowser.Display.PlotType
-    case 'Image' %%%image plot
-        plot_handle = imagesc(xbins,ybins,H./max(max(H)));
-        set(plot_handle,'AlphaData',l);
-        set(gca,'YDir','normal');
-    case 'Contour' %%%contour plot
-        zc=linspace(1, ceil(max(max(H))),10);
-        set(gca,'CLim',[0 ceil(2*max(max(H)))]);
-        H(H==0) = NaN;
-        [~, plot_handle]=contourf(xbins,ybins,H,[0 zc]);
-        set(plot_handle,'EdgeColor','none');
-end
-axis('tight');
+
 function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
 %HIST2D 2D histogram
 %
