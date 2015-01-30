@@ -2166,6 +2166,15 @@ if any(mode==6)
     To=str2double(h.MI_Phasor_To.String);
     Shift=str2double(h.MI_Phasor_Shift.String);
     Det=h.MI_Phasor_Det.Value;
+    
+    if From<1
+        From=1;
+        h.MI_Phasor_From.String=num2str(From);
+    end
+    if To>numel(PamMeta.MI_Hist{Det})
+        To=numel(PamMeta.MI_Hist{Det});
+        h.MI_Phasor_To.String=num2str(To);        
+    end
     %%% Plots Reference histogram 
     Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 Shift]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
@@ -2546,9 +2555,9 @@ switch e.Key
                 MT{1}=MT{1}(MI{1}>=From & MI{1}<=To);
                 if FileInfo.NumberOfFiles>1
                     for j=2:(FileInfo.NumberOfFiles)
-                        MI{j}=TcspcData.MI{Det,Rout}(FileInfo.LastPhoton{Det,Rout,j-1}:FileInfo.LastPhoton{Det,Rout,j});
+                        MI{j}=TcspcData.MI{Det,Rout}(FileInfo.LastPhoton{Det,Rout}(j-1):FileInfo.LastPhoton{Det,Rout}(j));
                         MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
-                        MT{j}=TcspcData.MT{Det,Rout}(FileInfo.LastPhoton{Det,Rout,j-1}:FileInfo.LastPhoton{Det,Rout,j});
+                        MT{j}=TcspcData.MT{Det,Rout}(FileInfo.LastPhoton{Det,Rout}(j-1):FileInfo.LastPhoton{Det,Rout}(j));
                         MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.SyncPeriod);
                     end
                 end
@@ -3234,10 +3243,14 @@ h=guidata(gcf);
 global UserValues TcspcData FileInfo PamMeta
 
 %%% Initializes matlabpool for paralell computation
-h.Progress_Text.String='Opening matlabpool';
-drawnow;
 if strcmp(h.Cor_Multi_Menu.Checked,'on')
-    gcp;
+    Pool=gcp;
+    if isempty(Pool)
+        h.Progress_Text.String='Opening matlabpool';
+        drawnow;
+        parpool('local');
+    end
+        
 end
 h.Progress_Text.String = 'Correlating';
 h.Progress_Axes.Color=[1 0 0];
