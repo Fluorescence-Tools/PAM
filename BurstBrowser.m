@@ -1,7 +1,7 @@
 function BurstBrowser %Burst Browser
 
 hfig=findobj('Name','BurstBrowser');
-global UserValues BurstMeta BurstData
+global UserValues BurstMeta
 LSUserValues(0);
 Look=UserValues.Look;
 
@@ -735,8 +735,43 @@ if isempty(hfig)
     'View',[0 90]);
 
     guidata(h.BurstBrowser,h);    
-    %% Initialize Global Variable
+    %% Initialize Plots in Global Variable
+    %%% Enables easy Updating later on
     BurstMeta.Plots = [];
+    %%% Main Tab
+    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+    axes(h.axes_general);load clown;BurstMeta.Plots.Main_Plot = imagesc(flipud(X));axis('tight');
+    %%%Corrections Tab
+    BurstMeta.Plots.histE_donly = bar(h.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histE_donly(1) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.histE_donly(2) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
+        BurstMeta.Plots.Fits.histE_donly(3) = plot(h.axes_crosstalk,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
+    BurstMeta.Plots.histS_aonly = bar(h.axes_direct_excitation,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histS_aonly(1) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.histS_aonly(2) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
+        BurstMeta.Plots.Fits.histS_aonly(3) = plot(h.axes_direct_excitation,[0 1],[0 0],'Color','r','LineStyle','--','Visible','off');
+    axes(h.axes_gamma);BurstMeta.Plots.gamma_fit = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.gamma = plot(h.axes_gamma,[0 1],[0 0],'Color','b','LineStyle','-');
+    axes(h.axes_gamma_lifetime);BurstMeta.Plots.gamma_lifetime = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.staticFRET_gamma_lifetime = plot(h.axes_gamma_lifetime,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
+    axes(h.axes_EvsTauGG);BurstMeta.Plots.EvsTauGG = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
+    axes(h.axes_EvsTauRR);BurstMeta.Plots.EvsTauRR = imagesc(flipud(X));axis('tight');
+        BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color','b','LineStyle','-','Visible','off');
+    axes(h.axes_rGGvsTauGG);BurstMeta.Plots.rGGvsTauGG = imagesc(flipud(X));axis('tight');
+        %%% Consider up to three Perrin lines
+        BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','g','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.PerrinGG(3) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
+    axes(h.axes_rRRvsTauRR);BurstMeta.Plots.rRRvsTauRR = imagesc(flipud(X));axis('tight');
+        %%% Consider up to three Perrin lines
+        BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','b','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','g','LineStyle','-','Visible','off');
+        BurstMeta.Plots.Fits.PerrinRR(3) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','r','LineStyle','-','Visible','off');
+    
     %% set UserValues in GUI
     UpdateCorrections([],[]);
 else
