@@ -234,7 +234,7 @@ if isempty(hfig)
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
     drawnow;
-    jScrollPaneX = findjobj(h.ParameterListX); %%% Execute twice because it fails to work on the first call
+    jScrollPaneX = findjobj(h.ParameterListX); 
     jScrollPaneY = findjobj(h.ParameterListY);
     jParameterListX = jScrollPaneX.getViewport.getComponent(0);
     jParameterListY = jScrollPaneY.getViewport.getComponent(0);
@@ -703,7 +703,9 @@ if isempty(hfig)
     'FontSize',14,...
     'nextplot','add',...
     'View',[0 90]);
-
+    xlabel(h.axes_gamma_lifetime,'Lifetime GG [ns]');
+    ylabel(h.axes_gamma_lifetime,'Efficiency');
+    title(h.axes_gamma_lifetime,'Efficiency vs. Lifetime GG');
     %% Define Axes in Lifetime Tab
     h.axes_EvsTauGG =  axes(...
     'Parent',h.MainTabLifetimePanel,...

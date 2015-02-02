@@ -497,7 +497,7 @@ if any(FileName{1}~=0)
     
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Changes fitt function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
 global FCSMeta UserValues
@@ -552,12 +552,18 @@ if ~isempty(FileName)
     %%% Extracts parameter names and initial values
     FCSMeta.Model.Params=cell(NParams,1);
     FCSMeta.Model.Value=zeros(NParams,1);
+    FCSMeta.Model.LowerBoundaries = zeros(NParams,1);
+    FCSMeta.Model.UpperBoundaries = zeros(NParams,1);
     %%% Reads parameters and values from file
     for i=1:NParams
         Param_Pos=strfind(Text{i+Param_Start},' ');
         FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
         Value_Pos=strfind(Text{i+Param_Start},'=');
-        FCSMeta.Model.Value(i)=str2double(Text{i+Param_Start}((Value_Pos+2):end));
+        Val = strsplit(Text{i+Param_Start}((Value_Pos+2):end),'\t');
+        %FCSMeta.Model.Value(i)=str2double(Text{i+Param_Start}((Value_Pos+2):end));
+        FCSMeta.Model.Value(i) = str2double(Val{1});
+        FCSMeta.Model.LowerBoundaries(i) = str2double(Val{2});
+        FCSMeta.Model.UpperBoundaries(i) = str2double(Val{3});
     end    
     FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
     
@@ -622,8 +628,10 @@ switch mode
         end
         Data(1:end-3,4:3:end-1)=deal(num2cell(FCSMeta.Params)');
         Data(end-2,4:3:end-1)=deal(num2cell(FCSMeta.Model.Value)');
-        Data(end-1,4:3:end-1)=deal({-inf});
-        Data(end,4:3:end-1)=deal({inf});
+        %Data(end-1,4:3:end-1)=deal({-inf});
+        %Data(end,4:3:end-1)=deal({inf});
+        Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
+        Data(end,4:3:end-1)=deal(num2cell(FCSMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
         Data(:,1)=deal({true});
         Data(:,5:3:end-1)=deal({false});

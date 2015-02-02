@@ -9,7 +9,9 @@ in the file.
 3. After than comes ONE space, and only ONE space to indicate the begining
 of the parameter name.
 4. Write the parameter name without using spaces.
-5. Use one space directly after the parameter name to indicate the end.
+5a. Use one space directly after the parameter name to indicate the end.
+5b. Use Tabulator once and enter the lower boundary for the parameter.
+5c. Use Tabulator again and enter the upper boundary.
 6. You can write whatever you want afterwards (including spaces), as long
 you do 
 not use an equal sign.
@@ -42,11 +44,11 @@ You might explain your function here:
 
     |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     |    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
-Param(1): N             = 1
-Param(2): tauD[탎]      = 30   
-Param(3): p             = 5
-Param(4): tauT[탎]      = 1
-Param(5): Trip          = 0.01
+Param(1): N             = 1	0	Inf
+Param(2): tauD[탎]      = 30	0	Inf   
+Param(3): p             = 5	0	Inf
+Param(4): tauT[탎]      = 1	0	Inf
+Param(5): Trip          = 0.01	0	1
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
