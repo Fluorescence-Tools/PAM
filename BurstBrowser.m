@@ -802,7 +802,7 @@ if isempty(hfig)
     [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
         BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
     BurstMeta.Plots.rGGvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_rGGvsTauGG);axis(h.axes_rGGvsTauGG,'tight');
-    [~,BurstMeta.Plots.rGGvsTauGG(1)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
+    [~,BurstMeta.Plots.rGGvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',3,'Visible','off');
@@ -1888,64 +1888,42 @@ idxE = strcmp('Efficiency',BurstData.NameArray);
 %% Add Fits
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
-    haxes = h.axes_EvsTauGG;
-    axes(haxes);
     %%% Calculate static FRET line in presence of linker fluctuations
-    tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+    tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),100);
     staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
         UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
         tau);
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_EvsTauGG.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
-    hold on;
-    plot_staticFRETline = plot(tau,staticFRETline);
-    legend('off');
-    plot_staticFRETline.Color = [0 0 1];
-    plot_staticFRETline.LineWidth = 3;
+    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
+    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
+    BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
 end
 if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %%% GG
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_rGGvsTauGG.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
     r0 = 0.4;
     fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
     PerrinFitGG = fit(datatoplot(:,idx_tauGG),datatoplot(:,idx_rGG),fPerrin,'StartPoint',1);
-    axes(h.axes_rGGvsTauGG);
-    hold on;
-    plotPerrinGG = plot(PerrinFitGG);
-    legend('off');
-    plotPerrinGG.Color = [0 0 1];
-    plotPerrinGG.LineWidth = 3;
+    tau = linspace(h.axes_rGGvsTauGG.XLim(1),h.axes_rGGvsTauGG.XLim(2),100);
+    BurstMeta.Plots.Fits.PerrinGG(1).Visible = 'on';
+    BurstMeta.Plots.Fits.PerrinGG(1).XData = tau;
+    BurstMeta.Plots.Fits.PerrinGG(1).YData = PerrinFitGG(tau);
+    BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
+    BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
+    
     BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
-    xlabel('Lifetime GG [ns]');
-    ylabel('Anisotropy GG');
-    title(['rhoGG = ' num2str(BurstData.Parameters.rhoGG) ' ns']);
+    title(h.axes_rGGvsTauGG,['rhoGG = ' num2str(BurstData.Parameters.rhoGG) ' ns']);
     %% RR
-    %%% find previous line plot if it exists
-    PreviousFit = findobj(h.axes_rRRvsTauRR.Children,'Type','Line');
-    if ~isempty(PreviousFit)
-        delete(PreviousFit);
-    end
     r0 = 0.4;
     fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
     PerrinFitRR = fit(datatoplot(:,idx_tauRR),datatoplot(:,idx_rRR),fPerrin,'StartPoint',1);
-    axes(h.axes_rRRvsTauRR);
-    hold on;
-    plotPerrinRR = plot(PerrinFitRR);
-    legend('off');
-    plotPerrinRR.Color = [0 0 1];
-    plotPerrinRR.LineWidth = 3;
+    tau = linspace(h.axes_rRRvsTauRR.XLim(1),h.axes_rRRvsTauRR.XLim(2),100);
+    BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
+    BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
+    BurstMeta.Plots.Fits.PerrinRR(1).YData = PerrinFitRR(tau);
+    BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
+    BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
     BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
-    xlabel('Lifetime RR [ns]');
-    ylabel('Anisotropy RR');
-    title(['rhoRR = ' num2str(BurstData.Parameters.rhoRR) ' ns']);
+    title(h.axes_rRRvsTauRR,['rhoRR = ' num2str(BurstData.Parameters.rhoRR) ' ns']);
 end
 %% Manual Perrin plots
 if obj == h.ManualAnisotropyButton
@@ -1953,22 +1931,25 @@ if obj == h.ManualAnisotropyButton
     if button == 1 %%% left mouse click, reset plot and plot one perrin line
         if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
             haxes = gca;
-            legend('off');
-            %%% find previous line plot if it exists
-            PreviousFit = findobj(haxes.Children,'Type','Line');
-            if ~isempty(PreviousFit)
-                delete(PreviousFit);
-            end
             %%% Determine rho
             r0 = 0.4;
             rho = x/(r0/y - 1);
             fitPerrin = @(x) r0./(1+x./rho);
             %%% plot
-            hold on;
             tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-            plotPerrin = plot(tau,fitPerrin(tau));
-            plotPerrin.Color = [0 0 1];
-            plotPerrin.LineWidth = 3;
+            if haxes == h.axes_rGGvsTauGG
+                BurstMeta.Plots.Fits.PerrinGG(1).Visible = 'on';
+                BurstMeta.Plots.Fits.PerrinGG(1).XData = tau;
+                BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
+                BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
+                BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
+            elseif haxes == h.axes_rRRvsTauRR
+                BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
+                BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
+                BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
+                BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
+                BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
+            end
             switch haxes
                 case h.axes_rGGvsTauGG
                     title(['rhoGG = ' num2str(rho)]);
@@ -1977,48 +1958,52 @@ if obj == h.ManualAnisotropyButton
             end
         end
     elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
-        if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
-            haxes = gca;
-            legend('off');
-            %%% find previous line plot if it exists
-            PreviousFit = findobj(haxes.Children,'Type','Line');
-            if isempty(PreviousFit) %%% no plot exists, just add a plot as is the case for left click
+        haxes = gca;
+        if haxes == h.axes_rGGvsTauGG
+            %%% Check for visibility of plots
+            vis = 0;
+            for i = 1:3
+                vis = vis + strcmp(BurstMeta.Plots.Fits.PerrinGG(i).Visible,'on');
+            end
+            if vis < 3
                 %%% Determine rho
                 r0 = 0.4;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
-                %%% plot
-                hold on;
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-                plotPerrin = plot(tau,fitPerrin(tau));
-                plotPerrin.Color = [0 0 1];
-                plotPerrin.LineWidth = 3;
-                switch haxes
-                    case h.axes_rGGvsTauGG
-                        title(['rhoGG = ' num2str(rho) ' ns']);
-                    case h.axes_rRRvsTauRR
-                        title(['rhoRR = ' num2str(rho) ' ns']);
+                BurstMeta.Plots.Fits.PerrinGG(vis+1).Visible = 'on';
+                BurstMeta.Plots.Fits.PerrinGG(vis+1).XData = tau;
+                BurstMeta.Plots.Fits.PerrinGG(vis+1).YData = fitPerrin(tau);
+                if vis == 0
+                    title(haxes,['rhoGG = ' num2str(rho)]);
+                else
+                    %%% add rho2 to title
+                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    title(new_title);
                 end
-            elseif ~isempty(PreviousFit)
-                %%% Determine second rho
+            end
+        elseif haxes == h.axes_rRRvsTauRR
+            %%% Check for visibility of plots
+            vis = 0;
+            for i = 1:3
+                vis = vis + strcmp(BurstMeta.Plots.Fits.PerrinRR(i).Visible,'on');
+            end
+            if vis < 3
+                %%% Determine rho
                 r0 = 0.4;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
-                %%% plot
-                hold on;
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-                plotPerrin = plot(tau,fitPerrin(tau));
-                if numel(PreviousFit) == 1
-                    plotPerrin.Color = [0 1 0];
-                elseif numel(PerrinFit) == 2
-                    plotPerrin.Color = [1 1 0];
+                BurstMeta.Plots.Fits.PerrinRR(vis+1).Visible = 'on';
+                BurstMeta.Plots.Fits.PerrinRR(vis+1).XData = tau;
+                BurstMeta.Plots.Fits.PerrinRR(vis+1).YData = fitPerrin(tau);
+                if vis == 0
+                    title(haxes,['rhoRR = ' num2str(rho)]);
                 else
-                    plotPerrin.Color = [1 1 1];
+                    %%% add rho2 to title
+                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    title(new_title);
                 end
-                plotPerrin.LineWidth = 3;
-                %%% add rho2 to title
-                new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
-                title(new_title);
             end
         end
     end
