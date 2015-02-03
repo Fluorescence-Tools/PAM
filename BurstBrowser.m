@@ -128,7 +128,7 @@ if isempty(hfig)
         'Tag','SecondaryTabCorrectionsPanel');
     
     h.Secondary_Tab_Correlation= uitab(h.Secondary_Tab,...
-        'title','Options',...
+        'title','Correlate',...
         'Tag','Secondary_Tab_Correlation'...
         ); 
 
@@ -533,7 +533,27 @@ if isempty(hfig)
     'String',num2str(UserValues.BurstBrowser.Corrections.LinkerLength),...
     'FontSize',14,...
     'Callback',@UpdateCorrections);
-
+    %% secondary tab correlation
+    Names = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','RR'};
+    h.Correlation_Table = uitable(...
+        'Parent',h.SecondaryTabCorrelationPanel,...
+        'Units','normalized',...
+        'Position',[0 0.6 1 0.4],...
+        'Tag','CorrelationTable',...
+        'ColumnWidth',{50},...
+        'ColumnEditable',true,...
+        'ColumnName',Names,...
+        'RowName',Names,...
+        'Data',false(numel(Names)));
+    
+    h.Correlate_Button = uicontrol(...
+        'Style','pushbutton',...
+        'Parent',h.SecondaryTabCorrelationPanel,...
+        'Units','normalized',...
+        'Position',[0 0.55 0.3 0.05],...
+        'Tag','CorrelationTable',...
+        'String','Correlate',...
+        'Callback',@Correlate_Bursts);
     %% secondary tab options
     
     %%% Display Options Panel
@@ -1419,7 +1439,7 @@ if ~isempty(CutState) %%% only procede if there are elements in the CutTable
         end
     end
 end
-
+BurstData.Selected = Valid;
 BurstData.DataCut = BurstData.DataArray(Valid,:);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Executes on change in the Cut Table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2231,7 +2251,88 @@ UpdateCorrections([],[]);
 ApplyCorrections;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%%
+%%%%%%% Normal Correlation of Burst Photon Streams %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Correlate_Bursts(obj,~)
+global BurstData BurstTCSPCData
+h = guidata(obj);
+%%% Load associated .bps file, containing Macrotime, Microtime and Channel
+if isempty(BurstTCSPCData)
+    load('-mat',[BurstData.FileName(1:end-3) 'bps']);
+    BurstTCSPCData.Macrotime = Macrotime;
+    BurstTCSPCData.Microtime = Microtime;
+    BurstTCSPCData.Channel = Channel;
+    clear Macrotime Microtime Channel
+end
+%%% find selected bursts
+MT = BurstTCSPCData.Macrotime(BurstData.Selected);
+MT = vertcat(MT{:});
+CH = BurstTCSPCData.Channel(BurstData.Selected);
+CH = vertcat(CH{:});
+
+%%% define channels
+Chan = {1,2,3,4,5,6,[1 2],[3 4],[1 2 3 4],[5 6]};
+Name = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','RR'};
+CorrMat = h.Correlation_Table.Data;
+NumChans = size(CorrMat,1);
+for i=1:NumChans
+    for j=1:NumChans
+        if CorrMat(i,j)
+            MT1 = MT(ismember(CH,Chan{i}));
+            MT2 = MT(ismember(CH,Chan{j}));
+            %%% Split Data in 10 time bins for errorbar calculation
+            Times = ceil(linspace(0,max([MT1;MT2]),11));
+            %%% Calculates the maximum inter-photon time in clock ticks
+            Maxtime=max(diff(Times));
+            Data1 = cell(10,1);
+            Data2 = cell(10,1);
+            for k = 1:10
+                Data1{k} = MT1( MT1 > Times(k) &...
+                    MT1 <= Times(k+1)) - Times(k);
+                Data2{k} = MT2( MT2 > Times(k) &...
+                    MT2 <= Times(k+1)) - Times(k);
+            end
+            %%% Do Correlation
+            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+            Cor_Times=Cor_Times*BurstData.SyncPeriod;
+            %%% Calculates average and standard error of mean (without tinv_table yet
+            if numel(Cor_Array)>1
+                Cor_Average=mean(Cor_Array,2);
+                %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+                %%% Averages files before saving to reduce errorbars
+                Amplitude=sum(Cor_Array,1);
+                Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+                Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+
+            else
+                Cor_Average=Cor_Array{1};
+                Cor_SEM=Cor_Array{1};
+            end
+            %%% Save the correlation file
+            %%% Generates filename
+            Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+            %%% Checks, if file already exists
+            if  exist(Current_FileName,'file')
+                k=1;
+                %%% Adds 1 to filename
+                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                %%% Increases counter, until no file is found
+                while exist(Current_FileName,'file')
+                    k=k+1;
+                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                end
+            end
+
+            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+            Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+            Valid = 1:10;
+            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                    
+        end 
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [H,xbins,ybins,xbins_hist,ybins_hist] = calc2dhist(x,y,nbins,limx,limy,haxes)
 %%% ouput arguments:
