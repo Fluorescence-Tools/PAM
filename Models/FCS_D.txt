@@ -3,7 +3,7 @@ Simple one component, 3D normal diffusion FCS model.
 Diffusion coefficient and focus size are both parameters
 One exponential triplet component
 
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offest|    
+    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1	0	Inf
 Param(2): D[µm^2/s]     = 373	0	Inf   

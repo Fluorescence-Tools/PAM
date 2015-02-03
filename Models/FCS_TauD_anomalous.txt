@@ -6,12 +6,13 @@ One exponential triplet component
     |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1	0	Inf
-Param(2): tauD[µs]      = 30   	0	Inf
+Param(2): tauD[?s]      = 30   	0	Inf
 Param(3): p             = 5	0	Inf
-Param(4): tauT[µs]      = 1	0	Inf
-Param(5): Trip          = 0.01	0	1
-Param(6): y0            = 0	-1	1
+Param(4): alpha         = 1	0	Inf
+Param(5): tauT[?s]      = 1	0	Inf
+Param(6): Trip          = 0.01	0	1
+Param(7): y0            = 0	-1	1
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
-OUT=(1/sqrt(8))*1/P(1)*(1+((P(5)/(1-P(5)))*exp(-x/P(4)/1e-6))).*(1./(1+x/(P(2)*1e-6))).*(1./sqrt(1+(1/P(3)^2)*x/(P(2)*1e-6)))+P(6);
+OUT=(1/sqrt(8))*1/P(1)*(1+((P(6)/(1-P(6)))*exp(-x/P(5)/1e-6))).*(1./(1+(x/(P(2)*1e-6)).^P(4))).*(1./sqrt(1+(1/P(3)^2)*(x/(P(2)*1e-6)).^P(4)))+P(7);
