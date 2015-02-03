@@ -101,7 +101,8 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'ForegroundColor',Look.Disabled,...
         'FontSize',8,...
         'Position',[0 0 1 1],...
-        'CellEditCallback',{@Update_Table,3});
+        'CellEditCallback',{@Update_Table,3},...
+        'CellSelectionCallback',{@Update_Table,3});
     %% Settings tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Tab for fit settings
     h.Setting_Tab= uitab(...
@@ -398,6 +399,7 @@ end
     FCSMeta=[];
     FCSMeta.Data=[];
     FCSMeta.Params=[];
+    FCSMeta.Confidence_Intervals = [];
     FCSMeta.Plots=cell(0);
     FCSMeta.Model=[];
     FCSMeta.Fits=[];
@@ -682,16 +684,25 @@ switch mode
         %% Individual cells calbacks 
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+            if isempty(e.Indices)
+                return;
+            end
+            NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+        end
+        if isprop(e,'NewData')
+            NewData = e.NewData;
+        end
         if e.Indices(1)==size(h.Fit_Table.Data,1)-2
             %% ALL row wase used => Applies to all files
-            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({e.NewData});
+            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
             if mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4
                 %% Value was changed => Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(e.NewData);
-            elseif mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=6 && e.NewData==1
+                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(NewData);
+            elseif mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=6 && NewData==1
                 %% Value was fixed => Uncheck global
                 h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
-            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && e.NewData==1
+            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
                 %% Global was change
                 %%% Apply value to all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
@@ -702,8 +713,8 @@ switch mode
             end
         elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Global was changed => Applies to all files
-            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({e.NewData});
-            if e.NewData
+            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
+            if NewData
                 %%% Apply value to all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
                 %%% Apply value to global variables
@@ -725,11 +736,11 @@ switch mode
             %% Value was changed
             if h.Fit_Table.Data{e.Indices(1),e.Indices(2)+2}
                 %% Global => changes value of all files
-                h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({e.NewData});
-                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(e.NewData);
+                h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
+                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(NewData);
             else
                 %% Not global => only changes value
-                FCSMeta.Params((e.Indices(2)-1)/3,e.Indices(1))=str2double(e.NewData);
+                FCSMeta.Params((e.Indices(2)-1)/3,e.Indices(1))=str2double(NewData);
                 
             end
         elseif e.Indices(2)==1
@@ -1170,7 +1181,9 @@ if sum(Global)==0
             Lb=lb(~Fixed(i,:));
             Ub=ub(~Fixed(i,:));                      
             %%% Performs fit
-            [Fitted_Params,~,~,Flag]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
+            [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
+            %%% calculate confidence intervals
+            FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
         end
@@ -1210,7 +1223,9 @@ else
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
     %%% Performs fit
-    [Fitted_Params,~,~,Flag]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
+    [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
+    %%% calculate confidence intervals
+    FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
     %%% Updates parameters
     FCSMeta.Params(Global,:)=Fitted_Params(1:sum(Global));
     Fitted_Params(1:sum(Global))=[];

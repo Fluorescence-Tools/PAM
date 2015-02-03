@@ -127,6 +127,21 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','SecondaryTabCorrectionsPanel');
     
+    h.Secondary_Tab_Correlation= uitab(h.Secondary_Tab,...
+        'title','Options',...
+        'Tag','Secondary_Tab_Correlation'...
+        ); 
+
+    h.SecondaryTabCorrelationPanel = uibuttongroup(...
+        'Parent',h.Secondary_Tab_Correlation,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','SecondaryTabCorrelationPanel');
+    
     h.Secondary_Tab_Options= uitab(h.Secondary_Tab,...
         'title','Options',...
         'Tag','Secondary_Tab_DisplayOptions'...
@@ -579,7 +594,7 @@ if isempty(hfig)
         'Tag','PlotTypePopupmenu',...
         'String',PlotType_String,...
         'Value',find(strcmp(PlotType_String,UserValues.BurstBrowser.Display.PlotType)),...
-        'Callback',@UpdatePlot...
+        'Callback',@ChangePlotType...
         );
     
     %%% Specify the colormap
@@ -813,6 +828,7 @@ if isempty(hfig)
         BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinRR(3) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3,'Visible','off'); 
+    ChangePlotType(h.PlotTypePopumenu,[]);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
     %%% Update ColorMap
@@ -1062,10 +1078,6 @@ if obj == h.NumberOfBinsEdit
     end
 end
 
-if obj == h.PlotTypePopumenu
-    UserValues.BurstBrowser.Display.PlotType = h.PlotTypePopumenu.String{h.PlotTypePopumenu.Value};
-end
-
 if obj == h.ColorMapPopupmenu
     UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
 end
@@ -1079,7 +1091,14 @@ nbins = UserValues.BurstBrowser.Display.NumberOfBins + 1;
 
 %% Update Plot
 %%% Disable/Enable respective plots
-BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Image'
+        BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+        BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+    case 'Contour'
+        BurstMeta.Plots.Main_Plot(1).Visible = 'off';
+        BurstMeta.Plots.Main_Plot(2).Visible = 'on';
+end
 BurstMeta.Plots.Main_histX.Visible = 'on';
 BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
@@ -1097,8 +1116,8 @@ BurstMeta.Plots.Main_Plot(1).CData = H;
 BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
 BurstMeta.Plots.Main_Plot(2).XData = xbins;
 BurstMeta.Plots.Main_Plot(2).YData = ybins;
-BurstMeta.Plots.Main_Plot(2).ZData = H;
-BurstMeta.Plots.Main_Plot(2).LevelList = linspace(1, max(max(H)),10);
+BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
+BurstMeta.Plots.Main_Plot(2).LevelList = linspace(0.1,1,10);
 
 axis(h.axes_general,'tight');
 %%% Update Labels
@@ -1128,6 +1147,38 @@ axis(h.axes_1d_y,'tight');
 %%% Update ColorMap
 eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 drawnow;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ChangePlotType(obj,~)
+global UserValues BurstMeta
+UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
+LSUserValues(1);
+
+fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Image')
+    %%% Make Image Plots Visible, Hide Contourf Plots 
+    for i = 1:numel(fields)
+        if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+            if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                BurstMeta.Plots.(fields{i})(1).Visible = 'on';
+                BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+            end
+        end
+    end
+end
+
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+    %%% Make Image Plots Visible, Hide Contourf Plots 
+    for i = 1:numel(fields)
+        if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+            if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                BurstMeta.Plots.(fields{i})(1).Visible = 'off';
+                BurstMeta.Plots.(fields{i})(2).Visible = 'on';
+            end
+        end
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
@@ -1526,7 +1577,8 @@ BurstMeta.Plots.gamma_fit(1).CData= H;
 BurstMeta.Plots.gamma_fit(1).AlphaData= (H>0);
 BurstMeta.Plots.gamma_fit(2).XData= xbins;
 BurstMeta.Plots.gamma_fit(2).YData= ybins;
-BurstMeta.Plots.gamma_fit(2).ZData= H;
+BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
+BurstMeta.Plots.gamma_fit(2).LevelList = linspace(0.1,1,10);
 %%% Update/Reset Axis Labels
 xlabel(h.axes_gamma,'Efficiency');
 ylabel(h.axes_gamma,'1/Stoichiometry');
@@ -1538,8 +1590,9 @@ BurstMeta.Data.S_raw = S_raw;
 fitGamma = fit(E_raw,1./S_raw,'poly1');
 BurstMeta.Plots.Fits.gamma.Visible = 'on';
 BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
-BurstMeta.Plots.Fits.gamma.XData = E_raw;
-BurstMeta.Plots.Fits.gamma.YData = fitGamma(E_raw);
+BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
+BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
+axis(h.axes_gamma,'tight');
 %%% Determine Gamma and Beta
 coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
@@ -1767,13 +1820,16 @@ UpdateLifetimePlots([],[]);
 function DetermineGammaManually(~,~)
 global UserValues BurstMeta
 h = guidata(gcf);
-BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
 [H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,51, [0 1], [0 1]);
 BurstMeta.Plots.gamma_fit(1).XData = xbins;
 BurstMeta.Plots.gamma_fit(1).YData = ybins;
 BurstMeta.Plots.gamma_fit(1).CData = H;
 BurstMeta.Plots.gamma_fit(1).AlphaData = (H>0);
+BurstMeta.Plots.gamma_fit(2).XData = xbins;
+BurstMeta.Plots.gamma_fit(2).YData = ybins;
+BurstMeta.Plots.gamma_fit(2).ZData = H/max(max(H));
+BurstMeta.Plots.gamma_fit(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_gamma,'tight');
 
 %%% Update Axis Labels
@@ -1838,6 +1894,10 @@ BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
 BurstMeta.Plots.EvsTauGG(1).AlphaData = (H>0);
+BurstMeta.Plots.EvsTauGG(2).XData = xbins;
+BurstMeta.Plots.EvsTauGG(2).YData = ybins;
+BurstMeta.Plots.EvsTauGG(2).ZData = H/max(max(H));
+BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_EvsTauGG,'tight');
 ylim(h.axes_EvsTauGG,[0 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
@@ -1850,7 +1910,10 @@ BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
 BurstMeta.Plots.EvsTauRR(1).AlphaData = (H>0);
-axis(h.axes_EvsTauRR,'tight');
+BurstMeta.Plots.EvsTauRR(2).XData = xbins;
+BurstMeta.Plots.EvsTauRR(2).YData = ybins;
+BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
+BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(0.1,1,10);
 ylim(h.axes_EvsTauRR,[0 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
@@ -1859,6 +1922,10 @@ BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(1).CData = H;
 BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
+BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
+BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
+BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
+BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),51, [0 6], [-0.1 0.5]);
@@ -1866,6 +1933,10 @@ BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(1).CData = H;
 BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
+BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
+BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
+BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
+BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_rRRvsTauRR,'tight');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Fits/theoretical Curves in Lifetime Tab %%%%%%%%%%%%%%%%%%%
@@ -2086,13 +2157,11 @@ out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3)
 %%%%%%% by minimizing the deviation from the static FRET line      %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineGammaLifetime(obj,~)
-global BurstData UserValues
+global BurstData UserValues BurstMeta
 h = guidata(obj);
-
-%%% Prepare photon counts
 %%% Change focus to CorrectionsTab
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
-
+%%% Prepare photon counts
 indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
 indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
 indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
@@ -2137,22 +2206,21 @@ dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_correc
 gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
 E =  NGR./(gamma_fit.*NGG+NGR);
 %%% plot E versus tau with static FRET line
-cla(h.axes_gamma_lifetime);
-axes(h.axes_gamma_lifetime);
-BurstData.Plots.GammaPlot = plot2dhist(data_for_corrections(S_threshold,indTauGG),E,51,[0 5],[-0.1 1]);
-
+[H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,51,[0 5],[-0.1 1]);
+BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
+BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
+BurstMeta.Plots.gamma_lifetime(1).CData= H;
+BurstMeta.Plots.gamma_lifetime(1).AlphaData= (H>0);
+BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
+BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
+BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
+BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(0.1,1,10);
 %%% add static FRET line
 tau = linspace(h.axes_gamma_lifetime.XLim(1),h.axes_gamma_lifetime.XLim(2),100);
-hold on;
-staticFRETplot = plot(tau,staticFRETline(tau));
-legend('off');
-staticFRETplot.Color = [0 0 1];
-staticFRETplot.LineWidth = 3;
-%%% Update Axis Labels
-xlabel('Lifetime GG [ns]');
-ylabel('Efficiency');
-title('Efficiency vs. Lifetime GG');
-ylim([0 1]);
+BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
+BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
+BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = staticFRETline(tau);
+ylim(h.axes_gamma_lifetime,[-0.1,1]);
 %%% Update UserValues
 UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
 %%% Save UserValues
