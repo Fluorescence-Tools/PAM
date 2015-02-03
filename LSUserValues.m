@@ -233,8 +233,43 @@ if Mode==0 %%% Loads user values
         S.Settings.FCSFit.Fit_Max=1;
         disp('UserValues.Settings.FCSFit.Fit_Max was incomplete');
     end
+    %%% Checks if FCSFit.Plot_Errorbars subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Plot_Errorbars')
+        S.Settings.FCSFit.Plot_Errorbars=1;
+        disp('UserValues.Settings.FCSFit.Plot_Errorbars was incomplete');
+    end
+    %%% Checks if FCSFit.Fit_Tolerance subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Fit_Tolerance')
+        S.Settings.FCSFit.Fit_Tolerance=1e-6;
+        disp('UserValues.Settings.FCSFit.Fit_Tolerance was incomplete');
+    end
+    %%% Checks if FCSFit.Use_Weights subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Use_Weights')
+        S.Settings.FCSFit.Use_Weights=1;
+        disp('UserValues.Settings.FCSFit.Use_Weights was incomplete');
+    end
+    %%% Checks if FCSFit.Max_Iterations subfield exists
+    if ~isfield (S.Settings.FCSFit, 'Max_Iterations')
+        S.Settings.FCSFit.Max_Iterations=1000;
+        disp('UserValues.Settings.FCSFit.Max_Iterations was incomplete');
+    end
+    %%% Checks if FCSFit.NormalizationMethod subfield exists
+    if ~isfield (S.Settings.FCSFit, 'NormalizationMethod')
+        S.Settings.FCSFit.NormalizationMethod=1;
+        disp('UserValues.Settings.FCSFit.NormalizationMethod was incomplete');
+    end
+    %%% Checks, if FCSFit.PlotStyles subfield exists
+    if ~isfield (S.Settings.FCSFit,'PlotStyles')
+        S.Settings.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
+        S.Settings.FCSFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
+        disp('UserValues.Settings.FCSFit.PlotStyles was incomplete');
+    end
     
-    %% Peripheral fields, that do not concern the main gui (like burst, phasor mia)
+    if ~isfield (S.Settings.FCSFit,'PlotStyleAll')
+        S.Settings.FCSFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
+        disp('UserValues.Settings.FCSFit.PlotStyleAll was incomplete');
+    end
+    %% Peripheral fields, that do not concern the main gui (like burst, phasor mia)    
     %% Phasor
     %%% Checks, if Phasor subfield exists
     if ~isfield (S,'Phasor')
