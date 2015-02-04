@@ -1954,7 +1954,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_MicrotimeHistograms(obj,~)
 global BurstData BurstMeta BurstTCSPCData
-h = guidata(gcf);
+h = guidata(obj);
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
@@ -1991,24 +1991,32 @@ MT_par{1} = [];MT_par{2} = [];
 MT_perp{1} = [];MT_perp{2} = [];
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
-        MI_par{i} = [MI_par{i};...
-            MI_species{i}(CH_species{i} == ParChans(j)) + max([max(MI_par{i}),0])];
-        MT_par{i} = [MT_par{i};...
-            MT_species{i}(CH_species{i} == ParChans(j))];
-        MI_perp{i} = [MI_perp{i};...
-            MI_species{i}(CH_species{i} == PerpChans(j)) + max([max(MI_perp{i}),0])];
-        MT_perp{i} = [MT_perp{i};...
-            MT_species{i}(CH_species{i} == PerpChans(j))];
+        MI_par{i} = vertcat(MI_par{i},...
+            MI_species{i}(CH_species{i} == ParChans(j)) -...
+            min(MI_species{i}(CH_species{i} == ParChans(j))) + 1 +...
+            max([max(MI_par{i}),0]));
+        MT_par{i} = vertcat(MT_par{i},...
+            MT_species{i}(CH_species{i} == ParChans(j)));
+        MI_perp{i} = vertcat(MI_perp{i},...
+            MI_species{i}(CH_species{i} == PerpChans(j)) -...
+            min(MI_species{i}(CH_species{i} == PerpChans(j))) + 1 +...
+            max([max(MI_perp{i}),0]));
+        MT_perp{i} = vertcat(MT_perp{i},...
+            MT_species{i}(CH_species{i} == PerpChans(j)));
     end
 end
 
 MI_total_par = [];
 MI_total_perp = [];
 for i = 1:numel(ParChans)
-    MI_total_par = [MI_total_par;...
-        MI_total(CH_total == ParChans(i)) + max([max(MI_total_par),0])];
-    MI_total_perp = [MI_total_perp;...
-        MI_total(CH_total == PerpChans(i)) + max([max(MI_total_perp),0])];
+    MI_total_par = vertcat(MI_total_par,...
+        MI_total(CH_total == ParChans(i)) -...
+        min(MI_total(CH_total == ParChans(i))) + 1 +...
+        max([max(MI_total_par),0]));
+    MI_total_perp = vertcat(MI_total_perp,...
+        MI_total(CH_total == PerpChans(i)) -...
+        min(MI_total(CH_total == PerpChans(i))) + 1 +...
+        max([max(MI_total_perp),0]));
 end
 
 %%% sort photons
@@ -2045,6 +2053,71 @@ BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_
 BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2};
 axis(h.axes_fFCS_DecayPerp,'tight');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Calc_fFCS_Filters(obj,~)
+global BurstMeta
+h = guidata(obj);
+
+%%% Concatenate Decay Patterns
+Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
+    BurstMeta.fFCS.hist_MIpar_Species{2}];
+Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
+Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
+Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
+Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
+    BurstMeta.fFCS.hist_MIperp_Species{2}];
+Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
+Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
+Decay_total_perp(Decay_total_perp == 0) = 1; %%% fill zeros with 1
+%%% calculate the diagonal over the Decay_total
+diag_Decay_total_par = zeros(numel(Decay_total_par));
+for i = 1:numel(Decay_total_par)
+    diag_Decay_total_par(i,i) = 1/Decay_total_par(i);
+end
+diag_Decay_total_perp = zeros(numel(Decay_total_perp));
+for i = 1:numel(Decay_total_perp)
+    diag_Decay_total_perp(i,i) = 1/Decay_total_perp(i);
+end
+
+BurstMeta.fFCS.filters_par = (Decay_par'*diag_Decay_total_par*Decay_par)^(-1)*Decay_par'*diag_Decay_total_par;
+BurstMeta.fFCS.reconstruction_par = sum((Decay_par'*diag_Decay_total_par*Decay_par)^(-1)*Decay_par',1);
+BurstMeta.fFCS.weighted_residuals_par = (Decay_total_par'-BurstMeta.fFCS.reconstruction_par)./(sqrt(Decay_total_par'));
+BurstMeta.fFCS.filters_perp = (Decay_perp'*diag_Decay_total_perp*Decay_perp)^(-1)*Decay_perp'*diag_Decay_total_perp;
+BurstMeta.fFCS.reconstruction_perp = sum((Decay_perp'*diag_Decay_total_perp*Decay_perp)^(-1)*Decay_perp',1);
+BurstMeta.fFCS.weighted_residuals_perp = (Decay_total_perp'-BurstMeta.fFCS.reconstruction_perp)./(sqrt(Decay_total_perp'));
+
+%%% Update plots
+BurstMeta.Plots.fFCS.FilterPar_Species1.XData = BurstMeta.fFCS.TAC_par;
+BurstMeta.Plots.fFCS.FilterPar_Species1.YData = BurstMeta.fFCS.filters_par(1,:);
+BurstMeta.Plots.fFCS.FilterPar_Species2.XData = BurstMeta.fFCS.TAC_par;
+BurstMeta.Plots.fFCS.FilterPar_Species2.YData = BurstMeta.fFCS.filters_par(2,:);
+BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.XData = BurstMeta.fFCS.TAC_par;
+BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.YData = BurstMeta.fFCS.hist_MItotal_par;
+BurstMeta.Plots.fFCS.Reconstruction_Par.XData = BurstMeta.fFCS.TAC_par;
+BurstMeta.Plots.fFCS.Reconstruction_Par.YData = BurstMeta.fFCS.reconstruction_par;
+BurstMeta.Plots.fFCS.Weighted_Residuals_Par.XData = BurstMeta.fFCS.TAC_par;
+BurstMeta.Plots.fFCS.Weighted_Residuals_Par.YData = BurstMeta.fFCS.weighted_residuals_par;
+
+BurstMeta.Plots.fFCS.FilterPerp_Species1.XData = BurstMeta.fFCS.TAC_perp;
+BurstMeta.Plots.fFCS.FilterPerp_Species1.YData = BurstMeta.fFCS.filters_perp(1,:);
+BurstMeta.Plots.fFCS.FilterPerp_Species2.XData = BurstMeta.fFCS.TAC_perp;
+BurstMeta.Plots.fFCS.FilterPerp_Species2.YData = BurstMeta.fFCS.filters_perp(2,:);
+BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.XData = BurstMeta.fFCS.TAC_perp;
+BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.YData = BurstMeta.fFCS.hist_MItotal_perp;
+BurstMeta.Plots.fFCS.Reconstruction_Perp.XData = BurstMeta.fFCS.TAC_perp;
+BurstMeta.Plots.fFCS.Reconstruction_Perp.YData = BurstMeta.fFCS.reconstruction_perp;
+BurstMeta.Plots.fFCS.Weighted_Residuals_Perp.XData = BurstMeta.fFCS.TAC_perp;
+BurstMeta.Plots.fFCS.Weighted_Residuals_Perp.YData = BurstMeta.fFCS.weighted_residuals_perp;
+
+axis(h.axes_fFCS_FilterPar,'tight');
+axis(h.axes_fFCS_FilterPerp,'tight');
+axis(h.axes_fFCS_ReconstructionPar,'tight');h.axes_fFCS_ReconstructionPar.YScale = 'log';
+axis(h.axes_fFCS_ReconstructionPerp,'tight');h.axes_fFCS_ReconstructionPerp.YScale = 'log';
+axis(h.axes_fFCS_ReconstructionParResiduals,'tight');
+axis(h.axes_fFCS_ReconstructionPerpResiduals,'tight');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
