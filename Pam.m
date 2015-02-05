@@ -3619,7 +3619,9 @@ UserValues.Phasor.Reference(Det,:)=0;
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
 %%% Anders: Highjacking this to also save an IRF for Lifetime Fitting
-UserValues.TauFit.IRF(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
+for i = 1:max(UserValues.Detector.Det)
+    UserValues.TauFit.IRF(i,1:numel(PamMeta.MI_Hist{i}))=PamMeta.MI_Hist{i};
+end
 
 LSUserValues(1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

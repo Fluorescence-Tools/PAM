@@ -387,6 +387,12 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     %%% Set the Popupmenus according to UserValues
     h.PIEChannelPar_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
     h.PIEChannelPer_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
+    if isempty(h.PIEChannelPar_Popupmenu.Value)
+        h.PIEChannelPar_Popupmenu.Value = 1;
+    end
+    if isempty(h.PIEChannelPer_Popupmenu.Value)
+        h.PIEChannelPer_Popupmenu.Value = 1;
+    end
     %%% Popup Menu for Fit Method Selection
     FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
         'Distribution','Distribution plus Donor only'};
@@ -1037,8 +1043,8 @@ switch TauFitData.FitType
         x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
         lb = [0 0 0];
         ub = [1 1 Inf];
-        shift_range = 0:0;
-        ignore = 50;
+        shift_range = -5:5;
+        ignore = 100;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         for i = shift_range
