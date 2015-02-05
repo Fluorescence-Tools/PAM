@@ -1074,22 +1074,22 @@ if isempty(hfig)
     %%% fFCS Tab
     BurstMeta.Plots.fFCS.IRF_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Microtime_Species1_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
-    BurstMeta.Plots.fFCS.Microtime_Species2_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.Microtime_Species2_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Microtime_Total_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     
     BurstMeta.Plots.fFCS.IRF_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Microtime_Species1_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
-    BurstMeta.Plots.fFCS.Microtime_Species2_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.Microtime_Species2_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Microtime_Total_perp = plot(h.axes_fFCS_DecayPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     
     BurstMeta.Plots.fFCS.FilterPar_Species1 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
-    BurstMeta.Plots.fFCS.FilterPar_Species2 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.FilterPar_Species2 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Par = plot(h.axes_fFCS_ReconstructionPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Decay_Par = plot(h.axes_fFCS_ReconstructionPar,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Weighted_Residuals_Par = plot(h.axes_fFCS_ReconstructionParResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     
     BurstMeta.Plots.fFCS.FilterPerp_Species1 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
-    BurstMeta.Plots.fFCS.FilterPerp_Species2 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color','g','LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.FilterPerp_Species2 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Weighted_Residuals_Perp = plot(h.axes_fFCS_ReconstructionPerpResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
@@ -1269,6 +1269,7 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot(hListbox);
+UpdateLifetimePlots(hListbox,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1966,18 +1967,19 @@ if isempty(BurstTCSPCData)
 end
 %%% Read out the bursts contained in the different species selections
 valid_total = UpdateCuts(1);
-species1 = h.fFCS_Species1_popupmenu.Value + 1;
-species2 = h.fFCS_Species2_popupmenu.Value + 1;
+species1 = h.fFCS_Species1_popupmenu.Value + 1;BurstMeta.fFCS.Names{1} = h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value};
+species2 = h.fFCS_Species2_popupmenu.Value + 1;BurstMeta.fFCS.Names{2} = h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value};
 valid_species1 = UpdateCuts(species1);
 valid_species2 = UpdateCuts(species2);
 
 %%% find selected bursts
 MI_total = BurstTCSPCData.Microtime(valid_total);MI_total = vertcat(MI_total{:});
 CH_total = BurstTCSPCData.Channel(valid_total);CH_total = vertcat(CH_total{:});
-MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
+MT_total = BurstTCSPCData.Macrotime(valid_total);MT_total = vertcat(MT_total{:});
+%MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
 MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
 CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
-MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
+%MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
 MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
 CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
 
@@ -1989,43 +1991,72 @@ MI_par{1} = [];MI_par{2} = [];
 MI_perp{1} = [];MI_perp{2} = [];
 MT_par{1} = [];MT_par{2} = [];
 MT_perp{1} = [];MT_perp{2} = [];
+%%% read out the limits of the PIE channels
+limit_low_par = [0, BurstData.fFCS.From(ParChans)];
+limit_high_par = [0, BurstData.fFCS.To(ParChans)];
+limit_low_perp = [0,BurstData.fFCS.From(PerpChans)];
+limit_high_perp = [0, BurstData.fFCS.To(PerpChans)];
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
         MI_par{i} = vertcat(MI_par{i},...
             MI_species{i}(CH_species{i} == ParChans(j)) -...
-            min(MI_species{i}(CH_species{i} == ParChans(j))) + 1 +...
-            max([max(MI_par{i}),0]));
-        MT_par{i} = vertcat(MT_par{i},...
-            MT_species{i}(CH_species{i} == ParChans(j)));
+            limit_low_par(j+1) + 1 +...
+            limit_high_par(j)-limit_low_par(j));
+%         MT_par{i} = vertcat(MT_par{i},...
+%             MT_species{i}(CH_species{i} == ParChans(j)));
         MI_perp{i} = vertcat(MI_perp{i},...
             MI_species{i}(CH_species{i} == PerpChans(j)) -...
-            min(MI_species{i}(CH_species{i} == PerpChans(j))) + 1 +...
-            max([max(MI_perp{i}),0]));
-        MT_perp{i} = vertcat(MT_perp{i},...
-            MT_species{i}(CH_species{i} == PerpChans(j)));
+            limit_low_perp(j+1) + 1 +...
+            limit_high_perp(j)-limit_low_perp(j));
+%         MT_perp{i} = vertcat(MT_perp{i},...
+%             MT_species{i}(CH_species{i} == PerpChans(j)));
+        
+%         MI_par{i} = vertcat(MI_par{i},...
+%             MI_species{i}(CH_species{i} == ParChans(j)) -...
+%             min(MI_species{i}(CH_species{i} == ParChans(j))) + 1 +...
+%             max([max(MI_par{i}),0]));
+%         MT_par{i} = vertcat(MT_par{i},...
+%             MT_species{i}(CH_species{i} == ParChans(j)));
+%         MI_perp{i} = vertcat(MI_perp{i},...
+%             MI_species{i}(CH_species{i} == PerpChans(j)) -...
+%             min(MI_species{i}(CH_species{i} == PerpChans(j))) + 1 +...
+%             max([max(MI_perp{i}),0]));
+%         MT_perp{i} = vertcat(MT_perp{i},...
+%             MT_species{i}(CH_species{i} == PerpChans(j)));
     end
 end
 
 MI_total_par = [];
 MI_total_perp = [];
+MT_total_par = [];
+MT_total_perp = [];
 for i = 1:numel(ParChans)
     MI_total_par = vertcat(MI_total_par,...
         MI_total(CH_total == ParChans(i)) -...
-        min(MI_total(CH_total == ParChans(i))) + 1 +...
-        max([max(MI_total_par),0]));
+        limit_low_par(i+1) + 1 +...
+        limit_high_par(i)-limit_low_par(i));
+    MT_total_par = vertcat(MT_total_par,...
+        MT_total(CH_total == ParChans(i)));
     MI_total_perp = vertcat(MI_total_perp,...
         MI_total(CH_total == PerpChans(i)) -...
-        min(MI_total(CH_total == PerpChans(i))) + 1 +...
-        max([max(MI_total_perp),0]));
+        limit_low_perp(i+1) + 1 +...
+        limit_high_perp(i)-limit_low_perp(i));
+    MT_total_perp = vertcat(MT_total_perp,...
+        MT_total(CH_total == PerpChans(i)));
 end
 
 %%% sort photons
-for i = 1:2 %%% loop over species
-    [MT_par{i},idx] = sort(MT_par{i});
-    MI_par{i} = MI_par{i}(idx);
-    [MT_perp{i},idx] = sort(MT_perp{i});
-    MI_perp{i} = MI_perp{i}(idx);
-end
+[MT_total_par,idx] = sort(MT_total_par);
+MI_total_par = MI_total_par(idx);
+[MT_total_perp,idx] = sort(MT_total_perp);
+MI_total_perp = MI_total_perp(idx);
+% for i = 1:2 %%% loop over species
+%     [MT_par{i},idx] = sort(MT_par{i});
+%     MI_par{i} = MI_par{i}(idx);
+%     [MT_perp{i},idx] = sort(MT_perp{i});
+%     MI_perp{i} = MI_perp{i}(idx);
+% end
+
 %%% Calculate the histograms
 maxTAC_par = max(MI_total_par);
 maxTAC_perp = max(MI_total_perp);
@@ -2038,6 +2069,11 @@ end
 BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par);
 BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
 
+%%% Store Photon Vectors of total photons in BurstMeta
+BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
+BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
+BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
+BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
 %%% Plot the Microtime histograms
 BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par;
@@ -2117,7 +2153,89 @@ axis(h.axes_fFCS_ReconstructionPar,'tight');h.axes_fFCS_ReconstructionPar.YScale
 axis(h.axes_fFCS_ReconstructionPerp,'tight');h.axes_fFCS_ReconstructionPerp.YScale = 'log';
 axis(h.axes_fFCS_ReconstructionParResiduals,'tight');
 axis(h.axes_fFCS_ReconstructionPerpResiduals,'tight');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Does fFCS Correlation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_fFCS(obj,~)
+global BurstMeta BurstData
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(gcf);
+end
 
+%%% define channels
+Name = BurstMeta.fFCS.Names;
+CorrMat = true(2);
+NumChans = size(CorrMat,1);
+%%% Read out photons and filters from BurstMeta
+MT_par = BurstMeta.fFCS.Photons.MT_total_par;
+MT_perp = BurstMeta.fFCS.Photons.MT_total_perp;
+MI_par = BurstMeta.fFCS.Photons.MI_total_par;
+MI_perp = BurstMeta.fFCS.Photons.MI_total_perp;
+filters_par{1} = BurstMeta.fFCS.filters_par(1,:)';
+filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
+filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
+filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
+%%% Split Data in 10 time bins for errorbar calculation
+Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
+for i=1:NumChans
+    for j=1:NumChans
+        if CorrMat(i,j)
+            %%% Calculates the maximum inter-photon time in clock ticks
+            Maxtime=max(diff(Times));
+            Data1 = cell(10,1);
+            Data2 = cell(10,1);
+            Weights1 = cell(10,1);
+            Weights2 = cell(10,1);
+            for k = 1:10
+                Data1{k} = MT_par( MT_par > Times(k) &...
+                    MT_par <= Times(k+1)) - Times(k);
+                Weights1{k} = filters_par{i}(MI_par( MT_par > Times(k) &...
+                    MT_par <= Times(k+1)) );
+                Data2{k} = MT_perp( MT_perp > Times(k) &...
+                    MT_perp <= Times(k+1)) - Times(k);
+                Weights2{k} = filters_perp{j}(MI_perp);
+            end
+            %%% Do Correlation
+            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+            Cor_Times=Cor_Times*BurstData.SyncPeriod;
+            %%% Calculates average and standard error of mean (without tinv_table yet
+            if numel(Cor_Array)>1
+                Cor_Average=mean(Cor_Array,2);
+                %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+                %%% Averages files before saving to reduce errorbars
+                Amplitude=sum(Cor_Array,1);
+                Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+                Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+
+            else
+                Cor_Average=Cor_Array{1};
+                Cor_SEM=Cor_Array{1};
+            end
+            %%% Save the correlation file
+            %%% Generates filename
+            Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+            %%% Checks, if file already exists
+            if  exist(Current_FileName,'file')
+                k=1;
+                %%% Adds 1 to filename
+                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                %%% Increases counter, until no file is found
+                while exist(Current_FileName,'file')
+                    k=k+1;
+                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                end
+            end
+
+            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+            Counts = [numel(MT_par) numel(MT_perp)]/(BurstData.SyncPeriod*max([MT_par;MT_perp]))/1000;
+            Valid = 1:10;
+            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                    
+        end 
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

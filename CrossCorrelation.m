@@ -1,5 +1,6 @@
-function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime)
+function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2)
 %%% Data1, Data2: Photon macrotimes
+%%% Weights1, Weights2: Photon weights
 %%% Blocktimes: 2xn vector of star/stop times
 %%% ProgressStruct: Structure with information for Progress;
 %%% ProgressStruct.Axes: handle of progress axes
@@ -7,7 +8,15 @@ function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime)
 %%% ProgressStruct.Max: total number of correlation bins
 %%% ProgressStruct.Current: number of correlation bins previously completed
 
-
+%%% If no weights are specified, set to 1
+if nargin < 4
+    Weights1 = cell(numel(Data1),1);
+    Weights2 = cell(numel(Data2),1);
+    for i = 1:numel(Data1)
+        Weights1{i} = ones(numel(Data1{i}),1);
+        Weights2{i} = ones(numel(Data2{i}),1);
+    end
+end
 %%% Calculates a pseudologarithmic timeaxis:
 %%% [1:21 20:2:41 45:4:81 ....]
 Timeaxis_Exponent=ceil(log2(Maxtime/10));
@@ -20,7 +29,7 @@ Cor_Array=repmat({[]},numel(Data1),1);
 parfor i=1:numel(Data1)
     if ~isempty(Data1{i}) && ~isempty(Data2{i})
         %%% Does the crosscorrelation        
-        Cor_Array{i}=Do_CCF(Data1{i},Data2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
+        Cor_Array{i}=Do_CCF(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
         %%% Truncates to leangth of Timeaxis
         Cor_Array{i}=Cor_Array{i}(1:numel(Timeaxis))';  
     end
@@ -32,7 +41,8 @@ Divisor=ones(numel(Timeaxis),1);
 Divisor(22:end)=2.^(floor((10:(numel(Divisor)-12))/10));
 %%% Does additional normalizing
 for i=1:numel(Cor_Array)
-    Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
+    Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
+    %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
 end
 

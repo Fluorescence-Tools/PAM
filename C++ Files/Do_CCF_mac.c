@@ -6,16 +6,17 @@
 ///////////////////////////////////////////////////////////////////////////
 // This function does the actual correlation, but the function called is below
 ///////////////////////////////////////////////////////////////////////////
-void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
+void fast_MT(double *mt1, double *mt2, double *w1, double *w2, unsigned int nc, unsigned int nb,
         unsigned int np1, unsigned int np2, double *corrl, double *xdat)               
 {
     // mt1, mt2:    pointers to the macrotimes; should not be modified, since they are matlab input pointers
     // xdat:        pointer to correlation time bins
     // np1, np2:    number of photons in each channel
+    // w1, w2:      photon weights
     // nc:          number of evenly spaced elements per block
     // nb:          number of blocks of increasing spacing
     // corrl:       pointer to correlation output
-    
+
     
     //Initializes some variables for for loops
     unsigned int i=0;
@@ -32,8 +33,8 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
     __int64_t limit_r;
     
     // Photon weights; if several photons are in the same bin, intensities will be summed up to save calculation time (see below)
-    __int64_t *photons1;         
-    __int64_t *photons2;
+    double *photons1;         
+    double *photons2;
     
     // Since mt1 and mt2 should not be changed, here a new memoryblock and pointer is defined
     __int64_t *t1;
@@ -47,11 +48,11 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
     for(im=0;im<np2;im++) {t2[im]=(__int64_t) mt2[im];};
     
 
-    // Initializes photon weights; currently all 1
-    photons1=(__int64_t*) mxCalloc(np1, sizeof(__int64_t));
-    for(i=0;i<np1;i++) {photons1[i]=1;}
-    photons2=(__int64_t*) mxCalloc(np2, sizeof(__int64_t));
-    for(i=0;i<np2;i++) {photons2[i]=1;}
+    // Initializes photon weights;
+    photons1=(double*) mxCalloc(np1, sizeof(__int64_t));
+    for(i=0;i<np1;i++) {photons1[i]=w1[i];}
+    photons2=(double*) mxCalloc(np2, sizeof(__int64_t));
+    for(i=0;i<np2;i++) {photons2[i]=w2[i];}
     
     //determine max macro time
     if (t1[np1-1]>t2[np2-1]) {maxmat=t1[np1-1];}
@@ -98,16 +99,16 @@ void fast_MT(double *mt1, double *mt2, unsigned int nc, unsigned int nb,
                         else
                             {
                             // If correlation time is positiv
-                            if (t2[j]>limit_l)
-                            {
-                                // Calculates time between two photons
-                                index=t2[j]-limit_l+(__int64_t)(k*nc);
-                                // Adds one to correlation at the appropriate timelag
-                                corrl[index]+=(double) (photons1[i]*photons2[j]);
+                                if (t2[j]>limit_l)
+                                {
+                                    // Calculates time between two photons
+                                    index=t2[j]-limit_l+(__int64_t)(k*nc);
+                                    // Adds one to correlation at the appropriate timelag
+                                    corrl[index]+=(double) (photons1[i]*photons2[j]);
+                                }
+                                // Increases starting photon in second array, to save time 
+                                else {p++;}
                             }
-                            // Increases starting photon in second array, to save time 
-                            else {p++;}
-                        }
                     }
                     j++;
                 };                
@@ -157,12 +158,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *mt1;
     double *mt2;
     double *xdat;
-
+    double *w1;
+    double *w2;
+            
     // Gets the other input values
-    unsigned int nc = (unsigned int)mxGetScalar(prhs[2]);
-    unsigned int nb = (unsigned int)mxGetScalar(prhs[3]);
-    unsigned int np1 = (unsigned int)mxGetScalar(prhs[4]);
-    unsigned int np2 = (unsigned int)mxGetScalar(prhs[5]);
+    unsigned int nc = (unsigned int)mxGetScalar(prhs[4]);
+    unsigned int nb = (unsigned int)mxGetScalar(prhs[5]);
+    unsigned int np1 = (unsigned int)mxGetScalar(prhs[6]);
+    unsigned int np2 = (unsigned int)mxGetScalar(prhs[7]);
         
     // Initializes output matrix and assigns pointer to it
     double *corrl; 
@@ -170,14 +173,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Assigns input pointers to initialized pointers
     mt1 = mxGetPr(prhs[0]);
     mt2 = mxGetPr(prhs[1]);
-    xdat = mxGetPr(prhs[6]);
+    w1 = mxGetPr(prhs[2]);
+    w2 = mxGetPr(prhs[3]);
+    xdat = mxGetPr(prhs[8]);
     
     plhs[0] = mxCreateDoubleMatrix(1, nb*nc+100, mxREAL);
     corrl = mxGetPr(plhs[0]);    
 
     
     // Calls function to do the actual work
-    fast_MT(mt1, mt2, nc, nb, np1, np2, corrl, xdat);     
+    fast_MT(mt1, mt2, w1, w2, nc, nb, np1, np2, corrl, xdat);     
 };
 
 
