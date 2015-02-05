@@ -1124,7 +1124,12 @@ function Load_Burst_Data_Callback(~,~)
 clearvars -global BurstData BurstTCSPCData
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
-BurstMeta.fFCS = [];
+if isfield(BurstMeta,'fFCS')
+    BurstMeta = rmfield(BurstMeta,'fFCS');
+end
+if isfield(BurstMeta,'Data')
+    BurstMeta = rmfield(BurstMeta,'Data');
+end
 LSUserValues(0);
 [FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
@@ -1331,6 +1336,7 @@ if ~isempty(obj)
 else
     h = guidata(gcf);
 end
+LSUserValues(0);
 if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
@@ -1838,7 +1844,7 @@ BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
 %% plot gamma plot for two populations (or lifetime versus E)
 %%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
+S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
 %%% Calculate "raw" E and S with gamma = 1, but still apply direct
 %%% excitation,crosstalk, and background corrections!
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);

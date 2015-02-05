@@ -4558,9 +4558,10 @@ end
 %%% Save the Burst Data
 BurstFileName = [FullFileName '.bur'];
 BurstFileName = GenerateName(BurstFileName);
-save(BurstFileName,'BurstData');
 %%% Store the FileName of the *.bur file
 BurstData.FileName = BurstFileName;
+save(BurstFileName,'BurstData');
+
 
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
@@ -4721,8 +4722,12 @@ if numel(start) ~= 0 && numel(stop) ~=0
 end
 % and ignore bursts with less than L photons
 %only cut if L is specified (it is not for DCBS sub-searches)
+if ~isempty(stop) && ~isempty(start)
+    Number_of_Photons = stop-start+1;
+else
+    Number_of_Photons = [];
+end
 
-Number_of_Photons = stop-start+1;
 if nargin > 3
     start(Number_of_Photons<L)=[];
     stop(Number_of_Photons<L)=[];

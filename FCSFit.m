@@ -399,7 +399,7 @@ end
     FCSMeta=[];
     FCSMeta.Data=[];
     FCSMeta.Params=[];
-    FCSMeta.Confidence_Intervals = [];
+    FCSMeta.Confidence_Intervals = cell(1,1);
     FCSMeta.Plots=cell(0);
     FCSMeta.Model=[];
     FCSMeta.Fits=[];
