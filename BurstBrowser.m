@@ -1410,7 +1410,7 @@ yticks= get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
 axes(h.axes_1d_y);
-hy = hist(datatoplot(:,y),ybins_1d);
+hy = histc(datatoplot(:,y),ybins_1d);
 hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 BurstMeta.Plots.Main_histY.XData = ybins;
 BurstMeta.Plots.Main_histY.YData = hy;
