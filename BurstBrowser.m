@@ -2926,10 +2926,9 @@ end
 if nargin == 6
     axes(haxes);
 end
-
 [H, xbins_hist, ybins_hist] = hist2d([x y], nbins, nbins, limx, limy);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-H(end-1,:) = H(end-1,:) + H(end-1,:); H(end,:) = [];
+H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
 xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
 ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 
