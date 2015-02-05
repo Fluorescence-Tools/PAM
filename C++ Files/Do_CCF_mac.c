@@ -50,9 +50,9 @@ void fast_MT(double *mt1, double *mt2, double *w1, double *w2, unsigned int nc, 
 
     // Initializes photon weights;
     photons1=(double*) mxCalloc(np1, sizeof(__int64_t));
-    for(i=0;i<np1;i++) {photons1[i]=w1[i];}
+    for(i=0;i<np1;i++) {photons1[i]= (double) w1[i];}
     photons2=(double*) mxCalloc(np2, sizeof(__int64_t));
-    for(i=0;i<np2;i++) {photons2[i]=w2[i];}
+    for(i=0;i<np2;i++) {photons2[i]= (double) w2[i];}
     
     //determine max macro time
     if (t1[np1-1]>t2[np2-1]) {maxmat=t1[np1-1];}

@@ -1120,10 +1120,11 @@ delete(gcf);
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(~,~)
-
+%%% clear global variable
+clearvars -global BurstData BurstTCSPCData
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
-
+BurstMeta.fFCS = [];
 LSUserValues(0);
 [FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
@@ -1269,6 +1270,7 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot(hListbox);
+Update_fFCS_GUI(hListbox,[]);
 UpdateLifetimePlots(hListbox,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
@@ -2195,7 +2197,8 @@ for i=1:NumChans
                     MT_par <= Times(k+1)) );
                 Data2{k} = MT_perp( MT_perp > Times(k) &...
                     MT_perp <= Times(k+1)) - Times(k);
-                Weights2{k} = filters_perp{j}(MI_perp);
+                Weights2{k} = filters_perp{j}(MI_perp(MT_perp > Times(k) &...
+                    MT_perp <= Times(k+1)) );
             end
             %%% Do Correlation
             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);

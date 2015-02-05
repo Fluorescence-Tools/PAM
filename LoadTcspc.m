@@ -213,12 +213,12 @@ switch (Type)
             end            
             
         else %if there is no set file, the B&H software was likely not used
-            h = msgbox('Setup (.set) file not found!');
+            h_msg = msgbox('Setup (.set) file not found!');
             Card = 'SPC-140/150';
             MI_Bins = 4096;
             TACRange = [];
             pause(1)
-            close(h)
+            close(h_msg)
         end        
         FileInfo.Card = Card;
         FileInfo.MI_Bins = MI_Bins;
