@@ -41,7 +41,10 @@ switch Card
         clear FileID;
         
         if numel(ByteRecord) < 2 % Even empty file will contain sync rate
-            msgbox(['Empty file: ', FullFileName]);
+            h = msgbox(['Empty file: ', FileName]);
+            disp(['Empty file: ', FileName])
+            pause(1)
+            close(h)
         else
             %the sync rate is contained in the first 3 bytes of the first byte
             %record in units of 100 ps
@@ -50,12 +53,13 @@ switch Card
             
             Rout=uint8(bitand(bitshift(ByteRecord, - 8), 240)); % Loads Routing bits
             Mark=uint8(bitand(bitshift(ByteRecord, -28),  15)); % Loads Mark, Gap, Macrotime Overflow and Invalid bits
+            %disp(['Number of invalid entries in ' FileName ': ' num2str(numel(find(Mark==8)))])
             Mark=Mark+Rout; % Combines Rout and Mark to save memory (Matlab has not file format < 8bit)
             clear Rout;
             
             MT=uint32(zeros(numel(Mark),1)); % Initializes macrotime overflow variable
             MT(bitand(Mark,12)==4)=1; % One single overflow occured (MTOV==1 & INVALID==0)
-            MT(bitand(Mark,12)==12)=bitand(ByteRecord(bitand(Mark,12)==12),268435455);% Several overflows occured (MTOV==1 & INVALID==1)
+            MT(bitand(Mark,12)==12)=bitand(ByteRecord(bitand(Mark,12)==12),268435455); % Number of times the MT overflowed (Several overflows occured (MTOV==1 & INVALID==1))
             
             Macrotime=uint16(bitand(ByteRecord, 4095)); % Loads Macrotime
             MI=4095-uint16(bitand(bitshift(ByteRecord, -16), 4095)); % Loads Microtime
@@ -90,7 +94,10 @@ switch Card
         clear FileID;
         
         if numel(ByteRecord) < 2 % Even empty file will contain sync rate
-            msgbox(['Empty file: ', FullFileName]);
+            h = msgbox(['Empty file: ', FileName]);
+            disp(['Empty file: ', FileName])
+            pause(1)
+            close(h)
         else
             %the clockrate is contained in the first 3 bytes of the first
             %record in units of 100 ps
@@ -99,6 +106,8 @@ switch Card
             % Non macro/microtime information
             Rout = uint8(bitand(bitshift(ByteRecord, - 21), 112));
             Mark = uint8(bitand(bitshift(ByteRecord, - 28),  15));
+            disp(['Number of invalid entries in ' FileName ': ' num2str(numel(find(Mark==8)))])
+            disp(['Number of multi MTOVs ' FileName ': ' num2str(numel(find(Mark==12)))])
             Mark = Mark + Rout;
             % Mark combines Rout and Mark to save memory (Matlab has not file format < 8bit)
             %
@@ -132,7 +141,7 @@ switch Card
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% Data is arranged per 6 bytes
         %%%% We first read the data at 16bits
-        ByteRecord = fread(FileID, NumberOfEntries, 'uint16=>uint16');
+        ByteRecord = fread(FileID, NoE, 'uint16=>uint16');
         %%%% First 6 bytes of ByteRecord contains Resolution of macrotime (MT) clock in units of 0.1ns
         %%%% SPC630: MT clock is always 50 ns
         %%%%
@@ -147,29 +156,26 @@ switch Card
         %%%% Important:
         %%%% To be able to do bitwise operations, we have to put the 6-byte file
         %%%% into one 16bit and one 32bit variable
-        maxi = round(numel(ByteRecord)/3);
-        ByteRecord1 = zeros(maxi, 1);
-        ByteRecord2 = zeros(maxi, 1);
-        for i = 1:maxi
-            % we create two new ByteRecords, one 16bit and one 32bit
-            ByteRecord1(i) = ByteRecord(1+3*(i-1));
-            %            Bit 7           <=           Bit 0
-            % Byte 0:    ADC7             <=          ADC0
-            % Byte 1:    0  GAP MTOV INVALID ACD11 <= ADC8
-            
-            ByteRecord2(i) = bitor(bitshift(uint32(ByteRecord(2+3*(i-1))),16), uint32(ByteRecord(3+3*(i-1))));
-            %            Bit 7  <=   Bit 0
-            % Byte 0:    MT7    <=   MT0
-            % Byte 1:    MT15   <=   MT8
-            % Byte 2:    MT23   <=   MT16
-            % Byte 3:    R7     <=   R0
-        end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        ind = uint32(1:3:round(numel(ByteRecord)));
+        ByteRecord1 = ByteRecord(ind); %16bit
+        %            Bit 7           <=           Bit 0
+        % Byte 0:    ADC7             <=          ADC0
+        % Byte 1:    0  GAP MTOV INVALID ACD11 <= ADC8
+        ByteRecord2 = bitor(bitshift(uint32(ByteRecord(ind+1)),16), uint32(ByteRecord(ind+2))); %32bit
+        %            Bit 7  <=   Bit 0
+        % Byte 0:    MT7    <=   MT0
+        % Byte 1:    MT15   <=   MT8
+        % Byte 2:    MT23   <=   MT16
+        % Byte 3:    R7     <=   R0
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
         fclose(FileID);
         clear FileID;
         
         if numel(ByteRecord) < 2 % Even empty file will contain sync rate
-            msgbox(['Empty file: ', FullFileName]);
+            h = msgbox(['Empty file: ', FileName]);
+            disp(['Empty file: ', FileName])
+            pause(1)
+            close(h)
         else
             %the clockrate is contained in the first 3 bytes of the first
             %record in units of 100 ps
@@ -179,10 +185,15 @@ switch Card
             ByteRecord2(1)=[]; %%% Delete Header entry
             % Non macro/microtime information
             Rout = uint8(bitand(bitshift(ByteRecord2, - 20), 240));
-            Mark = uint8(bitand(bitshift(ByteRecord1, - 12),  15));
-            Mark = bin2dec(fliplr(dec2bin(Mark,4)));
+            tmp = uint8(bitand(bitshift(ByteRecord1, - 12),  15));
+            Mark = tmp;
+            Mark = bitset(Mark,1,bitget(tmp, 4)); %MARK
+            Mark = bitset(Mark,2,bitget(tmp, 3)); %GAP
+            Mark = bitset(Mark,3,bitget(tmp, 2)); %MTOV
+            Mark = bitset(Mark,4,bitget(tmp, 1)); %INVALID
+            disp(['Number of invalid entries in ' FileName ': ' num2str(numel(find(Mark==8)))])
             Mark = Mark + Rout;
-            clear Rout;
+            clear Rout tmp;
             % Mark combines Rout and Mark to save memory (Matlab has not file format < 8bit)
             %
             % bit8         <=           bit1
@@ -195,15 +206,14 @@ switch Card
             %   - TAC + dither > ADC range
             %   - photon during MTOV entry
             % MTOV:
-            %   macrotime overflow bit
+            %   macrotime overflow bit, written in the next real photon
             % GAP:
             %   a FIFO overflow occurred. Data is likely invalid
             % MARK:
             %   scanning information, with MARK = 0 for 'SPC-630'
 
             MT = uint32(zeros(numel(Mark),1)); % Initializes macrotime overflow variable
-            MT(bitand(Mark,12)==4) = 1; % One single overflow occured (MTOV==1 & INVALID==0)
-            MT(bitand(Mark,12)==12) = bitand(ByteRecord2(bitand(Mark,12)==12), 16777215); % Several overflows occured (MTOV==1 & INVALID==1)
+            MT(bitand(Mark,4)==4) = 1; % One single overflow occured (MTOV==1 & INVALID==0) or (MTOV==1 & INVALID==1)
             Macrotime = bitand(ByteRecord2, 4294967295); % Loads 24 bit Macrotime in 32 bit
             MI = 4095-uint16(bitand(ByteRecord1, 4095)); % Loads 12 bit Microtime in 16 bit
             clear ByteRecord1 ByteRecord2
@@ -211,6 +221,7 @@ switch Card
             clear Macrotime;
         end
 end
+
 
 % Removes all remaining invalid entries (mostly overflow entries)
 MI(bitand(Mark,8)==8)=[];
@@ -226,7 +237,10 @@ end
 
 % Checks for detection gaps due to fifo overflows
 if any(bitand(Mark,2)==2)
-    msgbox(['FIFO overflow occured in file ', FullFileName]);
+    h = msgbox(['FIFO overflow occured in file ', FileName]);
+    disp('FIFO overflow occured in file ')
+    pause(1)
+    close(h)
 end
 % Checks for Mark entries (usually frame, line or pixels entries)
 if sum(Scanner>0) && any(bitend(Mark,1)==1)
