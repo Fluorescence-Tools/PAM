@@ -1315,20 +1315,20 @@ PhasorData.Cursor=[];
 else
     
 end
-guidata(gcf,h);
+guidata(h.Phasor,h);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Closes Phasor and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Phasor(~,~)
+function Close_Phasor(Obj,~)
 clear global -regexp Phasor_Data
 Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
 if isempty(Pam) && isempty(FCSFit)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 
 
@@ -1339,7 +1339,7 @@ delete(gcf);
 %%% Loades referenced files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Phasor_Data(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 global PhasorData UserValues
 LSUserValues(0);
 
@@ -1392,7 +1392,7 @@ end
 %%% Deletes\Selects\Unselects files for plotting %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function List_Callback(~,e)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 global PhasorData
 
 %%% Only executes if a valid key was pressed
@@ -1500,7 +1500,7 @@ end
 %   Right:          Ellipoidal ROI
 %%% Key 0:          Fraction Line
 function Phasor_Plot_Callback(~,~,Key)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Phasor'));
 
 %%% Checks, which mouse button was clicked
 Type=h.Phasor.SelectionType;
@@ -1735,7 +1735,7 @@ end
 %%% 0:      Fraction line definition
 %%% 1-6:    ROI selection
 function Phasor_Key(~,e,mode)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Phasor'));
 global PhasorData
 switch mode
     case 1
@@ -1774,7 +1774,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Stop_All(~,~)
 figure(findobj('Tag','Phasor'));
-h=guidata(gcf);
+h=guidata(findobj('Tag','Phasor'));
 %%% Sets standard mouse click callback (in case it was changed/disabled)
 h.Phasor_Plot.ButtonDownFcn={@Phasor_Plot_Callback,[]};
 %%% Updates plot, if new ROI was selected
@@ -1791,7 +1791,7 @@ h.Phasor.WindowButtonMotionFcn={@Phasor_Move,1,[],[]};
 %%% Generates trajectories for FRET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 function Calc_FRET(~,~,mode)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 
 Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
 
@@ -1951,7 +1951,7 @@ Plot_Phasor([],[],0,1:10);
 %%% right: open context menu (see Plots_Menu_Callback)
 function Select_Region(~,~)
 global PhasorData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 Type=h.Phasor.SelectionType;
 
 if ~isempty(h.List.String)
@@ -1985,7 +1985,7 @@ end
 %%% Updates all plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Plot_Phasor(~,~,Main,Images)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 global PhasorData
 
 Pixel=str2double(h.Phasor_Res.String);
@@ -2296,7 +2296,7 @@ end
 %%% 2: Changes ROI linewidth
 %%% 3: Changes ROI linestyle
 function ROI_Look(~,~,mode,ROI)   
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 
 switch mode
     case 1
@@ -2390,7 +2390,7 @@ end
 %%% Changes FRET appearance %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function FRET_Look(~,~,mode,Line)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Phasor'));
 
 switch mode
     case 1
@@ -2440,7 +2440,7 @@ end
 %%% 2: Exports current figure to new figure
 function Plots_Menu_Callback (~,~,mode)
 global UserValues PhasorData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Phasor'));
 obj=gca;
 switch mode
     case 1

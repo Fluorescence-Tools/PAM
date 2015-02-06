@@ -1723,14 +1723,14 @@ h.Pam.Visible='on';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions that executes upon closing of pam window %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Pam(~,~)
+function Close_Pam(Obj,~)
 clear global -regexp PamMeta TcspcData FileInfo
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
 if isempty(Phasor) && isempty(FCSFit)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 
 
@@ -1739,7 +1739,7 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Data(~,~,Detector,PIE)
 global TcspcData FileInfo UserValues PamMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 h.Progress_Text.String = 'Updating meta data';
 h.Progress_Axes.Color=[1 0 0];
@@ -1868,7 +1868,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calculate_Settings(obj,~)
 global UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 Display=0;
 %%% If use_image was clicked
 if obj == h.MT_Use_Image
@@ -1929,7 +1929,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Display(~,~,mode)
 global UserValues PamMeta FileInfo
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 %%% Determines which parts are updated
 %%% 1: PIE list and PIE info
@@ -2320,7 +2320,7 @@ if any(mode==2)
 end
 
 %% Saves new plots in guidata
-guidata(gcf,h)
+guidata(findobj('Tag','Pam'),h)
 h.Progress_Text.String = FileInfo.FileName{1};
 h.Progress_Axes.Color=UserValues.Look.Control;
 
@@ -2341,7 +2341,7 @@ h.Progress_Axes.Color=UserValues.Look.Control;
 %%% Export_Image_File menu: Exports Pixels x Pixels x FileNumber into workspace
 function PIE_List_Functions(obj,ed)
 global UserValues TcspcData FileInfo PamMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 %% Determines which buttons was pressed, if function was not called via key press 
 if ~strcmp(ed.EventName,'KeyPress')
@@ -2690,7 +2690,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_PIE_Channels(obj,~)
 global UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 Sel=h.PIE_List.Value(1);
 if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
@@ -2730,7 +2730,7 @@ Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 %%% Callback functions of Microtime plots and UIContextmenues  %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MI_Axes_Menu(obj,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 if obj == h.MI_Log
     if strcmp(h.MI_Log.Checked,'off')
         for i=1:(size(h.MI_Individual,2)/2-1)
@@ -2761,7 +2761,7 @@ Update_Display([],[],5);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MT_Section(obj,~)
 global PamMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 for i=1:numel(h.Plots.MT_Patches)
     if obj==h.Plots.MT_Patches{i}
@@ -2780,7 +2780,7 @@ Update_Display([],[],2);
 %%% "n"-Key: Opens dialog menu to change Channel name
 function MI_Channels_Functions(obj,ed)
 global UserValues PamMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 %% Determines which buttons was pressed, if function was not called via key press 
 if ~strcmp(ed.EventName,'KeyPress')
     if obj == h.MI_Add
@@ -2857,7 +2857,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Detector_Channels(~,~,mode)
 global UserValues FileInfo
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 %% Updates number of microtime tabs and plots
 if any(mode==0)
@@ -3056,7 +3056,7 @@ end
 %%% "-"-Key, "del"-Key or Delete menu: Deletes selected profile
 %%% "enter"-Key or Select menu: Makes selected profile current profile
 function Update_Profiles(obj,ed)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 %global PamMeta UserValues
 %% obj is empty, if function was called during initialization
 if isempty(obj)
@@ -3157,7 +3157,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_to_UserValues
 global UserValues
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 
 h.MT_Binning.String=UserValues.Settings.Pam.MT_Binning;
 h.MT_Time_Section.String=UserValues.Settings.Pam.MT_Time_Section;
@@ -3191,7 +3191,7 @@ Update_BurstGUI([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Cor_Table(obj,e)
 global UserValues
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 
 %%% Is executed, if one of the checkboxes was clicked
 if obj == h.Cor_Table
@@ -3239,7 +3239,7 @@ LSUserValues(1);
 %%% Function for correlating data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Correlate (~,~,mode)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 global UserValues TcspcData FileInfo PamMeta
 
 %%% Initializes matlabpool for paralell computation
@@ -3599,7 +3599,7 @@ LSUserValues(1);
 %%% Function to keep shift equal  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Phasor_Shift(obj,~)
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 if obj==h.MI_Phasor_Shift
     h.MI_Phasor_Slider.Value=str2double(h.MI_Phasor_Shift.String);
 elseif obj==h.MI_Phasor_Slider
@@ -3611,7 +3611,7 @@ Update_Display([],[],6);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_UseRef(~,~)
 global UserValues PamMeta
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 Det=h.MI_Phasor_Det.Value;
 %%% Sets reference to 0 in case of shorter MI length
 UserValues.Phasor.Reference(Det,:)=0;
@@ -3629,7 +3629,7 @@ LSUserValues(1)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_Calc(~,~)   
 global UserValues TcspcData FileInfo PamMeta
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference') 
     
     %%% Determines correct detector and routing
@@ -3763,7 +3763,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_BurstGUI(obj,~)
 global UserValues
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 if obj == h.BurstSearchSelection_Popupmenu %executed on change in Popupmenu
     %update the UserValues
     UserValues.BurstSearch.Method = obj.Value;
@@ -3833,7 +3833,7 @@ h.BurstParameter5_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstSearchParameterUpdate(obj,~)
 global UserValues
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 if obj == h.BurstPIE_Table %change in PIE channel selection
     UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method} = obj.Data;
 else %change in edit boxes
@@ -3848,7 +3848,7 @@ LSUserValues(1);
 function Do_BurstAnalysis(~,~)
 global FileInfo UserValues PamMeta
 %% Initialization
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
 clearvars -global BurstData
 global BurstData
@@ -4805,7 +4805,7 @@ h.NirFilter_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstSearch_Preview(obj,~)
 global FileInfo UserValues PamMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','Pam'));
 
 if obj ==  h.BurstSearchPreview_Button %%% recalculate the preview
     %%% Set Progress Bar
@@ -4986,7 +4986,7 @@ if obj ==  h.BurstSearchPreview_Button %%% recalculate the preview
             h.Plots.BurstPreview.SearchResult.Channel3(i) = plot(h.Burst_Axes, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch3(starttime(i):stoptime(i)),'ob');
         end
     end
-    guidata(gcf,h);
+    guidata(findobj('Tag','Pam'),h);
 else %%% < or > was pressed
     switch obj %%% determine if < or > was clicked
         case h.BurstSearchPreview_Forward_Button
@@ -5010,7 +5010,7 @@ Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SaveIRF(~,~)
 global UserValues PamMeta
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 %%% Save IRF pattern for Burstwise Lifetime Fitting
 for i=UserValues.Detector.Det
     UserValues.BurstSearch.IRF(i,1:numel(PamMeta.MI_Hist{i}))=PamMeta.MI_Hist{i};
@@ -5301,7 +5301,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calibrate_Detector(~,~,Det,Rout)
 global UserValues TcspcData PamMeta FileInfo
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 h.Progress_Text.String = 'Calculating detector calibration';
 h.Progress_Axes.Color=[1 0 0];
 drawnow;
@@ -5369,7 +5369,7 @@ h.Progress_Axes.Color=UserValues.Look.Control;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Det_Calib_Save(~,~)
 global UserValues PamMeta
-h=guidata(gcf);
+h=guidata(findobj('Tag','Pam'));
 Det=UserValues.Detector.Det(h.MI_Calib_Det.Value);
 Rout=UserValues.Detector.Rout(h.MI_Calib_Det.Value);
 if isfield(PamMeta.Det_Calib,'Shift')

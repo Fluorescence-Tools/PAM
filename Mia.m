@@ -1588,7 +1588,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions that executes upon closing of mia window %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Mia(~,~)
+function Close_Mia(Obj,~)
 clear global -regexp MIAData
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
@@ -1596,7 +1596,7 @@ Pam=findobj('Tag','Pam');
 if isempty(Phasor) && isempty(FCSFit) && isempty(Pam)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 
 
@@ -1605,7 +1605,7 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Load(~,~,mode)
 global MIAData UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 
 switch mode
     case 1 %%% Loads single color TIFFs
@@ -1750,7 +1750,7 @@ end
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(~,~,mode,channel)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
 
 h.Mia_Progress_Text.String = 'Updating plots';
@@ -2134,7 +2134,7 @@ h.Mia_Progress_Axes.Color=UserValues.Look.Control;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Frame(~,e,mode,channel)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 
 if size(MIAData.Data,1)>0
     %%% Determins slider in case of listener callback
@@ -2234,7 +2234,7 @@ Update_Plots([],[],1,mode);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_UseFrame(~,~,mode)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 if h.Mia_Image_Link.Value
     MIAData.Use(1,str2double(h.Mia_Frame(mode).String))=h.Mia_FrameUse(mode).Value;
     MIAData.Use(2,str2double(h.Mia_Frame(mode).String))=h.Mia_FrameUse(mode).Value;
@@ -2250,7 +2250,7 @@ h.Mia_Correlation_FramesUse.Value=2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Correct(~,~)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 h.Mia_Progress_Text.String = 'Applying Correction';
 h.Mia_Progress_Axes.Color=[1 0 0];  
 drawnow;
@@ -2358,7 +2358,7 @@ Update_Plots([],[],1,1:size(MIAData.Data,1))
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_ROI(~,e,mode)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 
 h.Mia_Progress_Text.String = 'Calculating ROI';
 h.Mia_Progress_Axes.Color=[1 0 0];  
@@ -2474,7 +2474,7 @@ end
 %%% Funtion to calculate correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_2D_XCor(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
 h.Mia_Progress_Text.String = 'Correlating';
 h.Mia_Progress_Axes.Color=[1 0 0];  
@@ -2894,7 +2894,7 @@ Update_Plots([],[],2,channel);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_RICS_Fit(~,~,mode)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 h.Mia_Progress_Text.String = 'Fitting correlation';
 h.Mia_Progress_Axes.Color=[1 0 0];  
 drawnow;
@@ -2957,7 +2957,7 @@ OUT=OUT./SEM;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
 function [OUT]=Calc_RICS_Fit(mode)
 global MIAData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 P=cellfun(@str2double,h.Mia_Cor_Fit_Table.Data(1:2:end,mode));
 Size=str2double(h.Mia_Cor_Size.String);
 
@@ -2980,7 +2980,7 @@ MIAData.Cor{mode,2}=reshape(OUT,[Size,Size]);
 %%% Funtion to calculate correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_NB(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 global MIAData
 
 h.Mia_Progress_Text.String = 'Calculating N&B';
@@ -3092,7 +3092,7 @@ Update_Plots([],[],3,channel);
 %%% Changes 2D histogram background color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function NB_2DHist_BG(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Mia'));
 h.Mia_NB_2DHist(3).BackgroundColor=1-h.Mia_NB_2DHist(3).BackgroundColor;
 h.Mia_NB_2DHist(3).ForegroundColor=1-h.Mia_NB_2DHist(3).ForegroundColor;
 Update_Plots([],[],3,1:3)

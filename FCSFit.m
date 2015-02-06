@@ -416,14 +416,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_FCSFit(~,~)
+function Close_FCSFit(Obj,~)
 clear global -regexp FCSData FCSMeta
 Phasor=findobj('Tag','Phasor');
 Pam=findobj('Tag','Pam');
 if isempty(Phasor) && isempty(Pam)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 
 
@@ -432,7 +432,7 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Cor(~,~,mode)
 global UserValues FCSData FCSMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 
 %%% Choose files to load
 [FileName,PathName,Type] = uigetfile({'*.mcor'; '.cor'}, 'Choose a referenced data file', UserValues.File.FCSPath, 'MultiSelect', 'on');
@@ -580,7 +580,7 @@ end
 %%% Function that updates fit table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Table(~,e,mode)
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData
 switch mode
     case 0
@@ -767,7 +767,7 @@ Update_Plots;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Style(~,e,mode) 
 global FCSMeta FCSData UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 LSUserValues(0);
 switch mode
     case 0
@@ -916,7 +916,7 @@ LSUserValues(1);
 %%% Function that updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData UserValues
 
 Min=str2double(h.Fit_Min.String);
@@ -1055,7 +1055,7 @@ h.Residuals_Axes.YLim=[RMin-0.1*abs(RMin) RMax+0.05*RMax+0.0001];
 %%% 2: Export to figure
 %%% 3: Export to Workspace
 function Plot_Menu_Callback(Obj,~,mode)
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData
 
 switch mode
@@ -1134,7 +1134,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_FCSFit(~,~)
 global FCSMeta UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 %%% Indicates fit in progress
 h.FCSFit.Name='FCS Fit  FITTING';
 h.Fit_Table.Enable='off';
@@ -1270,7 +1270,7 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{3}:    Indentifier of current file
 
 global FCSMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 
 x=Data{1};
 Weights=Data{2};
@@ -1297,7 +1297,7 @@ function [Out] = Fit_Global(Fit_Params,Data)
 %%% Data{3}:    Length indentifier for X and Weights data of each file
 
 global FCSMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','FCSFit'));
 
 X=Data{1};
 Weights=Data{2};
