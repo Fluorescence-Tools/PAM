@@ -1227,7 +1227,7 @@ else
     %%% calculate confidence intervals
     FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
     %%% Updates parameters
-    FCSMeta.Params(Global,:)=Fitted_Params(1:sum(Global));
+    FCSMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(FCSMeta.Params,2)]) ;
     Fitted_Params(1:sum(Global))=[];
     for i=find(Active)'
         FCSMeta.Params(~Fixed(i,:) & ~Global,i)=Fitted_Params(1:sum(~Fixed(i,:) & ~Global)); 
