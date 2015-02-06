@@ -569,10 +569,16 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display was incomplete');    
     end
     
-    %%% Checks, if BurstBrowser.Display.NumberOfBins subfield exists
-    if ~isfield (S.BurstBrowser.Display,'NumberOfBins')
-        S.BurstBrowser.Display.NumberOfBins=50;
-        disp('UserValues.BurstBrowser.Display.NumberOfBins was incomplete');    
+    %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
+    if ~isfield (S.BurstBrowser.Display,'NumberOfBinsX')
+        S.BurstBrowser.Display.NumberOfBinsX=50;
+        disp('UserValues.BurstBrowser.Display.NumberOfBinsX was incomplete');    
+    end
+    
+    %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
+    if ~isfield (S.BurstBrowser.Display,'NumberOfBinsY')
+        S.BurstBrowser.Display.NumberOfBinsY=50;
+        disp('UserValues.BurstBrowser.Display.NumberOfBinsY was incomplete');    
     end
     
     %%% Checks, if BurstBrowser.Display.PlotType subfield exists

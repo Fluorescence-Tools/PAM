@@ -549,7 +549,7 @@ guidata(gcf,h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(~,~)
 global UserValues TauFitData PamMeta FileInfo
-h = guidata(gcf);
+h = guidata(findobj('Tag','TauFit'));
 %%% find the number of the selected PIE channels
 PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
 PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
@@ -576,7 +576,7 @@ h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([T
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~)
 global UserValues TauFitData PamMeta FileInfo
-h = guidata(gcf);
+h = guidata(findobj('Tag','TauFit'));
 
 %%% Cases to consider:
 %%% obj is empty or is Button for LoadData/LoadIRF
@@ -958,7 +958,7 @@ hIRF_Per = hIRF_Per(UserValues.PIE.From(PIEChannel2):UserValues.PIE.To(PIEChanne
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Channel_Selection(obj,~)
 global UserValues
-h = guidata(gcf);
+h = guidata(findobj('Tag','TauFit'));
 %%% Update the Channel Selection in UserValues
 UserValues.TauFit.PIEChannelSelection{1} = UserValues.PIE.Name{h.PIEChannelPar_Popupmenu.Value};
 UserValues.TauFit.PIEChannelSelection{2} = UserValues.PIE.Name{h.PIEChannelPer_Popupmenu.Value};

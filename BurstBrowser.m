@@ -4,7 +4,6 @@ hfig=findobj('Name','BurstBrowser');
 global UserValues BurstMeta
 LSUserValues(0);
 Look=UserValues.Look;
-
 if isempty(hfig)
     %% define main window
     h.BurstBrowser = figure(...
@@ -648,15 +647,15 @@ if isempty(hfig)
     %%% Specify the Number of Bins
     uicontrol('Style','text',...
         'Parent',h.DisplayOptionsPanel,...
-        'String','Number of Bins',...
-        'Tag','Text_Number_of_Bins',...
+        'String','Number of Bins X',...
+        'Tag','Text_Number_of_BinsX',...
         'Units','normalized',...
         'Position',[0 0.85 0.4 0.07],...
         'FontSize',14,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    h.NumberOfBinsEdit = uicontrol(...
+    h.NumberOfBinsXEdit = uicontrol(...
         'Style','edit',...
         'Parent',h.DisplayOptionsPanel,...
         'BackgroundColor', Look.Control,...
@@ -665,7 +664,30 @@ if isempty(hfig)
         'Position',[0.4 0.85 0.2 0.07],...
         'FontSize',14,...
         'Tag','NumberOfBinsEdit',...
-        'String',UserValues.BurstBrowser.Display.NumberOfBins,...
+        'String',UserValues.BurstBrowser.Display.NumberOfBinsX,...
+        'Callback',@UpdatePlot...
+        );
+    
+    uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Number of Bins Y',...
+        'Tag','Text_Number_of_BinsY',...
+        'Units','normalized',...
+        'Position',[0 0.78 0.4 0.07],...
+        'FontSize',14,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+    h.NumberOfBinsYEdit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.4 0.78 0.2 0.07],...
+        'FontSize',14,...
+        'Tag','NumberOfBinsEdit',...
+        'String',UserValues.BurstBrowser.Display.NumberOfBinsY,...
         'Callback',@UpdatePlot...
         );
     
@@ -675,7 +697,7 @@ if isempty(hfig)
         'String','Plot Type',...
         'Tag','Text_Plot_Type',...
         'Units','normalized',...
-        'Position',[0 0.75 0.4 0.07],...
+        'Position',[0 0.68 0.4 0.07],...
         'FontSize',14,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -687,7 +709,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Axes,...
         'ForegroundColor', Look.Disabled,...
         'Units','normalized',...
-        'Position',[0.4 0.75 0.2 0.07],...
+        'Position',[0.4 0.68 0.2 0.07],...
         'FontSize',14,...
         'Tag','PlotTypePopupmenu',...
         'String',PlotType_String,...
@@ -701,7 +723,7 @@ if isempty(hfig)
         'String','Colormap',...
         'Tag','Text_ColorMap',...
         'Units','normalized',...
-        'Position',[0 0.65 0.4 0.07],...
+        'Position',[0 0.58 0.4 0.07],...
         'FontSize',14,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -713,7 +735,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Axes,...
         'ForegroundColor', Look.Disabled,...
         'Units','normalized',...
-        'Position',[0.4 0.65 0.2 0.07],...
+        'Position',[0.4 0.58 0.2 0.07],...
         'FontSize',14,...
         'Tag','ColorMapPopupmenu',...
         'String',Colormaps_String,...
@@ -1331,27 +1353,35 @@ end
 function UpdatePlot(obj,~)
 %% Preparation
 global BurstData UserValues BurstMeta  
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
+h = guidata(findobj('Tag','BurstBrowser'));
 LSUserValues(0);
 if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
     %%% Change focus to GeneralTab
     h.Main_Tab.SelectedTab = h.Main_Tab_General;
 end
 %%% If a display option was changed, update the UserValues!
-if obj == h.NumberOfBinsEdit
-    nbins = str2double(h.NumberOfBinsEdit.String);
-    if ~isnan(nbins)
-        if nbins > 0
-            UserValues.BurstBrowser.Display.NumberOfBins = nbins;
+if obj == h.NumberOfBinsXEdit
+    nbinsX = str2double(h.NumberOfBinsXEdit.String);
+    if ~isnan(nbinsX)
+        if nbinsX > 0
+            UserValues.BurstBrowser.Display.NumberOfBinsX = nbinsX;
         else
-            h.NumberOfBinsEdit.String = UserValues.BurstBrowser.Display.NumberOfBins;
+            h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
         end
     else
-        h.NumberOfBinsEdit.String = UserValues.BurstBrowser.Display.NumberOfBins;
+        h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
+    end
+end
+if obj == h.NumberOfBinsYEdit
+    nbinsY = str2double(h.NumberOfBinsYEdit.String);
+    if ~isnan(nbinsY)
+        if nbinsY > 0
+            UserValues.BurstBrowser.Display.NumberOfBinsY = nbinsY;
+        else
+            h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
+        end
+    else
+        h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
     end
 end
 
@@ -1364,7 +1394,8 @@ x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 
 %%% Read out the Number of Bins
-nbins = UserValues.BurstBrowser.Display.NumberOfBins + 1;
+nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
+nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
 %% Update Plot
 %%% Disable/Enable respective plots
@@ -1384,7 +1415,7 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 datatoplot = BurstData.DataCut;
 
-[H, xbins,ybins,xbins_1d, ybins_1d] = calc2dhist(datatoplot(:,x),datatoplot(:,y),nbins);
+[H, xbins,ybins,xbins_1d, ybins_1d] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
 
 %%% Update Image Plot and Contour Plot
 BurstMeta.Plots.Main_Plot(1).XData = xbins;
@@ -1461,7 +1492,7 @@ end
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MultiPlot(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','BurstBrowser'));
 global BurstData UserValues BurstMeta
 
 x = get(h.ParameterListX,'Value');
@@ -1853,7 +1884,7 @@ NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_correct
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-[H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,51,[0 1], [min(1./S_raw) max(1./S_raw)]);
+[H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [min(1./S_raw) max(1./S_raw)]);
 BurstMeta.Plots.gamma_fit(1).XData= xbins;
 BurstMeta.Plots.gamma_fit(1).YData= ybins;
 BurstMeta.Plots.gamma_fit(1).CData= H;
@@ -1940,13 +1971,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates GUI elements in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_fFCS_GUI(obj,~)
+function Update_fFCS_GUI(~,~)
 global BurstData
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
+h = guidata(findobj('Tag','BurstBrowser'));
 
 if numel(BurstData.SpeciesNames) > 1
     h.fFCS_Species1_popupmenu.String = BurstData.SpeciesNames(2:end);
@@ -2164,14 +2191,11 @@ axis(h.axes_fFCS_ReconstructionPerpResiduals,'tight');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Does fFCS Correlation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_fFCS(obj,~)
+function Do_fFCS(~,~)
 global BurstMeta BurstData
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
-
+h = guidata(findobj('Tag','BurstBrowser'));
+%%% Set Up Progress Bar
+h_waitbar = waitbar(0,'Correlating...');
 %%% define channels
 Name = BurstMeta.fFCS.Names;
 CorrMat = true(2);
@@ -2187,6 +2211,7 @@ filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 %%% Split Data in 10 time bins for errorbar calculation
 Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
+count = 0;
 for i=1:NumChans
     for j=1:NumChans
         if CorrMat(i,j)
@@ -2241,18 +2266,19 @@ for i=1:NumChans
             Counts = [numel(MT_par) numel(MT_perp)]/(BurstData.SyncPeriod*max([MT_par;MT_perp]))/1000;
             Valid = 1:10;
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-                    
+            count = count +1;waitbar(count/4);
         end 
     end
 end
+delete(h_waitbar);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCorrections(obj,~)
 global UserValues
-
+h = guidata(findobj('Tag','BurstBrowser'));
 if isempty(obj) %%% Just change the data to what is stored in UserValues
-    h = guidata(gcf);
     h.CorrectionsTable.Data = {UserValues.BurstBrowser.Corrections.Gamma_GR;...
         UserValues.BurstBrowser.Corrections.CrossTalk_GR;...
         UserValues.BurstBrowser.Corrections.DirectExcitation_GR;...
@@ -2267,7 +2293,6 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         UserValues.BurstBrowser.Corrections.l1;...
         UserValues.BurstBrowser.Corrections.l2};
 else %%% Update UserValues with new values
-    h = guidata(obj);
     LSUserValues(0);
     switch obj
         case h.CorrectionsTable
@@ -2409,9 +2434,9 @@ UpdateLifetimePlots([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineGammaManually(~,~)
 global UserValues BurstMeta
-h = guidata(gcf);
+h = guidata(findobj('Tag','BurstBrowser'));
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
-[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,51, [0 1], [0 1]);
+[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
 BurstMeta.Plots.gamma_fit(1).XData = xbins;
 BurstMeta.Plots.gamma_fit(1).YData = ybins;
 BurstMeta.Plots.gamma_fit(1).CData = H;
@@ -2457,13 +2482,9 @@ save(BurstData.FileName,'BurstData');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateLifetimePlots(obj,~)
+function UpdateLifetimePlots(~,~)
 global BurstData BurstMeta
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
+h = guidata(findobj('Tag','BurstBrowser'));
 
 if isempty(BurstData)
     return;
@@ -2479,7 +2500,7 @@ idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = strcmp('Efficiency',BurstData.NameArray);
 %% Plot E vs. tauGG in first plot
 %%% Check, whether a static FRET line already existed
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),51, [0 5], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 5], [0 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -2495,7 +2516,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),51, [0 6], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[51 51], [0 6], [0 1]);
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -2507,7 +2528,7 @@ BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(0.1,1,10);
 ylim(h.axes_EvsTauRR,[0 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),51, [0 5], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[51 51], [0 5], [-0.1 0.5]);
 BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -2518,7 +2539,7 @@ BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),51, [0 6], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 6], [-0.1 0.5]);
 BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -2533,11 +2554,7 @@ axis(h.axes_rRRvsTauRR,'tight');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimeFits(obj,~)
 global BurstData UserValues BurstMeta
-if ~isempty(obj)
-    h = guidata(obj);
-else
-    h = guidata(gcf);
-end
+h = guidata(findobj('Tag','BurstBrowser'));
 %%% Use the current cut Data (of the selected species) for plots
 datatoplot = BurstData.DataCut;
 %%% read out the indices of the parameters to plot
@@ -2796,7 +2813,7 @@ dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_correc
 gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
 E =  NGR./(gamma_fit.*NGG+NGR);
 %%% plot E versus tau with static FRET line
-[H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,51,[0 5],[-0.1 1]);
+[H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 5],[-0.1 1]);
 BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
 BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
 BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -2826,13 +2843,17 @@ ApplyCorrections;
 function Correlate_Bursts(obj,~)
 global BurstData BurstTCSPCData
 h = guidata(obj);
+%%% Set Up Progress Bar
+h_waitbar = waitbar(0,'Correlating...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
+    waitbar(0,h_waitbar,'Loading Photon Data');
     load('-mat',[BurstData.FileName(1:end-3) 'bps']);
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
+    waitbar(0,h_waitbar,'Correlating');
 end
 %%% find selected bursts
 MT = BurstTCSPCData.Macrotime(BurstData.Selected);
@@ -2840,11 +2861,19 @@ MT = vertcat(MT{:});
 CH = BurstTCSPCData.Channel(BurstData.Selected);
 CH = vertcat(CH{:});
 
+%%% Read out the species name
+if (BurstData.SelectedSpecies == 1)
+    species = 'global';
+else
+    species = BurstData.SpeciesNames{BurstData.SelectedSpecies};
+end
 %%% define channels
 Chan = {1,2,3,4,5,6,[1 2],[3 4],[1 2 3 4],[5 6]};
 Name = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','RR'};
 CorrMat = h.Correlation_Table.Data;
 NumChans = size(CorrMat,1);
+NCor = sum(sum(CorrMat));
+count = 0;
 for i=1:NumChans
     for j=1:NumChans
         if CorrMat(i,j)
@@ -2880,7 +2909,7 @@ for i=1:NumChans
             end
             %%% Save the correlation file
             %%% Generates filename
-            Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+            Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
             %%% Checks, if file already exists
             if  exist(Current_FileName,'file')
                 k=1;
@@ -2897,10 +2926,11 @@ for i=1:NumChans
             Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
             Valid = 1:10;
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-                    
+            count = count+1;waitbar(count/NCor);
         end 
     end
 end
+delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2915,7 +2945,8 @@ if nargin <2
 end
 %%% if number of bins is not specified, read from UserValues struct
 if nargin < 3
-    nbins = UserValues.BurstBrowser.Display.NumberOfBins;
+    nbins = [UserValues.BurstBrowser.Display.NumberOfBinsX,...
+        UserValues.BurstBrowser.Display.NumberOfBinsY];
 end
 %%% if no limits are specified, set limits to min-max
 if nargin < 5
@@ -2926,7 +2957,7 @@ end
 if nargin == 6
     axes(haxes);
 end
-[H, xbins_hist, ybins_hist] = hist2d([x y], nbins, nbins, limx, limy);
+[H, xbins_hist, ybins_hist] = hist2d([x y], nbins(1), nbins(2), limx, limy);
 H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
 H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
 xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
