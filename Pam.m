@@ -4217,7 +4217,7 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     
     ix=cellfun('isempty',Duration_per_Color);
     Duration_per_Color(ix)={nan};
-    Duration_per_Color = cell2mat(Duration_per_Color)/TcspcData.Header.SyncRate/1E-3;
+    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.SyncPeriod/1E-3;
     
     %Determine TGG-TGR and TGX-TRR
     TGG_TGR = abs(Mean_Macrotime_per_Color(:,4)-Mean_Macrotime_per_Color(:,5));
@@ -4398,13 +4398,13 @@ elseif any(BAMethod == [3 4])
             'Proximity Ratio GR','Proximity Ratio BG','Proximity Ratio BR',...
             'Stoichiometry GR (raw)','Stoichiometry BG (raw)','Stoichiometry BR (raw)',...
             'Lifetime BB [ns]','Lifetime GG [ns]','Lifetime RR [ns]',...
-            'Anisotropy BB''Anisotropy GG','Anisotropy RR',...
+            'Anisotropy BB','Anisotropy GG','Anisotropy RR',...
             '|TBX-TGX| Filter','|TBX-TRR| Filter','|TGX-TRR| Filter',...
             'ALEX 2CDE BG Filter','ALEX 2CDE BR Filter','ALEX 2CDE GR Filter',...
             '|TBB-TBG| Filter','|TBB-TBR| Filter','|TGG-TGR| Filter',...
             'FRET 2CDE BG Filter','FRET 2CDE BR Filter','FRET 2CDE GR Filter',...
             'Duration [ms]',...
-            'Mean Macrotime [ms]',...
+            'Mean Macrotime [s]',...
             'Number of Photons',...
             'Countrate [kHz]',...
             'Countrate (BB) [kHz]',...
@@ -4774,28 +4774,31 @@ if any(BurstData.BAMethod == [1,2]) %2 Color Data
     toc
     idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
     idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
-    
-elseif any(Data.BAMethod == [3,4]) %3 Color Data
+    BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
+    BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
     FRET_2CDE = zeros(numel(Macrotime),3);
     ALEX_2CDE = zeros(numel(Macrotime),3);
     
-    tau = tau_2CDE*1E-6*Data.SyncRate;
+    tau = tau_2CDE*1E-6/BurstData.SyncPeriod;
     
     %%% Split into 10 parts to display progress
     parts = (floor(linspace(1,numel(Macrotime),11)));
     tic
     for j = 1:10
+        Progress((j-1)/10,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
         parfor i = parts(j):parts(j+1)
-            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau);
+            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
         end
     end
+    Progress(1,h.Progress_Axes, h.Progress_Text,'Calculating 2CDE Filter...');
     toc
     
-    idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
-    idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
+    idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
+    idx_FRET2CDE = find(strcmp('FRET 2CDE BG Filter',BurstData.NameArray));
+    BurstData.DataArray(:,idx_ALEX2CDE:(idx_ALEX2CDE+2)) = ALEX_2CDE;
+    BurstData.DataArray(:,idx_FRET2CDE:(idx_FRET2CDE+2)) = FRET_2CDE;
 end
-BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
-BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
 
 save(BurstData.FileName,'BurstData');
 Update_Display([],[],1);
@@ -5017,25 +5020,64 @@ for i=UserValues.Detector.Det
 end
 
 BAMethod = UserValues.BurstSearch.Method;
-UserValues.BurstBrowser.Corrections.Background_GGpar = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
-UserValues.BurstBrowser.Corrections.Background_GGperp = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
-UserValues.BurstBrowser.Corrections.Background_GRpar = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
-UserValues.BurstBrowser.Corrections.Background_GRperp = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
-UserValues.BurstBrowser.Corrections.Background_RRpar = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
-UserValues.BurstBrowser.Corrections.Background_RRperp = ...
-    PamMeta.Info{...
-    (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
-
+switch BAMethod
+    case {1,2}
+        UserValues.BurstBrowser.Corrections.Background_GGpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GGperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GRpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GRperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_RRpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_RRperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
+    case {3,4}
+        UserValues.BurstBrowser.Corrections.Background_BBpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_BBperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_BGpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_BGperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_BRpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_BRperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GGpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GGperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GRpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_GRperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_RRpar = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}))}(4);
+        UserValues.BurstBrowser.Corrections.Background_RRperp = ...
+            PamMeta.Info{...
+            (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}))}(4);
+end
 LSUserValues(1);
 h.SaveIRF_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5043,6 +5085,7 @@ h.SaveIRF_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstLifetime(~,~)
 global UserValues BurstData TauFitBurstData
+h = guidata(findobj('Tag','Pam'));
 %% Prepare the data for lifetime fitting
 h.Progress_Text.String = 'Preparing Data for Lifetime Fit...';
 %%% Load associated Macro- and Microtimes from *.bps file
@@ -5068,10 +5111,6 @@ switch BurstData.BAMethod
         RRpar = histc(Microtime(Channel == 5), (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)));
         RRperp = histc(Microtime(Channel == 6), (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)));
         
-        GGpar = histc(Microtime(Channel == 1), (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)));
-        GGperp = histc(Microtime(Channel == 2), (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)));
-        RRpar = histc(Microtime(Channel == 5), (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)));
-        RRperp = histc(Microtime(Channel == 6), (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)));
         %%% Store Histograms in TauFitBurstData
         TauFitBurstData.hMI_Par{1} = GGpar;
         TauFitBurstData.hMI_Per{1} = GGperp;
@@ -5097,6 +5136,57 @@ switch BurstData.BAMethod
         TauFitBurstData.XData_Per{1} = (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)) - UserValues.PIE.From(idx_GGperp);
         TauFitBurstData.XData_Par{2} = (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)) - UserValues.PIE.From(idx_RRpar);
         TauFitBurstData.XData_Per{2} = (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)) - UserValues.PIE.From(idx_RRperp);
+    case {3,4} %%% Three-color MFD
+        %%% Read out the indices of the PIE channels
+        idx_BBpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
+        idx_BBperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
+        idx_GGpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1},UserValues.PIE.Name));
+        idx_GGperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2},UserValues.PIE.Name));
+        idx_RRpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1},UserValues.PIE.Name));
+        idx_RRperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2},UserValues.PIE.Name));
+        
+        max_MIBins = size(UserValues.BurstSearch.IRF,2);
+        %%% Calculate the MI histograms
+        BBpar = histc(Microtime(Channel == 1), (UserValues.PIE.From(idx_BBpar):min([UserValues.PIE.To(idx_BBpar) max_MIBins])));
+        BBperp = histc(Microtime(Channel == 2), (UserValues.PIE.From(idx_BBperp):min([UserValues.PIE.To(idx_BBperp) max_MIBins])));
+        GGpar = histc(Microtime(Channel == 7), (UserValues.PIE.From(idx_GGpar):min([UserValues.PIE.To(idx_GGpar) max_MIBins])));
+        GGperp = histc(Microtime(Channel == 8), (UserValues.PIE.From(idx_GGperp):min([UserValues.PIE.To(idx_GGperp) max_MIBins])));
+        RRpar = histc(Microtime(Channel == 11), (UserValues.PIE.From(idx_RRpar):min([UserValues.PIE.To(idx_RRpar) max_MIBins])));
+        RRperp = histc(Microtime(Channel == 12), (UserValues.PIE.From(idx_RRperp):min([UserValues.PIE.To(idx_RRperp) max_MIBins])));
+        
+        %%% Store Histograms in TauFitBurstData
+        TauFitBurstData.hMI_Par{1} = BBpar;
+        TauFitBurstData.hMI_Per{1} = BBperp;
+        TauFitBurstData.hMI_Par{2} = GGpar;
+        TauFitBurstData.hMI_Per{2} = GGperp;
+        TauFitBurstData.hMI_Par{3} = RRpar;
+        TauFitBurstData.hMI_Per{3} = RRperp;
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        hIRF_BBpar = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_BBpar),UserValues.PIE.From(idx_BBpar):min([UserValues.PIE.To(idx_BBpar) max_MIBins]));
+        hIRF_BBperp = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_BBperp),UserValues.PIE.From(idx_BBperp):min([UserValues.PIE.To(idx_BBperp) max_MIBins]));
+        hIRF_GGpar = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_GGpar),UserValues.PIE.From(idx_GGpar):min([UserValues.PIE.To(idx_GGpar) max_MIBins]));
+        hIRF_GGperp = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_GGperp),UserValues.PIE.From(idx_GGperp):min([UserValues.PIE.To(idx_GGperp) max_MIBins]));
+        hIRF_RRpar = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_RRpar),UserValues.PIE.From(idx_RRpar):min([UserValues.PIE.To(idx_RRpar) max_MIBins]));
+        hIRF_RRperp = UserValues.BurstSearch.IRF(UserValues.PIE.Detector(idx_RRperp),UserValues.PIE.From(idx_RRperp):min([UserValues.PIE.To(idx_RRperp) max_MIBins]));
+        
+        TauFitBurstData.hIRF_Par{1} = hIRF_BBpar;
+        TauFitBurstData.hIRF_Par{2} = hIRF_GGpar;
+        TauFitBurstData.hIRF_Par{3} = hIRF_RRpar;
+        TauFitBurstData.hIRF_Per{1} = hIRF_BBperp;
+        TauFitBurstData.hIRF_Per{2} = hIRF_GGperp;
+        TauFitBurstData.hIRF_Per{3} = hIRF_RRperp;
+        %%% Normalize IRF for better Visibility
+        for i = 1:3
+            TauFitBurstData.hIRF_Par{i} = (TauFitBurstData.hIRF_Par{i}./max(TauFitBurstData.hIRF_Par{i})).*max(TauFitBurstData.hMI_Par{i});
+            TauFitBurstData.hIRF_Per{i} = (TauFitBurstData.hIRF_Per{i}./max(TauFitBurstData.hIRF_Per{i})).*max(TauFitBurstData.hMI_Per{i});
+        end
+        %%% Generate XData
+        TauFitBurstData.XData_Par{1} = (UserValues.PIE.From(idx_BBpar):UserValues.PIE.To(idx_BBpar)) - UserValues.PIE.From(idx_BBpar);
+        TauFitBurstData.XData_Per{1} = (UserValues.PIE.From(idx_BBperp):UserValues.PIE.To(idx_BBperp)) - UserValues.PIE.From(idx_BBperp);
+        TauFitBurstData.XData_Par{2} = (UserValues.PIE.From(idx_GGpar):UserValues.PIE.To(idx_GGpar)) - UserValues.PIE.From(idx_GGpar);
+        TauFitBurstData.XData_Per{2} = (UserValues.PIE.From(idx_GGperp):UserValues.PIE.To(idx_GGperp)) - UserValues.PIE.From(idx_GGperp);
+        TauFitBurstData.XData_Par{3} = (UserValues.PIE.From(idx_RRpar):UserValues.PIE.To(idx_RRpar)) - UserValues.PIE.From(idx_RRpar);
+        TauFitBurstData.XData_Per{3} = (UserValues.PIE.From(idx_RRperp):UserValues.PIE.To(idx_RRperp)) - UserValues.PIE.From(idx_RRperp);
 end
 %%% Read out relevant parameters
 TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/BurstData.FileInfo.MI_Bins;

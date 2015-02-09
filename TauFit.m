@@ -995,23 +995,6 @@ function Start_Fit(obj,~)
 global TauFitData FileInfo
 h = guidata(obj);
 %% Read out the data from the plots
-% xmin_decay = max([1 h.Plots.Decay_Par.XData(1) h.Plots.Decay_Per.XData(1)]);
-% xmax_decay = min([h.Plots.Decay_Par.XData(end) h.Plots.Decay_Per.XData(end)]);
-% TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
-% TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
-% %%% read out the scatter pattern (i.e. the total IRF without
-% %%% restricting the IRF length)
-% TauFitData.FitData.Scatter_Par = circshift(TauFitData.hIRF_Par,[0, -TauFitData.IRFShift]);
-% TauFitData.FitData.Scatter_Par = TauFitData.FitData.Scatter_Par((h.Plots.Decay_Par.XData >= xmin_decay) & (h.Plots.Decay_Par.XData <= xmax_decay));
-% TauFitData.FitData.Scatter_Per = circshift(TauFitData.hIRF_Per,[0, -(TauFitData.IRFShift + TauFitData.ShiftPer)]);
-% TauFitData.FitData.Scatter_Per = TauFitData.FitData.Scatter_Per((h.Plots.Decay_Per.XData >= xmin_decay) & (h.Plots.Decay_Per.XData <= xmax_decay));
-% 
-% xmin_irf = max([1 h.Plots.IRF_Par.XData(1) h.Plots.IRF_Per.XData(1)]);
-% xmax_irf = min([h.Plots.IRF_Par.XData(end) h.Plots.IRF_Per.XData(end)]);
-% TauFitData.FitData.IRF_Par = zeros(1,numel(TauFitData.FitData.Scatter_Par));
-% TauFitData.FitData.IRF_Par((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay+1)) = h.Plots.IRF_Par.YData((h.Plots.IRF_Par.XData >= xmin_irf & h.Plots.IRF_Par.XData <= xmax_irf & h.Plots.IRF_Par.XData >= xmin_decay & h.Plots.IRF_Par.XData <= xmax_decay));
-% TauFitData.FitData.IRF_Per = zeros(1,numel(TauFitData.FitData.Scatter_Per));
-% TauFitData.FitData.IRF_Per((xmin_irf-xmin_decay+1):(xmax_irf-xmin_decay)) = h.Plots.IRF_Per.YData((h.Plots.IRF_Per.XData >= xmin_irf & h.Plots.IRF_Per.XData <= xmax_irf & h.Plots.IRF_Per.XData >= xmin_decay & h.Plots.IRF_Per.XData <= xmax_decay));
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Par.YData;
 TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
@@ -1043,7 +1026,7 @@ switch TauFitData.FitType
         x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
         lb = [0 0 0];
         ub = [1 1 Inf];
-        shift_range = -5:5;
+        shift_range = -0:0;
         ignore = 100;
         %%% fit for different IRF offsets and compare the results
         count = 1;
@@ -1067,8 +1050,8 @@ switch TauFitData.FitType
         x0 = [0.5, 0.1,0.1,round(2/TauFitData.TACChannelWidth),round(4/TauFitData.TACChannelWidth)];
         lb = [0 0 0 round(0.5/TauFitData.TACChannelWidth) round(2/TauFitData.TACChannelWidth)];
         ub = [1 1 1 Inf Inf];
-        shift_range = 0:0;
-        ignore = 50;
+        shift_range = -10:10;
+        ignore = 100;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         options = optimoptions('lsqcurvefit','MaxFunEvals',1000);
@@ -1101,7 +1084,10 @@ h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
 disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(3))]);
-
+disp(num2str(shift_range(best_fit)));
+disp(num2str(x{best_fit}(1)));
+disp(num2str(x{best_fit}(2)));
+disp(num2str(chi2(best_fit)));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
