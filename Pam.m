@@ -1285,6 +1285,14 @@ end
         'Callback',@Do_BurstAnalysis,...
         'Position',[0.75 0.92 0.24 0.07],...
         'TooltipString',sprintf('Start Burst Analysis'));   
+    %%% Right-click menu for Burst_Button to allow loading of performed
+    %%% BurstSearches for posterior Lifetime (re-)fitting and NirFilter
+    %%% (re-)calculation
+    h.Burst_Button_Menu = uicontextmenu;
+    h.Burst_Button_Menu_LoadData = uimenu(h.Burst_Button_Menu,...
+            'Label','Load Performed BurstSearch',...
+            'Callback',@Load_Performed_BurstSearch);
+    h.Burst_Button.UIContextMenu = h.Burst_Button_Menu;
     %%% Button to start burstwise Lifetime Fitting
     h.BurstLifetime_Button = uicontrol(...
         'Parent',h.Burst_Panel,...
@@ -4584,6 +4592,66 @@ h.BurstLifetime_Button.Enable = 'on';
 h.BurstLifetime_Button.ForegroundColor = [1 0 0];
 h.NirFilter_Button.Enable = 'on';
 h.NirFilter_Button.ForegroundColor = [1 0 0];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Loads a performed BurstSearch for further/re-analysis  %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Load_Performed_BurstSearch(obj,~)
+clearvars -global BurstData BurstTCSPCData
+global BurstData UserValues
+h = guidata(obj);
+[FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+
+if FileName == 0
+    return;
+end
+UserValues.File.BurstBrowserPath=PathName;
+LSUserValues(1);
+load('-mat',fullfile(PathName,FileName));
+
+Update_Display([],[],1);
+%%% set the text of the BurstSearch Button to green color to indicate that
+%%% a burst search has been done
+h.Burst_Button.ForegroundColor = [0 1 0];
+%%% Enable Lifetime and 2CDE Button
+h.BurstLifetime_Button.Enable = 'on';
+%%% Check if lifetime has been fit already
+if any(BurstData.BAMethod == [1,2])
+    if (sum(BurstData.DataArray(:,strcmp('Lifetime GG [ns]',BurstData.NameArray))) == 0 )
+        %%% no lifetime fit
+        h.BurstLifetime_Button.ForegroundColor = [1 0 0];
+    else
+        %%% lifetime was fit
+        h.BurstLifetime_Button.ForegroundColor = [0 1 0];
+    end
+elseif any(BurstData.BAMethod == [3,4])
+    if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
+        %%% no lifetime fit
+        h.BurstLifetime_Button.ForegroundColor = [1 0 0];
+    else
+        %%% lifetime was fit
+        h.BurstLifetime_Button.ForegroundColor = [0 1 0];
+    end
+end
+
+h.NirFilter_Button.Enable = 'on';
+%%% Check if NirFilter was calculated before
+if any(BurstData.BAMethod == [1,2])
+    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE',BurstData.NameArray))) == 0 )
+        %%% no lifetime fit
+        h.NirFilter_Button.ForegroundColor = [1 0 0];
+    else
+        %%% lifetime was fit
+        h.NirFilter_Button.ForegroundColor = [0 1 0];
+    end
+elseif any(BurstData.BAMethod == [3,4])
+    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR',BurstData.NameArray))) == 0 )
+        %%% no filter
+        h.NirFilter_Button.ForegroundColor = [1 0 0];
+    else
+        %%% filter was calculated
+        h.NirFilter_Button.ForegroundColor = [0 1 0];
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5191,7 +5259,8 @@ end
 %%% Read out relevant parameters
 TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/BurstData.FileInfo.MI_Bins;
 TauFitBurstData.BAMethod = BurstData.BAMethod;
-
+TauFitBurstData.SyncPeriod = BurstData.SyncPeriod;
+TauFitBurstData.MI_Bins = double(BurstData.FileInfo.MI_Bins);
 TauFitBurst();
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%
