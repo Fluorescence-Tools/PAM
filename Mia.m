@@ -879,7 +879,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.02 0.22, 0.64 0.06],...
-            'String',{'Do not save','Save as .cor2','Save as TIFF'});
+            'String',{'Do not save','Save as .miacor','Save as TIFF'});
         
             %% Perform N&B calculation tab
         %%% Tab and panel for perform correlation UIs
@@ -2656,16 +2656,24 @@ for i=Auto
             %%% Actual correlation
             MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(ImageFluct.*conj(ImageFluct))))/(mean(Image(Use{i}(:,:,j)))^2);
             %%% Corrects for shape of selected region
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=MIAData.Cor{floor(i*1.5)}(:,:,j)./Norm;            
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=MIAData.Cor{floor(i*1.5)}(:,:,j)./Norm;
+            %%% Used to calculate total mean
+            TotalInt(j)=sum(Image(Use{i}(:,:,j)));
+            TotalPx(j)=numel(Image(Use{i}(:,:,j)));
         else %%% Standard ICS
             %%% Actual correlation            
             Image_FFT=fft2(Image);
+            %%% Used to calculate total mean
+            TotalInt(j)=sum(sum((Image)));
+            TotalPx(j)=numel(Image);
             MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
         end
         %%% Center point is average of x neighbors to remove noise peak
         center=[floor(size(MIAData.Cor{floor(i*1.5)},1)/2)+1,floor(size(MIAData.Cor{floor(i*1.5)},2)/2)+1];
         MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;        
     end
+    %%% Calculates mean intensity for saving
+    MeanInt(i)=sum(TotalInt(j))/sum(TotalPx(j));
     clear Image ImageFluct;
 end
 %%% Performs crosscorrelation
@@ -2726,7 +2734,7 @@ end
 
 %%% Saves correlation files
 switch h.Mia_Correlation_Save.Value
-    case 2 %%% .cor2 filetype
+    case 2 %%% .miacor filetype
         %% Creates new filename
         %%% Removes file extension
         switch MIAData.Type
@@ -2734,23 +2742,22 @@ switch h.Mia_Correlation_Save.Value
                 FileName=MIAData.FileName{1}{1}(1:end-4);
         end
         %%% Generates filename
-        Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1 .cor2']);
-        Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2 .cor2']);
-        Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF .cor2']);
+        Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.miacor']);
+        Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.miacor']);
+        Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.miacor']);
         %%% Checks, if file already exists and create new filename
         if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
             k=1;
             %%% Adds 1 to filename
-            Current_FileName1=[Current_FileName1(1:end-5) num2str(k) '.cor2'];
-            Current_FileName2=[Current_FileName2(1:end-5) num2str(k) '.cor2'];
-            Current_FileName3=[Current_FileName3(1:end-5) num2str(k) '.cor2'];
+            Current_FileName1=[Current_FileName1(1:end-7) '_' num2str(k) '.miacor'];
+            Current_FileName2=[Current_FileName2(1:end-7) '_' num2str(k) '.miacor'];
+            Current_FileName3=[Current_FileName3(1:end-7) '_' num2str(k) '.miacor'];
             %%% Increases counter, until no file is found
             while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
                 k=k+1;
-                Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                Current_FileName1=[Current_FileName1(1:end-(5+numel(num2str(k-1)))) num2str(k) '.cor2'];
-                Current_FileName2=[Current_FileName2(1:end-(5+numel(num2str(k-1)))) num2str(k) '.cor2'];
-                Current_FileName3=[Current_FileName3(1:end-(5+numel(num2str(k-1)))) num2str(k) '.cor2'];
+                Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
             end
         end
         
@@ -2762,8 +2769,8 @@ switch h.Mia_Correlation_Save.Value
             Info.Path = UserValues.File.MIAPath;
             %%% ROI and TOI
             Info.Frames = Frames;
-            From=h.Plots.ROI(1).Position(1:2)+0.5;
-            To=From+h.Plots.ROI(1).Position(3:4)-1; 
+            From = h.Plots.ROI(1).Position(1:2)+0.5;
+            To = From+h.Plots.ROI(1).Position(3:4)-1; 
             Info.ROI = [From To];
             %%% Pixel [µs], Line [ms] and Frametime [s]
             Info.Times = [str2double(h.Mia_Image_Pixel.String) str2double(h.Mia_Image_Line.String) str2double(h.Mia_Image_Frame.String)];
@@ -2799,6 +2806,8 @@ switch h.Mia_Correlation_Save.Value
                     Info.AR.Var_Sub=str2double(h.Mia_Correlation_Sub2.String);
                     Info.AR.Var_SubSub=str2double(h.Mia_Correlation_Sub1.String);                    
             end   
+            %%% Mean intensity
+            Info.Counts = MeanInt(i);
             
             Data{1,1} = mean(MIAData.Cor{floor(1.5*i),1},3);
             Data{1,2} = std(MIAData.Cor{floor(1.5*i),1},0,3);
@@ -2855,6 +2864,8 @@ switch h.Mia_Correlation_Save.Value
                     Info.AR.Var_Sub=str2double(h.Mia_Correlation_Sub2.String);
                     Info.AR.Var_SubSub=str2double(h.Mia_Correlation_Sub1.String);
             end
+            %%% Mean intensity
+            Info.Counts = sum(MeanInt);
             
             Data{1,1} = mean(MIAData.Cor{2,1},3);
             Data{1,2} = std(MIAData.Cor{2,1},0,3);

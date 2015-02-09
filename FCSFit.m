@@ -140,7 +140,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String',num2str(UserValues.Settings.FCSFit.Fit_Min),...
+        'String',num2str(UserValues.FCSFit.Fit_Min),...
         'Callback',@Update_Plots,...
         'Position',[0.066 0.88 0.04 0.1]);
     h.Fit_Max = uicontrol(...
@@ -151,7 +151,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String',num2str(UserValues.Settings.FCSFit.Fit_Max),...
+        'String',num2str(UserValues.FCSFit.Fit_Max),...
         'Callback',@Update_Plots,...
         'Position',[0.11 0.88 0.04 0.1]);
     %%% Checkbox to toggle using weights
@@ -164,7 +164,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
         'String','Use weights',...
-        'Value',UserValues.Settings.FCSFit.Use_Weights,...
+        'Value',UserValues.FCSFit.Use_Weights,...
         'Callback',@Update_Plots,...
         'Position',[0.002 0.76 0.1 0.1]);
     %%% Checkbox to toggle errorbar plotting
@@ -177,7 +177,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
         'String','Plot errorbars',...
-        'Value',UserValues.Settings.FCSFit.Plot_Errorbars,...
+        'Value',UserValues.FCSFit.Plot_Errorbars,...
         'Callback',@Update_Plots,...
         'Position',[0.002 0.64 0.1 0.1]); 
     %%% Text
@@ -202,7 +202,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
         'String',{'None';'Fit N 3D';'Fit G(0)';'Fit N 2D'; 'Time'},...
-        'Value',UserValues.Settings.FCSFit.NormalizationMethod,...
+        'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
     %%% Editbox to set time used for normalization
@@ -237,7 +237,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String',num2str(UserValues.Settings.FCSFit.Max_Iterations),...
+        'String',num2str(UserValues.FCSFit.Max_Iterations),...
         'Position',[0.285 0.88 0.04 0.1]);
     uicontrol(...
         'Parent',h.Setting_Panel,...
@@ -257,7 +257,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','edit',...
-        'String',num2str(UserValues.Settings.FCSFit.Fit_Tolerance),...
+        'String',num2str(UserValues.FCSFit.Fit_Tolerance),...
         'Position',[0.285 0.76 0.04 0.1]);
     %%% Textbox containing optimization termination output
     h.Termination = uicontrol(...
@@ -461,12 +461,8 @@ if any(FileName{1}~=0)
         h.Style_Table.Data(1:end-1,:)=[];
     end
     
-    %%% Saves Path
-    UserValues.File.FCSPath=PathName;
-    LSUserValues(1);
     switch Type
-        case 1
-            %% Pam correlation files based on .mat files
+        case 1 %% Pam correlation files based on .mat files
             for i=1:numel(FileName)
                 %%% Updates global parameters
                 FCSData.Data{end+1}=load([PathName FileName{i}],'-mat');
@@ -490,8 +486,7 @@ if any(FileName{1}~=0)
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
                 FCSMeta.Params(:,end+1)=cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
-        case 2
-            %% Pam correlation files based on .txt files
+        case 2 %% Pam correlation files based on .txt files
     end
     %%% Updates table and plot data and style to new size
     Update_Style([],[],1);
@@ -514,7 +509,7 @@ elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Stand
     Models=dir([pwd filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
-       if strcmp(Models(1).name(end-3:end),'.txt')
+       if strcmp(Models(1).name(end-3:end),'.txt') 
            FileName=[pwd filesep 'Models' filesep Models(1).name];
            UserValues.File.FCS_Standard=FileName;
        else
@@ -791,7 +786,7 @@ switch mode
         h.Style_Table.ColumnEditable=true;
         h.Style_Table.ColumnFormat={'char',{'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char',...
                                            {'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char','logical'};
-        h.Style_Table.Data=UserValues.Settings.FCSFit.PlotStyleAll;        
+        h.Style_Table.Data=UserValues.FCSFit.PlotStyleAll;        
     case 1
         %% Called, when new file is loaded
 
@@ -802,9 +797,9 @@ switch mode
         h.Style_Table.RowName=Rows;
         Data=cell(numel(Rows),size(h.Style_Table.Data,2));
         %%% Sets ALL style to last row
-        Data(end,:)=UserValues.Settings.FCSFit.PlotStyleAll;
+        Data(end,:)=UserValues.FCSFit.PlotStyleAll;
         %%% Sets previous styles to first rows
-        Data(1:numel(FCSData.Data),:) = UserValues.Settings.FCSFit.PlotStyles(1:numel(FCSData.Data),:);
+        Data(1:numel(FCSData.Data),:) = UserValues.FCSFit.PlotStyles(1:numel(FCSData.Data),:);
         %%% Updates new plots to style
         for i=1:numel(FCSData.FileName)
 %            Data{i,1}=num2str(FCSMeta.Color(mod(i,6)+1,:));
@@ -908,8 +903,8 @@ switch mode
         end
 end
 %%% Save Updated UiTableData to UserValues.FCSFit.PlotStyles
-UserValues.Settings.FCSFit.PlotStyles(1:(size(h.Style_Table.Data,1)-1),:) = h.Style_Table.Data(1:(end-1),:);
-UserValues.Settings.FCSFit.PlotStyleAll = h.Style_Table.Data(end,:);
+UserValues.FCSFit.PlotStyles(1:(size(h.Style_Table.Data,1)-1),:) = h.Style_Table.Data(1:(end-1),:);
+UserValues.FCSFit.PlotStyleAll = h.Style_Table.Data(end,:);
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -924,10 +919,10 @@ Max=str2double(h.Fit_Max.String);
 Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
 %%% store in UserValues
-UserValues.Settings.FCSFit.Fit_Min = Min;
-UserValues.Settings.FCSFit.Fit_Max = Max;
-UserValues.Settings.FCSFit.Plot_Errorbars = Plot_Errorbars;
-UserValues.Settings.FCSFit.NormalizationMethod = Normalization_Method;
+UserValues.FCSFit.Fit_Min = Min;
+UserValues.FCSFit.Fit_Max = Max;
+UserValues.FCSFit.Plot_Errorbars = Plot_Errorbars;
+UserValues.FCSFit.NormalizationMethod = Normalization_Method;
 LSUserValues(1);
 
 YMax=0; YMin=0; RMax=0; RMin=0;
@@ -1150,10 +1145,10 @@ ub = cellfun(@str2double,ub);
 %%% Read fit settings and store in UserValues
 MaxIter = str2double(h.Iterations.String);
 TolFun = str2double(h.Tolerance.String);
-UserValues.Settings.FCSFit.Max_Iterations = MaxIter;
-UserValues.Settings.FCSFit.Fit_Tolerance = TolFun;
+UserValues.FCSFit.Max_Iterations = MaxIter;
+UserValues.FCSFit.Fit_Tolerance = TolFun;
 Use_Weights = h.Fit_Weights.Value;
-UserValues.Settings.FCSFit.Use_Weights = Use_Weights;
+UserValues.FCSFit.Use_Weights = Use_Weights;
 LSUserValues(1);
 %%% Optimization settings
 opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);

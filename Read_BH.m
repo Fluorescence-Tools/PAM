@@ -278,7 +278,7 @@ if numel(MI~=0)
     elseif numel(UsedRout)==1 %Only one routing channel was used
         MT={MT}; MI={MI}; % Transform to cell array to keep file format consistent
         for i=2:UsedRout
-            MT{i,1}=[]; MI{i}=[]; % Creates empty cell entries for unsued routing channels
+            MT{i,1}=[]; MI{i,1}=[]; % Creates empty cell entries for unused routing channels
         end
         % Shifts photons into the correct routing channel
         % This way, no photon is assigned to more than one variable to save memory

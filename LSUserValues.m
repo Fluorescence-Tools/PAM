@@ -122,12 +122,18 @@ if Mode==0 %%% Loads user values
     if ~isfield(S.File, 'MIAPath')
         S.File.MIAPath=pwd;
     end 
+    if ~isfield(S.File, 'MIAFitPath')
+        S.File.MIAFitPath=pwd;
+    end
     if ~isfield(S.File, 'BurstBrowserPath')
         S.File.BurstBrowserPath=pwd;
     end 
     
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
+    end
+    if ~isfield(S.File,'MIAFit_Standard')
+        S.File.MIAFit_Standard=[];
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -216,60 +222,114 @@ if Mode==0 %%% Loads user values
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
+
     
-       
+    %% Peripheral fields, that do not concern the main gui (like burst, phasor mia) 
+    
+    %% FCSFit
     %%% Checks, if FCSFit subfield exists
-    if ~isfield (S.Settings, 'FCSFit')
-        S.Settings.FCSFit=[];
-        disp('UserValues.Settings.FCSFit was incomplete');
+    if ~isfield (S, 'FCSFit')
+        S.FCSFit=[];
+        disp('UserValues.FCSFit was incomplete');
     end
     %%% Checks if FCSFit.Fit_Min subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Fit_Min')
-        S.Settings.FCSFit.Fit_Min=0;
-        disp('UserValues.Settings.FCSFit.Fit_Min was incomplete');
+    if ~isfield (S.FCSFit, 'Fit_Min')
+        S.FCSFit.Fit_Min=0;
+        disp('UserValues.FCSFit.Fit_Min was incomplete');
     end
     %%% Checks if FCSFit.Fit_Min subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Fit_Max')
-        S.Settings.FCSFit.Fit_Max=1;
-        disp('UserValues.Settings.FCSFit.Fit_Max was incomplete');
+    if ~isfield (S.FCSFit, 'Fit_Max')
+        S.FCSFit.Fit_Max=1;
+        disp('UserValues.FCSFit.Fit_Max was incomplete');
     end
     %%% Checks if FCSFit.Plot_Errorbars subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Plot_Errorbars')
-        S.Settings.FCSFit.Plot_Errorbars=1;
-        disp('UserValues.Settings.FCSFit.Plot_Errorbars was incomplete');
+    if ~isfield (S.FCSFit, 'Plot_Errorbars')
+        S.FCSFit.Plot_Errorbars=1;
+        disp('UserValues.FCSFit.Plot_Errorbars was incomplete');
     end
     %%% Checks if FCSFit.Fit_Tolerance subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Fit_Tolerance')
-        S.Settings.FCSFit.Fit_Tolerance=1e-6;
-        disp('UserValues.Settings.FCSFit.Fit_Tolerance was incomplete');
+    if ~isfield (S.FCSFit, 'Fit_Tolerance')
+        S.FCSFit.Fit_Tolerance=1e-6;
+        disp('UserValues.FCSFit.Fit_Tolerance was incomplete');
     end
     %%% Checks if FCSFit.Use_Weights subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Use_Weights')
-        S.Settings.FCSFit.Use_Weights=1;
-        disp('UserValues.Settings.FCSFit.Use_Weights was incomplete');
+    if ~isfield (S.FCSFit, 'Use_Weights')
+        S.FCSFit.Use_Weights=1;
+        disp('UserValues.FCSFit.Use_Weights was incomplete');
     end
     %%% Checks if FCSFit.Max_Iterations subfield exists
-    if ~isfield (S.Settings.FCSFit, 'Max_Iterations')
-        S.Settings.FCSFit.Max_Iterations=1000;
-        disp('UserValues.Settings.FCSFit.Max_Iterations was incomplete');
+    if ~isfield (S.FCSFit, 'Max_Iterations')
+        S.FCSFit.Max_Iterations=1000;
+        disp('UserValues.FCSFit.Max_Iterations was incomplete');
     end
     %%% Checks if FCSFit.NormalizationMethod subfield exists
-    if ~isfield (S.Settings.FCSFit, 'NormalizationMethod')
-        S.Settings.FCSFit.NormalizationMethod=1;
-        disp('UserValues.Settings.FCSFit.NormalizationMethod was incomplete');
+    if ~isfield (S.FCSFit, 'NormalizationMethod')
+        S.FCSFit.NormalizationMethod=1;
+        disp('UserValues.FCSFit.NormalizationMethod was incomplete');
     end
     %%% Checks, if FCSFit.PlotStyles subfield exists
-    if ~isfield (S.Settings.FCSFit,'PlotStyles')
-        S.Settings.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
-        S.Settings.FCSFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
-        disp('UserValues.Settings.FCSFit.PlotStyles was incomplete');
+    if ~isfield (S.FCSFit,'PlotStyles')
+        S.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
+        S.FCSFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
+        disp('UserValues.FCSFit.PlotStyles was incomplete');
+    end    
+    if ~isfield (S.FCSFit,'PlotStyleAll')
+        S.FCSFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
+        disp('UserValues.FCSFit.PlotStyleAll was incomplete');
     end
     
-    if ~isfield (S.Settings.FCSFit,'PlotStyleAll')
-        S.Settings.FCSFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
-        disp('UserValues.Settings.FCSFit.PlotStyleAll was incomplete');
+    %% MIAFit
+    %%% Checks, if MIAFit subfield exists
+    if ~isfield (S, 'MIAFit')
+        S.MIAFit=[];
+        disp('UserValues.MIAFit was incomplete');
     end
-    %% Peripheral fields, that do not concern the main gui (like burst, phasor mia)    
+    %%% Checks if MIAFit.Fit_X subfield exists
+    if ~isfield (S.MIAFit, 'Fit_X')
+        S.MIAFit.Fit_X=31;
+        disp('UserValues.MIAFit.Fit_Min was incomplete');
+    end
+    %%% Checks if MIAFit.Fit_Y subfield exists
+    if ~isfield (S.MIAFit, 'Fit_Y')
+        S.MIAFit.Fit_Y=31;
+        disp('UserValues.MIAFit.Fit_Max was incomplete');
+    end
+    %%% Checks if MIAFit.Plot_Errorbars subfield exists
+    if ~isfield (S.MIAFit, 'Plot_Errorbars')
+        S.MIAFit.Plot_Errorbars=1;
+        disp('UserValues.MIAFit.Plot_Errorbars was incomplete');
+    end
+    %%% Checks if MIAFit.Fit_Tolerance subfield exists
+    if ~isfield (S.MIAFit, 'Fit_Tolerance')
+        S.MIAFit.Fit_Tolerance=1e-6;
+        disp('UserValues.MIAFit.Fit_Tolerance was incomplete');
+    end
+    %%% Checks if MIAFit.Use_Weights subfield exists
+    if ~isfield (S.MIAFit, 'Use_Weights')
+        S.MIAFit.Use_Weights=1;
+        disp('UserValues.MIAFit.Use_Weights was incomplete');
+    end
+    %%% Checks if FCSFit.Max_Iterations subfield exists
+    if ~isfield (S.MIAFit, 'Max_Iterations')
+        S.MIAFit.Max_Iterations=1000;
+        disp('UserValues.MIAFit.Max_Iterations was incomplete');
+    end
+    %%% Checks if MIAFit.NormalizationMethod subfield exists
+    if ~isfield (S.MIAFit, 'NormalizationMethod')
+        S.MIAFit.NormalizationMethod=1;
+        disp('UserValues.MIAFit.NormalizationMethod was incomplete');
+    end
+    %%% Checks, if MIAFit.PlotStyles subfield exists
+    if ~isfield (S.MIAFit,'PlotStyles')
+        S.MIAFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
+        S.MIAFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
+        disp('UserValues.MIAFit.PlotStyles was incomplete');
+    end    
+    if ~isfield (S.MIAFit,'PlotStyleAll')
+        S.MIAFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
+        disp('UserValues.MIAFit.PlotStyleAll was incomplete');
+    end
+    
     %% Phasor
     %%% Checks, if Phasor subfield exists
     if ~isfield (S,'Phasor')
