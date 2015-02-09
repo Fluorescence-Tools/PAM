@@ -729,7 +729,7 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Display.ColorMap='hot';
         disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');    
     end
-    Pa.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
+    P.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     Mode=1;
