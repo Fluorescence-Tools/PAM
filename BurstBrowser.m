@@ -14,6 +14,7 @@ if isempty(hfig)
     'UserData',[],...
     'Visible','on',...
     'Tag','BurstBrowser',...
+    'Toolbar','figure',...
     'CloseRequestFcn',@Close_BurstBrowser);
     %'WindowScrollWheelFcn',@Bowser_Wheel,...
     %'KeyPressFcn',@Bowser_KeyPressFcn,...
@@ -1238,6 +1239,39 @@ if isempty(hfig)
     BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Weighted_Residuals_Perp = plot(h.axes_fFCS_ReconstructionPerpResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     
+    %%%Corrections Tab for 3CMFD
+    BurstMeta.Plots.histEBG_blueonly = bar(h.Corrections.ThreeCMFD.axes_crosstalk_BG,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histEBG_blueonly(1) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BG,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histEBG_blueonly(2) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BG,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histEBG_blueonly(3) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BG,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.histEBR_blueonly = bar(h.Corrections.ThreeCMFD.axes_crosstalk_BR,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histEBR_blueonly(1) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BR,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histEBR_blueonly(2) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BR,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histEBR_blueonly(3) = plot(h.Corrections.ThreeCMFD.axes_crosstalk_BR,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.histSBG_greenonly = bar(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histSBG_greenonly(1) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histSBG_greenonly(2) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histSBG_greenonly(3) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.histSBR_redonly = bar(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        %%%Consider fits also (three lines for 2 gauss fit)
+        BurstMeta.Plots.Fits.histSBR_redonly(1) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',3);
+        BurstMeta.Plots.Fits.histSBR_redonly(2) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.histSBR_redonly(3) = plot(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,[0 1],[0 0],'Color','r','LineStyle','--','LineWidth',3,'Visible','off');
+    BurstMeta.Plots.gamma_BG_fit(1) = imagesc(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gammaBG_threecolor);axis(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'tight');
+    [~,BurstMeta.Plots.gamma_BG_fit(2)] = contourf(zeros(2),10,'Parent',h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Visible','off');
+        BurstMeta.Plots.Fits.gamma_BG = plot(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3);  %Fit
+        BurstMeta.Plots.Fits.gamma_BG_manual = scatter(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,[0 1],[0 1],1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b','Visible','off');  %Manual
+    BurstMeta.Plots.gamma_BR_fit(1) = imagesc(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gammaBR_threecolor);axis(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'tight');
+    [~,BurstMeta.Plots.gamma_BR_fit(2)] = contourf(zeros(2),10,'Parent',h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Visible','off');
+        BurstMeta.Plots.Fits.gamma_BR = plot(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3);  %Fit
+        BurstMeta.Plots.Fits.gamma_BR_manual = scatter(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,[0 1],[0 1],1000,'+','LineWidth',4,'MarkerFaceColor','b','MarkerEdgeColor','b','Visible','off');  %Manual
+    BurstMeta.Plots.gamma_threecolor_lifetime(1) = imagesc(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime);axis(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'tight');
+    [~,BurstMeta.Plots.gamma_threecolor_lifetime(2)] = contourf(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Visible','off');
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime = plot(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+    
     ChangePlotType(h.PlotTypePopumenu,[]);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
@@ -2020,8 +2054,11 @@ h = guidata(gcbo);
 
 %%% Change focus to CorrectionsTab
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
-
-indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
+if any(BurstData.BAMethod == [1,2])
+    indS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
+elseif any(BurstData.BAMethod == [3,4])
+    indS = find(strcmp(BurstData.NameArray,'Stoichiometry GR'));
+end
 %indE = find(strcmp(BurstData.NameArray,'Efficiency'));
 indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
 indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
@@ -2118,6 +2155,7 @@ axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
 %%% Determine Gamma and Beta
 coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
@@ -2551,8 +2589,13 @@ function ApplyCorrections(~,~)
 global BurstData UserValues
 %% FRET and Stoichiometry Corrections
 %%% Read out indices of parameters
-indS = strcmp(BurstData.NameArray,'Stoichiometry');
-indE = strcmp(BurstData.NameArray,'Efficiency');
+if any(BurstData.BAMethod == [1,2])
+    indS = strcmp(BurstData.NameArray,'Stoichiometry');
+    indE = strcmp(BurstData.NameArray,'Efficiency');
+elseif any(BurstData.BAMethod == [3,4])
+    indS = strcmp(BurstData.NameArray,'Stoichiometry GR');
+    indE = strcmp(BurstData.NameArray,'Efficiency GR');
+end
 indDur = strcmp(BurstData.NameArray,'Duration [ms]');
 indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
 indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
@@ -2567,6 +2610,7 @@ Dur = BurstData.DataArray(:,indDur);
 %%% Read out corrections
 LSUserValues(0);
 gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
+beta_gr = UserValues.BurstBrowser.Corrections.Beta_GR;
 ct_gr = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
 de_gr = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
 BG_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
@@ -2583,7 +2627,7 @@ NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
 
 %%% Recalculate Efficiency and Stoichiometry
 E = NGR./(NGR + gamma_gr.*NGG);
-S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
+S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR./beta_gr);
 
 %%% Update Values in the DataArray
 BurstData.DataArray(:,indE) = E;
@@ -2705,7 +2749,11 @@ idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
 idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
 idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = strcmp('Efficiency',BurstData.NameArray);
+if any(BurstData.BAMethod == [1,2])
+    idxE = strcmp('Efficiency',BurstData.NameArray);
+elseif any(BurstData.BAMethod == [3,4])
+    idxE = strcmp('Efficiency GR',BurstData.NameArray);
+end
 %% Plot E vs. tauGG in first plot
 %%% Check, whether a static FRET line already existed
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 5], [0 1]);
@@ -2977,7 +3025,11 @@ h = guidata(obj);
 %%% Change focus to CorrectionsTab
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 %%% Prepare photon counts
-indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+if any(BurstData.BAMethod == [1,2])
+    indS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+elseif any(BurstData.BAMethod == [3,4])
+    indS = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
+end
 indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
 indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
 indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));

@@ -565,6 +565,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');    
     end
     P.BurstBrowser.Corrections.Gamma_BR = S.BurstBrowser.Corrections.Gamma_BR;
+    %%% Checks, if BurstBrowser.Corrections.Beta_GR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Beta_GR')
+        S.BurstBrowser.Corrections.Beta_GR=1;
+        disp('UserValues.BurstBrowser.Corrections.Beta_GR was incomplete');    
+    end
+    P.BurstBrowser.Corrections.Beta_GR = S.BurstBrowser.Corrections.Beta_GR;
+    %%% Checks, if BurstBrowser.Corrections.Beta_BG subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Beta_BG')
+        S.BurstBrowser.Corrections.Beta_BG=1;
+        disp('UserValues.BurstBrowser.Corrections.Beta_BG was incomplete');    
+    end
+    P.BurstBrowser.Corrections.Beta_BG = S.BurstBrowser.Corrections.Beta_BG;
+    %%% Checks, if BurstBrowser.Corrections.Beta_BR subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'Beta_BR')
+        S.BurstBrowser.Corrections.Beta_BR=1;
+        disp('UserValues.BurstBrowser.Corrections.Beta_BR was incomplete');    
+    end
+    P.BurstBrowser.Corrections.Beta_BR = S.BurstBrowser.Corrections.Beta_BR;
     %%% Checks, if BurstBrowser.Corrections.Background_BBpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BBpar')
         S.BurstBrowser.Corrections.Background_BBpar=0;
@@ -699,6 +717,41 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.LinkerLength was incomplete');    
     end
     P.BurstBrowser.Corrections.LinkerLength = S.BurstBrowser.Corrections.LinkerLength;
+     %%% Checks, if BurstBrowser.Corrections.DonorLifetimeBlue subfield exists
+    %%% This value stores the set Donor Lifetime of the Blue dye
+    if ~isfield (S.BurstBrowser.Corrections,'DonorLifetimeBlue')
+        S.BurstBrowser.Corrections.DonorLifetimeBlue=4.1;
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');    
+    end
+    P.BurstBrowser.Corrections.DonorLifetimeBlue = S.BurstBrowser.Corrections.DonorLifetimeBlue;
+    %%% Checks, if BurstBrowser.Corrections.FoersterRadiusBG subfield exists
+    %%% This value stores the set Foerster Radius BG
+    if ~isfield (S.BurstBrowser.Corrections,'FoersterRadiusBG')
+        S.BurstBrowser.Corrections.FoersterRadiusBG=59;
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBG was incomplete');    
+    end
+    P.BurstBrowser.Corrections.FoersterRadiusBG = S.BurstBrowser.Corrections.FoersterRadiusBG;
+    %%% Checks, if BurstBrowser.Corrections.LinkerLengthBG subfield exists
+    %%% This value stores the set Linker Length BG
+    if ~isfield (S.BurstBrowser.Corrections,'LinkerLengthBG')
+        S.BurstBrowser.Corrections.LinkerLengthBG=5;
+        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBG was incomplete');    
+    end
+    P.BurstBrowser.Corrections.LinkerLengthBG = S.BurstBrowser.Corrections.LinkerLengthBG;
+    %%% Checks, if BurstBrowser.Corrections.FoersterRadiusBR subfield exists
+    %%% This value stores the set Foerster Radius BR
+    if ~isfield (S.BurstBrowser.Corrections,'FoersterRadiusBR')
+        S.BurstBrowser.Corrections.FoersterRadiusBR=59;
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBR was incomplete');    
+    end
+    P.BurstBrowser.Corrections.FoersterRadiusBR = S.BurstBrowser.Corrections.FoersterRadiusBR;
+    %%% Checks, if BurstBrowser.Corrections.LinkerLength subfield exists
+    %%% This value stores the set Linker Length BR
+    if ~isfield (S.BurstBrowser.Corrections,'LinkerLengthBR')
+        S.BurstBrowser.Corrections.LinkerLengthBR=5;
+        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBR was incomplete');    
+    end
+    P.BurstBrowser.Corrections.LinkerLengthBR = S.BurstBrowser.Corrections.LinkerLengthBR;
     %%% Checks, if BurstBrowser.Display subfield exists
     %%% Here the display options are stored
     if ~isfield (S.BurstBrowser,'Display')
