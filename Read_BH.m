@@ -207,6 +207,7 @@ switch Card
             %   - photon during MTOV entry
             % MTOV:
             %   macrotime overflow bit, written in the next real photon
+            %   MTOV = 1 and INV = 1 does not mean multiple MTOV overflows!
             % GAP:
             %   a FIFO overflow occurred. Data is likely invalid
             % MARK:
@@ -214,7 +215,7 @@ switch Card
 
             MT = uint32(zeros(numel(Mark),1)); % Initializes macrotime overflow variable
             MT(bitand(Mark,4)==4) = 1; % One single overflow occured (MTOV==1 & INVALID==0) or (MTOV==1 & INVALID==1)
-            Macrotime = bitand(ByteRecord2, 4294967295); % Loads 24 bit Macrotime in 32 bit
+            Macrotime = bitand(ByteRecord2, 16777215); % Loads 24 bit Macrotime in 32 bit
             MI = 4095-uint16(bitand(ByteRecord1, 4095)); % Loads 12 bit Microtime in 16 bit
             clear ByteRecord1 ByteRecord2
             MT = cumsum(double(MT))*2^24 + double(Macrotime); % Transforms MT into continuous stream (as double)
@@ -237,8 +238,8 @@ end
 
 % Checks for detection gaps due to fifo overflows
 if any(bitand(Mark,2)==2)
-    h = msgbox(['FIFO overflow occured in file ', FileName]);
-    disp('FIFO overflow occured in file ')
+    h = msgbox(['FIFO overflow occured in ', FileName, '. Data is likely invalid!']);
+    disp(['FIFO overflow occured in ', FileName, '. Data is likely invalid!'])
     pause(1)
     close(h)
 end
