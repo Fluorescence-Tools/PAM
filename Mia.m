@@ -1704,7 +1704,6 @@ switch mode
             h.Mia_Frame_Slider(2).Value=1;
             h.Mia_Frame_Slider(2).Min=1;
             h.Mia_Frame(2).String='1';
-            MIAData.FileName{2}{1}='';
             Progress(1);
             %%% Updates plot
             Mia_ROI([],[],1)  
@@ -1860,7 +1859,7 @@ if any(mode==2)
             Y(2)=ceil(floor(size(MIAData.Cor{i,1},2)/2)+Size/2);
             %%% Plots average correlation, if frame 0 was selected
             if Frame==0
-                Frames=str2num(h.Mia_Cor_Frames2Use.String);
+                Frames=str2num(h.Mia_Cor_Frames2Use.String); %#ok<ST2NM>
                 Frames=Frames((Frames>0) & (Frames < size(MIAData.Cor{i,1},3)));
                 Image=mean(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frames),3);
             else
@@ -2117,9 +2116,9 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
         h.Mia_NB_Axes(5).YLim=[MinY MaxY]-(MaxY-MinY)/(2*BinY);        
     end
 end
-if size(MIAData.FileName)==2
+if numel(MIAData.FileName)==2
     h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
-elseif size(MIAData.FileName)==1
+elseif numel(MIAData.FileName)==1
     h.Mia_Progress_Text.String = MIAData.FileName{1}{1};  
 else
     h.Mia_Progress_Text.String = 'Nothing loaded';
@@ -2508,7 +2507,7 @@ else
 end
 
 %%% Determins, which frames to correlate
-Frames=str2num(h.Mia_Correlation_Frames.String); %%% Uses str2num, because the output is not scalar
+Frames=str2num(h.Mia_Correlation_Frames.String); %#ok<ST2NM> %%% Uses str2num, because the output is not scalar
 %%% Uses all Frames, if input was 0
 if all(Frames==0)
     Frames=1:size(MIAData.Data{1,2},3);
@@ -2632,6 +2631,7 @@ switch (h.Mia_Correlation_FramesUse.Value)
             
             MIAData.AR{i}=Use{i};
             Update_Plots([],[],1,i);
+            clear Data;
         end
         
         
@@ -2844,7 +2844,7 @@ switch h.Mia_Correlation_Save.Value
             end
             %%% Correlation Type (Arbitrary region == 3)
             Info.Type = h.Mia_Correlation_Type.String{h.Mia_Correlation_Type.Value};
-            switch h.Mia_Correlation_Type.Value
+            switch h.Mia_Correlation_FramesUse.Value
                 case [1 2] %%% All/Selected frames
                     %%% Mean intensity [counts]
                     Info.Mean = (mean2(double(MIAData.Data{1,2}(:,:,Frames))) + mean2(double(MIAData.Data{2,2}(:,:,Frames))))/2;
@@ -2853,7 +2853,7 @@ switch h.Mia_Correlation_Save.Value
                     %%% Mean intensity of selected pixels [counts]
                     Image1 = double(MIAData.Data{1,2}(:,:,Frames));
                     Image2 = double(MIAData.Data{2,2}(:,:,Frames));
-                    Info.Mean = (mean(Image1(Use{1}.*Use{2})) + mean(Image2(Use{1}.*Use{2})))/2;
+                    Info.Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
                     %%% Arbitrary region information
                     Info.AR.Int_Max = str2double(h.Mia_Correlation_Int_Max.String);
                     Info.AR.Int_Min = str2double(h.Mia_Correlation_Int_Min.String);
@@ -2868,7 +2868,7 @@ switch h.Mia_Correlation_Save.Value
             Info.Counts = sum(MeanInt);
             
             Data{1,1} = mean(MIAData.Cor{2,1},3);
-            Data{1,2} = std(MIAData.Cor{2,1},0,3);
+            Data{1,2} = std(MIAData.Cor{2,1},0,3); %#ok<NASGU>
             save(Current_FileName3,'Info','Data');
         end
    
@@ -2918,7 +2918,7 @@ YData=h.Plots.Cor(mode,2).ZData;
 Size=str2double(h.Mia_Cor_Size.String);  
 if str2double(h.Mia_Cor_Frame.String)==0
     %%% Extracts, what frames to use
-    Frames=str2num(h.Mia_Cor_Frames2Use.String);    
+    Frames=str2num(h.Mia_Cor_Frames2Use.String);     %#ok<ST2NM>
     %%% Calculate borders
     X(1)=ceil(floor(size(MIAData.Cor{mode,1},1)/2)-Size/2)+1;
     X(2)=ceil(floor(size(MIAData.Cor{mode,1},1)/2)+Size/2);

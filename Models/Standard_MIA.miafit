@@ -1,0 +1,52 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+Here you can describe you model als you like, as long as you do not use the 
+partition names in the text.
+HOW TO: 
+    PARAMS:
+1. Keep the partitions as they are, they are needed to read correctly read
+in the file.
+2. Put every parameter in a new line starting with Param(n).
+3. After than comes ONE space, and only ONE space to indicate the begining
+of the parameter name.
+4. Write the parameter name without using spaces.
+5. Use at least one space directly after the parameter name to indicate the end.
+6a. Use '=' to indicate the beginning of the initial value, the lower and the upper bound.  
+6b. Use ';' to indicate the end of the initial value, the lower and the upper bound.
+7a. You can write whatever you want after ';' and before  (e.g. LB, see below),
+as log as you do not use ';' or '='.
+7b. You can write whatever you want after the last ';'.
+9.DO NOT use a parameter called x, y, Out or P, but parameters starting with or 
+containing those characters are fine.
+    Brightness:
+1. Since fits might change, brightness has to be calculated for each model
+2. Define the brightness calculation as B = function
+3. The calculated brightness will then be multiplied with the countrate
+    FIT:
+1. Use OUT as the output parameter.
+2. Use P(n) as input parameters, representing the defined parameters in the
+right order.
+3. x and y will be used as function variables
+4. Use standard matlab expressions to define the function.
+5. Multiline expressions should also work.
+6. Always end the function with a semicolon to avoid writing to the command
+line
+
+    GENERAL:
+1. Do not use any empty lines in the parameter and fit sections
+
+You might explain your function here:
+
+    |Offset|+|Amplitude|*|First dimention on    off axis                         | + |Second dimention on       off axis    
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): A0                = 373;   LB = 0;      UB = Inf;   
+Param(2): Pixel size [nm]   = 50;    LB = 0;      UB = Inf;
+Param(3): X Offset [Px]     = 0;     LB = -Inf;   UB = Inf;
+Param(4): Y Offset [Px]     = 0;     LB = -Inf;   UB = Inf;
+Param(5): Sigma 1 [nm]      = 200;   LB = 0;      UB = Inf;
+Param(6): Sigma 2 [nm]      = 200;   LB = 0;      UB = Inf;
+Param(7): Angle [Rad]        = 0;    LB = 0;      UB = 6.3;
+Param(8): I0                = 0;     LB = -Inf;   UB = Inf;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B = 1/P(1);  
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT = P(8) + P(1).*exp(-(((x*P(2)-P(3))*cos(P(7))+((y*P(2)-P(4))*sin(P(7))))/P(5)).^2 - (((x*P(2)-P(3))*sin(P(7))+((y*P(2)-P(4))*cos(P(7))))/P(6)).^2);
