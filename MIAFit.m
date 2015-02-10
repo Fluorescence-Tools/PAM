@@ -221,8 +221,8 @@ h.Norm_X = uicontrol(...
     'Visible','off',...
     'Callback',@Update_Plots,...
     'Position',[0.145 0.51 0.04 0.1]);
-%%% Editbox to set X point used for normalization
-h.Norm_X = uicontrol(...
+%%% Editbox to set Y point used for normalization
+h.Norm_Y = uicontrol(...
     'Parent',h.Setting_Panel,...
     'Tag','Normalize',...
     'Units','normalized',...
@@ -234,6 +234,19 @@ h.Norm_X = uicontrol(...
     'Visible','off',...
     'Callback',@Update_Plots,...
     'Position',[0.19 0.51 0.04 0.1]);
+%%% Checkbox to omit center point
+h.Omit_Center = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Tag','Normalize',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Style','checkbox',...
+    'Value',UserValues.MIAFit.Omit,...
+    'String','Omit center',...
+    'Callback',@Update_Plots,...
+    'Position',[0.002 0.37 0.1 0.1]);
 %%% Optimization settings
 uicontrol(...
     'Parent',h.Setting_Panel,...
@@ -722,10 +735,11 @@ Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
 
 %%% store in UserValues
-UserValues.Settings.MIAFit.Fit_X = str2double(h.Fit_X.String);
-UserValues.Settings.MIAFit.Fit_Y = str2double(h.Fit_Y.String);
-UserValues.Settings.MIAFit.Plot_Errorbars = Plot_Errorbars;
-UserValues.Settings.MIAFit.NormalizationMethod = Normalization_Method;
+UserValues.MIAFit.Fit_X = str2double(h.Fit_X.String);
+UserValues.MIAFit.Fit_Y = str2double(h.Fit_Y.String);
+UserValues.MIAFit.Plot_Errorbars = Plot_Errorbars;
+UserValues.MIAFit.NormalizationMethod = Normalization_Method;
+UserValues.MIAFit.Omit = h.Omit_Center.Value;
 LSUserValues(1);
 
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
@@ -742,7 +756,7 @@ else %% Updates 2D plot selection string
        h.Plot2D.Value = 1;
    end
 end
-
+%%% Does the plotting and the calculations
 for i=1:size(MIAFitMeta.Plots,1)
     if Active(i)
         Center = ceil((size(MIAFitData.Data{i,1})+1)/2);
@@ -766,6 +780,12 @@ for i=1:size(MIAFitMeta.Plots,1)
                 if isnan(B) || B==0 || isinf(B)
                     B = 1;
                 end
+                x = str2double(h.Fit_X.String);
+                %%% Has to reset x and y parameters again;
+                y = str2double(h.Fit_Y.String);
+                [x,y] = meshgrid(1:x,1:y);
+                x = x - ceil(max(max(x))/2);
+                y = y - ceil(max(max(y))/2);
             case 4 %% Normalizes to number of particles 2D (defined in model)
                 P = MIAFitMeta.Params(:,i); %#ok<NASGU>
                 eval(MIAFitMeta.Model.Brightness);
@@ -776,7 +796,7 @@ for i=1:size(MIAFitMeta.Plots,1)
             case 5 %% Normalizes to selected pixel
                 h.Norm_X.Visible='on';
                 h.Norm_Y.Visible='on';
-                B = MIAFitMeta.Data{i,1}(Center(1)+(str2double(h.Norm_X.String)), Center(2)+(str2double(h.Norm_Y.String)));
+                B = MIAFitData.Data{i,1}(Center(1)+(str2double(h.Norm_Y.String)), Center(2)+(str2double(h.Norm_X.String)));
         end      
         %% Updates on axis data plot y values 
         MIAFitMeta.Plots{i,1}.XData = x(1,:);    
@@ -800,6 +820,11 @@ for i=1:size(MIAFitMeta.Plots,1)
         P=MIAFitMeta.Params(:,i); %#ok<NASGU>
         eval(MIAFitMeta.Model.Function);
         OUT=real(OUT);
+        if h.Omit_Center.Value
+           OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
+               (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
+               OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)-1))/2; 
+        end
         MIAFitMeta.Plots{i,2}.XData=x(1,:);        
         MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;     
         MIAFitMeta.Plots{i,5}.XData=y(:,1);
@@ -1121,6 +1146,14 @@ switch mode
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
 end
+
+%%% Calculates brightness for all files
+for i=1:size(MIAFitMeta.Params,2)
+    P=MIAFitMeta.Params(:,i); %#ok<NASGU>
+    eval(MIAFitMeta.Model.Brightness);
+    h.Fit_Table.Data{i,3}=num2str(mean(MIAFitData.Counts{i})*B);
+end
+
 Update_Plots;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1293,14 +1326,219 @@ LSUserValues(1);
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_MIAFit(~,~)
+global MIAFitMeta MIAFitData UserValues
+h = guidata(findobj('Tag','MIAFit'));
+%%% Indicates fit in progress
+h.MIAFit.Name = 'MIA Fit  FITTING';
+h.Fit_Table.Enable = 'off';
+drawnow;
+%%% Reads parameters from table
+Fixed = cell2mat(h.Fit_Table.Data(1:end-1,5:3:end-1));
+Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end-1));
+Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
+lb = h.Fit_Table.Data(end-1,4:3:end-1);
+lb = cellfun(@str2double,lb);
+ub = h.Fit_Table.Data(end  ,4:3:end-1);
+ub = cellfun(@str2double,ub);
+%%% Read fit settings and store in UserValues
+MaxIter = str2double(h.Iterations.String);
+TolFun = str2double(h.Tolerance.String);
+UserValues.MIAFit.Max_Iterations = MaxIter;
+UserValues.MIAFit.Fit_Tolerance = TolFun;
+Use_Weights = h.Fit_Weights.Value;
+UserValues.MIAFit.Use_Weights = Use_Weights;
+LSUserValues(1);
+%%% Optimization settings
+opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
+
+%%% Determines x and y data
+x = str2double(h.Fit_X.String);
+y = str2double(h.Fit_Y.String);
+[x,y] = meshgrid(1:x,1:y);
+x = x - ceil(max(max(x))/2);
+y = y - ceil(max(max(y))/2);
+
+%%% Performs fit
+if sum(Global)==0
+    %% Individual fits, not global
+    for i = find(Active)';
+        %%% Reads in parameters
+        Center = ceil((size(MIAFitData.Data{i,1})+1)/2);        
+        ZData = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
+        EData = MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
+        Omit = MIAFitData.Data{i,1}(Center(1), Center(2));
+        %%% Disables weights
+        if ~Use_Weights
+            EData(:)=1;
+        end
+        %%% Sets initial values and bounds for non fixed parameters
+        Fit_Params=MIAFitMeta.Params(~Fixed(i,:),i);
+        Lb=lb(~Fixed(i,:));
+        Ub=ub(~Fixed(i,:));
+        %%% Performs fit
+        tic;
+        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i},ZData./EData,Lb,Ub,opts);
+        toc;
+        %%% Updates parameters
+        MIAFitMeta.Params(~Fixed(i,:),i)=Fitted_Params;
+    end  
+else
+    %% Global fits
+    ZData = []; EData = [];
+    X = []; Y = [];
+    Points = []; Omit = [];
+    %%% Sets initial value and bounds for global parameters
+    Fit_Params=MIAFitMeta.Params(Global,1);
+    Lb=lb(Global);
+    Ub=ub(Global);
+    for  i=find(Active)' 
+        %%% Reads in parameters of current file   
+        Center = ceil((size(MIAFitData.Data{i,1})+1)/2);  
+        zdata=MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
+        edata=MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
+        %%% Disables weights
+        if ~Use_Weights
+            edata(:)=1;
+        end
+        ZData = [ZData;zdata(:)];
+        EData = [EData;edata(:)];
+        X = [X; x(:)];
+        Y = [Y; y(:)];
+        Omit = [Omit; MIAFitData.Data{i,1}(Center(1), Center(2))];
+        Points(end+1) = numel(x);
+        %%% Concaternates initial values and bounds for non fixed parameters
+        Fit_Params=[Fit_Params; MIAFitMeta.Params(~Fixed(i,:)& ~Global,i)];
+        Lb=[Lb lb(~Fixed(i,:) & ~Global)];
+        Ub=[Ub ub(~Fixed(i,:) & ~Global)];
+    end
+    %%% Performs fit
+    [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Global,Fit_Params,{X,Y,EData,Omit,Points},ZData./EData,Lb,Ub,opts);
+    %%% Updates parameters
+    MIAFitMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(MIAFitMeta.Params,2)]) ;
+    Fitted_Params(1:sum(Global))=[];
+    for i=find(Active)'
+        MIAFitMeta.Params(~Fixed(i,:) & ~Global,i)=Fitted_Params(1:sum(~Fixed(i,:) & ~Global)); 
+        Fitted_Params(1:sum(~Fixed(i,:)& ~Global))=[]; 
+    end    
+end
+%%% Displays last exitflag
+switch Flag
+    case 1
+        h.Termination.String='Function converged to a solution x.';
+    case 2
+        h.Termination.String='Change in x was less than the specified tolerance.';
+    case 3
+        h.Termination.String='Change in the residual was less than the specified tolerance.';
+    case 4
+        h.Termination.String='Magnitude of search direction smaller than the specified tolerance.';
+    case 0
+        h.Termination.String='Number of iterations exceeded options. MaxIter or number of function evaluations exceeded options.';
+    case -1
+        h.Termination.String='Algorithm was terminated by the output function.';
+    case -2
+        h.Termination.String='Problem is infeasible: the bounds lb and ub are inconsistent.';
+    case -4
+        h.Termination.String='Optimization could not make further progress.';
+    otherwise
+        h.Termination.String= ['Unknown exitflag: ' num2str(Flag)];
+end
+%%% Indicates end of fitting procedure
+h.Fit_Table.Enable='on';
+h.MIAFit.Name='MIA Fit';
+%%% Updates table values and plots
+Update_Table([],[],2);
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Actual fitting function for individual fits %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [Out] = Fit_Single(Fit_Params,Data)
+%%% Fit_Params: Non fixed parameters of current file
+%%% Data{1}:    x values of current file
+%%% Data{2}:    y values of current file
+%%% Data{3}:    Weights of current file
+%%% Data{4}:    Indentifier of current file
+
+global MIAFitMeta
+h = guidata(findobj('Tag','MIAFit'));
+
+x = Data{1}; %#ok<NASGU>
+y = Data{2}; %#ok<NASGU>
+Weights = Data{3};
+Omit = Data{4};
+file = Data{5};
+
+%%% Determines, which parameters are fixed
+Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
+P = zeros(numel(Fixed),1);
+%%% Assigns fitting parameters to unfixed parameters of fit
+P(~Fixed) = Fit_Params;
+%%% Assigns parameters from table to fixed parameters
+P(Fixed) = MIAFitMeta.Params(Fixed,file); %#ok<NASGU>
+%%% Applies function on parameters
+eval(MIAFitMeta.Model.Function);
+if h.Omit_Center.Value
+    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) = Omit;  %#ok<NODEF>
+end
+%%% Applies weights
+Out=OUT./Weights;
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Actual fitting function for global fits %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [Out] = Fit_Global(Fit_Params,Data)
+%%% Fit_Params: [Global parameters, Non fixed parameters of all files]
+%%% Data{1}:    x values of current file
+%%% Data{2}:    y values of current file
+%%% Data{3}:    Weights of current file
+%%% Data{4}:    Length indentifier for X and Weights data of each file
+
+global MIAFitMeta
+h = guidata(findobj('Tag','MIAFit'));
 
 
+X=Data{1};
+Y=Data{2};
+Weights=Data{3};
+Omit = Data{4};
+Points=Data{5};
 
+
+%%% Determines, which parameters are fixed, global and which files to use
+Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));
+Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end));
+Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
+P = zeros(numel(Global),1);
+
+%%% Asignes global parameters
+P(Global) = Fit_Params(1:sum(Global));
+Fit_Params(1:sum(Global)) = [];
+
+Out=[];k=1;
+for i=find(Active)'
+  %%% Sets non-fixed parameters
+  P(~Fixed(i,:) & ~Global) = Fit_Params(1:sum(~Fixed(i,:) & ~Global)); 
+  Fit_Params(1:sum(~Fixed(i,:)& ~Global)) = [];  
+  %%% Sets fixed parameters
+  P(Fixed(i,:) & ~Global) = MIAFitMeta.Params((Fixed(i,:)& ~Global),i);
+  %%% Defines XData and YData for the file
+  x = X(1:Points(k)); y = Y(1:Points(k));
+  X(1:Points(k))=[]; Y(1:Points(k)) = []; 
+  %%% Calculates function for current file
+  eval(MIAFitMeta.Model.Function);
+  if h.Omit_Center.Value
+      OUT(x==0 & y==0) = Omit(k); %#ok<AGROW>
+  end
+  Out=[Out;OUT]; 
+  k=k+1;
+end
+Out=Out./Weights;
 
 
 

@@ -375,6 +375,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.MIAFit.NormalizationMethod was incomplete');
     end
     P.MIAFit.NormalizationMethod = S.MIAFit.NormalizationMethod;
+    %%% Checks if MIAFit.Omit subfield exists
+    if ~isfield (S.MIAFit, 'Omit')
+        S.MIAFit.Omit=1;
+        disp('UserValues.MIAFit.Omit was incomplete');
+    end
+    P.MIAFit.Omit = S.MIAFit.Omit;
     %%% Checks, if MIAFit.PlotStyles subfield exists
     if ~isfield (S.MIAFit,'PlotStyles')
         S.MIAFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
@@ -386,8 +392,7 @@ if Mode==0 %%% Loads user values
         S.MIAFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
         disp('UserValues.MIAFit.PlotStyleAll was incomplete');
     end
-    P.MIAFit.PlotStyleAll = S.MIAFit.PlotStyleAll;
-    
+    P.MIAFit.PlotStyleAll = S.MIAFit.PlotStyleAll;    
     %% Phasor
     %%% Checks, if Phasor subfield exists
     if ~isfield (S,'Phasor')

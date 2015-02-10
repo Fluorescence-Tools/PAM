@@ -745,12 +745,7 @@ switch mode
         h.Fit_Table.CellEditCallback={@Update_Table,3};
 end
 
-%%% Calculates brightness for all files
-for i=1:size(FCSMeta.Params,2)
-    P=FCSMeta.Params(:,i);
-    eval(FCSMeta.Model.Brightness);
-    h.Fit_Table.Data{i,3}=num2str(mean(FCSData.Data{i}.Counts)*B);
-end
+
 
 %%% Updates plots to changes models
 Update_Plots;
