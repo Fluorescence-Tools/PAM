@@ -565,6 +565,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');    
     end
     P.BurstBrowser.Corrections.Gamma_BR = S.BurstBrowser.Corrections.Gamma_BR;
+    %%% Checks, if BurstBrowser.Corrections.UseBeta subfield exists
+    if ~isfield (S.BurstBrowser.Corrections,'UseBeta')
+        S.BurstBrowser.Corrections.UseBeta=0;
+        disp('UserValues.BurstBrowser.Corrections.UseBeta was incomplete');    
+    end
+    P.BurstBrowser.Corrections.UseBeta = S.BurstBrowser.Corrections.UseBeta;
     %%% Checks, if BurstBrowser.Corrections.Beta_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Beta_GR')
         S.BurstBrowser.Corrections.Beta_GR=1;
