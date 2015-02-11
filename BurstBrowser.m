@@ -399,10 +399,23 @@ if isempty(hfig)
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0 0.91 0.4 0.03],...
+    'Position',[0 0.95 0.4 0.03],...
     'Style','pushbutton',...
     'Tag','DetermineCorrectionsButton',...
     'String','Determine Corrections',...
+    'FontSize',14,...
+    'Callback',@DetermineCorrections);
+    
+    %%% Button to fit gamma
+    h.FitGammaButton = uicontrol(...
+    'Parent',h.SecondaryTabCorrectionsPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0 0.91 0.4 0.03],...
+    'Style','pushbutton',...
+    'Tag','FitGammaButton',...
+    'String','Fit Gamma (2 species or more)',...
     'FontSize',14,...
     'Callback',@DetermineCorrections);
 
@@ -2070,10 +2083,10 @@ UpdateLifetimePlots(hObject,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Determines the Correction Factors automatically  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DetermineCorrections(~,~)
+function DetermineCorrections(obj,~)
 global BurstData BurstMeta UserValues
 LSUserValues(0);
-h = guidata(gcbo);
+h = guidata(obj);
 
 %%% Change focus to CorrectionsTab
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
@@ -2104,7 +2117,8 @@ Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValue
 Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
 Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
 %% 2cMFD Corrections
-if BurstMeta.APBS == 1
+%% Crosstalk and direct excitation
+if obj ==h.DetermineCorrectionsButton
 %% plot raw Efficiency for S>0.9
 x_axis = linspace(0,0.3,50);
 Smin = 0.9;
@@ -2141,9 +2155,10 @@ BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
 BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
 end
+if obj == h.FitGammaButton
 %% plot gamma plot for two populations (or lifetime versus E)
 %%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
+S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,indS) < 0.8) );
 %%% Calculate "raw" E and S with gamma = 1, but still apply direct
 %%% excitation,crosstalk, and background corrections!
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
@@ -2181,6 +2196,7 @@ xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
 coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
 UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+end
 if any(BurstData.BAMethod == [3,4])
     %% 3cMFD corrections
     %%% Read out parameter positions
@@ -2206,6 +2222,7 @@ if any(BurstData.BAMethod == [3,4])
             (BurstData.DataArray(:,T3) < T_threshold);
         data_for_corrections = BurstData.DataArray(valid,:);
     end
+    if obj == h.DetermineCorrectionsButton
     %% Blue dye only
     S_threshold = ( (data_for_corrections(:,indSBG) > 0.9) &...
         (data_for_corrections(:,indSBR) > 0.9) );
@@ -2272,36 +2289,21 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.Fits.histSBR_redonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histSBR_redonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.DirectExcitation_BR = mean_de./(1-mean_de);
-    %% Gamma factor determination based on triple-labeled species
-    S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,indS) < 0.8) &...
-        (data_for_corrections(:,indSBG) > 0.2) & (data_for_corrections(:,indSBG) < 0.8) &...
-        (data_for_corrections(:,indSBR) > 0.2) & (data_for_corrections(:,indSBR) < 0.8) );
+    end
+    if obj == h.FitGammaButton
+    %% Gamma factor determination based on double-labeled species
+    %%% BG labeled
+    S_threshold = ( (data_for_corrections(:,indS) > 0.9) &...
+        (data_for_corrections(:,indSBG) > 0.3) & (data_for_corrections(:,indSBG) < 0.7) &...
+        (data_for_corrections(:,indSBR) > 0.9) );
     NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
     NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
-    NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
-    %%% Calculate a correct FRET Efficiency GR
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-    NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
-    gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
-    EGR = NGR./(gamma_gr.*NGG + NGR);
-    %%% Calculate NBG and NBR for "pseudo" two-dye system
-    NBG_cor = NBG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG;
-    NBR_cor = NBR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR -...
-        UserValues.BurstBrowser.Corrections.CrossTalk_GR.*(NBG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB)-...
-        UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*(EGR./(1-EGR)).*NGG;
-    NBG_pseudo = NBG_cor./(1-EGR);
-    NBR_pseudo = NBR_cor.*(EGR./(1-EGR));
-    %%% Calculate EBG and SBG for gamma_bg = 1
-    SBG_pseudo = (NBB+NBG_pseudo)./(NBB+NBG_pseudo+NGG+NGR./gamma_gr);
-    EBG_pseudo = NBG_pseudo./(NBB+NBG_pseudo);
-    %%% Calulate EBR and SBR for gamma_br = 1
-    SBR_pseudo = (NBB+NBR_pseudo)./(NBB+NBR_pseudo+NRR);
-    EBR_pseudo = NBR_pseudo./(NBB+NBR_pseudo);
-    
+    NBG = NBG - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB;
+    EBG_raw = NBG./(NBG+NBB);
+    SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
     %%% Calculate 2D-Hist and Fit
-    [H,xbins,ybins] = calc2dhist(EBG_pseudo,1./SBG_pseudo,[51 51],[0 1], [1 10]);
+    [H,xbins,ybins] = calc2dhist(EBG_raw,1./SBG_raw,[51 51],[0 1], [1 10]);
     BurstMeta.Plots.gamma_BG_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_BG_fit(1).YData= ybins;
     BurstMeta.Plots.gamma_BG_fit(1).CData= H;
@@ -2311,16 +2313,15 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.gamma_BG_fit(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(0.1,1,10);
     %%% Update/Reset Axis Labels
-    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency* BG');
-    ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG');
-    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. Efficiency* BG for gammaBG = 1');
+    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency BG');
+    ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG');
+    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. Efficiency BG for gammaBG = 1');
     %%% store for later use
-    BurstMeta.Data.EBG_pseudo = EBG_pseudo;
-    BurstMeta.Data.SBG_pseudo = SBG_pseudo;
+    BurstMeta.Data.EBG_raw = EBG_raw;
+    BurstMeta.Data.SBG_raw = SBG_raw;
     %%% Fit linearly
-    valid = EBG_pseudo >= 0 & EBG_pseudo <= 1 &...
-        SBG_pseudo >= 0 & SBG_pseudo <= 1 ;
-    fitGamma = fit(EBG_pseudo(valid),1./SBG_pseudo(valid),'poly1');
+    valid = ( EBG_raw >= 0 & EBG_raw <= 1 & SBG_raw >= 0 & SBG_raw <= 1);
+    fitGamma = fit(EBG_raw(valid),1./SBG_raw(valid),'poly1');
     BurstMeta.Plots.Fits.gamma_BG.Visible = 'on';
     BurstMeta.Plots.Fits.gamma_BG_manual.Visible = 'off';
     BurstMeta.Plots.Fits.gamma_BG.XData = linspace(0,1,1000);
@@ -2333,8 +2334,17 @@ if any(BurstData.BAMethod == [3,4])
     UserValues.BurstBrowser.Corrections.Gamma_BG = (b - 1)/(b + m - 1);
     UserValues.BurstBrowser.Corrections.Beta_BG = b+m-1;
     
+    S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
+        (data_for_corrections(:,indSBG) > 0.9) &...
+        (data_for_corrections(:,indSBR) > 0.2) & (data_for_corrections(:,indSBR) < 0.8) );
+    NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
+    NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
+    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+    NBR = NBR - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB;
+    EBR_raw = NBR./(NBR+NBB);
+    SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
     %%% Calculate 2D-Hist and Fit
-    [H,xbins,ybins] = calc2dhist(EBR_pseudo,1./SBR_pseudo,[51 51],[0 1], [1 10]);
+    [H,xbins,ybins] = calc2dhist(EBR_raw,1./SBR_raw,[51 51],[0 2], [1 10]);
     BurstMeta.Plots.gamma_BR_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_BR_fit(1).YData= ybins;
     BurstMeta.Plots.gamma_BR_fit(1).CData= H;
@@ -2348,12 +2358,12 @@ if any(BurstData.BAMethod == [3,4])
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR');
     title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1');
     %%% store for later use
-    BurstMeta.Data.EBR_pseudo = EBR_pseudo;
-    BurstMeta.Data.SBR_pseudo = SBR_pseudo;
+    BurstMeta.Data.EBR_raw = EBR_raw;
+    BurstMeta.Data.SBR_raw = SBR_raw;
     %%% Fit linearly
-    valid = EBR_pseudo >= 0 & EBR_pseudo <= 1 &...
-        SBR_pseudo >= 0 & SBR_pseudo <= 1 ;
-    fitGamma = fit(EBR_pseudo(valid),1./SBR_pseudo(valid),'poly1');
+    %valid = EBR_raw >= 0 & EBR_raw <= 1 &...
+    %     SBR_raw >= 0 & SBR_raw <= 1 ;
+    fitGamma = fit(EBR_raw,1./SBR_raw,'poly1');
     BurstMeta.Plots.Fits.gamma_BR.Visible = 'on';
     BurstMeta.Plots.Fits.gamma_BR_manual.Visible = 'off';
     BurstMeta.Plots.Fits.gamma_BR.XData = linspace(0,1,1000);
@@ -2365,6 +2375,7 @@ if any(BurstData.BAMethod == [3,4])
     coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
     UserValues.BurstBrowser.Corrections.Gamma_BR = (b - 1)/(b + m - 1);
     UserValues.BurstBrowser.Corrections.Beta_BR = b+m-1;
+    end
 end
 %% Save and Update GUI
 %%% Save UserValues
