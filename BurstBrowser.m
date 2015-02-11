@@ -403,7 +403,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','DetermineCorrectionsButton',...
     'String','Determine Corrections',...
-    'FontSize',14,...
+    'FontSize',12,...
     'Callback',@DetermineCorrections);
     
     %%% Button to fit gamma
@@ -416,7 +416,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','FitGammaButton',...
     'String','Fit Gamma (2 species or more)',...
-    'FontSize',14,...
+    'FontSize',12,...
     'Callback',@DetermineCorrections);
 
     %%% Button for manual gamma determination
@@ -425,24 +425,36 @@ if isempty(hfig)
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0 0.86 0.5 0.03],...
+    'Position',[0 0.86 0.4 0.03],...
     'Style','pushbutton',...
     'Tag','DetermineGammaManuallyButton',...
     'String','Determine Gamma Manually',...
-    'FontSize',14,...
+    'FontSize',12,...
     'Callback',@DetermineGammaManually);
     
     %%% Button to determine gamma from lifetime
-    h.DetermineGammaLifetimeButton = uicontrol(...
+    h.DetermineGammaLifetimeTwoColorButton = uicontrol(...
+    'Parent',h.SecondaryTabCorrectionsPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.5 0.91 0.5 0.03],...
+    'Style','pushbutton',...
+    'Tag','DetermineGammaLifetimeTwoColorButton',...
+    'String','Determine Gamma from Lifetime (2C)',...
+    'FontSize',12,...
+    'Callback',@DetermineGammaLifetime);
+
+    h.DetermineGammaLifetimeThreeColorButton = uicontrol(...
     'Parent',h.SecondaryTabCorrectionsPanel,...
     'Units','normalized',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.5 0.86 0.5 0.03],...
     'Style','pushbutton',...
-    'Tag','DetermineGammaLifetimeButton',...
-    'String','Determine Gamma from Lifetime',...
-    'FontSize',14,...
+    'Tag','DetermineGammaLifetimeThreeColorButton',...
+    'String','Determine Gamma from Lifetime (3C)',...
+    'FontSize',12,...
     'Callback',@DetermineGammaLifetime);
 
     %%% Button to apply custom correction factors
@@ -455,7 +467,7 @@ if isempty(hfig)
     'Style','pushbutton',...
     'Tag','ApplyCorrectionsButton',...
     'String','Apply Corrections',...
-    'FontSize',14,...
+    'FontSize',12,...
     'Callback',@ApplyCorrections);
     
     %%% Checkbox to enabel/disable beta factor Stoichiometry corrections
@@ -499,10 +511,10 @@ if isempty(hfig)
     uicontrol('Style','text',...
         'Tag','T_Threshold_Text',...
         'String','Threshold |TGX-TRR| for Corrections',...
-        'FontSize',14,...
+        'FontSize',12,...
         'Units','normalized',...
         'Parent',h.SecondaryTabCorrectionsPanel,...
-        'Position',[0.45 0.91 0.35 0.03],...
+        'Position',[0.45 0.96 0.35 0.03],...
         'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore);
     
@@ -512,7 +524,7 @@ if isempty(hfig)
         'FontSize',12,...
         'Units','normalized',...
         'Parent',h.SecondaryTabCorrectionsPanel,...
-        'Position',[0.8 0.91 0.15 0.03],...
+        'Position',[0.8 0.96 0.15 0.02],...
         'BackgroundColor',Look.Control,...
         'ForegroundColor',Look.Fore);
     
@@ -3675,116 +3687,120 @@ NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_correct
 NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
 NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
 
-%%% Calculate static FRET line in presence of linker fluctuations
-tau = linspace(0,5,100);
-[~, coeff] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-    UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
-    tau);
-staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
-%%% minimize deviation from static FRET line as a function of gamma
-dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_corrections(S_threshold,indTauGG) ) ).^2 );
-gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-E =  NGR./(gamma_fit.*NGG+NGR);
-%%% plot E versus tau with static FRET line
-[H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 5],[-0.1 1]);
-BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
-BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
-BurstMeta.Plots.gamma_lifetime(1).CData= H;
-BurstMeta.Plots.gamma_lifetime(1).AlphaData= (H>0);
-BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
-BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
-BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
-BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(0.1,1,10);
-%%% add static FRET line
-tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
-BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
-BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
-BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = staticFRETline(tau);
-ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
-%%% Update UserValues
-UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-
-%% 3cMFD - Fit E1A vs. TauBlue
-if any(BurstData.BAMethod == [3,4])
-    %%% Prepare photon counts
-    indNBB = (strcmp(BurstData.NameArray,'Number of Photons (BB)'));
-    indNBG = (strcmp(BurstData.NameArray,'Number of Photons (BG)'));
-    indNBR = (strcmp(BurstData.NameArray,'Number of Photons (BR)'));
-    indTauBB = (strcmp(BurstData.NameArray,'Lifetime BB [ns]'));
-    indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-    indSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
-    
-    T_threshold = str2double(h.T_Threshold_Edit.String);
-    if isnan(T_threshold)
-        T_threshold = 0.1;
-    end
-    cutT = 1;
-    %%% define T-threshold
-    if cutT == 0
-        data_for_corrections = BurstData.DataArray;
-    elseif cutT == 1
-        T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-        T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
-        T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
-        valid = (BurstData.DataArray(:,T1) < T_threshold) &...
-            (BurstData.DataArray(:,T2) < T_threshold) &...
-            (BurstData.DataArray(:,T3) < T_threshold);
-        data_for_corrections = BurstData.DataArray(valid,:);
-    end
-
-    %%% Read out corrections
-    Background_BB = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
-    Background_BG = UserValues.BurstBrowser.Corrections.Background_BGpar + UserValues.BurstBrowser.Corrections.Background_BGperp;
-    Background_BR = UserValues.BurstBrowser.Corrections.Background_BRpar + UserValues.BurstBrowser.Corrections.Background_BRperp;
-
-    %%% get E-S values between 0.1 and 0.9;
-    S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
-        (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
-        (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
-    %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
-    %%% excitation,crosstalk, and background corrections!
-    NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
-    NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
-    NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-    NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
-    gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
-    EGR = NGR./(gamma_gr.*NGG+NGR);
-    NBR = NBR - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB -...
-        UserValues.BurstBrowser.Corrections.CrossTalk_GR.*(NBG-UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB) -...
-        UserValues.BurstBrowser.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
-    NBG = NBG - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB;
+if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% Calculate static FRET line in presence of linker fluctuations
     tau = linspace(0,5,100);
-    [~, coeff] = conversion_tau_3C(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue,...
-        UserValues.BurstBrowser.Corrections.FoersterRadiusBG,UserValues.BurstBrowser.Corrections.FoersterRadiusBR,...
-        UserValues.BurstBrowser.Corrections.LinkerLengthBG,UserValues.BurstBrowser.Corrections.LinkerLengthBR,...
+    [~, coeff] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
         tau);
-    staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
-    %%% minimize deviation from static FRET line as a function of gamma_br!
-    dev = @(gamma) sum( ( ( (gamma_gr.*NBG+NBR)./(gamma.*NBB + gamma_gr.*NBG + NBR) ) - staticFRETline(data_for_corrections(S_threshold,indTauBB) ) ).^2 );
+    staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
+    %%% minimize deviation from static FRET line as a function of gamma
+    dev = @(gamma) sum( ( ( NGR./(gamma.*NGG+NGR) ) - staticFRETline(data_for_corrections(S_threshold,indTauGG) ) ).^2 );
     gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-    E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
+    E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 5],[-0.1 1]);
-    BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
-    BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
-    BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
-    BurstMeta.Plots.gamma_threecolor_lifetime(1).AlphaData= (H>0);
-    BurstMeta.Plots.gamma_threecolor_lifetime(2).XData= xbins;
-    BurstMeta.Plots.gamma_threecolor_lifetime(2).YData= ybins;
-    BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
-    BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(0.1,1,10);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 5],[-0.1 1]);
+    BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
+    BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
+    BurstMeta.Plots.gamma_lifetime(1).CData= H;
+    BurstMeta.Plots.gamma_lifetime(1).AlphaData= (H>0);
+    BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
+    BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
+    BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
+    BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(0.1,1,10);
     %%% add static FRET line
-    tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
-    BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
-    BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
-    BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = staticFRETline(tau);
-    ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
+    tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = staticFRETline(tau);
+    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
     %%% Update UserValues
-    UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
+    UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
+end
+%% 3cMFD - Fit E1A vs. TauBlue
+if obj == h.DetermineGammaLifetimeThreeColorButton
+    if any(BurstData.BAMethod == [3,4])
+        %%% Prepare photon counts
+        indNBB = (strcmp(BurstData.NameArray,'Number of Photons (BB)'));
+        indNBG = (strcmp(BurstData.NameArray,'Number of Photons (BG)'));
+        indNBR = (strcmp(BurstData.NameArray,'Number of Photons (BR)'));
+        indTauBB = (strcmp(BurstData.NameArray,'Lifetime BB [ns]'));
+        indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
+        indSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
+
+        T_threshold = str2double(h.T_Threshold_Edit.String);
+        if isnan(T_threshold)
+            T_threshold = 0.1;
+        end
+        cutT = 1;
+        %%% define T-threshold
+        if cutT == 0
+            data_for_corrections = BurstData.DataArray;
+        elseif cutT == 1
+            T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
+            T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
+            T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
+            valid = (BurstData.DataArray(:,T1) < T_threshold) &...
+                (BurstData.DataArray(:,T2) < T_threshold) &...
+                (BurstData.DataArray(:,T3) < T_threshold);
+            data_for_corrections = BurstData.DataArray(valid,:);
+        end
+
+        %%% Read out corrections
+        Background_BB = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
+        Background_BG = UserValues.BurstBrowser.Corrections.Background_BGpar + UserValues.BurstBrowser.Corrections.Background_BGperp;
+        Background_BR = UserValues.BurstBrowser.Corrections.Background_BRpar + UserValues.BurstBrowser.Corrections.Background_BRperp;
+
+        %%% get E-S values between 0.1 and 0.9;
+        S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
+            (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
+            (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
+        %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
+        %%% excitation,crosstalk, and background corrections!
+        NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
+        NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
+        NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
+        NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+        NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+        NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+        NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+        gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
+        EGR = NGR./(gamma_gr.*NGG+NGR);
+        NBR = NBR - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB -...
+            UserValues.BurstBrowser.Corrections.CrossTalk_GR.*(NBG-UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB) -...
+            UserValues.BurstBrowser.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
+        NBG = NBG - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB;
+        %%% Calculate static FRET line in presence of linker fluctuations
+        tau = linspace(0,5,100);
+        [~, coeff] = conversion_tau_3C(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue,...
+            UserValues.BurstBrowser.Corrections.FoersterRadiusBG,UserValues.BurstBrowser.Corrections.FoersterRadiusBR,...
+            UserValues.BurstBrowser.Corrections.LinkerLengthBG,UserValues.BurstBrowser.Corrections.LinkerLengthBR,...
+            tau);
+        staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+        %%% minimize deviation from static FRET line as a function of gamma_br!
+        dev = @(gamma) sum( ( ( (gamma_gr.*NBG+NBR)./(gamma.*NBB + gamma_gr.*NBG + NBR) ) - staticFRETline(data_for_corrections(S_threshold,indTauBB) ) ).^2 );
+        gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+        E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
+        %%% plot E versus tau with static FRET line
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 5],[-0.1 1]);
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).AlphaData= (H>0);
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).XData= xbins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).YData= ybins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(0.1,1,10);
+        %%% add static FRET line
+        tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = staticFRETline(tau);
+        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
+        %%% Update UserValues
+        UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
+        UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
+    end
 end
 %%% Save UserValues
 LSUserValues(1);
