@@ -707,6 +707,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.DonorLifetime was incomplete');    
     end
     P.BurstBrowser.Corrections.DonorLifetime = S.BurstBrowser.Corrections.DonorLifetime;
+    %%% Checks, if BurstBrowser.Corrections.DonorLifetimeBlue subfield exists
+    %%% This value stores the set Donor Lifetime
+    if ~isfield (S.BurstBrowser.Corrections,'DonorLifetimeBlue')
+        S.BurstBrowser.Corrections.DonorLifetimeBlue=3.8;
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');    
+    end
+    P.BurstBrowser.Corrections.DonorLifetimeBlue = S.BurstBrowser.Corrections.DonorLifetimeBlue;
     %%% Checks, if BurstBrowser.Corrections.AcceptorLifetime subfield exists
     %%% This value stores the set Acceptor Lifetime
     if ~isfield (S.BurstBrowser.Corrections,'AcceptorLifetime')
@@ -796,8 +803,7 @@ if Mode==0 %%% Loads user values
     P.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
-    Mode=1;
-    
+    save(fullfile(Profiledir,'Profile.mat'),'Profile');
 else
     Current=[];
 end
