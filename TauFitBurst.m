@@ -976,7 +976,6 @@ Irf = Irf-min(Irf(Irf~=0));
 Irf = Irf./sum(Irf);
 Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
 TauFitBurstData.TACRange = TauFitBurstData.SyncPeriod*1E9;
-TauFitBurstData.TACChannelWidth = TauFitBurstData.SyncPeriod*1E9/TauFitBurstData.MI_Bins;
 Scatter = TauFitBurstData.FitData.Scatter_Par{chan} + 2*TauFitBurstData.FitData.Scatter_Per{chan};
 Scatter = Scatter./sum(Scatter);
 
@@ -988,7 +987,7 @@ h.Progress_Text.String = 'Fitting...';
         %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.1,0.1,round(4/TauFitBurstData.TACChannelWidth)];
+        x0 = [0.1,0.1,round(4/TauFitBurstData.TAC_Bin)];
         shift_range = 0:0;
         %%% fit for different IRF offsets and compare the results
         count = 1;
@@ -1019,7 +1018,7 @@ h.Plots.Residuals.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
-disp(['Tau = ' num2str(TauFitBurstData.TACChannelWidth*x{best_fit}(3))]);
+disp(['Tau = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(3))]);
 TauFitBurstData.Tau = x{best_fit}(3);
 TauFitBurstData.Scatter_Contribution{chan} = x{best_fit}(2);
 TauFitBurstData.Background_Contribution{chan} = x{best_fit}(1);
@@ -1076,8 +1075,13 @@ case {1,2}
     load(fullfile(Path,[File '.bps']),'-mat');
 
     %%% Determine bin width for coarse binning
-    new_bin_width = floor(0.2/TauFitBurstData.TACChannelWidth);
+    new_bin_width = floor(0.1/TauFitBurstData.TAC_Bin);
 
+     %%% Read out burst duration
+    duration = BurstData.DataArray(:,strcmp(BurstData.NameArray,'Duration [ms]'));
+    %%% Read out Background Countrates per Chan
+    background{1} = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+    background{2} = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
     %% Prepare the data
     for chan = 1:2
         %%% Read out the shifted scatter pattern
@@ -1129,7 +1133,7 @@ case {1,2}
         Progress((chan-1)/2,h.Progress_Axes,h.Progress_Text,['Fitting Channel ' num2str(chan) ' of 2...']);
 
         [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
-        T = TauFitBurstData.TACChannelWidth*Length{chan};
+        T = TauFitBurstData.TAC_Bin*Length{chan};
         GAMMA = T./tau;
         p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
         %p = p(1:length+1,:);
@@ -1138,10 +1142,11 @@ case {1,2}
         z = sum(c,1);
         c = c./z(ones(size(c,1),1),:);
         c = c(1:Length{chan}+1,:);
-        model = (1-background{chan})*c + background{chan};
-        z = sum(model,1);
-        model = model./z(ones(size(model,1),1),:);
-        model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+%         model = (1-background{chan})*c + background{chan};
+%         z = sum(model,1);
+%         model = model./z(ones(size(model,1),1),:);
+%         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+        model = c;
         z = sum(model,1);
         model = model./z(ones(size(model,1),1),:);
         %%% Rebin to improve speed
@@ -1150,8 +1155,22 @@ case {1,2}
             model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
         end
         model = model_dummy;
-        parfor i = 1:numel(Mic{chan})
-            [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},model,range);
+        z = sum(model,1);model = model./z(ones(size(model,1),1),:);
+         %%% Calculate Background fraction
+        bg = duration.*background{1};
+        signal = cellfun(@sum,Mic{chan});
+        fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+        %%% Rebin SCATTER pattern
+        scat = downsamplebin(SCATTER{chan},new_bin_width);scat = scat./sum(scat);
+        for i = 1:numel(Mic{chan})
+            if fraction_bg(i) == 1
+                lifetime(i,chan) = NaN;
+            else
+                %%% Implementation of burst-wise background correction
+                %%% Calculate Fractions of Background and Signal
+                modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
+                [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},modelfun,range);
+            end
         end
     end
 
@@ -1206,8 +1225,14 @@ case {3,4}
     load(fullfile(Path,[File '.bps']),'-mat');
 
     %%% Determine bin width for coarse binning
-    new_bin_width = floor(0.2/TauFitBurstData.TACChannelWidth);
-
+    new_bin_width = floor(0.1/TauFitBurstData.TAC_Bin);
+    
+    %%% Read out burst duration
+    duration = BurstData.DataArray(:,strcmp(BurstData.NameArray,'Duration [ms]'));
+    %%% Read out Background Countrates per Chan
+    background{1} = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
+    background{2} = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
+    background{3} = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
     %% Prepare the data
     for chan = 1:3
         %%% Read out the shifted scatter pattern
@@ -1260,9 +1285,9 @@ case {3,4}
     for chan = 1:3
         %%% Update Progress
         Progress((chan-1)/3,h.Progress_Axes,h.Progress_Text,['Fitting Channel ' num2str(chan) ' of 3...']);
-
+        
         [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
-        T = TauFitBurstData.TACChannelWidth*Length{chan};
+        T = TauFitBurstData.TAC_Bin*Length{chan};
         GAMMA = T./tau;
         p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
         %p = p(1:length+1,:);
@@ -1271,10 +1296,12 @@ case {3,4}
         z = sum(c,1);
         c = c./z(ones(size(c,1),1),:);
         c = c(1:Length{chan}+1,:);
-        model = (1-background{chan})*c + background{chan};
-        z = sum(model,1);
-        model = model./z(ones(size(model,1),1),:);
-        model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+%         model = (1-background{chan})*c + background{chan};
+%         z = sum(model,1);
+%         model = model./z(ones(size(model,1),1),:);
+%         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+%         z = sum(model,1);
+        model = c;
         z = sum(model,1);
         model = model./z(ones(size(model,1),1),:);
         %%% Rebin to improve speed
@@ -1283,8 +1310,22 @@ case {3,4}
             model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
         end
         model = model_dummy;
+        z = sum(model,1);model = model./z(ones(size(model,1),1),:);
+         %%% Calculate Background fraction
+        bg = duration.*background{1};
+        signal = cellfun(@sum,Mic{chan});
+        fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+        %%% Rebin SCATTER pattern
+        scat = downsamplebin(SCATTER{chan},new_bin_width);scat = scat./sum(scat);
         parfor i = 1:numel(Mic{chan})
-            [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},model,range);
+            if fraction_bg(i) == 1
+                lifetime(i,chan) = NaN;
+            else
+                %%% Implementation of burst-wise background correction
+                %%% Calculate Fractions of Background and Signal
+                modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
+                [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}{i},modelfun,range);
+            end
         end
     end
 
