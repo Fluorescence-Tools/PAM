@@ -1873,7 +1873,7 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 datatoplot = BurstData.DataCut;
 
-[H, xbins,ybins,xbins_1d, ybins_1d] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
+[H, xbins,ybins,~,~] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
 
 %%% Update Image Plot and Contour Plot
 BurstMeta.Plots.Main_Plot(1).XData = xbins;
@@ -1891,18 +1891,19 @@ xlabel(h.axes_general,h.ParameterListX.String{x});
 ylabel(h.axes_general,h.ParameterListY.String{y});
 
 %plot 1D hists    
-hx = histc(datatoplot(:,x),xbins_1d);
-hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
+%hx = histc(datatoplot(:,x),xbins_1d);
+%hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 BurstMeta.Plots.Main_histX.XData = xbins;
-BurstMeta.Plots.Main_histX.YData = hx;
+%BurstMeta.Plots.Main_histX.YData = hx;
+BurstMeta.Plots.Main_histX.YData = sum(H,1);
 yticks= get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
-axes(h.axes_1d_y);
-hy = histc(datatoplot(:,y),ybins_1d);
-hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
+%hy = histc(datatoplot(:,y),ybins_1d);
+%hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 BurstMeta.Plots.Main_histY.XData = ybins;
-BurstMeta.Plots.Main_histY.YData = hy;
+%BurstMeta.Plots.Main_histY.YData = hy;
+BurstMeta.Plots.Main_histY.YData = sum(H,2);
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 
@@ -3404,7 +3405,8 @@ if any(BurstData.BAMethod == [3,4])
     idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
     idxE1A = strcmp('Efficiency B->G+R',BurstData.NameArray);
     %% Plot E1A vs. tauBB
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 5], [0 1]);
+    valid = (datatoplot(:,idx_tauBB) > 0.01);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 5], [0 1]);
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -3420,7 +3422,7 @@ if any(BurstData.BAMethod == [3,4])
         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
     end
     %% Plot rBB vs tauBB
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauBB), datatoplot(:,idx_rBB),[51 51], [0 6], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[51 51], [0 6], [-0.1 0.5]);
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
@@ -3456,10 +3458,21 @@ if obj == h.PlotStaticFRETButton
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
+    if any(BurstData.BAMethod == [3,4])
+        %%% Calculate static FRET line in presence of linker fluctuations
+        tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
+        staticFRETline = conversion_tau_3C(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue,...
+            UserValues.BurstBrowser.Corrections.FoersterRadiusBG,UserValues.BurstBrowser.Corrections.FoersterRadiusBR,...
+            UserValues.BurstBrowser.Corrections.LinkerLengthBG,UserValues.BurstBrowser.Corrections.LinkerLengthBR,...
+            tau);
+        BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
+        BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
+        BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.YData = staticFRETline;
+    end
 end
 if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
-    %%% GG
+    %% GG
     r0 = 0.4;
     fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
     tauGG = datatoplot(:,idx_tauGG); 
@@ -3486,12 +3499,30 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
     BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
     title(h.axes_rRRvsTauRR,['rhoRR = ' num2str(BurstData.Parameters.rhoRR) ' ns']);
+    if any(BurstData.BAMethod == [3,4])
+        %% BB
+        idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
+        idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
+        r0 = 0.4;
+        fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+        %valid = (datatoplot(:,idx_tauBB) > 0.01) & (datatoplot(:,idx_tauBB) < 5) & (~isnan(datatoplot(:,idx_tauBB))); 
+        tauBB = datatoplot(:,idx_tauBB);
+        PerrinFitBB = fit(tauBB(~isnan(tauBB)),datatoplot(~isnan(tauBB),idx_rBB),fPerrin,'StartPoint',1);
+        tau = linspace(h.axes_rBBvsTauBB.XLim(1),h.axes_rBBvsTauBB.XLim(2),100);
+        BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
+        BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
+        BurstMeta.Plots.Fits.PerrinBB(1).YData = PerrinFitBB(tau);
+        BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
+        BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
+        BurstData.Parameters.rhoBB = coeffvalues(PerrinFitBB);
+        title(h.axes_rBBvsTauBB,['rhoBB = ' num2str(BurstData.Parameters.rhoBB) ' ns']);
+    end
 end
 %% Manual Perrin plots
 if obj == h.ManualAnisotropyButton
     [x,y,button] = ginput(1);
     if button == 1 %%% left mouse click, reset plot and plot one perrin line
-        if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR)
+        if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR) || (gca == h.axes_rBBvsTauBB)
             haxes = gca;
             %%% Determine rho
             r0 = 0.4;
@@ -3499,24 +3530,28 @@ if obj == h.ManualAnisotropyButton
             fitPerrin = @(x) r0./(1+x./rho);
             %%% plot
             tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
-            if haxes == h.axes_rGGvsTauGG
-                BurstMeta.Plots.Fits.PerrinGG(1).Visible = 'on';
-                BurstMeta.Plots.Fits.PerrinGG(1).XData = tau;
-                BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
-                BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
-                BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
-            elseif haxes == h.axes_rRRvsTauRR
-                BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
-                BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
-                BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
-                BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
-                BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
-            end
             switch haxes
                 case h.axes_rGGvsTauGG
+                    BurstMeta.Plots.Fits.PerrinGG(1).Visible = 'on';
+                    BurstMeta.Plots.Fits.PerrinGG(1).XData = tau;
+                    BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
+                    BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
+                    BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
                     title(['rhoGG = ' num2str(rho)]);
                 case h.axes_rRRvsTauRR
+                    BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
+                    BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
+                    BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
+                    BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
+                    BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
                     title(['rhoRR = ' num2str(rho)]);
+                case h.axes_rBBvsTauBB
+                    BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
+                    BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
+                    BurstMeta.Plots.Fits.PerrinBB(1).YData = fitPerrin(tau);
+                    BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
+                    BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
+                    title(['rhoBB = ' num2str(rho)]);
             end
         end
     elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
@@ -3561,6 +3596,29 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinRR(vis+1).YData = fitPerrin(tau);
                 if vis == 0
                     title(haxes,['rhoRR = ' num2str(rho)]);
+                else
+                    %%% add rho2 to title
+                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    title(new_title);
+                end
+            end
+        elseif haxes == h.axes_rBBvsTauBB
+             %%% Check for visibility of plots
+            vis = 0;
+            for i = 1:3
+                vis = vis + strcmp(BurstMeta.Plots.Fits.PerrinBB(i).Visible,'on');
+            end
+            if vis < 3
+                %%% Determine rho
+                r0 = 0.4;
+                rho = x/(r0/y - 1);
+                fitPerrin = @(x) r0./(1+x./rho);
+                tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
+                BurstMeta.Plots.Fits.PerrinBB(vis+1).Visible = 'on';
+                BurstMeta.Plots.Fits.PerrinBB(vis+1).XData = tau;
+                BurstMeta.Plots.Fits.PerrinBB(vis+1).YData = fitPerrin(tau);
+                if vis == 0
+                    title(haxes,['rhoBB = ' num2str(rho)]);
                 else
                     %%% add rho2 to title
                     new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
@@ -4121,7 +4179,7 @@ end
 if nargin == 6
     axes(haxes);
 end
-valid = (x > limx(1)) & (x < limx(2)) & (y > limy(1)) & (y < limy(2));
+valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
 y = y(valid);
 [H, xbins_hist, ybins_hist] = hist2d([x y], nbins(1), nbins(2), limx, limy);
