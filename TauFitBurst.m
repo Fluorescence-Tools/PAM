@@ -1162,7 +1162,7 @@ case {1,2}
         fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
         %%% Rebin SCATTER pattern
         scat = downsamplebin(SCATTER{chan},new_bin_width);scat = scat./sum(scat);
-        for i = 1:numel(Mic{chan})
+        parfor i = 1:numel(Mic{chan})
             if fraction_bg(i) == 1
                 lifetime(i,chan) = NaN;
             else
