@@ -1072,7 +1072,7 @@ end
         'Callback',@Update_PIE_Channels,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.745 0.76 0.08 0.06]);   
+        'Position',[0.745 0.76 0.08 0.06]);
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.PIE_Panel,...
@@ -2371,6 +2371,8 @@ if ~strcmp(ed.EventName,'KeyPress')
         e.Key='Export_Image_Tiff';
     elseif obj == h.PIE_Combine
         e.Key='Combine';
+    elseif obj == h.PIE_Select
+        e.Key='PIE_Select';
     else
         e.Key='';
     end
@@ -2683,6 +2685,38 @@ switch e.Key
             %%% Updates correlation table
             Update_Cor_Table(obj);
         end        
+    case 'PIE_Select'
+        %%% Enable manual selection
+        [x,~] = ginput(2);
+        %%% Read out which Axis was clicked to get the Detector/Routing
+        Clicked_Axis = gca;
+        Axes_Handles = cell(size(UserValues.Detector.Plots,1),size(UserValues.Detector.Plots,2));
+        for i = 1:size(UserValues.Detector.Plots,1)
+            for j = 1:size(UserValues.Detector.Plots,2)
+                Axes_Handles{i,j} = h.MI_Individual{i,2*j+1};
+            end
+        end
+        Clicked_Plot = [];
+        for i = 1:size(UserValues.Detector.Plots,1)
+            for j = 1:size(UserValues.Detector.Plots,2)
+                if  Axes_Handles{i,j} == Clicked_Axis
+                    Clicked_Plot = UserValues.Detector.Plots(i,j);
+                end
+            end
+        end
+        
+        %%% Update UserValues
+        if ~isempty(Clicked_Plot)
+            UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(Clicked_Plot);
+            UserValues.PIE.Router(Sel)=UserValues.Detector.Rout(Clicked_Plot);
+            UserValues.PIE.From(Sel)=round(x(1));
+            UserValues.PIE.To(Sel)=round(x(2));
+            %%% Updates Pam meta data; input 3 should be empty to improve speed
+            %%% Input 4 is the new channel
+            Update_to_UserValues
+            Update_Data([],[],[],numel(UserValues.PIE.Name));
+            Update_Display([],[],0);
+        end    
     otherwise
         e.Key='';
 end

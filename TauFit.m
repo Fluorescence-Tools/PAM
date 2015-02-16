@@ -41,8 +41,18 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Tag','TauFit_Panel');
     
     %%% Right-click menu for plot changes
-    h.Microtime_Plot_Menu = uicontextmenu;
-    
+    h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
+    h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
+        h.Microtime_Plot_Menu_MIPlot,...
+        'Label','Logscale',...
+        'Tag','Plot_Logscale_MIPlot',...
+        'Callback',@ChangeYScale);
+    h.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
+    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
+        h.Microtime_Plot_Menu_ResultPlot,...
+        'Label','Logscale',...
+        'Tag','Plot_Logscale_ResultPlot',...
+        'Callback',@ChangeYScale);
     %%% Main Microtime Plot
     h.Microtime_Plot = axes(...
         'Parent',h.TauFit_Panel,...
@@ -51,7 +61,8 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Tag','Microtime_Plot',...
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
-        'Box','on');
+        'Box','on',...
+        'UIContextMenu',h.Microtime_Plot_Menu_MIPlot);
     
     %%% Create Graphs
     hold on;
@@ -98,7 +109,8 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'Box','on',...
-        'Visible','on');
+        'Visible','on',...
+        'UIContextMenu',h.Microtime_Plot_Menu_ResultPlot);
     
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
@@ -112,7 +124,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     
     hold on;
     h.Plots.DecayResult = plot([0 1],[0 0],'--k');
-    h.Plots.FitResult = plot([0 1],[0 0],'k');
+    h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2);
     
     %%% dummy panel to hide plots
     h.HidePanel = uibuttongroup(...
@@ -122,7 +134,6 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     
     %%% Hide Result Plot
     h.Result_Plot.Parent = h.HidePanel;
-    
     %% Sliders
     %%% Define the container
     h.Slider_Panel = uibuttongroup(...
@@ -395,7 +406,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     end
     %%% Popup Menu for Fit Method Selection
     FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-        'Distribution','Distribution plus Donor only'};
+        'Distribution','Distribution plus Donor only','Fit Anisotropy'};
     h.FitMethod_Popupmenu = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
         'Style','Popupmenu',...
@@ -440,6 +451,17 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Position',[0.05 0.05 0.2 0.2],...
         'String','Start Fit',...
         'Callback',@Start_Fit);
+    %%% Button to determine G-factor
+    h.Fit_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','Determine_GFactor_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.55 0.4 0.2 0.2],...
+        'String','Determine G-Factor',...
+        'Callback',@DetermineGFactor);
     %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for progressbar
     h.Progress_Panel = uibuttongroup(...
@@ -571,6 +593,23 @@ h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
 h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
 h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
 
+function ChangeYScale(obj,~)
+h = guidata(obj);
+if strcmp(obj.Checked,'off')
+    %%% Set Checked
+    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
+    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
+    %%% Change Scale to Log
+    h.Microtime_Plot.YScale = 'log';
+    h.Result_Plot.YScale = 'log';
+elseif strcmp(obj.Checked,'on')
+    %%% Set Unchecked
+    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
+    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
+    %%% Change Scale to Lin
+    h.Microtime_Plot.YScale = 'lin';
+    h.Result_Plot.YScale = 'lin';
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -753,8 +792,7 @@ h.Plots.IRF_Par.YData = hIRF_Par_Shifted((TauFitData.StartPar+1):TauFitData.IRFL
 h.Plots.IRF_Per.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
 hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
-
-axis('tight');
+axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Function for loading the IRF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1026,7 +1064,7 @@ switch TauFitData.FitType
         x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
         lb = [0 0 0];
         ub = [1 1 Inf];
-        shift_range = -0:0;
+        shift_range = 0:20;
         ignore = 100;
         %%% fit for different IRF offsets and compare the results
         count = 1;
@@ -1050,7 +1088,7 @@ switch TauFitData.FitType
         x0 = [0.5, 0.1,0.1,round(2/TauFitData.TACChannelWidth),round(4/TauFitData.TACChannelWidth)];
         lb = [0 0 0 round(0.5/TauFitData.TACChannelWidth) round(2/TauFitData.TACChannelWidth)];
         ub = [1 1 1 Inf Inf];
-        shift_range = -10:10;
+        shift_range = 0:20;
         ignore = 100;
         %%% fit for different IRF offsets and compare the results
         count = 1;
@@ -1088,6 +1126,50 @@ disp(num2str(shift_range(best_fit)));
 disp(num2str(x{best_fit}(1)));
 disp(num2str(x{best_fit}(2)));
 disp(num2str(chi2(best_fit)));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DetermineGFactor(obj,~)
+global TauFitData FileInfo
+h = guidata(obj);
+TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
+TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/double(FileInfo.MI_Bins);
+%%% Read out the data from the plots
+MI = h.Plots.Decay_Par.XData;
+Decay_Par = h.Plots.Decay_Par.YData;
+Decay_Per = h.Plots.Decay_Per.YData;
+%%% Calculate Anisotropy
+l1 = 0.03;
+l2 = 0.03;
+Anisotropy = (Decay_Par-Decay_Per)./((1-3*l1).*Decay_Par + (2-3*l2)*Decay_Per);
+%%% Define FitFunction
+Fit_Exp = @(p,x) (p(1)-p(3)).*exp(-x./p(2)) + p(3);
+%%% perform fit
+x0 = [0.4,round(1/TauFitData.TACChannelWidth),0];
+lb = [0,0,-0.4];
+ub = [0.4,Inf,0.4];
+[x,~,res] = lsqcurvefit(Fit_Exp,x0,MI,Anisotropy,lb,ub);
+FitFun = Fit_Exp(x,MI);
+
+%%% Update Plots
+h.Microtime_Plot.Parent = h.HidePanel;
+h.Result_Plot.Parent = h.TauFit_Panel;
+
+h.Plots.DecayResult.XData = MI;
+h.Plots.DecayResult.YData = Anisotropy;
+h.Plots.FitResult.XData = MI;
+h.Plots.FitResult.YData = FitFun;
+axis(h.Result_Plot,'tight');
+h.Plots.Residuals.XData = MI;
+h.Plots.Residuals.YData = res;
+h.Plots.Residuals_ZeroLine.XData = MI;
+h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
+
+%%% calculate G
+G = (1-x(3))./(1+2*x(3));
+disp(num2str(G));
+disp(num2str(x(2)*TauFitData.TACChannelWidth))
+disp(num2str(x(1)));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

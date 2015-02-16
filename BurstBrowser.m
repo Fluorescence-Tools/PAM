@@ -458,7 +458,8 @@ if isempty(hfig)
     'Tag','DetermineGammaLifetimeThreeColorButton',...
     'String','Determine Gamma from Lifetime (3C)',...
     'FontSize',12,...
-    'Callback',@DetermineGammaLifetime);
+    'Callback',@DetermineGammaLifetime,...
+    'Visible','off');
 
     %%% Button to apply custom correction factors
     h.ApplyCorrectionsButton = uicontrol(...
@@ -1246,7 +1247,7 @@ if isempty(hfig)
         'Parent',h.MainTabfFCSPanel,...
         'Units','normalized',...
         'Position',[0.14 0.94 0.15 0.05],...
-        'String',{''},...
+        'String',{' '},...
         'Value',1,...
         'FontSize',14);
     
@@ -1264,7 +1265,7 @@ if isempty(hfig)
         'Parent',h.MainTabfFCSPanel,...
         'Units','normalized',...
         'Position',[0.39 0.94 0.15 0.05],...
-        'String',{''},...
+        'String',{' '},...
         'Value',1,...
         'FontSize',14);
     
@@ -1433,12 +1434,14 @@ if isempty(hfig)
     
     BurstMeta.Plots.fFCS.FilterPar_Species1 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.FilterPar_Species2 = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.FilterPar_IRF = plot(h.axes_fFCS_FilterPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Par = plot(h.axes_fFCS_ReconstructionPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Decay_Par = plot(h.axes_fFCS_ReconstructionPar,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Weighted_Residuals_Par = plot(h.axes_fFCS_ReconstructionParResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     
     BurstMeta.Plots.fFCS.FilterPerp_Species1 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.FilterPerp_Species2 = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color',[0 0.5 0],'LineStyle','-','LineWidth',1);
+    BurstMeta.Plots.fFCS.FilterPerp_IRF = plot(h.axes_fFCS_FilterPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp = plot(h.axes_fFCS_ReconstructionPerp,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
     BurstMeta.Plots.fFCS.Weighted_Residuals_Perp = plot(h.axes_fFCS_ReconstructionPerpResiduals,[0 1],[0 0],'Color','k','LineStyle','-','LineWidth',1);
@@ -1997,7 +2000,7 @@ for i = 1:num_species
     [H{i}, xbins_hist, ybins_hist] = hist2d([datatoplot{i}(:,x) datatoplot{i}(:,y)],nbinsX, nbinsY, x_boundaries, y_boundaries);
     H{i}(H{i}==0) = NaN;
     H{i}(:,end-1) = H{i}(:,end-1) + H{i}(:,end); H{i}(:,end) = [];
-    H{i}(end-1,:) = H{i}(end-1,:) + H{i}(end-1,:); H{i}(end,:) = [];
+    H{i}(end-1,:) = H{i}(end-1,:) + H{i}(end,:); H{i}(end,:) = [];
 end
 
 xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
@@ -2633,6 +2636,11 @@ if numel(BurstData.SpeciesNames) > 1
     else
         h.fFCS_Species2_popupmenu.Value = 1;
     end
+else %%% Set to empty
+    h.fFCS_Species1_popupmenu.String = '';
+    h.fFCS_Species1_popupmenu.Value = 1;
+    h.fFCS_Species2_popupmenu.String = '';
+    h.fFCS_Species2_popupmenu.Value = 1;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Microtime Histograms in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2666,47 +2674,43 @@ CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(C
 %MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
 MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
 CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
-
-ParChans = [1 3]; %% GG1 and GR1
-PerpChans = [2 4]; %% GG2 and GR2
+switch BurstData.BAMethod
+    case {1,2} %%% 2ColorMFD
+        ParChans = [1 3]; %% GG1 and GR1
+        PerpChans = [2 4]; %% GG2 and GR2
+    case {3,4} %%% 3ColorMFD
+        ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
+        PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
+end
 %%% Construct Stacked Microtime Channels
 %%% ___| MT1 |___| MT2 + max(MT1) |___
 MI_par{1} = [];MI_par{2} = [];
 MI_perp{1} = [];MI_perp{2} = [];
-MT_par{1} = [];MT_par{2} = [];
-MT_perp{1} = [];MT_perp{2} = [];
 %%% read out the limits of the PIE channels
 limit_low_par = [0, BurstData.fFCS.From(ParChans)];
 limit_high_par = [0, BurstData.fFCS.To(ParChans)];
+dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
 limit_low_perp = [0,BurstData.fFCS.From(PerpChans)];
 limit_high_perp = [0, BurstData.fFCS.To(PerpChans)];
+dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
-        MI_par{i} = vertcat(MI_par{i},...
+         MI_par{i} = vertcat(MI_par{i},...
             MI_species{i}(CH_species{i} == ParChans(j)) -...
             limit_low_par(j+1) + 1 +...
-            limit_high_par(j)-limit_low_par(j));
-%         MT_par{i} = vertcat(MT_par{i},...
-%             MT_species{i}(CH_species{i} == ParChans(j)));
+            dif_par(j));
         MI_perp{i} = vertcat(MI_perp{i},...
             MI_species{i}(CH_species{i} == PerpChans(j)) -...
             limit_low_perp(j+1) + 1 +...
-            limit_high_perp(j)-limit_low_perp(j));
-%         MT_perp{i} = vertcat(MT_perp{i},...
-%             MT_species{i}(CH_species{i} == PerpChans(j)));
-        
+            dif_perp(j));
 %         MI_par{i} = vertcat(MI_par{i},...
 %             MI_species{i}(CH_species{i} == ParChans(j)) -...
-%             min(MI_species{i}(CH_species{i} == ParChans(j))) + 1 +...
-%             max([max(MI_par{i}),0]));
-%         MT_par{i} = vertcat(MT_par{i},...
-%             MT_species{i}(CH_species{i} == ParChans(j)));
+%             limit_low_par(j+1) + 1 +...
+%             limit_high_par(j)-limit_low_par(j));
 %         MI_perp{i} = vertcat(MI_perp{i},...
 %             MI_species{i}(CH_species{i} == PerpChans(j)) -...
-%             min(MI_species{i}(CH_species{i} == PerpChans(j))) + 1 +...
-%             max([max(MI_perp{i}),0]));
-%         MT_perp{i} = vertcat(MT_perp{i},...
-%             MT_species{i}(CH_species{i} == PerpChans(j)));
+%             limit_low_perp(j+1) + 1 +...
+%             limit_high_perp(j)-limit_low_perp(j));
     end
 end
 
@@ -2718,13 +2722,21 @@ for i = 1:numel(ParChans)
     MI_total_par = vertcat(MI_total_par,...
         MI_total(CH_total == ParChans(i)) -...
         limit_low_par(i+1) + 1 +...
-        limit_high_par(i)-limit_low_par(i));
+        dif_par(i));
+%     MI_total_par = vertcat(MI_total_par,...
+%         MI_total(CH_total == ParChans(i)) -...
+%         limit_low_par(i+1) + 1 +...
+%         limit_high_par(i)-limit_low_par(i));
     MT_total_par = vertcat(MT_total_par,...
         MT_total(CH_total == ParChans(i)));
     MI_total_perp = vertcat(MI_total_perp,...
         MI_total(CH_total == PerpChans(i)) -...
         limit_low_perp(i+1) + 1 +...
-        limit_high_perp(i)-limit_low_perp(i));
+        dif_perp(i));
+%     MI_total_perp = vertcat(MI_total_perp,...
+%         MI_total(CH_total == PerpChans(i)) -...
+%         limit_low_perp(i+1) + 1 +...
+%         limit_high_perp(i)-limit_low_perp(i));
     MT_total_perp = vertcat(MT_total_perp,...
         MT_total(CH_total == PerpChans(i)));
 end
@@ -2744,8 +2756,8 @@ MI_total_perp = MI_total_perp(idx);
 %%% Calculate the histograms
 maxTAC_par = max(MI_total_par);
 maxTAC_perp = max(MI_total_perp);
-BurstMeta.fFCS.TAC_par = 1:1:maxTAC_par;
-BurstMeta.fFCS.TAC_perp = 1:1:maxTAC_perp;
+BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par+1);%%% Add one because of how histc treats the bin edges
+BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp+1);
 for i = 1:2
     BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par);
     BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
@@ -2773,21 +2785,52 @@ BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_
 BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2};
 axis(h.axes_fFCS_DecayPerp,'tight');
+
+%%% Add IRF Pattern if existent
+if isfield(BurstData.fFCS,'IRF')
+    hIRF_par = [];
+    hIRF_perp = [];
+    for i = 1:numel(ParChans)
+        hIRF_par = [hIRF_par, BurstData.fFCS.IRF(BurstData.PIE.Detector(ParChans(i)),limit_low_par(i+1):limit_high_par(i+1))];
+        hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(BurstData.PIE.Detector(PerpChans(i)),limit_low_perp(i+1):limit_high_perp(i+1))];
+    end
+    %%% normaize with respect to the total decay histogram
+    hIRF_par = hIRF_par./max(hIRF_par).*max(BurstMeta.fFCS.hist_MItotal_par);
+    hIRF_perp = hIRF_perp./max(hIRF_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
+    %%% store in BurstMeta
+    BurstMeta.fFCS.hIRF_par = hIRF_par;
+    BurstMeta.fFCS.hIRF_perp = hIRF_perp;
+    %%% Update Plots
+    BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
+    BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hIRF_par;
+    BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hIRF_perp;
+elseif ~isfield(BurstData.fFCS,'IRF')
+    %%% Hide IRF plots
+    BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
+    BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calc_fFCS_Filters(obj,~)
-global BurstMeta
+global BurstMeta BurstData
 h = guidata(obj);
 
 %%% Concatenate Decay Patterns
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
+if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
+    Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par'];
+end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
 Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
 Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
+if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
+    Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp'];
+end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
 Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
 Decay_total_perp(Decay_total_perp == 0) = 1; %%% fill zeros with 1
@@ -2813,6 +2856,10 @@ BurstMeta.Plots.fFCS.FilterPar_Species1.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.FilterPar_Species1.YData = BurstMeta.fFCS.filters_par(1,:);
 BurstMeta.Plots.fFCS.FilterPar_Species2.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.FilterPar_Species2.YData = BurstMeta.fFCS.filters_par(2,:);
+if size(BurstMeta.fFCS.filters_par,1) > 2
+    BurstMeta.Plots.fFCS.FilterPar_IRF.XData = BurstMeta.fFCS.TAC_par;
+    BurstMeta.Plots.fFCS.FilterPar_IRF.YData = BurstMeta.fFCS.filters_par(3,:);
+end
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.YData = BurstMeta.fFCS.hist_MItotal_par;
 BurstMeta.Plots.fFCS.Reconstruction_Par.XData = BurstMeta.fFCS.TAC_par;
@@ -2824,6 +2871,10 @@ BurstMeta.Plots.fFCS.FilterPerp_Species1.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.FilterPerp_Species1.YData = BurstMeta.fFCS.filters_perp(1,:);
 BurstMeta.Plots.fFCS.FilterPerp_Species2.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.FilterPerp_Species2.YData = BurstMeta.fFCS.filters_perp(2,:);
+if size(BurstMeta.fFCS.filters_perp,1) > 2
+    BurstMeta.Plots.fFCS.FilterPerp_IRF.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.FilterPerp_IRF.YData = BurstMeta.fFCS.filters_perp(3,:);
+end
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.YData = BurstMeta.fFCS.hist_MItotal_perp;
 BurstMeta.Plots.fFCS.Reconstruction_Perp.XData = BurstMeta.fFCS.TAC_perp;
@@ -3505,9 +3556,11 @@ if obj == h.FitAnisotropyButton
         idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
         r0 = 0.4;
         fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
-        %valid = (datatoplot(:,idx_tauBB) > 0.01) & (datatoplot(:,idx_tauBB) < 5) & (~isnan(datatoplot(:,idx_tauBB))); 
-        tauBB = datatoplot(:,idx_tauBB);
-        PerrinFitBB = fit(tauBB(~isnan(tauBB)),datatoplot(~isnan(tauBB),idx_rBB),fPerrin,'StartPoint',1);
+        valid = (datatoplot(:,idx_tauBB) > 0.01) & (datatoplot(:,idx_tauBB) < 5) &...
+            (datatoplot(:,idx_rBB) > -1) & (datatoplot(:,idx_rBB) < 2) &...
+            (~isnan(datatoplot(:,idx_tauBB))); 
+        tauBB = datatoplot(valid,idx_tauBB);
+        PerrinFitBB = fit(tauBB,datatoplot(valid,idx_rBB),fPerrin,'StartPoint',1);
         tau = linspace(h.axes_rBBvsTauBB.XLim(1),h.axes_rBBvsTauBB.XLim(2),100);
         BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
         BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
@@ -4101,6 +4154,7 @@ if BAMethod == 3
         0;0;0;0;0;0;...
         1;1;1;0;0};
     %% Change Corrections GUI
+    h.DetermineGammaLifetimeThreeColorButton.Visible = 'on';
     h.FoersterRadiusBGEdit.Visible = 'on';
     h.FoersterRadiusBGText.Visible = 'on';
     h.FoersterRadiusBREdit.Visible = 'on';
@@ -4128,6 +4182,7 @@ elseif BAMethod == 2
         'BG GR perp','BG RR par','BG RR perp','G factor Green','G factor Red','l1','l2'};
     Corrections_Data = {1;1;0;0;0;0;0:0;0;0;1;1;0};
     %%% Hide 3cMFD corrections
+    h.DetermineGammaLifetimeThreeColorButton.Visible = 'off';
     h.FoersterRadiusBGEdit.Visible = 'off';
     h.FoersterRadiusBGText.Visible = 'off';
     h.FoersterRadiusBREdit.Visible = 'off';

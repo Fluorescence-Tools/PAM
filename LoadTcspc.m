@@ -360,7 +360,7 @@ switch (Type)
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.MI_Bins = max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))));
+        FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
 end
 Progress(1,h.Progress_Axes, h.Progress_Text);
