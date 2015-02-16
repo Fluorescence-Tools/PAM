@@ -593,7 +593,7 @@ switch mode
             Columns{3*i+2}='F';
             Columns{3*i+3}='G';
         end
-        Columns{end}='Chi?';
+        Columns{end}='Chi2';
         ColumnWidth=zeros(numel(Columns),1);
         %ColumnWidth(4:3:end-1)=cellfun('length',FCSMeta.Model.Params).*7;
         ColumnWidth(4:3:end-1) = 80;
@@ -622,7 +622,15 @@ switch mode
         %%% 6:3:end: Checkbox to fit parameter globaly
         Data=num2cell(zeros(numel(Rows),numel(Columns)));
         for i=1:(numel(Rows)-3)
-            Data{i,2}=mean(FCSData.Data{i}.Counts);
+            %%% Distinguish between Autocorrelation (only take Counts of
+            %%% Channel) and Crosscorrelation (take sum of Channels)
+            if FCSData.Data{i}.Counts(1) == FCSData.Data{i}.Counts(2)
+                %%% Autocorrelation
+                Data{i,2}=num2str(FCSData.Data{i}.Counts(1));
+            elseif FCSData.Data{i}.Counts(1) ~= FCSData.Data{i}.Counts(2)
+                %%% Crosscorrelation
+                Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
+            end
         end
         Data(1:end-3,4:3:end-1)=deal(num2cell(FCSMeta.Params)');
         Data(end-2,4:3:end-1)=deal(num2cell(FCSMeta.Model.Value)');
@@ -660,7 +668,15 @@ switch mode
         Data((size(h.Fit_Table.Data,1)-2):(end-3),:)=repmat(h.Fit_Table.Data(end-2,:),[numel(Rows)-(size(h.Fit_Table.Data,1)),1]);
         %%% Calculates countrate
         for i=1:numel(FCSData.Data)
-            Data{i,2}=num2str(mean(FCSData.Data{i}.Counts));
+            %%% Distinguish between Autocorrelation (only take Counts of
+            %%% Channel) and Crosscorrelation (take sum of Channels)
+            if FCSData.Data{i}.Counts(1) == FCSData.Data{i}.Counts(2)
+                %%% Autocorrelation
+                Data{i,2}=num2str(FCSData.Data{i}.Counts(1));
+            elseif FCSData.Data{i}.Counts(1) ~= FCSData.Data{i}.Counts(2)
+                %%% Crosscorrelation
+                Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
+            end
         end
         h.Fit_Table.Data=Data;
         %%% Enables cell callback again
@@ -669,6 +685,12 @@ switch mode
         %% Updates table after fit
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
+        %%% Updates Brightness in Table
+        for i=1:(size(h.Fit_Table.Data,1)-3)
+            P=FCSMeta.Params(:,i);
+            eval(FCSMeta.Model.Brightness);
+            h.Fit_Table.Data{i,3}= num2str(str2double(h.Fit_Table.Data{i,2}).*B);
+        end
         %%% Updates parameter values in table
         h.Fit_Table.Data(1:end-3,4:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
         %%% Updates plots
@@ -1173,7 +1195,7 @@ if sum(Global)==0
             %%% Performs fit
             [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
             %%% calculate confidence intervals
-            FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+            %FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
         end
