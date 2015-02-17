@@ -2841,7 +2841,7 @@ h = guidata(obj);
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
 if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par'];
+    Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par(1:size(Decay_par,1))'];
 end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
 Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
@@ -2849,7 +2849,7 @@ Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
 if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp'];
+    Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp(1:size(Decay_perp,1))'];
 end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
 Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
