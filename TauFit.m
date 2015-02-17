@@ -72,7 +72,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Plots.IRF_Par = plot([0 1],[0 0],'.g');
     h.Plots.IRF_Per = plot([0 1],[0 0],'.r');
     h.Plots.FitPreview = plot([0 1],[0 0],'k');
-    
+    h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2);
     h.Microtime_Plot.XLim = [0 1];
     h.Microtime_Plot.YLim = [0 1];
     h.Microtime_Plot.XLabel.Color = Look.Fore;
@@ -160,7 +160,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.2 0.84 0.8 0.1],...
+        'Position',[0.2 0.79 0.8 0.1],...
         'Tag','StartPar_Slider',...
         'Callback',@Update_Plots);
     
@@ -169,7 +169,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Style','edit',...
         'Tag','StartPar_Edit',...
         'Units','normalized',...
-        'Position',[0.15 0.85 0.05 0.1],...
+        'Position',[0.15 0.80 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
@@ -186,7 +186,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'FontSize',12,...
         'String','Start Parallel',...
         'TooltipString','Start Value for the Parallel Channel',...
-        'Position',[0.01 0.85 0.14 0.1],...
+        'Position',[0.01 0.80 0.14 0.1],...
         'Tag','StartPar_Text');
     
     %%% Slider for Selection of Length
@@ -232,7 +232,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.2 0.44 0.8 0.1],...
+        'Position',[0.2 0.49 0.8 0.1],...
         'Tag','ShiftPer_Slider',...
         'Callback',@Update_Plots);
     
@@ -241,7 +241,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Style','edit',...
         'Tag','ShiftPer_Edit',...
         'Units','normalized',...
-        'Position',[0.15 0.45 0.05 0.1],...
+        'Position',[0.15 0.5 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
@@ -258,7 +258,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'FontSize',12,...
         'String','Perpendicular Shift',...
         'TooltipString','Shift of the Perpendicular Channel',...
-        'Position',[0.01 0.45 0.14 0.1],...
+        'Position',[0.01 0.5 0.14 0.1],...
         'Tag','ShiftPer_Text');
     
     %%% Slider for Selection of IRF Shift
@@ -268,7 +268,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.2 0.24 0.8 0.1],...
+        'Position',[0.2 0.34 0.8 0.1],...
         'Tag','IRFShift_Slider',...
         'Callback',@Update_Plots);
     
@@ -277,7 +277,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Style','edit',...
         'Tag','IRFShift_Edit',...
         'Units','normalized',...
-        'Position',[0.15 0.25 0.05 0.1],...
+        'Position',[0.15 0.35 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
@@ -294,7 +294,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'FontSize',12,...
         'String','IRF Shift',...
         'TooltipString','Shift of the IRF',...
-        'Position',[0.01 0.25 0.14 0.1],...
+        'Position',[0.01 0.35 0.14 0.1],...
         'Tag','IRFShift_Text');
     
     %%% Slider for Selection of IRF Length
@@ -304,7 +304,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.2 0.04 0.8 0.1],...
+        'Position',[0.2 0.19 0.8 0.1],...
         'Tag','IRFLength_Slider',...
         'Callback',@Update_Plots);
     
@@ -313,7 +313,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Style','edit',...
         'Tag','IRFLength_Edit',...
         'Units','normalized',...
-        'Position',[0.15 0.05 0.05 0.1],...
+        'Position',[0.15 0.2 0.05 0.1],...
         'String','0',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
@@ -330,8 +330,44 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'FontSize',12,...
         'String','IRF Length',...
         'TooltipString','Length of the IRF',...
-        'Position',[0.01 0.05 0.14 0.1],...
+        'Position',[0.01 0.2 0.14 0.1],...
         'Tag','IRFLength_Text');
+    
+    %%% Slider for Selection of Ignore Region in the Beginning
+    h.Ignore_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.04 0.8 0.1],...
+        'Tag','Ignore_Slider',...
+        'Callback',@Update_Plots);
+    
+    h.Ignore_Edit = uicontrol(...
+        'Parent',h.Slider_Panel,...
+        'Style','edit',...
+        'Tag','Ignore_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.05 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_Plots);
+    
+    h.Ignore_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Ignore Length',...
+        'TooltipString','Length of the Ignore Region in the Beginning',...
+        'Position',[0.01 0.05 0.14 0.1],...
+        'Tag','Ignore_Text');
     
     %%% Add listeners to sliders for continuous update
     %addlistener(h.Start_Slider, 'Value', 'PostSet', @Update_Plots);
@@ -405,7 +441,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         h.PIEChannelPer_Popupmenu.Value = 1;
     end
     %%% Popup Menu for Fit Method Selection
-    FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
+    h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
         'Distribution','Distribution plus Donor only','Fit Anisotropy'};
     h.FitMethod_Popupmenu = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -413,7 +449,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Tag','FitMethod_Popupmenu',...
         'Units','normalized',...
         'Position',[0.35 0.25 0.6 0.1],...
-        'String',FitMethods,...
+        'String',h.FitMethods,...
         'Callback',@Method_Selection);
     
     h.FitMethod_Text = uicontrol(...
@@ -452,14 +488,14 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'String','Start Fit',...
         'Callback',@Start_Fit);
     %%% Button to determine G-factor
-    h.Fit_Button = uicontrol(...
+    h.Determine_GFactor_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
         'Style','pushbutton',...
         'Tag','Determine_GFactor_Button',...
         'Units','normalized',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.55 0.4 0.2 0.2],...
+        'Position',[0.55 0.4 0.4 0.2],...
         'String','Determine G-Factor',...
         'Callback',@DetermineGFactor);
     %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -521,14 +557,31 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.FitPar_Table = uitable(...
         'Parent',h.FitPar_Panel,...
         'Units','normalized',...
-        'Position',[0 0 1 1],...
+        'Position',[0 0.5 1 0.5],...
         'ColumnName',{'Value','LB','UB','Fixed'},...
         'ColumnFormat',{'numeric','numeric','numeric','logical'},...
         'RowName',{'Test'},...
         'ColumnEditable',[true true true true],...
-        'ColumnWidth',{'auto',50,50,50},...
+        'ColumnWidth',{45,45,45,40},...
         'Tag','FitPar_Table');
-    
+    %%% RowNames - Store the Parameter Names of different FitMethods
+    h.Parameters = cell(numel(h.FitMethods),1);
+    h.Parameters{1} = {'Tau [ns]','Background','IRF Shift'};
+    h.Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Background','IRF Shift'};
+    h.Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','Background','IRF Shift'};
+    h.Parameters{4} = {'Center R [nm]','Sigma R [nm]','Background','IRF Shift'};
+    h.Parameters{5} = {'Center R [nm]','Sigma R [nm]','TauD0 [ns]','Background','IRF Shift'};
+    h.Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Background','IRF Shift'};
+    h.FitPar_Table.RowName = h.Parameters{1};
+    %%% Initial Data - Store the StartValues as well as LB and UB
+    h.StartPar = cell(numel(h.FitMethods),1);
+    h.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,0,0,true};
+    h.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
+    h.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
+    h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,0,true};
+    h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;4,0,Inf,true;0,0,1,false;0,0,0,true};
+    h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,0,0.4,false;0,0,1,false;0,0,0,true};
+    h.FitPar_Table.Data = h.StartPar{1};
     %%% Tab containing settings
     h.Settings_Tab = uitab(...
         'Parent',h.TauFit_Tabgroup,...
@@ -561,8 +614,9 @@ TauFitData.StartPar = 0;
 TauFitData.ShiftPer = 0;
 TauFitData.IRFLength = 1;
 TauFitData.IRFShift = 0;
+TauFitData.Ignore = 1;
 TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
-TauFitData.FitMethods = FitMethods;
+TauFitData.FitMethods = h.FitMethods;
 
 guidata(gcf,h);
 
@@ -614,7 +668,7 @@ end
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~)
-global UserValues TauFitData PamMeta FileInfo
+global UserValues TauFitData PamMeta
 h = guidata(findobj('Tag','TauFit'));
 
 %%% Cases to consider:
@@ -674,8 +728,6 @@ if isempty(obj) || obj == h.LoadData_Button
     %%% start point between parallel and perpendicular up to the difference
     %%% between the end point of the parallel channel and the start point
     %%% of the perpendicular channel
-    %h.ShiftPer_Slider.Min = (-1)*max([0 TauFitData.XData_Per(1)-TauFitData.XData_Par(1)]);
-    %h.ShiftPer_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_Per(1)]);
     h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength/10);
     h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength/10);
     h.ShiftPer_Slider.Value = 0;
@@ -689,13 +741,18 @@ if isempty(obj) || obj == h.LoadData_Button
     TauFitData.IRFLength = TauFitData.MaxLength;
     h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
     %%% IRF Shift has the same limits as the perp shift property
-    %h.IRFShift_Slider.Min = (-1)*max([0 TauFitData.XData_IRFPar(1)-TauFitData.XData_Par(1)]);
-    %h.IRFShift_Slider.Max = max([0 TauFitData.XData_Par(end)-TauFitData.XData_IRFPar(1)]);
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength/10);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength/10);
     h.IRFShift_Slider.Value = 0;
     TauFitData.IRFShift = 0;
     h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+    
+    %%% Ignore Slider reaches from 1 to maximum length
+    h.Ignore_Slider.Value = 1;
+    h.Ignore_Slider.Min = 1;
+    h.Ignore_Slider.Max = TauFitData.MaxLength;
+    TauFitData.Ignore = 1;
+    h.Ignore_Edit.String = num2str(TauFitData.Ignore);
 end
 
 %%% Update Values
@@ -742,6 +799,12 @@ switch obj
         elseif obj == h.IRFShift_Edit
             TauFitData.IRFShift = str2double(obj.String);
         end
+    case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
+        if obj == h.Ignore_Slider
+            TauFitData.Ignore = floor(obj.Value);
+        elseif obj == h.Ignore_Edit
+            TauFitData.Ignore = str2double(obj.String);
+        end
 end
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
 switch obj.Style
@@ -751,30 +814,19 @@ switch obj.Style
         h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
         h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
         h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+        h.Ignore_Edit.String = num2str(TauFitData.Ignore);
     case 'edit'
         h.StartPar_Slider.Value = TauFitData.StartPar;
         h.Length_Slider.Value = TauFitData.Length;
         h.ShiftPer_Slider.Value = TauFitData.ShiftPer;
         h.IRFLength_Slider.Value = TauFitData.IRFLength;
         h.IRFShift_Slider.Value = TauFitData.IRFShift;
+        h.Ignore_Slider.Value = TauFitData.Ignore;
 end
+
 %%% Update Plot
-% %%% Apply the shift to the parallel channel
-% h.Plots.Decay_Par.XData = TauFitData.XData_Par(1:TauFitData.Length)-TauFitData.StartPar;
-% h.Plots.Decay_Par.YData = TauFitData.hMI_Par(1:TauFitData.Length);
-% %%% Apply the shift to the perpendicular channel
-% h.Plots.Decay_Per.XData = TauFitData.XData_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.ShiftPer);
-% h.Plots.Decay_Per.YData = TauFitData.hMI_Per((1+max([0 TauFitData.ShiftPer])):min([TauFitData.MaxLength (TauFitData.Length+TauFitData.ShiftPer)]));
-% %%% Apply the shift to the parallel IRF channel
-% h.Plots.IRF_Par.XData = TauFitData.XData_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]))-(TauFitData.StartPar+TauFitData.IRFShift);
-% h.Plots.IRF_Par.YData = TauFitData.hIRF_Par((1+max([0 TauFitData.IRFShift])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift)]));
-% %%% Apply the shift to the perpendicular IRF channel
-% h.Plots.IRF_Per.XData = TauFitData.XData_Per((1+max([0 (TauFitData.ShiftPer + TauFitData.IRFShift)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]))-(TauFitData.StartPar+TauFitData.IRFShift+TauFitData.ShiftPer);
-% h.Plots.IRF_Per.YData = TauFitData.hIRF_Per((1+max([0 (TauFitData.IRFShift + TauFitData.ShiftPer)])):min([TauFitData.MaxLength (TauFitData.IRFLength+TauFitData.IRFShift+TauFitData.ShiftPer)]));
 
 %%% Make the Microtime Adjustment Plot Visible, hide Result
-%h.Microtime_Plot.Visible = 'on';
-%h.Result_Plot.Visible = 'off';
 h.Microtime_Plot.Parent = h.TauFit_Panel;
 h.Result_Plot.Parent = h.HidePanel;
 %%% Apply the shift to the parallel channel
@@ -793,6 +845,17 @@ h.Plots.IRF_Per.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitD
 hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
 axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
+
+%%% Update Ignore Plot
+if TauFitData.Ignore > 1
+    %%% Make plot visible
+    h.Ignore_Plot.Visible = 'on';
+    h.Ignore_Plot.XData = [TauFitData.Ignore TauFitData.Ignore];
+    h.Ignore_Plot.YData = [0 h.Microtime_Plot.YLim(2)];
+elseif TauFitData.Ignore == 1
+    %%% Hide Plot Again
+    h.Ignore_Plot.Visible = 'off';
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Function for loading the IRF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1025,7 +1088,10 @@ delete(gcf);
 function Method_Selection(obj,~)
 global TauFitData
 TauFitData.FitType = obj.String{obj.Value};
-
+%%% Update FitTable
+h = guidata(obj);
+h.FitPar_Table.RowName = h.Parameters{obj.Value};
+h.FitPar_Table.Data = h.StartPar{obj.Value};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Fit the Data with selected Model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1038,46 +1104,66 @@ TauFitData.FitData.Decay_Per = h.Plots.Decay_Par.YData;
 TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
 TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
-Scatter_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
-TauFitData.FitData.Scatter_Par = Scatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
-Scatter_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift + TauFitData.ShiftPer])';
-TauFitData.FitData.Scatter_Per = Scatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
+%%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
+%%% total Scatter Pattern to avoid Edge Effects when using circshift!
+ScatterPer = circshift(TauFitData.hIRF_Per,[0,TauFitData.ShiftPer]);
+ScatterPattern = TauFitData.hIRF_Par(1:TauFitData.Length) +...
+    2*ScatterPer(1:TauFitData.Length);
+ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+%%% Old:
+%Scatter_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
+%TauFitData.FitData.Scatter_Par = Scatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
+%Scatter_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift + TauFitData.ShiftPer])';
+%TauFitData.FitData.Scatter_Per = Scatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
+%Scatter = TauFitData.FitData.Scatter_Par + 2*TauFitData.FitData.Scatter_Per;
+%Scatter = Scatter./sum(Scatter);
+
+%%% The IRF is also adjusted in the Fit dynamically from the total scatter
+%%% pattern and start,length, and shift values stored in ShiftParams
+%%% ShiftParams(1)  :   StartPar
+%%% ShiftParams(2)  :   IRFShift
+%%% ShiftParams(3)  :   IRFLength
+ShiftParams(1) = TauFitData.StartPar;
+ShiftParams(2) = TauFitData.IRFShift;
+ShiftParams(3) = TauFitData.Length;
+ShiftParams(4) = TauFitData.IRFLength;
+
+%%% Old:
+%Irf = TauFitData.FitData.IRF_Par+2*TauFitData.FitData.IRF_Per;
+%Irf = Irf-min(Irf(Irf~=0));
+%Irf = Irf./sum(Irf);
+%Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
+
 %%% initialize inputs for fit
 Decay = TauFitData.FitData.Decay_Par+2*TauFitData.FitData.Decay_Per;
-Irf = TauFitData.FitData.IRF_Par+2*TauFitData.FitData.IRF_Per;
-Irf = Irf-min(Irf(Irf~=0));
-Irf = Irf./sum(Irf);
-Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
 TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
 TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
-Scatter = TauFitData.FitData.Scatter_Par + 2*TauFitData.FitData.Scatter_Per;
-Scatter = Scatter./sum(Scatter);
+
 
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
 switch TauFitData.FitType
     case 'Single Exponential'
         %%% Parameter:
-        %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.1,0.1,round(4/TauFitData.TACChannelWidth)];
-        lb = [0 0 0];
-        ub = [1 1 Inf];
-        shift_range = 0:20;
-        ignore = 100;
+        x0 = [0.1,round(4/TauFitData.TACChannelWidth)];
+        lb = [0 0];
+        ub = [1 Inf];
+        shift_range = -20:20;
+        ignore = 1;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_1exp,x0,{Irf,Scatter,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub);
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_1exp,x0,{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub);
             count = count +1;
         end
         
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_1exp(x{best_fit},{Irf,Scatter,4096,Decay,shift_range(best_fit),1});
+        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
     case 'Biexponential'
         %%% Parameter:
@@ -1085,23 +1171,23 @@ switch TauFitData.FitType
         %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.5, 0.1,0.1,round(2/TauFitData.TACChannelWidth),round(4/TauFitData.TACChannelWidth)];
-        lb = [0 0 0 round(0.5/TauFitData.TACChannelWidth) round(2/TauFitData.TACChannelWidth)];
+        x0 = [0.5, 0.1,0.1,round(1/TauFitData.TACChannelWidth),round(5/TauFitData.TACChannelWidth)];
+        lb = [0 0 0 round(0/TauFitData.TACChannelWidth) round(0/TauFitData.TACChannelWidth)];
         ub = [1 1 1 Inf Inf];
-        shift_range = 0:20;
-        ignore = 100;
+        shift_range = -10:10;
+        ignore = 1;
         %%% fit for different IRF offsets and compare the results
         count = 1;
         options = optimoptions('lsqcurvefit','MaxFunEvals',1000);
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_2exp,x0,{Irf,Scatter,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub,options);
+            [x{count}, res(count), residuals{count}] = lsqcurvefit(@fitfun_2exp,x0,{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay(ignore:end),i,ignore},Decay(ignore:end),lb,ub,options);
             count = count +1;
         end
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_2exp(x{best_fit},{Irf,Scatter,4096,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
 end
@@ -1121,11 +1207,15 @@ h.Plots.Residuals.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
-disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(3))]);
+disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(2))]);
 disp(num2str(shift_range(best_fit)));
 disp(num2str(x{best_fit}(1)));
 disp(num2str(x{best_fit}(2)));
 disp(num2str(chi2(best_fit)));
+try
+    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(4)));
+    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(5)));
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1683,27 +1773,32 @@ function [z] = fitfun_1exp(param, xdata)
 %	irf is the measured Instrumental Response Function.
 %	y is the measured fluorescence decay curve.
 %	p is the time between to laser excitations (in number of TCSPC channels).
-irf = xdata{1};
-bg = xdata{2};
-p = xdata{3};
-y = xdata{4};
-c = xdata{5};
-ignore = xdata{6};
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+bg = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+bg = bg( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
 t = 1:n;
 tp = (1:p)';
-gamma = param(1);
-scatter = param(2);
-tau = param(3:length(param)); tau = tau(:)';
+scatter = param(1);
+tau = param(2:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-%irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
-irs = circshift(irf,[0 c]);
-bg = circshift(bg,[0 c]);
-z = convol(irs, x);
+z = convol(irf, x);
 z = z./sum(z);
-z = (1-scatter).*z + scatter*bg';z = z./sum(z);
-z = (1-gamma).*z+gamma/numel(z);z = z./sum(z);
+z = (1-scatter).*z + scatter*bg;z = z./sum(z);
 z = z(ignore:end);z = z./sum(z);
 z = z.*sum(y);
 z=z';
@@ -1721,12 +1816,22 @@ function [z] = fitfun_2exp(param, xdata)
 %	irf is the measured Instrumental Response Function.
 %	y is the measured fluorescence decay curve.
 %	p is the time between to laser excitations (in number of TCSPC channels).
-irf = xdata{1};
-bg = xdata{2};
-p = xdata{3};
-y = xdata{4};
-c = xdata{5};
-ignore = xdata{6};
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+bg = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+bg = bg( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
 t = 1:n;
@@ -1736,14 +1841,11 @@ gamma = param(2);
 scatter = param(3);
 tau = param(4:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-%irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
-irs = circshift(irf,[0 c]);
-bg = circshift(bg,[0 c]);
-z = convol(irs', x);
+z = convol(irf, x);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A*z(:,1) + (1-A)*z(:,2);
-z = (1-scatter).*z + scatter*bg';
+z = (1-scatter).*z + scatter*bg;
 z = z./sum(z);
 z = (1-gamma).*z+gamma/numel(z);
 z = z./sum(z);

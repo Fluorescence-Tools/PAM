@@ -444,6 +444,14 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.IRF was incomplete');    
     end
     P.BurstSearch.IRF = S.BurstSearch.IRF;
+    %%% Checks, if BurstSearch.IRF exists
+    %%% (This field contains the Scatter pattern used for burstwise lifetime
+    %%% fitting)
+    if ~isfield (S.BurstSearch,'Scatter')
+        S.BurstSearch.Scatter=[];
+        disp('UserValues.BurstSearch.Scatter was incomplete');    
+    end
+    P.BurstSearch.Scatter = S.BurstSearch.Scatter;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
