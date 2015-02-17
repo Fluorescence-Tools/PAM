@@ -1,4 +1,4 @@
-function BurstBrowser %Burst Browser
+function BurstBrowser(~,~)
 
 hfig=findobj('Name','BurstBrowser');
 global UserValues BurstMeta
@@ -1174,7 +1174,7 @@ if isempty(hfig)
     'View',[0 90]);
     ylabel(h.axes_rGGvsTauGG,'Anisotropy GG');
     xlabel(h.axes_rGGvsTauGG,'Lifetime GG [ns]');
-    title(h.axes_rGGvsTauGG,'Anisotropx GG vs. Lifetime GG');
+    title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG');
     
     h.axes_rRRvsTauRR=  axes(...
     'Parent',h.MainTabLifetimePanel,...

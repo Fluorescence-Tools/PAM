@@ -1,4 +1,4 @@
-function FCSFit
+function FCSFit(~,~)
 global UserValues FCSData FCSMeta
 h.FCSFit=findobj('Tag','FCSFit');
 

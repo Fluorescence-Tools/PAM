@@ -1,4 +1,4 @@
-function TauFit
+function TauFit(~,~)
 global UserValues TauFitData
 h.TauFit = findobj('Tag','TauFit');
 
@@ -563,7 +563,8 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'RowName',{'Test'},...
         'ColumnEditable',[true true true true],...
         'ColumnWidth',{45,45,45,40},...
-        'Tag','FitPar_Table');
+        'Tag','FitPar_Table',...
+        'CellEditCallBack',@Update_Plots);
     %%% RowNames - Store the Parameter Names of different FitMethods
     h.Parameters = cell(numel(h.FitMethods),1);
     h.Parameters{1} = {'Tau [ns]','Background','IRF Shift'};
@@ -691,6 +692,12 @@ if isempty(obj) || obj == h.LoadData_Button
     %%% Normalize IRF for better Visibility
     TauFitData.hIRF_Par = (TauFitData.hIRF_Par./max(TauFitData.hIRF_Par)).*max(TauFitData.hMI_Par);
     TauFitData.hIRF_Per = (TauFitData.hIRF_Per./max(TauFitData.hIRF_Per)).*max(TauFitData.hMI_Per);
+    %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
+    TauFitData.hScat_Par = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par));
+    TauFitData.hScat_Per = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per));
+    %%% Normalize IRF for better Visibility
+    TauFitData.hScat_Par = (TauFitData.hScat_Par./max(TauFitData.hScat_Par)).*max(TauFitData.hMI_Par);
+    TauFitData.hScat_Per = (TauFitData.hScat_Per./max(TauFitData.hScat_Per)).*max(TauFitData.hMI_Per);
     %%% Generate XData
     TauFitData.XData_Par = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
     TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
@@ -805,25 +812,33 @@ switch obj
         elseif obj == h.Ignore_Edit
             TauFitData.Ignore = str2double(obj.String);
         end
+    case {h.FitPar_Table}
+        TauFitData.IRFShift = obj.Data{end,1};
+        %%% Update Edit Box and Slider
+        h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+        h.IRFShift_Slider.Value = TauFitData.IRFShift;
 end
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
-switch obj.Style
-    case 'slider'
-        h.StartPar_Edit.String = num2str(TauFitData.StartPar);
-        h.Length_Edit.String = num2str(TauFitData.Length);
-        h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
-        h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
-        h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
-        h.Ignore_Edit.String = num2str(TauFitData.Ignore);
-    case 'edit'
-        h.StartPar_Slider.Value = TauFitData.StartPar;
-        h.Length_Slider.Value = TauFitData.Length;
-        h.ShiftPer_Slider.Value = TauFitData.ShiftPer;
-        h.IRFLength_Slider.Value = TauFitData.IRFLength;
-        h.IRFShift_Slider.Value = TauFitData.IRFShift;
-        h.Ignore_Slider.Value = TauFitData.Ignore;
+if isprop(obj,'Style')
+    switch obj.Style
+        case 'slider'
+            h.StartPar_Edit.String = num2str(TauFitData.StartPar);
+            h.Length_Edit.String = num2str(TauFitData.Length);
+            h.ShiftPer_Edit.String = num2str(TauFitData.ShiftPer);
+            h.IRFLength_Edit.String = num2str(TauFitData.IRFLength);
+            h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+            h.FitPar_Table.Data{end,1} = TauFitData.IRFShift;
+            h.Ignore_Edit.String = num2str(TauFitData.Ignore);
+        case 'edit'
+            h.StartPar_Slider.Value = TauFitData.StartPar;
+            h.Length_Slider.Value = TauFitData.Length;
+            h.ShiftPer_Slider.Value = TauFitData.ShiftPer;
+            h.IRFLength_Slider.Value = TauFitData.IRFLength;
+            h.IRFShift_Slider.Value = TauFitData.IRFShift;
+            h.FitPar_Table.Data{end,1} = TauFitData.IRFShift;
+            h.Ignore_Slider.Value = TauFitData.Ignore;
+    end
 end
-
 %%% Update Plot
 
 %%% Make the Microtime Adjustment Plot Visible, hide Result
@@ -1098,11 +1113,11 @@ h.FitPar_Table.Data = h.StartPar{obj.Value};
 function Start_Fit(obj,~)
 global TauFitData FileInfo
 h = guidata(obj);
-%% Read out the data from the plots
+%% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Par.YData;
-TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
-TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
+%TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
+%TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
@@ -1139,19 +1154,30 @@ Decay = TauFitData.FitData.Decay_Par+2*TauFitData.FitData.Decay_Per;
 TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
 TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
 
-
+irf_lb = h.FitPar_Table.Data{end,2};
+irf_ub = h.FitPar_Table.Data{end,3};
+shift_range = floor(TauFitData.IRFShift + irf_lb):ceil(TauFitData.IRFShift + irf_ub);
+ignore = TauFitData.Ignore;
+%% Start Fit
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
+FitType = find(strcmp(TauFitData.FitType,h.FitMethods));
 switch TauFitData.FitType
     case 'Single Exponential'
         %%% Parameter:
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.1,round(4/TauFitData.TACChannelWidth)];
-        lb = [0 0];
-        ub = [1 Inf];
-        shift_range = -20:20;
-        ignore = 1;
+        %%% Read out Parameters
+        x0 = cell2mat(h.FitPar_Table.Data(1:2,1))';
+        x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
+        lb = cell2mat(h.FitPar_Table.Data(1:2,2))';
+        lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
+        ub = cell2mat(h.FitPar_Table.Data(1:2,3))';
+        ub(1) = round(ub(1)/TauFitData.TACChannelWidth);  
+        %%% Reorder parameters
+        reorder = [2 1];
+        x0 = x0(reorder); lb = lb(reorder); ub = ub(reorder);
+                
         %%% fit for different IRF offsets and compare the results
         count = 1;
         for i = shift_range
@@ -1165,17 +1191,27 @@ switch TauFitData.FitType
         [~,best_fit] = min(chi2);
         FitFun = fitfun_1exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit}(reorder) shift_range(best_fit)]');
+        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+        h.FitPar_Table.Data(:,1) = FitResult;
+        
     case 'Biexponential'
         %%% Parameter:
         %%% A       - Amplitude of first lifetime
-        %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
-        x0 = [0.5, 0.1,0.1,round(1/TauFitData.TACChannelWidth),round(5/TauFitData.TACChannelWidth)];
-        lb = [0 0 0 round(0/TauFitData.TACChannelWidth) round(0/TauFitData.TACChannelWidth)];
-        ub = [1 1 1 Inf Inf];
-        shift_range = -10:10;
-        ignore = 1;
+        %%% Read out Parameters
+        x0 = cell2mat(h.FitPar_Table.Data(1:4,1))';
+        x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
+        lb = cell2mat(h.FitPar_Table.Data(1:4,2))';
+        lb(1:2) = round(lb(1)/TauFitData.TACChannelWidth);
+        ub = cell2mat(h.FitPar_Table.Data(1:4,3))';
+        ub(1:2) = round(ub(1)/TauFitData.TACChannelWidth);  
+        %%% Reorder parameters
+        reorder = [3 4 1 2];
+        x0 = x0(reorder); lb = lb(reorder); ub = ub(reorder);
         %%% fit for different IRF offsets and compare the results
         count = 1;
         options = optimoptions('lsqcurvefit','MaxFunEvals',1000);
@@ -1190,6 +1226,17 @@ switch TauFitData.FitType
         FitFun = fitfun_2exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,4096,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit}(reorder) shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+        FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+        %%% Convert Fraction from Area Fraction to Amplitude Fraction
+        %%% (i.e. correct for brightness)
+        amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
+        amp1 = amp1./(amp1+amp2);
+        FitResult{3} = amp1;
+        h.FitPar_Table.Data(:,1) = FitResult;
 end
 
 %%% Reset Progressbar
@@ -1213,8 +1260,8 @@ disp(num2str(x{best_fit}(1)));
 disp(num2str(x{best_fit}(2)));
 disp(num2str(chi2(best_fit)));
 try
+    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(3)));
     disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(4)));
-    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(5)));
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1837,17 +1884,14 @@ n = length(irf);
 t = 1:n;
 tp = (1:p)';
 A = param(1);
-gamma = param(2);
-scatter = param(3);
-tau = param(4:length(param)); tau = tau(:)';
+scatter = param(2);
+tau = param(3:length(param)); tau = tau(:)';
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
 z = convol(irf, x);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A*z(:,1) + (1-A)*z(:,2);
 z = (1-scatter).*z + scatter*bg;
-z = z./sum(z);
-z = (1-gamma).*z+gamma/numel(z);
 z = z./sum(z);
 z = z(ignore:end);
 z = z./sum(z);
