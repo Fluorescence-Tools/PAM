@@ -663,6 +663,13 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'ShadowColor',Look.Shadow,...
         'Position',[0 0 1 1],...
         'Tag','Settings_Panel');   
+    %% Set the FontSize to 12
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if isprop(h.(fields{i}),'FontSize')
+            h.(fields{i}).FontSize = 12;
+        end
+    end
     %% Mac upscaling of Font Sizes
     if ismac
         scale_factor = 1.2;
