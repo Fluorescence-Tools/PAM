@@ -217,7 +217,19 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'String','1e-6',...
         'Visible','off',...
         'Callback',@Update_Plots,...
-        'Position',[0.145 0.51 0.04 0.1]);   
+        'Position',[0.145 0.51 0.04 0.1]);  
+    %%% Checkbox to toggle confidence interval calculation
+    h.Conf_Interval = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Style','checkbox',...
+        'String','Calculate confidence intervals',...
+        'Value',UserValues.FCSFit.Conf_Interval,...
+        'Callback',@Update_Plots,...
+        'Position',[0.002 0.38 0.2 0.1]); 
     %%% Optimization settings
     uicontrol(...
         'Parent',h.Setting_Panel,...
@@ -935,11 +947,13 @@ Min=str2double(h.Fit_Min.String);
 Max=str2double(h.Fit_Max.String);
 Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
+Conv_Interval = h.Conf_Interval.Value;
 %%% store in UserValues
 UserValues.FCSFit.Fit_Min = Min;
 UserValues.FCSFit.Fit_Max = Max;
 UserValues.FCSFit.Plot_Errorbars = Plot_Errorbars;
 UserValues.FCSFit.NormalizationMethod = Normalization_Method;
+UserValues.FCSFit.Conf_Interval = Conv_Interval;
 LSUserValues(1);
 
 YMax=0; YMin=0; RMax=0; RMin=0;
@@ -1195,7 +1209,9 @@ if sum(Global)==0
             %%% Performs fit
             [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
             %%% calculate confidence intervals
-            %FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+            if h.Conf_Interval.Value
+                FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+            end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
         end
@@ -1237,7 +1253,9 @@ else
     %%% Performs fit
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
     %%% calculate confidence intervals
-    FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+    if h.Conf_Interval.Value
+        FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+    end
     %%% Updates parameters
     FCSMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(FCSMeta.Params,2)]) ;
     Fitted_Params(1:sum(Global))=[];

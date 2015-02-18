@@ -314,6 +314,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.FCSFit.NormalizationMethod was incomplete');
     end
     P.FCSFit.NormalizationMethod = S.FCSFit.NormalizationMethod;
+    %%% Checks if FCSFit.Conf_Interval subfield exists
+    if ~isfield (S.FCSFit, 'Conf_Interval')
+        S.FCSFit.Conf_Interval=1;
+        disp('UserValues.FCSFit.Conf_Interval was incomplete');
+    end
+    P.FCSFit.Conf_Interval = S.FCSFit.Conf_Interval;
     %%% Checks, if FCSFit.PlotStyles subfield exists
     if ~isfield (S.FCSFit,'PlotStyles')
         S.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
