@@ -3936,7 +3936,6 @@ global BurstData
 
 %%% Set Progress Bar
 h.Progress_Text.String = 'Performing Burst Search...';
-h.Progress_Axes.Color=[1 0 0];
 drawnow;
 
 %%% Reset BurstSearch Button Color
