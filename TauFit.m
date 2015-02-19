@@ -779,8 +779,8 @@ if isempty(obj) || obj == h.LoadData_Button
     TauFitData.hIRF_Par = (TauFitData.hIRF_Par./max(TauFitData.hIRF_Par)).*max(TauFitData.hMI_Par);
     TauFitData.hIRF_Per = (TauFitData.hIRF_Per./max(TauFitData.hIRF_Per)).*max(TauFitData.hMI_Per);
     %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-    TauFitData.hScat_Per = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+    TauFitData.hScat_Par = UserValues.PIE.ScatterPattern{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+    TauFitData.hScat_Per = UserValues.PIE.ScatterPattern{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
     %%% Normalize IRF for better Visibility
     TauFitData.hScat_Par = (TauFitData.hScat_Par./max(TauFitData.hScat_Par)).*max(TauFitData.hMI_Par);
     TauFitData.hScat_Per = (TauFitData.hScat_Per./max(TauFitData.hScat_Per)).*max(TauFitData.hMI_Per);

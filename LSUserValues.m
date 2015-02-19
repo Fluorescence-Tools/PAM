@@ -68,6 +68,7 @@ if Mode==0 %%% Loads user values
         S.PIE.Combined={[]};
         S.PIE.Duty_Cycle=0;
         S.PIE.IRF = {[]};
+        S.PIE.ScatterPattern = {[]};
         disp('UserValues.PIE was incomplete');
     end
     P.PIE = [];
@@ -84,6 +85,11 @@ if Mode==0 %%% Loads user values
         disp('UserValues.PIE.IRF was incomplete');
     end
     P.PIE.IRF = S.PIE.IRF;
+    if ~isfield(S.PIE,'ScatterPattern')
+        S.PIE.ScatterPattern = cell(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.ScatterPattern was incomplete');
+    end
+    P.PIE.ScatterPattern = S.PIE.ScatterPattern;
     %% Detector: Definition of Tcspc cards/routing channels to use %%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
