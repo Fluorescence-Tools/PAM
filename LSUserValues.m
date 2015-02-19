@@ -67,6 +67,7 @@ if Mode==0 %%% Loads user values
         S.PIE.Color=[1 0 0];
         S.PIE.Combined={[]};
         S.PIE.Duty_Cycle=0;
+        S.PIE.IRF = {[]};
         disp('UserValues.PIE was incomplete');
     end
     P.PIE = [];
@@ -78,6 +79,11 @@ if Mode==0 %%% Loads user values
     P.PIE.Color = S.PIE.Color;
     P.PIE.Combined = S.PIE.Combined;
     P.PIE.Duty_Cycle = S.PIE.Duty_Cycle;
+    if ~isfield(S.PIE,'IRF')
+        S.PIE.IRF = cell(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.IRF was incomplete');
+    end
+    P.PIE.IRF = S.PIE.IRF;
     %% Detector: Definition of Tcspc cards/routing channels to use %%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -442,22 +448,6 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
-    %%% Checks, if BurstSearch.IRF exists
-    %%% (This field contains the IRF pattern used for burstwise lifetime
-    %%% fitting)
-    if ~isfield (S.BurstSearch,'IRF')
-        S.BurstSearch.IRF=[];
-        disp('UserValues.BurstSearch.IRF was incomplete');    
-    end
-    P.BurstSearch.IRF = S.BurstSearch.IRF;
-    %%% Checks, if BurstSearch.IRF exists
-    %%% (This field contains the Scatter pattern used for burstwise lifetime
-    %%% fitting)
-    if ~isfield (S.BurstSearch,'Scatter')
-        S.BurstSearch.Scatter=[];
-        disp('UserValues.BurstSearch.Scatter was incomplete');    
-    end
-    P.BurstSearch.Scatter = S.BurstSearch.Scatter;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
@@ -474,13 +464,6 @@ if Mode==0 %%% Loads user values
             disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
     end
     P.TauFit.PIEChannelSelection = S.TauFit.PIEChannelSelection;
-    %%% Checks, if TauFit.IRF exists
-    %%% (This fields stores the Microtime Pattern of an IRF measurement)
-    if ~isfield (S.TauFit,'IRF')
-        S.TauFit.IRF=[];
-            disp('UserValues.TauFit.IRF was incomplete');    
-    end
-    P.TauFit.IRF = S.TauFit.IRF;
     %%% Checks, if TauFit.ScatterPattern exists
     %%% (This fields stores the Microtime Pattern of a Scattter measurement)
     if ~isfield (S.TauFit,'ScatterPattern')

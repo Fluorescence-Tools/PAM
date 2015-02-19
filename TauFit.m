@@ -751,22 +751,21 @@ if isempty(obj) || obj == h.LoadData_Button
     %%% find the number of the selected PIE channels
     PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
     PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
-    Max_MI_Bins = min([FileInfo.MI_Bins size(UserValues.TauFit.IRF,2) size(UserValues.TauFit.ScatterPattern,2)]);
     %%% Microtime Histogram of Parallel Channel
     TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
-        UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) Max_MI_Bins]) );
+        UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
     %%% Microtime Histogram of Perpendicular Channel
     TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
-        UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) Max_MI_Bins]) );
+        UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
     %%% Read out the Microtime Histograms of the IRF for the two channels
-    TauFitData.hIRF_Par = UserValues.TauFit.IRF(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) Max_MI_Bins]));
-    TauFitData.hIRF_Per = UserValues.TauFit.IRF(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) Max_MI_Bins]));
+    TauFitData.hIRF_Par = UserValues.PIE.IRF{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+    TauFitData.hIRF_Per = UserValues.PIE.IRF{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
     %%% Normalize IRF for better Visibility
     TauFitData.hIRF_Par = (TauFitData.hIRF_Par./max(TauFitData.hIRF_Par)).*max(TauFitData.hMI_Par);
     TauFitData.hIRF_Per = (TauFitData.hIRF_Per./max(TauFitData.hIRF_Per)).*max(TauFitData.hMI_Per);
     %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) Max_MI_Bins]));
-    TauFitData.hScat_Per = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) Max_MI_Bins]));
+    TauFitData.hScat_Par = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+    TauFitData.hScat_Per = UserValues.TauFit.ScatterPattern(UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
     %%% Normalize IRF for better Visibility
     TauFitData.hScat_Par = (TauFitData.hScat_Par./max(TauFitData.hScat_Par)).*max(TauFitData.hMI_Par);
     TauFitData.hScat_Per = (TauFitData.hScat_Per./max(TauFitData.hScat_Per)).*max(TauFitData.hMI_Per);

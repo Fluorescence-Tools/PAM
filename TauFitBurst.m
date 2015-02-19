@@ -970,9 +970,11 @@ end
 %%% Update UserValues on Correction Parameter Change %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ParameterChange(obj,~)
-global UserValues
+global UserValues TauFitBurstData
 h = guidata(obj);
-UserValues.TauFit.Gblue = str2double(h.Gblue_Edit.String);
+if any(TauFitBurstData.BAMethod == [3,4])
+    UserValues.TauFit.Gblue = str2double(h.Gblue_Edit.String);
+end
 UserValues.TauFit.Ggreen = str2double(h.Ggreen_Edit.String);
 UserValues.TauFit.Gred = str2double(h.Gred_Edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_Edit.String);
@@ -1006,7 +1008,7 @@ l1 = UserValues.TauFit.l1;
 l2 = UserValues.TauFit.l2;
 %% Read out the data from the plots
 TauFitBurstData.FitData.Decay_Par{chan} = h.Plots.Decay_Par.YData;
-TauFitBurstData.FitData.Decay_Per{chan} = h.Plots.Decay_Par.YData;
+TauFitBurstData.FitData.Decay_Per{chan} = h.Plots.Decay_Per.YData;
 TauFitBurstData.FitData.IRF_Par{chan} = h.Plots.IRF_Par.YData;
 TauFitBurstData.FitData.IRF_Per{chan} = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
@@ -1115,10 +1117,8 @@ case {1,2}
         background{2} = 0;
     end
 
-    %%% Load associated Macro- and Microtimes from *.bps file
-    [Path,File,~] = fileparts(BurstData.FileName);
-    load(fullfile(Path,[File '.bps']),'-mat');
-
+    Microtime = TauFitBurstData.Microtime ;
+    Channel = TauFitBurstData.Channel;
     %%% Determine bin width for coarse binning
     new_bin_width = floor(0.1/TauFitBurstData.TAC_Bin);
 
@@ -1136,13 +1136,13 @@ case {1,2}
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
-        TauFitBurstData.FitData.IRF_Par = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
+        TauFitBurstData.FitData.IRF_Par{chan} = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan}])';
         TauFitBurstData.FitData.IRF_Per{chan} = hIRF_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         
         Irf = G{chan}*(1-3*l2)*TauFitBurstData.FitData.IRF_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.IRF_Per{chan};
         Irf = Irf-min(Irf(Irf~=0));
-        Irf = Irf./sum(Irf);
+        Irf = Irf'./sum(Irf);
         IRF{chan} = [Irf zeros(1,TauFitBurstData.Length{chan}-numel(Irf))];
         Scatter = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Scatter_Par{chan} + (2-3*l1)*TauFitBurstData.FitData.Scatter_Per{chan};
         SCATTER{chan} = Scatter./sum(Scatter);
@@ -1393,7 +1393,7 @@ case {3,4}
     BurstData.DataArray(:,idx_tauGG) = lifetime(:,2);
     BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
 end
-save(BurstData.FileName,'BurstData');
+save(TauFitBurstData.FileName,'BurstData');
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 %%% Change the Color of the Button in Pam
 hPam = findobj('Tag','Pam');

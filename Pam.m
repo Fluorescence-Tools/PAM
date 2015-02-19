@@ -79,7 +79,7 @@ end
         'Parent', h.AdvancedAnalysis_Menu,...
         'Separator','on',...
         'Tag','SaveIRF_Menu',...
-        'Label','Save Measurement as IRF',...
+        'Label','Save Measurement as IRF for ALL PIE Channels',...
         'Callback',@SaveIRF);
     h.SaveScatter_Menu = uimenu(...
         'Parent', h.AdvancedAnalysis_Menu,...
@@ -121,7 +121,6 @@ end
         'BackgroundColor','none',...
         'Color',Look.Fore,...
         'Position',[0.5 0.5]);
-
 %% Detector tabs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Microtime tabs container
@@ -623,7 +622,6 @@ end
         'String', '1',...
         'Callback',{@Update_Detector_Channels, [0,1]},...
         'Position',[0.41 0.635 0.06 0.03]);
-   
 %% Trace and Image tabs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Macrotime tabs container
@@ -878,7 +876,6 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.28 0.32 0.38 0.06]);
-
 %% Various tabs (PIE Channels, general information, settings etc.) %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Macrotime tabs container
@@ -935,10 +932,16 @@ end
         'Callback',@PIE_List_Functions);
     %%% Changes Channel Color
     h.PIE_Color = uimenu(...
-        'Parent',h.PIE_List_Menu,...
+        'Parent',h.PIE_Channels,...
         'Label','Change channel colors',...
         'Tag','PIE_Color',...
         'Callback',@PIE_List_Functions);
+    %%% Saves the current Measurement as IRF for the Channel
+    h.PIE_IRF = uimenu(...
+        'Parent',h.PIE_List_Menu,...
+        'Label','Save IRF for selected PIE Channel',...
+        'Tag','PIE_IRF',...
+        'Callback',@SaveIRF);
     %%% Export main
     h.PIE_Export = uimenu(...
         'Parent',h.PIE_List_Menu,...
@@ -1709,7 +1712,6 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.415 0.01 0.575 0.98]);    
-
 %% Mac upscaling of Font Sizes
 if ismac
     scale_factor = 1.2;
@@ -1763,7 +1765,6 @@ TcspcData.MI=cell(1);
 TcspcData.MT=cell(1);
 
 guidata(h.Pam,h);  
-
 %% Initializes to UserValues
 Update_to_UserValues;
 %%% Initializes Profiles List
@@ -2444,6 +2445,7 @@ switch e.Key
         UserValues.PIE.To(end+1)=4096;
         UserValues.PIE.Name{end+1}='PIE Channel';
         UserValues.PIE.Duty_Cycle(end+1)=0;
+        UserValues.PIE.IRF{end+1} = [];
         %%% Reset Correlation Table Data Matrix
         UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
         %%% Updates Pam meta data; input 3 should be empty to improve speed
@@ -2464,6 +2466,7 @@ switch e.Key
         UserValues.PIE.To(Sel)=[];
         UserValues.PIE.Name(Sel)=[];
         UserValues.PIE.Duty_Cycle(Sel)=[];
+        UserValues.PIE.IRF(Sel) = [];
         %%% Reset Correlation Table Data Matrix
         UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
         %%% in Pam meta data
@@ -5163,18 +5166,26 @@ Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves the current measurement as IRF pattern %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SaveIRF(~,~)
-global UserValues PamMeta
-h=guidata(findobj('Tag','Pam'));
-%%% Save IRF pattern for Burstwise Lifetime Fitting
-for i=UserValues.Detector.Det
-    UserValues.BurstSearch.IRF(i,1:numel(PamMeta.MI_Hist{i}))=PamMeta.MI_Hist{i};
+function SaveIRF(obj,~)
+global UserValues PamMeta FileInfo
+if strcmp(FileInfo.FileName{1},'Nothing loaded')
+    errordlg('Load a measurement first!','No measurement loaded...');
+    return;
 end
-%%% Also Update the TauFit IRF
-UserValues.TauFit.IRF = UserValues.BurstSearch.IRF;
-
+h = guidata(findobj('Tag','Pam'));
+switch obj
+    case h.SaveIRF_Menu
+        %%% Update the IRF for ALL PIE channel
+        for i=1:numel(UserValues.PIE.Name)
+            UserValues.PIE.IRF{i} = PamMeta.MI_Hist{UserValues.PIE.Detector(i)}';
+        end
+    case h.PIE_IRF
+        %%% Find selected channels
+        Sel=h.PIE_List.Value;
+        %%% Update IRF of selected channel
+        UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{UserValues.PIE.Detector(Sel)}';
+end
 LSUserValues(1);
-h.SaveIRF_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5256,7 +5267,7 @@ function BurstLifetime(~,~)
 global UserValues BurstData TauFitBurstData
 h = guidata(findobj('Tag','Pam'));
 %%% Check if IRF and Scatter exists
-if isempty(UserValues.BurstSearch.IRF) || isempty(UserValues.BurstSearch.Scatter)
+if any(isempty(UserValues.PIE.IRF)) || isempty(UserValues.TauFit.ScatterPattern)
     warndlg('Define IRF and Scatter first.','No IRF found!');
     return;
 end
@@ -5264,27 +5275,43 @@ end
 h.Progress_Text.String = 'Preparing Data for Lifetime Fit...';
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
-load(fullfile(Path,[File '.bps']),'-mat');
+if exist(fullfile(Path,[File '.bps']),'file') == 2
+    %%% load if it exists
+    load(fullfile(Path,[File '.bps']),'-mat');
+    TauFitBurstData.FileName = BurstData.FileName;
+else
+    %%% else ask for the file
+    [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+    if FileName == 0
+        return;
+    end
+    load('-mat',fullfile(PathName,FileName));
+    %%% Store the correct Path in TauFitBurstData
+    TauFitBurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+end
+TauFitBurstData.Microtime = Microtime;
+TauFitBurstData.Channel = Channel;
 %%% Get total vector of microtime and channel
 Microtime = vertcat(Microtime{:});
 Channel = vertcat(Channel{:});
-TauFitBurstData.Microtime = Microtime;
-TauFitBurstData.Channel = Channel;
 %%% Calculate the total Microtime Histogram per Color from all bursts
 switch BurstData.BAMethod
     case {1,2} %two color MFD  
         %%% Read out the indices of the PIE channels
-%         idx_GGpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
-%         idx_GGperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
-%         idx_RRpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1},UserValues.PIE.Name));
-%         idx_RRperp = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
+        idx_GGpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
+        idx_GGperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
+        idx_RRpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1},UserValues.PIE.Name));
+        idx_RRperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
         
         %%% Calculate the MI histograms
-        max_MIBins = size(UserValues.BurstSearch.IRF,2);
-        GGpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins])));
-        GGperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins])));
-        RRpar = histc(Microtime(Channel == 5), (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins])));
-        RRperp = histc(Microtime(Channel == 6), (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins])));
+        max_MIBins_GGpar = numel(UserValues.PIE.IRF{idx_GGpar});
+        max_MIBins_GGperp = numel(UserValues.PIE.IRF{idx_GGperp});
+        max_MIBins_RRpar = numel(UserValues.PIE.IRF{idx_RRpar});
+        max_MIBins_RRperp = numel(UserValues.PIE.IRF{idx_RRperp});
+        GGpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
+        GGperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
+        RRpar = histc(Microtime(Channel == 5), (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
+        RRperp = histc(Microtime(Channel == 6), (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
         
         %%% Store Histograms in TauFitBurstData
         TauFitBurstData.hMI_Par{1} = GGpar;
@@ -5292,10 +5319,10 @@ switch BurstData.BAMethod
         TauFitBurstData.hMI_Par{2} = RRpar;
         TauFitBurstData.hMI_Per{2} = RRperp;
         %%% Read out the Microtime Histograms of the IRF for the two channels
-        hIRF_GGpar = BurstData.fFCS.IRF(BurstData.PIE.Detector(1),(BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins])));
-        hIRF_GGperp = BurstData.fFCS.IRF(BurstData.PIE.Detector(2),(BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins])));
-        hIRF_RRpar = BurstData.fFCS.IRF(BurstData.PIE.Detector(5),(BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins])));
-        hIRF_RRperp = BurstData.fFCS.IRF(BurstData.PIE.Detector(6),(BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins])));
+        hIRF_GGpar = UserValues.PIE.IRF{idx_GGpar}((BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
+        hIRF_GGperp = UserValues.PIE.IRF{idx_GGperp}((BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
+        hIRF_RRpar = UserValues.PIE.IRF{idx_RRpar}((BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
+        hIRF_RRperp = UserValues.PIE.IRF{idx_RRperp}((BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
         
         TauFitBurstData.hIRF_Par{1} = hIRF_GGpar;
         TauFitBurstData.hIRF_Par{2} = hIRF_RRpar;
@@ -5307,10 +5334,10 @@ switch BurstData.BAMethod
             TauFitBurstData.hIRF_Per{i} = (TauFitBurstData.hIRF_Per{i}./max(TauFitBurstData.hIRF_Per{i})).*max(TauFitBurstData.hMI_Per{i});
         end
         %%% Generate XData
-        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins])) - BurstData.fFCS.From(1);
-        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins])) - BurstData.fFCS.From(2);
-        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins])) - BurstData.fFCS.From(5);
-        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins])) - BurstData.fFCS.From(6);
+        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])) - BurstData.fFCS.From(1);
+        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])) - BurstData.fFCS.From(2);
+        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])) - BurstData.fFCS.From(5);
+        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])) - BurstData.fFCS.From(6);
     case {3,4} %%% Three-color MFD
 %         %%% Read out the indices of the PIE channels
 %         idx_BBpar = find(strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
