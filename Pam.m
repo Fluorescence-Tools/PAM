@@ -5328,6 +5328,18 @@ switch BurstData.BAMethod
             TauFitBurstData.hIRF_Par{i} = (TauFitBurstData.hIRF_Par{i}./max(TauFitBurstData.hIRF_Par{i})).*max(TauFitBurstData.hMI_Par{i});
             TauFitBurstData.hIRF_Per{i} = (TauFitBurstData.hIRF_Per{i}./max(TauFitBurstData.hIRF_Per{i})).*max(TauFitBurstData.hMI_Per{i});
         end
+        
+        %%% Read out the Microtime Histograms of the Scatter for the two channels
+        hScatter_GGpar = UserValues.PIE.ScatterPattern{idx_GGpar}((BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
+        hScatter_GGperp = UserValues.PIE.ScatterPattern{idx_GGperp}((BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
+        hScatter_RRpar = UserValues.PIE.ScatterPattern{idx_RRpar}((BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
+        hScatter_RRperp = UserValues.PIE.ScatterPattern{idx_RRperp}((BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
+        
+        TauFitBurstData.hScatter_Par{1} = hScatter_GGpar;
+        TauFitBurstData.hScatter_Par{2} = hScatter_RRpar;
+        TauFitBurstData.hScatter_Per{1} = hScatter_GGperp;
+        TauFitBurstData.hScatter_Per{2} = hScatter_RRperp;
+        
         %%% Generate XData
         TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])) - BurstData.fFCS.From(1);
         TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])) - BurstData.fFCS.From(2);
@@ -5382,6 +5394,22 @@ switch BurstData.BAMethod
             TauFitBurstData.hIRF_Par{i} = (TauFitBurstData.hIRF_Par{i}./max(TauFitBurstData.hIRF_Par{i})).*max(TauFitBurstData.hMI_Par{i});
             TauFitBurstData.hIRF_Per{i} = (TauFitBurstData.hIRF_Per{i}./max(TauFitBurstData.hIRF_Per{i})).*max(TauFitBurstData.hMI_Per{i});
         end
+        
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        hScatter_BBpar = BurstData.PIE.ScatterPattern{idx_BBpar}(BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar]));
+        hScatter_BBperp = BurstData.PIE.ScatterPattern{idx_BBperp}(BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp]));
+        hScatter_GGpar = BurstData.PIE.ScatterPattern{idx_GGpar}(BurstData.fFCS.From(7):min([BurstData.fFCS.To(7) max_MIBins_GGpar]));
+        hScatter_GGperp = BurstData.PIE.ScatterPattern{idx_GGperp}(BurstData.fFCS.From(8):min([BurstData.fFCS.To(8) max_MIBins_GGperp]));
+        hScatter_RRpar = BurstData.PIE.ScatterPattern{idx_RRpar}(BurstData.fFCS.From(11):min([BurstData.fFCS.To(11) max_MIBins_RRpar]));
+        hScatter_RRperp = BurstData.PIE.ScatterPattern{idx_RRperp}(BurstData.fFCS.From(12):min([BurstData.fFCS.To(12) max_MIBins_RRperp]));
+        
+        TauFitBurstData.hIRF_Par{1} = hScatter_BBpar;
+        TauFitBurstData.hIRF_Par{2} = hScatter_GGpar;
+        TauFitBurstData.hIRF_Par{3} = hScatter_RRpar;
+        TauFitBurstData.hIRF_Per{1} = hScatter_BBperp;
+        TauFitBurstData.hIRF_Per{2} = hScatter_GGperp;
+        TauFitBurstData.hIRF_Per{3} = hScatter_RRperp;
+        
         %%% Generate XData
         TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins])) - BurstData.fFCS.From(1);
         TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins])) - BurstData.fFCS.From(2);

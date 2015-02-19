@@ -1130,9 +1130,9 @@ case {1,2}
     %% Prepare the data
     for chan = 1:2
         %%% Read out the shifted scatter pattern
-        Scatter_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+        Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
         TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-        Scatter_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
+        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
