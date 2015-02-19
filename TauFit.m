@@ -1574,7 +1574,7 @@ h.Result_Plot_Text.Visible = 'on';
 h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)*TauFitData.TACChannelWidth) ' ns \nr_0 = ' num2str(x(1))...
     '\nr_i_n_f = ' num2str(x(3))]);
 h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
-h.Gfactor_Edit.String = num2str(G);
+h.G_factor_edit.String = num2str(G);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
