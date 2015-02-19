@@ -4603,7 +4603,7 @@ BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 BurstData.fFCS.From = UserValues.PIE.From(PIEChannels);
 BurstData.fFCS.To = UserValues.PIE.To(PIEChannels);
 %%% Save IRF
-BurstData.fFCS.IRF = UserValues.BurstSearch.IRF;
+BurstData.fFCS.IRF = UserValues.TauFit.IRF;
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 
@@ -5187,7 +5187,7 @@ LSUserValues(1);
 %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SaveScatter(~,~)
-global UserValues PamMeta
+global UserValues PamMeta TcspcData FileInfo
 h=guidata(findobj('Tag','Pam'));
 
 for i=1:numel(UserValues.PIE.Name)
