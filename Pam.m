@@ -5167,7 +5167,7 @@ Update_Display([],[],1);
 %%% Saves the current measurement as IRF pattern %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SaveIRF(obj,~)
-global UserValues PamMeta FileInfo
+global UserValues FileInfo TcspcData PamMeta
 if strcmp(FileInfo.FileName{1},'Nothing loaded')
     errordlg('Load a measurement first!','No measurement loaded...');
     return;
@@ -5177,13 +5177,15 @@ switch obj
     case h.SaveIRF_Menu
         %%% Update the IRF for ALL PIE channel
         for i=1:numel(UserValues.PIE.Name)
-            UserValues.PIE.IRF{i} = PamMeta.MI_Hist{UserValues.PIE.Detector(i)}';
+            %UserValues.PIE.IRF{i} = PamMeta.MI_Hist{UserValues.PIE.Detector(i)}';
+            UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
         end
     case h.PIE_IRF
         %%% Find selected channels
         Sel=h.PIE_List.Value;
         %%% Update IRF of selected channel
-        UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{UserValues.PIE.Detector(Sel)}';
+        %UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{UserValues.PIE.Detector(Sel)}';
+        UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
 end
 LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
