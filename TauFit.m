@@ -111,6 +111,12 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Box','on',...
         'Visible','on',...
         'UIContextMenu',h.Microtime_Plot_Menu_ResultPlot);
+    h.Result_Plot_Text = text(...
+        0,0,'',...
+        'Parent',h.Result_Plot,...
+        'FontSize',12,...
+        'FontWeight','bold',...
+        'BackgroundColor',[1 1 1]);
     
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
@@ -576,12 +582,12 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.FitPar_Table.RowName = h.Parameters{1};
     %%% Initial Data - Store the StartValues as well as LB and UB
     h.StartPar = cell(numel(h.FitMethods),1);
-    h.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,0,0,true};
-    h.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,-10,10,true};
+    h.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,-10,10,true};
+    h.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,-10,10,true};
+    h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,-10,10,true};
+    h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,-10,10,true};
+    h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,-10,10,true};
     h.FitPar_Table.Data = h.StartPar{1};
     
     %%% Edit Boxes for Correction Factors
@@ -1194,6 +1200,7 @@ h.FitPar_Table.Data = h.StartPar{obj.Value};
 function Start_Fit(obj,~)
 global TauFitData FileInfo
 h = guidata(obj);
+h.Result_Plot_Text.Visible = 'off';
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -1243,9 +1250,15 @@ if ~isfield(FileInfo,'Resolution')
 elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = FileInfo.Resolution/1000;
 end
-irf_lb = h.FitPar_Table.Data{end,2};
-irf_ub = h.FitPar_Table.Data{end,3};
-shift_range = floor(TauFitData.IRFShift + irf_lb):ceil(TauFitData.IRFShift + irf_ub);
+%%% Check if IRFshift is fixed or not
+if h.FitPar_Table.Data{end,4} == 0
+    %%% IRF is not fixed
+    irf_lb = h.FitPar_Table.Data{end,2};
+    irf_ub = h.FitPar_Table.Data{end,3};
+    shift_range = floor(TauFitData.IRFShift + irf_lb):ceil(TauFitData.IRFShift + irf_ub);
+elseif h.FitPar_Table.Data{end,4} == 1
+    shift_range = TauFitData.IRFShift;
+end
 ignore = TauFitData.Ignore;
 %% Start Fit
 %%% Update Progressbar
@@ -1557,10 +1570,11 @@ h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
 
 %%% calculate G
 G = (1-x(3))./(1+2*x(3));
-disp(num2str(G));
-disp(num2str(x(2)*TauFitData.TACChannelWidth))
-disp(num2str(x(1)));
-
+h.Result_Plot_Text.Visible = 'on';
+h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)*TauFitData.TACChannelWidth) ' ns \nr_0 = ' num2str(x(1))...
+    '\nr_i_n_f = ' num2str(x(3))]);
+h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
+h.Gfactor_Edit.String = num2str(G);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
