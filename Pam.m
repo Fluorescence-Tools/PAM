@@ -5692,6 +5692,7 @@ else
             %%% Calculates inter-photon time; first photon gets 0 shift
             Dif=[400; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
             Dif(Dif>400)=400;
+            Dif(Dif<1)=1;
             %%% Applies shift to microtime; no shift for >=400
             TcspcData.MI{Det(i),Rout(i)}(Dif<=400)...
                 =uint16(double(TcspcData.MI{Det(i),Rout(i)}(Dif<=400))...

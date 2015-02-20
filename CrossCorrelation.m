@@ -50,7 +50,7 @@ end
 Array_Length=cellfun(@numel,Cor_Array);
 if min(Array_Length)~=max(Array_Length)
    for i=1:numel(Cor_Array)
-      if Array_Lenght(i)<max(Array_Length)
+      if Array_Length(i)<max(Array_Length)
           Cor_Array{i}(max(Array_Length))=0;
       end
    end
