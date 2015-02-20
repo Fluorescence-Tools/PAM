@@ -1662,6 +1662,18 @@ end
         'Position',[0 0 1 1]);
     %%% Contexmenu for Profiles list
     h.Profiles_Menu = uicontextmenu;
+    %%% Selects profile
+    h.Profiles_Select = uimenu(...
+        'Parent',h.Profiles_Menu,...
+        'Label','Select profile',...
+        'Tag','Profiles_Delete',...
+        'Callback',@Update_Profiles);
+    %%% Deletes selected profile
+    h.Profiles_Duplicate = uimenu(...
+        'Parent',h.Profiles_Menu,...
+        'Label','Duplicate selected profile',...
+        'Tag','Profiles_Duplicate',...
+        'Callback',@Update_Profiles);
     %%% Adds new Profile
     h.Profiles_Add = uimenu(...
         'Parent',h.Profiles_Menu,...
@@ -1672,12 +1684,6 @@ end
     h.Profiles_Delete = uimenu(...
         'Parent',h.Profiles_Menu,...
         'Label','Delete selected profile',...
-        'Tag','Profiles_Delete',...
-        'Callback',@Update_Profiles);
-    %%% Selects profile
-    h.Profiles_Select = uimenu(...
-        'Parent',h.Profiles_Menu,...
-        'Label','Select profile',...
         'Tag','Profiles_Delete',...
         'Callback',@Update_Profiles);
     %%% Profiles list
@@ -3149,7 +3155,7 @@ end
 %%% "enter"-Key or Select menu: Makes selected profile current profile
 function Update_Profiles(obj,ed)
 h=guidata(findobj('Tag','Pam'));
-%global PamMeta UserValues
+global UserValues
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
@@ -3171,6 +3177,8 @@ if ~strcmp(ed.EventName,'KeyPress')
         e.Key='delete';
     elseif obj == h.Profiles_Select;
         e.Key='return';
+    elseif obj == h.Profiles_Duplicate
+        e.Key = 'duplicate';
     else
         e.Key='';
     end
@@ -3241,7 +3249,16 @@ switch e.Key
             Update_Data([],[],0,0);
             Update_Detector_Channels([],[],[1,2]);
             Update_Display([],[],0);
-        end        
+        end
+    case 'duplicate'
+        %% Duplicates selected profile
+        %%% Get profile name
+        Name=inputdlg('Enter profile name:');
+        %%% Creates new file and list entry if input was not empty
+        if ~isempty(Name)            
+            save([pwd filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
+            h.Profiles_List.String{end+1}=[Name{1} '.mat'];
+        end      
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1755,7 +1755,7 @@ h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
-Valid = UpdateCuts(SelectedSpecies);
+%Valid = UpdateCuts(SelectedSpecies);
 h_waitbar = waitbar(0,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
@@ -1802,31 +1802,58 @@ end
 
 %now save channel wise photon numbers
 total = n_bins;
-PDA.NGP = zeros(total,1);
-PDA.NGS = zeros(total,1);
-PDA.NFP = zeros(total,1);
-PDA.NFS = zeros(total,1);
-PDA.NRP = zeros(total,1);
-PDA.NRS = zeros(total,1);
+switch BurstData.BAMethod
+    case {1,2}
+        PDA.NGP = zeros(total,1);
+        PDA.NGS = zeros(total,1);
+        PDA.NFP = zeros(total,1);
+        PDA.NFS = zeros(total,1);
+        PDA.NRP = zeros(total,1);
+        PDA.NRS = zeros(total,1);
 
-PDA.NG = zeros(total,1);
-PDA.NF = zeros(total,1);
-PDA.NR = zeros(total,1);
+        PDA.NG = zeros(total,1);
+        PDA.NF = zeros(total,1);
+        PDA.NR = zeros(total,1);
 
-PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata);
-PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata);
-PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata);
-PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata);
-PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata);
-PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata);
+        PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata);
+        PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata);
+        PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata);
+        PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata);
+        PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata);
+        PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata);
 
-PDA.NG = PDA.NGP + PDA.NGS;
-PDA.NF = PDA.NFP + PDA.NFS;
-PDA.NR = PDA.NRP + PDA.NRS;
+        PDA.NG = PDA.NGP + PDA.NGS;
+        PDA.NF = PDA.NFP + PDA.NFS;
+        PDA.NR = PDA.NRP + PDA.NRS;
+    
+        newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
+        save(newfilename, 'PDA', 'timebin')
+    case {3,4}
+        NBBP = cellfun(@(x) sum((x==1)),PDAdata);
+        NBBS = cellfun(@(x) sum((x==2)),PDAdata);
+        NBGP = cellfun(@(x) sum((x==3)),PDAdata);
+        NBGS = cellfun(@(x) sum((x==4)),PDAdata);
+        NBRP = cellfun(@(x) sum((x==5)),PDAdata);
+        NBRS = cellfun(@(x) sum((x==6)),PDAdata);
+        NGGP = cellfun(@(x) sum((x==7)),PDAdata);
+        NGGS = cellfun(@(x) sum((x==8)),PDAdata);
+        NGRP = cellfun(@(x) sum((x==9)),PDAdata);
+        NGRS = cellfun(@(x) sum((x==10)),PDAdata);
+        NRRP = cellfun(@(x) sum((x==11)),PDAdata);
+        NRRS = cellfun(@(x) sum((x==12)),PDAdata);
 
-newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
-save(newfilename, 'PDA', 'timebin')
-
+        tcPDAstruct.NBB = NBBP + NBBS;
+        tcPDAstruct.NBG = NBGP + NBGS;
+        tcPDAstruct.NBR = NBRP + NBRS;
+        tcPDAstruct.NGG = NGGP + NGGS;
+        tcPDAstruct.NGR = NGRP + NGRS;
+        tcPDAstruct.NRR = NRRP + NRRS;
+        tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
+        tcPDAstruct.timebin = timebin*1000;
+        
+        newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
+        save(newfilename, 'tcPDAstruct', 'timebin')
+end
 delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3302,7 +3329,7 @@ if any(BurstData.BAMethod == [3,4])
     NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
     NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
     %%% Recalculate Efficiency and Stoichiometry
-    E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NGG + NBR);
+    E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR);
     EBG = (gamma_gr.*NBG)./(gamma_br.*NBB.*(1-EGR)+ gamma_gr.*NBG);
     EBR = (NBR - EGR.*(gamma_gr.*NBG+NBR))./(gamma_br.*NBB + NBR - EGR.*(gamma_br.*NBB + gamma_gr.*NBG + NBR));
     if UserValues.BurstBrowser.Corrections.UseBeta == 1
