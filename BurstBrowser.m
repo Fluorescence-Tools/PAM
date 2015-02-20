@@ -2693,12 +2693,24 @@ end
 %%%%%%% Updates Microtime Histograms in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_MicrotimeHistograms(obj,~)
-global BurstData BurstMeta BurstTCSPCData
+global BurstData BurstMeta BurstTCSPCData UserValues
 h = guidata(obj);
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    load('-mat',[BurstData.FileName(1:end-3) 'bps']);
+    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+        %%% load if it exists
+        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+    else
+        %%% else ask for the file
+        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+        if FileName == 0
+            return;
+        end
+        load('-mat',fullfile(PathName,FileName));
+        %%% Store the correct Path in TauFitBurstData
+        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+    end
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
@@ -2838,8 +2850,8 @@ if isfield(BurstData.fFCS,'IRF')
     hIRF_par = [];
     hIRF_perp = [];
     for i = 1:numel(ParChans)
-        hIRF_par = [hIRF_par, BurstData.fFCS.IRF(BurstData.PIE.Detector(ParChans(i)),limit_low_par(i+1):limit_high_par(i+1))];
-        hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(BurstData.PIE.Detector(PerpChans(i)),limit_low_perp(i+1):limit_high_perp(i+1))];
+        hIRF_par = [hIRF_par, BurstData.fFCS.IRF(ParChans(i),limit_low_par(i+1):limit_high_par(i+1))];
+        hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(PerpChans(i),limit_low_perp(i+1):limit_high_perp(i+1))];
     end
     %%% normaize with respect to the total decay histogram
     hIRF_par = hIRF_par./max(hIRF_par).*max(BurstMeta.fFCS.hist_MItotal_par);
