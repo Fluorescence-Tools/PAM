@@ -1162,7 +1162,7 @@ case {1,2}
         %%% Cut the Range of the Parallel Channel
         Par{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})',Par{chan},'UniformOutput',false);
         %%% Shift the perpendicular channel
-        Per{chan} = cellfun(@(x) circshift(x,[TauFitBurstData.ShiftPer{chan},0])',Per{chan},'UniformOutput',false);
+        Per{chan} = cellfun(@(x) circshift(x,[0,TauFitBurstData.ShiftPer{chan}])',Per{chan},'UniformOutput',false);
         %%% Cut the Range of the Perpendicular Channel
         Per{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan}),Per{chan},'UniformOutput',false);
         %%% Construct total Microtime Histogram
@@ -1292,13 +1292,13 @@ case {3,4}
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
-        TauFitBurstData.FitData.IRF_Par = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
+        TauFitBurstData.FitData.IRF_Par{chan} = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan}])';
         TauFitBurstData.FitData.IRF_Per{chan} = hIRF_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         
         Irf = G{chan}*(1-3*l2)*TauFitBurstData.FitData.IRF_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.IRF_Per{chan};
         Irf = Irf-min(Irf(Irf~=0));
-        Irf = Irf./sum(Irf);
+        Irf = Irf'./sum(Irf);
         IRF{chan} = [Irf zeros(1,TauFitBurstData.Length{chan}-numel(Irf))];
         Scatter = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Scatter_Par{chan} + (2-3*l1)*TauFitBurstData.FitData.Scatter_Per{chan};
         SCATTER{chan} = Scatter./sum(Scatter);
@@ -1321,7 +1321,7 @@ case {3,4}
         %%% Cut the Range of the Parallel Channel
         Par{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})',Par{chan},'UniformOutput',false);
         %%% Shift the perpendicular channel
-        Per{chan} = cellfun(@(x) circshift(x,[TauFitBurstData.ShiftPer{chan},0])',Per{chan},'UniformOutput',false);
+        Per{chan} = cellfun(@(x) circshift(x,[0,TauFitBurstData.ShiftPer{chan}])',Per{chan},'UniformOutput',false);
         %%% Cut the Range of the Perpendicular Channel
         Per{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan}),Per{chan},'UniformOutput',false);
         %%% Construct total Microtime Histogram
