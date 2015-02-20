@@ -3938,7 +3938,7 @@ LSUserValues(1);
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_BurstAnalysis(~,~)
-global FileInfo UserValues PamMeta
+global FileInfo UserValues
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
@@ -4602,8 +4602,27 @@ BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 %%% Save the lower and upper boundaries of the PIE Channels for later fFCS calculations
 BurstData.fFCS.From = UserValues.PIE.From(PIEChannels);
 BurstData.fFCS.To = UserValues.PIE.To(PIEChannels);
+
 %%% Save IRF
-BurstData.fFCS.IRF = UserValues.TauFit.IRF;
+switch BurstData.BAMethod
+    case {1,2}
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
+        hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
+        hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
+        BurstData.fFCS.IRF = [hIRF_GGpar; hIRF_GGperp; hIRF_RRpar; hIRF_RRperp];
+    case {3,4}
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
+        hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1})};
+        hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2})};
+        hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
+        hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
+        BurstData.fFCS.IRF = [hIRF_BBpar; hIRF_BBperp;hIRF_GGpar; hIRF_GGperp; hIRF_RRpar; hIRF_RRperp];
+end
+
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
 

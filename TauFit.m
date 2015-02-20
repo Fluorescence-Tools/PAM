@@ -66,6 +66,8 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     
     %%% Create Graphs
     hold on;
+    h.Plots.Scatter_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5]);
+    h.Plots.Scatter_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3]);
     h.Plots.Decay_Sum = plot([0 1],[0 0],'--k');
     h.Plots.Decay_Par = plot([0 1],[0 0],'--g');
     h.Plots.Decay_Per = plot([0 1],[0 0],'--r');
@@ -945,8 +947,15 @@ h.Plots.IRF_Par.YData = hIRF_Par_Shifted((TauFitData.StartPar+1):TauFitData.IRFL
 h.Plots.IRF_Per.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
 hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
-axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
+%%% Scatter Pattern
+h.Plots.Scatter_Par.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+hScatter_Par_Shifted = circshift(TauFitData.hScat_Par,[0,TauFitData.IRFShift])';
+h.Plots.Scatter_Par.YData = hScatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length);
+h.Plots.Scatter_Per.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+hScatter_Per_Shifted = circshift(TauFitData.hScat_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
+h.Plots.Scatter_Per.YData = hScatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length);
 
+axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 %%% Update Ignore Plot
 if TauFitData.Ignore > 1
     %%% Make plot visible
@@ -1017,10 +1026,15 @@ l2 = str2double(h.l2_edit.String);
 %%% Read out the shifted scatter pattern
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
-ScatterPer = circshift(TauFitData.hIRF_Per,[0,TauFitData.ShiftPer]);
-ScatterPattern = TauFitData.hIRF_Par(1:TauFitData.Length) +...
+ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer]);
+ScatterPattern = TauFitData.hScat_Par(1:TauFitData.Length) +...
     2*ScatterPer(1:TauFitData.Length);
 ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+
+IRFPer = circshift(TauFitData.hIRF_Per,[0,TauFitData.ShiftPer]);
+IRFPattern = TauFitData.hIRF_Par(1:TauFitData.Length) +...
+    2*IRFPer(1:TauFitData.Length);
+IRFPattern = IRFPattern'./sum(IRFPattern);
 %%% Old:
 %Scatter_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
 %TauFitData.FitData.Scatter_Par = Scatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length)';
@@ -1088,7 +1102,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
             x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1097,7 +1111,7 @@ switch TauFitData.FitType
         
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1120,7 +1134,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1128,7 +1142,7 @@ switch TauFitData.FitType
         end
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1159,7 +1173,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1167,7 +1181,7 @@ switch TauFitData.FitType
         end
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1201,7 +1215,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1209,7 +1223,7 @@ switch TauFitData.FitType
         end
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1237,7 +1251,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1245,7 +1259,7 @@ switch TauFitData.FitType
         end
         chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1282,7 +1296,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay,i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1293,7 +1307,7 @@ switch TauFitData.FitType
         %%% remove ignore range from decay
         Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
         Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,ScatterPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
         wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
         
          %%% Update FitResult
@@ -1903,12 +1917,12 @@ c = xdata{6};
 ignore = xdata{7};
 
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = circshift(IRFPattern,[c, 0]);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+Scatter = circshift(ScatterPattern,[c, 0]);
 Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
@@ -1949,12 +1963,12 @@ c = xdata{6};
 ignore = xdata{7};
 
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = circshift(IRFPattern,[c, 0]);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+Scatter = circshift(ScatterPattern,[c, 0]);
 Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
@@ -1998,12 +2012,12 @@ c = xdata{6};
 ignore = xdata{7};
 
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = circshift(IRFPattern,[c, 0]);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+Scatter = circshift(ScatterPattern,[c, 0]);
 Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
@@ -2040,12 +2054,12 @@ c = xdata{6};
 ignore = xdata{7};
 
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = circshift(IRFPattern,[c, 0]);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+Scatter = circshift(ScatterPattern,[c, 0]);
 Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
@@ -2085,12 +2099,12 @@ c = xdata{6};
 ignore = xdata{7};
 
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[(ShiftParams(2)+c), 0]);
+irf = circshift(IRFPattern,[c, 0]);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[(ShiftParams(2)+c), 0]);
+Scatter = circshift(ScatterPattern,[c, 0]);
 Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
@@ -2137,13 +2151,13 @@ IRF = cell(1,2);
 Scatter = cell(1,2); 
 for i = 1:2
     irf = [];
-    irf = circshift(IRFPattern{i},[(ShiftParams(2)+c), 0]);
+    irf = circshift(IRFPattern{i},[c, 0]);
     irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
     irf = irf-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
     s = [];
-    s = circshift(ScatterPattern{i},[(ShiftParams(2)+c), 0]);
+    s = circshift(ScatterPattern{i},[c, 0]);
     Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
 end
 n = size(y,2);
