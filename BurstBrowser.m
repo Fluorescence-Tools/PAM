@@ -1957,10 +1957,41 @@ BurstMeta.Plots.Main_histY.YData = sum(H,2);
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 
-%%% tighten axes
-axis(h.axes_general,'tight');
-axis(h.axes_1d_x,'tight');
-axis(h.axes_1d_y,'tight');
+%%% set axes limits 
+CutState = vertcat(BurstData.Cut{BurstData.SelectedSpecies}{:});
+CutParameters = CutState(:,1);
+if any(strcmp(BurstData.NameArray{x},CutParameters))
+    if CutState{strcmp(BurstData.NameArray{x},CutParameters),4} == 1 %%% Check if active
+        %%% Set x-axis limits according to cut boundaries of selected parameter
+        xlimits = [CutState{strcmp(BurstData.NameArray{x},CutParameters),2},...
+            CutState{strcmp(BurstData.NameArray{x},CutParameters),3}];
+    else
+        %%% set to min max
+        xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];       
+    end
+else
+    %%% set to min max
+    xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];
+end
+
+if any(strcmp(BurstData.NameArray{y},CutParameters))
+    if CutState{strcmp(BurstData.NameArray{y},CutParameters),4} == 1 %%% Check if active
+         %%% Set x-axis limits according to cut boundaries of selected parameter
+        ylimits = [CutState{strcmp(BurstData.NameArray{y},CutParameters),2},...
+            CutState{strcmp(BurstData.NameArray{y},CutParameters),3}];
+    else
+        %%% set to min max
+        ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];       
+    end
+else
+    %%% set to min max
+    ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];    
+end
+%%% set limits of axes
+xlim(h.axes_general,xlimits);
+ylim(h.axes_general,ylimits);
+xlim(h.axes_1d_x,xlimits);
+xlim(h.axes_1d_y,ylimits);
 %%% Update ColorMap
 eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 drawnow;
@@ -2044,14 +2075,9 @@ y_boundaries = [min(miny) max(maxy)];
 
 H = cell(num_species,1);
 for i = 1:num_species
-    [H{i}, xbins_hist, ybins_hist] = hist2d([datatoplot{i}(:,x) datatoplot{i}(:,y)],nbinsX, nbinsY, x_boundaries, y_boundaries);
-    H{i}(H{i}==0) = NaN;
-    H{i}(:,end-1) = H{i}(:,end-1) + H{i}(:,end); H{i}(:,end) = [];
-    H{i}(end-1,:) = H{i}(end-1,:) + H{i}(end,:); H{i}(end,:) = [];
+    [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x), datatoplot{i}(:,y),[nbinsX,nbinsY], x_boundaries, y_boundaries);
 end
 
-xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 
 %%% prepare image plot
 white = 1;
@@ -2107,50 +2133,40 @@ xlabel(h.axes_general,h.ParameterListX.String{x});
 ylabel(h.axes_general,h.ParameterListY.String{y});
 
 %plot first histogram
-hx = histc(datatoplot{1}(:,x),xbins_hist);
-hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
+hx = sum(H{1},1);
 %normalize
 hx = hx./sum(hx); hx = hx';
 BurstMeta.Plots.Multi.Multi_histX(1).Visible = 'on';
-BurstMeta.Plots.Multi.Multi_histX(1).XData = [xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2];
-BurstMeta.Plots.Multi.Multi_histX(1).YData = [hx, hx(end)];
-%stairsx(1) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','b','LineWidth',2);
+BurstMeta.Plots.Multi.Multi_histX(1).XData = xbins;
+BurstMeta.Plots.Multi.Multi_histX(1).YData = hx;
 %plot rest of histograms
 for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'on';
-    hx = histc(datatoplot{i}(:,x),xbins_hist);
-    hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
+    hx = sum(H{i},1);
     %normalize
     hx = hx./sum(hx); hx = hx';
-    BurstMeta.Plots.Multi.Multi_histX(i).XData = [xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2];
-    BurstMeta.Plots.Multi.Multi_histX(i).YData = [hx, hx(end)];
-    %stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','r','LineWidth',2);
-    %stairsx(i) = stairs([xbins(1)-min(diff(xbins))/2 xbins+min(diff(xbins))/2],[hx, hx(end)],'Color','g','LineWidth',2);
+    BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
+    BurstMeta.Plots.Multi.Multi_histX(i).YData = hx;
 end
 
 yticks = get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
 %plot first histogram
-hy = histc(datatoplot{1}(:,y),ybins_hist);
-hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
+hy = sum(H{1},2);
 %normalize
 hy = hy./sum(hy); hy = hy';
 BurstMeta.Plots.Multi.Multi_histY(1).Visible = 'on';
-BurstMeta.Plots.Multi.Multi_histY(1).XData = [ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2];
-BurstMeta.Plots.Multi.Multi_histY(1).YData = [hy, hy(end)];
-%stairsy(1) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','b','LineWidth',2);
+BurstMeta.Plots.Multi.Multi_histY(1).XData = ybins;
+BurstMeta.Plots.Multi.Multi_histY(1).YData = hy;
 %plot rest of histograms
 for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'on';
-    hy = histc(datatoplot{i}(:,y),ybins_hist);
-    hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
+    hy = sum(H{i},2);
     %normalize
     hy = hy./sum(hy); hy = hy';
-    BurstMeta.Plots.Multi.Multi_histY(i).XData = [ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2];
-    BurstMeta.Plots.Multi.Multi_histY(i).YData = [hy, hy(end)];
-    %stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','r','LineWidth',2);
-    %stairsy(i) = stairs([ybins(1)-min(diff(ybins))/2 ybins+min(diff(ybins))/2],[hy, hy(end)],'Color','g','LineWidth',2);
+    BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
+    BurstMeta.Plots.Multi.Multi_histY(i).YData = hy;
 end
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
@@ -4270,7 +4286,7 @@ UpdateCorrections([],[])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [H,xbins,ybins,xbins_hist,ybins_hist] = calc2dhist(x,y,nbins,limx,limy,haxes)
+function [H,xbins,ybins,xbins_hist,ybins_hist] = calc2dhist(x,y,nbins,limx,limy)
 %%% ouput arguments:
 %%% H:                      Image Data
 %%% xbins/ybins:            corrected xbins for image plot
@@ -4289,10 +4305,7 @@ if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
-%%% set axes
-if nargin == 6
-    axes(haxes);
-end
+
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
 y = y(valid);
