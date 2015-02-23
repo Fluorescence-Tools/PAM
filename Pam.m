@@ -4615,18 +4615,33 @@ switch BurstData.BAMethod
         %%% Read out the Microtime Histograms of the IRF for the two channels
         hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
         hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
+        hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
         hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
         hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        BurstData.fFCS.IRF = [hIRF_GGpar; hIRF_GGperp; hIRF_RRpar; hIRF_RRperp];
+        BurstData.fFCS.IRF = [hIRF_GGpar; hIRF_GGperp;...
+            hIRF_GRpar; hIRF_GRperp;...
+            hIRF_RRpar; hIRF_RRperp];
     case {3,4}
         %%% Read out the Microtime Histograms of the IRF for the two channels
         hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
         hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hIRF_BGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
+        hIRF_BGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
+        hIRF_BRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
+        hIRF_BRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
         hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1})};
         hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2})};
+        hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1})};
+        hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2})};
         hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
         hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
-        BurstData.fFCS.IRF = [hIRF_BBpar; hIRF_BBperp;hIRF_GGpar; hIRF_GGperp; hIRF_RRpar; hIRF_RRperp];
+        BurstData.fFCS.IRF = [hIRF_BBpar; hIRF_BBperp;...
+            hIRF_BGpar; hIRF_BGperp;...
+            hIRF_BRpar; hIRF_BRperp;...
+            hIRF_GGpar; hIRF_GGperp;...
+            hIRF_GRpar; hIRF_GRperp;...
+            hIRF_RRpar; hIRF_RRperp];
 end
 
 %%% get path from spc files, create folder

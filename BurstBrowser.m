@@ -1644,7 +1644,13 @@ if strcmpi(clickType,'Right-click')
     species = get(h.SpeciesList,'Value');
     param = clickedIndex;
     
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+    %%% Check whether the CutParameter already exists or not
+    ExistingCuts = vertcat(BurstData.Cut{species}{:});
+    if any(strcmp(BurstData.NameArray{param},ExistingCuts(:,1)))
+        return;
+    else
+        BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+    end
     UpdateCutTable(h);
     UpdateCuts();
     %UpdateCorrections;
@@ -2327,6 +2333,7 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
 UpdateLifetimePlots(hObject,[]);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Determines the Correction Factors automatically  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2749,6 +2756,7 @@ CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(C
 %MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
 MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
 CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
+
 switch BurstData.BAMethod
     case {1,2} %%% 2ColorMFD
         ParChans = [1 3]; %% GG1 and GR1
@@ -2816,6 +2824,21 @@ for i = 1:numel(ParChans)
         MT_total(CH_total == PerpChans(i)));
 end
 
+%%% Downsampling
+MI_total_par = double(MI_total_par);
+MI_total_perp = double(MI_total_perp);
+%%% redistribute to 1024 channels (hardcoded fornow)
+new_bin_number = 1024;
+maxMIpar = max(MI_total_par); maxMIper = max(MI_total_perp);
+MI_total_par = ceil(new_bin_number.*MI_total_par./maxMIpar);
+MI_total_perp = ceil(new_bin_number.*MI_total_perp./maxMIper);
+for i = 1:2
+    MI_par{i} = double(MI_par{i});
+    MI_perp{i} = double(MI_perp{i});
+    MI_par{i} = ceil(new_bin_number.*MI_par{i}./maxMIpar);
+    MI_perp{i} = ceil(new_bin_number.*MI_perp{i}./maxMIper);
+end
+
 %%% sort photons
 [MT_total_par,idx] = sort(MT_total_par);
 MI_total_par = MI_total_par(idx);
@@ -2862,28 +2885,30 @@ BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_
 axis(h.axes_fFCS_DecayPerp,'tight');
 
 %%% Add IRF Pattern if existent
-if isfield(BurstData.fFCS,'IRF')
-    hIRF_par = [];
-    hIRF_perp = [];
-    for i = 1:numel(ParChans)
-        hIRF_par = [hIRF_par, BurstData.fFCS.IRF(ParChans(i),limit_low_par(i+1):limit_high_par(i+1))];
-        hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(PerpChans(i),limit_low_perp(i+1):limit_high_perp(i+1))];
+try
+    if isfield(BurstData.fFCS,'IRF')
+        hIRF_par = [];
+        hIRF_perp = [];
+        for i = 1:numel(ParChans)
+            hIRF_par = [hIRF_par, BurstData.fFCS.IRF(ParChans(i),limit_low_par(i+1):limit_high_par(i+1))];
+            hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(PerpChans(i),limit_low_perp(i+1):limit_high_perp(i+1))];
+        end
+        %%% normaize with respect to the total decay histogram
+        hIRF_par = hIRF_par./max(hIRF_par).*max(BurstMeta.fFCS.hist_MItotal_par);
+        hIRF_perp = hIRF_perp./max(hIRF_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
+        %%% store in BurstMeta
+        BurstMeta.fFCS.hIRF_par = hIRF_par;
+        BurstMeta.fFCS.hIRF_perp = hIRF_perp;
+        %%% Update Plots
+        BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
+        BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hIRF_par;
+        BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hIRF_perp;
+    elseif ~isfield(BurstData.fFCS,'IRF')
+        %%% Hide IRF plots
+        BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
+        BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
     end
-    %%% normaize with respect to the total decay histogram
-    hIRF_par = hIRF_par./max(hIRF_par).*max(BurstMeta.fFCS.hist_MItotal_par);
-    hIRF_perp = hIRF_perp./max(hIRF_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
-    %%% store in BurstMeta
-    BurstMeta.fFCS.hIRF_par = hIRF_par;
-    BurstMeta.fFCS.hIRF_perp = hIRF_perp;
-    %%% Update Plots
-    BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
-    BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hIRF_par;
-    BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
-    BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hIRF_perp;
-elseif ~isfield(BurstData.fFCS,'IRF')
-    %%% Hide IRF plots
-    BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
-    BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2896,7 +2921,9 @@ h = guidata(obj);
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
 if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par(1:size(Decay_par,1))'];
+    if isfield(BurstMeta.fFCS,'hIRF_par')
+        Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par(1:size(Decay_par,1))'];
+    end
 end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
 Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
@@ -2904,7 +2931,9 @@ Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
 if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp(1:size(Decay_perp,1))'];
+    if isfield(BurstMeta.fFCS,'hIRF_perp')
+        Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp(1:size(Decay_perp,1))'];
+    end
 end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
 Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
