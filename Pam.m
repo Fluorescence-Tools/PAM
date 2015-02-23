@@ -1792,7 +1792,9 @@ function Close_Pam(Obj,~)
 clear global -regexp PamMeta TcspcData FileInfo
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
-if isempty(Phasor) && isempty(FCSFit)
+MIAFit=findobj('Tag','MIAFit');
+PCF=findobj('Tag','PCF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF)
     clear global -regexp UserValues
 end
 delete(Obj);
@@ -2906,6 +2908,7 @@ switch e.Key
             UserValues.Detector.Name{end+1}=Input{3};
             UserValues.Detector.Color(end+1,:)=str2num(Input{4});   %#ok<ST2NM>
             UserValues.Detector.Shift{end+1}=zeros(400,1);
+            UserValues.Phasor.Reference(end+1,end)=0;
         end
     case 'delete' 
         %% Deletes all selected microtimechannels        
@@ -3367,12 +3370,10 @@ h.Progress_Axes.Color=[1 0 0];
 if mode==2 %%% For Multiple Correlation
     %%% Select file to be loaded
     [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-                                        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
-    
+                                        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
     %%% Save path
     UserValues.File.Path=Path;
     LSUserValues(1);
-
     if ~iscell(File) && ~all(File==0) %%% If exactly one file was selected
         File={File};
         NCors=1;
@@ -3381,19 +3382,15 @@ if mode==2 %%% For Multiple Correlation
         NCors=[];
     else %%% If several files were selected
         NCors=1:size(File,2);
-    end
-    
+    end  
 else %%% Single File correlation
     File=[];
     NCors=1;
 end
-
-for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)
-    
+for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)    
     if mode==2 %%% Loads new file
         LoadTcspc([],[],@Update_Data,@Calibrate_Detector,h.Pam,File{m},Type);
-    end
-    
+    end    
     %%% Finds the right combinations to correlate
     [Cor_A,Cor_B]=find(h.Cor_Table.Data(1:end-1,1:end-1));
     %%% Calculates the maximum inter-photon time in clock ticks
@@ -3402,8 +3399,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
     %%% Uses truncated Filename
     FileName=FileInfo.FileName{1}(1:end-5);
-    drawnow;
-    
+    drawnow;    
     %%% For every active combination
     for i=1:numel(Cor_A)      
         %%% Findes all needed PIE channels
@@ -3487,15 +3483,12 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if k<=numel(Data1)
                     Data1(k:end)=[];
                     Data2(k:end)=[];
-                end
-                
-                
+                end             
                 %%% Applies divider to data
                 for j=1:numel(Data1)
                     Data1{j}=floor(Data1{j}/UserValues.Settings.Pam.Cor_Divider);
                     Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
-                end
-                
+                end               
                 %%% Actually calculates the crosscorrelation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                 Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
@@ -3513,8 +3506,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Cor_SEM=Cor_Array{1};
                 end
                 
-                %% Saves data
-                
+                %% Saves data                
                 %%% Removes Comb.: from Name of combined channels
                 PIE_Name1=UserValues.PIE.Name{Cor_A(i)};
                 if ~isempty(strfind(PIE_Name1,'Comb'))
@@ -3540,11 +3532,9 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     
-                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}];
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
-                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-                    
-                    
+                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000; %#ok<NASGU>
+                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
                 end
                 
                 if any(h.Cor_Format.Value == [2 3])
@@ -3580,12 +3570,11 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end
                 
                 Progress(1);
-                Progress((i)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')
-                
+                Progress((i)/numel(Cor_A),h.Progress_Axes,h.Progress_Text,'Correlating :')                
             case 2 %%% Pair correlation
                 Bins=str2double(h.Cor_Pair_Bins.String);
-                Dist=[0,str2num(h.Cor_Pair_Dist.String)];
-                
+                Dist=[0,str2num(h.Cor_Pair_Dist.String)]; %#ok<ST2NM>
+                Dist= Dist(Dist<Bins);               
                 %% Channel 1 calculations
                 Data=[];
                 %%% Combines all photons to one vector for channel 1
@@ -3628,8 +3617,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 PairCor=cell(Bins,max(Dist),2);
                 PairInfo.Time=[];
                 for j=1:Bins %%% Goes through every bin
-                    for l=Dist %%% Goes throu every selected bin distance
-                        if (l+j)<Bins %%% Checks if bin distance is valid
+                    for l=Dist %%% Goes through every selected bin distance
+                        if (l+j)<=Bins %%% Checks if bin distance is valid
                             %%% Ch1xCh2
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1(j),Data2(j+l),Maxtime);
                             %%% Adjusts correlation times to longest
@@ -3656,7 +3645,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end             
                 %% Transforms Data and Saves
                 %%% Transforms cell array to 4D matrix (Time,Bins,Dist,Dir)
-                PairCor=reshape(cell2mat(PairCor),[MaxLength,size(PairCor)]);
+                PairCor=reshape(cell2mat(PairCor),[MaxLength,size(PairCor)]); %#ok<NASGU>
                 %%% Calculates Intensity traces
                 for j=1:Bins
                     PairInt{1}(:,j)=histc(Data1{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
@@ -3664,7 +3653,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end
                 %%% Combines information
                 PairInfo.Dist=Dist;
-                PairInfo.Bins=Dins;
+                PairInfo.Bins=Bins;
+                PairInfo.ScanFreq=FileInfo.ScanFreq;
                 %%% Transforms time lag to real time
                 PairInfo.Time=PairInfo.Time/FileInfo.SyncPeriod/FileInfo.ScanFreq;                
                 %% Save Data
@@ -3678,21 +3668,20 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     PIE_Name2=PIE_Name2(8:end);
                 end
                 %%% Generates filename
-                    Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.pcor']);
-                    %%% Checks, if file already exists
-                    if  exist(Current_FileName,'file')
-                        k=1;
-                        %%% Adds 1 to filename
-                        Current_FileName=[Current_FileName(1:end-5) num2str(k) '.pcor'];
-                        %%% Increases counter, until no file is fount
-                        while exist(Current_FileName,'file')
-                            k=k+1;
-                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                        end
-                        %%% Saves File
-                        save(Current_FileName,'PairInfo','PairInt','PairCor');                        
+                Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.pcor']);
+                %%% Checks, if file already exists
+                if  exist(Current_FileName,'file')
+                    k=1;
+                    %%% Adds 1 to filename
+                    Current_FileName=[Current_FileName(1:end-5) num2str(k) '.pcor'];
+                    %%% Increases counter, until no file is fount
+                    while exist(Current_FileName,'file')
+                        k=k+1;
+                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
                     end
-                
+                end
+                %%% Saves File
+                save(Current_FileName,'PairInfo','PairInt','PairCor');                
         end
     end
     Update_Display([],[],1);
@@ -5705,7 +5694,7 @@ else
         Rout=UserValues.Detector.Rout;
     end
     for i=1:numel(Det)
-        if size(UserValues.Detector.Shift,1)>=Det(i) &&  any(UserValues.Detector.Shift{Det(i)}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
+        if size(UserValues.Detector.Shift,1)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
             %%% Calculates inter-photon time; first photon gets 0 shift
             Dif=[400; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
             Dif(Dif>400)=400;
@@ -5713,8 +5702,8 @@ else
             %%% Applies shift to microtime; no shift for >=400
             TcspcData.MI{Det(i),Rout(i)}(Dif<=400)...
                 =uint16(double(TcspcData.MI{Det(i),Rout(i)}(Dif<=400))...
-                -UserValues.Detector.Shift{Det(i)}(Dif(Dif<=400))');
-            PamMeta.Applied_Shift{Det(i)}=UserValues.Detector.Shift{Det(i)};
+                -UserValues.Detector.Shift{i}(Dif(Dif<=400))');
+            PamMeta.Applied_Shift{i}=UserValues.Detector.Shift{i};
 
         end
     end
@@ -5730,7 +5719,7 @@ h=guidata(findobj('Tag','Pam'));
 Det=UserValues.Detector.Det(h.MI_Calib_Det.Value);
 Rout=UserValues.Detector.Rout(h.MI_Calib_Det.Value);
 if isfield(PamMeta.Det_Calib,'Shift')
-    UserValues.Detector.Shift{Det,Rout}=PamMeta.Det_Calib.Shift;
+    UserValues.Detector.Shift{h.MI_Calib_Det.Value}=PamMeta.Det_Calib.Shift;
     Calibrate_Detector([],[],Det,Rout);
 end
 LSUserValues(1)

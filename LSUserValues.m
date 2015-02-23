@@ -168,6 +168,10 @@ if Mode==0 %%% Loads user values
         S.File.BurstBrowserPath=pwd;
     end 
     P.File.BurstBrowserPath = S.File.BurstBrowserPath;
+    if ~isfield(S.File,'PCFPath')
+        S.File.PCFPath=pwd;
+    end
+    P.File.PCFPath = S.File.PCFPath;
     
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
@@ -177,6 +181,7 @@ if Mode==0 %%% Loads user values
         S.File.MIAFit_Standard=[];
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
+
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
@@ -422,6 +427,8 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.Phasor,'Reference')
         S.Phasor.Reference=zeros(numel(S.Detector.Det),4096);
         disp('UserValues.Phasor.Reference was incomplete');
+    elseif size(S.Phasor.Reference,1)<numel(P.Detector.Det)
+        S.Phasor.Reference(numel(P.Detector.Det),end) = 0;
     end
     P.Phasor.Reference = S.Phasor.Reference;
     %% Burst Search
