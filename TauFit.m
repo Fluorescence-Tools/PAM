@@ -800,7 +800,7 @@ if isempty(obj) || obj == h.LoadData_Button
     h.Plots.IRF_Par.YData = TauFitData.hIRF_Par;
     h.Plots.IRF_Per.YData = TauFitData.hIRF_Per;
     h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
-    h.Microtime_Plot.YLimMode = 'auto';
+    h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par; TauFitData.hMI_Per]) 10/9*max([TauFitData.hMI_Par; TauFitData.hMI_Per])];
     %%% Define the Slider properties
     %%% Values to consider:
     %%% The length of the shortest PIE channel
@@ -961,7 +961,7 @@ if TauFitData.Ignore > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
     h.Ignore_Plot.XData = [TauFitData.Ignore TauFitData.Ignore];
-    h.Ignore_Plot.YData = [0 h.Microtime_Plot.YLim(2)];
+    h.Ignore_Plot.YData = h.Microtime_Plot.YLim;
 elseif TauFitData.Ignore == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
@@ -1275,10 +1275,15 @@ switch TauFitData.FitType
         %%% r_infinity - Residual Anisotropy
         %%% Background par
         %%% Background per
+
+        %%% Define separate Scatter Patterns
+        IRFPattern = cell(2,1);
+        IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+        IRFPattern{2} = IRFPer(1:TauFitData.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
         
         %%% Define separate Scatter Patterns
         ScatterPattern = cell(2,1);
-        ScatterPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+        ScatterPattern{1} = TauFitData.hScat_Par(1:TauFitData.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
         ScatterPattern{2} = ScatterPer(1:TauFitData.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
         
         %%% Convert Lifetimes
