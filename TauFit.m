@@ -78,9 +78,9 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Microtime_Plot.XLim = [0 1];
     h.Microtime_Plot.YLim = [0 1];
     h.Microtime_Plot.XLabel.Color = Look.Fore;
-    h.Microtime_Plot.XLabel.String = 'Microtime';
+    h.Microtime_Plot.XLabel.String = 'time [ns]';
     h.Microtime_Plot.YLabel.Color = Look.Fore;
-    h.Microtime_Plot.YLabel.String = 'Intensity [Counts]';
+    h.Microtime_Plot.YLabel.String = 'intensity [counts]';
     h.Microtime_Plot.XGrid = 'on';
     h.Microtime_Plot.YGrid = 'on';
     
@@ -98,7 +98,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Plots.Residuals = plot([0 1],[0 0],'-k');
     h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k');
     h.Residuals_Plot.YLabel.Color = Look.Fore;
-    h.Residuals_Plot.YLabel.String = 'Weighted Residuals';
+    h.Residuals_Plot.YLabel.String = 'res_w';
     h.Residuals_Plot.XGrid = 'on';
     h.Residuals_Plot.YGrid = 'on';
     
@@ -123,9 +123,9 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
     h.Result_Plot.XLabel.Color = Look.Fore;
-    h.Result_Plot.XLabel.String = 'Microtime';
+    h.Result_Plot.XLabel.String = 'time [ns]';
     h.Result_Plot.YLabel.Color = Look.Fore;
-    h.Result_Plot.YLabel.String = 'Intensity [Counts]';
+    h.Result_Plot.YLabel.String = 'intensity [counts]';
     h.Result_Plot.XGrid = 'on';
     h.Result_Plot.YGrid = 'on';
     linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
@@ -704,29 +704,29 @@ guidata(gcf,h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Load the Microtime Histogram of selected PIE Channels %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Data(~,~)
-global UserValues TauFitData PamMeta FileInfo
-h = guidata(findobj('Tag','TauFit'));
-%%% find the number of the selected PIE channels
-PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
-PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
-
-%%% Microtime Histogram of Parallel Channel
-TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
-    UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par) );
-%%% Microtime Histogram of Perpendicular Channel
-TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
-    UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per) );
-
-TauFitData.XData_Par = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
-TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
-%%% Plot the Data
-
-h.Plots.Decay_Par.XData = TauFitData.XData_Par;
-h.Plots.Decay_Per.XData = TauFitData.XData_Per;
-h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
-h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
-h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
+% function Load_Data(~,~)
+% global UserValues TauFitData PamMeta FileInfo
+% h = guidata(findobj('Tag','TauFit'));
+% %%% find the number of the selected PIE channels
+% PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
+% PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
+% 
+% %%% Microtime Histogram of Parallel Channel
+% TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
+%     UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par) );
+% %%% Microtime Histogram of Perpendicular Channel
+% TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
+%     UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per) );
+% 
+% TauFitData.XData_Par = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+% TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per))*FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+% %%% Plot the Data
+% 
+% h.Plots.Decay_Par.XData = TauFitData.XData_Par;
+% h.Plots.Decay_Per.XData = TauFitData.XData_Per;
+% h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
+% h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
+% h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
 
 function ChangeYScale(obj,~)
 h = guidata(obj);
@@ -791,15 +791,16 @@ if isempty(obj) || obj == h.LoadData_Button
     TauFitData.XData_Per = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
 
     %%% Plot the Data
-    h.Plots.Decay_Par.XData = TauFitData.XData_Par;
-    h.Plots.Decay_Per.XData = TauFitData.XData_Per;
-    h.Plots.IRF_Par.XData = TauFitData.XData_Par;
-    h.Plots.IRF_Per.XData = TauFitData.XData_Per;
+    TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+    h.Plots.Decay_Par.XData = TauFitData.XData_Par*TACtoTime;
+    h.Plots.Decay_Per.XData = TauFitData.XData_Per*TACtoTime;
+    h.Plots.IRF_Par.XData = TauFitData.XData_Par*TACtoTime;
+    h.Plots.IRF_Per.XData = TauFitData.XData_Per*TACtoTime;
     h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
     h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
     h.Plots.IRF_Par.YData = TauFitData.hIRF_Par;
     h.Plots.IRF_Per.YData = TauFitData.hIRF_Per;
-    h.Microtime_Plot.XLim = [min([TauFitData.XData_Par TauFitData.XData_Per]) max([TauFitData.XData_Par TauFitData.XData_Per])];
+    h.Microtime_Plot.XLim = [min([TauFitData.XData_Par*TACtoTime TauFitData.XData_Per*TACtoTime]) max([TauFitData.XData_Par*TACtoTime TauFitData.XData_Per*TACtoTime])];
     h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par; TauFitData.hMI_Per]) 10/9*max([TauFitData.hMI_Par; TauFitData.hMI_Per])];
     %%% Define the Slider properties
     %%% Values to consider:
@@ -932,26 +933,28 @@ end
 %%% Make the Microtime Adjustment Plot Visible, hide Result
 h.Microtime_Plot.Parent = h.TauFit_Panel;
 h.Result_Plot.Parent = h.HidePanel;
+
+TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
 %%% Apply the shift to the parallel channel
-h.Plots.Decay_Par.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+h.Plots.Decay_Par.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
 h.Plots.Decay_Par.YData = TauFitData.hMI_Par((TauFitData.StartPar+1):TauFitData.Length)';
 %%% Apply the shift to the perpendicular channel
-h.Plots.Decay_Per.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+h.Plots.Decay_Per.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
 hMI_Per_Shifted = circshift(TauFitData.hMI_Per,[TauFitData.ShiftPer,0])';
 h.Plots.Decay_Per.YData = hMI_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length);
 %%% Apply the shift to the parallel IRF channel
-h.Plots.IRF_Par.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
+h.Plots.IRF_Par.XData = ((TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar)*TACtoTime;
 hIRF_Par_Shifted = circshift(TauFitData.hIRF_Par,[0,TauFitData.IRFShift])';
 h.Plots.IRF_Par.YData = hIRF_Par_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
 %%% Apply the shift to the perpendicular IRF channel
-h.Plots.IRF_Per.XData = (TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar;
+h.Plots.IRF_Per.XData = ((TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar)*TACtoTime;
 hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
 %%% Scatter Pattern
-h.Plots.Scatter_Par.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+h.Plots.Scatter_Par.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
 hScatter_Par_Shifted = circshift(TauFitData.hScat_Par,[0,TauFitData.IRFShift])';
 h.Plots.Scatter_Par.YData = hScatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length);
-h.Plots.Scatter_Per.XData = (TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar;
+h.Plots.Scatter_Per.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
 hScatter_Per_Shifted = circshift(TauFitData.hScat_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer])';
 h.Plots.Scatter_Per.YData = hScatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length);
 
@@ -960,7 +963,7 @@ axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(
 if TauFitData.Ignore > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
-    h.Ignore_Plot.XData = [TauFitData.Ignore TauFitData.Ignore];
+    h.Ignore_Plot.XData = [TauFitData.Ignore*TACtoTime TauFitData.Ignore*TACtoTime];
     h.Ignore_Plot.YData = h.Microtime_Plot.YLim;
 elseif TauFitData.Ignore == 1
     %%% Hide Plot Again
@@ -1276,7 +1279,7 @@ switch TauFitData.FitType
         %%% Background par
         %%% Background per
 
-        %%% Define separate Scatter Patterns
+        %%% Define separate IRF Patterns
         IRFPattern = cell(2,1);
         IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
         IRFPattern{2} = IRFPer(1:TauFitData.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
@@ -1333,14 +1336,20 @@ h.Progress_Text.String = 'Fit done';
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 
-h.Plots.DecayResult.XData = 1:numel(Decay);
+% plot chi^2 on graph
+h.Result_Plot_Text.Visible = 'on';
+h.Result_Plot_Text.String = sprintf(['chi^2 = ' num2str(chi2)]);
+h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
+
+TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+h.Plots.DecayResult.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.DecayResult.YData = Decay;
-h.Plots.FitResult.XData = 1:numel(Decay);
+h.Plots.FitResult.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.FitResult.YData = FitFun;
 axis(h.Result_Plot,'tight');
-h.Plots.Residuals.XData = 1:numel(Decay);
+h.Plots.Residuals.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.Residuals.YData = wres;
-h.Plots.Residuals_ZeroLine.XData = 1:numel(Decay);
+h.Plots.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
 disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(2))]);
 disp(num2str(shift_range(best_fit)));
@@ -1380,14 +1389,15 @@ FitFun = Fit_Exp(x,MI);
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 
-h.Plots.DecayResult.XData = MI;
+TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+h.Plots.DecayResult.XData = MI*TACtoTime;
 h.Plots.DecayResult.YData = Anisotropy;
-h.Plots.FitResult.XData = MI;
+h.Plots.FitResult.XData = MI*TACtoTime;
 h.Plots.FitResult.YData = FitFun;
 axis(h.Result_Plot,'tight');
-h.Plots.Residuals.XData = MI;
+h.Plots.Residuals.XData = MI*TACtoTime;
 h.Plots.Residuals.YData = res;
-h.Plots.Residuals_ZeroLine.XData = MI;
+h.Plots.Residuals_ZeroLine.XData = MI*TACtoTime;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
 
 %%% calculate G
@@ -1482,7 +1492,7 @@ c = ceil(abs(csh))*sign(csh);
 ind = max([1,1+c]):min([n,n+c]);
 cx = lsqnonneg(M(ind,:),y(ind));
 z = M*cx;
-err = sum((z-y).^2./abs(z))/n
+err = sum((z-y).^2./abs(z))/n;
 
 if bild
     t = dt*t;
@@ -2188,7 +2198,7 @@ z_par = z_par./sum(z_par);
 z_par = z_par(ignore:end);
 z_par = z_par./sum(z_par);
 z_par = z_par.*sum(y(1,:)) + bg_par;
-z_par=z_par';
+z_par = z_par';
 
 %%% Calculate the perpendicular Intensity Decay
 x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
@@ -2199,7 +2209,18 @@ z_per = z_per./sum(z_per);
 z_per = z_per(ignore:end);
 z_per = z_per./sum(z_per);
 z_per = z_per.*sum(y(2,:)) + bg_per;
-z_per=z_per';
+z_per = z_per';
+
+% %%% Calculate the perpendicular t Decay
+% x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
+% z_per = convol(IRF{2}, x_per);
+% z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
+% z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
+% z_per = z_per./sum(z_per);
+% z_per = z_per(ignore:end);
+% z_per = z_per./sum(z_per);
+% z_per = z_per.*sum(y(2,:)) + bg_per;
+% z_per = z_per';
 
 %%% Construct Stacked Result
 z = [z_par z_per];
