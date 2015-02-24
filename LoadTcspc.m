@@ -1,4 +1,4 @@
-function LoadTcspc(~,~,Update_Data,Update_Display,Calibrate_Detector,Caller,FileName,Type)
+function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Caller,FileName,Type)
 global UserValues TcspcData FileInfo
 
 if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
@@ -365,7 +365,7 @@ switch (Type)
 end
 Progress(1,h.Progress_Axes, h.Progress_Text);
 %%% Applies detector shift immediately after loading data
-Calibrate_Detector([],[],0)
+Shift_Detector([],[],'load')
 %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
 Update_Data([],[],0,0);
 Update_Display([],[],0);
