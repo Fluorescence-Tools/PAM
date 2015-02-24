@@ -957,6 +957,27 @@ if isempty(hfig)
         'Title','Data Processing Options',...
         'FontSize',12);
     %% Define axes in main_tab_general
+    %%% Right-click menu for axes
+    h.ExportGraph_Menu = uicontextmenu;
+    
+    h.Export1DX_Menu = uimenu(...
+        'Parent',h.ExportGraph_Menu,...
+        'Label','Export X 1D',...
+        'Tag','Export1DX_Menu',...
+        'Callback',@ExportGraphs);
+    
+    h.Export1DY_Menu = uimenu(...
+        'Parent',h.ExportGraph_Menu,...
+        'Label','Export Y 1D',...
+        'Tag','Export1DY_Menu',...
+        'Callback',@ExportGraphs);
+    
+    h.Export2D_Menu = uimenu(...
+        'Parent',h.ExportGraph_Menu,...
+        'Label','Export 2D',...
+        'Tag','Export2D_Menu',...
+        'Callback',@ExportGraphs);
+    
     %define 2d axis
     h.axes_general =  axes(...
     'Parent',h.MainTabGeneralPanel,...
@@ -966,7 +987,8 @@ if isempty(hfig)
     'Tag','Axes_General',...
     'FontSize',12,...
     'View',[0 90],...
-    'nextplot','add');
+    'nextplot','add',...
+    'UIContextMenu',h.ExportGraph_Menu);
     
     %define 1d axes
     h.axes_1d_x =  axes(...
@@ -978,7 +1000,8 @@ if isempty(hfig)
     'FontSize',12,...
     'XAxisLocation','top',...
     'nextplot','add',...
-    'View',[0 90]);
+    'View',[0 90],...
+    'UIContextMenu',h.ExportGraph_Menu);
 
     h.axes_1d_y =  axes(...
     'Parent',h.MainTabGeneralPanel,...
@@ -991,7 +1014,8 @@ if isempty(hfig)
     'XAxisLocation','top',...
     'nextplot','add',...
     'View',[90 90],...
-    'XDir','reverse');
+    'XDir','reverse',...
+    'UIContextMenu',h.ExportGraph_Menu);
     %% Define axes in Corrections tab
         %% Corrections - 2ColorMFD
         h.Corrections.TwoCMFD.axes_crosstalk =  axes(...
@@ -1381,19 +1405,19 @@ if isempty(hfig)
     %%% Enables easy Updating later on
     BurstMeta.Plots = [];
     %%% Main Tab
-    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
-    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'HitTest','off');
+    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'HitTest','off');
     %%% Initialize both image AND contour plots in array
-    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general);axis(h.axes_general,'tight');
-    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');
+    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general,'HitTest','off');axis(h.axes_general,'tight');
+    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off','HitTest','off');
         %%% Main Tab multiple species (consider up to three)
-        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off','HitTest','off');
     %%%Corrections Tab
     BurstMeta.Plots.histE_donly = bar(h.Corrections.TwoCMFD.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
         %%%Consider fits also (three lines for 2 gauss fit)
@@ -1525,8 +1549,6 @@ delete(gcf);
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(~,~)
-%%% clear global variable
-clearvars -global BurstData BurstTCSPCData
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
 if isfield(BurstMeta,'fFCS')
@@ -1541,6 +1563,8 @@ LSUserValues(0);
 if FileName == 0
     return;
 end
+%%% clear global variable
+clearvars -global BurstData BurstTCSPCData
 
 LSUserValues(0);
 UserValues.File.BurstBrowserPath=PathName;
@@ -1646,11 +1670,14 @@ if strcmpi(clickType,'Right-click')
     
     %%% Check whether the CutParameter already exists or not
     ExistingCuts = vertcat(BurstData.Cut{species}{:});
-    if any(strcmp(BurstData.NameArray{param},ExistingCuts(:,1)))
-        return;
-    else
-        BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+    if ~isempty(ExistingCuts)
+        if any(strcmp(BurstData.NameArray{param},ExistingCuts(:,1)))
+            return;
+        end
     end
+
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+
     UpdateCutTable(h);
     UpdateCuts();
     %UpdateCorrections;
@@ -1952,6 +1979,7 @@ ylabel(h.axes_general,h.ParameterListY.String{y});
 BurstMeta.Plots.Main_histX.XData = xbins;
 %BurstMeta.Plots.Main_histX.YData = hx;
 BurstMeta.Plots.Main_histX.YData = sum(H,1);
+h.axes_1d_x.YTickMode = 'auto';
 yticks= get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
@@ -1960,44 +1988,58 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 BurstMeta.Plots.Main_histY.XData = ybins;
 %BurstMeta.Plots.Main_histY.YData = hy;
 BurstMeta.Plots.Main_histY.YData = sum(H,2);
+h.axes_1d_y.YTickMode = 'auto';
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 
-%%% set axes limits 
+%%% set axes limits
 CutState = vertcat(BurstData.Cut{BurstData.SelectedSpecies}{:});
-CutParameters = CutState(:,1);
-if any(strcmp(BurstData.NameArray{x},CutParameters))
-    if CutState{strcmp(BurstData.NameArray{x},CutParameters),4} == 1 %%% Check if active
-        %%% Set x-axis limits according to cut boundaries of selected parameter
-        xlimits = [CutState{strcmp(BurstData.NameArray{x},CutParameters),2},...
-            CutState{strcmp(BurstData.NameArray{x},CutParameters),3}];
+if size(CutState,2) > 0
+    CutParameters = CutState(:,1);
+    if any(strcmp(BurstData.NameArray{x},CutParameters))
+        if CutState{strcmp(BurstData.NameArray{x},CutParameters),4} == 1 %%% Check if active
+            %%% Set x-axis limits according to cut boundaries of selected parameter
+            xlimits = [CutState{strcmp(BurstData.NameArray{x},CutParameters),2},...
+                CutState{strcmp(BurstData.NameArray{x},CutParameters),3}];
+        else
+            %%% set to min max
+            xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];       
+        end
     else
         %%% set to min max
-        xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];       
+        xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];
     end
-else
-    %%% set to min max
-    xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];
-end
 
-if any(strcmp(BurstData.NameArray{y},CutParameters))
-    if CutState{strcmp(BurstData.NameArray{y},CutParameters),4} == 1 %%% Check if active
-         %%% Set x-axis limits according to cut boundaries of selected parameter
-        ylimits = [CutState{strcmp(BurstData.NameArray{y},CutParameters),2},...
-            CutState{strcmp(BurstData.NameArray{y},CutParameters),3}];
+    if any(strcmp(BurstData.NameArray{y},CutParameters))
+        if CutState{strcmp(BurstData.NameArray{y},CutParameters),4} == 1 %%% Check if active
+             %%% Set x-axis limits according to cut boundaries of selected parameter
+            ylimits = [CutState{strcmp(BurstData.NameArray{y},CutParameters),2},...
+                CutState{strcmp(BurstData.NameArray{y},CutParameters),3}];
+        else
+            %%% set to min max
+            ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];       
+        end
     else
         %%% set to min max
-        ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];       
+        ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];    
     end
+    if sum(xlimits == [0,0]) == 2
+        xlimits = [0 1];
+    end
+    if sum(ylimits == [0,0]) == 2
+        ylimits = [0 1];
+    end
+    %%% set limits of axes
+    xlim(h.axes_general,xlimits);
+    ylim(h.axes_general,ylimits);
+    xlim(h.axes_1d_x,xlimits);
+    xlim(h.axes_1d_y,ylimits);
 else
-    %%% set to min max
-    ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];    
+     %%% set limits of axes
+    axis(h.axes_general,'tight');
+    axis(h.axes_1d_x,'tight');
+    axis(h.axes_1d_y,'tight');
 end
-%%% set limits of axes
-xlim(h.axes_general,xlimits);
-ylim(h.axes_general,ylimits);
-xlim(h.axes_1d_x,xlimits);
-xlim(h.axes_1d_y,ylimits);
 %%% Update ColorMap
 eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 drawnow;
@@ -4312,6 +4354,111 @@ h.CorrectionsTable.Data = Corrections_Data;
 %%% Update CorrectionsTable with UserValues-stored Data
 UpdateCorrections([],[])
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ExportGraphs(obj,~)
+global BurstData UserValues
+h = guidata(obj);
+switch obj
+    case h.Export1DX_Menu
+        %%% Create a new figure with aspect ratio appropiate for the current plot
+        %%% i.e. 1.2*[x y]
+        AspectRatio = 0.7;
+        pos = [1,1, round(1.2*800),round(1.2*800*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        %%% Copy axes to figure
+        axes_copy = copyobj(h.axes_1d_x,hfig);
+        %%% Rescale Position
+        axes_copy.Position = [0.15 0.17 0.8 0.8];
+        %%% Increase fontsize
+        axes_copy.FontSize = 35;
+        %%% change Background Color
+        axes_copy.Color = [1,1,1];
+        %%% Reset XAxis Location
+        axes_copy.XAxisLocation = 'bottom';
+        %%% Make Ticks point Outwards
+        axes_copy.TickDir = 'out';
+        %%% Disable Box
+        axes_copy.Box = 'off';
+        %%% increase LineWidth of Axes
+        axes_copy.LineWidth = 3;
+        %%% Change FaceColor of BarPlot
+        axes_copy.Children(4).FaceColor = [0.5 0.5 0.5];
+        axes_copy.Children(4).LineWidth = 3;
+        %%% Redo YAxis Label
+        axes_copy.YTickMode = 'auto';
+        %%% Set XLabel
+        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',40);
+        ylabel('Frequency','FontSize',40);
+        %%% Construct Name
+        FigureName = BurstData.NameArray{h.ParameterListY.Value};
+    case h.Export1DY_Menu
+        AspectRatio = 0.7;
+        pos = [1,1, round(1.2*800),round(1.2*800*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        %%% Copy axes to figure
+        axes_copy = copyobj(h.axes_1d_y,hfig);
+        %%% flip axes
+        axes_copy.View = [0,90];
+        %%% Reverse XDir
+        axes_copy.XDir = 'normal';
+        %%% Rescale Position
+        axes_copy.Position = [0.15 0.17 0.8 0.8];
+        %%% Increase fontsize
+        axes_copy.FontSize = 35;
+        %%% change Background Color
+        axes_copy.Color = [1,1,1];
+        %%% Reset XAxis Location
+        axes_copy.XAxisLocation = 'bottom';
+        %%% Make Ticks point Outwards
+        axes_copy.TickDir = 'out';
+        %%% Disable Box
+        axes_copy.Box = 'off';
+        %%% increase LineWidth of Axes
+        axes_copy.LineWidth = 3;
+        %%% Change FaceColor of BarPlot
+        axes_copy.Children(4).FaceColor = [0.5 0.5 0.5];
+        axes_copy.Children(4).LineWidth = 3;
+        %%% Redo YAxis Label
+        axes_copy.YTickMode = 'auto';
+        %%% Set XLabel
+        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',40);
+        ylabel('Frequency','FontSize',40);
+        %%% Construct Name
+        FigureName = BurstData.NameArray{h.ParameterListY.Value};
+end
+
+%%% Get Path to save File
+FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
+[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+UserValues.BurstBrowser.PrintPath = PathName;
+LSUserValues(1);
+%%% print figure
+hfig.PaperPositionMode = 'auto';
+dpi = 300;
+switch FilterIndex
+    case 1
+        print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi));
+    case 2
+        % Make changing paper type possible
+        set(hfig,'PaperType','<custom>');
+
+        % Set units to all be the same
+        set(hfig,'PaperUnits','inches');
+        set(hfig,'Units','inches');
+
+        % Set the page size and position to match the figure's dimensions
+        position = get(hfig,'Position');
+        set(hfig,'PaperPosition',[0,0,position(3:4)]);
+        set(hfig,'PaperSize',position(3:4));
+        set(hfig,'InvertHardCopy', 'off');
+
+        print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
+    case 3
+        print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
+end
+close(hfig);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

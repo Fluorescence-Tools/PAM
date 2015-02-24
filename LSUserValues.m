@@ -818,6 +818,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');    
     end
     P.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
+    %%% Check, if BurstBrowser.PrintPath subfield exists
+    if ~isfield(S.BurstBrowser, 'PrintPath')
+        S.BurstBrowser.PrintPath=pwd;
+        disp('UserValues.BurstBrowser.PrintPath was incomplete');    
+    end 
+    P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
