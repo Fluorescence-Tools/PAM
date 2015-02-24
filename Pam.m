@@ -53,7 +53,7 @@ end
         'Parent', h.File,...
         'Tag','LoadTcspc',...
         'Label','Load Tcspc Data',...
-        'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Calibrate_Detector,h.Pam});
+        'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Shift_Detector,h.Pam});
     
     h.AdvancedAnalysis_Menu = uimenu(...
         'Parent',h.Pam,...
@@ -404,7 +404,7 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'String','Calculate correction',...
-        'Callback',@Calibrate_Detector,...
+        'Callback',@Shift_Detector,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.01 0.965 0.25 0.025]);
@@ -427,7 +427,6 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'String','400',...
-        'Callback',{@Update_Display;7},...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.38 0.965 0.1 0.025]); 
@@ -506,6 +505,18 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.45 0.93 0.12 0.025]);    
+    %%% Clears current shift
+    h.MI_Calib_Clear = uicontrol(...
+        'Parent',h.MI_Calib_Panel,...
+        'Tag','MI_Calib_Clear',...
+        'Style','pushbutton',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String','Clear Shift',...
+        'Callback',@Det_Calib_Clear,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.59 0.93 0.12 0.025]);   
     %%% Detector calibration axes    
     h.MI_Calib_Axes = axes(...
         'Parent',h.MI_Calib_Panel,...
@@ -522,9 +533,13 @@ end
     h.MI_Calib_Axes.YLabel.String='Counts';
     h.MI_Calib_Axes.YLabel.Color=Look.Fore;
     h.MI_Calib_Axes.XLim=[1 4096];
+    % uncorrected MI histogram:
     h.Plots.Calib_No=handle(plot([0 1], [0 0],'b'));
+    % corrected MI histogram:
     h.Plots.Calib=handle(plot([0 1], [0 0],'r'));
+    % ?:
     h.Plots.Calib_Cur=handle(plot([0 1], [0 0],'c'));
+    % selected interphoton time MI histogram:
     h.Plots.Calib_Sel=handle(plot([0 1], [0 0],'g'));
     
     %%% Detector calibration shift axes    
@@ -542,7 +557,6 @@ end
     h.MI_Calib_Axes_Shift.YLabel.String='Shift [microtime ticks]';
     h.MI_Calib_Axes_Shift.YLabel.Color=Look.Fore;
     h.MI_Calib_Axes_Shift.XLim=[1 400];
-    h.Plots.Calib_Shift_Applied=handle(plot(1:400, zeros(400,1),'b'));
     h.Plots.Calib_Shift_New=handle(plot(1:400, zeros(400,1),'r'));
     %% Detector tabs general settings %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Microtime settings tab
@@ -1786,7 +1800,6 @@ PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.TimeBins=0:0.01:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime);
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
-PamMeta.Applied_Shift=cell(1);
 PamMeta.Det_Calib=[];
 PamMeta.Burst.Preview = [];
 
@@ -2278,8 +2291,11 @@ end
 %% Detector Calibration plot update
 if any(mode==7)
     if isfield(PamMeta.Det_Calib,'Hist') && ~isempty(PamMeta.Det_Calib.Shift)
+        % uncorrected MI histogram (blue)
         h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
         h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
+        
+        % corrected MI histogram (red)
         Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));     
         maxtick = str2double(h.MI_Calib_Single_Max.String);
         h.MI_Calib_Single.Max = maxtick;
@@ -2289,23 +2305,17 @@ if any(mode==7)
         h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
         h.Plots.Calib.XData=1:FileInfo.MI_Bins;
         
-        
+        % slider
         h.MI_Calib_Single.Value=round(h.MI_Calib_Single.Value);  
         MIN=max([1 h.MI_Calib_Single.Value]);
         MAX=min([maxtick, MIN+str2double(h.MI_Calib_Single_Range.String)-1]);
         h.MI_Calib_Single_Text.String=num2str(MIN);
-                
+        
+        % interphoton time selected MI histogram (green)
         h.Plots.Calib_Sel.YData=sum(Cor_Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
         
     end
-    Det=UserValues.Detector.Det(h.MI_Calib_Det.Value);
-    Rout=UserValues.Detector.Rout(h.MI_Calib_Det.Value);
-    if all(size(PamMeta.Applied_Shift)>=[Det,Rout]) && ~isempty(PamMeta.Applied_Shift{Det,Rout})
-        h.Plots.Calib_Shift_Applied.YData=PamMeta.Applied_Shift{Det,Rout};
-    else
-        h.Plots.Calib_Shift_Applied.YData=zeros(1,maxtick);
-    end 
 end
 
 %% PIE Patches %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3415,7 +3425,7 @@ else %%% Single File correlation
 end
 for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)    
     if mode==2 %%% Loads new file
-        LoadTcspc([],[],@Update_Data,@Calibrate_Detector,h.Pam,File{m},Type);
+        LoadTcspc([],[],@Update_Data,@Shift_Detector,h.Pam,File{m},Type);
     end    
     %%% Finds the right combinations to correlate
     [Cor_A,Cor_B]=find(h.Cor_Table.Data(1:end-1,1:end-1));
@@ -5685,7 +5695,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Calibrate_Detector(~,~,Det,Rout)
+function Shift_Detector(~,~,info)
 global UserValues TcspcData PamMeta FileInfo
 h=guidata(findobj('Tag','Pam'));
 h.Progress_Text.String = 'Calculating detector calibration';
@@ -5699,14 +5709,8 @@ if nargin<3 % calculate the shift
     Dif(Dif>maxtick)=maxtick;
     MI=TcspcData.MI{Det,Rout};
     
-    if all(size(PamMeta.Applied_Shift)>=[Det,Rout]) && ~isempty(PamMeta.Applied_Shift{Det,Rout})
-        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI)+PamMeta.Applied_Shift{Det,Rout}(Dif)',0:(maxtick*FileInfo.MI_Bins-1));
-    else
-        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
-    end
+    PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
     PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
-%     PamMeta.Det_Calib.Hist(1:50,:)=0;
-%     PamMeta.Det_Calib.Hist(3000:end,:)=0;
     
     [Counts,Index]=sort(PamMeta.Det_Calib.Hist);
     PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
@@ -5717,25 +5721,39 @@ if nargin<3 % calculate the shift
     
     clear Counts Index
     
+    % uncorrected MI histogram
     h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
     h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
+   
+    % corrected MI histogram (red)
     Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
     for i=1:maxtick
        Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
     end
     h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
     h.Plots.Calib.XData=1:FileInfo.MI_Bins;
+    
+    % slider
     h.MI_Calib_Single.Value=round(h.MI_Calib_Single.Value);
+    
+    % interphoton time selected MI histogram (green)
     h.Plots.Calib_Sel.YData=Cor_Hist(:,h.MI_Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI_Calib_Single.Value),5));
     h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
     
+    % shift plot (red)
+    h.MI_Calib_Axes_Shift.XLim = [1 maxtick];
+    h.Plots.Calib_Shift_New.XData=1:maxtick;
     h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
+    
 else % apply the shift
-    if Det==0
-        Det=UserValues.Detector.Det;
-        Rout=UserValues.Detector.Rout;
+    if strcmp(info,'load')  %called from LoadTCSPC
+        index = 1:numel(UserValues.Detector.Det);
+    else %save shift of current channel
+        index = h.MI_Calib_Det.Value;
     end
-    for i=1:numel(Det)
+    Det=UserValues.Detector.Det;   
+    Rout=UserValues.Detector.Rout;
+    for i = index
         if size(UserValues.Detector.Shift,2)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
             if size(UserValues.Detector.Shift{i},2) ~= maxtick
                 UserValues.Detector.Shift{i} = zeros(1,maxtick);
@@ -5748,27 +5766,38 @@ else % apply the shift
             TcspcData.MI{Det(i),Rout(i)}(Dif<=maxtick)...
                 =uint16(double(TcspcData.MI{Det(i),Rout(i)}(Dif<=maxtick))...
                 -UserValues.Detector.Shift{i}(Dif(Dif<=maxtick))');
-            PamMeta.Applied_Shift{i}=UserValues.Detector.Shift{i};
-        else
-            PamMeta.Applied_Shift{i} = [];
-            UserValues.Detector.Shift{i} = [];
-            LSUserValues(1);
         end
     end
 end
 h.Progress_Text.String = FileInfo.FileName{1};
 h.Progress_Axes.Color=UserValues.Look.Control;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves Shift to UserValues and applies it %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Det_Calib_Save(~,~)
 global UserValues PamMeta
 h=guidata(findobj('Tag','Pam'));
-Det=UserValues.Detector.Det(h.MI_Calib_Det.Value);
-Rout=UserValues.Detector.Rout(h.MI_Calib_Det.Value);
 if isfield(PamMeta.Det_Calib,'Shift')
     UserValues.Detector.Shift{h.MI_Calib_Det.Value}=PamMeta.Det_Calib.Shift;
-    Calibrate_Detector([],[],Det,Rout);
+    Shift_Detector([],[],'save');
+    m = msgbox('Load data again');
+    pause(1)
+    delete(m)
+end
+LSUserValues(1)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Clears Shift from UserValues %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Det_Calib_Clear(~,~)
+global UserValues PamMeta
+h=guidata(findobj('Tag','Pam'));
+if isfield(PamMeta.Det_Calib,'Shift')
+    UserValues.Detector.Shift{h.MI_Calib_Det.Value} = [];
+    m = msgbox('Load data again');
+    pause(1)
+    delete(m)
 end
 LSUserValues(1)
 
