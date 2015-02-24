@@ -105,6 +105,13 @@ if isempty(hfig)
         'Tag','MainTabCorrectionsThreeCMFDPanel'...
         );
     
+    h.LifeTime_Menu = uicontextmenu;
+    h.ExportLifetime_Menu = uimenu(...
+        'Parent',h.LifeTime_Menu,...
+        'Label','Export Lifetime Plots',...
+        'Tag','ExportLifetime_Menu',...
+        'Callback',@ExportGraphs);
+    
     h.Main_Tab_Lifetime= uitab(h.Main_Tab,...
         'title','Lifetime',...
         'Tag','Main_Tab_Lifetime'...
@@ -118,7 +125,8 @@ if isempty(hfig)
         'ShadowColor', Look.Shadow,...
         'Units','normalized',...
         'Position',[0 0 1 1],...
-        'Tag','MainTabLifetimePanel');
+        'Tag','MainTabLifetimePanel',...
+        'UIContextMenu',h.LifeTime_Menu);
     
     %%% fFCS main tab
     h.Main_Tab_fFCS= uitab(h.Main_Tab,...
@@ -958,7 +966,7 @@ if isempty(hfig)
         'FontSize',12);
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
-    h.ExportGraph_Menu = uicontextmenu;
+    h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
     
     h.Export1DX_Menu = uimenu(...
         'Parent',h.ExportGraph_Menu,...
@@ -1405,19 +1413,19 @@ if isempty(hfig)
     %%% Enables easy Updating later on
     BurstMeta.Plots = [];
     %%% Main Tab
-    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
-    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
+    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
     %%% Initialize both image AND contour plots in array
-    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general);axis(h.axes_general,'tight');
-    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');
+    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general,'UIContextMenu',h.ExportGraph_Menu);axis(h.axes_general,'tight');
+    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');BurstMeta.Plots.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
         %%% Main Tab multiple species (consider up to three)
-        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off');
-        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible');
-        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible');
-        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible');
-        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible');
-        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible');
-        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off','UIContextMenu',h.ExportGraph_Menu);
+        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off');
     %%%Corrections Tab
     BurstMeta.Plots.histE_donly = bar(h.Corrections.TwoCMFD.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
         %%%Consider fits also (three lines for 2 gauss fit)
@@ -1966,7 +1974,7 @@ BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
 BurstMeta.Plots.Main_Plot(2).XData = xbins;
 BurstMeta.Plots.Main_Plot(2).YData = ybins;
 BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
-BurstMeta.Plots.Main_Plot(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.Main_Plot(2).LevelList = linspace(0.05,1,10);
 
 axis(h.axes_general,'tight');
 %%% Update Labels
@@ -3531,7 +3539,7 @@ save(BurstData.FileName,'BurstData');
 %%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimePlots(~,~)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 
 if isempty(BurstData)
@@ -3547,7 +3555,7 @@ idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = BurstMeta.posE;
 %% Plot E vs. tauGG in first plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 5], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [0 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -3563,7 +3571,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[51 51], [0 6], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) UserValues.BurstBrowser.Corrections.AcceptorLifetime+1.5])], [0 1]);
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -3575,7 +3583,7 @@ BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(0.1,1,10);
 ylim(h.axes_EvsTauRR,[0 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[51 51], [0 5], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -3586,7 +3594,7 @@ BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 6], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) UserValues.BurstBrowser.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -3603,7 +3611,7 @@ if any(BurstData.BAMethod == [3,4])
     idxE1A = strcmp('Efficiency B->G+R',BurstData.NameArray);
     %% Plot E1A vs. tauBB
     valid = (datatoplot(:,idx_tauBB) > 0.01);
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 5], [0 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])], [0 1]);
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -3619,7 +3627,7 @@ if any(BurstData.BAMethod == [3,4])
         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
     end
     %% Plot rBB vs tauBB
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[51 51], [0 6], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
@@ -3652,6 +3660,9 @@ if obj == h.PlotStaticFRETButton
     staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
         UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
         tau);
+    %%% Remove points from the static FRET line after first pass through
+    %%% zero
+    staticFRETline(find(staticFRETline < 0,1,'first')+10:end) = NaN;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
@@ -3846,17 +3857,16 @@ global BurstData UserValues BurstMeta
 h = guidata(obj);
 if obj.Value == 1 %%% Checkbox was clicked on
     LSUserValues(0);
-    %%% Determine Donor Only lifetime from data with S > 0.98
+    %%% Determine Donor Only lifetime from data with S > 0.95
     idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
     idxS = BurstMeta.posS;
     if any(BurstData.BAMethod == [1,2])
-        valid = (BurstData.DataArray(:,idxS) > 0.98);
+        valid = (BurstData.DataArray(:,idxS) > 0.95);
     elseif any(BurstData.BAMethod == [3,4])
         idxSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
         valid = (BurstData.DataArray(:,idxS) > 0.90) & (BurstData.DataArray(:,idxS) < 1.1) &...
             (BurstData.DataArray(:,idxSBG) > 0) & (BurstData.DataArray(:,idxSBG) < 0.1);
     end
-    %DonorOnlyLifetime = mean(BurstData.DataArray(valid,idx_tauGG));
     x_axis = 0:0.05:10;
     htauGG = histc(BurstData.DataArray(valid,idx_tauGG),x_axis);
     [DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG,1);
@@ -3864,6 +3874,24 @@ if obj.Value == 1 %%% Checkbox was clicked on
     h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
     h.DonorLifetimeEdit.Enable = 'off';
     UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
+    
+    %%% Determine Acceptor Only Lifetime from data with S < 0.1
+    idx_tauRR = strcmp(BurstData.NameArray,'Lifetime RR [ns]');
+    idxS = BurstMeta.posS;
+    if any(BurstData.BAMethod == [1,2])
+        valid = (BurstData.DataArray(:,idxS) < 0.1);
+    elseif any(BurstData.BAMethod == [3,4])
+        idxSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
+        valid = (BurstData.DataArray(:,idxS) < 0.1) & (BurstData.DataArray(:,idxS) > -0.1) &...
+            (BurstData.DataArray(:,idxSBR) < 0.1) & (BurstData.DataArray(:,idxSBR) > -0.1);
+    end
+    x_axis = 0:0.05:10;
+    htauRR = histc(BurstData.DataArray(valid,idx_tauRR),x_axis);
+    [AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR,1);
+    %%% Update GUI
+    h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
+    h.AcceptorLifetimeEdit.Enable = 'off';
+    UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
     
     if any(BurstData.BAMethod == [3,4])
         %%% Determine Donor Blue Lifetime from Blue dye only species
@@ -3885,6 +3913,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
 else
     h.DonorLifetimeEdit.Enable = 'on';
     h.DonorLifetimeBlueEdit.Enable = 'on';
+    h.AcceptorLifetimeEdit.Enable = 'on';
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
@@ -4035,11 +4064,16 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
-    dev = @(gamma) sum( ( ( NGR(~isnan(tauGG))./(gamma.*NGG(~isnan(tauGG))+NGR(~isnan(tauGG))) ) - staticFRETline( tauGG(~isnan(tauGG)) ) ).^2 );
+    %%% Restrict the fitting to the "valid range" of the static FRET line,
+    %%% that is before it goes to negative values!
+    tt = linspace(0,10,1000);fret_line = staticFRETline(tt);
+    tau_max = tt(find(fret_line < 0,1,'first'));
+    valid = (tauGG < tau_max) & ~isnan(tauGG);
+    dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - staticFRETline( tauGG(valid) ) ).^2 );
     gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 5],[-0.1 1]);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])],[-0.1 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -4052,7 +4086,9 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
-    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = staticFRETline(tau);
+    FRETline = staticFRETline(tau);
+    FRETline(find(FRETline < 0,1,'first')+10:end) = NaN;
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
     ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
@@ -4120,13 +4156,17 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
             tau);
         staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
         tauBB = data_for_corrections(S_threshold,indTauBB);
+        %%% Restrict the fitting to the "valid range" of the static FRET line,
+        %%% that is before it goes to negative values!
+        tt = linspace(0,10,1000);fret_line = staticFRETline(tt);
+        tau_max = tt(find(fret_line < 0,1,'first'));
+        valid = (tauBB < tau_max) & ~isnan(tauBB);
         %%% minimize deviation from static FRET line as a function of gamma_br!
-        valid = (~isnan(tauBB));
         dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - staticFRETline( tauBB(valid) ) ).^2 );
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 5],[-0.1 1]);
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
