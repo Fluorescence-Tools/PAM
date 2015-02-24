@@ -1405,19 +1405,19 @@ if isempty(hfig)
     %%% Enables easy Updating later on
     BurstMeta.Plots = [];
     %%% Main Tab
-    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'HitTest','off');
-    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'HitTest','off');
+    BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+    BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
     %%% Initialize both image AND contour plots in array
-    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general,'HitTest','off');axis(h.axes_general,'tight');
-    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off','HitTest','off');
+    BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general);axis(h.axes_general,'tight');
+    [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');
         %%% Main Tab multiple species (consider up to three)
-        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off','HitTest','off');
-        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off','HitTest','off');
+        BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible');
+        BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible');
     %%%Corrections Tab
     BurstMeta.Plots.histE_donly = bar(h.Corrections.TwoCMFD.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
         %%%Consider fits also (three lines for 2 gauss fit)
@@ -4392,7 +4392,7 @@ switch obj
         xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',40);
         ylabel('Frequency','FontSize',40);
         %%% Construct Name
-        FigureName = BurstData.NameArray{h.ParameterListY.Value};
+        FigureName = BurstData.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
         AspectRatio = 0.7;
         pos = [1,1, round(1.2*800),round(1.2*800*AspectRatio)];
@@ -4427,8 +4427,43 @@ switch obj
         ylabel('Frequency','FontSize',40);
         %%% Construct Name
         FigureName = BurstData.NameArray{h.ParameterListY.Value};
+    case h.Export2D_Menu
+        AspectRatio = 1;
+        pos = [1,1, round(1.2*1000),round(1.2*800*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        %%% Copy axes to figure
+        panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
+        %%% set Background Color to white
+        panel_copy.BackgroundColor = [1 1 1];
+        %%% Update ColorMap
+        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        for i = 1:numel(panel_copy.Children)
+            %%% Set the Color of Axes to white
+            panel_copy.Children(i).Color = [1 1 1];
+            %%% increase LineWidth of Axes
+            panel_copy.Children(i).LineWidth = 3;
+            %%% Increase FontSize
+            panel_copy.Children(i).FontSize = 35;
+            %%% Reorganize Axes Positions
+           switch i
+               case 1
+                    panel_copy.Children(i).Position = [0.77 0.12 0.15 0.65];
+               case 2
+                    panel_copy.Children(i).Position = [0.12 0.77 0.65 0.15];
+               case 3
+                    panel_copy.Children(i).Position = [0.12 0.12 0.65 0.65];
+            end
+        end
+        FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
 end
-
+%%% Combine the Original FileName and the parameter names
+if strcmp(BurstData.FileNameSPC,'_m1')
+    FileName = BurstData.FileNameSPC(1:end-3);
+else
+    FileName = BurstData.FileNameSPC;
+end
+FigureName = [FileName '_' FigureName];
+        
 %%% Get Path to save File
 FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
 [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
