@@ -408,6 +408,30 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.01 0.965 0.25 0.025]);
+    %%% Text Maximum corrected ticks
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.MI_Calib_Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','Left',...
+        'String','Max',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.28 0.965 0.1 0.025]);
+    %%% Edit box maximum corrected ticks
+    h.MI_Calib_Single_Max = uicontrol(...
+        'Parent',h.MI_Calib_Panel,...
+        'Tag','MI_Calib_Single_Max',...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String','400',...
+        'Callback',{@Update_Display;7},...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.38 0.965 0.1 0.025]); 
+    
     %%% Detector calibration channel
     h.MI_Calib_Det = uicontrol(...
         'Parent',h.MI_Calib_Panel,...
@@ -434,7 +458,7 @@ end
         'Callback',{@Update_Display;7},...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.28 0.965 0.25 0.025]);
+        'Position',[0.5 0.965 0.25 0.025]);
     %%% Show interphoton time
     h.MI_Calib_Single_Text = uicontrol(...
         'Parent',h.MI_Calib_Panel,...
@@ -445,7 +469,7 @@ end
         'String','1',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.54 0.965 0.05 0.025]);
+        'Position',[0.77 0.965 0.05 0.025]);
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.MI_Calib_Panel,...
@@ -2256,8 +2280,10 @@ if any(mode==7)
     if isfield(PamMeta.Det_Calib,'Hist') && ~isempty(PamMeta.Det_Calib.Shift)
         h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
         h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
-        Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
-        for i=1:400
+        Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));     
+        maxtick = str2double(h.MI_Calib_Single_Max.String);
+        h.MI_Calib_Single.Max = maxtick;
+        for i=1:maxtick
             Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
         end
         h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
@@ -2266,7 +2292,7 @@ if any(mode==7)
         
         h.MI_Calib_Single.Value=round(h.MI_Calib_Single.Value);  
         MIN=max([1 h.MI_Calib_Single.Value]);
-        MAX=min([400, MIN+str2double(h.MI_Calib_Single_Range.String)-1]);
+        MAX=min([maxtick, MIN+str2double(h.MI_Calib_Single_Range.String)-1]);
         h.MI_Calib_Single_Text.String=num2str(MIN);
                 
         h.Plots.Calib_Sel.YData=sum(Cor_Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
@@ -2278,7 +2304,7 @@ if any(mode==7)
     if all(size(PamMeta.Applied_Shift)>=[Det,Rout]) && ~isempty(PamMeta.Applied_Shift{Det,Rout})
         h.Plots.Calib_Shift_Applied.YData=PamMeta.Applied_Shift{Det,Rout};
     else
-        h.Plots.Calib_Shift_Applied.YData=zeros(1,400);
+        h.Plots.Calib_Shift_Applied.YData=zeros(1,maxtick);
     end 
 end
 
@@ -2907,7 +2933,7 @@ switch e.Key
             UserValues.Detector.Rout(end+1)=str2double(Input{2});
             UserValues.Detector.Name{end+1}=Input{3};
             UserValues.Detector.Color(end+1,:)=str2num(Input{4});   %#ok<ST2NM>
-            UserValues.Detector.Shift{end+1}=zeros(400,1);
+            UserValues.Detector.Shift{end+1}=[];
             UserValues.Phasor.Reference(end+1,end)=0;
         end
     case 'delete' 
@@ -5664,20 +5690,21 @@ global UserValues TcspcData PamMeta FileInfo
 h=guidata(findobj('Tag','Pam'));
 h.Progress_Text.String = 'Calculating detector calibration';
 h.Progress_Axes.Color=[1 0 0];
+maxtick = str2double(h.MI_Calib_Single_Max.String);
 drawnow;
-if nargin<3
+if nargin<3 % calculate the shift
     Det=UserValues.Detector.Det(h.MI_Calib_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI_Calib_Det.Value);
-    Dif=[400; uint16(diff(TcspcData.MT{Det,Rout}))];
-    Dif(Dif>400)=400;
+    Dif=[maxtick; uint16(diff(TcspcData.MT{Det,Rout}))];
+    Dif(Dif>maxtick)=maxtick;
     MI=TcspcData.MI{Det,Rout};
     
     if all(size(PamMeta.Applied_Shift)>=[Det,Rout]) && ~isempty(PamMeta.Applied_Shift{Det,Rout})
-        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI)+PamMeta.Applied_Shift{Det,Rout}(Dif)',0:(400*FileInfo.MI_Bins-1));
+        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI)+PamMeta.Applied_Shift{Det,Rout}(Dif)',0:(maxtick*FileInfo.MI_Bins-1));
     else
-        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(400*FileInfo.MI_Bins-1));
+        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
     end
-    PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,400);
+    PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
 %     PamMeta.Det_Calib.Hist(1:50,:)=0;
 %     PamMeta.Det_Calib.Hist(3000:end,:)=0;
     
@@ -5693,7 +5720,7 @@ if nargin<3
     h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
     h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
     Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
-    for i=1:400
+    for i=1:maxtick
        Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
     end
     h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
@@ -5703,23 +5730,29 @@ if nargin<3
     h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
     
     h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
-else
+else % apply the shift
     if Det==0
         Det=UserValues.Detector.Det;
         Rout=UserValues.Detector.Rout;
     end
     for i=1:numel(Det)
-        if size(UserValues.Detector.Shift,1)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
+        if size(UserValues.Detector.Shift,2)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
+            if size(UserValues.Detector.Shift{i},2) ~= maxtick
+                UserValues.Detector.Shift{i} = zeros(1,maxtick);
+            end
             %%% Calculates inter-photon time; first photon gets 0 shift
-            Dif=[400; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
-            Dif(Dif>400)=400;
+            Dif=[maxtick; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
+            Dif(Dif>maxtick)=maxtick;
             Dif(Dif<1)=1;
-            %%% Applies shift to microtime; no shift for >=400
-            TcspcData.MI{Det(i),Rout(i)}(Dif<=400)...
-                =uint16(double(TcspcData.MI{Det(i),Rout(i)}(Dif<=400))...
-                -UserValues.Detector.Shift{i}(Dif(Dif<=400))');
+            %%% Applies shift to microtime; no shift for >=maxtick
+            TcspcData.MI{Det(i),Rout(i)}(Dif<=maxtick)...
+                =uint16(double(TcspcData.MI{Det(i),Rout(i)}(Dif<=maxtick))...
+                -UserValues.Detector.Shift{i}(Dif(Dif<=maxtick))');
             PamMeta.Applied_Shift{i}=UserValues.Detector.Shift{i};
-
+        else
+            PamMeta.Applied_Shift{i} = [];
+            UserValues.Detector.Shift{i} = [];
+            LSUserValues(1);
         end
     end
 end
