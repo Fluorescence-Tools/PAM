@@ -1964,7 +1964,7 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 datatoplot = BurstData.DataCut;
 
-[H, xbins,ybins,~,~] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
+[H, xbins,ybins,xbins_contour,ybins_contour] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
 
 %%% Update Image Plot and Contour Plot
 BurstMeta.Plots.Main_Plot(1).XData = xbins;
@@ -3788,6 +3788,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
                     title(new_title);
                 end
+                BurstData.Parameters.rhoGG(vis+1) = rho;
             end
         elseif haxes == h.axes_rRRvsTauRR
             %%% Check for visibility of plots
@@ -3811,6 +3812,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
                     title(new_title);
                 end
+                BurstData.Parameters.rhoRR(vis+1) = rho;
             end
         elseif haxes == h.axes_rBBvsTauBB
              %%% Check for visibility of plots
@@ -3834,6 +3836,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
                     title(new_title);
                 end
+                BurstData.Parameters.rhoBB(vis+1) = rho;
             end
         end
     end
@@ -4405,14 +4408,14 @@ switch obj
         %%% Create a new figure with aspect ratio appropiate for the current plot
         %%% i.e. 1.2*[x y]
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*800),round(1.2*800*AspectRatio)];
+        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_x,hfig);
         %%% Rescale Position
         axes_copy.Position = [0.15 0.17 0.8 0.8];
         %%% Increase fontsize
-        axes_copy.FontSize = 35;
+        axes_copy.FontSize = 50;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
         %%% Reset XAxis Location
@@ -4429,13 +4432,13 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',40);
-        ylabel('Frequency','FontSize',40);
+        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',50);
+        ylabel('Frequency','FontSize',50);
         %%% Construct Name
         FigureName = BurstData.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*800),round(1.2*800*AspectRatio)];
+        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_y,hfig);
@@ -4444,9 +4447,9 @@ switch obj
         %%% Reverse XDir
         axes_copy.XDir = 'normal';
         %%% Rescale Position
-        axes_copy.Position = [0.15 0.17 0.8 0.8];
+        axes_copy.Position = [0.18 0.17 0.8 0.8];
         %%% Increase fontsize
-        axes_copy.FontSize = 35;
+        axes_copy.FontSize = 50;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
         %%% Reset XAxis Location
@@ -4463,13 +4466,13 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',40);
-        ylabel('Frequency','FontSize',40);
+        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',50);
+        ylabel('Frequency','FontSize',50);
         %%% Construct Name
         FigureName = BurstData.NameArray{h.ParameterListY.Value};
     case h.Export2D_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*1000),round(1.2*800*AspectRatio)];
+        pos = [1,1, round(1.2*1000),round(1.2*900*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
@@ -4483,18 +4486,80 @@ switch obj
             %%% increase LineWidth of Axes
             panel_copy.Children(i).LineWidth = 3;
             %%% Increase FontSize
-            panel_copy.Children(i).FontSize = 35;
+            panel_copy.Children(i).FontSize = 50;
             %%% Reorganize Axes Positions
            switch i
                case 1
-                    panel_copy.Children(i).Position = [0.77 0.12 0.15 0.65];
+                    panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                case 2
-                    panel_copy.Children(i).Position = [0.12 0.77 0.65 0.15];
+                    panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                case 3
-                    panel_copy.Children(i).Position = [0.12 0.12 0.65 0.65];
+                    panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
             end
         end
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
+    case h.ExportLifetime_Menu
+        AspectRatio = 1;
+        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1]);
+        %%% Copy axes to figure
+        panel_copy = copyobj(h.MainTabLifetimePanel,hfig);
+        %%% set Background Color to white
+        panel_copy.BackgroundColor = [1 1 1];
+        %%% Update ColorMap
+        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        if any(BurstData.BAMethod == [1,2])
+            for i = 1:numel(panel_copy.Children)
+                %%% Set the Color of Axes to white
+                panel_copy.Children(i).Color = [1 1 1];
+                %%% increase LineWidth of Axes
+                panel_copy.Children(i).LineWidth = 3;
+                %%% Increase FontSize
+                panel_copy.Children(i).FontSize = 30;
+                %%% Make Bold
+                %panel_copy.Children(i).FontWeight = 'bold';
+                %%% disable titles
+                title(panel_copy.Children(i),'');
+                %%% move axes up and left
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.0325 0.0325 0 0];
+                %%% Add rotational correlation time
+                switch i
+                    case 1
+                        %%%rRR vs TauRR
+                        if ~isempty(BurstData.Parameters.rhoRR)
+                            str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoRR(1));
+                            if numel(BurstData.Parameters.rhoRR) > 1
+                                str = [str(1:4) '_1' str(5:end)];
+                                for j=2:numel(BurstData.Parameters.rhoRR)
+                                    str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoRR(j))];
+                                end
+                            end
+                        end
+                        text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                            'Parent',panel_copy.Children(i),...
+                            'FontSize',20);
+                            %'BackgroundColor',[1 1 1],...
+                            %'EdgeColor',[0 0 0]);
+                    case 2
+                        %%%rGG vs TauGG
+                        if ~isempty(BurstData.Parameters.rhoGG)
+                            str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoGG(1));
+                            if numel(BurstData.Parameters.rhoGG) > 1
+                                str = [str(1:4) '_1' str(5:end)];
+                                for j=2:numel(BurstData.Parameters.rhoGG)
+                                    str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoGG(j))];
+                                end
+                            end
+                        end
+                        text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                            'Parent',panel_copy.Children(i),...
+                            'FontSize',20);
+                            %'BackgroundColor',[1 1 1],...
+                            %'EdgeColor',[0 0 0]);
+                end
+            end
+        end
+        FigureName = 'LifetimePlots';
 end
 %%% Combine the Original FileName and the parameter names
 if strcmp(BurstData.FileNameSPC,'_m1')
