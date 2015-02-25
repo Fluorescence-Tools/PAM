@@ -1189,7 +1189,7 @@ end
         'Position',[0 0 1 1]);
     %%% Contexmenu for correlation table
     h.Cor_Menu = uicontextmenu;
-    %%% Adds new PIE Channel
+    %%% multicorsupport
     h.Cor_Multi_Menu = uimenu(...
         'Parent',h.Cor_Menu,...
         'Label','Use Multi-core',...
@@ -1198,7 +1198,7 @@ end
     %%% Sets a divider for correlation
     h.Cor_Divider_Menu = uimenu(...
         'Parent',h.Cor_Menu,...
-        'Label','Divider: 1',...
+        'Label',['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)],...
         'Tag','Cor_Divider_Menu',...
         'Callback',@Calculate_Settings);
     %%% Correlations table
@@ -1217,7 +1217,7 @@ end
             'Divider: Divider for correlation time resolution for certain excitation schemes']),...
         'UIContextMenu',h.Cor_Menu,...
         'CellEditCallback',@Update_Cor_Table);
-    %%% Correlatse current loaded data
+    %%% Correlates current loaded data
     h.Cor_Button = uicontrol(...
         'Parent',h.Cor_Panel,...
         'Tag','Cor_Button',...
@@ -1431,13 +1431,13 @@ end
     %%% store the information for the BurstPIE_Table in the handles
     %%% structure
     %%% Labels for 2C-noMFD All-Photon Burst Search
-    h.BurstPIE_Table_Content.APBS_twocolornoMFD.RowName = {'GG','GR','RR'};
+    h.BurstPIE_Table_Content.APBS_twocolornoMFD.RowName = {'DD','DA','AA'};
     h.BurstPIE_Table_Content.APBS_twocolornoMFD.ColumnName = {'PIE Channel'};
     %%% Labels for 2C-MFD All-Photon Burst Search
-    h.BurstPIE_Table_Content.APBS_twocolorMFD.RowName = {'GG','GR','RR'};
+    h.BurstPIE_Table_Content.APBS_twocolorMFD.RowName = {'DD','DA','AA'};
     h.BurstPIE_Table_Content.APBS_twocolorMFD.ColumnName = {'Parallel','Perpendicular'};
     %%% Labels for 2C-MFD Dual-Channel Burst Search
-    h.BurstPIE_Table_Content.DCBS_twocolorMFD.RowName = {'GG','GR','RR'};
+    h.BurstPIE_Table_Content.DCBS_twocolorMFD.RowName = {'DD','DA','AA'};
     h.BurstPIE_Table_Content.DCBS_twocolorMFD.ColumnName = {'Parallel','Perpendicular'};
     %%% Labels for 3C-MFD All-Photon Burst Search
     h.BurstPIE_Table_Content.APBS_threecolorMFD.RowName = {'BB','BG','BR','GG','GR','RR'};
@@ -3427,7 +3427,7 @@ else %%% Single File correlation
     File=[];
     NCors=1;
 end
-for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)    
+for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(single file correlation)    
     if mode==2 %%% Loads new file
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,File{m},Type);
     end    
