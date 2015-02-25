@@ -5762,9 +5762,6 @@ else % apply the shift
     Rout=UserValues.Detector.Rout;
     for i = index
         if size(UserValues.Detector.Shift,2)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
-            if size(UserValues.Detector.Shift{i},2) ~= maxtick
-                UserValues.Detector.Shift{i} = zeros(1,maxtick);
-            end
             %%% Calculates inter-photon time; first photon gets 0 shift
             Dif=[maxtick; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
             Dif(Dif>maxtick)=maxtick;
