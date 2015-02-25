@@ -1966,6 +1966,8 @@ for  i=find(UserValues.PIE.Detector==0)
     end
 end
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2025,7 +2027,6 @@ if Display
     Update_Data([],[],0,0);
     Update_Display([],[],0);
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates Pam plots  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2424,6 +2425,7 @@ end
 guidata(findobj('Tag','Pam'),h)
 h.Progress_Text.String = FileInfo.FileName{1};
 h.Progress_Axes.Color=UserValues.Look.Control;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback functions of PIE list and uicontextmenues  %%%%%%%%%%%%%%%%%%%
@@ -2907,6 +2909,7 @@ end
 PamMeta.Selected_MT_Patches(i)=abs(PamMeta.Selected_MT_Patches(i)-1);
 Update_Display([],[],2);
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback functions of microtime channel list and UIContextmenues  %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3185,7 +3188,8 @@ else %%% PIE channel contains no photons
     Photons_PIEchannel = [];
 end
 
-        
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function generating deleting and selecting profiles  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3299,7 +3303,6 @@ switch e.Key
             h.Profiles_List.String{end+1}=[Name{1} '.mat'];
         end      
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to adjust setting to UserValues if a new profile was loaded  %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3332,6 +3335,7 @@ h.MI_Calib_Det.Value=1;
 
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3425,7 +3429,7 @@ else %%% Single File correlation
 end
 for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(singler file correlation)    
     if mode==2 %%% Loads new file
-        LoadTcspc([],[],@Update_Data,@Shift_Detector,h.Pam,File{m},Type);
+        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,File{m},Type);
     end    
     %%% Finds the right combinations to correlate
     [Cor_A,Cor_B]=find(h.Cor_Table.Data(1:end-1,1:end-1));
@@ -3692,7 +3696,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 PairInfo.Bins=Bins;
                 PairInfo.ScanFreq=FileInfo.ScanFreq;
                 %%% Transforms time lag to real time
-                PairInfo.Time=PairInfo.Time/FileInfo.SyncPeriod/FileInfo.ScanFreq;                
+                PairInfo.Time=PairInfo.Time/FileInfo.ScanFreq;                
                 %% Save Data
                 %%% Removes Comb.: from Name of combined channels
                 PIE_Name1=UserValues.PIE.Name{Cor_A(i)};
@@ -3713,7 +3717,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Increases counter, until no file is fount
                     while exist(Current_FileName,'file')
                         k=k+1;
-                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.pcor'];
                     end
                 end
                 %%% Saves File
@@ -5692,6 +5696,9 @@ else
     ALEX_2CDE(1,1:3) = NaN;
 end
 
+
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5771,7 +5778,6 @@ else % apply the shift
 end
 h.Progress_Text.String = FileInfo.FileName{1};
 h.Progress_Axes.Color=UserValues.Look.Control;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves Shift to UserValues and applies it %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5786,7 +5792,6 @@ if isfield(PamMeta.Det_Calib,'Shift')
     delete(m)
 end
 LSUserValues(1)
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Clears Shift from UserValues %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5800,6 +5805,10 @@ if isfield(PamMeta.Det_Calib,'Shift')
     delete(m)
 end
 LSUserValues(1)
+
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Generates windows-compatible file names and adds increment %%%%%%%%%%%%
