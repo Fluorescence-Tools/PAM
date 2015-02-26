@@ -3721,12 +3721,12 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Saves File
-                save(Current_FileName,'PairInfo','PairInt','PairCor');                
+                save(Current_FileName,'PairInfo','PairInt','PairCor');  
+                UserValues.File.PCFPath = FileInfo.Path;
         end
     end
     Update_Display([],[],1);
 end
-
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
 LSUserValues(1);
