@@ -1808,7 +1808,7 @@ end
 %%%%%%% Export Photons for PDA analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_To_PDA(~,~)
-global BurstData BurstTCSPCData
+global BurstData BurstTCSPCData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
@@ -1818,7 +1818,19 @@ h_waitbar = waitbar(0,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
     waitbar(0,h_waitbar,'Loading Photon Data');
-    load('-mat',[BurstData.FileName(1:end-3) 'bps']);
+    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+        %%% load if it exists
+        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+    else
+        %%% else ask for the file
+        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+        if FileName == 0
+            return;
+        end
+        load('-mat',fullfile(PathName,FileName));
+        %%% Store the correct Path in TauFitBurstData
+        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+    end
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
@@ -1981,7 +1993,7 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 datatoplot = BurstData.DataCut;
 
-[H, xbins,ybins,xbins_contour,ybins_contour] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
+[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
 
 %%% Update Image Plot and Contour Plot
 BurstMeta.Plots.Main_Plot(1).XData = xbins;

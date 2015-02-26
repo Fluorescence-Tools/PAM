@@ -1270,10 +1270,9 @@ case {3,4}
         background{3} = 0;
     end
 
-    %%% Load associated Macro- and Microtimes from *.bps file
-    [Path,File,~] = fileparts(BurstData.FileName);
-    load(fullfile(Path,[File '.bps']),'-mat');
-
+    %%% Rename variables
+    Microtime = TauFitBurstData.Microtime;
+    Channel = TauFitBurstData.Channel;
     %%% Determine bin width for coarse binning
     new_bin_width = floor(0.1/TauFitBurstData.TAC_Bin);
     
@@ -1303,6 +1302,7 @@ case {3,4}
         Scatter = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Scatter_Par{chan} + (2-3*l1)*TauFitBurstData.FitData.Scatter_Per{chan};
         SCATTER{chan} = Scatter./sum(Scatter);
     end
+
     %%% Histogram the Data
     Par{1} = cellfun(@(x,y) histc(x(y == 1)', (BurstData.fFCS.From(1):BurstData.fFCS.To(1))),Microtime,Channel,'UniformOutput',false);
     Per{1} = cellfun(@(x,y) histc(x(y == 2)', (BurstData.fFCS.From(2):BurstData.fFCS.To(2))),Microtime,Channel,'UniformOutput',false);

@@ -4747,6 +4747,7 @@ save(PhotonsFileName,'Macrotime','Microtime','Channel');
 UserValues.File.BurstBrowserPath = FileInfo.Path;
 LSUserValues(1);
 
+Progress(1,h.Progress_Axes, h.Progress_Text, 'Done');
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
 %%% a burst search has been done
