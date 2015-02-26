@@ -567,12 +567,12 @@ if ~isempty(FileName)
     for i=1:NParams
         Param_Pos=strfind(Text{i+Param_Start},' ');
         FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
-        Value_Pos=strfind(Text{i+Param_Start},'=');
-        Val = strsplit(Text{i+Param_Start}((Value_Pos+2):end),'\t');
-        %FCSMeta.Model.Value(i)=str2double(Text{i+Param_Start}((Value_Pos+2):end));
-        FCSMeta.Model.Value(i) = str2double(Val{1});
-        FCSMeta.Model.LowerBoundaries(i) = str2double(Val{2});
-        FCSMeta.Model.UpperBoundaries(i) = str2double(Val{3});
+        Start = strfind(Text{i+Param_Start},'=');
+        Stop = strfind(Text{i+Param_Start},';');
+
+        FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
+        FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
+        FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
     end    
     FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
     

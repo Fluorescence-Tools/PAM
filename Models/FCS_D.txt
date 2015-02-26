@@ -5,13 +5,13 @@ One exponential triplet component
 
     |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
-Param(1): N             = 1	0	Inf
-Param(2): D[µm^2/s]     = 373	0	Inf   
-Param(3): w_r [µm]      = 0.2	0	Inf
-Param(4): w_z [µm]      = 1	0	Inf
-Param(5): tauT[µs]      = 1	0	Inf
-Param(6): Trip          = 0.01	0	1
-Param(7): y0            = 0	-1	1
+Param(1): N             = 1     0   Inf
+Param(2): D[µm^2/s]     = 373   0	Inf   
+Param(3): w_r [µm]      = 0.2   0	Inf
+Param(4): w_z [µm]      = 1	0   Inf
+Param(5): tauT[µs]      = 1	0   Inf
+Param(6): Trip          = 0.01  0	1
+Param(7): y0            = 0     -1  1
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
