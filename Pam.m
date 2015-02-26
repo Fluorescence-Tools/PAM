@@ -5379,10 +5379,11 @@ switch BurstData.BAMethod
         idx_RRperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
         
         %%% Calculate the MI histograms
-        max_MIBins_GGpar = numel(UserValues.PIE.IRF{idx_GGpar});
-        max_MIBins_GGperp = numel(UserValues.PIE.IRF{idx_GGperp});
-        max_MIBins_RRpar = numel(UserValues.PIE.IRF{idx_RRpar});
-        max_MIBins_RRperp = numel(UserValues.PIE.IRF{idx_RRperp});
+        max_MIBins_GGpar = min([numel(UserValues.PIE.IRF{idx_GGpar}) numel(UserValues.PIE.ScatterPattern{idx_GGpar})]);
+        max_MIBins_GGperp = min([numel(UserValues.PIE.IRF{idx_GGperp}) numel(UserValues.PIE.ScatterPattern{idx_GGperp})]);
+        max_MIBins_RRpar = min([numel(UserValues.PIE.IRF{idx_RRpar}) numel(UserValues.PIE.ScatterPattern{idx_RRpar})]);
+        max_MIBins_RRperp = min([numel(UserValues.PIE.IRF{idx_RRperp}) numel(UserValues.PIE.ScatterPattern{idx_RRperp})]);
+        
         GGpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
         GGperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
         RRpar = histc(Microtime(Channel == 5), (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
@@ -5434,12 +5435,12 @@ switch BurstData.BAMethod
         idx_RRpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1},UserValues.PIE.Name));
         idx_RRperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2},UserValues.PIE.Name));
         
-        max_MIBins_BBpar = numel(UserValues.PIE.IRF{idx_BBpar});
-        max_MIBins_BBperp = numel(UserValues.PIE.IRF{idx_BBperp});
-        max_MIBins_GGpar = numel(UserValues.PIE.IRF{idx_GGpar});
-        max_MIBins_GGperp = numel(UserValues.PIE.IRF{idx_GGperp});
-        max_MIBins_RRpar = numel(UserValues.PIE.IRF{idx_RRpar});
-        max_MIBins_RRperp = numel(UserValues.PIE.IRF{idx_RRperp});
+        max_MIBins_BBpar = min([numel(UserValues.PIE.IRF{idx_BBpar}) numel(UserValues.PIE.ScatterPattern{idx_BBpar})]);
+        max_MIBins_BBperp = min([numel(UserValues.PIE.IRF{idx_BBperp}) numel(UserValues.PIE.ScatterPattern{idx_BBperp})]);
+        max_MIBins_GGpar = min([numel(UserValues.PIE.IRF{idx_GGpar}) numel(UserValues.PIE.ScatterPattern{idx_GGpar})]);
+        max_MIBins_GGperp = min([numel(UserValues.PIE.IRF{idx_GGperp}) numel(UserValues.PIE.ScatterPattern{idx_GGperp})]);
+        max_MIBins_RRpar = min([numel(UserValues.PIE.IRF{idx_RRpar}) numel(UserValues.PIE.ScatterPattern{idx_RRpar})]);
+        max_MIBins_RRperp = min([numel(UserValues.PIE.IRF{idx_RRperp}) numel(UserValues.PIE.ScatterPattern{idx_RRperp})]);
         %%% Calculate the MI histograms
         BBpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar])));
         BBperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp])));
