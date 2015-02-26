@@ -3616,46 +3616,65 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 Dist=[0,str2num(h.Cor_Pair_Dist.String)]; %#ok<ST2NM>
                 Dist= Dist(Dist<Bins);               
                 %% Channel 1 calculations
-                Data=[];
+                Data = []; MI = [];
                 %%% Combines all photons to one vector for channel 1
                 for l=1:numel(Det1)
                     if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
-                        Data=TcspcData.MT{Det1(l),Rout1(l)}(...
+                        %%% Extracts all macrotimes
+                        Data = [Data TcspcData.MT{Det1(l),Rout1(l)}(...
                             TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
-                            TcspcData.MI{Det1(l),Rout1(l)}<=To1(l));
+                            TcspcData.MI{Det1(l),Rout1(l)}<=To1(l))];
+                        %%% Extracts all microtimes
+                        MI = [MI TcspcData.MI{Det1(l),Rout1(l)}(...
+                            TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                            TcspcData.MI{Det1(l),Rout1(l)}<=To1(l))];
                     end
                 end
                 %%% Sorts photons into spatial bins
-                Data=sort(Data);
-                Data=Data*FileInfo.SyncPeriod*FileInfo.ScanFreq; 
-                Maxtime=Data(end)-Data(1);
-                Data1=cell(Bins,1);
-                for j=1:Bins
-                    Data1{j}=ceil(Data(mod(Data,1)<=j/Bins));
-                    Data=Data(mod(Data,1)>j/Bins);
+                [Data,Index] = sort(Data);
+                MI = MI(Index);
+                Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq; 
+                Maxtime = Data(end)-Data(1);
+                Data1 = cell(Bins,1);
+                MI1 = cell(Bins,1);
+                for j=1:Bins %%% Sorts photons by position bin
+                    Data1{j} = ceil(Data(mod(Data,1)<=j/Bins));
+                    MI1{j} = MI(mod(Data,1)<=j/Bins);
+                    MI = MI(mod(Data,1)>j/Bins);
+                    Data = Data(mod(Data,1)>j/Bins);    
                 end               
                 %% Channel 2 calculations
                 Data=[];
                 %%% Combines all photons to one vector for channel 2
                 for l=1:numel(Det2)
                     if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
-                        Data=TcspcData.MT{Det2(l),Rout2(l)}(...
+                        Data=[Data TcspcData.MT{Det2(l),Rout2(l)}(...
                             TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
-                            TcspcData.MI{Det2(l),Rout2(l)}<=To2(l));
+                            TcspcData.MI{Det2(l),Rout2(l)}<=To2(l))];
+                        %%% Extracts all microtimes
+                        MI = [MI TcspcData.MI{Det2(l),Rout2(l)}(...
+                            TcspcData.MI{Det2(l),Rout2(l)}>=From1(l) &...
+                            TcspcData.MI{Det2(l),Rout2(l)}<=To1(l))];
                     end
                 end
                 %%% Sorts photons into spatial bins
-                Data=sort(Data);
-                Data=Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
-                Maxtime=max([Maxtime,Data(end)-Data(1)]);
-                Data2=cell(Bins,1);
+                [Data,Index] = sort(Data);
+                MI = MI(Index);
+                Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                Maxtime = max([Maxtime,Data(end)-Data(1)]);
+                Data2 = cell(Bins,1);
+                MI2 = cell(Bins,1);
                 for j=1:Bins
                     Data2{j}=ceil(Data(mod(Data,1)<=j/Bins));
+                    MI2{j} = MI(mod(Data,1)<=j/Bins);
+                    MI = MI(mod(Data,1)>j/Bins);
                     Data=Data(mod(Data,1)>j/Bins);
                 end
                 %% Actually calculates the crosscorrelation
                 PairCor=cell(Bins,max(Dist),2);
                 PairInfo.Time=[];
+                Progress(0,h.Progress_Axes, h.Progress_Text,'Calculating PCF:');
+                h.Progress_Axes.Color=UserValues.Look.Control;
                 for j=1:Bins %%% Goes through every bin
                     for l=Dist %%% Goes through every selected bin distance
                         if (l+j)<=Bins %%% Checks if bin distance is valid
@@ -3675,6 +3694,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             end
                         end                        
                     end
+                    Progress(j/Bins,h.Progress_Axes, h.Progress_Text,'Calculating PCF:');
                 end
                 %%% Fills all empty bins with zeros
                 MaxLength=max(max(max(cellfun(@numel,PairCor))));
@@ -3688,9 +3708,27 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 PairCor=reshape(cell2mat(PairCor),[MaxLength,size(PairCor)]); %#ok<NASGU>
                 %%% Calculates Intensity traces
                 for j=1:Bins
-                    PairInt{1}(:,j)=histc(Data1{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    %%% Intensity tracefor channel 1
+                    PairInt{1}(:,j)= histc(Data1{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    %%% Mean arrival time trace for channel 1
+                    CumInt = cumsum(PairInt{1}(:,j));
+                    CumInt(CumInt==0)=1;
+                    CumMI = cumsum(double(MI1{j}));
+                    CumMI = CumMI(CumInt);
+                    CumMI = [CumMI(1); diff(CumMI)];
+                    PairMI{1}(:,j) = CumMI./PairInt{1}(:,j);
+                    %%% Intensity tracefor channel 2
                     PairInt{2}(:,j)=histc(Data2{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    %%% Mean arrival time trace for channel 2
+                    CumInt = cumsum(PairInt{2}(:,j));
+                    CumInt(CumInt==0)=1;
+                    CumMI = cumsum(double(MI2{j}));
+                    CumMI = CumMI(CumInt);
+                    CumMI = [CumMI(2); diff(CumMI)];
+                    PairMI{2}(:,j) = CumMI./PairInt{2}(:,j);
                 end
+                PairMI{1}(isnan(PairMI{1}) | isinf(PairMI{1})) = 0;
+                PairMI{2}(isnan(PairMI{2}) | isinf(PairMI{2})) = 0;
                 %%% Combines information
                 PairInfo.Dist=Dist;
                 PairInfo.Bins=Bins;
@@ -3721,7 +3759,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Saves File
-                save(Current_FileName,'PairInfo','PairInt','PairCor');  
+                save(Current_FileName,'PairInfo','PairInt','PairMI','PairCor');  
                 UserValues.File.PCFPath = FileInfo.Path;
         end
     end
