@@ -5717,10 +5717,13 @@ if nargin<3 % calculate the shift
     Dif(Dif>maxtick)=maxtick;
     MI=TcspcData.MI{Det,Rout};
     
+    % make a 2D histogram of the interphoton time (0:maxtick) versus TAC bin
     PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
     PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
-    
+    % sort from low to high counts along the TAC axis:
     [Counts,Index]=sort(PamMeta.Det_Calib.Hist);
+    % for each interphoton macrotime, take the average TAC position of the
+    % 100 brightnest bins:
     PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
     PamMeta.Det_Calib.Shift=round(PamMeta.Det_Calib.Shift-PamMeta.Det_Calib.Shift(end));
     PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
@@ -5729,7 +5732,7 @@ if nargin<3 % calculate the shift
     
     clear Counts Index
     
-    % uncorrected MI histogram
+    % uncorrected MI histogram (blue)
     h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
     h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
    
