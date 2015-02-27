@@ -69,7 +69,7 @@ end
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Position',[0.005 0.005 0.4925 0.99]); 
-    
+    %% Top Pannel
     %%% File selection menu
     h.PCF_File = uicontrol(...
         'Parent',h.Carpet_Panel,...
@@ -80,9 +80,7 @@ end
         'ForegroundColor', Look.Fore,...
         'Position',[0.005 0.965, 0.99 0.03],...
         'Callback',{@Select_Bins,1},...
-        'String','Nothing Loaded');
-    
-    
+        'String','Nothing Loaded');   
     %%% Text for distance selection
     h.Text{end+1} = uicontrol(...
         'Parent',h.Carpet_Panel,...
@@ -158,30 +156,18 @@ end
         'Callback',{@Update_Plots,[1,2]},...
         'Enable','off',...
         'String','100');
-    %%% Checkbox for normalizing carpet
-    h.Carpet_Normalize = uicontrol(...
-        'Parent',h.Carpet_Panel,...
-        'Style','checkbox',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.4 0.935, 0.14 0.02],...
-        'Callback',{@Update_Plots,[1,2]},...
-        'Enable','off',...
-        'String','Normalize');
+
     %%% Checkbox to switch between Cotrelation and Intensity
-    h.Carpet_Intensity = uicontrol(...
+    h.Text{end+1} = uicontrol(...
         'Parent',h.Carpet_Panel,...
-        'Style','checkbox',...
+        'Style','text',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.55 0.935, 0.12 0.02],...
-        'Callback',{@Update_Plots,[1,2]},...
-        'Enable','off',...
-        'String','Intensity');
+        'HorizontalAlignment','left',...
+        'Position',[0.4 0.935, 0.25 0.02],...
+        'String','Intensity rebinning factor:');
     %%% Editbox for Intensity rebinning
     h.Carpet_Intensity_Rebin = uicontrol(...
         'Parent',h.Carpet_Panel,...
@@ -190,12 +176,74 @@ end
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.67 0.935, 0.07 0.02],...
+        'Position',[0.65 0.935, 0.07 0.02],...
         'Callback',{@Update_Plots,[1,2]},...
         'Enable','off',...
-        'String','200');
+        'String','200');    
+    %% Context menues
+    %%% Contexmenu for Correlation Carpet
+    h.Carpet_Menu = uicontextmenu;
+    %%% Menu for normalizing carpet
+    h.Carpet_Normalize = uimenu(...
+        'Parent',h.Carpet_Menu,...
+        'Label','Normalize',...
+        'Callback', {@Carpet_Callback,1});
+    %%% Menu for carpet ploting selection
+    h.Carpet_PlotStyle = uimenu(...
+        'Parent',h.Carpet_Menu,...
+        'Label','Plot...');
+    %%% Menu for plotting correlation carpet
+    h.Carpet_Cor = uimenu(...
+        'Parent',h.Carpet_PlotStyle,...
+        'Label','Correlations',...
+        'Checked','on',...
+        'Callback', {@Carpet_Callback,2});   
+    %%% Menu for plotting intensity carpet
+    h.Carpet_Int = uimenu(...
+        'Parent',h.Carpet_PlotStyle,...
+        'Label','Intensities',...
+        'Callback', {@Carpet_Callback,3});
+    %%% Menu for plotting arrival time carpet
+    h.Carpet_MI = uimenu(...
+        'Parent',h.Carpet_PlotStyle,...
+        'Label','Mean arrival times',...
+        'Callback', {@Carpet_Callback,4});
+    %%% Selection for exporting carpet
+    h.Carpet_Export2Fig = uimenu(...
+        'Parent',h.Carpet_Menu,...
+        'Label','Export to figure:');
+    %%% Menu for exporting full normalized carpet
+    h.Carpet_Full2Fig = uimenu(...
+        'Parent',h.Carpet_Export2Fig,...
+        'Label','Full carpet',...
+        'Callback', {@Carpet_Callback,5});
+    h.Carpet_Sel2Fig = uimenu(...
+        'Parent',h.Carpet_Export2Fig,...
+        'Label','Selected carpet',...
+        'Callback', {@Carpet_Callback,5});
     
-       
+    %%% Contexmenu for Mean Intensity/Arrival time histogram
+    h.Mean_Menu = uicontextmenu;
+    %%% Menu for mean ploting selection
+    h.Mean_PlotStyle = uimenu(...
+        'Parent',h.Mean_Menu,...
+        'Label','Plot...');
+    %%% Menu for plotting mean intensity 
+    h.Mean_Int = uimenu(...
+        'Parent',h.Mean_PlotStyle,...
+        'Label','Mean intensity',...
+        'Checked','on',...
+        'Callback', {@Intensity_Callback,1});
+    %%% Menu for plotting mean arrival time
+    h.Mean_MI = uimenu(...
+        'Parent',h.Mean_PlotStyle,...
+        'Label','Mean arrival time',...
+        'Callback', {@Intensity_Callback,2});
+    %%% Menu for Exporting Carpet
+    h.Mean_Export = uimenu(...
+        'Parent',h.Mean_Menu,...
+        'Label','Export carpet');   
+    %% Axes and plots
     %%% Axes for Carpet
     h.Carpet_Axes = axes(...
         'Parent',h.Carpet_Panel,...
@@ -238,8 +286,8 @@ end
         'ButtonDownFcn',{@Select_Bins,2},...
         'Box','off');
     %%% Links xlim of carpet axes
-    h.Plot.Link.Carpet = linkprop([h.Selected_Axes,h.Intensity_Axes,h.Carpet_Axes], 'XLim');
-       
+    h.Plot.Link.Carpet = linkprop([h.Selected_Axes,h.Intensity_Axes,h.Carpet_Axes], 'XLim');   
+    %% List and buttons
     %%% Listbox of all ROIs
     h.ROI_List = uicontrol(...
         'Parent',h.Carpet_Panel,...
@@ -470,6 +518,8 @@ h.Carpet_Intensity.Enable = 'on';
 h.Carpet_Intensity_Rebin.Enable = 'on';
 h.Cor_Min_Time.Enable = 'on';
 h.Cor_Max_Time.Enable = 'on';
+h.Plot.Carpet.UIContextMenu = h.Carpet_Menu;
+h.Intensity_Axes.UIContextMenu = h.Mean_Menu;
 h.Plot.Carpet.ButtonDownFcn = {@Select_ROI,1};
 h.Intensity_Axes.ButtonDownFcn = {@Select_ROI,2};
 
@@ -513,27 +563,13 @@ for i= 1:size(h.Plot.ROI,1)
     end
 end
 
-if any(mode == 1) %%% Updates carpet/intensity
-    if h.Carpet_Intensity.Value %%% Plots intensity carpet
-        Rebin = str2double(h.Carpet_Intensity_Rebin.String);        
-        CData = PCFData.Data{File}.PairInt{1};
-        CData = CData(1:end-mod(size(CData,1),Rebin),:);
-        CData = squeeze(sum(reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)])));
-        if h.Carpet_Normalize.Value %%% Normalized data per bin
-            CData = (CData-repmat(min(CData),[size(CData,1),1]))./repmat((max(CData)-min(CData)),[size(CData,1),1]);
-            CData(isnan(CData) | isinf(CData)) = 0;
-        end
-        h.Plot.Carpet.CData = CData;
-        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin;
-        h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
-        h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
-        h.Carpet_Axes.YLabel.String='Time [s]';
-    else %%% Plots correlation carpet
+if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
+    if strcmp(h.Carpet_Cor.Checked,'on') %%% Plots correlation carpet
         Min = str2double(h.Carpet_Min_Time.String);
         Max = min([str2double(h.Carpet_Max_Time.String), size(PCFData.Data{File}.PairInfo.Time,1)]);
         if any(PCFData.Data{File}.PairInfo.Dist == Dist) %%% Plots PCF for selected distance
             CData = PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,1);
-            if h.Carpet_Normalize.Value %%% Normalized data per bin 
+            if strcmp(h.Carpet_Normalize.Checked,'on') %%% Normalized data per bin
                 CData = (CData-repmat(min(CData),[(Max-Min+1),1]))./repmat((max(CData)-min(CData)),[(Max-Min+1),1]);
                 CData(isnan(CData) | isinf(CData)) = 0;
             end
@@ -551,13 +587,50 @@ if any(mode == 1) %%% Updates carpet/intensity
         h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
         h.Carpet_Axes.YLim = [0.5 size(CData,1)+0.5];
         h.Carpet_Axes.YLabel.String='Correlation bins (logscale)';
+    elseif strcmp(h.Carpet_Int.Checked,'on') %%% Plots intensity carpet
+        Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+        CData = PCFData.Data{File}.PairInt{1};
+        CData = CData(1:end-mod(size(CData,1),Rebin),:);
+        CData = squeeze(sum(reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)])));
+        if strcmp(h.Carpet_Normalize.Checked,'on') %%% Normalized data per bin
+            CData = (CData-repmat(min(CData),[size(CData,1),1]))./repmat((max(CData)-min(CData)),[size(CData,1),1]);
+            CData(isnan(CData) | isinf(CData)) = 0;
+        end
+        h.Plot.Carpet.CData = CData;
+        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin;
+        h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
+        h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
+        h.Carpet_Axes.YLabel.String='Time [s]';
+    elseif strcmp(h.Carpet_MI.Checked,'on') %%% Plots mean arrival time carpet
+        Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+        CData = PCFData.Data{File}.PairMI{1};
+        CData = CData(1:end-mod(size(CData,1),Rebin),:);
+        CData = reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)]);
+        WData = PCFData.Data{File}.PairInt{1};
+        WData = WData(1:end-mod(size(WData,1),Rebin),:);
+        WData = reshape(WData,[Rebin,size(WData,1)/Rebin,size(WData,2)]);        
+        CData = squeeze(sum(CData.*WData)./sum(WData));
+        if strcmp(h.Carpet_Normalize.Checked,'on') %%% Normalized data per bin
+            CData = (CData-repmat(min(CData),[size(CData,1),1]))./repmat((max(CData)-min(CData)),[size(CData,1),1]);
+            CData(isnan(CData) | isinf(CData)) = 0;
+        end
+        h.Plot.Carpet.CData = CData;
+        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin;
+        h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
+        h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
+        h.Carpet_Axes.YLabel.String='Time [s]';
     end
 end
 if any(mode == 2) %%% Updates mean intensity/arival time plot
-    %%% Plots mean intensity in kHz
-    h.Plot.Intensity.YData = (mean(PCFData.Data{File}.PairInt{1},1)+mean(PCFData.Data{File}.PairInt{2},1))/2*...
-        PCFData.Data{File}.PairInfo.ScanFreq*...
-        PCFData.Data{File}.PairInfo.Bins/1000;
+    if strcmp(h.Mean_Int.Checked,'on') %%% Plots mean intensity in kHz
+        h.Plot.Intensity.YData = (mean(PCFData.Data{File}.PairInt{1},1)*...
+            PCFData.Data{File}.PairInfo.ScanFreq*...
+            PCFData.Data{File}.PairInfo.Bins/1000);
+        h.Intensity_Axes.YLabel.String='Mean intensity [kHz]';
+    elseif strcmp(h.Mean_MI.Checked,'on') %%% Plots mean arrival time
+        h.Plot.Intensity.YData = sum(PCFData.Data{File}.PairInt{1}.*PCFData.Data{File}.PairMI{1},1)./sum(PCFData.Data{File}.PairInt{1});
+        h.Intensity_Axes.YLabel.String = 'Mean arrival time [ticks]';
+    end
     %%% Adjusts axis limits
     h.Plot.Intensity.XData = 1:numel(h.Plot.Intensity.YData);
     h.Intensity_Axes.XLim = [0 numel(h.Plot.Intensity.XData)]+0.5;
@@ -586,10 +659,6 @@ Update_Plots([],[],1)
 
 
 
-
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for disabling/enabling bins %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -610,7 +679,7 @@ switch mode
                 'HitTest', 'off',...
                 'FaceColor',[~PCFData.Data{File}.SelectedBins(i), PCFData.Data{File}.SelectedBins(i), 0]);
         end
-        Update_Plots([],[],[1 2]);
+        Update_Plots([],[],1);
     case 2 %%% (Un)select bins by clicking
         File = h.PCF_File.Value;
         Pos = round(e.IntersectionPoint(1));
@@ -627,7 +696,7 @@ switch mode
                 for i=1:PCFData.Data{File}.PairInfo.Bins
                     h.Selected_Axes.Children(i).FaceColor = [~State State 0];
                 end
-                Update_Plots([],[],[1 2]);
+                Update_Plots([],[],1);
         end      
     case 3 %%% Unselect bins by moving
         File = h.PCF_File.Value;
@@ -650,7 +719,7 @@ switch mode
     case 5 %%% Stop (un)selection
         h.PCF.WindowButtonMotionFcn = [];
         h.PCF.WindowButtonUpFcn = [];
-        Update_Plots([],[],[1 2]);
+        Update_Plots([],[],1);
     case 6 %%% (Un)select bins according to ROIs
         File = h.PCF_File.Value;
         Bins = [];
@@ -668,19 +737,149 @@ switch mode
                 h.Selected_Axes.Children(end-i+1).FaceColor = [1 0 0];
             end
         end
-        Update_Plots([],[],[1 2]);
+        Update_Plots([],[],1);
         
         
 end
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions to select relevant regions in carpet  %%%%%%%%%%%%%%%%%%%%%%%%
+%%% Callback for Carpet menus %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Carpet_Callback(Obj,~,mode)
+global PCFData
+h = guidata(findobj('Tag','PCF'));
+
+switch mode
+    case 1 %%% Toggle binwise normalization
+        if strcmp(h.Carpet_Normalize.Checked,'on')
+            h.Carpet_Normalize.Checked ='off';
+        else
+            h.Carpet_Normalize.Checked = 'on';
+        end
+        Update_Plots([],[],1);
+    case 2 %%% Plot correlations
+        h.Carpet_Cor.Checked = 'on';
+        h.Carpet_Int.Checked = 'off';
+        h.Carpet_MI.Checked = 'off';
+        Update_Plots([],[],1);
+    case 3 %%% Plot intensities
+        h.Carpet_Cor.Checked = 'off';
+        h.Carpet_Int.Checked = 'on';
+        h.Carpet_MI.Checked = 'off';        
+        Update_Plots([],[],1);
+    case 4 %%% Plot mean arrival times
+        h.Carpet_Cor.Checked = 'off';
+        h.Carpet_Int.Checked = 'off';
+        h.Carpet_MI.Checked = 'on';
+        Update_Plots([],[],1);
+    case 5 %%% Exports full carpet to figure
+        %% Calculates image
+        File = h.PCF_File.Value;
+        Dist = h.PCF_Dist_Slider.Value;
+        Min = str2double(h.Carpet_Min_Time.String);
+        Max = min([str2double(h.Carpet_Max_Time.String), size(PCFData.Data{File}.PairInfo.Time,1)]);
+        if any(PCFData.Data{File}.PairInfo.Dist == Dist) %%% Plots PCF for selected distance
+            CData = PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,1);
+            if strcmp(h.Carpet_Normalize.Checked,'on') %%% Normalized data per bin
+                CData = (CData-repmat(min(CData),[(Max-Min+1),1]))./repmat((max(CData)-min(CData)),[(Max-Min+1),1]);
+                CData(isnan(CData) | isinf(CData)) = 0;
+            end            
+        else %%% Plots zeros for nonexistent distances
+            CData = 0*PCFData.Data{File}.PairCor(Min:Max,:,1,1);
+        end
+        CData = CData(:,1:end-Dist);   
+        %% Removes unselected bins
+        if Obj == h.Carpet_Sel2Fig
+            Sel = PCFData.Data{File}.SelectedBins & circshift(PCFData.Data{File}.SelectedBins,[0,-Dist]);
+            Sel = Sel(1:end-Dist);
+            %%% Removes all unselected bins
+            CData = reshape(CData(repmat(Sel,[Max-Min+1,1])~=0),[],sum(Sel));
+        else
+        end
+        %% Creates figure, axes and plot
+        Scale = 4;
+        Exp.fig = figure(...
+        'Units','points',...
+        'defaultUicontrolFontName','Arial',...
+        'defaultAxesFontName','Arial',...
+        'defaultTextFontName','Arial',...
+        'Position',[100 200 Scale*size(CData,2)+140 Scale*size(CData,1)+40]);
+    
+        Exp.axes = axes(...
+            'Parent',Exp.fig,...
+            'Units','points',...
+            'FontSize',12,...
+            'Position',[25 5 Scale*size(CData,2)+60 Scale*size(CData,1)],...
+            'NextPlot', 'add',...
+            'XLim',[0.5 size(CData,2)+0.5],...
+            'YLim',[0.5 size(CData,1)+0.5],...
+            'YDir','reverse',...
+            'XAxisLocation','top',...
+            'Layer','top',...
+            'XTick',[1 size(CData,2)],...
+            'DataAspectRatio',[1 1 1],...
+            'Box', 'off');
+        Exp.Carpet = imagesc(...
+            'Parent', Exp.axes,...
+            'CData',CData);
+        colormap(jet);        
+        %% Calculates and adds Ticks and Labels
+        YTickLabels = cell(60,1);
+        YTicks = zeros(60,1);
+        for i= 1:6
+            YTicks((1:9)+((i-1)*9)) = 10^(-5+i)*(1:9);
+            YTickLabels{9*(i-1)+1} = num2str(YTicks(9*(i-1)+1));
+        end
+        Time = PCFData.Data{File}.PairInfo.Time(Min:Max);
+        YTicks = interp1(Time,1:numel(Time),YTicks);        
+        Exp.axes.YTickLabel = YTickLabels(~isnan(YTicks));
+        Exp.axes.YTick = YTicks(~isnan(YTicks));
+        Exp.axes.YLabel.String = 'Lag time {\it\tau{}} [s]';
+        Exp.axes.YLabel.FontSize = 14;       
+        Exp.axes.XLabel.String = 'Bin';
+        Exp.axes.XLabel.FontSize = 14;        
+        %% Adds colorbar
+        Exp.colbar = colorbar(...
+            'peer',Exp.axes,...
+            'FontSize',12,...
+            'Units','points',...
+            'Position', [Scale*size(CData,2)+70 5 15 Scale*size(CData,1)],...
+            'Location','eastoutside');
+        if strcmp(h.Carpet_Normalize.Checked,'on')
+            Exp.colbar.Label.String = 'Normalized G({\it\tau{}})';
+        else
+            Exp.colbar.Label.String = 'G({\it\tau{}})';
+        end
+        Exp.colbar.Label.FontSize = 14;         
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Callback for Carpet menus %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Intensity_Callback(~,~,mode)
+h = guidata(findobj('Tag','PCF'));
+
+switch mode
+    case 1 %%% Plot mean intensity
+        h.Mean_Int.Checked = 'on';
+        h.Mean_MI.Checked = 'off';        
+        Update_Plots([],[],2);
+    case 2 %%% Plot mean arrival time
+        h.Mean_Int.Checked = 'off';
+        h.Mean_MI.Checked = 'on';
+        Update_Plots([],[],2);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions to select relevant regions in carpet  %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Select_ROI(~,e,mode)
 global PCFData
 h = guidata(findobj('Tag','PCF'));
 
-if mode %%% Start of ROI selection
+if mode && strcmp(h.PCF.SelectionType,'normal') %%% Start of ROI selection
     %%% Determines Starting position
     Start = floor(e.IntersectionPoint(1)+0.5);
     
@@ -709,7 +908,7 @@ if mode %%% Start of ROI selection
     h.PCF.WindowButtonUpFcn = {@Select_ROI,0};
     %%% Activates movement callback
     ROI_Move([],[],Start,mode);
-else %%% Stop of ROI selection
+elseif mode == 0 %%% Stop of ROI selection
     %%% Disables stop function
     h.PCF.WindowButtonUpFcn = [];
     %%% Disables movement callback
