@@ -10,7 +10,7 @@ Param(2): tauD[µs]      = 30;	LB = 0;     UB = Inf;
 Param(3): p             = 5;	LB = 0;     UB = Inf;
 Param(4): tauT[µs]      = 1;    LB = 0;     UB = Inf;
 Param(5): Trip          = 0.01; LB = 0;     UB = 1;
-Param(6): y0            = 0     LB = -1;    UB = 1;
+Param(6): y0            = 0;     LB = -1;    UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
