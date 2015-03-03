@@ -2857,7 +2857,10 @@ switch e.Key
             UserValues.PIE.Detector(end+1)=0;
             UserValues.PIE.Router(end+1)=0;
             UserValues.PIE.From(end+1)=0;
-            UserValues.PIE.To(end+1)=0;            
+            UserValues.PIE.To(end+1)=0;  
+            UserValues.PIE.Duty_Cycle(Sel)=[];
+            UserValues.PIE.IRF{end+1} = [];
+            UserValues.PIE.ScatterPattern(Sel) = [];
             UserValues.PIE.Name{end+1}='Comb.: ';
             for i=Sel;
                 UserValues.PIE.Name{end}=[UserValues.PIE.Name{end} UserValues.PIE.Name{i} '+'];
@@ -3799,7 +3802,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Calculates Intensity traces
                 for j=1:Bins
                     %%% Intensity tracefor channel 1
-                    PairInt{1}(:,j)= histc(Data1{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{1}(:,j)= histc(Data1{j},1:10:ceil(FileInfo.NumberOfFiles*FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 1
                     CumInt = cumsum(PairInt{1}(:,j));
                     CumInt(CumInt==0)=1;
@@ -3808,7 +3811,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     CumMI = [CumMI(1); diff(CumMI)];
                     PairMI{1}(:,j) = CumMI./PairInt{1}(:,j);
                     %%% Intensity tracefor channel 2
-                    PairInt{2}(:,j)=histc(Data2{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{2}(:,j)=histc(Data2{j},1:10:ceil(FileInfo.NumberOfFiles*FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 2
                     CumInt = cumsum(PairInt{2}(:,j));
                     CumInt(CumInt==0)=1;
@@ -3817,6 +3820,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     CumMI = [CumMI(2); diff(CumMI)];
                     PairMI{2}(:,j) = CumMI./PairInt{2}(:,j);
                 end
+                PairInt{1} = PairInt{1}/10;
+                PairInt{2} = PairInt{2}/10;
                 PairMI{1}(isnan(PairMI{1}) | isinf(PairMI{1})) = 0;
                 PairMI{2}(isnan(PairMI{2}) | isinf(PairMI{2})) = 0;
                 %%% Combines information

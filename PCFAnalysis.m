@@ -620,13 +620,13 @@ switch mode
                     h.Current_Int.String = ['G(t): ' num2str(Int, '%.3g')];
                 elseif strcmp(h.Carpet_Int.Checked,'on') %%% Intensity plot
                     Time = Pos(2);
-                    Point = round(Time*PCFData.Data{File}.PairInfo.ScanFreq/Rebin);
+                    Point = round(Time*PCFData.Data{File}.PairInfo.ScanFreq/Rebin/10);
                     Int = h.Plot.Carpet.CData(Point,Bin);
                     h.Current_Time.String= ['Time: ' num2str(Time, '%.3g') ' s'];
                     h.Current_Int.String = ['Count rate: ' num2str(Int, '%.4g') ' kHz'];
                 elseif strcmp(h.Carpet_MI.Checked,'on') %%% Mean arival time plot
                     Time = Pos(2);
-                    Point = round(Time*PCFData.Data{File}.PairInfo.ScanFreq/Rebin);
+                    Point = round(Time*PCFData.Data{File}.PairInfo.ScanFreq/Rebin/10);
                     Int = h.Plot.Carpet.CData(Point,Bin);
                     h.Current_Time.String= ['Time: ' num2str(Time, '%.3g') ' s'];
                     h.Current_Int.String = ['Mean arrival time: ' num2str(Int, '%.4g') ];
@@ -642,7 +642,7 @@ switch mode
                     Int = h.Plot.Intensity.YData(round(Pos(1)));
                     h.Current_Int.String = ['Count rate: ' num2str(Int, '%.4g') ' kHz'];
                 elseif strcmp(h.Mean_MI.Checked,'on') %%% Mean arrival time
-                    Int = h.Plot.Intensity.YData(round(Pos(2)));
+                    Int = h.Plot.Intensity.YData(round(Pos(1)));
                     h.Current_Int.String = ['Mean arrival time: ' num2str(Int, '%.4g') ];
                 end
             end
@@ -726,7 +726,7 @@ if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
             CData(isnan(CData) | isinf(CData)) = 0;
         end
         h.Plot.Carpet.CData = CData;
-        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin;
+        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin*10;
         h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
         h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
         h.Carpet_Axes.YLabel.String='Time [s]';
@@ -744,7 +744,7 @@ if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
             CData(isnan(CData) | isinf(CData)) = 0;
         end
         h.Plot.Carpet.CData = CData;
-        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin;
+        h.Plot.Carpet.YData = (0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin*10;
         h.Carpet_Axes.XLim = [0.5 size(CData,2)+0.5];
         h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
         h.Carpet_Axes.YLabel.String='Time [s]';
@@ -1068,7 +1068,7 @@ switch mode
         Exp.carpet = imagesc(...
             'Parent', Exp.axes1,...
             'CData',CData,...
-            'YData',(0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin);
+            'YData',(0.5:(size(CData,1)-0.5))/PCFData.Data{File}.PairInfo.ScanFreq*Rebin*10);
         colormap(jet);      
         
         Exp.axes2 = axes(...
