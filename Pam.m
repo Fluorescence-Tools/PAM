@@ -2634,11 +2634,30 @@ switch e.Key
             Rout=UserValues.PIE.Router(i);
             From=UserValues.PIE.From(i);
             To=UserValues.PIE.To(i); 
-            if all (size(TcspcData.MI) >= [Det Rout])
+            if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
                 MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
                 assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
                 MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;          
+                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;   
+            elseif Det == 0 %%% Combined PIE channel
+                MI =[];
+                MT = [];
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Det=UserValues.PIE.Detector(j);
+                    Rout=UserValues.PIE.Router(j);
+                    From=UserValues.PIE.From(j);
+                    To=UserValues.PIE.To(j);
+                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
+                        MI=[MI; TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];                        
+                        MT=[MT; TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];      
+                    end   
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                [MT,Index] = sort(MT);
+                MI = MI(Index);
+                assignin('base',[Name 'MI'],MI); clear MI;
+                assignin('base',[Name 'MT'],MT); clear MT;
             end
         end
     case 'Export_Raw_File'        
@@ -2652,23 +2671,58 @@ switch e.Key
             From=UserValues.PIE.From(i);
             To=UserValues.PIE.To(i);
             
-            if all (size(TcspcData.MI) >= [Det Rout])                
+            if Det>0 && all(size(TcspcData.MI) >= [Det Rout])  %%% Normal PIE channel               
                 MI=cell(FileInfo.NumberOfFiles,1);
                 MT=cell(FileInfo.NumberOfFiles,1);                
-                MI{1}=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
-                MI{1}=MI{1}(MI{1}>=From & MI{1}<=To);
-                MT{1}=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
+                MT{1}=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
+                MI{1}=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
                 MT{1}=MT{1}(MI{1}>=From & MI{1}<=To);
+                MI{1}=MI{1}(MI{1}>=From & MI{1}<=To);
                 if FileInfo.NumberOfFiles>1
                     for j=2:(FileInfo.NumberOfFiles)
-                        MI{j}=TcspcData.MI{Det,Rout}(FileInfo.LastPhoton{Det,Rout}(j-1):FileInfo.LastPhoton{Det,Rout}(j));
+                        MI{j}=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
                         MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
-                        MT{j}=TcspcData.MT{Det,Rout}(FileInfo.LastPhoton{Det,Rout}(j-1):FileInfo.LastPhoton{Det,Rout}(j));
+                        MT{j}=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
                         MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.SyncPeriod);
                     end
                 end
                 assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;          
+                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;   
+            elseif Det == 0 %%% Combined PIE channel
+                MI=cell(FileInfo.NumberOfFiles,1);
+                MT=cell(FileInfo.NumberOfFiles,1);
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Det=UserValues.PIE.Detector(j);
+                    Rout=UserValues.PIE.Router(j);
+                    From=UserValues.PIE.From(j);
+                    To=UserValues.PIE.To(j);
+                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
+                        mt=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
+                        mi=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
+                        mt=mt(mi>=From & mi<=To);
+                        mi=mi(mi>=From & mi<=To);
+                        MI{1}=[MI{1}; mi];
+                        MT{1}=[MT{1}; mt];
+                        if FileInfo.NumberOfFiles>1
+                            for k=2:FileInfo.NumberOfFiles
+                                mt=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
+                                mi=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
+                                mt=mt(mi>=From & mi<=To);
+                                mi=mi(mi>=From & mi<=To);
+                                MI{k}=[MI{k}; mi];
+                                MT{k}=[MT{k}; mt];
+                            end
+                        end
+                    end
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                for k = 1:FileInfo.NumberOfFiles
+                    [MT{k},Index] = sort(MT{k});
+                    MI{k} = MI{k}(Index);
+                end
+                assignin('base',[Name 'MI'],MI); clear MI;
+                assignin('base',[Name 'MT'],MT); clear MT;
             end
 
         end 
@@ -2678,15 +2732,25 @@ switch e.Key
         h.Progress_Axes.Color=[1 0 0];
         drawnow;
         for i=Sel
+            %%% Changes combined PIE channel name to make it compatible
+            %%% with Matlab variable names
+            if strfind(UserValues.PIE.Name{i},'Comb.:')
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+            else
+                Name = [UserValues.PIE.Name{i} '_'];
+            end
             %%% Exports intensity image
             if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 2
-                assignin('base',[UserValues.PIE.Name{i} '_Image'],PamMeta.Image{i});
+                assignin('base',[Name 'Image'],PamMeta.Image{i});
                 figure('Name',[UserValues.PIE.Name{i} '_Image']);
                 imagesc(PamMeta.Image{i});
             end
             %%% Exports mean arrival time image
             if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 3
-                assignin('base',[UserValues.PIE.Name{i} '_LT'],PamMeta.Lifetime{i});
+                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
             end
@@ -2700,9 +2764,18 @@ switch e.Key
         drawnow;
         for i=Sel
             %%% Gets the photons
-            Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i)); 
+            if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
+                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+            else
+                Stack = [];
+                for j = UserValues.PIE.Combined{i} %%% Combined channel
+                    Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                end                
+            end
             
             %%% Calculates pixel times for each line and file                
             Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
@@ -2718,7 +2791,15 @@ switch e.Key
             %%% Reshapes pixelvector to a pixel x pixel x frames matrix
             Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
             %%% Exports matrix to workspace
-            assignin('base',[UserValues.PIE.Name{i} '_Images'],Stack);            
+            if strfind(UserValues.PIE.Name{i},'Comb.:')
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                assignin('base',[Name 'Image'],Stack);
+            else
+                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
+            end          
         end
     case 'Export_Image_Tiff'
         %% Exports image stack into workspace
@@ -2731,9 +2812,18 @@ switch e.Key
             LSUserValues(1);
             for i=Sel
                 %%% Gets the photons
-                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+                if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
+                    Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+                else
+                    Stack = [];
+                    for j = UserValues.PIE.Combined{i} %%% Combined channel
+                        Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                            TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                            TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                    end
+                end
                 
                 %%% Calculates pixel times for each line and file
                 Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
@@ -3709,7 +3799,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Calculates Intensity traces
                 for j=1:Bins
                     %%% Intensity tracefor channel 1
-                    PairInt{1}(:,j)= histc(Data1{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{1}(:,j)= histc(Data1{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 1
                     CumInt = cumsum(PairInt{1}(:,j));
                     CumInt(CumInt==0)=1;
@@ -3718,7 +3808,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     CumMI = [CumMI(1); diff(CumMI)];
                     PairMI{1}(:,j) = CumMI./PairInt{1}(:,j);
                     %%% Intensity tracefor channel 2
-                    PairInt{2}(:,j)=histc(Data2{j},1:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{2}(:,j)=histc(Data2{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 2
                     CumInt = cumsum(PairInt{2}(:,j));
                     CumInt(CumInt==0)=1;

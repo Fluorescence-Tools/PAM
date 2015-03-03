@@ -606,7 +606,7 @@ switch mode
                 
                 File = h.PCF_File.Value;
                 Dist = h.PCF_Dist_Slider.Value;
-                Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+                Rebin = str2double(h.Carpet_Intensity_Rebin.String)/10;
                 Bin = round(Pos(1));
                 h.Current_Bin.String = ['Bin: ' num2str(Bin)];
                 if strcmp(h.Carpet_Cor.Checked,'on') %%% Correlation plot
@@ -634,8 +634,7 @@ switch mode
             end
             %%% Information about mean intensity/arrival time plot
             Pos=h.Intensity_Axes.CurrentPoint(1,1:2);            
-            if Pos(1)>h.Intensity_Axes.XLim(1) && Pos(1)<h.Intensity_Axes.XLim(2) && Pos(2)>h.Intensity_Axes.YLim(1) && Pos(2)<h.Intensity_Axes.YLim(2)
-                
+            if Pos(1)>h.Intensity_Axes.XLim(1) && Pos(1)<h.Intensity_Axes.XLim(2) && Pos(2)>h.Intensity_Axes.YLim(1) && Pos(2)<h.Intensity_Axes.YLim(2)                
                 Bin = round(Pos(1));
                 h.Current_Bin.String = ['Bin: ' num2str(Bin)];
                 h.Current_Time.String = '';
@@ -715,7 +714,7 @@ if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
         h.Carpet_Axes.YLim = [0.5 size(CData,1)+0.5];
         h.Carpet_Axes.YLabel.String='Correlation bins (logscale)';
     elseif strcmp(h.Carpet_Int.Checked,'on') %%% Plots intensity carpet
-        Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+        Rebin = str2double(h.Carpet_Intensity_Rebin.String)/10;
         CData = PCFData.Data{File}.PairInt{1}*...        
             PCFData.Data{File}.PairInfo.ScanFreq*...
             PCFData.Data{File}.PairInfo.Bins/...
@@ -732,7 +731,7 @@ if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
         h.Carpet_Axes.YLim = h.Plot.Carpet.YData([1 end]);
         h.Carpet_Axes.YLabel.String='Time [s]';
     elseif strcmp(h.Carpet_MI.Checked,'on') %%% Plots mean arrival time carpet
-        Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+        Rebin = str2double(h.Carpet_Intensity_Rebin.String)/10;
         CData = PCFData.Data{File}.PairMI{1};
         CData = CData(1:end-mod(size(CData,1),Rebin),:);
         CData = reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)]);
@@ -1007,7 +1006,7 @@ switch mode
                 PCFData.Data{File}.PairInfo.ScanFreq*...
                 PCFData.Data{File}.PairInfo.Bins/1000);
             
-            Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+            Rebin = str2double(h.Carpet_Intensity_Rebin.String)/10;
             CData = PCFData.Data{File}.PairInt{1};
             CData = CData(1:end-mod(size(CData,1),Rebin),:);
             CData = squeeze(sum(reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)])))*...
@@ -1020,7 +1019,7 @@ switch mode
             YData = sum(PCFData.Data{File}.PairInt{1}.*PCFData.Data{File}.PairMI{1},1)./sum(PCFData.Data{File}.PairInt{1});
             YLabel_String = 'Mean arrival time [ticks]';
             
-            Rebin = str2double(h.Carpet_Intensity_Rebin.String);
+            Rebin = str2double(h.Carpet_Intensity_Rebin.String)/10;
             CData = PCFData.Data{File}.PairMI{1};
             CData = CData(1:end-mod(size(CData,1),Rebin),:);
             CData = reshape(CData,[Rebin,size(CData,1)/Rebin,size(CData,2)]);
@@ -1549,6 +1548,7 @@ switch mode
         end
     case 5 %%% Average averaged correlations
         PCFData.Cor(end+1).Cor(:,2) = PCFData.Cor(Sel(1)).Cor(:,2);
+        PCFData.Cor(end).Cor(:,3) = 0*PCFData.Cor(Sel(1)).Cor(:,2);
         PCFData.Cor(end).Color = [0 0 0];
         Bins = 0;
         for i = Sel
@@ -1566,7 +1566,7 @@ switch mode
                                              (PCFData.Cor(end).Cor(:,1)+PCFData.Cor(i).Cor(:,1)).^2);
             Bins = Bins + numel(PCFData.Cor(i).Bins);   
         end
-        PCFData.Cor(end).Cor(:,1) = PCFData.Cor(end).Cor(:,1)/Bins;
+        PCFData.Cor(end).Cor(:,1) = PCFData.Cor(end).Cor(:,1);
         PCFData.Cor(end).Color = PCFData.Cor(end).Color/numel(Sel);
         PCFData.Cor(end).File = 0;
         PCFData.Cor(end).Bins = Bins;
@@ -1601,6 +1601,8 @@ switch mode
         for i = Sel
             [FileName,PathName] = uiputfile('*.mcor','Save Pair Correlation',UserValues.File.FCSPath);
             if any(FileName~=0)
+                UserValues.File.FCSPath = PathName;
+                LSUserValues(1);
                 Cor_Array = PCFData.Cor(i).Cor(:,1)'; %#ok<NASGU>
                 Cor_Average = PCFData.Cor(i).Cor(:,1)'; %#ok<NASGU>
                 Cor_Times = PCFData.Cor(i).Cor(:,2)'; %#ok<NASGU>
