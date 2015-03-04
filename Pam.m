@@ -3487,16 +3487,7 @@ function Correlate (~,~,mode)
 h=guidata(findobj('Tag','Pam'));
 global UserValues TcspcData FileInfo PamMeta
 
-%%% Initializes matlabpool for paralell computation
-if strcmp(h.Cor_Multi_Menu.Checked,'on')
-    Pool=gcp;
-    if isempty(Pool)
-        h.Progress_Text.String='Opening matlabpool';
-        drawnow;
-        parpool('local');
-    end
-        
-end
+
 h.Progress_Text.String = 'Correlating';
 h.Progress_Axes.Color=[1 0 0];
 
@@ -3504,9 +3495,6 @@ if mode==2 %%% For Multiple Correlation
     %%% Select file to be loaded
     [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
                                         '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
-    %%% Save path
-    UserValues.File.Path=Path;
-    LSUserValues(1);
     if ~iscell(File) && ~all(File==0) %%% If exactly one file was selected
         File={File};
         NCors=1;
@@ -3519,8 +3507,27 @@ if mode==2 %%% For Multiple Correlation
 else %%% Single File correlation
     File=[];
     NCors=1;
+    Path=UserValues.File.Path;
 end
-for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(single file correlation)    
+
+if ~isempty(NCors)
+    %%% Save path
+    UserValues.File.Path=Path;
+    LSUserValues(1);
+    %%% Initializes matlabpool for paralell computation
+    if strcmp(h.Cor_Multi_Menu.Checked,'on')
+        Pool=gcp;
+        if isempty(Pool)
+            h.Progress_Text.String='Opening matlabpool';
+            drawnow;
+            parpool('local');
+        end        
+    end
+end
+
+for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(single file correlation)   
+
+    
     if mode==2 %%% Loads new file
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,File{m},Type);
     end    

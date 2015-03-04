@@ -828,7 +828,13 @@ switch mode
         %%% Sets ALL style to last row
         Data(end,:)=UserValues.FCSFit.PlotStyleAll;
         %%% Sets previous styles to first rows
-        Data(1:numel(FCSData.Data),:) = UserValues.FCSFit.PlotStyles(1:numel(FCSData.Data),:);
+        for i=1:numel(FCSData.Data)
+            if i<=size(UserValues.FCSFit.PlotStyles,1)
+                Data(i,:) = UserValues.FCSFit.PlotStyles(i,:);
+            else
+                Data(i,:) = UserValues.FCSFit.PlotStyles(end,:);
+            end
+        end
         %%% Updates new plots to style
         for i=1:numel(FCSData.FileName)
 %            Data{i,1}=num2str(FCSMeta.Color(mod(i,6)+1,:));

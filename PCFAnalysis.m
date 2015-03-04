@@ -1569,7 +1569,7 @@ switch mode
         PCFData.Cor(end).Cor(:,1) = PCFData.Cor(end).Cor(:,1);
         PCFData.Cor(end).Color = PCFData.Cor(end).Color/numel(Sel);
         PCFData.Cor(end).File = 0;
-        PCFData.Cor(end).Bins = Bins;
+        PCFData.Cor(end).Bins = Bins:-1:1;
         PCFData.Cor(end).Dist = PCFData.Cor(Sel(1)).Dist;
         
         %%% Adds new correlation plot
@@ -1582,7 +1582,7 @@ switch mode
         Hex_color = dec2hex(round(PCFData.Cor(end).Color*255))';
         h.Cor_List.String{end+1} = ['<HTML><FONT color=#' Hex_color(:)' '>'...
             'Averaged correlation of distance ' num2str(PCFData.Cor(end).Dist)...
-            ' with ' num2str(PCFData.Cor(end).Bins) ' Bins</Font></html>'];
+            ' with ' num2str(PCFData.Cor(end).Bins(1)) ' Bins</Font></html>'];
         %%% Save new plots
         guidata(h.PCF,h);
     case 6 %%% Change color
