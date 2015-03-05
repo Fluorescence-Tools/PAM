@@ -4786,10 +4786,10 @@ PIEChannels = PIEChannels(:);
 BurstData.PIE.Detector = UserValues.PIE.Detector(PIEChannels);
 BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 %%% Save the lower and upper boundaries of the PIE Channels for later fFCS calculations
-BurstData.fFCS.From = UserValues.PIE.From(PIEChannels);
-BurstData.fFCS.To = UserValues.PIE.To(PIEChannels);
+BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
+BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
 
-%%% Save IRF
+%%% Save IRF and ScatterPattern
 switch BurstData.BAMethod
     case {1,2}
         %%% Read out the Microtime Histograms of the IRF for the two channels
@@ -4799,9 +4799,18 @@ switch BurstData.BAMethod
         hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
         hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
         hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        BurstData.fFCS.IRF = [hIRF_GGpar; hIRF_GGperp;...
+        BurstData.IRF = {hIRF_GGpar; hIRF_GGperp;...
             hIRF_GRpar; hIRF_GRperp;...
-            hIRF_RRpar; hIRF_RRperp];
+            hIRF_RRpar; hIRF_RRperp};
+        hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
+        hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
+        hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
+        hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
+        hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
+        BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
+            hScat_GRpar; hScat_GRperp;...
+            hScat_RRpar; hScat_RRperp};
     case {3,4}
         %%% Read out the Microtime Histograms of the IRF for the two channels
         hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
@@ -4816,12 +4825,30 @@ switch BurstData.BAMethod
         hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2})};
         hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
         hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
-        BurstData.fFCS.IRF = [hIRF_BBpar; hIRF_BBperp;...
+        BurstData.IRF = {hIRF_BBpar; hIRF_BBperp;...
             hIRF_BGpar; hIRF_BGperp;...
             hIRF_BRpar; hIRF_BRperp;...
             hIRF_GGpar; hIRF_GGperp;...
             hIRF_GRpar; hIRF_GRperp;...
-            hIRF_RRpar; hIRF_RRperp];
+            hIRF_RRpar; hIRF_RRperp};
+        hScat_BBpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
+        hScat_BBperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
+        hScat_BGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
+        hScat_BGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
+        hScat_BRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
+        hScat_BRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
+        hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1})};
+        hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2})};
+        hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1})};
+        hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2})};
+        hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
+        hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
+        BurstData.ScatterPattern = {hScat_BBpar; hScat_BBperp;...
+            hScat_BGpar; hScat_BGperp;...
+            hScat_BRpar; hScat_BRperp;...
+            hScat_GGpar; hScat_GGperp;...
+            hScat_GRpar; hScat_GRperp;...
+            hScat_RRpar; hScat_RRperp};
 end
 
 %%% get path from spc files, create folder
@@ -5483,7 +5510,7 @@ function BurstLifetime(~,~)
 global UserValues BurstData TauFitBurstData
 h = guidata(findobj('Tag','Pam'));
 %%% Check if IRF and Scatter exists
-if any(isempty(UserValues.PIE.IRF)) || any(isempty(UserValues.PIE.ScatterPattern))
+if any(isempty(BurstData.IRF)) || any(isempty(BurstData.ScatterPattern))
     warndlg('Define IRF and Scatter first.','No IRF found!');
     return;
 end
@@ -5514,21 +5541,21 @@ Channel = vertcat(Channel{:});
 switch BurstData.BAMethod
     case {1,2} %two color MFD  
         %%% Read out the indices of the PIE channels
-        idx_GGpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
-        idx_GGperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
-        idx_RRpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1},UserValues.PIE.Name));
-        idx_RRperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2},UserValues.PIE.Name));
+        idx_GGpar = 1;
+        idx_GGperp = 2;
+        idx_RRpar = 5;
+        idx_RRperp = 6;
         
         %%% Calculate the MI histograms
-        max_MIBins_GGpar = min([numel(UserValues.PIE.IRF{idx_GGpar}) numel(UserValues.PIE.ScatterPattern{idx_GGpar})]);
-        max_MIBins_GGperp = min([numel(UserValues.PIE.IRF{idx_GGperp}) numel(UserValues.PIE.ScatterPattern{idx_GGperp})]);
-        max_MIBins_RRpar = min([numel(UserValues.PIE.IRF{idx_RRpar}) numel(UserValues.PIE.ScatterPattern{idx_RRpar})]);
-        max_MIBins_RRperp = min([numel(UserValues.PIE.IRF{idx_RRperp}) numel(UserValues.PIE.ScatterPattern{idx_RRperp})]);
+        max_MIBins_GGpar = min([numel(BurstData.IRF{idx_GGpar}) numel(BurstData.ScatterPattern{idx_GGpar})]);
+        max_MIBins_GGperp = min([numel(BurstData.IRF{idx_GGperp}) numel(BurstData.ScatterPattern{idx_GGperp})]);
+        max_MIBins_RRpar = min([numel(BurstData.IRF{idx_RRpar}) numel(BurstData.ScatterPattern{idx_RRpar})]);
+        max_MIBins_RRperp = min([numel(BurstData.IRF{idx_RRperp}) numel(BurstData.ScatterPattern{idx_RRperp})]);
         
-        GGpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
-        GGperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
-        RRpar = histc(Microtime(Channel == 5), (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
-        RRperp = histc(Microtime(Channel == 6), (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
+        GGpar = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+        GGperp = histc(Microtime(Channel == 2), (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+        RRpar = histc(Microtime(Channel == 5), (BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+        RRperp = histc(Microtime(Channel == 6), (BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
         
         %%% Store Histograms in TauFitBurstData
         TauFitBurstData.hMI_Par{1} = GGpar;
@@ -5536,10 +5563,10 @@ switch BurstData.BAMethod
         TauFitBurstData.hMI_Par{2} = RRpar;
         TauFitBurstData.hMI_Per{2} = RRperp;
         %%% Read out the Microtime Histograms of the IRF for the two channels
-        hIRF_GGpar = UserValues.PIE.IRF{idx_GGpar}((BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
-        hIRF_GGperp = UserValues.PIE.IRF{idx_GGperp}((BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
-        hIRF_RRpar = UserValues.PIE.IRF{idx_RRpar}((BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
-        hIRF_RRperp = UserValues.PIE.IRF{idx_RRperp}((BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
+        hIRF_GGpar = BurstData.IRF{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+        hIRF_GGperp = BurstData.IRF{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+        hIRF_RRpar = BurstData.IRF{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+        hIRF_RRperp = BurstData.IRF{idx_RRperp}((BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
         
         TauFitBurstData.hIRF_Par{1} = hIRF_GGpar;
         TauFitBurstData.hIRF_Par{2} = hIRF_RRpar;
@@ -5552,10 +5579,10 @@ switch BurstData.BAMethod
         end
         
         %%% Read out the Microtime Histograms of the Scatter for the two channels
-        hScatter_GGpar = UserValues.PIE.ScatterPattern{idx_GGpar}((BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])));
-        hScatter_GGperp = UserValues.PIE.ScatterPattern{idx_GGperp}((BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])));
-        hScatter_RRpar = UserValues.PIE.ScatterPattern{idx_RRpar}((BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])));
-        hScatter_RRperp = UserValues.PIE.ScatterPattern{idx_RRperp}((BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])));
+        hScatter_GGpar = BurstData.ScatterPattern{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+        hScatter_GGperp = BurstData.ScatterPattern{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+        hScatter_RRpar = BurstData.ScatterPattern{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+        hScatter_RRperp = BurstData.ScatterPattern{idx_RRperp}((BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
         
         TauFitBurstData.hScatter_Par{1} = hScatter_GGpar;
         TauFitBurstData.hScatter_Par{2} = hScatter_RRpar;
@@ -5563,32 +5590,32 @@ switch BurstData.BAMethod
         TauFitBurstData.hScatter_Per{2} = hScatter_RRperp;
         
         %%% Generate XData
-        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_GGpar])) - BurstData.fFCS.From(1);
-        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_GGperp])) - BurstData.fFCS.From(2);
-        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(5):min([BurstData.fFCS.To(5) max_MIBins_RRpar])) - BurstData.fFCS.From(5);
-        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(6):min([BurstData.fFCS.To(6) max_MIBins_RRperp])) - BurstData.fFCS.From(6);
+        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])) - BurstData.PIE.From(1);
+        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])) - BurstData.PIE.From(2);
+        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])) - BurstData.PIE.From(5);
+        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])) - BurstData.PIE.From(6);
     case {3,4} %%% Three-color MFD
          %%% Read out the indices of the PIE channels
-        idx_BBpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1},UserValues.PIE.Name));
-        idx_BBperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2},UserValues.PIE.Name));
-        idx_GGpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1},UserValues.PIE.Name));
-        idx_GGperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2},UserValues.PIE.Name));
-        idx_RRpar = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1},UserValues.PIE.Name));
-        idx_RRperp = (strcmp(UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2},UserValues.PIE.Name));
+        idx_BBpar = 1;
+        idx_BBperp = 2;
+        idx_GGpar = 7;
+        idx_GGperp = 8;
+        idx_RRpar = 11;
+        idx_RRperp = 12;
         
-        max_MIBins_BBpar = min([numel(UserValues.PIE.IRF{idx_BBpar}) numel(UserValues.PIE.ScatterPattern{idx_BBpar})]);
-        max_MIBins_BBperp = min([numel(UserValues.PIE.IRF{idx_BBperp}) numel(UserValues.PIE.ScatterPattern{idx_BBperp})]);
-        max_MIBins_GGpar = min([numel(UserValues.PIE.IRF{idx_GGpar}) numel(UserValues.PIE.ScatterPattern{idx_GGpar})]);
-        max_MIBins_GGperp = min([numel(UserValues.PIE.IRF{idx_GGperp}) numel(UserValues.PIE.ScatterPattern{idx_GGperp})]);
-        max_MIBins_RRpar = min([numel(UserValues.PIE.IRF{idx_RRpar}) numel(UserValues.PIE.ScatterPattern{idx_RRpar})]);
-        max_MIBins_RRperp = min([numel(UserValues.PIE.IRF{idx_RRperp}) numel(UserValues.PIE.ScatterPattern{idx_RRperp})]);
+        max_MIBins_BBpar = min([numel(BurstData.IRF{idx_BBpar}) numel(BurstData.ScatterPattern{idx_BBpar})]);
+        max_MIBins_BBperp = min([numel(BurstData.IRF{idx_BBperp}) numel(BurstData.ScatterPattern{idx_BBperp})]);
+        max_MIBins_GGpar = min([numel(BurstData.IRF{idx_GGpar}) numel(BurstData.ScatterPattern{idx_GGpar})]);
+        max_MIBins_GGperp = min([numel(BurstData.IRF{idx_GGperp}) numel(BurstData.ScatterPattern{idx_GGperp})]);
+        max_MIBins_RRpar = min([numel(BurstData.IRF{idx_RRpar}) numel(BurstData.ScatterPattern{idx_RRpar})]);
+        max_MIBins_RRperp = min([numel(BurstData.IRF{idx_RRperp}) numel(BurstData.ScatterPattern{idx_RRperp})]);
         %%% Calculate the MI histograms
-        BBpar = histc(Microtime(Channel == 1), (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar])));
-        BBperp = histc(Microtime(Channel == 2), (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp])));
-        GGpar = histc(Microtime(Channel == 7), (BurstData.fFCS.From(7):min([BurstData.fFCS.To(7) max_MIBins_GGpar])));
-        GGperp = histc(Microtime(Channel == 8), (BurstData.fFCS.From(8):min([BurstData.fFCS.To(8) max_MIBins_GGperp])));
-        RRpar = histc(Microtime(Channel == 11), (BurstData.fFCS.From(11):min([BurstData.fFCS.To(11) max_MIBins_RRpar])));
-        RRperp = histc(Microtime(Channel == 12), (BurstData.fFCS.From(12):min([BurstData.fFCS.To(12) max_MIBins_RRperp])));
+        BBpar = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar])));
+        BBperp = histc(Microtime(Channel == 2), (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_BBperp])));
+        GGpar = histc(Microtime(Channel == 7), (BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar])));
+        GGperp = histc(Microtime(Channel == 8), (BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp])));
+        RRpar = histc(Microtime(Channel == 11), (BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar])));
+        RRperp = histc(Microtime(Channel == 12), (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])));
         
         %%% Store Histograms in TauFitBurstData
         TauFitBurstData.hMI_Par{1} = BBpar;
@@ -5598,12 +5625,12 @@ switch BurstData.BAMethod
         TauFitBurstData.hMI_Par{3} = RRpar;
         TauFitBurstData.hMI_Per{3} = RRperp;
         %%% Read out the Microtime Histograms of the IRF for the two channels
-        hIRF_BBpar = UserValues.PIE.IRF{idx_BBpar}(BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar]));
-        hIRF_BBperp = UserValues.PIE.IRF{idx_BBperp}(BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp]));
-        hIRF_GGpar = UserValues.PIE.IRF{idx_GGpar}(BurstData.fFCS.From(7):min([BurstData.fFCS.To(7) max_MIBins_GGpar]));
-        hIRF_GGperp = UserValues.PIE.IRF{idx_GGperp}(BurstData.fFCS.From(8):min([BurstData.fFCS.To(8) max_MIBins_GGperp]));
-        hIRF_RRpar = UserValues.PIE.IRF{idx_RRpar}(BurstData.fFCS.From(11):min([BurstData.fFCS.To(11) max_MIBins_RRpar]));
-        hIRF_RRperp = UserValues.PIE.IRF{idx_RRperp}(BurstData.fFCS.From(12):min([BurstData.fFCS.To(12) max_MIBins_RRperp]));
+        hIRF_BBpar = BurstData.IRF{idx_BBpar}(BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar]));
+        hIRF_BBperp = BurstData.IRF{idx_BBperp}(BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_BBperp]));
+        hIRF_GGpar = BurstData.IRF{idx_GGpar}(BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar]));
+        hIRF_GGperp = BurstData.IRF{idx_GGperp}(BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp]));
+        hIRF_RRpar = BurstData.IRF{idx_RRpar}(BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar]));
+        hIRF_RRperp = BurstData.IRF{idx_RRperp}(BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp]));
         
         TauFitBurstData.hIRF_Par{1} = hIRF_BBpar;
         TauFitBurstData.hIRF_Par{2} = hIRF_GGpar;
@@ -5618,12 +5645,12 @@ switch BurstData.BAMethod
         end
         
         %%% Read out the Microtime Histograms of the IRF for the two channels
-        hScatter_BBpar = UserValues.PIE.ScatterPattern{idx_BBpar}(BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar]));
-        hScatter_BBperp = UserValues.PIE.ScatterPattern{idx_BBperp}(BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp]));
-        hScatter_GGpar = UserValues.PIE.ScatterPattern{idx_GGpar}(BurstData.fFCS.From(7):min([BurstData.fFCS.To(7) max_MIBins_GGpar]));
-        hScatter_GGperp = UserValues.PIE.ScatterPattern{idx_GGperp}(BurstData.fFCS.From(8):min([BurstData.fFCS.To(8) max_MIBins_GGperp]));
-        hScatter_RRpar = UserValues.PIE.ScatterPattern{idx_RRpar}(BurstData.fFCS.From(11):min([BurstData.fFCS.To(11) max_MIBins_RRpar]));
-        hScatter_RRperp = UserValues.PIE.ScatterPattern{idx_RRperp}(BurstData.fFCS.From(12):min([BurstData.fFCS.To(12) max_MIBins_RRperp]));
+        hScatter_BBpar = BurstData.ScatterPattern{idx_BBpar}(BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar]));
+        hScatter_BBperp = BurstData.ScatterPattern{idx_BBperp}(BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_BBperp]));
+        hScatter_GGpar = BurstData.ScatterPattern{idx_GGpar}(BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar]));
+        hScatter_GGperp = BurstData.ScatterPattern{idx_GGperp}(BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp]));
+        hScatter_RRpar = BurstData.ScatterPattern{idx_RRpar}(BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar]));
+        hScatter_RRperp = BurstData.ScatterPattern{idx_RRperp}(BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp]));
         
         TauFitBurstData.hIRF_Par{1} = hScatter_BBpar;
         TauFitBurstData.hIRF_Par{2} = hScatter_GGpar;
@@ -5633,12 +5660,12 @@ switch BurstData.BAMethod
         TauFitBurstData.hIRF_Per{3} = hScatter_RRperp;
         
         %%% Generate XData
-        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.fFCS.To(1) max_MIBins_BBpar])) - BurstData.fFCS.From(1);
-        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.fFCS.To(2) max_MIBins_BBperp])) - BurstData.fFCS.From(2);
-        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(7):min([BurstData.fFCS.To(7) max_MIBins_GGpar])) - BurstData.fFCS.From(7);
-        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(8):min([BurstData.fFCS.To(8) max_MIBins_GGperp])) - BurstData.fFCS.From(8);
-        TauFitBurstData.XData_Par{3} = (BurstData.fFCS.From(11):min([BurstData.fFCS.To(11) max_MIBins_RRpar])) - BurstData.fFCS.From(11);
-        TauFitBurstData.XData_Per{3} = (BurstData.fFCS.From(12):min([BurstData.fFCS.To(12) max_MIBins_RRperp])) - BurstData.fFCS.From(12);
+        TauFitBurstData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar])) - BurstData.PIE.From(1);
+        TauFitBurstData.XData_Per{1} = (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_BBperp])) - BurstData.PIE.From(2);
+        TauFitBurstData.XData_Par{2} = (BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar])) - BurstData.PIE.From(7);
+        TauFitBurstData.XData_Per{2} = (BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp])) - BurstData.PIE.From(8);
+        TauFitBurstData.XData_Par{3} = (BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar])) - BurstData.PIE.From(11);
+        TauFitBurstData.XData_Per{3} = (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])) - BurstData.PIE.From(12);
 end
 %%% Read out relevant parameters
 TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/double(BurstData.FileInfo.MI_Bins);

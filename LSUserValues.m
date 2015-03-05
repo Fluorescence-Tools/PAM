@@ -477,13 +477,6 @@ if Mode==0 %%% Loads user values
             disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
     end
     P.TauFit.PIEChannelSelection = S.TauFit.PIEChannelSelection;
-    %%% Checks, if TauFit.ScatterPattern exists
-    %%% (This fields stores the Microtime Pattern of a Scattter measurement)
-    if ~isfield (S.TauFit,'ScatterPattern')
-        S.TauFit.ScatterPattern=[];
-            disp('UserValues.TauFit.ScatterPattern was incomplete');    
-    end
-    P.TauFit.ScatterPattern = S.TauFit.ScatterPattern;
     %%% Checks, if TauFit.blue exists
     %%% (Gfactor for the blue channels)
     if ~isfield (S.TauFit,'Gblue')

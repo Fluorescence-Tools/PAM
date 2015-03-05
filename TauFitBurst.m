@@ -1168,12 +1168,17 @@ case {1,2}
     Par1 = Par1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
     Per1 = circshift(Per1,[0,TauFitBurstData.ShiftPer{1}]);
     Per1 = Per1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
+    
+    Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+    clear Par1 Per1
+    
     Par2 = Par2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
     Per2 = circshift(Per2,[0,TauFitBurstData.ShiftPer{2}]);
     Per2 = Per2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
-    %%% Create total microtime
-    Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+   
     Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+    clear Par2 Per2
+    
     Length{1} = size(Mic{1},2)-1;
     Length{2} = size(Mic{2},2)-1;
     %%% Rebin to improve speed
@@ -1183,8 +1188,8 @@ case {1,2}
         Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
         Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
     end
-    Mic{1} = Mic1';
-    Mic{2} = Mic2';
+    Mic{1} = Mic1'; clear Mic1;
+    Mic{2} = Mic2'; clear Mic2;
     %% Old
 %     %%% Histogram the Data
 %     Par{1} = cellfun(@(x,y) histc(x(y == 1)', (BurstData.fFCS.From(1):BurstData.fFCS.To(1))),Microtime,Channel,'UniformOutput',false);
@@ -1369,18 +1374,23 @@ case {3,4}
     Per1 = circshift(Per1,[0,TauFitBurstData.ShiftPer{1}]);
     Per1 = Per1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
     
+    Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+    clear Par1 Per
+    
     Par2 = Par2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
     Per2 = circshift(Per2,[0,TauFitBurstData.ShiftPer{2}]);
     Per2 = Per2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
     
+    Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+    clear Par2 Per2
+    
     Par3 = Par3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
     Per3 = circshift(Per3,[0,TauFitBurstData.ShiftPer{3}]);
     Per3 = Per3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
-    
-    %%% Create total microtime
-    Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
-    Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+
     Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
+    clear Par3 Per3
+    
     Length{1} = size(Mic{1},2)-1;
     Length{2} = size(Mic{2},2)-1;
     Length{3} = size(Mic{3},2)-1;
@@ -1393,9 +1403,9 @@ case {3,4}
         Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
         Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
     end
-    Mic{1} = Mic1';
-    Mic{2} = Mic2';
-    Mic{3} = Mic3';
+    Mic{1} = Mic1'; clear Mic1;
+    Mic{2} = Mic2'; clear Mic2;
+    Mic{3} = Mic3'; clear Mic3;
     
     %% Old
     %%% Histogram the Data

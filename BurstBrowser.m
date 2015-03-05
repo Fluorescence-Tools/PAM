@@ -2865,11 +2865,11 @@ end
 MI_par{1} = [];MI_par{2} = [];
 MI_perp{1} = [];MI_perp{2} = [];
 %%% read out the limits of the PIE channels
-limit_low_par = [0, BurstData.fFCS.From(ParChans)];
-limit_high_par = [0, BurstData.fFCS.To(ParChans)];
+limit_low_par = [0, BurstData.PIE.From(ParChans)];
+limit_high_par = [0, BurstData.PIE.To(ParChans)];
 dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
-limit_low_perp = [0,BurstData.fFCS.From(PerpChans)];
-limit_high_perp = [0, BurstData.fFCS.To(PerpChans)];
+limit_low_perp = [0,BurstData.PIE.From(PerpChans)];
+limit_high_perp = [0, BurstData.PIE.To(PerpChans)];
 dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
@@ -2980,31 +2980,30 @@ BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_
 axis(h.axes_fFCS_DecayPerp,'tight');
 
 %%% Add IRF Pattern if existent
-try
-    if isfield(BurstData.fFCS,'IRF')
-        hIRF_par = [];
-        hIRF_perp = [];
-        for i = 1:numel(ParChans)
-            hIRF_par = [hIRF_par, BurstData.fFCS.IRF(ParChans(i),limit_low_par(i+1):limit_high_par(i+1))];
-            hIRF_perp = [hIRF_perp, BurstData.fFCS.IRF(PerpChans(i),limit_low_perp(i+1):limit_high_perp(i+1))];
-        end
-        %%% normaize with respect to the total decay histogram
-        hIRF_par = hIRF_par./max(hIRF_par).*max(BurstMeta.fFCS.hist_MItotal_par);
-        hIRF_perp = hIRF_perp./max(hIRF_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
-        %%% store in BurstMeta
-        BurstMeta.fFCS.hIRF_par = hIRF_par;
-        BurstMeta.fFCS.hIRF_perp = hIRF_perp;
-        %%% Update Plots
-        BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
-        BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hIRF_par;
-        BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
-        BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hIRF_perp;
-    elseif ~isfield(BurstData.fFCS,'IRF')
-        %%% Hide IRF plots
-        BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
-        BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
+if isfield(BurstData,'ScatterPattern')
+    hScat_par = [];
+    hScat_perp = [];
+    for i = 1:numel(ParChans)
+        hScat_par = [hScat_par, BurstData.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
+        hScat_perp = [hScat_perp, BurstData.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
     end
+    %%% normaize with respect to the total decay histogram
+    hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par);
+    hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
+    %%% store in BurstMeta
+    BurstMeta.fFCS.hScat_par = hScat_par;
+    BurstMeta.fFCS.hScat_perp = hScat_perp;
+    %%% Update Plots
+    BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
+    BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;
+    BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
+elseif ~isfield(BurstData.fFCS,'IRF')
+    %%% Hide IRF plots
+    BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
+    BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3015,9 +3014,9 @@ h = guidata(obj);
 %%% Concatenate Decay Patterns
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
-if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    if isfield(BurstMeta.fFCS,'hIRF_par')
-        Decay_par = [Decay_par, BurstMeta.fFCS.hIRF_par(1:size(Decay_par,1))'];
+if isfield(BurstData,'ScatterPattern') %%% include scatter pattern
+    if isfield(BurstMeta.fFCS,'hScat_par')
+        Decay_par = [Decay_par, BurstMeta.fFCS.hScat_par(1:size(Decay_par,1))'];
     end
 end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
@@ -3025,9 +3024,9 @@ Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
 Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
-if isfield(BurstData.fFCS,'IRF') %%% include scatter pattern
-    if isfield(BurstMeta.fFCS,'hIRF_perp')
-        Decay_perp = [Decay_perp, BurstMeta.fFCS.hIRF_perp(1:size(Decay_perp,1))'];
+if isfield(BurstData,'ScatterPattern') %%% include scatter pattern
+    if isfield(BurstMeta.fFCS,'hScat_perp')
+        Decay_perp = [Decay_perp, BurstMeta.fFCS.hScat_perp(1:size(Decay_perp,1))'];
     end
 end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
