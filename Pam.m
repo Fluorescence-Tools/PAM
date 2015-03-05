@@ -4864,7 +4864,7 @@ BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
 BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
 
-%%% Save IRF and ScatterPattern
+%%% Save IRF and ScatterPattern, as well as background counts!
 switch BurstData.BAMethod
     case {1,2}
         %%% Read out the Microtime Histograms of the IRF for the two channels
@@ -4886,6 +4886,10 @@ switch BurstData.BAMethod
         BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
             hScat_GRpar; hScat_GRperp;...
             hScat_RRpar; hScat_RRperp};
+        
+        BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
+            UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
+            UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
     case {3,4}
         %%% Read out the Microtime Histograms of the IRF for the two channels
         hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
@@ -4924,6 +4928,13 @@ switch BurstData.BAMethod
             hScat_GGpar; hScat_GGperp;...
             hScat_GRpar; hScat_GRperp;...
             hScat_RRpar; hScat_RRperp};
+        
+        BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_BBpar, UserValues.BurstBrowser.Corrections.Background_BBperp,...
+            UserValues.BurstBrowser.Corrections.Background_BGpar, UserValues.BurstBrowser.Corrections.Background_BGperp,...
+            UserValues.BurstBrowser.Corrections.Background_BRpar, UserValues.BurstBrowser.Corrections.Background_BRperp
+            UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
+            UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
+            UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
 end
 
 %%% get path from spc files, create folder
@@ -5217,7 +5228,7 @@ function NirFilter(obj,~)
 global BurstData
 h = guidata(obj);
 tau_2CDE = str2double(h.NirFilter_Edit.String);
-
+h.Progress_Text.String = 'Preparing Data...';drawnow;
 if isnan(tau_2CDE)
     h.NirFilter_Edit.String =  '100';
     tau_2CDE = 100;
@@ -5227,8 +5238,7 @@ end
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
 
-h.Progress_Text.String = 'Calculating 2CDE Filter...';
-drawnow;
+h.Progress_Text.String = 'Calculating 2CDE Filter...';drawnow;
 
 if any(BurstData.BAMethod == [1,2]) %2 Color Data
     FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
