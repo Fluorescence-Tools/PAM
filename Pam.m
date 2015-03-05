@@ -5298,7 +5298,6 @@ h = guidata(findobj('Tag','Pam'));
 if obj ==  h.BurstSearchPreview_Button %%% recalculate the preview
     %%% Set Progress Bar
     h.Progress_Text.String = 'Calculating Burst Search Preview...';
-    h.Progress_Axes.Color=[1 0 0];
     drawnow;
 
     %bintime for display, based on the time window used for the burst analysis

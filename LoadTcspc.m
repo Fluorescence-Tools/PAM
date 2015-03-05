@@ -366,9 +366,16 @@ end
 Progress(1,h.Progress_Axes, h.Progress_Text);
 %%% Applies detector shift immediately after loading data
 Shift_Detector([],[],'load')
+
 %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
 Update_Data([],[],0,0);
 Update_Display([],[],0);
+
+%%% Resets GUI Elements of BurstSearch
+h.BurstLifetime_Button.Enable = 'off';
+h.BurstLifetime_Button.ForegroundColor = [1 1 1];
+h.NirFilter_Button.Enable = 'off';
+h.NirFilter_Button.ForegroundColor = [1 1 1];
 
 
 
