@@ -4569,39 +4569,41 @@ switch obj
                 %%% move axes up and left
                 panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.0325 0.0325 0 0];
                 %%% Add rotational correlation time
-                switch i
-                    case 1
-                        %%%rRR vs TauRR
-                        if ~isempty(BurstData.Parameters.rhoRR)
-                            str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoRR(1));
-                            if numel(BurstData.Parameters.rhoRR) > 1
-                                str = [str(1:4) '_1' str(5:end)];
-                                for j=2:numel(BurstData.Parameters.rhoRR)
-                                    str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoRR(j))];
+                if isfield(BurstData,'Parameters')
+                    switch i
+                        case 1
+                            %%%rRR vs TauRR
+                            if ~isempty(BurstData.Parameters.rhoRR)
+                                str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoRR(1));
+                                if numel(BurstData.Parameters.rhoRR) > 1
+                                    str = [str(1:4) '_1' str(5:end)];
+                                    for j=2:numel(BurstData.Parameters.rhoRR)
+                                        str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoRR(j))];
+                                    end
                                 end
                             end
-                        end
-                        text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
-                            'Parent',panel_copy.Children(i),...
-                            'FontSize',20);
-                            %'BackgroundColor',[1 1 1],...
-                            %'EdgeColor',[0 0 0]);
-                    case 2
-                        %%%rGG vs TauGG
-                        if ~isempty(BurstData.Parameters.rhoGG)
-                            str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoGG(1));
-                            if numel(BurstData.Parameters.rhoGG) > 1
-                                str = [str(1:4) '_1' str(5:end)];
-                                for j=2:numel(BurstData.Parameters.rhoGG)
-                                    str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoGG(j))];
+                            text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',20);
+                                %'BackgroundColor',[1 1 1],...
+                                %'EdgeColor',[0 0 0]);
+                        case 2
+                            %%%rGG vs TauGG
+                            if ~isempty(BurstData.Parameters.rhoGG)
+                                str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoGG(1));
+                                if numel(BurstData.Parameters.rhoGG) > 1
+                                    str = [str(1:4) '_1' str(5:end)];
+                                    for j=2:numel(BurstData.Parameters.rhoGG)
+                                        str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoGG(j))];
+                                    end
                                 end
                             end
-                        end
-                        text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
-                            'Parent',panel_copy.Children(i),...
-                            'FontSize',20);
-                            %'BackgroundColor',[1 1 1],...
-                            %'EdgeColor',[0 0 0]);
+                            text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',20);
+                                %'BackgroundColor',[1 1 1],...
+                                %'EdgeColor',[0 0 0]);
+                    end
                 end
             end
         end
