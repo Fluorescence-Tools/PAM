@@ -2918,44 +2918,23 @@ for i = 1:numel(ParChans)
         MT_total(CH_total == PerpChans(i)));
 end
 
-%%% Downsampling
-MI_total_par = double(MI_total_par);
-MI_total_perp = double(MI_total_perp);
-%%% redistribute to 1024 channels (hardcoded fornow)
-new_bin_number = 1024;
-maxMIpar = max(MI_total_par); maxMIper = max(MI_total_perp);
-MI_total_par = ceil(new_bin_number.*MI_total_par./maxMIpar);
-MI_total_perp = ceil(new_bin_number.*MI_total_perp./maxMIper);
-for i = 1:2
-    MI_par{i} = double(MI_par{i});
-    MI_perp{i} = double(MI_perp{i});
-    MI_par{i} = ceil(new_bin_number.*MI_par{i}./maxMIpar);
-    MI_perp{i} = ceil(new_bin_number.*MI_perp{i}./maxMIper);
-end
-
 %%% sort photons
 [MT_total_par,idx] = sort(MT_total_par);
 MI_total_par = MI_total_par(idx);
 [MT_total_perp,idx] = sort(MT_total_perp);
 MI_total_perp = MI_total_perp(idx);
-% for i = 1:2 %%% loop over species
-%     [MT_par{i},idx] = sort(MT_par{i});
-%     MI_par{i} = MI_par{i}(idx);
-%     [MT_perp{i},idx] = sort(MT_perp{i});
-%     MI_perp{i} = MI_perp{i}(idx);
-% end
 
 %%% Calculate the histograms
 maxTAC_par = max(MI_total_par);
 maxTAC_perp = max(MI_total_perp);
-BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par+1);%%% Add one because of how histc treats the bin edges
-BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp+1);
+BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par);
+BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp);
 for i = 1:2
-    BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par);
+    BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par); 
     BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
 end
-BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par);
-BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
+BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par); 
+BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp); 
 
 %%% Store Photon Vectors of total photons in BurstMeta
 BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
@@ -2989,9 +2968,10 @@ if isfield(BurstData,'ScatterPattern')
     %%% normaize with respect to the total decay histogram
     hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par);
     hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
+
     %%% store in BurstMeta
-    BurstMeta.fFCS.hScat_par = hScat_par;
-    BurstMeta.fFCS.hScat_perp = hScat_perp;
+    BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
+    BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
     %%% Update Plots
     BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
     BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;

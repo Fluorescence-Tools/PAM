@@ -1150,15 +1150,15 @@ case {1,2}
     end
     
     %%% Create array of histogrammed microtimes
-    Par1 = zeros(numel(Microtime),numel(BurstData.fFCS.From(1):BurstData.fFCS.To(1)));
-    Per1 = zeros(numel(Microtime),numel(BurstData.fFCS.From(2):BurstData.fFCS.To(2)));
-    Par2 = zeros(numel(Microtime),numel(BurstData.fFCS.From(5):BurstData.fFCS.To(5)));
-    Per2 = zeros(numel(Microtime),numel(BurstData.fFCS.From(6):BurstData.fFCS.To(6)));
+    Par1 = zeros(numel(Microtime),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+    Per1 = zeros(numel(Microtime),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+    Par2 = zeros(numel(Microtime),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
+    Per2 = zeros(numel(Microtime),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
     parfor i = 1:numel(Microtime)
-        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.fFCS.From(1):BurstData.fFCS.To(1)))';
-        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.fFCS.From(2):BurstData.fFCS.To(2)))';
-        Par2(i,:) = histc(Microtime{i}(Channel{i} == 5),(BurstData.fFCS.From(5):BurstData.fFCS.To(5)))';
-        Per2(i,:) = histc(Microtime{i}(Channel{i} == 6),(BurstData.fFCS.From(6):BurstData.fFCS.To(6)))';
+        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+        Par2(i,:) = histc(Microtime{i}(Channel{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+        Per2(i,:) = histc(Microtime{i}(Channel{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
     end
     
     Mic{1} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1}));
@@ -1349,20 +1349,20 @@ case {3,4}
     end
     
     %%% Create array of histogrammed microtimes
-    Par1 = zeros(numel(Microtime),numel(BurstData.fFCS.From(1):BurstData.fFCS.To(1)));
-    Per1 = zeros(numel(Microtime),numel(BurstData.fFCS.From(2):BurstData.fFCS.To(2)));
-    Par2 = zeros(numel(Microtime),numel(BurstData.fFCS.From(7):BurstData.fFCS.To(7)));
-    Per2 = zeros(numel(Microtime),numel(BurstData.fFCS.From(8):BurstData.fFCS.To(8)));
-    Par3 = zeros(numel(Microtime),numel(BurstData.fFCS.From(11):BurstData.fFCS.To(11)));
-    Per3 = zeros(numel(Microtime),numel(BurstData.fFCS.From(12):BurstData.fFCS.To(12)));
+    Par1 = zeros(numel(Microtime),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+    Per1 = zeros(numel(Microtime),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+    Par2 = zeros(numel(Microtime),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
+    Per2 = zeros(numel(Microtime),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
+    Par3 = zeros(numel(Microtime),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
+    Per3 = zeros(numel(Microtime),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
     
     parfor i = 1:numel(Microtime)
-        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.fFCS.From(1):BurstData.fFCS.To(1)))';
-        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.fFCS.From(2):BurstData.fFCS.To(2)))';
-        Par2(i,:) = histc(Microtime{i}(Channel{i} == 7),(BurstData.fFCS.From(7):BurstData.fFCS.To(7)))';
-        Per2(i,:) = histc(Microtime{i}(Channel{i} == 8),(BurstData.fFCS.From(8):BurstData.fFCS.To(8)))';
-        Par3(i,:) = histc(Microtime{i}(Channel{i} == 11),(BurstData.fFCS.From(11):BurstData.fFCS.To(11)))';
-        Per3(i,:) = histc(Microtime{i}(Channel{i} == 12),(BurstData.fFCS.From(12):BurstData.fFCS.To(12)))';
+        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+        Par2(i,:) = histc(Microtime{i}(Channel{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
+        Per2(i,:) = histc(Microtime{i}(Channel{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
+        Par3(i,:) = histc(Microtime{i}(Channel{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
+        Per3(i,:) = histc(Microtime{i}(Channel{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
     end
     
     Mic{1} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1}));

@@ -164,6 +164,27 @@ end
         'Label','Plot as log scale',...
         'Tag','MI_Log',...
         'Callback',@MI_Axes_Menu);
+    %%% Contextmenu for individual microtime axes
+    h.MI_Menu_Individual = uicontextmenu;
+    %%% Menu for Log scal plotting
+    h.MI_Log_Ind = uimenu(...
+        'Parent',h.MI_Menu_Individual,...
+        'Label','Plot as log scale',...
+        'Tag','MI_Log',...
+        'Callback',@MI_Axes_Menu);
+    %%% Menu for Enabling/Disabling IRF Plotting
+    h.MI_IRF = uimenu(...
+        'Parent',h.MI_Menu_Individual,...
+        'Label','Plot IRF',...
+        'Separator','on',...
+        'Tag','MI_IRF',...
+        'Callback',@Calculate_Settings);
+    %%% Menu for Enabling/Disabling Scatter Pattern Plotting
+    h.MI_ScatterPattern = uimenu(...
+        'Parent',h.MI_Menu_Individual,...
+        'Label','Plot Scatter Pattern',...
+        'Tag','MI_ScatterPattern',...
+        'Callback',@Calculate_Settings);
     %%% All microtime axes
     h.MI_All_Axes = axes(...
         'Parent',h.MI_All_Panel,...
@@ -2019,6 +2040,22 @@ elseif obj == h.Cor_Divider_Menu
         h.Cor_Divider_Menu.Label=['Divider: ' cell2mat(Divider)];
        UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));       
     end
+elseif obj == h.MI_IRF
+    %%% Switches IRF Check Display
+    if strcmp(h.MI_IRF.Checked,'on')
+        h.MI_IRF.Checked = 'off';
+    else
+        h.MI_IRF.Checked = 'on';
+    end
+    Update_Display([],[],4);
+elseif obj == h.MI_ScatterPattern
+    %%% Switches IRF Check Display
+    if strcmp(h.MI_ScatterPattern.Checked,'on')
+        h.MI_ScatterPattern.Checked = 'off';
+    else
+        h.MI_ScatterPattern.Checked = 'on';
+    end
+    Update_Display([],[],4);
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -2245,6 +2282,29 @@ if any(mode==4)
             h.Plots.MI_Ind{i}.Color=UserValues.Detector.Color(UserValues.Detector.Plots(i),:);
             %%% Set XLim to Microtime Range
             h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
+            if (UserValues.PIE.Detector(Sel) == UserValues.Detector.Det(UserValues.Detector.Plots(i)))...
+                    && (UserValues.PIE.Router(Sel) == UserValues.Detector.Rout(UserValues.Detector.Plots(i)))
+                if strcmp(h.MI_IRF.Checked,'on')
+                    %%% Plot IRF/Scatter Pattern in PIE Channel range
+                    h.Plots.MI_Ind_IRF{i}.XData = 1:numel(UserValues.PIE.IRF{Sel});
+                    h.Plots.MI_Ind_IRF{i}.YData = UserValues.PIE.IRF{Sel}./max(UserValues.PIE.IRF{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
+                    h.Plots.MI_Ind_IRF{i}.Visible = 'on';
+                else
+                    h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+                end
+                
+                if strcmp(h.MI_ScatterPattern.Checked,'on')
+                    %%% Plot IRF/Scatter Pattern in PIE Channel range
+                    h.Plots.MI_Ind_Scat{i}.XData = 1:numel(UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)});
+                    h.Plots.MI_Ind_Scat{i}.YData = UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)}./max(UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
+                    h.Plots.MI_Ind_Scat{i}.Visible = 'on';
+                else
+                    h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+                end
+            else
+                h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+                h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+            end
         end
     end
     %%% Resets PIE patch scale
@@ -2256,7 +2316,7 @@ if any(mode==4)
                 %%% Moves selected PIE patch to top (but below curve)
                 if i==Sel
                     uistack(h.Plots.PIE_Patches{i},'top');
-                    uistack(h.Plots.PIE_Patches{i},'down',1);
+                    uistack(h.Plots.PIE_Patches{i},'down',3);
                 end
             end
         end
@@ -2360,7 +2420,7 @@ if any(mode==5)
             %%% Moves selected PIE patch to top (but below curve)
             if i==Sel
                 uistack(h.Plots.PIE_Patches{end},'top');
-                uistack(h.Plots.PIE_Patches{end},'down',1);
+                uistack(h.Plots.PIE_Patches{end},'down',3);
             end
         end
     end
@@ -2962,7 +3022,7 @@ Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MI_Axes_Menu(obj,~)
 h = guidata(findobj('Tag','Pam'));
-if obj == h.MI_Log
+if obj == h.MI_Log || obj == h.MI_Log_Ind
     if strcmp(h.MI_Log.Checked,'off')
         for i=1:(size(h.MI_Individual,2)/2-1)
             for j=1:size(h.MI_Individual,1)
@@ -2973,6 +3033,7 @@ if obj == h.MI_Log
         h.MI_Phasor_Axes.YScale='Log';
         h.MI_Calib_Axes.YScale='Log';
         h.MI_Log.Checked='on';
+        h.MI_Log_Ind.Checked='on';
     else
         h.MI_All_Axes.YScale='Linear';
         for i=1:(size(h.MI_Individual,2)/2-1)
@@ -2983,8 +3044,10 @@ if obj == h.MI_Log
         h.MI_Phasor_Axes.YScale='Linear';
         h.MI_Calib_Axes.YScale='Linear';
         h.MI_Log.Checked='off';
+        h.MI_Log_Ind.Checked='off';
     end
 end
+
 Update_Display([],[],5);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3156,7 +3219,7 @@ if any(mode==1);
                 'Parent',h.MI_Individual{i,2},...
                 'Units','normalized',...
                 'NextPlot','add',...
-                'UIContextMenu',h.MI_Menu,...
+                'UIContextMenu',h.MI_Menu_Individual,...
                 'XColor',UserValues.Look.Fore,...
                 'YColor',UserValues.Look.Fore,...
                 'Position',[0.09 0.05+(j-1)*(0.98/NPlots) 0.89 0.98/NPlots-0.05],...
@@ -3185,7 +3248,19 @@ if any(mode==1);
                 'Parent',h.MI_Individual{i,2*(1+j)-1},...
                 'Color',UserValues.Detector.Color(UserValues.Detector.Plots(i,j),:),...
                 'XData',[0 1],...
-                'YData',[0 0]);            
+                'YData',[0 0]);
+            h.Plots.MI_Ind_Scat{i,j}=line(...
+                'Parent',h.MI_Individual{i,2*(1+j)-1},...
+                'Color',[0.5 0.5 0.5],...
+                'XData',[0 1],...
+                'YData',[0 0],...
+                'Visible','off');
+            h.Plots.MI_Ind_IRF{i,j}=line(...
+                'Parent',h.MI_Individual{i,2*(1+j)-1},...
+                'Color',[0.25 0.25 0.25],...
+                'XData',[0 1],...
+                'YData',[0 0],...
+                'Visible','off');
         end
     end
 end
@@ -5590,10 +5665,10 @@ switch BurstData.BAMethod
         TauFitBurstData.hScatter_Per{2} = hScatter_RRperp;
         
         %%% Generate XData
-        TauFitBurstData.XData_Par{1} = (BurstData.fFCS.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])) - BurstData.PIE.From(1);
-        TauFitBurstData.XData_Per{1} = (BurstData.fFCS.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])) - BurstData.PIE.From(2);
-        TauFitBurstData.XData_Par{2} = (BurstData.fFCS.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])) - BurstData.PIE.From(5);
-        TauFitBurstData.XData_Per{2} = (BurstData.fFCS.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])) - BurstData.PIE.From(6);
+        TauFitBurstData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])) - BurstData.PIE.From(1);
+        TauFitBurstData.XData_Per{1} = (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])) - BurstData.PIE.From(2);
+        TauFitBurstData.XData_Par{2} = (BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])) - BurstData.PIE.From(5);
+        TauFitBurstData.XData_Per{2} = (BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])) - BurstData.PIE.From(6);
     case {3,4} %%% Three-color MFD
          %%% Read out the indices of the PIE channels
         idx_BBpar = 1;
