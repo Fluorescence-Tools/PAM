@@ -2295,8 +2295,8 @@ if any(mode==4)
                 
                 if strcmp(h.MI_ScatterPattern.Checked,'on')
                     %%% Plot IRF/Scatter Pattern in PIE Channel range
-                    h.Plots.MI_Ind_Scat{i}.XData = 1:numel(UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)});
-                    h.Plots.MI_Ind_Scat{i}.YData = UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)}./max(UserValues.PIE.ScatterPattern{UserValues.Detector.Plots(i)}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
+                    h.Plots.MI_Ind_Scat{i}.XData = 1:numel(UserValues.PIE.ScatterPattern{Sel});
+                    h.Plots.MI_Ind_Scat{i}.YData = UserValues.PIE.ScatterPattern{Sel}./max(UserValues.PIE.ScatterPattern{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
                     h.Plots.MI_Ind_Scat{i}.Visible = 'on';
                 else
                     h.Plots.MI_Ind_Scat{i}.Visible = 'off';
