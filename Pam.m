@@ -3828,8 +3828,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             TcspcData.MI{Det2(l),Rout2(l)}<=To2(l))];
                         %%% Extracts all microtimes
                         MI = [MI TcspcData.MI{Det2(l),Rout2(l)}(...
-                            TcspcData.MI{Det2(l),Rout2(l)}>=From1(l) &...
-                            TcspcData.MI{Det2(l),Rout2(l)}<=To1(l))];
+                            TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
+                            TcspcData.MI{Det2(l),Rout2(l)}<=To2(l))];
                     end
                 end
                 %%% Sorts photons into spatial bins
