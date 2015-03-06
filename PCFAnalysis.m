@@ -765,6 +765,13 @@ if any(mode == 2) %%% Updates mean intensity/arival time plot
     h.Intensity_Axes.XLim = [0 numel(h.Plot.Intensity.XData)]+0.5;
     YLim = [min(h.Plot.Intensity.YData) max(h.Plot.Intensity.YData)+1e-10];
     h.Intensity_Axes.YLim = [YLim(1)-0.1*diff(YLim) YLim(2)+0.1*diff(YLim)];
+    
+    YLim = h.Intensity_Axes.YLim;
+    YLim = [YLim(1)+0.01*diff(YLim),YLim(2)-0.01*diff(YLim)];
+    for i=1:size(h.Plot.ROI,1)
+        h.Plot.ROI{i,2}.YData = [YLim(2), YLim(1), YLim(1), YLim(2), YLim(2)];
+    end
+    
 end
 if any(mode == 3) %%% Updates correlations plot
     h.Cor_Axes.XLim = [str2double(h.Cor_Min_Time.String), str2double(h.Cor_Max_Time.String)];
