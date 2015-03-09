@@ -3789,9 +3789,6 @@ if obj == h.PlotStaticFRETButton
     staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
         UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
         tau);
-    %%% Remove points from the static FRET line after first pass through
-    %%% zero
-    staticFRETline(find(staticFRETline < 0,1,'first')+10:end) = NaN;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
@@ -4094,7 +4091,7 @@ if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
 
-function [out, coefficients] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR,xval)
+function [out, func] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR,xval)
 res = 100;
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
 RBG = linspace(0*R0BG,4*R0BG,res);
@@ -4139,9 +4136,13 @@ for j = 1:res
 tauf(j) = sum(sum(p(:,:,j).*(tau(:,:,j).^2)))./taux(j);
 end
 
-coefficients = polyfit(tauf,taux,3);
+%coefficients = polyfit(tauf,taux,3);
+%out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 
-out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+out = 1-interp1(tauf,taux,xval)./tauD;
+if nargout > 1
+    func = @(x) 1-interp1(tauf,taux,x)./tauD;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates the Gamma Factor using the lifetime information %%%%%%%%
 %%%%%%% by minimizing the deviation from the static FRET line      %%%%%%%%
