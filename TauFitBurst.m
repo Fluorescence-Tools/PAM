@@ -1297,7 +1297,7 @@ case {1,2}
         end
         Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
     end
-    lifetime = vertcat(lt{:});
+    lifetime = vertcat(lifetime{:});
     %% Save the result
     Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
     idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
