@@ -2163,7 +2163,7 @@ else
 end
 stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
 avg = round(avg*rounding)/rounding;
-set(h.axes_1d_x_text, 'String', ['avg = ' num2str(avg) '±' num2str(stdev)])
+set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
 
 % Update average value Y histogram
 x = get(BurstMeta.Plots.Main_histY, 'XData');
@@ -2178,7 +2178,7 @@ else
 end
 stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
 avg = round(avg*rounding)/rounding;
-set(h.axes_1d_y_text, 'String', ['avg = ' num2str(avg) '±' num2str(stdev)])
+set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
 
 drawnow;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
