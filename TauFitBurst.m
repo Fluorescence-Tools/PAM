@@ -24,7 +24,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'CloseRequestFcn',@Close_TauFit,...
         'Visible','on');
     %%% Sets background of axes and other things
-    whitebg(Look.Axes);
+    whitebg(Look.Fore);
     %%% Changes background; must be called after whitebg
     h.TauFitBurst.Color=Look.Back;
     %% Main Fluorescence Decay Plot
@@ -718,11 +718,11 @@ elseif any(TauFitBurstData.BAMethod == [3,4])
 end
 
 for i = 1:Number_of_Channels
-    TauFitBurstData.Length{i} = 1;
-    TauFitBurstData.StartPar{i} = 0;
-    TauFitBurstData.ShiftPer{i} = 0;
-    TauFitBurstData.IRFLength{i} = 1;
-    TauFitBurstData.IRFShift{i} = 0;
+    TauFitBurstData.Length{i} = 0;
+    TauFitBurstData.StartPar{i} = UserValues.BurstSearch.TauFit.StartPar{i};
+    TauFitBurstData.ShiftPer{i} = UserValues.BurstSearch.TauFit.ShiftPer{i};
+    TauFitBurstData.IRFLength{i} = UserValues.BurstSearch.TauFit.IRFLength{i};
+    TauFitBurstData.IRFShift{i} = UserValues.BurstSearch.TauFit.IRFShift{i};
 end
 TauFitBurstData.Scatter_Contribution{1} = 0;
 TauFitBurstData.Scatter_Contribution{2} = 0;
@@ -751,7 +751,7 @@ h.Length_Edit.String = num2str(TauFitBurstData.Length{1});
 %%% length of the shortest PIE channel minus the set length
 h.StartPar_Slider.Min = 0;
 h.StartPar_Slider.Max = TauFitBurstData.MaxLength{1};
-h.StartPar_Slider.Value = 0;
+h.StartPar_Slider.Value = TauFitBurstData.StartPar{1};
 for i = 1:Number_of_Channels
     TauFitBurstData.StartPar{i} = 0;
 end
@@ -764,7 +764,7 @@ h.StartPar_Edit.String = num2str(TauFitBurstData.StartPar{1});
 %h.ShiftPer_Slider.Max = max([0 TauFitBurstData.XData_Par(end)-TauFitBurstData.XData_Per(1)]);
 h.ShiftPer_Slider.Min = -floor(TauFitBurstData.MaxLength{1}/10);
 h.ShiftPer_Slider.Max = floor(TauFitBurstData.MaxLength{1}/10);
-h.ShiftPer_Slider.Value = 0;
+h.ShiftPer_Slider.Value = TauFitBurstData.ShiftPer{1};
 for i = 1:Number_of_Channels
     TauFitBurstData.ShiftPer{i} = 0;
 end
@@ -773,7 +773,7 @@ h.ShiftPer_Edit.String = num2str(TauFitBurstData.ShiftPer{1});
 %%% IRF Length has the same limits as the Length property
 h.IRFLength_Slider.Min = 1;
 h.IRFLength_Slider.Max = TauFitBurstData.MaxLength{1};
-h.IRFLength_Slider.Value = TauFitBurstData.MaxLength{1};
+h.IRFLength_Slider.Value = TauFitBurstData.IRFLength{1};
 for i = 1:Number_of_Channels
     TauFitBurstData.IRFLength{i} = TauFitBurstData.MaxLength{i};
 end
@@ -783,7 +783,7 @@ h.IRFLength_Edit.String = num2str(TauFitBurstData.IRFLength{1});
 %h.IRFShift_Slider.Max = max([0 TauFitBurstData.XData_Par(end)-TauFitBurstData.XData_IRFPar(1)]);
 h.IRFShift_Slider.Min = -floor(TauFitBurstData.MaxLength{1}/10);
 h.IRFShift_Slider.Max = floor(TauFitBurstData.MaxLength{1}/10);
-h.IRFShift_Slider.Value = 0;
+h.IRFShift_Slider.Value = TauFitBurstData.IRFShift{1};
 for i = 1:Number_of_Channels
     TauFitBurstData.IRFShift{i} = 0;
 end
@@ -797,7 +797,7 @@ Update_Plots(h.ChannelSelect_Popupmenu,[]);
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(obj,~)
-global TauFitBurstData
+global TauFitBurstData UserValues
 h = guidata(obj);
 chan = h.ChannelSelect_Popupmenu.Value;
 %%% Cases to consider:
@@ -912,6 +912,14 @@ switch obj.Style
         h.IRFLength_Slider.Value = TauFitBurstData.IRFLength{chan};
         h.IRFShift_Slider.Value = TauFitBurstData.IRFShift{chan};
 end
+%%% Update UserValues
+for i = 1:numel(TauFitBurstData.StartPar)
+    UserValues.BurstSearch.TauFit.StartPar{i} = TauFitBurstData.StartPar{i};
+    UserValues.BurstSearch.TauFit.ShiftPer{i} = TauFitBurstData.ShiftPer{i};
+    UserValues.BurstSearch.TauFit.IRFLength{i} = TauFitBurstData.IRFLength{i};
+    UserValues.BurstSearch.TauFit.IRFShift{i} = TauFitBurstData.IRFShift{i};
+end
+LSUserValues(1);
 %%% Update Plot
 % %%% Apply the shift to the parallel channel
 % h.Plots.Decay_Par.XData = TauFitBurstData.XData_Par(1:TauFitBurstData.Length)-TauFitBurstData.StartPar;
@@ -1149,16 +1157,22 @@ case {1,2}
         SCATTER{chan} = Scatter./sum(Scatter);
     end
     
+    %%% Process in Chunks of 10.000 Bursts
+    %%% Prepare Chunks:
+    parts = (floor(linspace(1,numel(Microtime),11)));
+    
     %%% Create array of histogrammed microtimes
     Par1 = zeros(numel(Microtime),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
     Per1 = zeros(numel(Microtime),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
     Par2 = zeros(numel(Microtime),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
     Per2 = zeros(numel(Microtime),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
-    parfor i = 1:numel(Microtime)
-        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
-        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
-        Par2(i,:) = histc(Microtime{i}(Channel{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
-        Per2(i,:) = histc(Microtime{i}(Channel{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+    for j = 1:10
+        parfor i = parts(j):parts(j+1)
+            Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+            Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+            Par2(i,:) = histc(Microtime{i}(Channel{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+            Per2(i,:) = histc(Microtime{i}(Channel{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+        end
     end
     
     Mic{1} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1}));
@@ -1184,9 +1198,11 @@ case {1,2}
     %%% Rebin to improve speed
     Mic1 = zeros(numel(Microtime),floor(size(Mic{1},2)/new_bin_width));
     Mic2 = zeros(numel(Microtime),floor(size(Mic{2},2)/new_bin_width));
-    parfor i = 1:numel(Microtime)
-        Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
-        Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+    for j = 1:10
+        parfor i = parts(j):parts(j+1)
+            Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+            Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+        end
     end
     Mic{1} = Mic1'; clear Mic1;
     Mic{2} = Mic2'; clear Mic2;

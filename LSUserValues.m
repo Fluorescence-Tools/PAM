@@ -280,8 +280,7 @@ if Mode==0 %%% Loads user values
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
-    P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;
-    
+    P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;   
     %% FCSFit
     %%% Checks, if FCSFit subfield exists
     if ~isfield (S, 'FCSFit')
@@ -461,6 +460,42 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
+    %%% Checks, if BurstSearch.TauFit subfield exists
+    if ~isfield (S.BurstSearch,'TauFit')
+        S.BurstSearch.TauFit=[];
+        disp('UserValues.BurstSearch.TauFit was incomplete');    
+    end
+    P.BurstSearch.TauFit = S.BurstSearch.TauFit;
+    %%% Checks, if BurstSearch.TauFit.StartPar subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'StartPar')
+        S.BurstSearch.TauFit.StartPar={0,0,0};
+        disp('UserValues.BurstSearch.TauFit.StartPar was incomplete');    
+    end
+    P.BurstSearch.TauFit.StartPar = S.BurstSearch.TauFit.StartPar;
+    %%% Checks, if BurstSearch.TauFit.ShiftPer subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'ShiftPer')
+        S.BurstSearch.TauFit.ShiftPer={0,0,0};
+        disp('UserValues.BurstSearch.TauFit.ShiftPer was incomplete');    
+    end
+    P.BurstSearch.TauFit.ShiftPer = S.BurstSearch.TauFit.ShiftPer;
+    %%% Checks, if BurstSearch.TauFit.ShiftPer subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'ShiftPer')
+        S.BurstSearch.TauFit.ShiftPer={0,0,0};
+        disp('UserValues.BurstSearch.TauFit.ShiftPer was incomplete');    
+    end
+    P.BurstSearch.TauFit.ShiftPer = S.BurstSearch.TauFit.ShiftPer;
+    %%% Checks, if BurstSearch.TauFit.IRFShift subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'IRFShift')
+        S.BurstSearch.TauFit.IRFShift={0,0,0};
+        disp('UserValues.BurstSearch.TauFit.IRFShift was incomplete');    
+    end
+    P.BurstSearch.TauFit.IRFShift = S.BurstSearch.TauFit.IRFShift;
+    %%% Checks, if BurstSearch.TauFit.IRFLength subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'IRFLength')
+        S.BurstSearch.TauFit.IRFLength={200,200,200};
+        disp('UserValues.BurstSearch.TauFit.IRFLength was incomplete');    
+    end
+    P.BurstSearch.TauFit.IRFShift = S.BurstSearch.TauFit.IRFShift;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
