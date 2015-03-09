@@ -495,7 +495,7 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.TauFit.IRFLength={200,200,200};
         disp('UserValues.BurstSearch.TauFit.IRFLength was incomplete');    
     end
-    P.BurstSearch.TauFit.IRFShift = S.BurstSearch.TauFit.IRFShift;
+    P.BurstSearch.TauFit.IRFLength = S.BurstSearch.TauFit.IRFLength;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
