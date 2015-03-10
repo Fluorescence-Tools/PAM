@@ -3380,18 +3380,21 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
             end
+             UpdateLifetimePlots([],[]);
         case h.AcceptorLifetimeEdit
             if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
             else %%% Reset value
                 h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
             end
+             UpdateLifetimePlots([],[]);
         case h.DonorLifetimeBlueEdit
             if ~isnan(str2double(h.DonorLifetimeBlueEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = str2double(h.DonorLifetimeBlueEdit.String);
             else %%% Reset value
                 h.DonorLifetimeBlueEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue);
             end
+            UpdateLifetimePlots([],[]);
         case h.FoersterRadiusEdit
             if ~isnan(str2double(h.FoersterRadiusEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
@@ -3684,7 +3687,7 @@ idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = BurstMeta.posE;
 %% Plot E vs. tauGG in first plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [-0.1 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -3694,7 +3697,7 @@ BurstMeta.Plots.EvsTauGG(2).YData = ybins;
 BurstMeta.Plots.EvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_EvsTauGG,'tight');
-ylim(h.axes_EvsTauGG,[0 1]);
+ylim(h.axes_EvsTauGG,[-0.1 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
