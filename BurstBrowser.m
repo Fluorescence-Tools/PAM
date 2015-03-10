@@ -576,7 +576,32 @@ if isempty(hfig)
     'String','Plot Static FRET Line',...
     'FontSize',12,...
     'Callback',@UpdateLifetimeFits);
-        
+
+    h.DynamicFRET_Menu = uicontextmenu;
+    h.DynamicFRETManual_Menu = uimenu(...
+        'Parent',h.DynamicFRET_Menu,...
+        'Tag','DynamicFRETManual_Menu',...
+        'Callback',@UpdateLifetimeFits,...
+        'Label','Define States');
+    h.DynamicFRETRemove_Menu = uimenu(...
+        'Parent',h.DynamicFRET_Menu,...
+        'Tag','DynamicFRETRemove_Menu',...
+        'Callback',@UpdateLifetimeFits,...
+        'Label','Remove Plot');
+    
+    h.PlotDynamicFRETButton = uicontrol(...
+    'Parent',h.FitLifetimeRelatedPanel,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.4 0.55 0.2 0.1],...
+    'Style','pushbutton',...
+    'Tag','PlotDynamicFRETButton',...
+    'String','Dynamic',...
+    'FontSize',12,...
+    'UIContextMenu',h.DynamicFRET_Menu,...
+    'Callback',@UpdateLifetimeFits);
+
     uicontrol(...
     'Parent',h.FitLifetimeRelatedPanel,...
     'Units','normalized',...
@@ -667,10 +692,11 @@ if isempty(hfig)
     'Units','normalized',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.5 0.65 0.35 0.07],...
+    'Position',[0.65 0.65 0.35 0.07],...
     'Style','text',...
     'Tag','FoersterRadiusText',...
     'String','Foerster Radius [A]',...
+    'HorizontalAlignment','left',...
     'FontSize',12);
     
     h.FoersterRadiusEdit = uicontrol(...
@@ -690,10 +716,11 @@ if isempty(hfig)
     'Units','normalized',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.5 0.55 0.35 0.07],...
+    'Position',[0.65 0.55 0.35 0.07],...
     'Style','text',...
     'Tag','LinkerLengthText',...
     'String','Linker Length [A]',...
+    'HorizontalAlignment','left',...
     'FontSize',12);
     
     h.LinkerLengthEdit = uicontrol(...
@@ -985,6 +1012,19 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdatePlot...
         );
+    %%% Option to display average values in 1d histograms
+    h.DisplayAverage = uicontrol('Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Display Average Value in 1D Histograms',...
+        'Tag','DisplayAverage',...
+        'Value', 0,...
+        'Units','normalized',...
+        'Position',[0.1 0.38 0.5 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdatePlot...
+        );
     
     %%% Data Processing Options Panel
     h.DataProcessingPanel = uipanel(...
@@ -1066,7 +1106,8 @@ if isempty(hfig)
         'HorizontalAlignment','left',...
         'BackgroundColor','none',...
         'Color', 'r',...
-        'Position',[0.025 0.8]);
+        'Position',[0.025 0.8],...
+        'Visible','off');
     
     h.axes_1d_y =  axes(...
     'Parent',h.MainTabGeneralPanel,...
@@ -1097,7 +1138,8 @@ if isempty(hfig)
         'HorizontalAlignment','left',...
         'BackgroundColor','none',...
         'Color', 'r',...
-        'Position',[0.1 0.95]);
+        'Position',[0.1 0.95],...
+        'Visible','off');
     
     %% Define axes in Corrections tab
         %% Corrections - 2ColorMFD
@@ -1523,6 +1565,7 @@ if isempty(hfig)
     BurstMeta.Plots.EvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauGG);axis(h.axes_EvsTauGG,'tight');
     [~,BurstMeta.Plots.EvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauGG,'Visible','off');
         BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
+        BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color','b','LineStyle','--','LineWidth',3,'Visible','off');
     BurstMeta.Plots.EvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauRR);axis(h.axes_EvsTauRR,'tight');
     [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
         BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
@@ -2013,6 +2056,9 @@ delete(h_waitbar);
 function UpdatePlot(obj,~)
 %% Preparation
 global BurstData UserValues BurstMeta  
+if isempty(BurstData)
+    return;
+end
 h = guidata(findobj('Tag','BurstBrowser'));
 LSUserValues(0);
 % if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
@@ -2174,36 +2220,42 @@ eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 % Update no. bursts
 set(h.text_nobursts, 'String', {[num2str(sum(BurstData.Selected)) ' bursts']; [num2str(round(sum(BurstData.Selected/numel(BurstData.Selected)*1000))/10) '% of total']})
 
-% Update average value X histogram
-x = get(BurstMeta.Plots.Main_histX, 'XData');
-y = get(BurstMeta.Plots.Main_histX, 'YData');
-avg = sum(x.*y)/sum(y);
-if avg < 1
-    rounding = 100;  
-elseif avg < 10
-    rounding = 10;
-else
-    rounding = 1;
-end
-stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
-avg = round(avg*rounding)/rounding;
-set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
+if h.DisplayAverage.Value == 1
+    h.axes_1d_x_text.Visible = 'on';
+    h.axes_1d_y_text.Visible = 'on';
+    % Update average value X histogram
+    x = get(BurstMeta.Plots.Main_histX, 'XData');
+    y = get(BurstMeta.Plots.Main_histX, 'YData');
+    avg = sum(x.*y)/sum(y);
+    if avg < 1
+        rounding = 100;  
+    elseif avg < 10
+        rounding = 10;
+    else
+        rounding = 1;
+    end
+    stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
+    avg = round(avg*rounding)/rounding;
+    set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
 
-% Update average value Y histogram
-x = get(BurstMeta.Plots.Main_histY, 'XData');
-y = get(BurstMeta.Plots.Main_histY, 'YData');
-avg = sum(x.*y)/sum(y);
-if avg < 1
-    rounding = 100;  
-elseif avg < 10
-    rounding = 10;
+    % Update average value Y histogram
+    x = get(BurstMeta.Plots.Main_histY, 'XData');
+    y = get(BurstMeta.Plots.Main_histY, 'YData');
+    avg = sum(x.*y)/sum(y);
+    if avg < 1
+        rounding = 100;  
+    elseif avg < 10
+        rounding = 10;
+    else
+        rounding = 1;
+    end
+    stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
+    avg = round(avg*rounding)/rounding;
+    set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
 else
-    rounding = 1;
+    h.axes_1d_x_text.Visible = 'off';
+    h.axes_1d_y_text.Visible = 'off';
 end
-stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
-avg = round(avg*rounding)/rounding;
-set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
-
 drawnow;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3818,6 +3870,7 @@ if obj == h.PlotStaticFRETButton
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
+    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     if any(BurstData.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
@@ -3828,6 +3881,34 @@ if obj == h.PlotStaticFRETButton
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.YData = staticFRETline;
+    end
+end
+if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETRemove_Menu])
+    switch obj
+        case {h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu}
+            if obj == h.PlotDynamicFRETButton
+                %%% Query Effiencies using ginput
+                [x,~] = ginput(2);
+                y = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+                UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+                x);
+            elseif obj == h.DynamicFRETManual_Menu
+                %%% Query using edit box
+                y = inputdlg({'Efficiency 1','Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+                y = cellfun(@str2double,y);
+                if any(isnan(y))
+                        return;
+                end
+            end
+            tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),10000);
+            dynFRETline = dynamicFRETline(UserValues.BurstBrowser.Corrections.DonorLifetime,...
+                y(1),y(2),UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+                tau);
+            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'on';
+            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.XData = tau;
+            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.YData = dynFRETline;
+        case h.DynamicFRETRemove_Menu
+            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     end
 end
 if obj == h.FitAnisotropyButton
@@ -4117,7 +4198,6 @@ out = 1-interp1(tauf,taux,xval)./tauD;
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
-
 function [out, func] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR,xval)
 res = 100;
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
@@ -4166,6 +4246,49 @@ end
 %coefficients = polyfit(tauf,taux,3);
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 
+out = 1-interp1(tauf,taux,xval)./tauD;
+if nargout > 1
+    func = @(x) 1-interp1(tauf,taux,x)./tauD;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates dynamic FRET line between two states  %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [out, func] = dynamicFRETline(tauD,E1,E2,R0,s,xval)
+res = 1000;
+%%% Calculate two distance distribution for two states
+%RDA1 = R0*((tauD/tau1)-1)^(-1/6);
+%RDA2 = R0*((tauD/tau2)-1)^(-1/6);
+RDA1 = R0.*(1/E1-1)^(1/6);
+RDA2 = R0.*(1/E2-1)^(1/6);
+r = linspace(0*R0,5*R0,res);
+p1 = exp(-((r-RDA1).^2)./(2*s^2));p1 = p1./sum(p1);
+p2 = exp(-((r-RDA2).^2)./(2*s^2));p2 = p2./sum(p2);
+%%% Generate mixed distributions
+x = linspace(0,1,res);
+p = zeros(res,res);
+for i = 1:numel(x)
+    p(i,:) = x(i).*p1 + (1-x(i)).*p2;
+end
+
+%calculate lifetime distribution
+tau = tauD./(1+((R0./r).^6));
+
+
+%calculate species weighted taux
+taux = zeros(1,numel(x));
+for j = 1:numel(x)
+taux(j) = sum(p(j,:).*tau);
+end
+
+%calculate intensity weighted tauf
+tauf = zeros(1,numel(x));
+for j = 1:numel(x)
+tauf(j) = sum(p(j,:).*(tau.^2))./taux(j);
+end
+
+%coefficients = polyfit(tauf,taux,3);
+
+%out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 out = 1-interp1(tauf,taux,xval)./tauD;
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
