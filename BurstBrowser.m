@@ -1620,11 +1620,27 @@ end
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_BurstBrowser(~,~)
+global BurstData
+if ~isempty(BurstData)
+    %%% Ask for saving
+    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
+    switch choice
+        case 'Yes'
+            Save_Analysis_State_Callback([],[]);
+    end
+end
+
 clear global -regexp BurstMeta
 Phasor=findobj('Tag','Phasor');
 Pam=findobj('Tag','Pam');
-if isempty(Phasor) && isempty(Pam)
-    clear global -regexp UserValues BurstData
+TauFit = findobj('Tag','TauFit');
+FCSFit = findobj('Tag','FCSFit');
+if isempty(Pam)
+    clear global -regexp BurstData
+end
+
+if isempty(Pam) && isempty(TauFit) && isempty(FCSFit) && isempty(Phasor)
+    clear global -regexp UserValues
 end
 delete(gcf);
 
@@ -3664,7 +3680,6 @@ ApplyCorrections;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
 global BurstData
-
 save(BurstData.FileName,'BurstData');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
