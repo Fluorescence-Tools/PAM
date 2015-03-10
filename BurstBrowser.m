@@ -1650,6 +1650,12 @@ delete(gcf);
 function Load_Burst_Data_Callback(~,~)
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
+%%% Ask for saving
+choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
+switch choice
+    case 'Yes'
+        Save_Analysis_State_Callback([],[]);
+end
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
 end
@@ -4057,6 +4063,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
         UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
     end
     LSUserValues(1);
+    UpdateLifetimePlots([],[]);
 else
     h.DonorLifetimeEdit.Enable = 'on';
     h.DonorLifetimeBlueEdit.Enable = 'on';
