@@ -2290,7 +2290,9 @@ if any(mode==4)
                     h.Plots.MI_Ind_IRF{i}.YData = UserValues.PIE.IRF{Sel}./max(UserValues.PIE.IRF{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
                     h.Plots.MI_Ind_IRF{i}.Visible = 'on';
                 else
-                    h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+                    if ishandle(h.Plots.MI_Ind_IRF{i})
+                        h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+                    end
                 end
                 
                 if strcmp(h.MI_ScatterPattern.Checked,'on')
@@ -2299,7 +2301,9 @@ if any(mode==4)
                     h.Plots.MI_Ind_Scat{i}.YData = UserValues.PIE.ScatterPattern{Sel}./max(UserValues.PIE.ScatterPattern{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
                     h.Plots.MI_Ind_Scat{i}.Visible = 'on';
                 else
-                    h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+                    if ishandle(h.Plots.MI_Ind_Scat{i})
+                        h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+                    end
                 end
             else
                 h.Plots.MI_Ind_IRF{i}.Visible = 'off';

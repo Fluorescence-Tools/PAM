@@ -752,9 +752,7 @@ h.Length_Edit.String = num2str(TauFitBurstData.Length{1});
 h.StartPar_Slider.Min = 0;
 h.StartPar_Slider.Max = TauFitBurstData.MaxLength{1};
 h.StartPar_Slider.Value = TauFitBurstData.StartPar{1};
-for i = 1:Number_of_Channels
-    TauFitBurstData.StartPar{i} = 0;
-end
+
 h.StartPar_Edit.String = num2str(TauFitBurstData.StartPar{1});
 %%% Shift Perpendicular Slider can assume values from the difference in
 %%% start point between parallel and perpendicular up to the difference
@@ -765,18 +763,14 @@ h.StartPar_Edit.String = num2str(TauFitBurstData.StartPar{1});
 h.ShiftPer_Slider.Min = -floor(TauFitBurstData.MaxLength{1}/10);
 h.ShiftPer_Slider.Max = floor(TauFitBurstData.MaxLength{1}/10);
 h.ShiftPer_Slider.Value = TauFitBurstData.ShiftPer{1};
-for i = 1:Number_of_Channels
-    TauFitBurstData.ShiftPer{i} = 0;
-end
+
 h.ShiftPer_Edit.String = num2str(TauFitBurstData.ShiftPer{1});
 
 %%% IRF Length has the same limits as the Length property
 h.IRFLength_Slider.Min = 1;
 h.IRFLength_Slider.Max = TauFitBurstData.MaxLength{1};
 h.IRFLength_Slider.Value = TauFitBurstData.IRFLength{1};
-for i = 1:Number_of_Channels
-    TauFitBurstData.IRFLength{i} = TauFitBurstData.MaxLength{i};
-end
+
 h.IRFLength_Edit.String = num2str(TauFitBurstData.IRFLength{1});
 %%% IRF Shift has the same limits as the perp shift property
 %h.IRFShift_Slider.Min = (-1)*max([0 TauFitBurstData.XData_IRFPar(1)-TauFitBurstData.XData_Par(1)]);
@@ -784,9 +778,7 @@ h.IRFLength_Edit.String = num2str(TauFitBurstData.IRFLength{1});
 h.IRFShift_Slider.Min = -floor(TauFitBurstData.MaxLength{1}/10);
 h.IRFShift_Slider.Max = floor(TauFitBurstData.MaxLength{1}/10);
 h.IRFShift_Slider.Value = TauFitBurstData.IRFShift{1};
-for i = 1:Number_of_Channels
-    TauFitBurstData.IRFShift{i} = 0;
-end
+
 h.IRFShift_Edit.String = num2str(TauFitBurstData.IRFShift{1});
     
 guidata(h.TauFitBurst,h);
