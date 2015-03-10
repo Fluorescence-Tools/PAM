@@ -1650,11 +1650,13 @@ delete(gcf);
 function Load_Burst_Data_Callback(~,~)
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
-%%% Ask for saving
-choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
-switch choice
-    case 'Yes'
+if ~isempty(BurstData)
+    %%% Ask for saving
+    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
+    switch choice
+        case 'Yes'
         Save_Analysis_State_Callback([],[]);
+    end
 end
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
