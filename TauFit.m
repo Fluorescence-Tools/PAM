@@ -1208,9 +1208,9 @@ switch TauFitData.FitType
         %%% R0
         %%% Donor only lifetime
         %%% Convert Lifetimes
-        x0(5) = round(x0(5)/TauFitData.TACChannelWidth);
-        lb(5) = round(lb(5)/TauFitData.TACChannelWidth);
-        ub(5) = round(ub(5)/TauFitData.TACChannelWidth);  
+        x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
+        lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
+        ub(6) = round(ub(6)/TauFitData.TACChannelWidth);  
         %%% fit for different IRF offsets and compare the results
         x = cell(numel(shift_range,1));
         residuals = cell(numel(shift_range,1));
@@ -1244,9 +1244,9 @@ switch TauFitData.FitType
         %%% Donor only lifetime
         
         %%% Convert Lifetimes
-        x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
-        lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
-        ub(6) = round(ub(6)/TauFitData.TACChannelWidth);  
+        x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
+        lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
+        ub(7) = round(ub(7)/TauFitData.TACChannelWidth);  
         %%% fit for different IRF offsets and compare the results
         x = cell(numel(shift_range,1));
         residuals = cell(numel(shift_range,1));
@@ -1268,7 +1268,7 @@ switch TauFitData.FitType
         %%% Update FitResult
         FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
         %%% Convert Lifetimes to Nanoseconds
-        FitResult{6} = FitResult{6}.*TauFitData.TACChannelWidth;
+        FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
         h.FitPar_Table.Data(:,1) = FitResult;
     case 'Fit Anisotropy'
         %%% Parameter
@@ -1338,7 +1338,7 @@ h.Result_Plot.Parent = h.TauFit_Panel;
 
 % plot chi^2 on graph
 h.Result_Plot_Text.Visible = 'on';
-h.Result_Plot_Text.String = sprintf(['chi^2 = ' num2str(chi2)]);
+h.Result_Plot_Text.String = sprintf(['chi^2 = ' num2str(chi2(best_fit))]);
 h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
 
 TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
@@ -1351,15 +1351,7 @@ h.Plots.Residuals.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
-disp(['Tau1 = ' num2str(TauFitData.TACChannelWidth*x{best_fit}(2))]);
-disp(num2str(shift_range(best_fit)));
-disp(num2str(x{best_fit}(1)));
-disp(num2str(x{best_fit}(2)));
-disp(num2str(chi2(best_fit)));
-try
-    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(3)));
-    disp(num2str(TauFitData.TACChannelWidth*x{best_fit}(4)));
-end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

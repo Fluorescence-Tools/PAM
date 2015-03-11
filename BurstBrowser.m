@@ -207,6 +207,22 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0 0 1 1],...
         'Tag','fFCS_SubTabPerpReconstructionPanel');
+    
+    %%% sub-ensemble TCSPC tab
+    h.Main_Tab_TauFit= uitab(h.Main_Tab,...
+        'title','Lifetime Fitting',...
+        'Tag','Main_Tab_TauFit'...
+        ); 
+    
+    h.MainTabTauFitPanel = uibuttongroup(...
+        'Parent',h.Main_Tab_TauFit,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','MainTabTauFitPanel');
     %% Secondary tab selection gui
     h.Secondary_Tab = uitabgroup(...
     'Parent',h.BurstBrowser,...
@@ -1510,6 +1526,475 @@ if isempty(hfig)
     'FontSize',12,...
     'nextplot','add',...
     'XTickLabel',[]);
+    %% Define Axes in TauFit Tab
+    %%% Right-click menu for plot changes
+    h.TauFit.Microtime_Plot_Menu_MIPlot = uicontextmenu;
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
+        h.TauFit.Microtime_Plot_Menu_MIPlot,...
+        'Label','Logscale',...
+        'Tag','Plot_Logscale_MIPlot',...
+        'Callback',@ChangeYScale);
+    h.TauFit.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
+        h.TauFit.Microtime_Plot_Menu_ResultPlot,...
+        'Label','Logscale',...
+        'Tag','Plot_Logscale_ResultPlot',...
+        'Callback',@ChangeYScale);
+    %%% Main Microtime Plot
+    h.TauFit.Microtime_Plot = axes(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Units','normalized',...
+        'Position',[0.05 0.35 0.9 0.55],...
+        'Tag','Microtime_Plot',...
+        'Box','on',...
+        'UIContextMenu',h.TauFit.Microtime_Plot_Menu_MIPlot,...
+        'nextplot','add');
+    
+    h.Microtime_Plot.XLim = [0 1];
+    h.Microtime_Plot.YLim = [0 1];
+    h.Microtime_Plot.XLabel.Color = Look.Fore;
+    h.Microtime_Plot.XLabel.String = 'time [ns]';
+    h.Microtime_Plot.YLabel.Color = Look.Fore;
+    h.Microtime_Plot.YLabel.String = 'intensity [counts]';
+    h.Microtime_Plot.XGrid = 'on';
+    h.Microtime_Plot.YGrid = 'on';
+    
+    %%% Residuals Plot
+    h.TauFit.Residuals_Plot = axes(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Units','normalized',...
+        'Position',[0.05 0.9 0.9 0.08],...
+        'Tag','Residuals_Plot',...
+        'XTick',[],...
+        'Box','on',...
+        'nextplot','add');
+
+    h.Residuals_Plot.YLabel.Color = Look.Fore;
+    h.Residuals_Plot.YLabel.String = 'res_w';
+    h.Residuals_Plot.XGrid = 'on';
+    h.Residuals_Plot.YGrid = 'on';
+    
+    %%% Result Plot (Replaces Microtime Plot after fit is done)
+    h.TauFit.Result_Plot = axes(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Units','normalized',...
+        'Position',[0.05 0.35 0.9 0.55],...
+        'Tag','Microtime_Plot',...
+        'Box','on',...
+        'Visible','on',...
+        'UIContextMenu',h.TauFit.Microtime_Plot_Menu_ResultPlot,...
+        'nextplot','add');
+    h.TauFit.Result_Plot_Text = text(...
+        0,0,'',...
+        'Parent',h.TauFit.Result_Plot,...
+        'FontSize',12,...
+        'FontWeight','bold',...
+        'BackgroundColor',[1 1 1]);
+    
+    h.Result_Plot.XLim = [0 1];
+    h.Result_Plot.YLim = [0 1];
+    h.Result_Plot.XLabel.Color = Look.Fore;
+    h.Result_Plot.XLabel.String = 'time [ns]';
+    h.Result_Plot.YLabel.Color = Look.Fore;
+    h.Result_Plot.YLabel.String = 'intensity [counts]';
+    h.Result_Plot.XGrid = 'on';
+    h.Result_Plot.YGrid = 'on';
+    linkaxes([h.TauFit.Result_Plot, h.TauFit.Residuals_Plot],'x');
+    
+    %%% dummy panel to hide plots
+    h.TauFit.HidePanel = uibuttongroup(...
+        'Visible','off',...
+        'Parent',h.MainTabTauFitPanel,...
+        'Tag','HidePanel');
+    
+    %%% Hide Result Plot
+    h.TauFit.Result_Plot.Parent = h.TauFit.HidePanel;
+    
+    %%% Panel for Selection
+    h.TauFit.Selection_Panel = uibuttongroup(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0.15 0.6 0.15],...
+        'Tag','Slider_Panel');
+    %%% Dropdown menu for selecting a species
+    uicontrol('Style','text',...
+        'Tag','TauFit_SpeciesSelect_text',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0 0.7 0.2 0.1],...
+        'String','Species selection',...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'FontSize',12);
+    h.TauFit.SpeciesSelect = uicontrol(...
+        'Style','popupmenu',...
+        'Tag','TauFit_SpeciesSelect_popupmenu',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0.2 0.7 0.2 0.1],...
+        'String',{' '},...
+        'Value',1,...
+        'FontSize',12);
+    
+    %%% Dropdown menu for selecting a channel (GG/RR)
+    uicontrol('Style','text',...
+        'Tag','TauFit_ChannelSelect_text',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0 0.5 0.2 0.1],...
+        'String','Channel selection',...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'FontSize',12);
+    h.TauFit.ChannelSelect = uicontrol(...
+        'Style','popupmenu',...
+        'Tag','TauFit_ChannelSelect_popupmenu',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0.2 0.5 0.2 0.1],...
+        'String',{'GG','RR'},...
+        'Value',1,...
+        'FontSize',12);
+    
+    %%% Button to Update Microtime Histograms
+    h.TauFit.Plot_Microtimes_button = uicontrol(...
+        'Style','pushbutton',...
+        'Tag','Plot_Microtimes_button',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0.1 0.1 0.3 0.25],...
+        'String','Plot Microtimes',...
+        'FontSize',12,...
+        'Callback',@Update_MicrotimeHistograms);
+    
+    %%% Button to Start Lifetime Fit
+    h.TauFit.Start_TauFit_button = uicontrol(...
+        'Style','pushbutton',...
+        'Tag','Start_Fit_button',...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Units','normalized',...
+        'Position',[0.5 0.1 0.3 0.25],...
+        'String','Start Fit',...
+        'FontSize',12,...
+        'Callback',@Start_TauFit);
+    
+    %%% Popup Menu for Fit Method Selection
+    h.TauFit.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
+        'Distribution','Distribution plus Donor only','Fit Anisotropy'};
+    h.TauFit.FitMethod_Popupmenu = uicontrol(...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Style','Popupmenu',...
+        'Tag','FitMethod_Popupmenu',...
+        'Units','normalized',...
+        'Position',[0.5 0.4 0.3 0.1],...
+        'String',h.TauFit.FitMethods,...
+        'Callback',@Method_Selection_TauFit);
+    
+    h.TauFit.FitMethod_Text = uicontrol(...
+        'Parent',h.TauFit.Selection_Panel,...
+        'Style','Text',...
+        'Tag','FitMethod_Text',...
+        'Units','normalized',...
+        'Position',[0.5 0.7 0.3 0.1],...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Fit Method',...
+        'ToolTipString','Select the Fit Method');
+    
+    %%% Sliders
+    %%% Define the container
+    h.TauFit.Slider_Panel = uibuttongroup(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0 0.6 0.15],...
+        'Tag','Slider_Panel');
+    
+    %%% Individual sliders for:
+    %%% 1) Start
+    %%% 2) Length
+    %%% 3) Shift of perpendicular channel
+    %%% 4) Shift of IRF
+    %%% 5) IRF length to consider
+    %%%
+    %%% Slider for Selection of Start
+    h.TauFit.StartPar_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.79 0.8 0.1],...
+        'Tag','StartPar_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.StartPar_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','StartPar_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.80 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.StartPar_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Start Parallel',...
+        'TooltipString','Start Value for the Parallel Channel',...
+        'Position',[0.01 0.80 0.14 0.1],...
+        'Tag','StartPar_Text');
+    
+    %%% Slider for Selection of Length
+    h.TauFit.Length_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.64 0.8 0.1],...
+        'Tag','Length_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.Length_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','Length_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.65 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.Length_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Length',...
+        'TooltipString','Length of the Microtime Histogram',...
+        'Position',[0.01 0.65 0.14 0.1],...
+        'Tag','Length_Text');
+    
+    %%% Slider for Selection of Perpendicular Shift
+    h.TauFit.ShiftPer_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.49 0.8 0.1],...
+        'Tag','ShiftPer_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.ShiftPer_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','ShiftPer_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.5 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.ShiftPer_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Perpendicular Shift',...
+        'TooltipString','Shift of the Perpendicular Channel',...
+        'Position',[0.01 0.5 0.14 0.1],...
+        'Tag','ShiftPer_Text');
+    
+    %%% Slider for Selection of IRF Shift
+    h.TauFit.IRFShift_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.34 0.8 0.1],...
+        'Tag','IRFShift_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.IRFShift_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','IRFShift_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.35 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.IRFShift_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','IRF Shift',...
+        'TooltipString','Shift of the IRF',...
+        'Position',[0.01 0.35 0.14 0.1],...
+        'Tag','IRFShift_Text');
+    
+    %%% Slider for Selection of IRF Length
+    h.TauFit.IRFLength_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.19 0.8 0.1],...
+        'Tag','IRFLength_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.IRFLength_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','IRFLength_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.2 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.IRFLength_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','IRF Length',...
+        'TooltipString','Length of the IRF',...
+        'Position',[0.01 0.2 0.14 0.1],...
+        'Tag','IRFLength_Text');
+    
+    %%% Slider for Selection of Ignore Region in the Beginning
+    h.TauFit.Ignore_Slider = uicontrol(...
+        'Style','slider',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.04 0.8 0.1],...
+        'Tag','Ignore_Slider',...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.Ignore_Edit = uicontrol(...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Style','edit',...
+        'Tag','Ignore_Edit',...
+        'Units','normalized',...
+        'Position',[0.15 0.05 0.05 0.1],...
+        'String','0',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',10,...
+        'Callback',@Update_TauFitPlots);
+    
+    h.TauFit.Ignore_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.TauFit.Slider_Panel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'String','Ignore Length',...
+        'TooltipString','Length of the Ignore Region in the Beginning',...
+        'Position',[0.01 0.05 0.14 0.1],...
+        'Tag','Ignore_Text');
+    %%% Tab for FitParameters and Settings
+    %%% Tab containing a table for the fit parameters
+    h.TauFit.TauFit_Tabgroup = uitabgroup(...
+        'Parent',h.MainTabTauFitPanel,...
+        'Tag','TauFit_Tabgroup',...
+        'Units','normalized',...
+        'Position',[0.6 0 0.4 0.3]);
+    
+    h.TauFit.FitPar_Tab = uitab(...
+        'Parent',h.TauFit.TauFit_Tabgroup,...
+        'Title','Fit',...
+        'Tag','FitPar_Tab');
+    
+    h.TauFit.FitPar_Panel = uibuttongroup(...
+        'Parent',h.TauFit.FitPar_Tab,...
+        'Units','normalized',...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'HighlightColor',Look.Control,...
+        'ShadowColor',Look.Shadow,...
+        'Position',[0 0 1 1],...
+        'Tag','FitPar_Panel');
+    
+    %%% Fit Parameter Table
+    h.TauFit.FitPar_Table = uitable(...
+        'Parent',h.TauFit.FitPar_Panel,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'ColumnName',{'Value','LB','UB','Fixed'},...
+        'ColumnFormat',{'numeric','numeric','numeric','logical'},...
+        'RowName',{'Test'},...
+        'ColumnEditable',[true true true true],...
+        'ColumnWidth',{50,50,50,40},...
+        'Tag','FitPar_Table',...
+        'CellEditCallBack',@Update_TauFitPlots);
+    %%% RowNames - Store the Parameter Names of different FitMethods
+    h.TauFit.Parameters = cell(numel(h.TauFit.FitMethods),1);
+    h.TauFit.Parameters{1} = {'Tau [ns]','Scatter','Background','IRF Shift'};
+    h.TauFit.Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Scatter','Background','IRF Shift'};
+    h.TauFit.Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','Scatter','Background','IRF Shift'};
+    h.TauFit.Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+    h.TauFit.Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+    h.TauFit.Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+    h.TauFit.FitPar_Table.RowName = h.TauFit.Parameters{1};
+    %%% Initial Data - Store the StartValues as well as LB and UB
+    h.TauFit.StartPar = cell(numel(h.TauFit.FitMethods),1);
+    h.TauFit.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
+    h.TauFit.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
+    h.TauFit.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
+    h.TauFit.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.TauFit.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.TauFit.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.FitPar_Table.Data = h.TauFit.StartPar{1};
+    
     %% Mac upscaling of Font Sizes
     if ismac
         scale_factor = 1.2;
@@ -1649,6 +2134,23 @@ if isempty(hfig)
     [~,BurstMeta.Plots.gamma_threecolor_lifetime(2)] = contourf(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Visible','off');
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime = plot(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',3,'Visible','off');
     
+    %%% TauFit
+    %%% Microtime Plot
+    BurstMeta.Plots.TauFit.Scatter_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.Scatter_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.Decay_Sum = plot([0 1],[0 0],'--k','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.Decay_Par = plot([0 1],[0 0],'--g','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.Decay_Per = plot([0 1],[0 0],'--r','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.IRF_Par = plot([0 1],[0 0],'.g','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.IRF_Per = plot([0 1],[0 0],'.r','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.FitPreview = plot([0 1],[0 0],'k','Parent',h.TauFit.Microtime_Plot);
+    BurstMeta.Plots.TauFit.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2,'Parent',h.TauFit.Microtime_Plot);
+    %%% Residuals Plot
+    BurstMeta.Plots.TauFit.Residuals = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot);
+    BurstMeta.Plots.TauFit.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot);
+    %%% Result Plot
+    BurstMeta.Plots.TauFit.DecayResult = plot([0 1],[0 0],'--k','Parent',h.TauFit.Result_Plot);
+    BurstMeta.Plots.TauFit.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'Parent',h.TauFit.Result_Plot);
     ChangePlotType(h.PlotTypePopumenu,[]);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
@@ -2628,7 +3130,7 @@ Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValue
 Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
-if obj ==h.DetermineCorrectionsButton
+if obj == h.DetermineCorrectionsButton
 %% plot raw Efficiency for S>0.9
 x_axis = linspace(0,0.3,50);
 Smin = 0.9;
@@ -2888,6 +3390,19 @@ if any(BurstData.BAMethod == [3,4])
     end
 end
 %% Save and Update GUI
+%%% Update Corrections in BurstData
+switch BurstData.BAMethod
+    case {1,2}
+        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
+            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
+            UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+    case {3,4}
+        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
+            UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
+            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
+            UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
+            UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+end
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
@@ -2947,7 +3462,7 @@ elseif N_gauss == 2
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Updates GUI elements in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates GUI elements in fFCS tab and Lifetime Tab %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_fFCS_GUI(~,~)
 global BurstData
@@ -2968,6 +3483,10 @@ else %%% Set to empty
     h.fFCS_Species2_popupmenu.String = '';
     h.fFCS_Species2_popupmenu.Value = 1;
 end
+
+%%% Update Lifetime GUI popupmenu with species list
+h.TauFit.SpeciesSelect.String = BurstData.SpeciesNames;
+h.TauFit.SpeciesSelect.Value = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Microtime Histograms in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2995,154 +3514,261 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
 end
-%%% Read out the bursts contained in the different species selections
-valid_total = UpdateCuts(1);
-species1 = h.fFCS_Species1_popupmenu.Value + 1;BurstMeta.fFCS.Names{1} = h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value};
-species2 = h.fFCS_Species2_popupmenu.Value + 1;BurstMeta.fFCS.Names{2} = h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value};
-valid_species1 = UpdateCuts(species1);
-valid_species2 = UpdateCuts(species2);
+switch obj
+    case h.Plot_Microtimes_button %%% fFCS
+        %%% Read out the bursts contained in the different species selections
+        valid_total = UpdateCuts(1);
+        species1 = h.fFCS_Species1_popupmenu.Value + 1;BurstMeta.fFCS.Names{1} = h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value};
+        species2 = h.fFCS_Species2_popupmenu.Value + 1;BurstMeta.fFCS.Names{2} = h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value};
+        valid_species1 = UpdateCuts(species1);
+        valid_species2 = UpdateCuts(species2);
 
-%%% find selected bursts
-MI_total = BurstTCSPCData.Microtime(valid_total);MI_total = vertcat(MI_total{:});
-CH_total = BurstTCSPCData.Channel(valid_total);CH_total = vertcat(CH_total{:});
-MT_total = BurstTCSPCData.Macrotime(valid_total);MT_total = vertcat(MT_total{:});
-%MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
-MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
-CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
-%MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
-MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
-CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
+        %%% find selected bursts
+        MI_total = BurstTCSPCData.Microtime(valid_total);MI_total = vertcat(MI_total{:});
+        CH_total = BurstTCSPCData.Channel(valid_total);CH_total = vertcat(CH_total{:});
+        MT_total = BurstTCSPCData.Macrotime(valid_total);MT_total = vertcat(MT_total{:});
+        %MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
+        MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
+        CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
+        %MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
+        MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
+        CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
 
-switch BurstData.BAMethod
-    case {1,2} %%% 2ColorMFD
-        ParChans = [1 3]; %% GG1 and GR1
-        PerpChans = [2 4]; %% GG2 and GR2
-    case {3,4} %%% 3ColorMFD
-        ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
-        PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
-end
-%%% Construct Stacked Microtime Channels
-%%% ___| MT1 |___| MT2 + max(MT1) |___
-MI_par{1} = [];MI_par{2} = [];
-MI_perp{1} = [];MI_perp{2} = [];
-%%% read out the limits of the PIE channels
-limit_low_par = [0, BurstData.PIE.From(ParChans)];
-limit_high_par = [0, BurstData.PIE.To(ParChans)];
-dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
-limit_low_perp = [0,BurstData.PIE.From(PerpChans)];
-limit_high_perp = [0, BurstData.PIE.To(PerpChans)];
-dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
-for i = 1:2 %%% loop over species
-    for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
-         MI_par{i} = vertcat(MI_par{i},...
-            MI_species{i}(CH_species{i} == ParChans(j)) -...
-            limit_low_par(j+1) + 1 +...
-            dif_par(j));
-        MI_perp{i} = vertcat(MI_perp{i},...
-            MI_species{i}(CH_species{i} == PerpChans(j)) -...
-            limit_low_perp(j+1) + 1 +...
-            dif_perp(j));
-%         MI_par{i} = vertcat(MI_par{i},...
-%             MI_species{i}(CH_species{i} == ParChans(j)) -...
-%             limit_low_par(j+1) + 1 +...
-%             limit_high_par(j)-limit_low_par(j));
-%         MI_perp{i} = vertcat(MI_perp{i},...
-%             MI_species{i}(CH_species{i} == PerpChans(j)) -...
-%             limit_low_perp(j+1) + 1 +...
-%             limit_high_perp(j)-limit_low_perp(j));
-    end
-end
+        switch BurstData.BAMethod
+            case {1,2} %%% 2ColorMFD
+                ParChans = [1 3]; %% GG1 and GR1
+                PerpChans = [2 4]; %% GG2 and GR2
+            case {3,4} %%% 3ColorMFD
+                ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
+                PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
+        end
+        %%% Construct Stacked Microtime Channels
+        %%% ___| MT1 |___| MT2 + max(MT1) |___
+        MI_par{1} = [];MI_par{2} = [];
+        MI_perp{1} = [];MI_perp{2} = [];
+        %%% read out the limits of the PIE channels
+        limit_low_par = [0, BurstData.PIE.From(ParChans)];
+        limit_high_par = [0, BurstData.PIE.To(ParChans)];
+        dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
+        limit_low_perp = [0,BurstData.PIE.From(PerpChans)];
+        limit_high_perp = [0, BurstData.PIE.To(PerpChans)];
+        dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
+        for i = 1:2 %%% loop over species
+            for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
+                 MI_par{i} = vertcat(MI_par{i},...
+                    MI_species{i}(CH_species{i} == ParChans(j)) -...
+                    limit_low_par(j+1) + 1 +...
+                    dif_par(j));
+                MI_perp{i} = vertcat(MI_perp{i},...
+                    MI_species{i}(CH_species{i} == PerpChans(j)) -...
+                    limit_low_perp(j+1) + 1 +...
+                    dif_perp(j));
+        %         MI_par{i} = vertcat(MI_par{i},...
+        %             MI_species{i}(CH_species{i} == ParChans(j)) -...
+        %             limit_low_par(j+1) + 1 +...
+        %             limit_high_par(j)-limit_low_par(j));
+        %         MI_perp{i} = vertcat(MI_perp{i},...
+        %             MI_species{i}(CH_species{i} == PerpChans(j)) -...
+        %             limit_low_perp(j+1) + 1 +...
+        %             limit_high_perp(j)-limit_low_perp(j));
+            end
+        end
 
-MI_total_par = [];
-MI_total_perp = [];
-MT_total_par = [];
-MT_total_perp = [];
-for i = 1:numel(ParChans)
-    MI_total_par = vertcat(MI_total_par,...
-        MI_total(CH_total == ParChans(i)) -...
-        limit_low_par(i+1) + 1 +...
-        dif_par(i));
-%     MI_total_par = vertcat(MI_total_par,...
-%         MI_total(CH_total == ParChans(i)) -...
-%         limit_low_par(i+1) + 1 +...
-%         limit_high_par(i)-limit_low_par(i));
-    MT_total_par = vertcat(MT_total_par,...
-        MT_total(CH_total == ParChans(i)));
-    MI_total_perp = vertcat(MI_total_perp,...
-        MI_total(CH_total == PerpChans(i)) -...
-        limit_low_perp(i+1) + 1 +...
-        dif_perp(i));
-%     MI_total_perp = vertcat(MI_total_perp,...
-%         MI_total(CH_total == PerpChans(i)) -...
-%         limit_low_perp(i+1) + 1 +...
-%         limit_high_perp(i)-limit_low_perp(i));
-    MT_total_perp = vertcat(MT_total_perp,...
-        MT_total(CH_total == PerpChans(i)));
-end
+        MI_total_par = [];
+        MI_total_perp = [];
+        MT_total_par = [];
+        MT_total_perp = [];
+        for i = 1:numel(ParChans)
+            MI_total_par = vertcat(MI_total_par,...
+                MI_total(CH_total == ParChans(i)) -...
+                limit_low_par(i+1) + 1 +...
+                dif_par(i));
+        %     MI_total_par = vertcat(MI_total_par,...
+        %         MI_total(CH_total == ParChans(i)) -...
+        %         limit_low_par(i+1) + 1 +...
+        %         limit_high_par(i)-limit_low_par(i));
+            MT_total_par = vertcat(MT_total_par,...
+                MT_total(CH_total == ParChans(i)));
+            MI_total_perp = vertcat(MI_total_perp,...
+                MI_total(CH_total == PerpChans(i)) -...
+                limit_low_perp(i+1) + 1 +...
+                dif_perp(i));
+        %     MI_total_perp = vertcat(MI_total_perp,...
+        %         MI_total(CH_total == PerpChans(i)) -...
+        %         limit_low_perp(i+1) + 1 +...
+        %         limit_high_perp(i)-limit_low_perp(i));
+            MT_total_perp = vertcat(MT_total_perp,...
+                MT_total(CH_total == PerpChans(i)));
+        end
 
-%%% sort photons
-[MT_total_par,idx] = sort(MT_total_par);
-MI_total_par = MI_total_par(idx);
-[MT_total_perp,idx] = sort(MT_total_perp);
-MI_total_perp = MI_total_perp(idx);
+        %%% sort photons
+        [MT_total_par,idx] = sort(MT_total_par);
+        MI_total_par = MI_total_par(idx);
+        [MT_total_perp,idx] = sort(MT_total_perp);
+        MI_total_perp = MI_total_perp(idx);
 
-%%% Calculate the histograms
-maxTAC_par = max(MI_total_par);
-maxTAC_perp = max(MI_total_perp);
-BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par);
-BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp);
-for i = 1:2
-    BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par); 
-    BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
-end
-BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par); 
-BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp); 
+        %%% Calculate the histograms
+        maxTAC_par = max(MI_total_par);
+        maxTAC_perp = max(MI_total_perp);
+        BurstMeta.fFCS.TAC_par = 1:1:(maxTAC_par);
+        BurstMeta.fFCS.TAC_perp = 1:1:(maxTAC_perp);
+        for i = 1:2
+            BurstMeta.fFCS.hist_MIpar_Species{i} = histc(MI_par{i},BurstMeta.fFCS.TAC_par); 
+            BurstMeta.fFCS.hist_MIperp_Species{i} = histc(MI_perp{i},BurstMeta.fFCS.TAC_perp);
+        end
+        BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par); 
+        BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp); 
 
-%%% Store Photon Vectors of total photons in BurstMeta
-BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
-BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
-BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
-BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
-%%% Plot the Microtime histograms
-BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
-BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par;
-BurstMeta.Plots.fFCS.Microtime_Species1_par.XData = BurstMeta.fFCS.TAC_par;
-BurstMeta.Plots.fFCS.Microtime_Species1_par.YData = BurstMeta.fFCS.hist_MIpar_Species{1};
-BurstMeta.Plots.fFCS.Microtime_Species2_par.XData = BurstMeta.fFCS.TAC_par;
-BurstMeta.Plots.fFCS.Microtime_Species2_par.YData = BurstMeta.fFCS.hist_MIpar_Species{2};
-axis(h.axes_fFCS_DecayPar,'tight');
-BurstMeta.Plots.fFCS.Microtime_Total_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Total_perp.YData = BurstMeta.fFCS.hist_MItotal_perp;
-BurstMeta.Plots.fFCS.Microtime_Species1_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{1};
-BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
-BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2};
-axis(h.axes_fFCS_DecayPerp,'tight');
+        %%% Store Photon Vectors of total photons in BurstMeta
+        BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
+        BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
+        BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
+        BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+        %%% Plot the Microtime histograms
+        BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
+        BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par;
+        BurstMeta.Plots.fFCS.Microtime_Species1_par.XData = BurstMeta.fFCS.TAC_par;
+        BurstMeta.Plots.fFCS.Microtime_Species1_par.YData = BurstMeta.fFCS.hist_MIpar_Species{1};
+        BurstMeta.Plots.fFCS.Microtime_Species2_par.XData = BurstMeta.fFCS.TAC_par;
+        BurstMeta.Plots.fFCS.Microtime_Species2_par.YData = BurstMeta.fFCS.hist_MIpar_Species{2};
+        axis(h.axes_fFCS_DecayPar,'tight');
+        BurstMeta.Plots.fFCS.Microtime_Total_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.Microtime_Total_perp.YData = BurstMeta.fFCS.hist_MItotal_perp;
+        BurstMeta.Plots.fFCS.Microtime_Species1_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.Microtime_Species1_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{1};
+        BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
+        BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2};
+        axis(h.axes_fFCS_DecayPerp,'tight');
 
-%%% Add IRF Pattern if existent
-if isfield(BurstData,'ScatterPattern')
-    hScat_par = [];
-    hScat_perp = [];
-    for i = 1:numel(ParChans)
-        hScat_par = [hScat_par, BurstData.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
-        hScat_perp = [hScat_perp, BurstData.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
-    end
-    %%% normaize with respect to the total decay histogram
-    hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par);
-    hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
+        %%% Add IRF Pattern if existent
+        if isfield(BurstData,'ScatterPattern')
+            hScat_par = [];
+            hScat_perp = [];
+            for i = 1:numel(ParChans)
+                hScat_par = [hScat_par, BurstData.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
+                hScat_perp = [hScat_perp, BurstData.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
+            end
+            %%% normaize with respect to the total decay histogram
+            hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par);
+            hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
 
-    %%% store in BurstMeta
-    BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
-    BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
-    %%% Update Plots
-    BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
-    BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;
-    BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
-    BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
-elseif ~isfield(BurstData.fFCS,'IRF')
-    %%% Hide IRF plots
-    BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
-    BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
+            %%% store in BurstMeta
+            BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
+            BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
+            %%% Update Plots
+            BurstMeta.Plots.fFCS.IRF_par.XData = BurstMeta.fFCS.TAC_par;
+            BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;
+            BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
+            BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
+        elseif ~isfield(BurstData.fFCS,'IRF')
+            %%% Hide IRF plots
+            BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
+            BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
+        end
+    case h.TauFit.Plot_Microtimes_button %%% TauFit
+        %%% Read out the bursts contained in the different species selections
+        species = h.TauFit.SpeciesSelect.Value;
+        valid = UpdateCuts(species);
+
+        %%% find selected bursts
+        MI_total = BurstTCSPCData.Microtime(valid);MI_total = vertcat(MI_total{:});
+        CH_total = BurstTCSPCData.Channel(valid);CH_total = vertcat(CH_total{:});
+        
+        switch h.TauFit.ChannelSelect.Value
+            case 1 %% GG
+                chan = [1,2];
+            case 2 %% RR
+                chan = [5,6];
+        end
+        MI_par = MI_total(CH_total == chan(1));
+        MI_perp = MI_total(CH_total == chan(2));
+        
+        %%% Calculate the histograms
+        MI_par = histc(MI_par,0:(BurstData.FileInfo.MI_Bins-1)); 
+        MI_perp = histc(MI_perp,0:(BurstData.FileInfo.MI_Bins-1)); 
+        BurstMeta.TauFit.hMI_Par = MI_par(BurstData.PIE.From(chan(1)):min([BurstData.PIE.To(chan(1)) end]));
+        BurstMeta.TauFit.hMI_Per = MI_perp(BurstData.PIE.From(chan(2)):min([BurstData.PIE.To(chan(2)) end]));
+        
+        BurstMeta.TauFit.hIRF_Par = BurstData.IRF{chan(1)}(BurstData.PIE.From(chan(1)):min([BurstData.PIE.To(chan(1)) end]));
+        BurstMeta.TauFit.hIRF_Per = BurstData.IRF{chan(2)}(BurstData.PIE.From(chan(2)):min([BurstData.PIE.To(chan(2)) end]));
+        BurstMeta.TauFit.hIRF_Par = (BurstMeta.TauFit.hIRF_Par./max(BurstMeta.TauFit.hIRF_Par)).*max(BurstMeta.TauFit.hMI_Par);
+        BurstMeta.TauFit.hIRF_Per = (BurstMeta.TauFit.hIRF_Per./max(BurstMeta.TauFit.hIRF_Per)).*max(BurstMeta.TauFit.hMI_Per);
+    
+        BurstMeta.TauFit.hScat_Par = BurstData.ScatterPattern{chan(1)}(BurstData.PIE.From(chan(1)):min([BurstData.PIE.To(chan(1)) end]));
+        BurstMeta.TauFit.hScat_Per = BurstData.ScatterPattern{chan(2)}(BurstData.PIE.From(chan(2)):min([BurstData.PIE.To(chan(2)) end]));
+        BurstMeta.TauFit.hScat_Par = (BurstMeta.TauFit.hScat_Par./max(BurstMeta.TauFit.hScat_Par)).*max(BurstMeta.TauFit.hMI_Par);
+        BurstMeta.TauFit.hScat_Per = (BurstMeta.TauFit.hScat_Per./max(BurstMeta.TauFit.hScat_Per)).*max(BurstMeta.TauFit.hMI_Per);
+    
+        %%% Generate XData
+        BurstMeta.TauFit.XData_Par = (BurstData.PIE.From(chan(1)):BurstData.PIE.To(chan(1))) - BurstData.PIE.From(chan(1));
+        BurstMeta.TauFit.XData_Per = (BurstData.PIE.From(chan(2)):BurstData.PIE.To(chan(2))) - BurstData.PIE.From(chan(2));
+
+        %%% Plot
+        %%% Plot the Data
+        TACtoTime = 1/BurstData.FileInfo.MI_Bins*BurstData.FileInfo.TACRange*1e9;
+        BurstMeta.Plots.TauFit.Decay_Par.XData = BurstMeta.TauFit.XData_Par*TACtoTime;
+        BurstMeta.Plots.TauFit.Decay_Per.XData = BurstMeta.TauFit.XData_Per*TACtoTime;
+        BurstMeta.Plots.TauFit.IRF_Par.XData = BurstMeta.TauFit.XData_Par*TACtoTime;
+        BurstMeta.Plots.TauFit.IRF_Per.XData = BurstMeta.TauFit.XData_Per*TACtoTime;
+        BurstMeta.Plots.TauFit.Scatter_Par.XData = BurstMeta.TauFit.XData_Par*TACtoTime;
+        BurstMeta.Plots.TauFit.Scatter_Per.XData = BurstMeta.TauFit.XData_Per*TACtoTime;
+        BurstMeta.Plots.TauFit.Decay_Par.YData = BurstMeta.TauFit.hMI_Par;
+        BurstMeta.Plots.TauFit.Decay_Per.YData = BurstMeta.TauFit.hMI_Per;
+        BurstMeta.Plots.TauFit.IRF_Par.YData = BurstMeta.TauFit.hIRF_Par;
+        BurstMeta.Plots.TauFit.IRF_Per.YData = BurstMeta.TauFit.hIRF_Per;
+        BurstMeta.Plots.TauFit.Scatter_Par.YData = BurstMeta.TauFit.hScat_Par;
+        BurstMeta.Plots.TauFit.Scatter_Per.YData = BurstMeta.TauFit.hScat_Per;
+        
+        h.TauFit.Microtime_Plot.XLim = [min([BurstMeta.TauFit.XData_Par*TACtoTime BurstMeta.TauFit.XData_Per*TACtoTime]) max([BurstMeta.TauFit.XData_Par*TACtoTime BurstMeta.TauFit.XData_Per*TACtoTime])];
+        h.TauFit.Microtime_Plot.YLim = [min([BurstMeta.TauFit.hMI_Par; BurstMeta.TauFit.hMI_Per]) 10/9*max([BurstMeta.TauFit.hMI_Par; BurstMeta.TauFit.hMI_Per])];
+        
+        %%% Define the Slider properties
+        %%% Values to consider:
+        %%% The length of the shortest PIE channel
+        BurstMeta.TauFit.MaxLength = min([numel(BurstMeta.TauFit.hMI_Par) numel(BurstMeta.TauFit.hMI_Per)]);
+        %%% The Length Slider defaults to the length of the shortest PIE
+        %%% channel and should not assume larger values
+        h.TauFit.Length_Slider.Min = 1;
+        h.TauFit.Length_Slider.Max = BurstMeta.TauFit.MaxLength;
+        h.TauFit.Length_Slider.Value = BurstMeta.TauFit.MaxLength;
+        BurstMeta.TauFit.Length = BurstMeta.TauFit.MaxLength;
+        h.TauFit.Length_Edit.String = num2str(BurstMeta.TauFit.Length);
+        %%% Start Parallel Slider can assume values from 0 (no shift) up to the
+        %%% length of the shortest PIE channel minus the set length
+        h.TauFit.StartPar_Slider.Min = 0;
+        h.TauFit.StartPar_Slider.Max = BurstMeta.TauFit.MaxLength;
+        h.TauFit.StartPar_Slider.Value = 0;
+        BurstMeta.TauFit.StartPar = 0;
+        h.TauFit.StartPar_Edit.String = num2str(BurstMeta.TauFit.StartPar);
+        %%% Shift Perpendicular Slider can assume values from the difference in
+        %%% start point between parallel and perpendicular up to the difference
+        %%% between the end point of the parallel channel and the start point
+        %%% of the perpendicular channel
+        h.TauFit.ShiftPer_Slider.Min = -floor(BurstMeta.TauFit.MaxLength/10);
+        h.TauFit.ShiftPer_Slider.Max = floor(BurstMeta.TauFit.MaxLength/10);
+        h.TauFit.ShiftPer_Slider.Value = 0;
+        BurstMeta.TauFit.ShiftPer = 0;
+        h.TauFit.ShiftPer_Edit.String = num2str(BurstMeta.TauFit.ShiftPer);
+
+        %%% IRF Length has the same limits as the Length property
+        h.TauFit.IRFLength_Slider.Min = 1;
+        h.TauFit.IRFLength_Slider.Max = BurstMeta.TauFit.MaxLength;
+        h.TauFit.IRFLength_Slider.Value = BurstMeta.TauFit.MaxLength;
+        BurstMeta.TauFit.IRFLength = BurstMeta.TauFit.MaxLength;
+        h.TauFit.IRFLength_Edit.String = num2str(BurstMeta.TauFit.IRFLength);
+        %%% IRF Shift has the same limits as the perp shift property
+        h.TauFit.IRFShift_Slider.Min = -floor(BurstMeta.TauFit.MaxLength/10);
+        h.TauFit.IRFShift_Slider.Max = floor(BurstMeta.TauFit.MaxLength/10);
+        h.TauFit.IRFShift_Slider.Value = 0;
+        BurstMeta.TauFit.IRFShift = 0;
+        h.TauFit.IRFShift_Edit.String = num2str(BurstMeta.TauFit.IRFShift);
+
+        %%% Ignore Slider reaches from 1 to maximum length
+        h.TauFit.Ignore_Slider.Value = 1;
+        h.TauFit.Ignore_Slider.Min = 1;
+        h.TauFit.Ignore_Slider.Max = BurstMeta.TauFit.MaxLength;
+        BurstMeta.TauFit.Ignore = 1;
+        h.TauFit.Ignore_Edit.String = num2str(BurstMeta.TauFit.Ignore);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3312,6 +3938,829 @@ end
 delete(h_waitbar);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates TauFit Plots  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_TauFitPlots(obj,~)
+global BurstData BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+%%% Update Values
+switch obj
+    case {h.TauFit.StartPar_Slider, h.TauFit.StartPar_Edit}
+        if obj == h.TauFit.StartPar_Slider
+            BurstMeta.TauFit.StartPar = floor(obj.Value);
+        elseif obj == h.TauFit.StartPar_Edit
+            BurstMeta.TauFit.StartPar = str2double(obj.String);
+        end
+    case {h.TauFit.Length_Slider, h.TauFit.Length_Edit}
+        %%% Update Value
+        if obj == h.TauFit.Length_Slider
+            BurstMeta.TauFit.Length = floor(obj.Value);
+        elseif obj == h.TauFit.Length_Edit
+            BurstMeta.TauFit.Length = str2double(obj.String);
+        end
+        %%% Correct if IRFLength exceeds the Length
+        if BurstMeta.TauFit.IRFLength > BurstMeta.TauFit.Length
+            BurstMeta.TauFit.IRFLength = BurstMeta.TauFit.Length;
+        end
+    case {h.TauFit.ShiftPer_Slider, h.TauFit.ShiftPer_Edit}
+        %%% Update Value
+        if obj == h.TauFit.ShiftPer_Slider
+            BurstMeta.TauFit.ShiftPer = floor(obj.Value);
+        elseif obj == h.TauFit.ShiftPer_Edit
+            BurstMeta.TauFit.ShiftPer = str2double(obj.String);
+        end
+    case {h.TauFit.IRFLength_Slider, h.TauFit.IRFLength_Edit}
+        %%% Update Value
+        if obj == h.TauFit.IRFLength_Slider
+            BurstMeta.TauFit.IRFLength = floor(obj.Value);
+        elseif obj == h.IRFLength_Edit
+            BurstMeta.TauFit.IRFLength = str2double(obj.String);
+        end
+        %%% Correct if IRFLength exceeds the Length
+        if BurstMeta.TauFit.IRFLength > BurstMeta.TauFit.Length
+            BurstMeta.TauFit.IRFLength = BurstMeta.TauFit.Length;
+        end
+    case {h.TauFit.IRFShift_Slider, h.TauFit.IRFShift_Edit}
+        %%% Update Value
+        if obj == h.TauFit.IRFShift_Slider
+            BurstMeta.TauFit.IRFShift = floor(obj.Value);
+        elseif obj == h.TauFit.IRFShift_Edit
+            BurstMeta.TauFit.IRFShift = str2double(obj.String);
+        end
+    case {h.TauFit.Ignore_Slider,h.TauFit.Ignore_Edit}%%% Update Value
+        if obj == h.TauFit.Ignore_Slider
+            BurstMeta.TauFit.Ignore = floor(obj.Value);
+        elseif obj == h.TauFit.Ignore_Edit
+            BurstMeta.TauFit.Ignore = str2double(obj.String);
+        end
+    case {h.TauFit.FitPar_Table}
+        BurstMeta.TauFit.IRFShift = obj.Data{end,1};
+        %%% Update Edit Box and Slider
+        h.IRFShift_Edit.String = num2str(BurstMeta.TauFit.IRFShift);
+        h.IRFShift_Slider.Value = BurstMeta.TauFit.IRFShift;
+end
+%%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
+if isprop(obj,'Style')
+    switch obj.Style
+        case 'slider'
+            h.TauFit.StartPar_Edit.String = num2str(BurstMeta.TauFit.StartPar);
+            h.TauFit.Length_Edit.String = num2str(BurstMeta.TauFit.Length);
+            h.TauFit.ShiftPer_Edit.String = num2str(BurstMeta.TauFit.ShiftPer);
+            h.TauFit.IRFLength_Edit.String = num2str(BurstMeta.TauFit.IRFLength);
+            h.TauFit.IRFShift_Edit.String = num2str(BurstMeta.TauFit.IRFShift);
+            h.TauFit.FitPar_Table.Data{end,1} = BurstMeta.TauFit.IRFShift;
+            h.TauFit.Ignore_Edit.String = num2str(BurstMeta.TauFit.Ignore);
+        case 'edit'
+            h.TauFit.StartPar_Slider.Value = BurstMeta.TauFit.StartPar;
+            h.TauFit.Length_Slider.Value = BurstMeta.TauFit.Length;
+            h.TauFit.ShiftPer_Slider.Value = BurstMeta.TauFit.ShiftPer;
+            h.TauFit.IRFLength_Slider.Value = BurstMeta.TauFit.IRFLength;
+            h.TauFit.IRFShift_Slider.Value = BurstMeta.TauFit.IRFShift;
+            h.TauFit.FitPar_Table.Data{end,1} = BurstMeta.TauFit.IRFShift;
+            h.TauFit.Ignore_Slider.Value = BurstMeta.TauFit.Ignore;
+    end
+end
+%%% Update Plot
+%%% Make the Microtime Adjustment Plot Visible, hide Result
+h.TauFit.Microtime_Plot.Parent = h.MainTabTauFitPanel;
+h.TauFit.Result_Plot.Parent = h.TauFit.HidePanel;
+
+TACtoTime = 1/BurstData.FileInfo.MI_Bins*BurstData.FileInfo.TACRange*1e9;
+%%% Apply the shift to the parallel channel
+BurstMeta.Plots.TauFit.Decay_Par.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+BurstMeta.Plots.TauFit.Decay_Par.YData = BurstMeta.TauFit.hMI_Par((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length)';
+%%% Apply the shift to the perpendicular channel
+BurstMeta.Plots.TauFit.Decay_Per.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+hMI_Per_Shifted = circshift(BurstMeta.TauFit.hMI_Per,[BurstMeta.TauFit.ShiftPer,0])';
+BurstMeta.Plots.TauFit.Decay_Per.YData = hMI_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
+%%% Apply the shift to the parallel IRF channel
+BurstMeta.Plots.TauFit.IRF_Par.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.IRFLength-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+hIRF_Par_Shifted = circshift(BurstMeta.TauFit.hIRF_Par,[0,BurstMeta.TauFit.IRFShift])';
+BurstMeta.Plots.TauFit.IRF_Par.YData = hIRF_Par_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.IRFLength);
+%%% Apply the shift to the perpendicular IRF channel
+BurstMeta.Plots.TauFit.IRF_Per.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.IRFLength-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+hIRF_Per_Shifted = circshift(BurstMeta.TauFit.hIRF_Per,[0,BurstMeta.TauFit.IRFShift+BurstMeta.TauFit.ShiftPer])';
+BurstMeta.Plots.TauFit.IRF_Per.YData = hIRF_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.IRFLength);
+%%% Scatter Pattern
+BurstMeta.Plots.TauFit.Scatter_Par.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+hScatter_Par_Shifted = circshift(BurstMeta.TauFit.hScat_Par,[0,BurstMeta.TauFit.IRFShift])';
+BurstMeta.Plots.TauFit.Scatter_Par.YData = hScatter_Par_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
+BurstMeta.Plots.TauFit.Scatter_Per.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
+hScatter_Per_Shifted = circshift(BurstMeta.TauFit.hScat_Per,[0,BurstMeta.TauFit.IRFShift+BurstMeta.TauFit.ShiftPer])';
+BurstMeta.Plots.TauFit.Scatter_Per.YData = hScatter_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
+
+axes(h.TauFit.Microtime_Plot);xlim([BurstMeta.Plots.TauFit.Decay_Par.XData(1),BurstMeta.Plots.TauFit.Decay_Par.XData(end)]);
+%%% Update Ignore Plot
+if BurstMeta.TauFit.Ignore > 1
+    %%% Make plot visible
+    BurstMeta.Plots.TauFit.Ignore_Plot.Visible = 'on';
+    BurstMeta.Plots.TauFit.Ignore_Plot.XData = [BurstMeta.TauFit.Ignore*TACtoTime BurstMeta.TauFit.Ignore*TACtoTime];
+    BurstMeta.Plots.TauFit.Ignore_Plot.YData = h.TauFit.Microtime_Plot.YLim;
+elseif BurstMeta.TauFit.Ignore == 1
+    %%% Hide Plot Again
+    BurstMeta.Plots.TauFit.Ignore_Plot.Visible = 'off';
+end
+function ChangeYScale(obj,~)
+h = guidata(obj);
+if strcmp(obj.Checked,'off')
+    %%% Set Checked
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
+    %%% Change Scale to Log
+    h.TauFit.Microtime_Plot.YScale = 'log';
+    h.TauFit.Result_Plot.YScale = 'log';
+elseif strcmp(obj.Checked,'on')
+    %%% Set Unchecked
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
+    h.TauFit.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
+    %%% Change Scale to Lin
+    h.TauFit.Microtime_Plot.YScale = 'lin';
+    h.TauFit.Result_Plot.YScale = 'lin';
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Executes on Method selection change in TauFit %%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Method_Selection_TauFit(obj,~)
+global BurstMeta
+BurstMeta.TauFit.FitType = obj.String{obj.Value};
+%%% Update FitTable
+h = guidata(obj);
+h.TauFit.FitPar_Table.RowName = h.TauFit.Parameters{obj.Value};
+h.TauFit.FitPar_Table.Data = h.TauFit.StartPar{obj.Value};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Fit the Data with selected Model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Start_TauFit(obj,~)
+global BurstMeta BurstData
+h = guidata(obj);
+h.TauFit.Result_Plot_Text.Visible = 'off';
+%% Prepare FitData
+BurstMeta.TauFit.FitData.Decay_Par = BurstMeta.Plots.TauFit.Decay_Par.YData;
+BurstMeta.TauFit.FitData.Decay_Per = BurstMeta.Plots.TauFit.Decay_Per.YData;
+
+G = BurstData.Corrections(4+h.TauFit.ChannelSelect.Value);
+l1 = 0;
+l2 = 0;
+
+%BurstMeta.TauFit.FitData.IRF_Par = h.Plots.IRF_Par.YData;
+%BurstMeta.TauFit.FitData.IRF_Per = h.Plots.IRF_Per.YData;
+%%% Read out the shifted scatter pattern
+%%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
+%%% total Scatter Pattern to avoid Edge Effects when using circshift!
+ScatterPer = circshift(BurstMeta.TauFit.hScat_Per,[0,BurstMeta.TauFit.ShiftPer]);
+ScatterPattern = BurstMeta.TauFit.hScat_Par(1:BurstMeta.TauFit.Length) +...
+    2*ScatterPer(1:BurstMeta.TauFit.Length);
+ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+
+IRFPer = circshift(BurstMeta.TauFit.hIRF_Per,[0,BurstMeta.TauFit.ShiftPer]);
+IRFPattern = BurstMeta.TauFit.hIRF_Par(1:BurstMeta.TauFit.Length) +...
+    2*IRFPer(1:BurstMeta.TauFit.Length);
+IRFPattern = IRFPattern'./sum(IRFPattern);
+%%% Old:
+%Scatter_Par_Shifted = circshift(BurstMeta.TauFit.hIRF_Par,[0,BurstMeta.TauFit.IRFShift])';
+%BurstMeta.TauFit.FitData.Scatter_Par = Scatter_Par_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length)';
+%Scatter_Per_Shifted = circshift(BurstMeta.TauFit.hIRF_Per,[0,BurstMeta.TauFit.IRFShift + BurstMeta.TauFit.ShiftPer])';
+%BurstMeta.TauFit.FitData.Scatter_Per = Scatter_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length)';
+%Scatter = BurstMeta.TauFit.FitData.Scatter_Par + 2*BurstMeta.TauFit.FitData.Scatter_Per;
+%Scatter = Scatter./sum(Scatter);
+
+%%% The IRF is also adjusted in the Fit dynamically from the total scatter
+%%% pattern and start,length, and shift values stored in ShiftParams
+%%% ShiftParams(1)  :   StartPar
+%%% ShiftParams(2)  :   IRFShift
+%%% ShiftParams(3)  :   IRFLength
+ShiftParams(1) = BurstMeta.TauFit.StartPar;
+ShiftParams(2) = BurstMeta.TauFit.IRFShift;
+ShiftParams(3) = BurstMeta.TauFit.Length;
+ShiftParams(4) = BurstMeta.TauFit.IRFLength;
+
+%%% Old:
+%Irf = BurstMeta.TauFit.FitData.IRF_Par+2*BurstMeta.TauFit.FitData.IRF_Per;
+%Irf = Irf-min(Irf(Irf~=0));
+%Irf = Irf./sum(Irf);
+%Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
+
+%%% initialize inputs for fit
+Decay = G*(1-3*l1)*BurstMeta.TauFit.FitData.Decay_Par+(2-3*l2)*BurstMeta.TauFit.FitData.Decay_Per;
+BurstMeta.TauFit.TACRange = BurstData.FileInfo.SyncPeriod*1E9;
+if ~isfield(BurstData.FileInfo,'Resolution')
+    BurstMeta.TauFit.TACChannelWidth = BurstData.FileInfo.SyncPeriod*1E9/BurstData.FileInfo.MI_Bins;
+elseif isfield(BurstData.FileInfo,'Resolution') %%% HydraHarp Data
+    BurstMeta.TauFit.TACChannelWidth = BurstData.FileInfo.Resolution/1000;
+end
+%%% Check if IRFshift is fixed or not
+if h.TauFit.FitPar_Table.Data{end,4} == 0
+    %%% IRF is not fixed
+    irf_lb = h.TauFit.FitPar_Table.Data{end,2};
+    irf_ub = h.TauFit.FitPar_Table.Data{end,3};
+    shift_range = floor(BurstMeta.TauFit.IRFShift + irf_lb):ceil(BurstMeta.TauFit.IRFShift + irf_ub);
+elseif h.TauFit.FitPar_Table.Data{end,4} == 1
+    shift_range = BurstMeta.TauFit.IRFShift;
+end
+ignore = BurstMeta.TauFit.Ignore;
+%% Start Fit
+%%% Update Progressbar
+%h.Progress_Text.String = 'Fitting...';
+MI_Bins = BurstData.FileInfo.MI_Bins;
+%%% Read out parameters
+x0 = cell2mat(h.TauFit.FitPar_Table.Data(1:end-1,1))';
+lb = cell2mat(h.TauFit.FitPar_Table.Data(1:end-1,2))';
+ub = cell2mat(h.TauFit.FitPar_Table.Data(1:end-1,3))';
+fixed = cell2mat(h.TauFit.FitPar_Table.Data(1:end-1,4));
+switch BurstMeta.TauFit.FitType
+    case 'Single Exponential'
+        %%% Parameter:
+        %%% taus    - Lifetimes
+        %%% scatter - Scatter Background (IRF pattern)
+        %%% Convert Lifetimes
+        x0(1) = round(x0(1)/BurstMeta.TauFit.TACChannelWidth);
+        lb(1) = round(lb(1)/BurstMeta.TauFit.TACChannelWidth);
+        ub(1) = round(ub(1)/BurstMeta.TauFit.TACChannelWidth);  
+        %%% fit for different IRF offsets and compare the results
+        count = 1;
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
+            x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;        
+    case 'Biexponential'
+        %%% Parameter:
+        %%% taus    - Lifetimes
+        %%% A       - Amplitude of first lifetime
+        %%% scatter - Scatter Background (IRF pattern)
+        %%% Convert Lifetimes
+        x0(1:2) = round(x0(1:2)/BurstMeta.TauFit.TACChannelWidth);
+        lb(1:2) = round(lb(1:2)/BurstMeta.TauFit.TACChannelWidth);
+        ub(1:2) = round(ub(1:2)/BurstMeta.TauFit.TACChannelWidth);  
+        %%% fit for different IRF offsets and compare the results
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        count = 1;
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
+                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
+        FitResult{2} = FitResult{2}.*BurstMeta.TauFit.TACChannelWidth;
+        %%% Convert Fraction from Area Fraction to Amplitude Fraction
+        %%% (i.e. correct for brightness)
+        amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
+        amp1 = amp1./(amp1+amp2);
+        FitResult{3} = amp1;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;
+    case 'Three Exponentials'
+        %%% Parameter:
+        %%% taus    - Lifetimes
+        %%% A1      - Amplitude of first lifetime
+        %%% A2      - Amplitude of first lifetime
+        %%% scatter - Scatter Background (IRF pattern)
+        %%% Convert Lifetimes
+        x0(1:3) = round(x0(1:3)/BurstMeta.TauFit.TACChannelWidth);
+        lb(1:3) = round(lb(1:3)/BurstMeta.TauFit.TACChannelWidth);
+        ub(1:3) = round(ub(1:3)/BurstMeta.TauFit.TACChannelWidth);  
+        %%% fit for different IRF offsets and compare the results
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        count = 1;
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
+                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
+        FitResult{2} = FitResult{2}.*BurstMeta.TauFit.TACChannelWidth;
+        FitResult{3} = FitResult{3}.*BurstMeta.TauFit.TACChannelWidth;
+        %%% Convert Fraction from Area Fraction to Amplitude Fraction
+        %%% (i.e. correct for brightness)
+        amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
+        amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
+        FitResult{4} = amp1;
+        FitResult{5} = amp2;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;
+    case 'Distribution'
+        %%% Parameter:
+        %%% Center R
+        %%% sigmaR
+        %%% Background
+        %%% R0
+        %%% Donor only lifetime
+        %%% Convert Lifetimes
+        x0(6) = round(x0(6)/BurstMeta.TauFit.TACChannelWidth);
+        lb(6) = round(lb(6)/BurstMeta.TauFit.TACChannelWidth);
+        ub(6) = round(ub(6)/BurstMeta.TauFit.TACChannelWidth);  
+        %%% fit for different IRF offsets and compare the results
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        count = 1;
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
+                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{6} = FitResult{6}.*BurstMeta.TauFit.TACChannelWidth;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;
+    case 'Distribution plus Donor only'
+        %%% Parameter:
+        %%% Center R
+        %%% sigmaR
+        %%% Fraction D only
+        %%% Background
+        %%% R0
+        %%% Donor only lifetime
+        
+        %%% Convert Lifetimes
+        x0(7) = round(x0(7)/BurstMeta.TauFit.TACChannelWidth);
+        lb(7) = round(lb(7)/BurstMeta.TauFit.TACChannelWidth);
+        ub(7) = round(ub(7)/BurstMeta.TauFit.TACChannelWidth);  
+        %%% fit for different IRF offsets and compare the results
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        count = 1;
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
+                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        wres = (Decay-FitFun)./sqrt(Decay);
+        
+        %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{7} = FitResult{7}.*BurstMeta.TauFit.TACChannelWidth;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;
+    case 'Fit Anisotropy'
+        %%% Parameter
+        %%% Lifetime
+        %%% Rotational Correlation Time
+        %%% r0 - Initial Anisotropy
+        %%% r_infinity - Residual Anisotropy
+        %%% Background par
+        %%% Background per
+
+        %%% Define separate IRF Patterns
+        IRFPattern = cell(2,1);
+        IRFPattern{1} = BurstMeta.TauFit.hIRF_Par(1:BurstMeta.TauFit.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+        IRFPattern{2} = IRFPer(1:BurstMeta.TauFit.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+        
+        %%% Define separate Scatter Patterns
+        ScatterPattern = cell(2,1);
+        ScatterPattern{1} = BurstMeta.TauFit.hScat_Par(1:BurstMeta.TauFit.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+        ScatterPattern{2} = ScatterPer(1:BurstMeta.TauFit.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+        
+        %%% Convert Lifetimes
+        x0(1:2) = round(x0(1:2)/BurstMeta.TauFit.TACChannelWidth);
+        lb(1:2) = round(lb(1:2)/BurstMeta.TauFit.TACChannelWidth);
+        ub(1:2) = round(ub(1:2)/BurstMeta.TauFit.TACChannelWidth);  
+        
+        %%% Prepare data as vector
+        Decay =  [BurstMeta.TauFit.FitData.Decay_Par(ignore:end); BurstMeta.TauFit.FitData.Decay_Per(ignore:end)];
+        Decay_stacked = [BurstMeta.TauFit.FitData.Decay_Par(ignore:end) BurstMeta.TauFit.FitData.Decay_Per(ignore:end)];
+        %%% fit for different IRF offsets and compare the results
+        x = cell(numel(shift_range,1));
+        residuals = cell(numel(shift_range,1));
+        count = 1;
+        for i = shift_range
+            %%% Update Progressbar
+            %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore};
+            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
+                x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+            x{count} = interlace(x0,x{count},fixed);
+            count = count +1;
+        end
+        chi2 = cellfun(@(x) sum(x.^2./Decay_stacked)/(numel(Decay_stacked)-numel(x0)),residuals);
+        [~,best_fit] = min(chi2);
+        %%% remove ignore range from decay
+        Decay = [BurstMeta.TauFit.FitData.Decay_Par; BurstMeta.TauFit.FitData.Decay_Per];
+        Decay_stacked = [BurstMeta.TauFit.FitData.Decay_Par BurstMeta.TauFit.FitData.Decay_Per];
+        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+        
+         %%% Update FitResult
+        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+        %%% Convert Lifetimes to Nanoseconds
+        FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
+        FitResult{2} = FitResult{2}.*BurstMeta.TauFit.TACChannelWidth;
+        h.TauFit.FitPar_Table.Data(:,1) = FitResult;      
+end
+
+%%% Update IRFShift in Slider and Edit Box
+h.TauFit.IRFShift_Slider.Value = shift_range(best_fit);
+h.TauFit.IRFShift_Edit.String = num2str(shift_range(best_fit));
+
+%%% Reset Progressbar
+%h.Progress_Text.String = 'Fit done';
+%%% Update Plot
+h.TauFit.Microtime_Plot.Parent = h.TauFit.HidePanel;
+h.TauFit.Result_Plot.Parent = h.MainTabTauFitPanel;
+
+% plot chi^2 on graph
+h.TauFit.Result_Plot_Text.Visible = 'on';
+h.TauFit.Result_Plot_Text.String = sprintf(['chi^2 = ' num2str(chi2(best_fit))]);
+h.TauFit.Result_Plot_Text.Position = [0.8*h.TauFit.Result_Plot.XLim(2) 0.9*h.TauFit.Result_Plot.YLim(2)];
+
+TACtoTime = 1/BurstData.FileInfo.MI_Bins*BurstData.FileInfo.TACRange*1e9;
+BurstMeta.Plots.TauFit.DecayResult.XData = (1:numel(Decay))*TACtoTime;
+BurstMeta.Plots.TauFit.DecayResult.YData = Decay;
+BurstMeta.Plots.TauFit.FitResult.XData = (1:numel(Decay))*TACtoTime;
+BurstMeta.Plots.TauFit.FitResult.YData = FitFun;
+axis(h.TauFit.Result_Plot,'tight');
+BurstMeta.Plots.TauFit.Residuals.XData = (1:numel(Decay))*TACtoTime;
+BurstMeta.Plots.TauFit.Residuals.YData = wres;
+BurstMeta.Plots.TauFit.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
+BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
+
+function y = convol(irf, x)
+% convol(irf, x) performs a convolution of the instrumental response 
+% function irf with the decay function x. Periodicity (=length(x)) is assumed.
+
+mm = mean(irf(end-10:end));
+if size(x,1)==1 || size(x,2)==1
+    irf = irf(:);
+    x = x(:);
+end
+p = size(x,1);
+n = length(irf);
+if p>n
+    irf = [irf; mm*ones(p-n,1)]; 
+else
+    irf = irf(1:p);
+end
+y = real(ifft((fft(irf)*ones(1,size(x,2))).*fft(x)));
+t = rem(rem(0:n-1,p)+p,p)+1;
+y = y(t,:);
+function a = interlace( a, x, fix )
+a(~fix) = x;
+function [z] = fitfun_1exp(param, xdata)
+%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
+%	and the computed values. 
+%	LSFIT assumes a function of the form:
+%
+%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
+%
+%	param(1) is the color shift value between irf and y.
+%	param(2) is the irf offset.
+%	param(3:...) are the decay times.
+%	irf is the measured Instrumental Response Function.
+%	y is the measured fluorescence decay curve.
+%	p is the time between to laser excitations (in number of TCSPC channels).
+ShiftParams = xdata{1};
+IRFPattern = xdata{2}; %for convolution
+ScatterPattern = xdata{3}; %for accounting for scatter in the actual decay
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[c, 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+tp = (1:p)';
+bg = param(3);
+sc = param(2);
+tau = param(1);
+x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
+z = convol(irf, x);
+z = z./sum(z);
+z = (1-sc).*z + sc*Scatter; 
+%z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
+z = z.*sum(y)+bg;
+z=z';
+function [z] = fitfun_2exp(param, xdata)
+%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
+%	and the computed values. 
+%	LSFIT assumes a function of the form:
+%
+%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
+%
+%	param(1) is the color shift value between irf and y.
+%	param(2) is the irf offset.
+%	param(3:...) are the decay times.
+%	irf is the measured Instrumental Response Function.
+%	y is the measured fluorescence decay curve.
+%	p is the time between to laser excitations (in number of TCSPC channels).
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[c, 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+tp = (1:p)';
+A = param(3);
+sc = param(4);
+bg = param(5);
+tau = param(1:2);
+x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
+z = convol(irf, x);
+z = z./repmat(sum(z,1),size(z,1),1);
+%%% combine the two exponentials
+z = A*z(:,1) + (1-A)*z(:,2);
+z = (1-sc).*z + sc*Scatter;
+z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
+z = z.*sum(y)+bg;
+z=z';
+function [z] = fitfun_3exp(param, xdata)
+%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
+%	and the computed values. 
+%	LSFIT assumes a function of the form:
+%
+%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
+%
+%	param(1) is the color shift value between irf and y.
+%	param(2) is the irf offset.
+%	param(3:...) are the decay times.
+%	irf is the measured Instrumental Response Function.
+%	y is the measured fluorescence decay curve.
+%	p is the time between to laser excitations (in number of TCSPC channels).
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[c, 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+tp = (1:p)';
+A1 = param(4);
+A2 = param(5);
+if (A1+A2) > 1
+    A1 = A1./(A1+A2);
+    A2 = A2./(A1+A2);
+end
+sc = param(6);
+bg = param(7);
+tau = param(1:3);
+x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
+z = convol(irf, x);
+z = z./repmat(sum(z,1),size(z,1),1);
+%%% combine the two exponentials
+z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
+z = (1-scatter).*z + sc*Scatter;
+z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
+z = z.*sum(y) + bg;
+z=z';
+function [z] = fitfun_dist(param,xdata)
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[c, 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+%tp = (1:p)';
+
+meanR = param(1); %%% Center distance
+sigmaR = param(2); %%% Sigma R
+sc = param(3);
+bg = param(4);
+R0 = param(5);
+tauD0 = param(6);
+
+%%% Determine distribution of lifetimes
+xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);
+c_gauss = zeros(numel(xR),n);
+for i = 1:numel(xR)
+    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
+end
+x = sum(c_gauss,1);
+z = convol(irf, x);
+z = z./repmat(sum(z,1),size(z,1),1);
+z = (1-sc).*z + sc*Scatter;
+z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
+z = z.*sum(y)+bg;
+z=z';
+function [z] = fitfun_dist_donly(param,xdata)
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+irf = circshift(IRFPattern,[c, 0]);
+irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+irf = irf-min(irf(irf~=0));
+irf = irf./sum(irf);
+irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
+Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+
+n = length(irf);
+%t = 1:n;
+%tp = (1:p)';
+
+meanR = param(1); %%% Center distance
+sigmaR = param(2); %%% Sigma R
+fraction_donly = param(3);
+sc = param(4);
+bg = param(5);
+R0 = param(6);
+tauD0 = param(7);
+
+%%% Determine distribution of lifetimes
+xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);
+c_gauss = zeros(numel(xR),n);
+for i = 1:numel(xR)
+    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
+end
+xdist = sum(c_gauss,1);xdist = xdist./sum(xdist);
+xDonly = exp(-(1:n)./tauD0); xDonly = xDonly./sum(xDonly);
+x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
+z = convol(irf, x);
+z = z./repmat(sum(z,1),size(z,1),1);
+z = (1-sc).*z + sc*Scatter;
+z = z./sum(z);
+z = z(ignore:end);
+z = z./sum(z);
+z = z.*sum(y) + bg;
+z=z';
+function [z] = fitfun_aniso(param,xdata)
+ShiftParams = xdata{1};
+IRFPattern = xdata{2};
+ScatterPattern = xdata{3};
+p = xdata{4};
+y = xdata{5};
+c = xdata{6};
+ignore = xdata{7};
+
+%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
+IRF = cell(1,2);
+Scatter = cell(1,2); 
+for i = 1:2
+    irf = [];
+    irf = circshift(IRFPattern{i},[c, 0]);
+    irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
+    irf = irf-min(irf(irf~=0));
+    irf = irf./sum(irf);
+    IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
+    s = [];
+    s = circshift(ScatterPattern{i},[c, 0]);
+    Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
+end
+n = size(y,2);
+%t = 1:n;
+%tp = (1:p)';
+tau = param(1);
+rho = param(2);
+r0 = param(3);
+r_inf = param(4);
+l1 = param(9);
+l2 = param(10);
+sc_par = param(5);
+sc_per = param(6);
+bg_par = param(7);
+bg_per = param(8);
+
+%%% Calculate the parallel Intensity Decay
+x_par = exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
+z_par = convol(IRF{1}, x_par);
+z_par = z_par./repmat(sum(z_par,1),size(z_par,1),1);
+z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
+z_par = z_par./sum(z_par);
+z_par = z_par(ignore:end);
+z_par = z_par./sum(z_par);
+z_par = z_par.*sum(y(1,:)) + bg_par;
+z_par = z_par';
+
+%%% Calculate the perpendicular Intensity Decay
+x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
+z_per = convol(IRF{2}, x_per);
+z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
+z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
+z_per = z_per./sum(z_per);
+z_per = z_per(ignore:end);
+z_per = z_per./sum(z_per);
+z_per = z_per.*sum(y(2,:)) + bg_per;
+z_per = z_per';
+
+% %%% Calculate the perpendicular t Decay
+% x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
+% z_per = convol(IRF{2}, x_per);
+% z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
+% z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
+% z_per = z_per./sum(z_per);
+% z_per = z_per(ignore:end);
+% z_per = z_per./sum(z_per);
+% z_per = z_per.*sum(y(2,:)) + bg_per;
+% z_per = z_per';
+
+%%% Construct Stacked Result
+z = [z_par z_per];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCorrections(obj,~)
@@ -3351,54 +4800,70 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                         UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
                         UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
             end
-        elseif isfield(BurstData,'Background')
-            if any(BurstData.BAMethod == [1,2]) %%% 2cMFD, same as default
-                h.CorrectionsTable.Data = {UserValues.BurstBrowser.Corrections.Gamma_GR;...
-                    UserValues.BurstBrowser.Corrections.Beta_GR;...
-                    UserValues.BurstBrowser.Corrections.CrossTalk_GR;...
-                    UserValues.BurstBrowser.Corrections.DirectExcitation_GR;...
-                    UserValues.BurstBrowser.Corrections.GfactorGreen;...
-                    UserValues.BurstBrowser.Corrections.GfactorRed;...
-                    UserValues.BurstBrowser.Corrections.l1;...
-                    UserValues.BurstBrowser.Corrections.l2;...
-                    BurstData.Background(1);...
-                    BurstData.Background(2);...
-                    BurstData.Background(3);...
-                    BurstData.Background(4);...
-                    BurstData.Background(5);...
-                    BurstData.Background(6)};
-            elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
-                h.CorrectionsTable.Data = {UserValues.BurstBrowser.Corrections.Gamma_GR;...
-                    UserValues.BurstBrowser.Corrections.Gamma_BG;...
-                    UserValues.BurstBrowser.Corrections.Gamma_BR;...
-                    UserValues.BurstBrowser.Corrections.Beta_GR;...
-                    UserValues.BurstBrowser.Corrections.Beta_BG;...
-                    UserValues.BurstBrowser.Corrections.Beta_BR;...
-                    UserValues.BurstBrowser.Corrections.CrossTalk_GR;...
-                    UserValues.BurstBrowser.Corrections.CrossTalk_BG;...
-                    UserValues.BurstBrowser.Corrections.CrossTalk_BR;...
-                    UserValues.BurstBrowser.Corrections.DirectExcitation_GR;...
-                    UserValues.BurstBrowser.Corrections.DirectExcitation_BG;...
-                    UserValues.BurstBrowser.Corrections.DirectExcitation_BR;...
-                    UserValues.BurstBrowser.Corrections.GfactorBlue;...
-                    UserValues.BurstBrowser.Corrections.GfactorGreen;...
-                    UserValues.BurstBrowser.Corrections.GfactorRed;...
-                    UserValues.BurstBrowser.Corrections.l1;...
-                    UserValues.BurstBrowser.Corrections.l2;...
-                    BurstData.Background(1);...
-                    BurstData.Background(2);...
-                    BurstData.Background(3);...
-                    BurstData.Background(4);...
-                    BurstData.Background(5);...
-                    BurstData.Background(6);...
-                    BurstData.Background(7);...
-                    BurstData.Background(8);...
-                    BurstData.Background(9);...
-                    BurstData.Background(10);...
-                    BurstData.Background(11);...
-                    BurstData.Background(12)};
+        end
+        
+        if ~isfield(BurstData,'Corrections')
+            switch BurstData.BAMethod
+                case {1,2}
+                    BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
+                        UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
+                        UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+                case {3,4}
+                    BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
+                        UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
+                        UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
+                        UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
+                        UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
             end
         end
+
+        if any(BurstData.BAMethod == [1,2]) %%% 2cMFD, same as default
+            h.CorrectionsTable.Data = {BurstData.Corrections(3);...
+                BurstData.Corrections(4);...
+                BurstData.Corrections(1);...
+                BurstData.Corrections(2);...
+                BurstData.Corrections(5);...
+                BurstData.Corrections(6);...
+                UserValues.BurstBrowser.Corrections.l1;...
+                UserValues.BurstBrowser.Corrections.l2;...
+                BurstData.Background(1);...
+                BurstData.Background(2);...
+                BurstData.Background(3);...
+                BurstData.Background(4);...
+                BurstData.Background(5);...
+                BurstData.Background(6)};
+        elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
+            h.CorrectionsTable.Data = {BurstData.Corrections(7);...
+                BurstData.Corrections(8);...
+                BurstData.Corrections(9);...
+                BurstData.Corrections(10);...
+                BurstData.Corrections(11);...
+                BurstData.Corrections(12);...
+                BurstData.Corrections(1);...
+                BurstData.Corrections(2);...
+                BurstData.Corrections(3);...
+                BurstData.Corrections(4);...
+                BurstData.Corrections(5);...
+                BurstData.Corrections(6);...
+                BurstData.Corrections(13);...
+                BurstData.Corrections(14);...
+                BurstData.Corrections(15);...
+                UserValues.BurstBrowser.Corrections.l1;...
+                UserValues.BurstBrowser.Corrections.l2;...
+                BurstData.Background(1);...
+                BurstData.Background(2);...
+                BurstData.Background(3);...
+                BurstData.Background(4);...
+                BurstData.Background(5);...
+                BurstData.Background(6);...
+                BurstData.Background(7);...
+                BurstData.Background(8);...
+                BurstData.Background(9);...
+                BurstData.Background(10);...
+                BurstData.Background(11);...
+                BurstData.Background(12)};
+        end
+
     end
 else %%% Update UserValues with new values
     LSUserValues(0);
@@ -3686,7 +5151,19 @@ if any(BurstData.BAMethod == [3,4])
     %%% Update Value in the DataArray
     BurstData.DataArray(:,ind_rBB) = rBB;
 end
-
+%%% Save Corrections in BurstData
+switch BurstData.BAMethod
+    case {1,2}
+        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
+            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
+            UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+    case {3,4}
+        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
+            UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
+            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
+            UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
+            UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+end
 %%% Update Display
 UpdateCuts;
 UpdatePlot([],[]);
@@ -4492,7 +5969,19 @@ h_waitbar = waitbar(0,'Correlating...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
     waitbar(0,h_waitbar,'Loading Photon Data');
-    load('-mat',[BurstData.FileName(1:end-3) 'bps']);
+    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+        %%% load if it exists
+        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+    else
+        %%% else ask for the file
+        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+        if FileName == 0
+            return;
+        end
+        load('-mat',fullfile(PathName,FileName));
+        %%% Store the correct Path in TauFitBurstData
+        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+    end
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
