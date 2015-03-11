@@ -1269,7 +1269,7 @@ case {1,2}
         lt = zeros(numel(MI),2);
         for chan = 1:2
             %%% Calculate Background fraction
-            bg = DUR.*background{1};
+            bg = DUR.*background{chan};
             signal = sum(Mic{chan},1)';
             fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
             
@@ -1494,7 +1494,7 @@ case {3,4}
         model = model_dummy;
         z = sum(model,1);model = model./z(ones(size(model,1),1),:);
          %%% Calculate Background fraction
-        bg = duration.*background{1};
+        bg = duration.*background{chan};
         signal = sum(Mic{chan},1)';
         fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
         %%% Rebin SCATTER pattern
