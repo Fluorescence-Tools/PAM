@@ -1096,27 +1096,7 @@ case {1,2}
     G{2} = UserValues.TauFit.Gred;
     l1 = UserValues.TauFit.l1;
     l2 = UserValues.TauFit.l2;
-    %scatter{1} = str2double(h.ScatterGreen_Edit.String);
-    scatter{1} = 0;
-    if isnan(scatter{1})
-        scatter{1} = 0;
-    end
-    %scatter{2} = str2double(h.ScatterRed_Edit.String);
-    scatter{2} = 0;
-    if isnan(scatter{2})
-        scatter{2} = 0;
-    end
-    %background{1} = str2double(h.BackgroundGreen_Edit.String);
-    background{1} = 0;
-    if isnan(background{1})
-        background{1} = 0;
-    end
-    %background{2} = str2double(h.BackgroundRed_Edit.String);
-    background{2} = 0;
-    if isnan(background{2})
-        background{2} = 0;
-    end
-    
+
     %%% Rename variables
     Microtime = TauFitBurstData.Microtime;
     Channel = TauFitBurstData.Channel;
@@ -1147,7 +1127,7 @@ case {1,2}
         IRF{chan} = [Irf zeros(1,TauFitBurstData.Length{chan}-numel(Irf))];
         Scatter = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Scatter_Par{chan} + (2-3*l1)*TauFitBurstData.FitData.Scatter_Per{chan};
         SCATTER{chan} = Scatter./sum(Scatter);
-        Length{chan} = numel(Scatter);
+        Length{chan} = numel(Scatter)-1;
     end
     
     Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
@@ -1225,8 +1205,6 @@ case {1,2}
         Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
         clear Par2 Per2
 
-        Length{1} = size(Mic{1},2)-1;
-        Length{2} = size(Mic{2},2)-1;
         %%% Rebin to improve speed
         Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
         Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
@@ -1304,37 +1282,6 @@ case {3,4}
     G{3} = UserValues.TauFit.Gred;
     l1 = UserValues.TauFit.l1;
     l2 = UserValues.TauFit.l2;
-    
-    %scatter{1} = str2double(h.ScatterGblue_Edit.String);
-    scatter{1} = 0;
-    if isnan(scatter{1})
-        scatter{1} = 0;
-    end
-    %scatter{2} = str2double(h.ScatterGreen_Edit.String);
-    scatter{2} = 0;
-    if isnan(scatter{2})
-        scatter{2} = 0;
-    end
-    %scatter{3} = str2double(h.ScatterRed_Edit.String);
-    scatter{3} = 0;
-    if isnan(scatter{3})
-        scatter{3} = 0;
-    end
-    %background{1} = str2double(h.BackgroundBlue_Edit.String);
-    background{1} = 0;
-    if isnan(background{1})
-        background{1} = 0;
-    end
-    %background{} = str2double(h.BackgroundGreen_Edit.String);
-    background{2} = 0;
-    if isnan(background{1})
-        background{2} = 0;
-    end
-    %background{3} = str2double(h.BackgroundRed_Edit.String);
-    background{3} = 0;
-    if isnan(background{3})
-        background{3} = 0;
-    end
 
     %%% Rename variables
     Microtime = TauFitBurstData.Microtime;
@@ -1367,107 +1314,23 @@ case {3,4}
         IRF{chan} = [Irf zeros(1,TauFitBurstData.Length{chan}-numel(Irf))];
         Scatter = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Scatter_Par{chan} + (2-3*l1)*TauFitBurstData.FitData.Scatter_Per{chan};
         SCATTER{chan} = Scatter./sum(Scatter);
+        Length{chan} = numel(Scatter)-1;
     end
     
-    %%% Create array of histogrammed microtimes
-    Par1 = zeros(numel(Microtime),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
-    Per1 = zeros(numel(Microtime),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-    Par2 = zeros(numel(Microtime),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
-    Per2 = zeros(numel(Microtime),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
-    Par3 = zeros(numel(Microtime),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
-    Per3 = zeros(numel(Microtime),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
-    
-    parfor i = 1:numel(Microtime)
-        Par1(i,:) = histc(Microtime{i}(Channel{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
-        Per1(i,:) = histc(Microtime{i}(Channel{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
-        Par2(i,:) = histc(Microtime{i}(Channel{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
-        Per2(i,:) = histc(Microtime{i}(Channel{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
-        Par3(i,:) = histc(Microtime{i}(Channel{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
-        Per3(i,:) = histc(Microtime{i}(Channel{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
-    end
-    
-    Mic{1} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1}));
-    Mic{2} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2}));
-    Mic{3} = zeros(numel(Microtime),numel((TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3}));
-    
-    %%% Shift Microtimes
-    Par1 = Par1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
-    Per1 = circshift(Per1,[0,TauFitBurstData.ShiftPer{1}]);
-    Per1 = Per1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
-    
-    Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
-    clear Par1 Per
-    
-    Par2 = Par2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
-    Per2 = circshift(Per2,[0,TauFitBurstData.ShiftPer{2}]);
-    Per2 = Per2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
-    
-    Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
-    clear Par2 Per2
-    
-    Par3 = Par3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
-    Per3 = circshift(Per3,[0,TauFitBurstData.ShiftPer{3}]);
-    Per3 = Per3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
-
-    Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
-    clear Par3 Per3
-    
-    Length{1} = size(Mic{1},2)-1;
-    Length{2} = size(Mic{2},2)-1;
-    Length{3} = size(Mic{3},2)-1;
-    %%% Rebin to improve speed
-    Mic1 = zeros(numel(Microtime),floor(size(Mic{1},2)/new_bin_width));
-    Mic2 = zeros(numel(Microtime),floor(size(Mic{2},2)/new_bin_width));
-    Mic3 = zeros(numel(Microtime),floor(size(Mic{3},2)/new_bin_width));
-    parfor i = 1:numel(Microtime)
-        Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
-        Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
-        Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
-    end
-    Mic{1} = Mic1'; clear Mic1;
-    Mic{2} = Mic2'; clear Mic2;
-    Mic{3} = Mic3'; clear Mic3;
-    
-    %% Old
-    %%% Histogram the Data
-%     Par{1} = cellfun(@(x,y) histc(x(y == 1)', (BurstData.fFCS.From(1):BurstData.fFCS.To(1))),Microtime,Channel,'UniformOutput',false);
-%     Per{1} = cellfun(@(x,y) histc(x(y == 2)', (BurstData.fFCS.From(2):BurstData.fFCS.To(2))),Microtime,Channel,'UniformOutput',false);
-%     Par{2} = cellfun(@(x,y) histc(x(y == 7)', (BurstData.fFCS.From(7):BurstData.fFCS.To(7))),Microtime,Channel,'UniformOutput',false);
-%     Per{2} = cellfun(@(x,y) histc(x(y == 8)', (BurstData.fFCS.From(8):BurstData.fFCS.To(8))),Microtime,Channel,'UniformOutput',false);
-%     Par{3} = cellfun(@(x,y) histc(x(y == 11)', (BurstData.fFCS.From(11):BurstData.fFCS.To(11))),Microtime,Channel,'UniformOutput',false);
-%     Per{3} = cellfun(@(x,y) histc(x(y == 12)', (BurstData.fFCS.From(12):BurstData.fFCS.To(12))),Microtime,Channel,'UniformOutput',false);
-%     %%% Initialize Cell Array of Microtimes
-%     Mic = cell(1,3);
-%     Mic{1} = cell(1,numel(Par{chan}));
-%     Mic{2} = cell(1,numel(Par{chan}));
-%     Mic{3} = cell(1,numel(Par{chan}));
-%     Length = cell(1,3);
-%     %%% Apply Shift/Range and Construct Total Microtime Histograms
-%     for chan = 1:3
-%         %%% Cut the Range of the Parallel Channel
-%         Par{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})',Par{chan},'UniformOutput',false);
-%         %%% Shift the perpendicular channel
-%         Per{chan} = cellfun(@(x) circshift(x,[0,TauFitBurstData.ShiftPer{chan}])',Per{chan},'UniformOutput',false);
-%         %%% Cut the Range of the Perpendicular Channel
-%         Per{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan}),Per{chan},'UniformOutput',false);
-%         %%% Construct total Microtime Histogram
-%         Mic{chan} = cellfun(@(x,y) (1-3*l2)*G{chan}*x+(2-3*l1)*y,Par{chan},Per{chan},'UniformOutput',false);
-%         Length{chan} = numel(Mic{chan}{1})-1;
-%         %%% Rebin to improve speed
-%         Mic{chan} = cellfun(@(x) downsamplebin(x,new_bin_width),Mic{chan},'UniformOutput',false);
-%     end
-
-    %%% Preallocate fit outputs
-    lifetime = zeros(numel(Mic),3);
-    %%% Prepare the fit inputs
+    Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
+    %%% Process in Chunk
+    %%% Prepare Chunks:
+    parts = (floor(linspace(1,numel(Microtime),21)));parts(1) = 0;
+    %%% Preallocate lifetime array
+    lifetime{1} = cell(numel(parts)-1,1);
+    lifetime{2} = cell(numel(parts)-1,1);
+    lifetime{3} = cell(numel(parts)-1,1);
+    %%% Prepare Fit Model
     mean_tau = 5;
     range_tau = 9.98;
     steps_tau = 2111;
     range = mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2;
     for chan = 1:3
-        %%% Update Progress
-        Progress((chan-1)/3,h.Progress_Axes,h.Progress_Text,['Fitting Channel ' num2str(chan) ' of 3...']);
-        
         [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
         T = TauFitBurstData.TAC_Bin*Length{chan};
         GAMMA = T./tau;
@@ -1478,39 +1341,139 @@ case {3,4}
         z = sum(c,1);
         c = c./z(ones(size(c,1),1),:);
         c = c(1:Length{chan}+1,:);
-%         model = (1-background{chan})*c + background{chan};
-%         z = sum(model,1);
-%         model = model./z(ones(size(model,1),1),:);
-%         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
-%         z = sum(model,1);
+        %         model = (1-background{chan})*c + background{chan};
+        %         z = sum(model,1);
+        %         model = model./z(ones(size(model,1),1),:);
+        %         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
         model = c;
         z = sum(model,1);
         model = model./z(ones(size(model,1),1),:);
         %%% Rebin to improve speed
-        model_dummy = zeros(size(Mic{chan},1),size(model,2));
+        model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
         for i = 1:size(model,2)
             model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
         end
         model = model_dummy;
         z = sum(model,1);model = model./z(ones(size(model,1),1),:);
-         %%% Calculate Background fraction
-        bg = duration.*background{chan};
-        signal = sum(Mic{chan},1)';
-        fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
-        %%% Rebin SCATTER pattern
-        scat = downsamplebin(SCATTER{chan},new_bin_width);scat = scat./sum(scat);
-        parfor i = 1:numel(Mic{chan})
-            if fraction_bg(i) == 1
-                lifetime(i,chan) = NaN;
-            else
-                %%% Implementation of burst-wise background correction
-                %%% Calculate Fractions of Background and Signal
-                modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                [lifetime(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
-            end
-        end
+        MODEL{chan} = model;
+         %%% Rebin SCATTER pattern
+        SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});    
     end
-
+    
+    for j = 1:(numel(parts)-1)
+        MI = Microtime((parts(j)+1):parts(j+1));
+        CH = Channel((parts(j)+1):parts(j+1));
+        DUR = duration((parts(j)+1):parts(j+1));
+        %%% Create array of histogrammed microtimes
+        Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+        Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+        Par2 = zeros(numel(MI),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
+        Per2 = zeros(numel(MI),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
+        Par3 = zeros(numel(MI),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
+        Per3 = zeros(numel(MI),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
+        
+        parfor i = 1:numel(MI)
+            Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+            Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+            Par2(i,:) = histc(MI{i}(CH{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
+            Per2(i,:) = histc(MI{i}(CH{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
+            Par3(i,:) = histc(MI{i}(CH{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
+            Per3(i,:) = histc(MI{i}(CH{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
+        end
+        
+        Mic{1} = zeros(numel(MI),numel((TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1}));
+        Mic{2} = zeros(numel(MI),numel((TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2}));
+        Mic{3} = zeros(numel(MI),numel((TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3}));
+        
+        %%% Shift Microtimes
+        Par1 = Par1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
+        Per1 = circshift(Per1,[0,TauFitBurstData.ShiftPer{1}]);
+        Per1 = Per1(:,(TauFitBurstData.StartPar{1}+1):TauFitBurstData.Length{1});
+        
+        Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+        clear Par1 Per
+        
+        Par2 = Par2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
+        Per2 = circshift(Per2,[0,TauFitBurstData.ShiftPer{2}]);
+        Per2 = Per2(:,(TauFitBurstData.StartPar{2}+1):TauFitBurstData.Length{2});
+        
+        Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+        clear Par2 Per2
+        
+        Par3 = Par3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
+        Per3 = circshift(Per3,[0,TauFitBurstData.ShiftPer{3}]);
+        Per3 = Per3(:,(TauFitBurstData.StartPar{3}+1):TauFitBurstData.Length{3});
+        
+        Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
+        clear Par3 Per3
+        
+        %%% Rebin to improve speed
+        Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
+        Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
+        Mic3 = zeros(numel(MI),floor(size(Mic{3},2)/new_bin_width));
+        parfor i = 1:numel(MI)
+            Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+            Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+            Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
+        end
+        Mic{1} = Mic1'; clear Mic1;
+        Mic{2} = Mic2'; clear Mic2;
+        Mic{3} = Mic3'; clear Mic3;
+        
+        %% Old
+        %%% Histogram the Data
+        %     Par{1} = cellfun(@(x,y) histc(x(y == 1)', (BurstData.fFCS.From(1):BurstData.fFCS.To(1))),Microtime,Channel,'UniformOutput',false);
+        %     Per{1} = cellfun(@(x,y) histc(x(y == 2)', (BurstData.fFCS.From(2):BurstData.fFCS.To(2))),Microtime,Channel,'UniformOutput',false);
+        %     Par{2} = cellfun(@(x,y) histc(x(y == 7)', (BurstData.fFCS.From(7):BurstData.fFCS.To(7))),Microtime,Channel,'UniformOutput',false);
+        %     Per{2} = cellfun(@(x,y) histc(x(y == 8)', (BurstData.fFCS.From(8):BurstData.fFCS.To(8))),Microtime,Channel,'UniformOutput',false);
+        %     Par{3} = cellfun(@(x,y) histc(x(y == 11)', (BurstData.fFCS.From(11):BurstData.fFCS.To(11))),Microtime,Channel,'UniformOutput',false);
+        %     Per{3} = cellfun(@(x,y) histc(x(y == 12)', (BurstData.fFCS.From(12):BurstData.fFCS.To(12))),Microtime,Channel,'UniformOutput',false);
+        %     %%% Initialize Cell Array of Microtimes
+        %     Mic = cell(1,3);
+        %     Mic{1} = cell(1,numel(Par{chan}));
+        %     Mic{2} = cell(1,numel(Par{chan}));
+        %     Mic{3} = cell(1,numel(Par{chan}));
+        %     Length = cell(1,3);
+        %     %%% Apply Shift/Range and Construct Total Microtime Histograms
+        %     for chan = 1:3
+        %         %%% Cut the Range of the Parallel Channel
+        %         Par{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})',Par{chan},'UniformOutput',false);
+        %         %%% Shift the perpendicular channel
+        %         Per{chan} = cellfun(@(x) circshift(x,[0,TauFitBurstData.ShiftPer{chan}])',Per{chan},'UniformOutput',false);
+        %         %%% Cut the Range of the Perpendicular Channel
+        %         Per{chan} = cellfun(@(x) x((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan}),Per{chan},'UniformOutput',false);
+        %         %%% Construct total Microtime Histogram
+        %         Mic{chan} = cellfun(@(x,y) (1-3*l2)*G{chan}*x+(2-3*l1)*y,Par{chan},Per{chan},'UniformOutput',false);
+        %         Length{chan} = numel(Mic{chan}{1})-1;
+        %         %%% Rebin to improve speed
+        %         Mic{chan} = cellfun(@(x) downsamplebin(x,new_bin_width),Mic{chan},'UniformOutput',false);
+        %     end
+        %% Fit
+        %%% Preallocate fit outputs
+        lt = zeros(numel(MI),3);
+        for chan = 1:3
+            %%% Calculate Background fraction
+            bg = DUR.*background{chan};
+            signal = sum(Mic{chan},1)';
+            fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+            
+            scat = SCATTER{chan};
+            model = MODEL{chan};
+            parfor i = 1:size(Mic{chan},2)
+                if fraction_bg(i) == 1
+                    lt(i,chan) = NaN;
+                else
+                    %%% Implementation of burst-wise background correction
+                    %%% Calculate Fractions of Background and Signal
+                    modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
+                    [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                end
+            end
+            lifetime{j} = lt;
+        end
+        Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
+    end
+    lifetime = vertcat(lifetime{:});
     %% Save the result
     Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
     idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
