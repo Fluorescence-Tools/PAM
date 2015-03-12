@@ -109,7 +109,7 @@ function plot_after_fit(handles)
 
 global tcPDAstruct
 switch (tcPDAstruct.selected_tab)
-        case 1
+        case handles.tab_1d
             
             if ~ishandle(tcPDAstruct.plots.handle_1d_data) %data plot was deleted -> replot
                 axes(handles.axes_1d);
@@ -160,7 +160,7 @@ switch (tcPDAstruct.selected_tab)
                 set(tcPDAstruct.plots.handle_1d_dev,'YData',tcPDAstruct.plots.dev_gr);
             end
             
-        case 2
+        case handles.tab_2d
             color_str = {'g','r','y','c','m'};
             if ~ishandle(tcPDAstruct.plots.handle_2d_data) %data plot was deleted -> replot
                 axes(handles.axes_2d);
@@ -216,7 +216,7 @@ switch (tcPDAstruct.selected_tab)
                 set(tcPDAstruct.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d);
                 set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
             end
-        case 3
+        case handles.tab_3d
             color_str = {'g','r','y','c','m'};
             if ~ishandle(tcPDAstruct.plots.handle_3d_data_bg_br) %data plot was deleted -> replot
                 plot4d(tcPDAstruct.H_meas,handles);

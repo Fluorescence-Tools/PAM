@@ -553,14 +553,14 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser=[];
         disp('UserValues.BurstBrowser was incomplete');    
     end
-    P.BurstBrowser = [];
+    P.BurstBrowser = S.BurstBrowser;
     %%% Checks, if BurstBrowser.Corrections subfield exists
     %%% Here the correction factors are stored
     if ~isfield (S.BurstBrowser,'Corrections')
         S.BurstBrowser.Corrections=[];
         disp('UserValues.BurstBrowser.Corrections was incomplete');    
     end
-    P.BurstBrowser.Corrections = [];
+    P.BurstBrowser.Corrections = S.BurstBrowser.Corrections;
     %%% Checks, if BurstBrowser.Corrections.CrossTalk_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_GR')
         S.BurstBrowser.Corrections.CrossTalk_GR=0;
@@ -852,6 +852,121 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.PrintPath was incomplete');    
     end 
     P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
+    %% tcPDA
+    if ~isfield(S, 'tcPDA')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
+        S.tcPDA = [];
+    end
+    P.tcPDA = S.tcPDA;
+
+    if ~isfield(S.tcPDA, 'corrections')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections" missing');
+        S.tcPDA.corrections = [];
+    end
+    P.tcPDA.corrections = S.tcPDA.corrections;
+
+    if ~isfield(S.tcPDA.corrections, 'ct_gr')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_gr" missing');
+        S.tcPDA.corrections.ct_gr = 0;
+    end
+    P.tcPDA.corrections.ct_gr = S.tcPDA.corrections.ct_gr;
+
+    if ~isfield(S.tcPDA.corrections, 'ct_bg')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_bg" missing');
+        S.tcPDA.corrections.ct_bg = 0;
+    end
+    P.tcPDA.corrections.ct_bg = S.tcPDA.corrections.ct_bg;
+
+    if ~isfield(S.tcPDA.corrections, 'ct_br')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_br" missing');
+        S.tcPDA.corrections.ct_br = 0;
+    end
+    P.tcPDA.corrections.ct_br = S.tcPDA.corrections.ct_br;
+
+    if ~isfield(S.tcPDA.corrections, 'de_gr')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_gr" missing');
+        S.tcPDA.corrections.de_gr = 0;
+    end
+    P.tcPDA.corrections.de_gr = S.tcPDA.corrections.de_gr;
+
+    if ~isfield(S.tcPDA.corrections, 'de_bg')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_bg" missing');
+        S.tcPDA.corrections.de_bg = 0;
+    end
+    P.tcPDA.corrections.de_bg = S.tcPDA.corrections.de_bg;
+
+    if ~isfield(S.tcPDA.corrections, 'de_br')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_br" missing');
+        S.tcPDA.corrections.de_br = 0;
+    end
+    P.tcPDA.corrections.de_br = S.tcPDA.corrections.de_br;
+
+    if ~isfield(S.tcPDA.corrections, 'gamma_gr')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_gr" missing');
+        S.tcPDA.corrections.gamma_gr = 1;
+    end
+    P.tcPDA.corrections.gamma_gr = S.tcPDA.corrections.gamma_gr;
+
+    if ~isfield(S.tcPDA.corrections, 'gamma_br')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_br" missing');
+        S.tcPDA.corrections.gamma_br = 1;
+    end
+    P.tcPDA.corrections.gamma_br = S.tcPDA.corrections.gamma_br;
+
+
+    if ~isfield(S.tcPDA.corrections, 'BG_bb')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bb" missing');
+        S.tcPDA.corrections.BG_bb = 0;
+    end
+    P.tcPDA.corrections.BG_bb = S.tcPDA.corrections.BG_bb;
+
+    if ~isfield(S.tcPDA.corrections, 'BG_bg')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bg" missing');
+        S.tcPDA.corrections.BG_bg = 0;
+    end
+    P.tcPDA.corrections.BG_bg = S.tcPDA.corrections.BG_bg;
+
+    if ~isfield(S.tcPDA.corrections, 'BG_br')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_br" missing');
+        S.tcPDA.corrections.BG_br = 0;
+    end
+    P.tcPDA.corrections.BG_br = S.tcPDA.corrections.BG_br;
+
+    if ~isfield(S.tcPDA.corrections, 'BG_gg')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gg" missing');
+        S.tcPDA.corrections.BG_gg = 0;
+    end
+    P.tcPDA.corrections.BG_gg = S.tcPDA.corrections.BG_gg;
+
+    if ~isfield(S.tcPDA.corrections, 'BG_gr')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gr" missing');
+        S.tcPDA.corrections.BG_gr = 0;
+    end
+    P.tcPDA.corrections.BG_gr = S.tcPDA.corrections.BG_gr;
+
+    if ~isfield(S.tcPDA.corrections, 'sampling')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.sampling" missing');
+        S.tcPDA.corrections.sampling = 1;
+    end
+    P.tcPDA.corrections.sampling = S.tcPDA.corrections.sampling;
+
+    if ~isfield(S.tcPDA.corrections, 'R0_gr')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_gr" missing');
+        S.tcPDA.corrections.R0_gr = 68;
+    end
+    P.tcPDA.corrections.R0_gr = S.tcPDA.corrections.R0_gr;
+
+    if ~isfield(S.tcPDA.corrections, 'R0_bg')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_bg" missing');
+        S.tcPDA.corrections.R0_bg = 63;
+    end
+    P.tcPDA.corrections.R0_bg = S.tcPDA.corrections.R0_bg;
+
+    if ~isfield(S.tcPDA.corrections, 'R0_br')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_br" missing');
+        S.tcPDA.corrections.R0_br = 51;
+    end
+    P.tcPDA.corrections.R0_br = S.tcPDA.corrections.R0_br;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
