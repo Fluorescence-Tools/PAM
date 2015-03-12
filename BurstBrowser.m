@@ -2151,6 +2151,8 @@ if isempty(hfig)
     %%% Result Plot
     BurstMeta.Plots.TauFit.DecayResult = plot([0 1],[0 0],'--k','Parent',h.TauFit.Result_Plot);
     BurstMeta.Plots.TauFit.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'Parent',h.TauFit.Result_Plot);
+    %%% Initialize TauFit Variables
+    BurstMeta.TauFit.FitType = 'Single Exponential';
     ChangePlotType(h.PlotTypePopumenu,[]);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
@@ -3496,6 +3498,7 @@ h = guidata(obj);
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
+    h_waitbar = waitbar(0,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -3513,6 +3516,7 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
+    close(h_waitbar);
 end
 switch obj
     case h.Plot_Microtimes_button %%% fFCS
@@ -4190,7 +4194,7 @@ switch BurstMeta.TauFit.FitType
             count = count +1;
         end
         
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4221,7 +4225,7 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4260,7 +4264,7 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4302,7 +4306,7 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4338,7 +4342,7 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4388,7 +4392,7 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay_stacked)/(numel(Decay_stacked)-numel(x0)),residuals);
+        chi2 = cellfun(@(x) sum(isfinite(x.^2./Decay_stacked)/(numel(Decay_stacked)-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         %%% remove ignore range from decay
         Decay = [BurstMeta.TauFit.FitData.Decay_Par; BurstMeta.TauFit.FitData.Decay_Per];
