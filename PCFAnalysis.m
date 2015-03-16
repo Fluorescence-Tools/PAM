@@ -1,4 +1,4 @@
-function PCFAnalysis
+function PCFAnalysis(~,~)
 global UserValues PCFData
 h.PCF=findobj('Tag','PCF');
 

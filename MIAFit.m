@@ -1,4 +1,4 @@
-function MIAFit
+function MIAFit(~,~)
 global UserValues MIAFitData MIAFitMeta
 
 h.MIAFit=findobj('Tag','MIAFit');

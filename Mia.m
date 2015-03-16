@@ -1,4 +1,4 @@
-function Mia
+function Mia(~,~)
 global UserValues MIAData
 h.Mia=findobj('Tag','Mia');
 
@@ -175,7 +175,7 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Callback',{@Mia_Frame,2,i},...    
+            'UserData',[2,i],...
             'Position',[0.11 1.3-0.49*i, 0.09 0.03]);
         h.Mia_Frame_Listener(i)=addlistener(h.Mia_Frame_Slider(i),'Value','PostSet',@Mia_Frame);  
         %%% Editbox for frame
@@ -190,8 +190,6 @@ if isempty(h.Mia)
             'Value',1,...
             'Position',[0.205 1.3-0.49*i, 0.05 0.03],...
             'String','Use');        
-        
-
         %%% Text
         h.Text{end+1} = uicontrol(...
             'Parent',h.Mia_Image_Panel,...
@@ -214,8 +212,7 @@ if isempty(h.Mia)
             'Position',[0.12 1.26-0.49*i, 0.08 0.03],...
             'Callback',{@Update_Plots,1,i},...
             'Value',2,...
-            'String',{'Original','Dynamic','Static'});
-        
+            'String',{'Original','Dynamic','Static'});        
         %%% Checkbox to link channels
         if i==1
             h.Mia_Image_Link = uicontrol(...
@@ -223,19 +220,14 @@ if isempty(h.Mia)
                 'Style','checkbox',...
                 'Units','normalized',...
                 'FontSize',14,...
-                'Callback',{@Mia_Frame,5,1},...
+                'Callback',{@Mia_Frame,2,1},...
                 'BackgroundColor', Look.Back,...
                 'ForegroundColor', Look.Fore,...
                 'Position',[0.01 0.73, 0.15 0.03],...
                 'Value',1,...
                 'String','Link channels');
         end
-        %%% Image frames link
-        if i==2;
-            h.Mia_Frame_Link=linkprop([],'Value');
-        end
-        
-        
+       
         %%% Axes to display images
         h.Mia_Image_Axes(i,1)= axes(...
             'Parent',h.Mia_Image_Panel,...
@@ -1029,7 +1021,7 @@ if isempty(h.Mia)
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Callback',{@Mia_Frame,4,1:3},...
+        'UserData',[4,i],...
         'Position',[0.1 0.91, 0.08 0.03]);
     h.Mia_Cor_Frame_Listener=addlistener(h.Mia_Cor_Frame_Slider,'Value','PostSet',@Mia_Frame);
     %%% Text
@@ -1674,19 +1666,17 @@ switch mode
             end
         end
         %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image_Link.Value = 0;
+        h.Mia_Image_Link.Visible = 'off';
         h.Mia_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
         h.Mia_Correlation_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
-        h.Mia_Frame_Slider(1).Value=1;
+        h.Mia_Frame_Slider(1).Value=1;  
         h.Mia_Frame_Slider(1).Min=1;
-        h.Mia_Frame(1).String='1';
         MIAData.Use=ones(2,size(MIAData.Data{1,1},3));        
         %% Stops function, if only one channel was loaded and clear channel 2
         if all(Path2==0) 
-            %%% Unlinks framses
-            while ~isempty(h.Mia_Frame_Link.Targets)
-                removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
-            end
             %%% Clears images
             h.Plots.Image(2,1).CData=zeros(1,1,3);
             h.Mia_Image_Axes(2,1).XLim=[0 1]+0.5;
@@ -1724,14 +1714,11 @@ switch mode
         h.Mia_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
         h.Mia_Frame_Slider(2).Value=1;
         h.Mia_Frame_Slider(2).Min=1;
-        h.Mia_Frame(2).String='1';
         h.Plots.ROI(2).Position=[10 10 200 200];
         
         %%% Links frames
-        if h.Mia_Image_Link.Value
-            addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
-            addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
-        end
+        h.Mia_Image_Link.Value = 1;
+        h.Mia_Image_Link.Visible = 'on';
         Progress(1);  
         %%% Updates plots
         Mia_ROI([],[],1)
@@ -1750,7 +1737,6 @@ global MIAData UserValues
 h.Mia_Progress_Text.String = 'Updating plots';
 h.Mia_Progress_Axes.Color=[1 0 0];  
 drawnow;
-
 %% Plots intensity images
 if any(mode==1)    
     for i=channel
@@ -2133,8 +2119,8 @@ h = guidata(findobj('Tag','Mia'));
 if size(MIAData.Data,1)>0
     %%% Determins slider in case of listener callback
     if nargin<4
-        mode=e.AffectedObject.Callback{2};
-        channel=e.AffectedObject.Callback{3};
+        mode=e.AffectedObject.UserData(1);
+        channel=e.AffectedObject.UserData(2);
     end
     %%% Updates UIs
     switch mode
@@ -2154,19 +2140,25 @@ if size(MIAData.Data,1)>0
                 h.Mia_Frame(channel).String='1';
             end
             h.Mia_Frame_Slider(channel).Value=Frame;
-            Update_Plots([],[],1,channel);
         case 2 %%% Image frames slider changed
             Frame=h.Mia_Frame_Slider(channel).Value;
+
             if mod(Frame,1)~=0
-                Frame=round(Frame);
-                h.Mia_Frame_Slider(channel).Value=Frame;
+                Frame=round(Frame);                
+                h.Mia_Frame_Slider(channel).Value=Frame;             
             end
             if Frame<1
                 Frame=1;
-                h.Mia_Frame(channel).String=num2str(size(MIAData.Data{channel,1},3));
             end
             h.Mia_Frame(channel).String=num2str(Frame);
-            Update_Plots([],[],1,channel);
+            
+            if h.Mia_Image_Link.Value
+                h.Mia_Frame(mod(2*channel,3)).String=num2str(Frame);
+                h.Mia_Frame_Slider(mod(2*channel,3)).Value=Frame;
+                Update_Plots([],[],1,[1 2]);
+            else
+                Update_Plots([],[],1,channel);
+            end
         case 3 %%% Cor frames editbox changed
             Frame=str2double(h.Mia_Cor_Frame.String);
             i=find(~cellfun(@isempty,MIAData.Cor),1,'first');
@@ -2175,7 +2167,7 @@ if size(MIAData.Data,1)>0
                 Frame=size(MIAData.Cor{i},3);
                 h.Mia_Cor_Frame.String=num2str(size(MIAData.Cor{i},3));
             end
-            if  mod(Frame,1)~=0
+            if mod(Frame,1)~=0
                 Frame=round(Frame);
                 h.Mia_Cor_Frame.String=num2str(Frame);
             end
@@ -2184,7 +2176,6 @@ if size(MIAData.Data,1)>0
                 h.Mia_Cor_Frame.String='1';
             end
             h.Mia_Cor_Frame_Slider.Value=Frame;
-            Update_Plots([],[],2,1:3);
         case 4 %%% Cor frames slider changed
             Frame=h.Mia_Cor_Frame_Slider.Value;
             if mod(Frame,1)~=0
@@ -2197,18 +2188,6 @@ if size(MIAData.Data,1)>0
             end
             h.Mia_Cor_Frame.String=num2str(Frame);
             Update_Plots([],[],2,1:3);
-        case 5 %%% Links frames of image for both channels
-            if h.Mia_Image_Link.Value
-                if size(MIAData.Data,1)==2
-                    addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(1));
-                    addtarget(h.Mia_Frame_Link,h.Mia_Frame_Slider(2));
-                end
-            else %%% Unlinks
-                while ~isempty(h.Mia_Frame_Link.Targets)
-                    removetarget(h.Mia_Frame_Link,h.Mia_Frame_Link.Targets(end));
-                end
-            end
-            Update_Plots([],[],2,1:2);
     end
     %%% Sets the frame use value
     h.Mia_FrameUse(1).Value=MIAData.Use(1,str2double(h.Mia_Frame(1).String));

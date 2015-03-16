@@ -1,4 +1,4 @@
-function Sim
+function Sim(~,~)
 global UserValues SimData
 h.Sim=findobj('Tag','Sim');
 
@@ -1104,6 +1104,8 @@ for i = 1:numel(SimData.Species);
     
     NoP = SimData.Species(i).N;
     D = sqrt(2*SimData.Species(i).D*10^6/Freq);
+    
+    wr = zeros(4,1); wz = zeros(4,1); MB = zeros(4,1); BP = zeros(4,1);
     for j = 1:SimData.Species(i).Color
         wr(j) = SimData.Species(i).wr(j);
         wz(j) = SimData.Species(i).wz(j);
@@ -1153,6 +1155,8 @@ for i = 1:numel(SimData.Species);
     end
     clear Photons;
 end
+
+Sim_Photons = cell(4,1);
 for i=1:4 %%% Combines photons of all species
     Sim_Photons{i} = cell2mat(Photons_total(:,i));
 end
