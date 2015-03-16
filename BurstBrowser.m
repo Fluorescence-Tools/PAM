@@ -2162,6 +2162,7 @@ if isempty(hfig)
 else
     figure(hfig);
 end
+clearvars -global BurstData BurstTCSPCData
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
