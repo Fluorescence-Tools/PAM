@@ -3128,9 +3128,9 @@ elseif cutT == 1
 end
 
 %%% Read out corrections
-Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
-Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
@@ -3151,6 +3151,7 @@ axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
 BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
 BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
+BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
 %% plot raw data for S < 0.2 for direct excitation
 %%% check if plot exists
 Smax = 0.2;
@@ -3169,6 +3170,7 @@ axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
 BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
 BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
 UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
+BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
 end
 if obj == h.FitGammaButton
 %% plot gamma plot for two populations (or lifetime versus E)
@@ -3179,7 +3181,7 @@ S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,i
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
 NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
 NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
 [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
@@ -3210,7 +3212,9 @@ xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
 %%% Determine Gamma and Beta
 coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
 end
 if any(BurstData.BAMethod == [3,4])
     %% 3cMFD corrections
@@ -3222,9 +3226,9 @@ if any(BurstData.BAMethod == [3,4])
     indNBG = find(strcmp(BurstData.NameArray,'Number of Photons (BG)'));
     indNBR = find(strcmp(BurstData.NameArray,'Number of Photons (BR)'));
     %%% Read out corrections
-    Background_BB = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
-    Background_BG = UserValues.BurstBrowser.Corrections.Background_BGpar + UserValues.BurstBrowser.Corrections.Background_BGperp;
-    Background_BR = UserValues.BurstBrowser.Corrections.Background_BRpar + UserValues.BurstBrowser.Corrections.Background_BRperp;
+    Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
+    Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
+    Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
     %%% define T-threshold
     if cutT == 0
         data_for_corrections = BurstData.DataArray;
@@ -3256,6 +3260,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.Fits.histEBG_blueonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histEBG_blueonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.CrossTalk_BG = mean_ct./(1-mean_ct);
+    BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
     %%% Crosstalk B->R
     x_axis = linspace(-0.05,0.25,50);
     EBR_raw = NBR./(NBR+NBB);
@@ -3268,6 +3273,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.Fits.histEBR_blueonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histEBR_blueonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.CrossTalk_BR = mean_ct./(1-mean_ct);
+    BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
     %% Green dye only
     S_threshold = ( (data_for_corrections(:,indSBG) < 0.2) &...
         (data_for_corrections(:,indS) > 0.9) );
@@ -3286,6 +3292,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.Fits.histSBG_greenonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histSBG_greenonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.DirectExcitation_BG = mean_de./(1-mean_de);
+    BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
     %% Red dye only
     S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
         (data_for_corrections(:,indSBR) < 0.2) );
@@ -3304,6 +3311,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.Fits.histSBR_redonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histSBR_redonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.DirectExcitation_BR = mean_de./(1-mean_de);
+    BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
     end
     if obj == h.FitGammaButton
     %% Gamma factor determination based on double-labeled species
@@ -3314,7 +3322,7 @@ if any(BurstData.BAMethod == [3,4])
     NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
     NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NBG = NBG - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB;
+    NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
     EBG_raw = NBG./(NBG+NBB);
     SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
     %%% Calculate 2D-Hist and Fit
@@ -3347,7 +3355,9 @@ if any(BurstData.BAMethod == [3,4])
     %%% Determine Gamma and Beta
     coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
     UserValues.BurstBrowser.Corrections.Gamma_BG = (b - 1)/(b + m - 1);
+    BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
     UserValues.BurstBrowser.Corrections.Beta_BG = b+m-1;
+    BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
     
     S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
         (data_for_corrections(:,indSBG) > 0.9) &...
@@ -3355,7 +3365,7 @@ if any(BurstData.BAMethod == [3,4])
     NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
     NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
     NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-    NBR = NBR - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB;
+    NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB;
     EBR_raw = NBR./(NBR+NBB);
     SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
     %%% Calculate 2D-Hist and Fit
@@ -3389,23 +3399,12 @@ if any(BurstData.BAMethod == [3,4])
     %%% Determine Gamma and Beta
     coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
     UserValues.BurstBrowser.Corrections.Gamma_BR = (b - 1)/(b + m - 1);
+    BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
     UserValues.BurstBrowser.Corrections.Beta_BR = b+m-1;
+    BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
     end
 end
 %% Save and Update GUI
-%%% Update Corrections in BurstData
-switch BurstData.BAMethod
-    case {1,2}
-        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
-            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
-            UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
-    case {3,4}
-        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
-            UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
-            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
-            UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
-            UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
-end
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
@@ -4794,79 +4793,115 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         if ~isfield(BurstData,'Background')
             switch BurstData.BAMethod
                 case {1,2}
-                    BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
-                        UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
-                        UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
+                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                    BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                    BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
                 case {3,4}
-                    BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_BBpar, UserValues.BurstBrowser.Corrections.Background_BBperp,...
-                        UserValues.BurstBrowser.Corrections.Background_BGpar, UserValues.BurstBrowser.Corrections.Background_BGperp,...
-                        UserValues.BurstBrowser.Corrections.Background_BRpar, UserValues.BurstBrowser.Corrections.Background_BRperp
-                        UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
-                        UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
-                        UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
+                    BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
+                    BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+                    BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
+                    BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
+                    BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
+                    BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
+                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                    BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                    BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             end
         end
-        
+        %%% Set Correction Struct to UserValues. Afterwards, corrections
+        %%% are treated individually per mesurement.
         if ~isfield(BurstData,'Corrections')
             switch BurstData.BAMethod
                 case {1,2}
-                    BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
-                        UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
-                        UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+                    BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                    BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                    BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                    BurstData.Corrections.GfactorGreen =  UserValues.BurstBrowser.Corrections.GfactorGreen;
+                    BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.DonorLifetime;
+                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.AcceptorLifetime;
+                    BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                    BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
                 case {3,4}
-                    BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
-                        UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
-                        UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
-                        UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
-                        UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
+                    BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                    BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
+                    BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
+                    BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                    BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
+                    BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
+                    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                    BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+                    BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+                    BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                    BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
+                    BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+                    BurstData.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
+                    BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                    BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                    BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.DonorLifetimeBlue;
+                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.DonorLifetime;
+                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.AcceptorLifetime;
+                    BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                    BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                    BurstData.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
+                    BurstData.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
+                    BurstData.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
+                    BurstData.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
             end
         end
 
         if any(BurstData.BAMethod == [1,2]) %%% 2cMFD, same as default
-            h.CorrectionsTable.Data = {BurstData.Corrections(3);...
-                BurstData.Corrections(4);...
-                BurstData.Corrections(1);...
-                BurstData.Corrections(2);...
-                BurstData.Corrections(5);...
-                BurstData.Corrections(6);...
+            h.CorrectionsTable.Data = {BurstData.Corrections.Gamma_GR;...
+                BurstData.Corrections.Beta_GR;...
+                BurstData.Corrections.CrossTalk_GR;...
+                BurstData.Corrections.DirectExcitation_GR;...
+                BurstData.Corrections.GfactorGreen;...
+                BurstData.Corrections.GfactorRed;...
                 UserValues.BurstBrowser.Corrections.l1;...
                 UserValues.BurstBrowser.Corrections.l2;...
-                BurstData.Background(1);...
-                BurstData.Background(2);...
-                BurstData.Background(3);...
-                BurstData.Background(4);...
-                BurstData.Background(5);...
-                BurstData.Background(6)};
+                BurstData.Background.GfactorBlue;...
+                BurstData.Background.Background_GGperp;...
+                BurstData.Background.Background_GRpar;...
+                BurstData.Background.Background_GRperp;...
+                BurstData.Background.Background_RRpar;...
+                BurstData.Background.Background_RRperp};
         elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
-            h.CorrectionsTable.Data = {BurstData.Corrections(7);...
-                BurstData.Corrections(8);...
-                BurstData.Corrections(9);...
-                BurstData.Corrections(10);...
-                BurstData.Corrections(11);...
-                BurstData.Corrections(12);...
-                BurstData.Corrections(1);...
-                BurstData.Corrections(2);...
-                BurstData.Corrections(3);...
-                BurstData.Corrections(4);...
-                BurstData.Corrections(5);...
-                BurstData.Corrections(6);...
-                BurstData.Corrections(13);...
-                BurstData.Corrections(14);...
-                BurstData.Corrections(15);...
+            h.CorrectionsTable.Data = {BurstData.Corrections.Gamma_GR;...
+                BurstData.Corrections.Gamma_BG;...
+                BurstData.Corrections.Gamma_BR;...
+                BurstData.Corrections.Beta_GR;...
+                BurstData.Corrections.Beta_BG;...
+                BurstData.Corrections.Beta_BR;...
+                BurstData.Corrections.CrossTalk_GR;...
+                BurstData.Corrections.CrossTalk_BG;...
+                BurstData.Corrections.CrossTalk_BR;...
+                BurstData.Corrections.DirectExcitation_GR;...
+                BurstData.Corrections.DirectExcitation_BG;...
+                BurstData.Corrections.DirectExcitation_BR;...
+                BurstData.Corrections.GfactorBlue;...
+                BurstData.Corrections.GfactorGreen;...
+                BurstData.Corrections.GfactorRed;...
                 UserValues.BurstBrowser.Corrections.l1;...
                 UserValues.BurstBrowser.Corrections.l2;...
-                BurstData.Background(1);...
-                BurstData.Background(2);...
-                BurstData.Background(3);...
-                BurstData.Background(4);...
-                BurstData.Background(5);...
-                BurstData.Background(6);...
-                BurstData.Background(7);...
-                BurstData.Background(8);...
-                BurstData.Background(9);...
-                BurstData.Background(10);...
-                BurstData.Background(11);...
-                BurstData.Background(12)};
+                BurstData.Background.Background_BBpar;...
+                BurstData.Background.Background_BBperp;...
+                BurstData.Background.Background_BGpar;...
+                BurstData.Background.Background_BGperp;...
+                BurstData.Background.Background_BRpar;...
+                BurstData.Background.Background_BRperp;...
+                BurstData.Background.Background_GGpar;...
+                BurstData.Background.Background_GGperp;...
+                BurstData.Background.Background_GRpar;...
+                BurstData.Background.Background_GRperp;...
+                BurstData.Background.Background_RRpar;...
+                BurstData.Background.Background_RRperp};
         end
 
     end
@@ -4876,60 +4911,102 @@ else %%% Update UserValues with new values
         case h.CorrectionsTable
             if any(BurstData.BAMethod == [1,2]) %%% 2cMFD
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
+                 BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = obj.Data{2};
+                 BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{3};
+                 BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{4};
+                 BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{5};
+                 BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{6};
+                 BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = obj.Data{7};
                 UserValues.BurstBrowser.Corrections.l2 = obj.Data{8};
                 UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{9};
+                 BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{10};
+                 BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{11};
+                 BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{12};
+                 BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                 UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{13};
+                 BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{14};
+                 BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
+                 BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Gamma_BG = obj.Data{2};
+                 BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
                 UserValues.BurstBrowser.Corrections.Gamma_BR = obj.Data{3};
+                 BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = obj.Data{4};
+                 BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.Beta_BG = obj.Data{5};
+                 BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
                 UserValues.BurstBrowser.Corrections.Beta_BR = obj.Data{6};
+                 BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{7};
+                 BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BG = obj.Data{8};
+                 BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BR = obj.Data{9};
+                 BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{10};
+                 BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BG= obj.Data{11};
+                 BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BR= obj.Data{12};
+                 BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
                 UserValues.BurstBrowser.Corrections.GfactorBlue = obj.Data{13};
+                 BurstData.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{14};
+                 BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{15};
+                 BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = obj.Data{16};
                 UserValues.BurstBrowser.Corrections.l2 = obj.Data{17};
                 UserValues.BurstBrowser.Corrections.Background_BBpar= obj.Data{18};
+                 BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
                 UserValues.BurstBrowser.Corrections.Background_BBperp= obj.Data{19};
+                 BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
                 UserValues.BurstBrowser.Corrections.Background_BGpar= obj.Data{20};
+                 BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
                 UserValues.BurstBrowser.Corrections.Background_BGperp= obj.Data{21};
+                 BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
                 UserValues.BurstBrowser.Corrections.Background_BRpar= obj.Data{22};
+                 BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
                 UserValues.BurstBrowser.Corrections.Background_BRperp= obj.Data{23};
+                 BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
                 UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{24};
+                 BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{25};
+                 BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{26};
+                 BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{27};
+                 BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                 UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{28};
+                 BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{29};
+                 BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             end
+           
         case h.DonorLifetimeEdit
             if ~isnan(str2double(h.DonorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetime = str2double(h.DonorLifetimeEdit.String);
+                BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
             else %%% Reset value
-                h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
+                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
             end
              UpdateLifetimePlots([],[]);
         case h.AcceptorLifetimeEdit
             if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
+                BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
             else %%% Reset value
                 h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
             end
@@ -4937,6 +5014,7 @@ else %%% Update UserValues with new values
         case h.DonorLifetimeBlueEdit
             if ~isnan(str2double(h.DonorLifetimeBlueEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = str2double(h.DonorLifetimeBlueEdit.String);
+                BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
             else %%% Reset value
                 h.DonorLifetimeBlueEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue);
             end
@@ -4944,36 +5022,42 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusEdit
             if ~isnan(str2double(h.FoersterRadiusEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
+                BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
             else %%% Reset value
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
+                BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
             else %%% Reset value
                 h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
             end
         case h.FoersterRadiusBGEdit
             if ~isnan(str2double(h.FoersterRadiusBGEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBG = str2double(h.FoersterRadiusBGEdit.String);
+                BurstData.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
             else %%% Reset value
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
+                BurstData.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
             else %%% Reset value
                 h.LinkerLengthBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBG);
             end
         case h.FoersterRadiusBREdit
             if ~isnan(str2double(h.FoersterRadiusBREdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBR = str2double(h.FoersterRadiusBREdit.String);
+                BurstData.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
             else %%% Reset value
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
+                BurstData.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
             else %%% Reset value
                 h.LinkerLengthBREdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBR);
             end
@@ -5007,13 +5091,13 @@ NRR = BurstData.DataArray(:,indNRR);
 Dur = BurstData.DataArray(:,indDur);
 
 %%% Read out corrections
-gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
-beta_gr = UserValues.BurstBrowser.Corrections.Beta_GR;
-ct_gr = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-de_gr = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
-BG_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-BG_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
-BG_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+gamma_gr = BurstData.Corrections.Gamma_GR;
+beta_gr = BurstData.Corrections.Beta_GR;
+ct_gr = BurstData.Corrections.CrossTalk_GR;
+de_gr = BurstData.Corrections.DirectExcitation_GR;
+BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
 
 %%% Apply Background corrections
 NGG = NGG - Dur.*BG_GG;
@@ -5049,14 +5133,14 @@ NRRpar = BurstData.DataArray(:,indNRRpar);
 NRRperp = BurstData.DataArray(:,indNRRperp);
 
 %%% Read out corrections
-Ggreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
-Gred = UserValues.BurstBrowser.Corrections.GfactorRed;
+Ggreen = BurstData.Corrections.GfactorGreen;
+Gred = BurstData.Corrections.GfactorRed;
 l1 = UserValues.BurstBrowser.Corrections.l1;
 l2 = UserValues.BurstBrowser.Corrections.l2;
-BG_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-BG_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-BG_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-BG_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+BG_GGpar = BurstData.Background.Background_GGpar;
+BG_GGperp = BurstData.Background.Background_GGperp;
+BG_RRpar = BurstData.Background.Background_RRpar;
+BG_RRperp = BurstData.Background.Background_RRperp;
 
 %%% Apply Background corrections
 NGGpar = NGGpar - Dur.*BG_GGpar;
@@ -5091,17 +5175,17 @@ if any(BurstData.BAMethod == [3,4])
     NBR = BurstData.DataArray(:,indNBR);
 
     %%% Read out corrections
-    gamma_bg = UserValues.BurstBrowser.Corrections.Gamma_BG;
-    beta_bg = UserValues.BurstBrowser.Corrections.Beta_BG;
-    gamma_br = UserValues.BurstBrowser.Corrections.Gamma_BR;
-    beta_br = UserValues.BurstBrowser.Corrections.Beta_BR;
-    ct_bg = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
-    de_bg = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
-    ct_br = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
-    de_br = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
-    BG_BB = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
-    BG_BG = UserValues.BurstBrowser.Corrections.Background_BGpar + UserValues.BurstBrowser.Corrections.Background_BGperp;
-    BG_BR = UserValues.BurstBrowser.Corrections.Background_BRpar + UserValues.BurstBrowser.Corrections.Background_BRperp;
+    gamma_bg = BurstData.Corrections.Gamma_BG;
+    beta_bg = BurstData.Corrections.Beta_BG;
+    gamma_br = BurstData.Corrections.Gamma_BR;
+    beta_br = BurstData.Corrections.Beta_BR;
+    ct_bg = BurstData.Corrections.CrossTalk_BG;
+    de_bg = BurstData.Corrections.DirectExcitation_BG;
+    ct_br = BurstData.Corrections.CrossTalk_BR;
+    de_br = BurstData.Corrections.DirectExcitation_BR;
+    BG_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
+    BG_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
+    BG_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
 
     %%% Apply Background corrections
     NBB = NBB - Dur.*BG_BB;
@@ -5142,9 +5226,9 @@ if any(BurstData.BAMethod == [3,4])
     NBBperp = BurstData.DataArray(:,indNBBperp);
 
     %%% Read out corrections
-    Gblue = UserValues.BurstBrowser.Corrections.GfactorBlue;
-    BG_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
-    BG_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+    Gblue = BurstData.Corrections.GfactorBlue;
+    BG_BBpar = BurstData.Background.Background_BBpar;
+    BG_BBperp = BurstData.Background.Background_BBperp;
 
     %%% Apply Background corrections
     NBBpar = NBBpar - Dur.*BG_BBpar;
@@ -5156,19 +5240,7 @@ if any(BurstData.BAMethod == [3,4])
     %%% Update Value in the DataArray
     BurstData.DataArray(:,ind_rBB) = rBB;
 end
-%%% Save Corrections in BurstData
-switch BurstData.BAMethod
-    case {1,2}
-        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.DirectExcitation_GR,...
-            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Beta_GR,...
-            UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
-    case {3,4}
-        BurstData.Corrections = [UserValues.BurstBrowser.Corrections.CrossTalk_GR, UserValues.BurstBrowser.Corrections.CrossTalk_BG, UserValues.BurstBrowser.Corrections.CrossTalk_BR,...
-            UserValues.BurstBrowser.Corrections.DirectExcitation_GR,UserValues.BurstBrowser.Corrections.DirectExcitation_BG,UserValues.BurstBrowser.Corrections.DirectExcitation_BR,...
-            UserValues.BurstBrowser.Corrections.Gamma_GR, UserValues.BurstBrowser.Corrections.Gamma_BG, UserValues.BurstBrowser.Corrections.Gamma_BR,...
-            UserValues.BurstBrowser.Corrections.Beta_GR, UserValues.BurstBrowser.Corrections.Beta_BG, UserValues.BurstBrowser.Corrections.Beta_BR,...
-            UserValues.BurstBrowser.Corrections.GfactorBlue,UserValues.BurstBrowser.Corrections.GfactorGreen, UserValues.BurstBrowser.Corrections.GfactorRed];
-end
+
 %%% Update Display
 UpdateCuts;
 UpdatePlot([],[]);
@@ -5179,7 +5251,7 @@ UpdateLifetimePlots([],[]);
 %%%%%%% of two populations                                     %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineGammaManually(~,~)
-global UserValues BurstMeta
+global UserValues BurstMeta BurstData
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
 [H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
@@ -5208,6 +5280,7 @@ m = (s(2)-s(1))./(e(2)-e(1));
 b = s(2) - m.*e(2);
 
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 
 
 %%% Save UserValues
@@ -5244,7 +5317,7 @@ idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = BurstMeta.posE;
 %% Plot E vs. tauGG in first plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [-0.1 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -5260,7 +5333,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) UserValues.BurstBrowser.Corrections.AcceptorLifetime+1.5])], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [0 1]);
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -5272,7 +5345,7 @@ BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(0.1,1,10);
 ylim(h.axes_EvsTauRR,[0 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -5283,7 +5356,7 @@ BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(0.1,1,10);
 axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) UserValues.BurstBrowser.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -5300,7 +5373,7 @@ if any(BurstData.BAMethod == [3,4])
     idxE1A = strcmp('Efficiency B->G+R',BurstData.NameArray);
     %% Plot E1A vs. tauBB
     valid = (datatoplot(:,idx_tauBB) > 0.01);
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])], [0 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [0 1]);
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -5316,7 +5389,7 @@ if any(BurstData.BAMethod == [3,4])
         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
     end
     %% Plot rBB vs tauBB
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
@@ -5346,8 +5419,8 @@ if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
     %%% Calculate static FRET line in presence of linker fluctuations
     tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),100);
-    staticFRETline = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+    staticFRETline = conversion_tau(BurstData.Corrections.DonorLifetime,...
+        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
         tau);
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
@@ -5356,9 +5429,9 @@ if obj == h.PlotStaticFRETButton
     if any(BurstData.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
-        staticFRETline = conversion_tau_3C(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue,...
-            UserValues.BurstBrowser.Corrections.FoersterRadiusBG,UserValues.BurstBrowser.Corrections.FoersterRadiusBR,...
-            UserValues.BurstBrowser.Corrections.LinkerLengthBG,UserValues.BurstBrowser.Corrections.LinkerLengthBR,...
+        staticFRETline = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
+            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
+            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
             tau);
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
@@ -5371,8 +5444,8 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
             if obj == h.PlotDynamicFRETButton
                 %%% Query Effiencies using ginput
                 [x,~] = ginput(2);
-                y = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-                UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+                y = conversion_tau(BurstData.Corrections.DonorLifetime,...
+                BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
                 x);
             elseif obj == h.DynamicFRETManual_Menu
                 %%% Query using edit box
@@ -5383,8 +5456,8 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 end
             end
             tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),10000);
-            dynFRETline = dynamicFRETline(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-                y(1),y(2),UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+            dynFRETline = dynamicFRETline(BurstData.Corrections.DonorLifetime,...
+                y(1),y(2),BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
                 tau);
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'on';
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.XData = tau;
@@ -5592,7 +5665,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
     h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
     h.DonorLifetimeEdit.Enable = 'off';
     UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
-    
+    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
     %%% Determine Acceptor Only Lifetime from data with S < 0.1
     idx_tauRR = strcmp(BurstData.NameArray,'Lifetime RR [ns]');
     idxS = BurstMeta.posS;
@@ -5610,7 +5683,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
     h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
     h.AcceptorLifetimeEdit.Enable = 'off';
     UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
-    
+    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
     if any(BurstData.BAMethod == [3,4])
         %%% Determine Donor Blue Lifetime from Blue dye only species
         idx_tauBB = strcmp(BurstData.NameArray,'Lifetime BB [ns]');
@@ -5626,6 +5699,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
         h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
         h.DonorLifetimeBlueEdit.Enable = 'off';
         UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
+        BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
     end
     LSUserValues(1);
     UpdateLifetimePlots([],[]);
@@ -5807,9 +5881,9 @@ elseif cutT == 1
 end
 
 %%% Read out corrections
-Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar + UserValues.BurstBrowser.Corrections.Background_GRperp;
-Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
+Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
 
 %%% get E-S values between 0.3 and 0.8;
 S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
@@ -5823,27 +5897,23 @@ end
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
 NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
 NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
+NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
 
 if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% Calculate static FRET line in presence of linker fluctuations
     tau = linspace(0,5,100);
-    [~, statFRETfun] = conversion_tau(UserValues.BurstBrowser.Corrections.DonorLifetime,...
-        UserValues.BurstBrowser.Corrections.FoersterRadius,UserValues.BurstBrowser.Corrections.LinkerLength,...
+    [~, statFRETfun] = conversion_tau(BurstData.Corrections.DonorLifetime,...
+        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
         tau);
-    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetime;
+    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
-    %%% Restrict the fitting to the "valid range" of the static FRET line,
-    %%% that is before it goes to negative values!
-    tt = linspace(0,10,1000);fret_line = statFRETfun(tt);
-    %tau_max = tt(find(fret_line < 0,1,'first'));
-    valid = (tauGG <= UserValues.BurstBrowser.Corrections.DonorLifetime) & ~isnan(tauGG);
+    valid = (tauGG < BurstData.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
     dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
     gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) UserValues.BurstBrowser.Corrections.DonorLifetime+1.5])],[-0.1 1]);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.1 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -5862,6 +5932,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
+    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 end
 %% 3cMFD - Fit E1A vs. TauBlue
 if obj == h.DetermineGammaLifetimeThreeColorButton
@@ -5893,9 +5964,9 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         end
 
         %%% Read out corrections
-        Background_BB = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
-        Background_BG = UserValues.BurstBrowser.Corrections.Background_BGpar + UserValues.BurstBrowser.Corrections.Background_BGperp;
-        Background_BR = UserValues.BurstBrowser.Corrections.Background_BRpar + UserValues.BurstBrowser.Corrections.Background_BRperp;
+        Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
+        Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
+        Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
 
         %%% get E-S values between 0.1 and 0.9;
         S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
@@ -5911,32 +5982,28 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
         NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
         NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-        NGR = NGR - UserValues.BurstBrowser.Corrections.DirectExcitation_GR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_GR.*NGG;
-        gamma_gr = UserValues.BurstBrowser.Corrections.Gamma_GR;
+        NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
+        gamma_gr = BurstData.Corrections.Gamma_GR;
         EGR = NGR./(gamma_gr.*NGG+NGR);
-        NBR = NBR - UserValues.BurstBrowser.Corrections.DirectExcitation_BR.*NRR - UserValues.BurstBrowser.Corrections.CrossTalk_BR.*NBB -...
-            UserValues.BurstBrowser.Corrections.CrossTalk_GR.*(NBG-UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB) -...
-            UserValues.BurstBrowser.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
-        NBG = NBG - UserValues.BurstBrowser.Corrections.DirectExcitation_BG.*NGG - UserValues.BurstBrowser.Corrections.CrossTalk_BG.*NBB;
+        NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB -...
+            BurstData.Corrections.CrossTalk_GR.*(NBG-BurstData.Corrections.CrossTalk_BG.*NBB) -...
+            BurstData.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
+        NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(0,5,100);
-        [~, coeff] = conversion_tau_3C(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue,...
-            UserValues.BurstBrowser.Corrections.FoersterRadiusBG,UserValues.BurstBrowser.Corrections.FoersterRadiusBR,...
-            UserValues.BurstBrowser.Corrections.LinkerLengthBG,UserValues.BurstBrowser.Corrections.LinkerLengthBR,...
+        [~, statFRETfun] = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
+            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
+            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
             tau);
-        staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetimeBlue;
         tauBB = data_for_corrections(S_threshold,indTauBB);
-        %%% Restrict the fitting to the "valid range" of the static FRET line,
-        %%% that is before it goes to negative values!
-        tt = linspace(0,10,1000);fret_line = staticFRETline(tt);
-        tau_max = tt(find(fret_line < 0,1,'first'));
-        valid = (tauBB < tau_max) & ~isnan(tauBB);
+        valid = (tauBB < BurstData.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
         %%% minimize deviation from static FRET line as a function of gamma_br!
-        dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - staticFRETline( tauBB(valid) ) ).^2 );
+        dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - statFRETfun( tauBB(valid) ) ).^2 );
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) UserValues.BurstBrowser.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -5949,11 +6016,13 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
-        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = staticFRETline(tau);
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETfun(tau);
         ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
+        BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+        BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
     end
 end
 %%% Save UserValues
