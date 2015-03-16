@@ -2278,8 +2278,9 @@ if isfield(BurstData,'SpeciesNames') %%% Previous Cuts exist
     end
 end
 
-SwitchGUI(BurstData.BAMethod); %%% Switches GUI to 3cMFD or 2cMFD format
+ %%% Switches GUI to 3cMFD or 2cMFD format
 UpdateCorrections([],[]);
+SwitchGUI(BurstData.BAMethod);
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([]);
@@ -4814,9 +4815,35 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             end
         end
-        %%% Set Correction Struct to UserValues. Afterwards, corrections
-        %%% are treated individually per mesurement.
-        if ~isfield(BurstData,'Corrections')
+        %%% Backwards Compatibility Check (Remove at some point)
+        if ~isstruct(BurstData.Background) % Second check for compatibility of old data (Background was stored in array, not in struct)
+             switch BurstData.BAMethod
+                case {1,2}
+                    Background.Background_GGpar = BurstData.Background(1);
+                    Background.Background_GGpar = BurstData.Background(2);
+                    Background.Background_GRpar = BurstData.Background(3);
+                    Background.Background_GGperp = BurstData.Background(4);
+                    Background.Background_RRpar = BurstData.Background(5);
+                    Background.Background_RRperp = BurstData.Background(6);
+                case {3,4}
+                    Background.Background_BBpar = BurstData.Background(1);
+                    Background.Background_BBperp = BurstData.Background(2);
+                    Background.Background_BGpar = BurstData.Background(3);
+                    Background.Background_BGperp = BurstData.Background(4);
+                    Background.Background_BRpar = BurstData.Background(5);
+                    Background.Background_BRperp = BurstData.Background(6);
+                    Background.Background_GGpar = BurstData.Background(7);
+                    Background.Background_GGperp = BurstData.Background(8);
+                    Background.Background_GRpar = BurstData.Background(9);
+                    Background.Background_GRperp = BurstData.Background(10);
+                    Background.Background_RRpar = BurstData.Background(11);
+                    Background.Background_RRperp = BurstData.Background(12);
+             end
+             BurstData.Background = Background;
+        end
+        %%% Set Correction Struct to UserValues. From here on, corrections
+        %%% are stored individually per measurement.
+        if ~isfield(BurstData,'Corrections') || ~isstruct(BurstData.Corrections) % Second check for compatibility of old data
             switch BurstData.BAMethod
                 case {1,2}
                     BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
@@ -4825,8 +4852,8 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                     BurstData.Corrections.GfactorGreen =  UserValues.BurstBrowser.Corrections.GfactorGreen;
                     BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
-                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.DonorLifetime;
-                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.AcceptorLifetime;
+                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
                     BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
                     BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
                 case {3,4}
@@ -4845,9 +4872,9 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
                     BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                     BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
-                    BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.DonorLifetimeBlue;
-                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.DonorLifetime;
-                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.AcceptorLifetime;
+                    BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
                     BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
                     BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
                     BurstData.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
