@@ -432,7 +432,11 @@ function Close_FCSFit(Obj,~)
 clear global -regexp FCSData FCSMeta
 Phasor=findobj('Tag','Phasor');
 Pam=findobj('Tag','Pam');
-if isempty(Phasor) && isempty(Pam)
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim)
     clear global -regexp UserValues
 end
 delete(Obj);

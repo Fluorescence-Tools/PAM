@@ -695,13 +695,17 @@ File_List_Callback([],[],3);
 %%% Functions that executes upon closing of Sim window %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_Sim(~,~)
+clear global -regexp SimData
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
-Pam=findobj('Tag','Pam');
-if isempty(Phasor) && isempty(FCSFit) && isempty(Pam)
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Pam=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Pam)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that recalculates and adjusts simulation parameters %%%%%%%%%%

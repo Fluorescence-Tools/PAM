@@ -1325,7 +1325,11 @@ function Close_Phasor(Obj,~)
 clear global -regexp Phasor_Data
 Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
-if isempty(Pam) && isempty(FCSFit)
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim)
     clear global -regexp UserValues
 end
 delete(Obj);

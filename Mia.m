@@ -1584,8 +1584,11 @@ function Close_Mia(Obj,~)
 clear global -regexp MIAData
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
+MIAFit=findobj('Tag','MIAFit');
 Pam=findobj('Tag','Pam');
-if isempty(Phasor) && isempty(FCSFit) && isempty(Pam)
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Pam) && isempty(Sim)
     clear global -regexp UserValues
 end
 delete(Obj);

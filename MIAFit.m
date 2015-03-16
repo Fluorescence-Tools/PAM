@@ -537,12 +537,15 @@ Update_Style([],[],0);
 function Close_MIAFit(~,~)
 clear global -regexp MIAFitData MIAFitMeta
 Phasor=findobj('Tag','Phasor');
+FCSFit=findobj('Tag','FCSFit');
 Pam=findobj('Tag','Pam');
-FCS=findobj('Tag','FCSFit');
-if isempty(Phasor) && isempty(Pam) && isempty(FCS)
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(Pam) && isempty(PCF) && isempty(Mia) && isempty(Sim)
     clear global -regexp UserValues
 end
-delete(gcf);
+delete(Obj);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

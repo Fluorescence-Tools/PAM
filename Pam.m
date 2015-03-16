@@ -1872,8 +1872,10 @@ clear global -regexp PamMeta TcspcData FileInfo
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
 MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF)
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim)
     clear global -regexp UserValues
 end
 delete(Obj);

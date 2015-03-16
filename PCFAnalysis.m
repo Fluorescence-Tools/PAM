@@ -513,11 +513,12 @@ guidata(h.PCF,h);
 function Close_PCF(Obj,~)
 clear global -regexp PCFData
 Phasor=findobj('Tag','Phasor');
-Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
 MIAFit=findobj('Tag','MIAFit');
-
-if isempty(Phasor) && isempty(FCSFit) && isempty(Pam) && isempty(MIAFit)
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+Pam=findobj('Tag','Pam');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(Pam) && isempty(Mia) && isempty(Sim)
     clear global -regexp UserValues
 end
 delete(Obj);
