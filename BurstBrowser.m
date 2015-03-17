@@ -2225,7 +2225,7 @@ LSUserValues(0);
 UserValues.File.BurstBrowserPath=PathName;
 LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
-
+BurstData.FileName = fullfile(PathName,FileName);
 %%% Determine if an APBS or DCBS file was loaded
 %%% This is important because for APBS, the donor only lifetime can be
 %%% determined from the measurement!
@@ -4822,7 +4822,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     Background.Background_GGpar = BurstData.Background(1);
                     Background.Background_GGpar = BurstData.Background(2);
                     Background.Background_GRpar = BurstData.Background(3);
-                    Background.Background_GGperp = BurstData.Background(4);
+                    Background.Background_GRperp = BurstData.Background(4);
                     Background.Background_RRpar = BurstData.Background(5);
                     Background.Background_RRperp = BurstData.Background(6);
                 case {3,4}
@@ -4893,7 +4893,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                 BurstData.Corrections.GfactorRed;...
                 UserValues.BurstBrowser.Corrections.l1;...
                 UserValues.BurstBrowser.Corrections.l2;...
-                BurstData.Background.GfactorBlue;...
+                BurstData.Background.Background_GGpar;...
                 BurstData.Background.Background_GGperp;...
                 BurstData.Background.Background_GRpar;...
                 BurstData.Background.Background_GRperp;...
@@ -6048,7 +6048,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
-        BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+        BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
         BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
     end
 end
