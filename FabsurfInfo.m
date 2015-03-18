@@ -1,5 +1,4 @@
 function Header = FabsurfInfo(FullFileName,ToRead)
-
 % SCANNING AND GENERAL PARAMETERS:   
 %   1   Time per Image [ms]            
 %   2   Image Size:                     
@@ -141,12 +140,21 @@ fid(9) = fopen([FullFileName(1:end-10) '_Track_info' FullFileName(end-9:end-6) '
 fid(10) = fopen([FullFileName(1:end-10) '_MeasureCursorSeries_info' FullFileName(end-9:end-6) '.txt']);
 fid(11) = fopen([FullFileName(1:end-10) '_ZScan_info' FullFileName(end-9:end-6) '.txt']);
 fid(12) = fopen([FullFileName(1:end-10) '_ZTrack_info' FullFileName(end-9:end-6) '.txt']);
+%%% HydraHarp
+fid(13) = fopen([FullFileName(1:end-8) '_info' FullFileName(end-7:end-4) '.txt']);
+fid(14) = fopen([FullFileName(1:end-8) '_MeasureCursor_info' FullFileName(end-7:end-4) '.txt']);
+fid(15) = fopen([FullFileName(1:end-8) '_Scanning_info' FullFileName(end-7:end-4) '.txt']);
+fid(16) = fopen([FullFileName(1:end-8) '_Track_info' FullFileName(end-7:end-4) '.txt']);
+fid(17) = fopen([FullFileName(1:end-8) '_MeasureCursorSeries_info' FullFileName(end-7:end-4) '.txt']);
+fid(18) = fopen([FullFileName(1:end-8) '_ZScan_info' FullFileName(end-7:end-4) '.txt']);
+fid(19) = fopen([FullFileName(1:end-8) '_ZTrack_info' FullFileName(end-7:end-4) '.txt']);
+
 i=1;
 FID=-1;
-while i<13
+while i<20
     if fid(i)~=-1; 
         FID=fid(i); 
-        i=12;
+        break;
     end;
     i=i+1;
 end
