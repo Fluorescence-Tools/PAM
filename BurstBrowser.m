@@ -4797,7 +4797,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                     BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGperp;
                     BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
-                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                    BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                     BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                     BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
                 case {3,4}
