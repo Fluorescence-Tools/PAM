@@ -445,7 +445,11 @@ switch (Type)
                 FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
             end
             
-            Linetimes=[0 PLF{2}];
+            if ~isempty(PLF{2})
+                Linetimes=[PLF{2} PLF{2}(end)+mean(diff(PLF{2}))];
+            else 
+                Linetimes = [];
+            end
             
             %%% Creates linebreak entries
             if isempty(Linetimes)
