@@ -4103,7 +4103,14 @@ h.TauFit.Result_Plot_Text.Visible = 'off';
 BurstMeta.TauFit.FitData.Decay_Par = BurstMeta.Plots.TauFit.Decay_Par.YData;
 BurstMeta.TauFit.FitData.Decay_Per = BurstMeta.Plots.TauFit.Decay_Per.YData;
 
-G = BurstData.Corrections(4+h.TauFit.ChannelSelect.Value);
+switch h.TauFit.ChannelSelect.String{h.TauFit.ChannelSelect.Value}
+    case 'GG'
+        G = BurstData.Corrections.GfactorGreen;
+    case 'RR'
+        G = BurstData.Corrections.GfactorRed;
+    case 'BB'
+        G = BurstData.Corrections.GfactorBlue;
+end
 l1 = 0;
 l2 = 0;
 
@@ -4596,7 +4603,7 @@ z = convol(irf, x);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
-z = (1-scatter).*z + sc*Scatter;
+z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
 z = z(ignore:end);
 z = z./sum(z);
@@ -4795,7 +4802,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
             switch BurstData.BAMethod
                 case {1,2}
                     BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGperp;
                     BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                     BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                     BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
