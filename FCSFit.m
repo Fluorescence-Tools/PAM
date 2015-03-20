@@ -357,7 +357,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'HorizontalAlignment','left',...
         'Style','text',...
         'String','Font size:',...
-        'Position',[0.795 0.75 0.06 0.1]);
+        'Position',[0.82 0.75 0.05 0.1]);
     %%% Editbox for font size
     h.Export_FontSize = uicontrol(...
         'Parent',h.Setting_Panel,...
@@ -401,6 +401,17 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Style','checkbox',...
         'String','Box',...
         'Position',[0.735 0.62 0.04 0.1]);
+    %%% Checkbox for fit legend entry
+    h.Export_FitsLegend = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Value',0,...
+        'Style','checkbox',...
+        'String','Fits in legend',...
+        'Position',[0.78 0.62 0.15 0.1]);
     %% Plotting style tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Tab for fit function inputs
     h.Style_Tab= uitab(...
@@ -831,7 +842,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices)
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
                 return;
             end
             NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
@@ -896,8 +907,6 @@ switch mode
         h.Fit_Table.CellEditCallback={@Update_Table,3};
 end
 
-
-
 %%% Updates plots to changes models
 Update_Plots;
 
@@ -911,10 +920,9 @@ global FCSMeta FCSData UserValues
 h = guidata(findobj('Tag','FCSFit'));
 LSUserValues(0);
 switch mode
-    case 0
-        %% Called at the figure initialization
+    case 0 %%% Called at the figure initialization
         %%% Generates the table column and cell names
-        Columns=cell(9,1);
+        Columns=cell(11,1);
         Columns{1}='Color';
         Columns{2}='Data LineStyle';
         Columns{3}='Data LineWidth';
@@ -925,17 +933,16 @@ switch mode
         Columns{8}='Fit Marker';
         Columns{9}='Fit MarkerSize';   
         Columns{10}='Remove';
+        Columns{11}='Rename';
         h.Style_Table.ColumnName=Columns;
         h.Style_Table.RowName={'ALL'};
         
         %%% Generates the initial cell inputs
         h.Style_Table.ColumnEditable=true;
         h.Style_Table.ColumnFormat={'char',{'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char',...
-                                           {'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char','logical'};
-        h.Style_Table.Data=UserValues.FCSFit.PlotStyleAll;        
-    case 1
-        %% Called, when new file is loaded
-
+                                           {'none','-','-.','--',':'},'char',{'none','.','+','o','*','square','diamond','v','^','<','>'},'char','logical','logical'};
+        h.Style_Table.Data=UserValues.FCSFit.PlotStyleAll(1:8);        
+    case 1 %%% Called, when new file is loaded
         %%% Sets row names to file names 
         Rows=cell(numel(FCSData.Data)+1,1);
         Rows(1:numel(FCSData.Data))=deal(FCSData.FileName);
@@ -943,13 +950,13 @@ switch mode
         h.Style_Table.RowName=Rows;
         Data=cell(numel(Rows),size(h.Style_Table.Data,2));
         %%% Sets ALL style to last row
-        Data(end,:)=UserValues.FCSFit.PlotStyleAll;
+        Data(end,1:8)=UserValues.FCSFit.PlotStyleAll(1:8);
         %%% Sets previous styles to first rows
         for i=1:numel(FCSData.Data)
             if i<=size(UserValues.FCSFit.PlotStyles,1)
-                Data(i,:) = UserValues.FCSFit.PlotStyles(i,:);
+                Data(i,1:8) = UserValues.FCSFit.PlotStyles(i,1:8);
             else
-                Data(i,:) = UserValues.FCSFit.PlotStyles(end,:);
+                Data(i,:) = UserValues.FCSFit.PlotStyles(end,1:8);
             end
         end
         %%% Updates new plots to style
@@ -975,8 +982,7 @@ switch mode
            FCSMeta.Plots{i,3}.MarkerSize=str2double(Data{i,7});
         end
         h.Style_Table.Data=Data;
-    case 2
-        %% Cell callback
+    case 2 %%% Cell callback
         %%% Applies to all files if ALL row was used
         if e.Indices(1)==size(h.Style_Table.Data,1)
             File=1:(size(h.Style_Table.Data,1)-1);
@@ -985,60 +991,50 @@ switch mode
             File=e.Indices(1);
         end
         switch e.Indices(2)
-            case 1
-                %% Changes file color
+            case 1 %%% Changes file color
                 for i=File
                     NewColor = str2num(e.NewData);
                     FCSMeta.Plots{i,1}.Color=NewColor;
                     FCSMeta.Plots{i,2}.Color=NewColor;
                     FCSMeta.Plots{i,3}.Color=NewColor;
                 end
-            case 2
-                %% Changes data line style
+            case 2 %%% Changes data line style
                 for i=File
                     FCSMeta.Plots{i,1}.LineStyle=e.NewData;
                 end
-            case 3
-                %% Changes data line width
+            case 3 %%% Changes data line width
                 for i=File
                     FCSMeta.Plots{i,1}.LineWidth=str2double(e.NewData);
                 end
-            case 4
-                %% Changes data marker style
+            case 4 %%% Changes data marker style
                 for i=File
                     FCSMeta.Plots{i,1}.Marker=e.NewData;
                 end
-            case 5
-                %% Changes data marker size
+            case 5 %%% Changes data marker size
                 for i=File
                     FCSMeta.Plots{i,1}.MarkerSize=str2double(e.NewData);
                 end
-            case 6
-                %% Changes fit line style
+            case 6 %%% Changes fit line style
                 for i=File
                     FCSMeta.Plots{i,2}.LineStyle=e.NewData;
                     FCSMeta.Plots{i,3}.LineStyle=e.NewData;
                 end
-            case 7
-                %% Changes fit line width
+            case 7 %%% Changes fit line width
                 for i=File
                     FCSMeta.Plots{i,2}.LineWidth=str2double(e.NewData);
                     FCSMeta.Plots{i,3}.LineWidth=str2double(e.NewData);
                 end
-            case 8
-                %% Changes fit marker style
+            case 8 %%% Changes fit marker style
                 for i=File
                     FCSMeta.Plots{i,2}.Marker=e.NewData;
                     FCSMeta.Plots{i,3}.Marker=e.NewData;
                 end
-            case 9
-                %% Changes fit marker size
+            case 9 %%% Changes fit marker size
                 for i=File
                     FCSMeta.Plots{i,2}.MarkerSize=str2double(e.NewData);
                     FCSMeta.Plots{i,3}.MarkerSize=str2double(e.NewData);
                 end
-            case 10
-                %% Removes files
+            case 10 %%% Removes files
                 File=flip(File,2);
                 for i=File
                     FCSData.Data(i)=[];
@@ -1052,11 +1048,22 @@ switch mode
                     h.Style_Table.RowName(i)=[];
                     h.Style_Table.Data(i,:)=[];
                 end
+            case 11 %%% Renames Files
+                if numel(File)>1
+                    return;
+                end
+                NewName = inputdlg('Enter new filename');
+                if ~isempty(NewName)
+                    h.Style_Table.RowName{File} = NewName{1};
+                    h.Fit_Table.RowName{File} = NewName{1};
+                    FCSData.FileName{File} = NewName{1};
+                    Update_Plots;
+                end                  
         end
 end
 %%% Save Updated UiTableData to UserValues.FCSFit.PlotStyles
-UserValues.FCSFit.PlotStyles(1:(size(h.Style_Table.Data,1)-1),:) = h.Style_Table.Data(1:(end-1),:);
-UserValues.FCSFit.PlotStyleAll = h.Style_Table.Data(end,:);
+UserValues.FCSFit.PlotStyles(1:(size(h.Style_Table.Data,1)-1),1:8) = h.Style_Table.Data(1:(end-1),(1:8));
+UserValues.FCSFit.PlotStyleAll = h.Style_Table.Data(end,1:8);
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1267,9 +1274,19 @@ switch mode
         H.Residuals.YLim=h.Residuals_Axes.YLim;
         H.Residuals.YLabel.String = {'Weighted'; 'residuals'};
         %% Copies objects to new figure
-        H.FCS_Plots=copyobj(h.FCS_Axes.Children,H.FCS);
-        H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
-        H.Residuals_Plots=copyobj(h.Residuals_Axes.Children,H.Residuals);          
+        Active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
+        H.FCS_Plots=copyobj(h.FCS_Axes.Children(end-sort([Active*2-1; Active*2])+1),H.FCS);
+        if h.Export_FitsLegend.Value
+            H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
+        else
+            
+            LegendString = h.FCS_Legend.String(1:2:end-1);
+            for i=1:numel(LegendString)
+                LegendString{i} = LegendString{i}(7:end);
+            end
+            H.FCS_Legend=legend(H.FCS,H.FCS_Plots(1:2:end-1),LegendString,'Interpreter','none');
+        end
+        H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(Active),H.Residuals);          
         %% Toggles box and grid
         if h.Export_Grid.Value
             grid(H.FCS,'on');
