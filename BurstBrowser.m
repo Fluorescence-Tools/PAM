@@ -4795,7 +4795,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
             switch BurstData.BAMethod
                 case {1,2}
                     BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                     BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                     BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                     BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
@@ -4820,7 +4820,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
              switch BurstData.BAMethod
                 case {1,2}
                     Background.Background_GGpar = BurstData.Background(1);
-                    Background.Background_GGpar = BurstData.Background(2);
+                    Background.Background_GGperp = BurstData.Background(2);
                     Background.Background_GRpar = BurstData.Background(3);
                     Background.Background_GRperp = BurstData.Background(4);
                     Background.Background_RRpar = BurstData.Background(5);
