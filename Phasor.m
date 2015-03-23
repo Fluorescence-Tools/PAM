@@ -1353,6 +1353,15 @@ if isempty(h.Phasor) % Creates new figure, if none exists
     h.Int_Plot(7) = plot([0 1], [0 0],'Color','y');
     h.Int_Plot(8) = plot([0 1], [0 0],'Color','c');
     
+    h.Int_Type = uicontrol(...
+        'Parent',h.Int_Tab,...
+        'Units','normalized',...
+        'BackgroundColor',Look.Control,...
+        'ForegroundColor',Look.Fore,...
+        'Style','popup',...
+        'String',{'Frequency','Mean G','Mean S'},...
+        'Callback', {@Plot_Phasor,0,[]},...
+        'Position',[0.01 0.14 0.22 0.025]);
     h.Int_Norm = uicontrol(...
         'Parent',h.Int_Tab,...
         'Units','normalized',...
@@ -1361,7 +1370,7 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Style','popup',...
         'String',{'No normalization','Area normalization','Maximum normalization'},...
         'Callback', {@Plot_Phasor,0,[]},...
-        'Position',[0.01 0.14 0.22 0.025]);
+        'Position',[0.01 0.105 0.22 0.025]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
 
     
@@ -2542,16 +2551,28 @@ end
 if isempty(Images) %%% Plots Intensity plot
     Sel = h.List.Value;
     
-    Int = cell(7,1);
+    Int = cell(7,1); g = cell(7,1); s = cell(7,1);
     for i = Sel(Sel>0)
         %%% All Pixels
         Int{1} = [Int{1}; PhasorData.Data{i}.Intensity(:)];
+        g{1} = [g{1}; PhasorData.Data{i}.g(:)];
+        s{1} = [s{1}; PhasorData.Data{i}.s(:)];
         %%% ROIs
         for j=1:6
             if strcmp(h.Phasor_ROI(j,1).Visible,'on') %%% Rectangular ROI                
                 Pos = h.Phasor_ROI(j,1).Position;
                 %%% Generates ROI map
                 Int{j+1} =[Int{j+1}; PhasorData.Data{i}.Intensity(...
+                    PhasorData.Data{i}.g>=Pos(1) &...
+                    PhasorData.Data{i}.g<=(Pos(1)+Pos(3)) &...
+                    PhasorData.Data{i}.s>=Pos(2) &...
+                    PhasorData.Data{i}.s<=(Pos(2)+Pos(4)))];
+                g{j+1} =[g{j+1}; PhasorData.Data{i}.g(...
+                    PhasorData.Data{i}.g>=Pos(1) &...
+                    PhasorData.Data{i}.g<=(Pos(1)+Pos(3)) &...
+                    PhasorData.Data{i}.s>=Pos(2) &...
+                    PhasorData.Data{i}.s<=(Pos(2)+Pos(4)))];
+                s{j+1} =[s{j+1}; PhasorData.Data{i}.s(...
                     PhasorData.Data{i}.g>=Pos(1) &...
                     PhasorData.Data{i}.g<=(Pos(1)+Pos(3)) &...
                     PhasorData.Data{i}.s>=Pos(2) &...
@@ -2573,6 +2594,8 @@ if isempty(Images) %%% Plots Intensity plot
                 S(isnan(S) | S<1) = 1;
                 %%% Generates ROI map
                 Int{j+1} = [Int{j+1}; PhasorData.Data{i}.Intensity(Map(sub2ind(size(Map),G,S))==1)];
+                g{j+1} = [g{j+1}; PhasorData.Data{i}.g(Map(sub2ind(size(Map),G,S))==1)];
+                s{j+1} = [s{j+1}; PhasorData.Data{i}.s(Map(sub2ind(size(Map),G,S))==1)];
             end
         end
     end
@@ -2583,23 +2606,54 @@ if isempty(Images) %%% Plots Intensity plot
     XData = (floor(Min/10^Scale)*10^Scale):10^Scale:max(Max);
     
     %%% Updates plot
-    for i=1:7        
+    for i=1:7 
+        h.Int_Plot(1,i+1).XData = XData;
         if ~isempty(Int{i})
-            YData = histc(Int{i},XData);  
-            h.Int_Plot(1,i+1).XData = XData;
-            switch h.Int_Norm.Value
-                case 1
+            switch h.Int_Type.Value
+                case 1 %%% Frequency vs. Int
+                    YData = histc(Int{i},XData);                    
+                    switch h.Int_Norm.Value
+                        case 1 %%% No normalization
+                            h.Int_Plot(1,i+1).YData = YData;
+                        case 2 %%% Area normalization
+                            h.Int_Plot(1,i+1).YData = YData./sum(YData);
+                        case 3 %%% Maximum normalization
+                            h.Int_Plot(1,i+1).YData = YData./max(YData);
+                    end
+                case 2 %%% mean g vs int
+                    [Int{i},Index] = sort(Int{i});
+                    Int{i} = [0; Int{i}];
+                    g{i} = [0; cumsum(g{i}(Index))];
+                    k=1;
+                    for j = 1:numel(XData)
+                        Bin = find(Int{i}>=XData(j),1,'first');
+                        if ~isempty(Bin)
+                            YData(j) = (g{i}(Bin)-g{i}(k))/(Bin-k);
+                            k = Bin;
+                        else
+                            YData(j) = 0;
+                        end
+                    end
                     h.Int_Plot(1,i+1).YData = YData;
-                case 2
-                    h.Int_Plot(1,i+1).YData = YData./sum(YData);
-                case 3
-                    h.Int_Plot(1,i+1).YData = YData./max(YData);
+                case 3 %%% mean s vs int
+                    [Int{i},Index] = sort(Int{i});
+                    Int{i} = [0; Int{i}];
+                    s{i} = [0; cumsum(s{i}(Index))];
+                    k=1;
+                    for j = 1:numel(XData)
+                        Bin = find(Int{i}>=XData(j),1,'first');
+                        if ~isempty(Bin)
+                            YData(j) = (s{i}(Bin)-s{i}(k))/(Bin-k);
+                            k = Bin;
+                        else
+                            YData(j) = 0;
+                        end
+                    end
+                    h.Int_Plot(1,i+1).YData = YData;
             end
             
         else
-            h.Int_Plot(1,i+1).XData = XData;
             h.Int_Plot(1,i+1).YData = 0*XData;
-            
         end
     end    
 end

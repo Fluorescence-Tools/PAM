@@ -437,7 +437,8 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'ForegroundColor',Look.Disabled,...
         'FontSize',8,...
         'Position',[0 0 1 1],...
-        'CellEditCallback',{@Update_Style,2});
+        'CellEditCallback',{@Update_Style,2},...
+        'CellSelectionCallback',{@Update_Style,2});
     
 %% Main Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for fit plots
@@ -579,7 +580,11 @@ global UserValues FCSData FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
 
 %%% Choose files to load
-[FileName,PathName,Type] = uigetfile({'*.mcor'; '.cor'}, 'Choose a referenced data file', UserValues.File.FCSPath, 'MultiSelect', 'on');
+[FileName,PathName,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
+                                      '*.mcor','Individual correlation curves based on matlab filetype'},...
+                                      'Choose a referenced data file',...
+                                      UserValues.File.FCSPath,... 
+                                      'MultiSelect', 'on');
 %%% Tranforms to cell array, if only one file was selected
 if ~iscell(FileName)
     FileName = {FileName};
@@ -609,28 +614,54 @@ if any(FileName{1}~=0)
         case 1 %% Pam correlation files based on .mat files
             for i=1:numel(FileName)
                 %%% Updates global parameters
-                FCSData.Data{end+1}=load([PathName FileName{i}],'-mat');
-                FCSData.FileName{end+1}=FileName{i}(1:end-5);
-                FCSMeta.Data{end+1,1}=FCSData.Data{end}.Cor_Times;
-                FCSMeta.Data{end,2}=FCSData.Data{end}.Cor_Average;
-                FCSMeta.Data{end,3}=FCSData.Data{end}.Cor_SEM;
+                FCSData.Data{end+1} = load([PathName FileName{i}],'-mat');
+                FCSData.FileName{end+1} = FileName{i}(1:end-5);
+                FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+                FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
                 %%% Creates new plots
-                FCSMeta.Plots{end+1,1}=errorbar(...
+                FCSMeta.Plots{end+1,1} = errorbar(...
                     FCSMeta.Data{end,1},...
                     FCSMeta.Data{end,2},...
                     FCSMeta.Data{end,3},...
                     'Parent',h.FCS_Axes);
-                FCSMeta.Plots{end,2}=line(...
+                FCSMeta.Plots{end,2} = line(...
                     'Parent',h.FCS_Axes,...
                     'XData',FCSMeta.Data{end,1},...
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                FCSMeta.Plots{end,3}=line(...
+                FCSMeta.Plots{end,3} = line(...
                     'Parent',h.Residuals_Axes,...
                     'XData',FCSMeta.Data{end,1},...
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                FCSMeta.Params(:,end+1)=cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
-        case 2 %% Pam correlation files based on .txt files
+        case 2 %% Individual curves from .mcor files
+            for i=1:numel(FileName)
+                Data = load([PathName FileName{i}],'-mat');
+                for j=1:size(Data.Cor_Array,2)
+                    FCSData.Data{end+1} = Data;
+                    FCSData.FileName{end+1} = [FileName{i}(1:end-5) ' Curve ' num2str(Data.Valid(j))];
+                    FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                    FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
+                    FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+                    %%% Creates new plots
+                    FCSMeta.Plots{end+1,1} = errorbar(...
+                        FCSMeta.Data{end,1},...
+                        FCSMeta.Data{end,2},...
+                        FCSMeta.Data{end,3},...
+                        'Parent',h.FCS_Axes);
+                    FCSMeta.Plots{end,2} = line(...
+                        'Parent',h.FCS_Axes,...
+                        'XData',FCSMeta.Data{end,1},...
+                        'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                    FCSMeta.Plots{end,3} = line(...
+                        'Parent',h.Residuals_Axes,...
+                        'XData',FCSMeta.Data{end,1},...
+                        'YData',zeros(numel(FCSMeta.Data{end,1}),1));  
+                    FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+                end
+            end
+            
     end
     %%% Updates table and plot data and style to new size
     Update_Style([],[],1);
@@ -983,56 +1014,68 @@ switch mode
         end
         h.Style_Table.Data=Data;
     case 2 %%% Cell callback
+        if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)) && e.Indices(2)~=1)
+                return;
+            end
+            NewData = h.Style_Table.Data{e.Indices(1),e.Indices(2)};
+        end
+        if isprop(e,'NewData')
+            NewData = e.NewData;
+        end
         %%% Applies to all files if ALL row was used
         if e.Indices(1)==size(h.Style_Table.Data,1)
             File=1:(size(h.Style_Table.Data,1)-1);
-            h.Style_Table.Data(:,e.Indices(2))=deal({e.NewData});
+            if e.Indices(2)~=1
+                h.Style_Table.Data(:,e.Indices(2))=deal({NewData});
+            end
         else
             File=e.Indices(1);
         end
         switch e.Indices(2)
             case 1 %%% Changes file color
+                NewColor = uisetcolor;              
                 for i=File
-                    NewColor = str2num(e.NewData);
+                    h.Style_Table.Data{i,1} = num2str(NewColor);
                     FCSMeta.Plots{i,1}.Color=NewColor;
                     FCSMeta.Plots{i,2}.Color=NewColor;
                     FCSMeta.Plots{i,3}.Color=NewColor;
                 end
             case 2 %%% Changes data line style
                 for i=File
-                    FCSMeta.Plots{i,1}.LineStyle=e.NewData;
+                    FCSMeta.Plots{i,1}.LineStyle=NewData;
                 end
             case 3 %%% Changes data line width
                 for i=File
-                    FCSMeta.Plots{i,1}.LineWidth=str2double(e.NewData);
+                    FCSMeta.Plots{i,1}.LineWidth=str2double(NewData);
                 end
             case 4 %%% Changes data marker style
                 for i=File
-                    FCSMeta.Plots{i,1}.Marker=e.NewData;
+                    FCSMeta.Plots{i,1}.Marker=NewData;
                 end
             case 5 %%% Changes data marker size
                 for i=File
-                    FCSMeta.Plots{i,1}.MarkerSize=str2double(e.NewData);
+                    FCSMeta.Plots{i,1}.MarkerSize=str2double(NewData);
                 end
             case 6 %%% Changes fit line style
                 for i=File
-                    FCSMeta.Plots{i,2}.LineStyle=e.NewData;
-                    FCSMeta.Plots{i,3}.LineStyle=e.NewData;
+                    FCSMeta.Plots{i,2}.LineStyle=NewData;
+                    FCSMeta.Plots{i,3}.LineStyle=NewData;
                 end
             case 7 %%% Changes fit line width
                 for i=File
-                    FCSMeta.Plots{i,2}.LineWidth=str2double(e.NewData);
-                    FCSMeta.Plots{i,3}.LineWidth=str2double(e.NewData);
+                    FCSMeta.Plots{i,2}.LineWidth=str2double(NewData);
+                    FCSMeta.Plots{i,3}.LineWidth=str2double(NewData);
                 end
             case 8 %%% Changes fit marker style
                 for i=File
-                    FCSMeta.Plots{i,2}.Marker=e.NewData;
-                    FCSMeta.Plots{i,3}.Marker=e.NewData;
+                    FCSMeta.Plots{i,2}.Marker=NewData;
+                    FCSMeta.Plots{i,3}.Marker=NewData;
                 end
             case 9 %%% Changes fit marker size
                 for i=File
-                    FCSMeta.Plots{i,2}.MarkerSize=str2double(e.NewData);
-                    FCSMeta.Plots{i,3}.MarkerSize=str2double(e.NewData);
+                    FCSMeta.Plots{i,2}.MarkerSize=str2double(NewData);
+                    FCSMeta.Plots{i,3}.MarkerSize=str2double(NewData);
                 end
             case 10 %%% Removes files
                 File=flip(File,2);
