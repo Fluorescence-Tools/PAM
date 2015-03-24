@@ -874,6 +874,7 @@ switch mode
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
             if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
                 return;
             end
             NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};

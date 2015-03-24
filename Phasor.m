@@ -426,6 +426,14 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Callback',{@Plot_Phasor,1,[]},...
         'Style', 'popupmenu',...
         'String',{'Jet';'Hot';'Gray';'HSV'});
+    
+    h.List_Menu = uicontextmenu;
+    h.Average_Data = uimenu(...
+        'Parent',h.List_Menu,...
+        'Label','Average Pixels',...
+        'Tag','E_Button',...
+        'Callback',@List_Callback);
+    
     %%% Listbox of all loaded files
     h.List = uicontrol(...
         'Parent',h.Settings_Panel,...
@@ -437,6 +445,7 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Max',5,...
         'FontSize',12,...
         'Value',0,...
+        'UIContextMenu',h.List_Menu,...
         'Position',[0.41 0.01 0.58 0.98],...
         'Style','listbox',...
         'Tag','List'); 
@@ -1223,11 +1232,6 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Label','Export image to new figure',...
         'Tag','Export_Fig',...
         'Callback',{@Plots_Menu_Callback,2});
-    h.Average_Data = uimenu(...
-        'Parent',h.Plots_Menu,...
-        'Label','Average Pixels',...
-        'Tag','E_Button',...
-        'Callback',{@Plots_Menu_Callback,3});
     %% Tab containing main plots
     h.Plots_Tab= uitab(...
         'Parent',h.Main_Tab,...
@@ -1352,6 +1356,10 @@ if isempty(h.Phasor) % Creates new figure, if none exists
     h.Int_Plot(6) = plot([0 1], [0 0],'Color','m');
     h.Int_Plot(7) = plot([0 1], [0 0],'Color','y');
     h.Int_Plot(8) = plot([0 1], [0 0],'Color','c');
+    h.Int_Plot(9) = imagesc(...
+        'Parent',h.Int_Plot(1),...
+        'Visible','off',...
+        'CData',zeros(1));
     
     h.Int_Type = uicontrol(...
         'Parent',h.Int_Tab,...
@@ -1359,7 +1367,7 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'BackgroundColor',Look.Control,...
         'ForegroundColor',Look.Fore,...
         'Style','popup',...
-        'String',{'Frequency','Mean G','Mean S'},...
+        'String',{'Frequency','Mean G','Mean S','G','S'},...
         'Callback', {@Plot_Phasor,0,[]},...
         'Position',[0.01 0.14 0.22 0.025]);
     h.Int_Norm = uicontrol(...
@@ -1606,7 +1614,7 @@ h = guidata(findobj('Tag','Phasor'));
 global PhasorData
 
 %%% Only executes if a valid key was pressed
-if ~isempty(h.List.String) && any(strcmp(e.Key,{'delete','rightarrow','leftarrow','add'}))
+if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rightarrow','leftarrow','add'}))
     
     %%% Finds selected files
     selected=h.List.Value;  
@@ -1692,6 +1700,56 @@ if ~isempty(h.List.String) && any(strcmp(e.Key,{'delete','rightarrow','leftarrow
     
     %%% Starts plotting; plots phasor and the new images (free)
     Plot_Phasor([],[],1,[free 10]);    
+elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% Creates an averaged data entry
+    %%% Finds selected files
+    Sel = h.List.Value;          
+    for i = Sel
+        %%% Loades Data
+        PhasorData.Data{end+1} = PhasorData.Data{i};
+        PhasorData.Files{end+1,1} = [PhasorData.Files{i,1} ' (Avg)'];
+        PhasorData.Files{end,2} = PhasorData.Files{i,2};
+        PhasorData.Selected_Region{end+1} = false(size(PhasorData.Data{end}.g));
+        
+        G = PhasorData.Data{end}.g; G(end+2,end+2) = 0;
+        S = PhasorData.Data{end}.s; S(end+2,end+2) = 0;
+        Int = PhasorData.Data{end}.Intensity; Int(end+2,end+2) = 0;
+        
+        g=zeros(size(G));
+        s=zeros(size(G));
+        int=zeros(size(Int));
+        
+        %%% Applies moving average to data
+        for j=0:2
+            for k=0:2
+                g=g+circshift(G.*Int,[j,k,0]);
+                s=s+circshift(S.*Int,[j,k,0]);
+                int=int+circshift(Int,[j,k,0]);
+            end
+        end
+        g=g./int; g(isnan(g))=0;
+        s=s./int; s(isnan(s))=0;
+        PhasorData.Data{end}.g=g(2:end-1,2:end-1);
+        PhasorData.Data{end}.s=s(2:end-1,2:end-1);
+        %%% Uses file for phasor calculation
+        PhasorData.Selected(end+1)=1;
+        if sum(PhasorData.Plot(1:9)~=0)<9
+            %%% Plots file in first free image plot
+            free=find(PhasorData.Plot(1:9)==0,1,'first');
+            PhasorData.Plot(free)=numel(PhasorData.Data);
+            %%% Changes filename to blue, to indicate that it is plotted
+            PhasorData.List{end+1}=['<HTML><FONT color="blue">' PhasorData.Files{end,1} ' Plot: ' num2str(free(end)) '</Font></html>'];
+        else
+            %%% Changes filename to red, if no free plots are available
+            free = [];
+            PhasorData.List{end+1}=['<HTML><FONT color="red">' PhasorData.Files{end,1} '</Font></html>'];
+        end
+        %%% Updates list
+        h.List.String=PhasorData.List;
+        %%% Selects the last enty in list
+        h.List.Value=size(PhasorData.Files,1);
+        %%% Starts plotting; plots phasor and the new images (free)
+        Plot_Phasor([],[],1,[free 10]);
+    end
 end
 
 
@@ -2335,7 +2393,6 @@ switch h.ImageColor.Value
     case 5
         ImageColor=zeros(128,3);
 end    
-
 %%% Only plot Multiple or Single Plot
 if h.Main_Tab.SelectedTab == h.Plots_Tab
     Images=Images(~(Images==10));
@@ -2344,7 +2401,6 @@ elseif h.Main_Tab.SelectedTab == h.Single_Tab
 else
     Images = [];
 end
-
 for i=Images %%% Plots Phasor Data
     if PhasorData.Plot(i)~=0 
         %%% Changes the plot title
@@ -2547,10 +2603,11 @@ for i=Images %%% Plots Phasor Data
         end
     end
 end
- 
+
+ %% Calculates and plots Intensity information
 if isempty(Images) %%% Plots Intensity plot
-    Sel = h.List.Value;
-    
+    %%% Extracts Intensity, g and s data
+    Sel = h.List.Value;    
     Int = cell(7,1); g = cell(7,1); s = cell(7,1);
     for i = Sel(Sel>0)
         %%% All Pixels
@@ -2600,62 +2657,128 @@ if isempty(Images) %%% Plots Intensity plot
         end
     end
     
+    %%% Calculates bins for intensity axis
     Max = str2double(h.THmax.String);
     Min = str2double(h.THmin.String);
     Scale = max([ceil(log10(Max))-2,0]);
     XData = (floor(Min/10^Scale)*10^Scale):10^Scale:max(Max);
     
-    %%% Updates plot
-    for i=1:7 
-        h.Int_Plot(1,i+1).XData = XData;
-        if ~isempty(Int{i})
-            switch h.Int_Type.Value
-                case 1 %%% Frequency vs. Int
-                    YData = histc(Int{i},XData);                    
-                    switch h.Int_Norm.Value
-                        case 1 %%% No normalization
-                            h.Int_Plot(1,i+1).YData = YData;
-                        case 2 %%% Area normalization
-                            h.Int_Plot(1,i+1).YData = YData./sum(YData);
-                        case 3 %%% Maximum normalization
-                            h.Int_Plot(1,i+1).YData = YData./max(YData);
-                    end
-                case 2 %%% mean g vs int
-                    [Int{i},Index] = sort(Int{i});
-                    Int{i} = [0; Int{i}];
-                    g{i} = [0; cumsum(g{i}(Index))];
-                    k=1;
-                    for j = 1:numel(XData)
-                        Bin = find(Int{i}>=XData(j),1,'first');
-                        if ~isempty(Bin)
-                            YData(j) = (g{i}(Bin)-g{i}(k))/(Bin-k);
-                            k = Bin;
-                        else
-                            YData(j) = 0;
+    
+    if h.Int_Type.Value<4 %%% Updates lineplots
+        for i=1:7 %%% Updates plots for and
+            h.Int_Plot(1,i+1).XData = XData;
+            if ~isempty(Int{i})
+                switch h.Int_Type.Value
+                    case 1 %%% Frequency vs. Int
+                        YData = histc(Int{i},XData);
+                        switch h.Int_Norm.Value
+                            case 1 %%% No normalization
+                                h.Int_Plot(1,i+1).YData = YData;
+                            case 2 %%% Area normalization
+                                h.Int_Plot(1,i+1).YData = YData./sum(YData);
+                            case 3 %%% Maximum normalization
+                                h.Int_Plot(1,i+1).YData = YData./max(YData);
                         end
-                    end
-                    h.Int_Plot(1,i+1).YData = YData;
-                case 3 %%% mean s vs int
-                    [Int{i},Index] = sort(Int{i});
-                    Int{i} = [0; Int{i}];
-                    s{i} = [0; cumsum(s{i}(Index))];
-                    k=1;
-                    for j = 1:numel(XData)
-                        Bin = find(Int{i}>=XData(j),1,'first');
-                        if ~isempty(Bin)
-                            YData(j) = (s{i}(Bin)-s{i}(k))/(Bin-k);
-                            k = Bin;
-                        else
-                            YData(j) = 0;
+                    case 2 %%% mean g vs int
+                        [Int{i},Index] = sort(Int{i});
+                        Int{i} = [0; Int{i}];
+                        g{i} = [0; cumsum(g{i}(Index))];
+                        k=1;
+                        for j = 1:numel(XData)
+                            Bin = find(Int{i}>=XData(j),1,'first');
+                            if ~isempty(Bin)
+                                YData(j) = (g{i}(Bin)-g{i}(k))/(Bin-k);
+                                k = Bin;
+                            else
+                                YData(j) = 0;
+                            end
                         end
-                    end
-                    h.Int_Plot(1,i+1).YData = YData;
+                        h.Int_Plot(1,i+1).YData = YData;
+                    case 3 %%% mean s vs int
+                        [Int{i},Index] = sort(Int{i});
+                        Int{i} = [0; Int{i}];
+                        s{i} = [0; cumsum(s{i}(Index))];
+                        k=1;
+                        for j = 1:numel(XData)
+                            Bin = find(Int{i}>=XData(j),1,'first');
+                            if ~isempty(Bin)
+                                YData(j) = (s{i}(Bin)-s{i}(k))/(Bin-k);
+                                k = Bin;
+                            else
+                                YData(j) = 0;
+                            end
+                        end
+                        h.Int_Plot(1,i+1).YData = YData;
+                        
+                end
+                
+            else
+                h.Int_Plot(1,i+1).YData = 0*XData;
             end
-            
-        else
-            h.Int_Plot(1,i+1).YData = 0*XData;
         end
-    end    
+        h.Int_Plot(9).Visible = 'off';
+        h.Int_Plot(1).YLimMode = 'auto';
+    else %%% g/s vs int histogram   
+        %%% Determins g\s resolution
+        Pixel=str2double(h.Phasor_Res.String);
+        %%% Uses last selected ROI or total for plotting
+        ROI = find(~cellfun(@isempty,Int),1,'last');
+        %%% Exits function, if no file is loaded
+        if isempty(ROI)
+            return;
+        end
+        %%% Removes unused intensity pixels
+        Int = Int{ROI};
+        Int(Int<Min) = NaN; Int((Max+10^Scale)) = NaN;
+        %%% Calculates 2D histogram as long vector for speed
+        switch h.Int_Type.Value
+            case 4 %%% g vs Int
+                g = floor((g{ROI}+0.1)*Pixel)-1;
+                g(g<0) = NaN; g(g>=1.3*Pixel) = NaN;
+                Int = Int+g*XData(end);
+            case 5 %%% s vs Int
+                s = floor((s{ROI}+0.1)*Pixel)-1;
+                s(s<0) = NaN; s(s>=1.3*Pixel) = NaN;
+                Int = Int+s*XData(end);
+        end        
+        Bins = repmat(XData',[1,1.3*Pixel])+repmat(((0:(1.3*Pixel-1))*XData(end)),[numel(XData),1]);       
+        Image = histc(Int,Bins(:));
+        %%% Reshapes 2D histogram
+        Image = reshape(Image,[numel(XData),1.3*Pixel])';
+        %%% Performs binwise mormalization
+        if h.Int_Norm.Value==2
+            Image = Image./repmat(sum(Image),[size(Image,1),1]);
+        elseif h.Int_Norm.Value==3
+            Image = Image./repmat(max(Image),[size(Image,1),1]);
+        end
+        Image(isnan(Image)) = 0;   
+
+        %%% Transforms 2D histogram to phasor colormap
+        Image = ceil(Image/max(max(Image))*128)+1;        
+        switch h.PhasorColor.Value
+            case 1
+                PhasorColor=[1 1 1;jet(128)];
+            case 2
+                PhasorColor=[1 1 1;hot(128)];
+            case 3
+                PhasorColor=[1 1 1;gray(128)];
+            case 4
+                PhasorColor=[1 1 1;hsv(128)];
+            otherwise
+                PhasorColor=[1 1 1;jet(128)];
+        end       
+        CData = reshape(PhasorColor(Image(:),:),[size(Image,1),size(Image,2),3]);
+        
+        %%% Plots 2D histogram and makes it visible
+        h.Int_Plot(9).CData = CData;
+        h.Int_Plot(9).Visible = 'on';
+        uistack(h.Int_Plot(9),'top');
+        h.Int_Plot(9).XData = XData;
+        h.Int_Plot(9).YData = -0.1:1/Pixel:(1.3);
+        h.Int_Plot(1).XLim = [XData(1) XData(end)];
+        h.Int_Plot(1).YLim = [-0.1 1.3];
+    end
+    h.Int_Plot(1).XLim = [XData(1) XData(end)];
 end
   
 
@@ -2811,20 +2934,17 @@ end
 %%% 1: Exports current figure as TIFF
 %%% 2: Exports current figure to new figure
 function Plots_Menu_Callback (~,~,mode)
-global UserValues PhasorData
-h = guidata(findobj('Tag','Phasor'));
+global UserValues
 obj=gca;
 switch mode
-    case 1
-        %% Exports current figure as TIFF
+    case 1 %%% Exports current figure as TIFF
         [FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
         if FileName~=0
             UserValues.File.ExportPath=PathName;
             LSUserValues(1)
             imwrite(obj.Children(1).CData,fullfile(PathName,FileName));
         end
-    case 2
-        %% Exports current image to new figure
+    case 2 %%% Exports current image to new figure
         figure;A=axes;
         obj=copyobj(obj.Children(1),A);
         A.DataAspectRatio=[1 1 1];
@@ -2833,60 +2953,8 @@ switch mode
         A.XTick=[];
         A.YTick=[];
         A.YDir='reverse';
-    case 3
-        %% Creates an averaged data entry
-        Plot=find(obj==h.Image_Plot(:,1));
-        
-        %%% Loades Data
-        PhasorData.Data{end+1}=PhasorData.Data{PhasorData.Plot(Plot)};
-        PhasorData.Files{end+1,1}=[PhasorData.Files{PhasorData.Plot(Plot),1} ' (Avg)'];
-        PhasorData.Files{end,2}=PhasorData.Files{PhasorData.Plot(Plot),2};
-        PhasorData.Selected_Region{end+1}=false(size(PhasorData.Data{end}.g));
-        
-        G=PhasorData.Data{end}.g; G(end+2,end+2)=0;
-        S=PhasorData.Data{end}.s; S(end+2,end+2)=0;
-        Int=PhasorData.Data{end}.Intensity; Int(end+2,end+2)=0;
-        
-        g=zeros(size(G));
-        s=zeros(size(G));
-        int=zeros(size(Int));
-        
-        %%% Applies moving average to data
-        for i=0:2
-            for j=0:2
-                g=g+circshift(G.*Int,[i,j,0]);
-                s=s+circshift(S.*Int,[i,j,0]);
-                int=int+circshift(Int,[i,j,0]);
-            end
-        end
-        g=g./int; g(isnan(g))=0;
-        s=s./int; s(isnan(s))=0;
-        PhasorData.Data{end}.g=g(2:end-1,2:end-1);
-        PhasorData.Data{end}.s=s(2:end-1,2:end-1);
-        %%% Uses file for phasor calculation
-        PhasorData.Selected(end+1)=1;
-        if sum(PhasorData.Plot~=0)<9
-            %%% Plots file in first free image plot
-            free=find(PhasorData.Plot(1:9)==0,1,'first');
-            PhasorData.Plot(free)=numel(PhasorData.Data);
-            %%% Changes filename to blue, to indicate that it is plotted
-            PhasorData.List{end+1}=['<HTML><FONT color="blue">' PhasorData.Files{end,1} ' Plot: ' num2str(free(end)) '</Font></html>'];
-        else
-            %%% Changes filename to red, if no free plots are available
-            PhasorData.List{end+1}=['<HTML><FONT color="red">' PhasorData.Files{end,1} '</Font></html>'];
-        end
-        %%% Updates list
-        h.List.String=PhasorData.List;
-        %%% Selects the last enty in list
-        h.List.Value=size(PhasorData.Files,1);
-        %%% Starts plotting; plots phasor and the new images (free)
-        Plot_Phasor([],[],1,[free 10]);
 end
 
-
-
-    
-    
 
 
 
