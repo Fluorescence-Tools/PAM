@@ -2329,8 +2329,12 @@ if any(mode==4)
                     end
                 end
             else
-                h.Plots.MI_Ind_IRF{i}.Visible = 'off';
-                h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+                if ishandle(h.Plots.MI_Ind_IRF{i})
+                    h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+                end
+                if ishandle(h.Plots.MI_Ind_Scat{i})
+                    h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+                end
             end
         end
     end
