@@ -581,7 +581,9 @@ h = guidata(findobj('Tag','FCSFit'));
 
 %%% Choose files to load
 [FileName,PathName,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
-                                      '*.mcor','Individual correlation curves based on matlab filetype'},...
+                                      '*.cor','Averaged correlation based on .txt. filetype';...
+                                      '*.mcor','Individual correlation curves based on matlab filetype';...
+                                      '*.cor','Individual correlation curves based on .txt. filetype';},...
                                       'Choose a referenced data file',...
                                       UserValues.File.FCSPath,... 
                                       'MultiSelect', 'on');
@@ -591,33 +593,109 @@ if ~iscell(FileName)
 end
 
 %%% Only esecutes, if at least one file was selected
-if any(FileName{1}~=0)
-    %%% Saves pathname to uservalues
-    UserValues.File.FCSPath=PathName;
-    LSUserValues(1);
-    %%% Deletes loaded data
-    if mode==1
-        FCSData=[];
-        FCSData.Data=[];
-        FCSData.FileName=[];
-        cellfun(@delete,FCSMeta.Plots);
-        FCSMeta.Data=[];
-        FCSMeta.Params=[];
-        FCSMeta.Plots=cell(0);
-        h.Fit_Table.RowName(1:end-3)=[];
-        h.Fit_Table.Data(1:end-3,:)=[];
-        h.Style_Table.RowName(1:end-1,:)=[];
-        h.Style_Table.Data(1:end-1,:)=[];
-    end
-    
-    switch Type
-        case 1 %% Pam correlation files based on .mat files
-            for i=1:numel(FileName)
-                %%% Updates global parameters
+if all(FileName{1}==0)
+    return
+end
+
+%%% Saves pathname to uservalues
+UserValues.File.FCSPath=PathName;
+LSUserValues(1);
+%%% Deletes loaded data
+if mode==1
+    FCSData=[];
+    FCSData.Data=[];
+    FCSData.FileName=[];
+    cellfun(@delete,FCSMeta.Plots);
+    FCSMeta.Data=[];
+    FCSMeta.Params=[];
+    FCSMeta.Plots=cell(0);
+    h.Fit_Table.RowName(1:end-3)=[];
+    h.Fit_Table.Data(1:end-3,:)=[];
+    h.Style_Table.RowName(1:end-1,:)=[];
+    h.Style_Table.Data(1:end-1,:)=[];
+end
+
+switch Type
+    case {1,2} %%% Averaged correlation files
+        for i=1:numel(FileName)
+            %%% Reads files (1 == .mcor; 2 == .cor)
+            if Type == 1
                 FCSData.Data{end+1} = load([PathName FileName{i}],'-mat');
-                FCSData.FileName{end+1} = FileName{i}(1:end-5);
+            else                
+                FID = fopen(fullfile(PathName,FileName{i}));
+                Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
+                Text = Text{1};
+                Data.Header = Text{1};
+                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 1 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 2 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
+                
+                Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
+                k=1;
+                for j = Start+1:numel(Text)
+                    Values(k,:) = str2num(Text{j});  %#ok<ST2NM>
+                    k = k+1;
+                end
+                Data.Cor_Times = Values(:,1);
+                Data.Cor_Average = Values(:,2);
+                Data.Cor_SEM = Values(:,3);
+                Data.Cor_Array = Values(:,4:end);
+                FCSData.Data{end+1} = Data;
+            end
+            %%% Updates global parameters
+            FCSData.FileName{end+1} = FileName{i}(1:end-5);
+            FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+            FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+            %%% Creates new plots
+            FCSMeta.Plots{end+1,1} = errorbar(...
+                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,2},...
+                FCSMeta.Data{end,3},...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Plots{end,2} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,3} = line(...
+                'Parent',h.Residuals_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+        end
+    case {3,4} %% Individual curves from correlation files
+        for i=1:numel(FileName)
+            %%% Reads files (3 == .mcor; 4 == .cor)
+            if Type == 3
+                Data = load([PathName FileName{i}],'-mat');
+            else
+                FID = fopen(fullfile(PathName,FileName{i}));
+                Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
+                Text = Text{1};
+                Data.Header = Text{1};
+                Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 1 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 2 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
+                
+                Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);
+                k=1;
+                for j = Start+1:numel(Text)
+                    Values(k,:) = str2num(Text{j});  %#ok<ST2NM>
+                    k = k+1;
+                end
+                Data.Cor_Times = Values(:,1);
+                Data.Cor_Average = Values(:,2);
+                Data.Cor_SEM = Values(:,3);
+                Data.Cor_Array = Values(:,4:end);
+            end           
+            %%% Creates entry for each individual curve
+            for j=1:size(Data.Cor_Array,2)
+                FCSData.Data{end+1} = Data;
+                FCSData.FileName{end+1} = [FileName{i}(1:end-5) ' Curve ' num2str(Data.Valid(j))];
                 FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
-                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
                 FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
                 %%% Creates new plots
                 FCSMeta.Plots{end+1,1} = errorbar(...
@@ -635,39 +713,14 @@ if any(FileName{1}~=0)
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
                 FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
-        case 2 %% Individual curves from .mcor files
-            for i=1:numel(FileName)
-                Data = load([PathName FileName{i}],'-mat');
-                for j=1:size(Data.Cor_Array,2)
-                    FCSData.Data{end+1} = Data;
-                    FCSData.FileName{end+1} = [FileName{i}(1:end-5) ' Curve ' num2str(Data.Valid(j))];
-                    FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
-                    FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
-                    FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
-                    %%% Creates new plots
-                    FCSMeta.Plots{end+1,1} = errorbar(...
-                        FCSMeta.Data{end,1},...
-                        FCSMeta.Data{end,2},...
-                        FCSMeta.Data{end,3},...
-                        'Parent',h.FCS_Axes);
-                    FCSMeta.Plots{end,2} = line(...
-                        'Parent',h.FCS_Axes,...
-                        'XData',FCSMeta.Data{end,1},...
-                        'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                    FCSMeta.Plots{end,3} = line(...
-                        'Parent',h.Residuals_Axes,...
-                        'XData',FCSMeta.Data{end,1},...
-                        'YData',zeros(numel(FCSMeta.Data{end,1}),1));  
-                    FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
-                end
-            end
-            
-    end
-    %%% Updates table and plot data and style to new size
-    Update_Style([],[],1);
-    Update_Table([],[],1);
-    
+        end
 end
+
+%%% Updates table and plot data and style to new size
+Update_Style([],[],1);
+Update_Table([],[],1);
+    
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

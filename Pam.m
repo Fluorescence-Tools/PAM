@@ -3794,15 +3794,16 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
+                    
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
                     
                     %%% Writes Heater
                     fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
-                    fprintf(FileID, ['Countrate channel 1 [kHz]: ' num2str(Counts1/1000, '%12.2f') '\n']);
-                    fprintf(FileID, ['Countrate channel 2 [kHz]: ' num2str(Counts2/1000, '%12.2f') '\n']);
+                    fprintf(FileID, ['Countrate channel 1 [kHz]: ' num2str(Counts(1), '%12.2f') '\n']);
+                    fprintf(FileID, ['Countrate channel 2 [kHz]: ' num2str(Counts(2), '%12.2f') '\n']);
                     fprintf(FileID, ['Valid bins: ' num2str(Valid) '\n']);
-                    fprintf(FileID, ['Used  bins: ' num2str(1,ones(numel(Valid))) '\n']);
                     %%% Indicates start of data
                     fprintf(FileID, ['Data starts here: ' '\n']);
                     
