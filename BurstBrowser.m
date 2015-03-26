@@ -1060,12 +1060,55 @@ if isempty(hfig)
         'Tag','SaveOnClose',...
         'Value', UserValues.BurstBrowser.SaveOnClose,...
         'Units','normalized',...
-        'Position',[0.1 0.58 0.5 0.07],...
+        'Position',[0.1 0.88 0.5 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
+    
+    %%% Option to check/uncheck downsampling for fFCS
+    h.Downsample_fFCS = uicontrol('Style','checkbox',...
+        'Parent',h.DataProcessingPanel,...
+        'String','Increase TAC bin width for fFCS',...
+        'Tag','Downsample_fFCS',...
+        'Value', UserValues.BurstBrowser.Downsample_fFCS,...
+        'Units','normalized',...
+        'Position',[0.1 0.78 0.5 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
+    
+    h.Downsample_fFCS_edit = uicontrol('Style','edit',...
+        'Parent',h.DataProcessingPanel,...
+        'Tag','Downsample_fFCS',...
+        'String', num2str(UserValues.BurstBrowser.Downsample_fFCS_Time),...
+        'Units','normalized',...
+        'Position',[0.6 0.78 0.2 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
+    uicontrol('Style','text',...
+        'Parent',h.DataProcessingPanel,...
+        'Tag','Downsample_fFCS',...
+        'String','ps',...
+        'Units','normalized',...
+        'Position',[0.8 0.78 0.2 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore...
+        );
+    
+    if UserValues.BurstBrowser.Downsample_fFCS
+        h.Downsample_fFCS_edit.Enable = 'on';
+    else
+        h.Downsample_fFCS_edit.Enable = 'off';
+    end
+    
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
@@ -2313,6 +2356,16 @@ h = guidata(obj);
 switch obj
     case h.SaveOnClose
         UserValues.BurstBrowser.SaveOnClose = obj.Value;
+    case h.Downsample_fFCS_edit
+        UserValues.BurstBrowser.Downsample_fFCS_Time = str2double(h.Downsample_fFCS_edit.String);
+    case h.Downsample_fFCS
+        UserValues.BurstBrowser.Downsample_fFCS = obj.Value;
+        switch h.Downsample_fFCS.Value
+            case 1
+                h.Downsample_fFCS_edit.Enable = 'on';
+            case 0
+                h.Downsample_fFCS_edit.Enable = 'off';
+        end               
 end
 LSUserValues(1);
     
@@ -3640,7 +3693,24 @@ switch obj
         MI_total_par = MI_total_par(idx);
         [MT_total_perp,idx] = sort(MT_total_perp);
         MI_total_perp = MI_total_perp(idx);
-
+        
+        %%% Downsampling if checked
+        %%% New binwidth in picoseconds
+        if UserValues.BurstBrowser.Downsample_fFCS
+            if ~isfield(BurstData.FileInfo,'Resolution')
+                TACChannelWidth = BurstData.FileInfo.SyncPeriod*1E9/BurstData.FileInfo.MI_Bins;
+            elseif isfield(BurstData.FileInfo,'Resolution') %%% HydraHarp Data
+                TACChannelWidth = BurstData.FileInfo.Resolution/1000;
+            end
+            new_bin_width = floor(UserValues.BurstBrowser.Downsample_fFCS_Time/(1000*TACChannelWidth));
+            MI_total_par = ceil(double(MI_total_par)/new_bin_width);
+            MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
+            for i = 1:2
+                MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
+                MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
+            end
+        end
+        
         %%% Calculate the histograms
         maxTAC_par = max(MI_total_par);
         maxTAC_perp = max(MI_total_perp);
@@ -3682,10 +3752,17 @@ switch obj
                 hScat_par = [hScat_par, BurstData.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
                 hScat_perp = [hScat_perp, BurstData.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
             end
+            
+            if UserValues.BurstBrowser.Downsample_fFCS
+                %%% Downsampling if checked
+                hScat_par = downsamplebin(hScat_par,new_bin_width);hScat_par = hScat_par';
+                hScat_perp = downsamplebin(hScat_perp,new_bin_width);hScat_perp = hScat_perp';
+            end
+            
             %%% normaize with respect to the total decay histogram
             hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par);
             hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp);
-
+               
             %%% store in BurstMeta
             BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
             BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
@@ -6777,3 +6854,14 @@ if obj == h.Secondary_Tab_Correlation_Divider_Menu
 end
 %%% Saves UserValues
 LSUserValues(1);
+
+function [outv] = downsamplebin(invec,newbin)
+%%% treat case where mod(numel/newbin) =/= 0
+% if mod(numel(invec),newbin) ~= 0
+%      %%% Discard the last bin
+%     invec = invec(1:(floor(numel(invec)/newbin)*newbin));
+% end
+while mod(numel(invec),newbin) ~= 0
+    invec(end+1) = 0;
+end
+outv = sum(reshape(invec,newbin,numel(invec)/newbin),1)';

@@ -853,13 +853,25 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.PrintPath was incomplete');    
     end 
     P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
-    
     %%% Check, if BurstBrowser.SaveOnClose subfield exists
     if ~isfield(S.BurstBrowser, 'SaveOnClose')
         S.BurstBrowser.SaveOnClose=0;
         disp('UserValues.BurstBrowser.SaveOnClose was incomplete');    
     end 
     P.BurstBrowser.SaveOnClose = S.BurstBrowser.SaveOnClose;
+    %%% Check, if BurstBrowser.Downsample_fFCS subfield exists
+    if ~isfield(S.BurstBrowser, 'Downsample_fFCS')
+        S.BurstBrowser.Downsample_fFCS=0;
+        disp('UserValues.BurstBrowser.Downsample_fFCS was incomplete');    
+    end 
+    P.BurstBrowser.Downsample_fFCS = S.BurstBrowser.Downsample_fFCS;
+    %%% Check, if BurstBrowser.Downsample_fFCS_Time subfield exists
+    %%% Stores the desired MI Bin time in ps
+    if ~isfield(S.BurstBrowser, 'Downsample_fFCS_Time')
+        S.BurstBrowser.Downsample_fFCS_Time=100;
+        disp('UserValues.BurstBrowser.Downsample_fFCS_Time was incomplete');    
+    end 
+    P.BurstBrowser.Downsample_fFCS_Time = S.BurstBrowser.Downsample_fFCS_Time;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
