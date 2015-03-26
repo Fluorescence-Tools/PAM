@@ -1872,20 +1872,23 @@ if isempty(Key)
 elseif Key>0 && Key <=6
    %% ROI selection mouse clicks
    switch Type
-       case 'normal'
-           %% Rectangular ROI selection
+       case 'normal' %%% Rectangular ROI selection
            h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
            [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};          
-       case 'alt'
-           %% Ellipsoid ROI
+       case 'alt' %%% Ellipsoid ROI
            [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
    end
     
 elseif Key==0
     [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible] = deal('off');
-    h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6,h.Phasor_Plot.CurrentPoint(1,1:2)};
+    switch Type
+        case 'normal'
+            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6,h.Phasor_Plot.CurrentPoint(1,1:2)};
+        case 'alt'
+            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6.5,h.Phasor_Plot.CurrentPoint(1,1:2)};
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Tracks mouse/wheel movement %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1903,8 +1906,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
     h=guidata(gcf);
     Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
     switch mode
-        case 1
-            %% Shows info about current cursor position
+        case 1 %%% Shows info about current cursor position
             %%% Disables callback, to avoit multiple executions
             h.Phasor.WindowButtonMotionFcn=[];
             %%% Calculates current cursor position relative to limits
@@ -1927,13 +1929,11 @@ if strcmp('Phasor',get(gcf,'Tag'));
             end
             %%% Enables callback
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,1,[],[]};
-        case 2
-            %% Pans the plot around (hold left mouse button)
+        case 2 %%% Pans the plot around (hold left mouse button)
             h.Phasor_Plot.XLim=h.Phasor_Plot.XLim-(Pos(1)-Start(1));
             h.Phasor_Plot.YLim=h.Phasor_Plot.YLim-(Pos(2)-Start(2));
             pause(0.01);
-        case 3
-            %% Zooms (via mouse scroll
+        case 3 %%% Zooms (via mouse scroll
             %%% Calculates current cursor position relative to limits
             XLim=h.Phasor_Plot.XLim;
             YLim=h.Phasor_Plot.YLim;
@@ -1949,8 +1949,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
                     h.Phasor_Plot.YLim=[mean(YLim)-diff(YLim)/sqrt(2),mean(YLim)+diff(YLim)/sqrt(2)];
                 end
             end
-        case 4
-            %% Generates a rectangular ROI
+        case 4 %%% Generates a rectangular ROI
             %%% Disables callback, to avoit multiple executions
             h.Phasor.WindowButtonMotionFcn=[];
             %%% Resizes ROI rectangle         
@@ -1964,8 +1963,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
             end
             %%% Enables callback
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,4,Start,Key}; 
-        case 5 
-            %% Generates a elliposidal ROI
+        case 5 %%% Generates a elliposidal ROI
             %%% Disables callback, to avoit multiple executions
             h.Phasor.WindowButtonMotionFcn=[];
             %%% Ony executes, if mouse moved
@@ -2016,8 +2014,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
             end
             %%% Enables callback
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,5,Start,Key}; 
-        case 6
-            %% Fraction line
+        case {6, 6.5} %%% Fraction line
             %%% Disables callback, to avoit multiple executions
             h.Phasor.WindowButtonMotionFcn=[];
             %%% Ony executes, if mouse moved
@@ -2029,9 +2026,8 @@ if strcmp('Phasor',get(gcf,'Tag'));
                 %%% Hides Fraction line,
                 h.Phasor_Fraction.Visible='off';
             end
-            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6,Start};
-        case 7
-            %% Select individual regions in Single plot
+            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,mode,Start};
+        case 7 %%% Select individual regions in Single plot
             h.Phasor.WindowButtonMotionFcn=[];
             %%% Calculates current cursor position relative to limits
             Pos=round(h.Image_Plot(10,1).CurrentPoint(1,1:2)+0.5);
@@ -2097,7 +2093,12 @@ h=guidata(findobj('Tag','Phasor'));
 %%% Sets standard mouse click callback (in case it was changed/disabled)
 h.Phasor_Plot.ButtonDownFcn={@Phasor_Plot_Callback,[]};
 %%% Updates plot, if new ROI was selected
-if ~isempty(h.Phasor.WindowButtonMotionFcn) && any(h.Phasor.WindowButtonMotionFcn{2}==[4,5,6])
+if ~isempty(h.Phasor.WindowButtonMotionFcn) && any(h.Phasor.WindowButtonMotionFcn{2}==[4,5,6,6.5])
+    %%% Inverts fraction line
+    if h.Phasor.WindowButtonMotionFcn{2}==6.5
+        h.Phasor_Fraction.XData = h.Phasor_Fraction.XData([2,1]);
+        h.Phasor_Fraction.YData = h.Phasor_Fraction.YData([2,1]);
+    end
     h.Phasor.Pointer='arrow';
     Plot_Phasor([],[],0,1:10);
 end

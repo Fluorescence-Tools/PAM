@@ -3779,7 +3779,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                     
                     Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000; %#ok<NASGU>
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid); %#ok<NASGU>
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
                 end
                 
@@ -3798,7 +3798,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000;
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
