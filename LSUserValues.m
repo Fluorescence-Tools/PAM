@@ -853,6 +853,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.PrintPath was incomplete');    
     end 
     P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
+    
+    %%% Check, if BurstBrowser.SaveOnClose subfield exists
+    if ~isfield(S.BurstBrowser, 'SaveOnClose')
+        S.BurstBrowser.SaveOnClose=0;
+        disp('UserValues.BurstBrowser.SaveOnClose was incomplete');    
+    end 
+    P.BurstBrowser.SaveOnClose = S.BurstBrowser.SaveOnClose;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');

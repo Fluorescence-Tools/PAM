@@ -65,6 +65,8 @@ else
     %% code for plotting in the respective axes
     
     plot_after_fit(handles);
+    
+    
 end
 
 function plotvector(iteration,fval)

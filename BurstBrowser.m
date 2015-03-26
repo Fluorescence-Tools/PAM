@@ -1052,6 +1052,20 @@ if isempty(hfig)
         'ForegroundColor',Look.Fore,...
         'Title','Data Processing Options',...
         'FontSize',12);
+    
+    %%% Option to enable/disable save dialog on closing
+    h.SaveOnClose = uicontrol('Style','checkbox',...
+        'Parent',h.DataProcessingPanel,...
+        'String','Ask for saving when closing window',...
+        'Tag','SaveOnClose',...
+        'Value', UserValues.BurstBrowser.SaveOnClose,...
+        'Units','normalized',...
+        'Position',[0.1 0.58 0.5 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
@@ -2198,7 +2212,7 @@ delete(gcf);
 function Load_Burst_Data_Callback(~,~)
 h = guidata(gcbo);
 global BurstData UserValues BurstMeta
-if ~isempty(BurstData)
+if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
     switch choice
@@ -2285,8 +2299,23 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([]);
 UpdateLifetimePlots([],[]);
+DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function UpdateOptions(obj,~)
+global UserValues
+if isempty(obj)
+    return;
+end
+h = guidata(obj);
+switch obj
+    case h.SaveOnClose
+        UserValues.BurstBrowser.SaveOnClose = obj.Value;
+end
+LSUserValues(1);
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Callback for Parameter List: Left-click updates plot,    %%%%%%%%%%
 %%%%%%% Right-click adds parameter to CutList                    %%%%%%%%%%

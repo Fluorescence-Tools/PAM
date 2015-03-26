@@ -9,11 +9,11 @@ handles = guidata(gcbo);
 
 stop = false;
 if(strcmp(flag,'init')) 
-        set(gca,'Yscale','log'); %Set up the plot
+        set(gca,'Yscale','lin'); %Set up the plot
         hold on;
         xlabel('Iteration'); 
-        ylabel('Log Change in Values');
-        title(['Change in Best Function Value']);
+        ylabel('Function Values');
+        title(['Function Value']);
 end
  
 % Best objective function value in the current iteration
@@ -26,12 +26,12 @@ last_best = best;
 else
         %Change in objective function value
 			 change = last_best - best; 
-        plot(optimvalues.iteration, change, '.r');
+        plot(optimvalues.iteration, best, 'xb','MarkerSize',5);
 end
-        plot_after_fit(handles);
-        %update table
-        n_gauss = str2double(get(handles.popupmenu_ngauss,'String'));
-        UpdateFitTable(handles,n_gauss);
+plot_after_fit(handles);
+%update table
+n_gauss = str2double(get(handles.popupmenu_ngauss,'String'));
+UpdateFitTable(handles,n_gauss);
 
 
         
@@ -45,6 +45,7 @@ for i = 1:n_gauss
 end
 
 set(handles.fit_table,'Data',data);
+drawnow;
 
 function [covNew] = fix_covariance_matrix(cov)
 %find eigenvalue smaller 0
