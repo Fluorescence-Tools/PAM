@@ -20,10 +20,10 @@ using namespace tr1;
 ///////////////////////////////////////////////////////////////////////////
 void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, double posx, double posy, double posz, double d, // Box and Particle parameters
                                __int16 scan_type, double x_step, double y_step, double x_px, double y_px, __int64 x_t, __int64 y_t, // Scan parameters 
-                               double wr_b, double wz_b, double mb_b, double bp_b,  // Color parameters blue    
-                               double wr_y, double wz_y, double mb_y, double bp_y,  // Color parameters yellow
-                               double wr_r, double wz_r, double mb_r, double bp_r,  // Color parameters red
-                               double wr_ir, double wz_ir, double mb_ir, double bp_ir,  // Color parameters ir
+                               double wr_b, double wz_b, double mb_b, double bp_b, double dx_b, double dy_b, double dz_b,  // Color parameters blue    
+                               double wr_y, double wz_y, double mb_y, double bp_y, double dx_y, double dy_y, double dz_y,  // Color parameters yellow
+                               double wr_r, double wz_r, double mb_r, double bp_r, double dx_r, double dy_r, double dz_r,  // Color parameters red
+                               double wr_ir, double wz_ir, double mb_ir, double bp_ir, double dx_ir, double dy_ir, double dz_ir,  // Color parameters ir
                                __int64 *Photons_b, __int64 *C_b, // Output parameters blue
                                __int64 *Photons_y, __int64 *C_y, // Output parameters yellow
                                __int64 *Photons_r, __int64 *C_r, // Output parameters red
@@ -108,7 +108,7 @@ void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, 
         if (pb_b > 0)
         {
             /// Calculates 3D gaussian emission profile
-            P_em = pb_b*exp(-2*(((posx-bs_x/2-x)*(posx-bs_x/2-x))+((posy-bs_y/2-y)*(posy-bs_y/2-y)))/(wr_b*wr_b) -2*((posz-bs_z/2)*(posz-bs_z/2))/(wz_b*wz_b));
+            P_em = pb_b*exp(-2*(((posx-bs_x/2+dx_b-x)*(posx-bs_x/2+dx_b-x))+((posy-bs_y/2+dy_b-y)*(posy-bs_y/2+dy_b-y)))/(wr_b*wr_b) -2*((posz-bs_z/2+dz_b)*(posz-bs_z/2+dz_b))/(wz_b*wz_b));
             /// Calculates bleaching probability
             P_bl = bp_b*P_em;
             /// Checks, if particle bleaches
@@ -141,7 +141,7 @@ void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, 
         if (pb_y > 0)
         {
             /// Calculates 3D gaussian emission profile
-            P_em = pb_y*exp(-2*(((posx-bs_x/2-x)*(posx-bs_x/2-x))+((posy-bs_y/2-y)*(posy-bs_y/2-y)))/(wr_y*wr_y) -2*((posz-bs_z/2)*(posz-bs_z/2))/(wz_y*wz_y));
+            P_em = pb_y*exp(-2*(((posx-bs_x/2+dx_y-x)*(posx-bs_x/2+dx_y-x))+((posy-bs_y/2+dy_y-y)*(posy-bs_y/2+dy_y-y)))/(wr_y*wr_y) -2*((posz-bs_z/2+dz_y)*(posz-bs_z/2+dz_y))/(wz_y*wz_y));
             /// Calculates bleaching probability
             P_bl = bp_y*P_em;
             /// Checks, if particle bleaches
@@ -174,7 +174,7 @@ void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, 
         if (pb_r > 0)
         {
             /// Calculates 3D gaussian emission profile
-            P_em = pb_r*exp(-2*(((posx-bs_x/2-x)*(posx-bs_x/2-x))+((posy-bs_y/2-y)*(posy-bs_y/2-y)))/(wr_r*wr_r) -2*((posz-bs_z/2)*(posz-bs_z/2))/(wz_r*wz_r));
+            P_em = pb_r*exp(-2*(((posx-bs_x/2+dx_r-x)*(posx-bs_x/2+dx_r-x))+((posy-bs_y/2+dy_r-y)*(posy-bs_y/2+dy_r-y)))/(wr_r*wr_r) -2*((posz-bs_z/2+dz_r)*(posz-bs_z/2+dz_r))/(wz_r*wz_r));
             /// Calculates bleaching probability
             P_bl = bp_y*P_em;
             /// Checks, if particle bleaches
@@ -207,7 +207,7 @@ void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, 
         if (pb_ir > 0)
         {
             /// Calculates 3D gaussian emission profile
-            P_em = pb_ir*exp(-2*(((posx-bs_x/2-x)*(posx-bs_x/2-x))+((posy-bs_y/2-y)*(posy-bs_y/2-y)))/(wr_ir*wr_ir) -2*((posz-bs_z/2)*(posz-bs_z/2))/(wz_ir*wz_ir));
+            P_em = pb_ir*exp(-2*(((posx-bs_x/2+dx_ir-x)*(posx-bs_x/2+dx_ir-x))+((posy-bs_y/2+dy_ir-y)*(posy-bs_y/2+dy_ir-y)))/(wr_ir*wr_ir) -2*((posz-bs_z/2+dz_ir)*(posz-bs_z/2+dz_ir))/(wz_ir*wz_ir));
             /// Calculates bleaching probability
             P_bl = bp_ir*P_em;
             /// Checks, if particle bleaches
@@ -294,30 +294,42 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
 	double wz_b = (double)mxGetScalar(prhs[16]);
 	double mb_b = (double)mxGetScalar(prhs[17]);
 	double bp_b = (double)mxGetScalar(prhs[18]);
+    double dx_b = (double)mxGetScalar(prhs[19]);
+    double dy_b = (double)mxGetScalar(prhs[20]);
+    double dz_b = (double)mxGetScalar(prhs[21]);
 
     ///////////////////////////////////////////////////////////////////////
 	/// Second color parameters ///////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////
-    double wr_y = (double)mxGetScalar(prhs[19]);
-    double wz_y = (double)mxGetScalar(prhs[20]);
-    double mb_y = (double)mxGetScalar(prhs[21]);
-    double bp_y = (double)mxGetScalar(prhs[22]);
+    double wr_y = (double)mxGetScalar(prhs[22]);
+    double wz_y = (double)mxGetScalar(prhs[23]);
+    double mb_y = (double)mxGetScalar(prhs[24]);
+    double bp_y = (double)mxGetScalar(prhs[25]);
+    double dx_y = (double)mxGetScalar(prhs[26]);
+    double dy_y = (double)mxGetScalar(prhs[27]);
+    double dz_y = (double)mxGetScalar(prhs[28]);
     
     ///////////////////////////////////////////////////////////////////////
     /// Third color parameters ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
-    double wr_r = (double)mxGetScalar(prhs[23]);
-    double wz_r = (double)mxGetScalar(prhs[24]);
-    double mb_r = (double)mxGetScalar(prhs[25]);
-    double bp_r = (double)mxGetScalar(prhs[26]);
+    double wr_r = (double)mxGetScalar(prhs[29]);
+    double wz_r = (double)mxGetScalar(prhs[30]);
+    double mb_r = (double)mxGetScalar(prhs[31]);
+    double bp_r = (double)mxGetScalar(prhs[32]);
+    double dx_r = (double)mxGetScalar(prhs[33]);
+    double dy_r = (double)mxGetScalar(prhs[34]);
+    double dz_r = (double)mxGetScalar(prhs[35]);
     
     ///////////////////////////////////////////////////////////////////////
     /// Forth color parameters ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
-    double wr_ir = (double)mxGetScalar(prhs[27]);
-    double wz_ir = (double)mxGetScalar(prhs[28]);
-    double mb_ir = (double)mxGetScalar(prhs[29]);
-    double bp_ir = (double)mxGetScalar(prhs[30]);
+    double wr_ir = (double)mxGetScalar(prhs[36]);
+    double wz_ir = (double)mxGetScalar(prhs[37]);
+    double mb_ir = (double)mxGetScalar(prhs[38]);
+    double bp_ir = (double)mxGetScalar(prhs[39]);
+    double dx_ir = (double)mxGetScalar(prhs[40]);
+    double dy_ir = (double)mxGetScalar(prhs[41]);
+    double dz_ir = (double)mxGetScalar(prhs[42]);
     
 
     ///////////////////////////////////////////////////////////////////////
@@ -351,8 +363,14 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
     C_ir=(_int64*) mxCalloc(1, sizeof(__int64));
 
     ///////////////////////////////////////////////////////////////////////
-    /// Simulate 4Col Dif |#Ticks| Bixsize in nm| Start position  | D| Scan Type| Scan dim.     | Px/Lines  |T per p/l| Blue parameters       | Yellow parameters     |Red parameters         | IR parameters             |Photon output parameters                                         | Final particle position  | 
-    Simulate_Diffusion(maxtime, bs_x, bs_y, bs_z, posx, posy, posz, d, scan_type, x_step, y_step, x_px, y_px, x_t, y_t, wr_b, wz_b, mb_b, bp_b, wr_y, wz_y, mb_y, bp_y, wr_r, wz_r, mb_r, bp_r, wr_ir, wz_ir, mb_ir, bp_ir, Photons_b, C_b, Photons_y, C_y, Photons_r, C_r, Photons_ir, C_ir, Final_x, Final_y, Final_z);
+    /// Simulate 4Col Dif |#Ticks| Bixsize in nm| Start position  | D| Scan Type| Scan dim.     | Px/Lines  |T per p/l|| 
+    Simulate_Diffusion(maxtime, bs_x, bs_y, bs_z, posx, posy, posz, d, scan_type, x_step, y_step, x_px, y_px, x_t, y_t,
+            wr_b, wz_b, mb_b, bp_b, dx_b, dy_b, dz_b, // Blue parameters  
+            wr_y, wz_y, mb_y, bp_y, dx_y, dy_y, dz_y, // Yellow parameters  
+            wr_r, wz_r, mb_r, bp_r, dx_r, dy_r, dz_r, // Red parameters  
+            wr_ir, wz_ir, mb_ir, bp_ir, dx_ir, dy_ir, dz_ir, // IR parameters  
+            Photons_b, C_b, Photons_y, C_y, Photons_r, C_r, Photons_ir, C_ir, // Photon output parameters     
+            Final_x, Final_y, Final_z);// Final particle position  
 
     const mwSize dims_b[]={(double)C_b[0],1};
     const mwSize dims_y[]={(double)C_y[0],1};

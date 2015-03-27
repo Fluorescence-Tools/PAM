@@ -2762,7 +2762,7 @@ if h.Mia_Correlation_Save.Value > 1
         %%% Averaged correlation
         DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1},3);
         %%% Error of correlation
-        DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1},0,3);
+        DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1},0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1},3));
         
 
     end
@@ -2816,7 +2816,7 @@ if h.Mia_Correlation_Save.Value > 1
         %%% Averaged correlation
         DataAll{3,1} = mean(MIAData.Cor{2,1},3);
         %%% Error of correlation
-        DataAll{3,2} = std(MIAData.Cor{2,1},0,3);
+        DataAll{3,2} = std(MIAData.Cor{2,1},0,3)./sqrt(size(MIAData.Cor{2,1},3));
     end
     %% Saves correlations
     switch h.Mia_Correlation_Save.Value
