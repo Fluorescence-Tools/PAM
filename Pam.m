@@ -3142,7 +3142,9 @@ switch e.Key
         UserValues.Detector.Rout(Sel)=[];
         UserValues.Detector.Name(Sel)=[];
         UserValues.Detector.Color(Sel,:)=[];
+        try
         UserValues.Detector.Shift(Sel)=[];
+        end
         PamMeta.MI_Hist(Sel)=[];
         %%% Updates List
         h.MI_Channels_List.String(Sel)=[];

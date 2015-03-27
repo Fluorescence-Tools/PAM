@@ -890,6 +890,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Downsample_fFCS_Time was incomplete');    
     end 
     P.BurstBrowser.Downsample_fFCS_Time = S.BurstBrowser.Downsample_fFCS_Time;
+    %%% Check, if BurstBrowser.fFCS_UseIRF subfield exists
+    if ~isfield(S.BurstBrowser, 'fFCS_UseIRF')
+        S.BurstBrowser.fFCS_UseIRF=1;
+        disp('UserValues.BurstBrowser.fFCS_UseIRF was incomplete');    
+    end 
+    P.BurstBrowser.fFCS_UseIRF = S.BurstBrowser.fFCS_UseIRF;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');

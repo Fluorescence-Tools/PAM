@@ -1185,6 +1185,18 @@ if isempty(hfig)
         h.Downsample_fFCS_edit.Enable = 'off';
     end
     
+    h.fFCS_UseIRF = uicontrol('Style','checkbox',...
+        'Parent',h.DataProcessingPanel,...
+        'String','Use Scatter Pattern for fFCS',...
+        'Tag','Downsample_fFCS',...
+        'Value', UserValues.BurstBrowser.fFCS_UseIRF,...
+        'Units','normalized',...
+        'Position',[0.1 0.68 0.5 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
@@ -2302,13 +2314,15 @@ clearvars -global BurstData BurstTCSPCData
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_BurstBrowser(~,~)
-global BurstData
-if ~isempty(BurstData)
+global BurstData UserValues
+if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     %%% Ask for saving
-    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
+    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
     switch choice
         case 'Yes'
             Save_Analysis_State_Callback([],[]);
+        case 'Cancel'
+            return;
     end
 end
 
@@ -2334,10 +2348,12 @@ h = guidata(gcbo);
 global BurstData UserValues BurstMeta
 if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     %%% Ask for saving
-    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Discard');
+    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
     switch choice
         case 'Yes'
         Save_Analysis_State_Callback([],[]);
+        case 'Cancel'
+            return;
     end
 end
 if isfield(BurstMeta,'fFCS')
@@ -2442,7 +2458,9 @@ switch obj
                 h.Downsample_fFCS_edit.Enable = 'on';
             case 0
                 h.Downsample_fFCS_edit.Enable = 'off';
-        end               
+        end 
+    case h.fFCS_UseIRF
+        UserValues.BurstBrowser.fFCS_UseIRF = obj.Value;
 end
 LSUserValues(1);
     
@@ -3887,7 +3905,7 @@ switch obj
         axis(h.axes_fFCS_DecayPerp,'tight');
 
         %%% Add IRF Pattern if existent
-        if isfield(BurstData,'ScatterPattern')
+        if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.fFCS_UseIRF
             hScat_par = [];
             hScat_perp = [];
             for i = 1:numel(ParChans)
@@ -4028,13 +4046,13 @@ end
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calc_fFCS_Filters(obj,~)
-global BurstMeta BurstData
+global BurstMeta BurstData UserValues
 h = guidata(obj);
 
 %%% Concatenate Decay Patterns
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
-if isfield(BurstData,'ScatterPattern') %%% include scatter pattern
+if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.fFCS_UseIRF %%% include scatter pattern
     if isfield(BurstMeta.fFCS,'hScat_par')
         Decay_par = [Decay_par, BurstMeta.fFCS.hScat_par(1:size(Decay_par,1))'];
     end
@@ -4044,7 +4062,7 @@ Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
 Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
-if isfield(BurstData,'ScatterPattern') %%% include scatter pattern
+if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.fFCS_UseIRF %%% include scatter pattern
     if isfield(BurstMeta.fFCS,'hScat_perp')
         Decay_perp = [Decay_perp, BurstMeta.fFCS.hScat_perp(1:size(Decay_perp,1))'];
     end
