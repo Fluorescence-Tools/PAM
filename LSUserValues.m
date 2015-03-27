@@ -865,6 +865,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');    
     end
     P.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
+    %%% Checks, if BurstBrowser.Display.NumberOfContourLevels subfield exists
+    if ~isfield (S.BurstBrowser.Display,'NumberOfContourLevels')
+        S.BurstBrowser.Display.NumberOfContourLevels=10;
+        disp('UserValues.BurstBrowser.Display.NumberOfContourLevels was incomplete');    
+    end
+    P.BurstBrowser.Display.NumberOfContourLevels = S.BurstBrowser.Display.NumberOfContourLevels;
+    %%% Checks, if BurstBrowser.Display.ContourOffset subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ContourOffset')
+        S.BurstBrowser.Display.ContourOffset=5;
+        disp('UserValues.BurstBrowser.Display.ContourOffset was incomplete');    
+    end
+    P.BurstBrowser.Display.ContourOffset = S.BurstBrowser.Display.ContourOffset;
+    %%% Checks, if BurstBrowser.Display.PlotContourLines subfield exists
+    if ~isfield (S.BurstBrowser.Display,'PlotContourLines')
+        S.BurstBrowser.Display.PlotContourLines=1;
+        disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');    
+    end
+    P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
     %%% Check, if BurstBrowser.PrintPath subfield exists
     if ~isfield(S.BurstBrowser, 'PrintPath')
         S.BurstBrowser.PrintPath=pwd;

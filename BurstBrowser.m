@@ -632,7 +632,7 @@ if isempty(hfig)
     'FontSize',12,...
     'Callback',@UpdateCorrections);
 
-    uicontrol(...
+    h.r0Blue_text = uicontrol(...
     'Parent',h.FitLifetimeRelatedPanel,...
     'Units','normalized',...
     'BackgroundColor', Look.Back,...
@@ -1065,6 +1065,56 @@ if isempty(hfig)
         'Callback',@ChangePlotType...
         );
     
+    h.NumberOfContourLevels_text = uicontrol(...
+        'Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.62 0.68 0.28 0.07],...
+        'FontSize',12,...
+        'Tag','NumberOfContourLevels_edit',...
+        'String','Number of Contour Levels'...
+        );
+    
+    h.NumberOfContourLevels_edit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.9 0.68 0.1 0.07],...
+        'FontSize',12,...
+        'Tag','NumberOfContourLevels_edit',...
+        'String',num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels),...
+        'Callback',@UpdatePlot...
+        );
+    
+    h.ContourOffset_text = uicontrol(...
+        'Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.62 0.58 0.28 0.07],...
+        'FontSize',12,...
+        'Tag','NumberOfContourLevels_edit',...
+        'String','Contour Plot Offset [%]'...
+        );
+    
+    h.ContourOffset_edit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.9 0.58 0.1 0.07],...
+        'FontSize',12,...
+        'Tag','NumberOfContourLevels_edit',...
+        'String',num2str(UserValues.BurstBrowser.Display.ContourOffset),...
+        'Callback',@UpdatePlot...
+        );
+    
     %%% Specify the colormap
     uicontrol('Style','text',...
         'Parent',h.DisplayOptionsPanel,...
@@ -1089,6 +1139,19 @@ if isempty(hfig)
         'String',Colormaps_String,...
         'Value',find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap)),...
         'Callback',@UpdatePlot...
+        );
+    
+    h.PlotContourLines = uicontrol('Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Plot Contour Lines',...
+        'Tag','PlotContourLines',...
+        'Value', UserValues.BurstBrowser.Display.PlotContourLines,...
+        'Units','normalized',...
+        'Position',[0.6 0.48 0.4 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@ChangePlotType...
         );
     
     %%% Option to take log10 of 2D histogram
@@ -2156,6 +2219,8 @@ if isempty(hfig)
             end
         end
     end
+    %% Store GUI data
+    guidata(h.BurstBrowser,h);    
     %% Initialize Plots in Global Variable
     %%% Enables easy Updating later on
     BurstMeta.Plots = [];
@@ -2301,7 +2366,6 @@ if isempty(hfig)
     ChangePlotType(h.PlotTypePopumenu,[]);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
-    guidata(h.BurstBrowser,h);    
     %%% Update ColorMap
     eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
 else
@@ -2758,7 +2822,7 @@ if obj == h.NumberOfBinsXEdit
             h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
         end
     else
-        h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
+        h.NumberOfBinsXEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsX);
     end
 end
 if obj == h.NumberOfBinsYEdit
@@ -2770,10 +2834,33 @@ if obj == h.NumberOfBinsYEdit
             h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
         end
     else
-        h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
+        h.NumberOfBinsYEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsY);
     end
 end
-
+if obj == h.NumberOfContourLevels_edit
+    nClevels = str2double(h.NumberOfContourLevels_edit.String);
+    if ~isnan(nClevels)
+        if nClevels > 1
+            UserValues.BurstBrowser.Display.NumberOfContourLevels = nClevels;
+        else
+            h.NumberOfContourLevels_edit.String = UserValues.BurstBrowser.Display.NumberOfContourLevels;
+        end
+    else
+        h.NumberOfContourLevels_edit.String = num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    end
+end
+if obj == h.ContourOffset_edit
+    ContourOffset = str2double(h.ContourOffset_edit.String);
+    if ~isnan(ContourOffset)
+        if ContourOffset >=0 && ContourOffset<=100
+            UserValues.BurstBrowser.Display.ContourOffset = ContourOffset;
+        else
+            h.ContourOffset_edit.String = UserValues.BurstBrowser.Display.ContourOffset;
+        end
+    else
+        h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
+    end
+end
 if obj == h.ColorMapPopupmenu
     UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
 end
@@ -2818,7 +2905,7 @@ BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
 BurstMeta.Plots.Main_Plot(2).XData = xbins;
 BurstMeta.Plots.Main_Plot(2).YData = ybins;
 BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
-BurstMeta.Plots.Main_Plot(2).LevelList = linspace(0.05,1,10);
+BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 
 axis(h.axes_general,'tight');
 %%% Update Labels
@@ -2945,34 +3032,50 @@ drawnow;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ChangePlotType(obj,~)
 global UserValues BurstMeta
-UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
+h = guidata(obj);
+switch obj
+    case h.PlotTypePopumenu
+        UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
+        fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
+        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Image')
+            %%% Make Image Plots Visible, Hide Contourf Plots 
+            for i = 1:numel(fields)
+                if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                    if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                        BurstMeta.Plots.(fields{i})(1).Visible = 'on';
+                        BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+                    end
+                end
+            end
+        end
+
+        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            %%% Make Image Plots Visible, Hide Contourf Plots 
+            for i = 1:numel(fields)
+                if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                    if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                        BurstMeta.Plots.(fields{i})(1).Visible = 'off';
+                        BurstMeta.Plots.(fields{i})(2).Visible = 'on';
+                    end
+                end
+            end
+        end
+    case h.PlotContourLines
+        UserValues.BurstBrowser.Display.PlotContourLines = h.PlotContourLines.Value;
+        fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
+        for i = 1:numel(fields)
+            if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                    if UserValues.BurstBrowser.Display.PlotContourLines == 0
+                        BurstMeta.Plots.(fields{i})(2).LineStyle = 'none';
+                    elseif UserValues.BurstBrowser.Display.PlotContourLines == 1
+                        BurstMeta.Plots.(fields{i})(2).LineStyle = '-';
+                    end  
+                end
+            end
+        end
+end
 LSUserValues(1);
-
-fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
-if strcmp(UserValues.BurstBrowser.Display.PlotType,'Image')
-    %%% Make Image Plots Visible, Hide Contourf Plots 
-    for i = 1:numel(fields)
-        if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
-            if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
-                BurstMeta.Plots.(fields{i})(1).Visible = 'on';
-                BurstMeta.Plots.(fields{i})(2).Visible = 'off';
-            end
-        end
-    end
-end
-
-if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-    %%% Make Image Plots Visible, Hide Contourf Plots 
-    for i = 1:numel(fields)
-        if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
-            if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
-                BurstMeta.Plots.(fields{i})(1).Visible = 'off';
-                BurstMeta.Plots.(fields{i})(2).Visible = 'on';
-            end
-        end
-    end
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3435,7 +3538,7 @@ BurstMeta.Plots.gamma_fit(1).AlphaData= (H>0);
 BurstMeta.Plots.gamma_fit(2).XData= xbins;
 BurstMeta.Plots.gamma_fit(2).YData= ybins;
 BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
-BurstMeta.Plots.gamma_fit(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 %%% Update/Reset Axis Labels
 xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency');
 ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry');
@@ -3577,7 +3680,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.gamma_BG_fit(2).XData= xbins;
     BurstMeta.Plots.gamma_BG_fit(2).YData= ybins;
     BurstMeta.Plots.gamma_BG_fit(2).ZData= H/max(max(H));
-    BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(0.1,1,10);
+    BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Update/Reset Axis Labels
     xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency BG');
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG');
@@ -3620,7 +3723,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.gamma_BR_fit(2).XData= xbins;
     BurstMeta.Plots.gamma_BR_fit(2).YData= ybins;
     BurstMeta.Plots.gamma_BR_fit(2).ZData= H/max(max(H));
-    BurstMeta.Plots.gamma_BR_fit(2).LevelList = linspace(0.1,1,10);
+    BurstMeta.Plots.gamma_BR_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Update/Reset Axis Labels
     xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR');
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR');
@@ -5154,7 +5257,42 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
                     BurstData.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
                     BurstData.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
+                    BurstData.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+                    BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+                    BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
             end
+        end
+        if ~isfield(BurstData.Corrections,'r0_green')
+            BurstData.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+        end
+        if ~isfield(BurstData.Corrections,'r0_red')
+            BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+        end
+        if ~isfield(BurstData.Corrections,'r0_green') && any(BurstData.BAMethod == [3,4])
+            BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+        end
+        %%% Update GUI with values stored in BurstData Structure
+        switch BurstData.BAMethod
+            case {1,2}
+                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
+                h.AcceptorLifetimeEdit.String = num2str(BurstData.Corrections.AcceptorLifetime);
+                h.FoersterRadiusEdit = num2str(BurstData.Corrections.FoersterRadius);
+                h.LinkerLengthEdit = num2str(BurstData.Corrections.LinkerLength);
+                h.r0Green_edit.String = num2str(BurstData.Corrections.r0_green);
+                h.r0Red_edit = num2str(BurstData.Corrections.r0_red);
+            case {3,4}
+                h.DonorLifetimeBlueEdit.String = num2str(BurstData.Corrections.DonorLifetimeBlue);
+                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
+                h.AcceptorLifetimeEdit.String = num2str(BurstData.Corrections.AcceptorLifetime);
+                h.FoersterRadiusEdit = num2str(BurstData.Corrections.FoersterRadius);
+                h.LinkerLengthEdit = num2str(BurstData.Corrections.LinkerLength);
+                h.FoersterRadiusBGEdit = num2str(BurstData.Corrections.FoersterRadiusBG);
+                h.LinkerLengthBGEdit = num2str(BurstData.Corrections.LinkerLengthBG);
+                h.FoersterRadiusBREdit = num2str(BurstData.Corrections.FoersterRadiusBR);
+                h.LinkerLengthBREdit = num2str(BurstData.Corrections.LinkerLengthBR);
+                h.r0Blue_edit.String = num2str(BurstData.Corrections.r0_blue);
+                h.r0Green_edit.String = num2str(BurstData.Corrections.r0_green);
+                h.r0Red_edit = num2str(BurstData.Corrections.r0_red);
         end
 
         if any(BurstData.BAMethod == [1,2]) %%% 2cMFD, same as default
@@ -5582,7 +5720,7 @@ BurstMeta.Plots.gamma_fit(1).AlphaData = (H>0);
 BurstMeta.Plots.gamma_fit(2).XData = xbins;
 BurstMeta.Plots.gamma_fit(2).YData = ybins;
 BurstMeta.Plots.gamma_fit(2).ZData = H/max(max(H));
-BurstMeta.Plots.gamma_fit(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
 
 %%% Update Axis Labels
@@ -5645,7 +5783,7 @@ BurstMeta.Plots.EvsTauGG(1).AlphaData = (H>0);
 BurstMeta.Plots.EvsTauGG(2).XData = xbins;
 BurstMeta.Plots.EvsTauGG(2).YData = ybins;
 BurstMeta.Plots.EvsTauGG(2).ZData = H/max(max(H));
-BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_EvsTauGG,'tight');
 ylim(h.axes_EvsTauGG,[-0.1 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
@@ -5661,7 +5799,7 @@ BurstMeta.Plots.EvsTauRR(1).AlphaData = (H>0);
 BurstMeta.Plots.EvsTauRR(2).XData = xbins;
 BurstMeta.Plots.EvsTauRR(2).YData = ybins;
 BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
-BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 ylim(h.axes_EvsTauRR,[0 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
@@ -5673,7 +5811,7 @@ BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
 BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
-BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_rGGvsTauGG,'tight');
 %% Plot rRR vs. tauRR in third plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
@@ -5684,7 +5822,7 @@ BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
 BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
-BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(0.1,1,10);
+BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_rRRvsTauRR,'tight');
 %% 3cMFD
 if any(BurstData.BAMethod == [3,4])
@@ -5701,7 +5839,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.E_BtoGRvsTauBB(2).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = H/max(max(H));
-    BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(0.1,1,10);
+    BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     axis(h.axes_E_BtoGRvsTauBB,'tight');
     ylim(h.axes_E_BtoGRvsTauBB,[0 1]);
     if strcmp(BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible,'on')
@@ -5717,7 +5855,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.rBBvsTauBB(2).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(2).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(2).ZData = H/max(max(H));
-    BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(0.1,1,10);
+    BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     axis(h.axes_rBBvsTauBB,'tight');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6241,7 +6379,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
-    BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(0.1,1,10);
+    BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% add static FRET line
     tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
@@ -6331,7 +6469,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         BurstMeta.Plots.gamma_threecolor_lifetime(2).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(2).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
-        BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(0.1,1,10);
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% add static FRET line
         tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
@@ -6524,6 +6662,8 @@ if BAMethod == 3
     h.LinkerLengthBRText.Visible = 'on';
     h.DonorLifetimeBlueText.Visible = 'on';
     h.DonorLifetimeBlueEdit.Visible = 'on';
+    h.r0Blue_edit.Visible = 'on';
+    h.r0Blue_text.Visible = 'on';
     %% Change Lifetime GUI
     %%% Make 3C-Plots visible
     h.axes_E_BtoGRvsTauBB.Parent = h.MainTabLifetimePanel;
@@ -6553,6 +6693,8 @@ elseif BAMethod == 2
     h.LinkerLengthBRText.Visible = 'off';
     h.DonorLifetimeBlueText.Visible = 'off';
     h.DonorLifetimeBlueEdit.Visible = 'off';
+    h.r0Blue_edit.Visible = 'off';
+    h.r0Blue_text.Visible = 'off';
     %%% Reset Lifetime Plots
      %%% Make 3C-Plots invisible
     h.axes_E_BtoGRvsTauBB.Parent = h.Hide_Stuff;
