@@ -822,6 +822,24 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Display=[];
         disp('UserValues.BurstBrowser.Display was incomplete');    
     end
+        %%% Check, if BurstBrowser.Corrections.r0_green subfield exists
+    if ~isfield(S.BurstBrowser.Corrections, 'r0_green')
+        S.BurstBrowser.Corrections.r0_green=0.4;
+        disp('UserValues.BurstBrowser.Corrections.r0_green was incomplete');    
+    end 
+    P.BurstBrowser.Corrections.r0_green = S.BurstBrowser.Corrections.r0_green;
+    %%% Check, if BurstBrowser.Corrections.r0_red subfield exists
+    if ~isfield(S.BurstBrowser.Corrections, 'r0_red')
+        S.BurstBrowser.Corrections.r0_red=0.4;
+        disp('UserValues.BurstBrowser.Corrections.r0_red was incomplete');    
+    end 
+    P.BurstBrowser.Corrections.r0_red = S.BurstBrowser.Corrections.r0_red;
+    %%% Check, if BurstBrowser.Corrections.r0_green subfield exists
+    if ~isfield(S.BurstBrowser.Corrections, 'r0_blue')
+        S.BurstBrowser.Corrections.r0_blue=0.4;
+        disp('UserValues.BurstBrowser.Corrections.r0_blue was incomplete');    
+    end 
+    P.BurstBrowser.Corrections.r0_blue = S.BurstBrowser.Corrections.r0_blue;
     P.BurstBrowser.Display = [];
     %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
     if ~isfield (S.BurstBrowser.Display,'NumberOfBinsX')
