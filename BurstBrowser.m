@@ -3053,8 +3053,73 @@ if ~isfield(BurstData,'Cut')
 end
 
 species = get(h.SpeciesList,'Value');
-BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
-BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+
+%%% Check whether the CutParameter already exists or not
+ExistingCuts = vertcat(BurstData.Cut{species}{:});
+param_x = get(h.ParameterListX,'Value');
+param_y = get(h.ParameterListY,'Value');
+if ~isempty(ExistingCuts)
+    if any(strcmp(BurstData.NameArray{param_x},ExistingCuts(:,1)))
+        BurstData.Cut{species}{strcmp(BurstData.NameArray{param_x},ExistingCuts(:,1))} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+    else
+        BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+    end
+    
+    if any(strcmp(BurstData.NameArray{param_y},ExistingCuts(:,1)))
+        BurstData.Cut{species}{strcmp(BurstData.NameArray{param_y},ExistingCuts(:,1))} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+    else
+        BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+    end
+else
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+end
+
+%%% If a change was made to the GlobalCuts Species, update all other
+%%% existent species with the changes
+if BurstData.SelectedSpecies == 1
+    if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+        ChangedParamX = BurstData.NameArray{get(h.ParameterListX,'Value')};
+        ChangedParamY = BurstData.NameArray{get(h.ParameterListY,'Value')};
+        GlobalParams = vertcat(BurstData.Cut{1}{:});
+        GlobalParams = GlobalParams(1:numel(BurstData.Cut{1}),1);
+        %%% cycle through the number of other species
+        for j = 2:numel(BurstData.Cut)
+            %%% Check if the parameter already exists in the species j
+            ParamList = vertcat(BurstData.Cut{j}{:});
+            if ~isempty(ParamList)
+                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                CheckParam = strcmp(ParamList,ChangedParamX);
+                if any(CheckParam)
+                    %%% Parameter added or changed
+                    %%% Override the parameter with GlobalCut
+                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+                else %%% Parameter is new to GlobalCut
+                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+                end
+            else %%% Parameter is new to GlobalCut
+                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+            end
+        end
+        for j = 2:numel(BurstData.Cut)
+            %%% Check if the parameter already exists in the species j
+            ParamList = vertcat(BurstData.Cut{j}{:});
+            if ~isempty(ParamList)
+                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                CheckParam = strcmp(ParamList,ChangedParamY);
+                if any(CheckParam)
+                    %%% Parameter added or changed
+                    %%% Override the parameter with GlobalCut
+                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+                else %%% Parameter is new to GlobalCut
+                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+                end
+            else %%% Parameter is new to GlobalCut
+                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+            end
+        end
+    end
+end
 
 UpdateCutTable(h);
 UpdateCuts();
