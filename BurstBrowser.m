@@ -4570,8 +4570,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        
-        chi2 = cellfun(@(x) sum((x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4602,7 +4602,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum((x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4641,7 +4642,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum((x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4683,7 +4685,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum((x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4719,7 +4722,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum((x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0))),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -4769,7 +4773,8 @@ switch BurstMeta.TauFit.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum((x.^2./Decay_stacked)/(numel(Decay_stacked)-numel(x0))),residuals);
+        sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0))),residuals);
         [~,best_fit] = min(chi2);
         %%% remove ignore range from decay
         Decay = [BurstMeta.TauFit.FitData.Decay_Par; BurstMeta.TauFit.FitData.Decay_Per];
@@ -4869,7 +4874,8 @@ bg = param(3);
 sc = param(2);
 tau = param(1);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+%z = convol(irf, x);
+z = conv(irf,x);z = z(1:n);
 z = z./sum(z);
 z = (1-sc).*z + sc*Scatter; 
 %z = z./sum(z);
@@ -4915,7 +4921,12 @@ sc = param(4);
 bg = param(5);
 tau = param(1:2);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+%z = convol(irf, x);
+z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+for i = 1:size(x,2)
+    z(:,i) = conv(irf, x(:,i));
+end
+z = z(1:n,:);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A*z(:,1) + (1-A)*z(:,2);
@@ -4968,7 +4979,12 @@ sc = param(6);
 bg = param(7);
 tau = param(1:3);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+%z = convol(irf, x);
+z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+for i = 1:size(x,2)
+    z(:,i) = conv(irf, x(:,i));
+end
+z = z(1:n,:);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
@@ -5014,7 +5030,8 @@ for i = 1:numel(xR)
     c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
 end
 x = sum(c_gauss,1);
-z = convol(irf, x);
+%z = convol(irf, x);
+z = conv(irf,x);z = z(1:n)';
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
@@ -5061,7 +5078,8 @@ end
 xdist = sum(c_gauss,1);xdist = xdist./sum(xdist);
 xDonly = exp(-(1:n)./tauD0); xDonly = xDonly./sum(xDonly);
 x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
-z = convol(irf, x);
+%z = convol(irf, x);
+z = conv(irf,x);z = z(1:n)';
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
@@ -5092,7 +5110,7 @@ for i = 1:2
     s = circshift(ScatterPattern{i},[c, 0]);
     Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
 end
-n = size(y,2);
+n = length(IRF{1});
 %t = 1:n;
 %tp = (1:p)';
 tau = param(1);
@@ -5108,7 +5126,8 @@ bg_per = param(8);
 
 %%% Calculate the parallel Intensity Decay
 x_par = exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_par = convol(IRF{1}, x_par);
+%z_par = convol(IRF{1}, x_par);
+z_par = conv(IRF{1}, x_par); z_par = z_par(1:n)';
 z_par = z_par./repmat(sum(z_par,1),size(z_par,1),1);
 z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
 z_par = z_par./sum(z_par);
@@ -5119,7 +5138,8 @@ z_par = z_par';
 
 %%% Calculate the perpendicular Intensity Decay
 x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_per = convol(IRF{2}, x_per);
+%z_per = convol(IRF{2}, x_per);
+z_per = conv(IRF{2}, x_per);z_per = z_per(1:n)';
 z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
 z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
 z_per = z_per./sum(z_per);
@@ -5268,7 +5288,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         if ~isfield(BurstData.Corrections,'r0_red')
             BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
         end
-        if ~isfield(BurstData.Corrections,'r0_green') && any(BurstData.BAMethod == [3,4])
+        if ~isfield(BurstData.Corrections,'r0_blue') && any(BurstData.BAMethod == [3,4])
             BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
         end
         %%% Update GUI with values stored in BurstData Structure
@@ -5927,8 +5947,7 @@ end
 if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %% GG
-    r0 = 0.4;
-    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    fPerrin = @(rho,x) BurstData.Corrections.r0_green./(1+x./rho); %%% x = tau
     tauGG = datatoplot(:,idx_tauGG); 
     PerrinFitGG = fit(tauGG(~isnan(tauGG)),datatoplot(~isnan(tauGG),idx_rGG),fPerrin,'StartPoint',1);
     tau = linspace(h.axes_rGGvsTauGG.XLim(1),h.axes_rGGvsTauGG.XLim(2),100);
@@ -5941,8 +5960,7 @@ if obj == h.FitAnisotropyButton
     BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
     title(h.axes_rGGvsTauGG,['rhoGG = ' num2str(BurstData.Parameters.rhoGG) ' ns']);
     %% RR
-    r0 = 0.4;
-    fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+    fPerrin = @(rho,x) BurstData.Corrections.r0_red./(1+x./rho); %%% x = tau
     tauRR = datatoplot(:,idx_tauRR); 
     PerrinFitRR = fit(tauRR(~isnan(tauRR)),datatoplot(~isnan(tauRR),idx_rRR),fPerrin,'StartPoint',1);
     tau = linspace(h.axes_rRRvsTauRR.XLim(1),h.axes_rRRvsTauRR.XLim(2),100);
@@ -5957,8 +5975,7 @@ if obj == h.FitAnisotropyButton
         %% BB
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
         idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
-        r0 = 0.4;
-        fPerrin = @(rho,x) r0./(1+x./rho); %%% x = tau
+        fPerrin = @(rho,x) BurstData.Corrections.r0_blue./(1+x./rho); %%% x = tau
         valid = (datatoplot(:,idx_tauBB) > 0.01) & (datatoplot(:,idx_tauBB) < 5) &...
             (datatoplot(:,idx_rBB) > -1) & (datatoplot(:,idx_rBB) < 2) &...
             (~isnan(datatoplot(:,idx_tauBB))); 
@@ -5981,7 +5998,14 @@ if obj == h.ManualAnisotropyButton
         if (gca == h.axes_rGGvsTauGG) || (gca == h.axes_rRRvsTauRR) || (gca == h.axes_rBBvsTauBB)
             haxes = gca;
             %%% Determine rho
-            r0 = 0.4;
+            switch gca
+                case h.axes_rGGvsTauGG
+                    r0 = BurstData.Corrections.r0_green;
+                case h.axes_rRRvsTauRR
+                    r0 = BurstData.Corrections.r0_red;
+                case h.axes_rBBvsTauBB
+                    r0 = BurstData.Corrections.r0_blue;
+            end
             rho = x/(r0/y - 1);
             fitPerrin = @(x) r0./(1+x./rho);
             %%% plot
@@ -6020,7 +6044,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = 0.4;
+                r0 = BurstData.Corrections.r0_green;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
@@ -6044,7 +6068,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = 0.4;
+                r0 = BurstData.Corrections.r0_red;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
@@ -6068,7 +6092,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = 0.4;
+                r0 = BurstData.Corrections.r0_blue;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);

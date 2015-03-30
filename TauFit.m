@@ -1111,8 +1111,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -1143,7 +1143,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -1182,7 +1183,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -1224,7 +1226,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -1260,7 +1263,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay(ignore:end))/(numel(Decay(ignore:end))-numel(x0)),residuals);
+        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
         wres = (Decay-FitFun)./sqrt(Decay);
@@ -1310,7 +1314,8 @@ switch TauFitData.FitType
             x{count} = interlace(x0,x{count},fixed);
             count = count +1;
         end
-        chi2 = cellfun(@(x) sum(x.^2./Decay_stacked)/(numel(Decay_stacked)-numel(x0)),residuals);
+        sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
+        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
         %%% remove ignore range from decay
         Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
@@ -1939,7 +1944,7 @@ bg = param(3);
 sc = param(2);
 tau = param(1);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+z = conv(irf, x); z = z(1:n);
 z = z./sum(z);
 z = (1-sc).*z + sc*Scatter; 
 %z = z./sum(z);
@@ -1986,7 +1991,11 @@ sc = param(4);
 bg = param(5);
 tau = param(1:2);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+for i = 1:size(x,2)
+    z(:,i) = conv(irf, x(:,i));
+end
+z = z(1:n,:);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A*z(:,1) + (1-A)*z(:,2);
@@ -2040,11 +2049,15 @@ sc = param(6);
 bg = param(7);
 tau = param(1:3);
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = convol(irf, x);
+z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
+for i = 1:size(x,2)
+    z(:,i) = conv(irf, x(:,i));
+end
+z = z(1:n,:);
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials
 z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
-z = (1-scatter).*z + sc*Scatter;
+z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
 z = z(ignore:end);
 z = z./sum(z);
@@ -2087,7 +2100,7 @@ for i = 1:numel(xR)
     c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
 end
 x = sum(c_gauss,1);
-z = convol(irf, x);
+z = conv(irf, x); z = z(1:n)';
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
@@ -2135,7 +2148,7 @@ end
 xdist = sum(c_gauss,1);xdist = xdist./sum(xdist);
 xDonly = exp(-(1:n)./tauD0); xDonly = xDonly./sum(xDonly);
 x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
-z = convol(irf, x);
+z = conv(irf, x); z = z(1:n)';
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
@@ -2167,7 +2180,7 @@ for i = 1:2
     s = circshift(ScatterPattern{i},[c, 0]);
     Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
 end
-n = size(y,2);
+n = length(IRF{1});
 %t = 1:n;
 %tp = (1:p)';
 tau = param(1);
@@ -2183,7 +2196,7 @@ bg_per = param(8);
 
 %%% Calculate the parallel Intensity Decay
 x_par = exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_par = convol(IRF{1}, x_par);
+z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
 z_par = z_par./repmat(sum(z_par,1),size(z_par,1),1);
 z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
 z_par = z_par./sum(z_par);
@@ -2194,7 +2207,7 @@ z_par = z_par';
 
 %%% Calculate the perpendicular Intensity Decay
 x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_per = convol(IRF{2}, x_per);
+z_per = conv(IRF{2}, x_per);z_per = z_per(1:n)';
 z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
 z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
 z_per = z_per./sum(z_per);

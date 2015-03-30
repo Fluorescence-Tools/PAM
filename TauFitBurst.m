@@ -1148,7 +1148,7 @@ case {1,2}
         GAMMA = T./tau;
         p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
         %p = p(1:length+1,:);
-        c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);
+        c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
         c(c<0) = 0;
         z = sum(c,1);
         c = c./z(ones(size(c,1),1),:);
@@ -1336,7 +1336,7 @@ case {3,4}
         GAMMA = T./tau;
         p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
         %p = p(1:length+1,:);
-        c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);
+        c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
         c(c<0) = 0;
         z = sum(c,1);
         c = c./z(ones(size(c,1),1),:);
