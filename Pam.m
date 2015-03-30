@@ -1916,7 +1916,12 @@ end
 %% Creates trace and image plots
 
 %%% Creates macrotime bins for traces (currently fixed 10ms)
-PamMeta.TimeBins=0:str2double(h.MT_Binning.String)/1000:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime);
+if isfield(FileInfo,'FabSurf')
+    MeasurementTime = FileInfo.MeasurementTime*FileInfo.NumberOfFiles;
+else
+    MeasurementTime = FileInfo.MeasurementTime;
+end
+PamMeta.TimeBins=0:str2double(h.MT_Binning.String)/1000:MeasurementTime;
 %%% Creates a intensity trace and image for each non-combined PIE channel
 if ~isempty(PIE)
     for i=PIE
@@ -1982,8 +1987,13 @@ if ~isempty(PIE)
             PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
             PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*str2double(h.MT_Binning.String);
             clear Image_Sum;
-            PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
-            PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)/1000;
+            if isfield(FileInfo,'FabSurf')
+                MeasurementTime = FileInfo.MeasurementTime*FileInfo.NumberOfFiles;
+            else
+                MeasurementTime = FileInfo.MeasurementTime;
+            end
+            PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/MeasurementTime/1000;
+            PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/MeasurementTime/1000;
         else
             %%% Creates a 0 trace for empty/nonexistent detector/routing pairs
             PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
@@ -2459,11 +2469,16 @@ end
 
 %% Trace sections %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==2)
+    if isfield(FileInfo,'FabSurf')
+        MeasurementTime = FileInfo.MeasurementTime*FileInfo.NumberOfFiles;
+    else
+        MeasurementTime = FileInfo.MeasurementTime;
+    end
     %%% Calculates the borders of the trace patches
     if h.MT_Trace_Sectioning.Value==1
-        PamMeta.MT_Patch_Times=linspace(0,FileInfo.MeasurementTime*FileInfo.NumberOfFiles,UserValues.Settings.Pam.MT_Number_Section+1);
+        PamMeta.MT_Patch_Times=linspace(0,MeasurementTime,UserValues.Settings.Pam.MT_Number_Section+1);
     else
-        PamMeta.MT_Patch_Times=0:UserValues.Settings.Pam.MT_Time_Section:(FileInfo.MeasurementTime*FileInfo.NumberOfFiles);
+        PamMeta.MT_Patch_Times=0:UserValues.Settings.Pam.MT_Time_Section:MeasurementTime;
     end
     %%% Adjusts trace patches number to needed number
     %%% Deletes all patches if none are needed
@@ -3781,7 +3796,12 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                     
                     Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid); %#ok<NASGU>
+                    if isfield(FileInfo,'FabSurf')
+                        MeasurementTime = FileInfo.MeasurementTime*FileInfo.NumberOfFiles;
+                    else
+                        MeasurementTime = FileInfo.MeasurementTime;
+                    end
+                    Counts = [Counts1 Counts2]/MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid); %#ok<NASGU>
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
                 end
                 

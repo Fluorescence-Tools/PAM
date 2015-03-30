@@ -548,6 +548,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.l2 was incomplete');    
     end
     P.TauFit.l2 = S.TauFit.l2;
+    %%% Checks, if TauFit.ConvolutionType exists
+    %%% (Options: lijnear and circular == periodic convolution)
+    if ~isfield (S.TauFit,'ConvolutionType')
+        S.TauFit.ConvolutionType='linear';
+        disp('UserValues.TauFit.ConvolutionType was incomplete');    
+    end
+    P.TauFit.ConvolutionType = S.TauFit.ConvolutionType;
     %% BurstBrowser
     %%% Checks, if BurstBrowser subfield exists
     if ~isfield (S,'BurstBrowser')

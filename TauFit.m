@@ -1,7 +1,7 @@
 function TauFit(~,~)
 global UserValues TauFitData
 h.TauFit = findobj('Tag','TauFit');
-
+addpath([pwd filesep 'TauFit Models']);
 if isempty(h.TauFit) % Creates new figure, if none exists
     %% Figure Generation
     %%% Load user profile
@@ -670,7 +670,29 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'HighlightColor',Look.Control,...
         'ShadowColor',Look.Shadow,...
         'Position',[0 0 1 1],...
-        'Tag','Settings_Panel');   
+        'Tag','Settings_Panel');
+    
+    uicontrol(...
+        'Style','text',...
+        'Parent',h.Settings_Panel,...
+        'Units','normalized',...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'Position',[0.05 0.9 0.35 0.07],...
+        'String','Convolution Type',...
+        'FontSize',12,...
+        'Tag','ConvolutionType_Text');   
+    
+    h.ConvolutionType_Menu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.Settings_Panel,...
+        'Units','normalized',...
+        'BackgroundColor',Look.Fore,...
+        'ForegroundColor',Look.Back,...
+        'Position',[0.4 0.9 0.5 0.07],...
+        'String',{'linear','circular'},...
+        'Value',find(strcmp({'linear','circular'},UserValues.TauFit.ConvolutionType)),...
+        'Tag','ConvolutionType_Menu');   
     %% Set the FontSize to 12
     fields = fieldnames(h); %%% loop through h structure
     for i = 1:numel(fields)
@@ -1023,7 +1045,7 @@ TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
 G = str2double(h.G_factor_edit.String);
 l1 = str2double(h.l1_edit.String);
 l2 = str2double(h.l2_edit.String);
-
+Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 %TauFitData.FitData.IRF_Par = h.Plots.IRF_Par.YData;
 %TauFitData.FitData.IRF_Per = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
@@ -1105,7 +1127,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
             x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1114,7 +1136,7 @@ switch TauFitData.FitType
         sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
         chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1137,7 +1159,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1146,7 +1168,7 @@ switch TauFitData.FitType
         sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
         chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1177,7 +1199,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1186,7 +1208,7 @@ switch TauFitData.FitType
         sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
         chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1220,7 +1242,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1229,7 +1251,7 @@ switch TauFitData.FitType
         sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
         chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1257,7 +1279,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1266,7 +1288,7 @@ switch TauFitData.FitType
         sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
         chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
         [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1});
+        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
         wres = (Decay-FitFun)./sqrt(Decay);
         
         %%% Update FitResult
@@ -1308,7 +1330,7 @@ switch TauFitData.FitType
         for i = shift_range
             %%% Update Progressbar
             Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore};
+            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
             [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
                 x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
             x{count} = interlace(x0,x{count},fixed);
@@ -1320,7 +1342,7 @@ switch TauFitData.FitType
         %%% remove ignore range from decay
         Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
         Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1});
+        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
         wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
         
          %%% Update FitResult
@@ -1557,26 +1579,6 @@ if flag>0
     cx = cx/sum(cx);
     tau = tmp;
 end
-
-function y = convol(irf, x)
-% convol(irf, x) performs a convolution of the instrumental response 
-% function irf with the decay function x. Periodicity (=length(x)) is assumed.
-
-mm = mean(irf(end-10:end));
-if size(x,1)==1 || size(x,2)==1
-    irf = irf(:);
-    x = x(:);
-end
-p = size(x,1);
-n = length(irf);
-if p>n
-    irf = [irf; mm*ones(p-n,1)]; 
-else
-    irf = irf(1:p);
-end
-y = real(ifft((fft(irf)*ones(1,size(x,2))).*fft(x)));
-t = rem(rem(0:n-1,p)+p,p)+1;
-y = y(t,:);
 
 function [c, offset, A, tau, dc, dtau, irs, zz, t, chi] = Fluofit(irf, y, p, dt, tau, lim, init)
 % The function FLUOFIT performs a fit of a multi-exponential decay curve.
@@ -1906,326 +1908,3 @@ end
 
 function a = interlace( a, x, fix )
 a(~fix) = x;
-
-function [z] = fitfun_1exp(param, xdata)
-%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
-%	and the computed values. 
-%	LSFIT assumes a function of the form:
-%
-%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
-%
-%	param(1) is the color shift value between irf and y.
-%	param(2) is the irf offset.
-%	param(3:...) are the decay times.
-%	irf is the measured Instrumental Response Function.
-%	y is the measured fluorescence decay curve.
-%	p is the time between to laser excitations (in number of TCSPC channels).
-ShiftParams = xdata{1};
-IRFPattern = xdata{2}; %for convolution
-ScatterPattern = xdata{3}; %for accounting for scatter in the actual decay
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-tp = (1:p)';
-bg = param(3);
-sc = param(2);
-tau = param(1);
-x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = conv(irf, x); z = z(1:n);
-z = z./sum(z);
-z = (1-sc).*z + sc*Scatter; 
-%z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*sum(y)+bg;
-z=z';
-
-function [z] = fitfun_2exp(param, xdata)
-%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
-%	and the computed values. 
-%	LSFIT assumes a function of the form:
-%
-%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
-%
-%	param(1) is the color shift value between irf and y.
-%	param(2) is the irf offset.
-%	param(3:...) are the decay times.
-%	irf is the measured Instrumental Response Function.
-%	y is the measured fluorescence decay curve.
-%	p is the time between to laser excitations (in number of TCSPC channels).
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-tp = (1:p)';
-A = param(3);
-sc = param(4);
-bg = param(5);
-tau = param(1:2);
-x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
-for i = 1:size(x,2)
-    z(:,i) = conv(irf, x(:,i));
-end
-z = z(1:n,:);
-z = z./repmat(sum(z,1),size(z,1),1);
-%%% combine the two exponentials
-z = A*z(:,1) + (1-A)*z(:,2);
-z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*sum(y)+bg;
-z=z';
-
-function [z] = fitfun_3exp(param, xdata)
-%	LSFIT(param, irf, y, p) returns the Least-Squares deviation between the data y 
-%	and the computed values. 
-%	LSFIT assumes a function of the form:
-%
-%	  y =  yoffset + A(1)*convol(irf,exp(-t/tau(1)/(1-exp(-p/tau(1)))) + ...
-%
-%	param(1) is the color shift value between irf and y.
-%	param(2) is the irf offset.
-%	param(3:...) are the decay times.
-%	irf is the measured Instrumental Response Function.
-%	y is the measured fluorescence decay curve.
-%	p is the time between to laser excitations (in number of TCSPC channels).
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-tp = (1:p)';
-A1 = param(4);
-A2 = param(5);
-if (A1+A2) > 1
-    A1 = A1./(A1+A2);
-    A2 = A2./(A1+A2);
-end
-sc = param(6);
-bg = param(7);
-tau = param(1:3);
-x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
-z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
-for i = 1:size(x,2)
-    z(:,i) = conv(irf, x(:,i));
-end
-z = z(1:n,:);
-z = z./repmat(sum(z,1),size(z,1),1);
-%%% combine the two exponentials
-z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
-z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*sum(y) + bg;
-z=z';
-
-function [z] = fitfun_dist(param,xdata)
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-%tp = (1:p)';
-
-meanR = param(1); %%% Center distance
-sigmaR = param(2); %%% Sigma R
-sc = param(3);
-bg = param(4);
-R0 = param(5);
-tauD0 = param(6);
-
-%%% Determine distribution of lifetimes
-xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);
-c_gauss = zeros(numel(xR),n);
-for i = 1:numel(xR)
-    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
-end
-x = sum(c_gauss,1);
-z = conv(irf, x); z = z(1:n)';
-z = z./repmat(sum(z,1),size(z,1),1);
-z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*sum(y)+bg;
-z=z';
-
-function [z] = fitfun_dist_donly(param,xdata)
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
-irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
-irf = irf./sum(irf);
-irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
-
-n = length(irf);
-%t = 1:n;
-%tp = (1:p)';
-
-meanR = param(1); %%% Center distance
-sigmaR = param(2); %%% Sigma R
-fraction_donly = param(3);
-sc = param(4);
-bg = param(5);
-R0 = param(6);
-tauD0 = param(7);
-
-%%% Determine distribution of lifetimes
-xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);
-c_gauss = zeros(numel(xR),n);
-for i = 1:numel(xR)
-    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
-end
-xdist = sum(c_gauss,1);xdist = xdist./sum(xdist);
-xDonly = exp(-(1:n)./tauD0); xDonly = xDonly./sum(xDonly);
-x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
-z = conv(irf, x); z = z(1:n)';
-z = z./repmat(sum(z,1),size(z,1),1);
-z = (1-sc).*z + sc*Scatter;
-z = z./sum(z);
-z = z(ignore:end);
-z = z./sum(z);
-z = z.*sum(y) + bg;
-z=z';
-
-function [z] = fitfun_aniso(param,xdata)
-ShiftParams = xdata{1};
-IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
-p = xdata{4};
-y = xdata{5};
-c = xdata{6};
-ignore = xdata{7};
-
-%%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-IRF = cell(1,2);
-Scatter = cell(1,2); 
-for i = 1:2
-    irf = [];
-    irf = circshift(IRFPattern{i},[c, 0]);
-    irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-    irf = irf-min(irf(irf~=0));
-    irf = irf./sum(irf);
-    IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
-    s = [];
-    s = circshift(ScatterPattern{i},[c, 0]);
-    Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
-end
-n = length(IRF{1});
-%t = 1:n;
-%tp = (1:p)';
-tau = param(1);
-rho = param(2);
-r0 = param(3);
-r_inf = param(4);
-l1 = param(9);
-l2 = param(10);
-sc_par = param(5);
-sc_per = param(6);
-bg_par = param(7);
-bg_per = param(8);
-
-%%% Calculate the parallel Intensity Decay
-x_par = exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
-z_par = z_par./repmat(sum(z_par,1),size(z_par,1),1);
-z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
-z_par = z_par./sum(z_par);
-z_par = z_par(ignore:end);
-z_par = z_par./sum(z_par);
-z_par = z_par.*sum(y(1,:)) + bg_par;
-z_par = z_par';
-
-%%% Calculate the perpendicular Intensity Decay
-x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-z_per = conv(IRF{2}, x_per);z_per = z_per(1:n)';
-z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
-z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
-z_per = z_per./sum(z_per);
-z_per = z_per(ignore:end);
-z_per = z_per./sum(z_per);
-z_per = z_per.*sum(y(2,:)) + bg_per;
-z_per = z_per';
-
-% %%% Calculate the perpendicular t Decay
-% x_per = exp(-(1:n)./tau).*(1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
-% z_per = convol(IRF{2}, x_per);
-% z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
-% z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
-% z_per = z_per./sum(z_per);
-% z_per = z_per(ignore:end);
-% z_per = z_per./sum(z_per);
-% z_per = z_per.*sum(y(2,:)) + bg_per;
-% z_per = z_per';
-
-%%% Construct Stacked Result
-z = [z_par z_per];

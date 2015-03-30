@@ -294,6 +294,13 @@ switch (Type)
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+        
+        if isempty(FileInfo.TACRange)
+            %%% try to read the TACrange from SyncPeriod and number of used
+            %%% MIBins
+            usedMI = max(cellfun(@numel,cellfun(@unique,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)),'UniformOutput',false)));
+            FileInfo.TACRange = (FileInfo.SyncPeriod/usedMI)*FileInfo.MI_Bins;
+        end
     case {4}
         %%4 : *.ht3 files from HydraHarp400
         %%5 : *.ht3 files from FabSurf
