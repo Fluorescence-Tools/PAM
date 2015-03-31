@@ -1014,6 +1014,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_TauFit(~,~)
 clear global -regexp TauFitData
+Pam = findobj('Tag','Pam');
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
 MIAFit=findobj('Tag','MIAFit');
@@ -1021,8 +1022,7 @@ Mia=findobj('Tag','Mia');
 Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit)
+if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser)
     clear global -regexp UserValues
 end
 delete(gcf);

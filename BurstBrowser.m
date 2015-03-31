@@ -932,7 +932,6 @@ if isempty(hfig)
     'FontSize',12,...
     'Visible','off',...
     'Callback',@UpdateCorrections);
-
     %% Secondary tab correlation
     h.Secondary_Tab_Correlation= uitab(...
         'Parent',h.Secondary_Tab,...
@@ -983,8 +982,7 @@ if isempty(hfig)
         'Position',[0 0.55 0.3 0.05],...
         'Tag','CorrelationTable',...
         'String','Correlate',...
-        'Callback',@Correlate_Bursts);
-    
+        'Callback',@Correlate_Bursts);  
     %% Secondary tab options
     
     %%% Display Options Panel
@@ -1370,7 +1368,6 @@ if isempty(hfig)
         'Color', 'r',...
         'Position',[0.1 0.95],...
         'Visible','off');
-    
     %% Define axes in Corrections tab
         %% Corrections - 2ColorMFD
         h.Corrections.TwoCMFD.axes_crosstalk =  axes(...
@@ -2465,9 +2462,8 @@ MIAFit=findobj('Tag','MIAFit');
 Mia=findobj('Tag','Mia');
 Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
 TauFit=findobj('Tag','TauFit');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit)
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit)
     clear global -regexp UserValues
 end
 

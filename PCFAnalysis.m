@@ -518,7 +518,9 @@ MIAFit=findobj('Tag','MIAFit');
 Mia=findobj('Tag','Mia');
 Sim=findobj('Tag','Sim');
 Pam=findobj('Tag','Pam');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(Pam) && isempty(Mia) && isempty(Sim)
+BurstBrowser=findobj('Tag','BurstBrowser');
+TauFit=findobj('Tag','TauFit');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(Pam) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser)
     clear global -regexp UserValues
 end
 delete(Obj);
