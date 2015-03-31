@@ -987,7 +987,14 @@ function Close_TauFit(~,~)
 clear global -regexp TauFitBurstData
 Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
-if isempty(Pam) && isempty(FCSFit)
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+BurstBrowser=findobj('Tag','BurstBrowser');
+TauFit=findobj('Tag','TauFit');
+Phasor = findobj('Tag','Phasor');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(Pam) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PCF)
     clear global -regexp UserValues
 end
 delete(gcf);
