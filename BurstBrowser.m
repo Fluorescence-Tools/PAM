@@ -2442,7 +2442,7 @@ end
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_BurstBrowser(~,~)
-global BurstData UserValues
+global BurstData UserValues BurstTCSPCData
 if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
@@ -2454,18 +2454,23 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     end
 end
 
-clear global -regexp BurstMeta
-Phasor=findobj('Tag','Phasor');
-Pam=findobj('Tag','Pam');
-TauFit = findobj('Tag','TauFit');
-FCSFit = findobj('Tag','FCSFit');
+clear global -regexp BurstMeta BurstTCSPCData
+Pam = findobj('Tag','Pam');
 if isempty(Pam)
-    clear global -regexp BurstData
+     clear global -regexp BurstData
 end
-
-if isempty(Pam) && isempty(TauFit) && isempty(FCSFit) && isempty(Phasor)
+Phasor=findobj('Tag','Phasor');
+FCSFit=findobj('Tag','FCSFit');
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+BurstBrowser=findobj('Tag','BurstBrowser');
+TauFit=findobj('Tag','TauFit');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit)
     clear global -regexp UserValues
 end
+
 delete(gcf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
