@@ -6476,7 +6476,7 @@ switch obj
         %%% i.e. 1.2*[x y]
         AspectRatio = 0.7;
         pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
-        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_x,hfig);
         %%% Rescale Position
@@ -6506,7 +6506,7 @@ switch obj
     case h.Export1DY_Menu
         AspectRatio = 0.7;
         pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
-        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_y,hfig);
         %%% flip axes
@@ -6540,13 +6540,20 @@ switch obj
     case h.Export2D_Menu
         AspectRatio = 1;
         pos = [1,1, round(1.2*1000),round(1.2*900*AspectRatio)];
-        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','off');
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
         eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        %%% Remove non-axes object
+        for i = 1:numel(panel_copy.Children)
+            if ~strcmp(panel_copy.Children(i),'axes')
+                del(i) = 1;
+            end
+        end
+        delete(panel_copy.Children(del));
         for i = 1:numel(panel_copy.Children)
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
@@ -6562,7 +6569,7 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                case 3
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
-            end
+           end
         end
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu

@@ -11,7 +11,7 @@ end
     %%% Disables negative values for log plot warning
     warning('off','MATLAB:Axes:NegativeDataInLogAxis');
     %%% Loads user profile    
-    [Profiles,~]=LSUserValues(0);
+    Profiles=LSUserValues(0);
     %%% To save typing
     Look=UserValues.Look;    
     %%% Generates the Pam figure
