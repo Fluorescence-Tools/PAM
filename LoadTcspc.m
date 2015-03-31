@@ -58,7 +58,7 @@ switch (Type)
         FileInfo.NumberOfFiles=numel(FileName);
         FileInfo.Type=Type;
         FileInfo.MI_Bins=4096;
-        FileInfo.MeasurementTime=FileInfo.Fabsurf.Imagetime/1000;
+        FileInfo.ImageTime=FileInfo.Fabsurf.Imagetime/1000;
         FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
         FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
         FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
@@ -136,6 +136,7 @@ switch (Type)
             Totaltime=Totaltime + Imagetime;
             
         end
+        FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
     case {2, 3} %%% .spc Files generated with native B&H program
         %%% 2: '*_m1.spc', 'Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)'
         %%% 3: '*.spc',    'Single card B&H SPC files recorded with B&H-Software (*.spc)'
@@ -394,7 +395,7 @@ switch (Type)
         %%% General FileInfo
         FileInfo.NumberOfFiles=numel(FileName);
         FileInfo.Type=Type;
-        FileInfo.MeasurementTime=FileInfo.Fabsurf.Imagetime/1000;
+        FileInfo.ImageTime=FileInfo.Fabsurf.Imagetime/1000;
         FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
         FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
         FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
