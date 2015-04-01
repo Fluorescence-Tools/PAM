@@ -63,8 +63,9 @@ else
     set(get(gca,'Title'),'String',sprintf('Current Function Value: %g',fval));
     
     %% code for plotting in the respective axes
-    
-    plot_after_fit(handles);
+    if tcPDAstruct.MLE == 0
+        plot_after_fit(handles);
+    end
     
     
 end

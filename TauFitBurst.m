@@ -79,7 +79,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
     h.Microtime_Plot.XLim = [0 1];
     h.Microtime_Plot.YLim = [0 1];
     h.Microtime_Plot.XLabel.Color = Look.Fore;
-    h.Microtime_Plot.XLabel.String = 'Microtime [ns]';
+    h.Microtime_Plot.XLabel.String = 'Microtime [bins]';
     h.Microtime_Plot.YLabel.Color = Look.Fore;
     h.Microtime_Plot.YLabel.String = 'Intensity [Counts]';
     h.Microtime_Plot.XGrid = 'on';
@@ -118,7 +118,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
     h.Result_Plot.XLabel.Color = Look.Fore;
-    h.Result_Plot.XLabel.String = 'Microtime [ns]';
+    h.Result_Plot.XLabel.String = 'Microtime [bins]';
     h.Result_Plot.YLabel.Color = Look.Fore;
     h.Result_Plot.YLabel.String = 'Intensity [Counts]';
     h.Result_Plot.XGrid = 'on';
