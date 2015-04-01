@@ -2463,7 +2463,7 @@ Mia=findobj('Tag','Mia');
 Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 TauFit=findobj('Tag','TauFit');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit)
+if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit)
     clear global -regexp UserValues
 end
 
