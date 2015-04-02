@@ -534,7 +534,7 @@ Update_Style([],[],0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_MIAFit(~,~)
+function Close_MIAFit(Obj,~)
 clear global -regexp MIAFitData MIAFitMeta
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
