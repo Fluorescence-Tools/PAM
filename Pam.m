@@ -1970,7 +1970,11 @@ if ~isempty(PIE)
                 %%% Needed for later indexing
                 Image_Sum(Image_Sum<1)=1;
                 %%% Calculates mean arrival time image vector
-                PamMeta.Lifetime{i}=PIE_MI(Image_Sum(2:(FileInfo.Pixels+1)))-PIE_MI(Image_Sum(1:FileInfo.Pixels));
+                if ~isempty(PIE_MI)
+                    PamMeta.Lifetime{i} = PIE_MI(Image_Sum(2:(FileInfo.Pixels+1)))-PIE_MI(Image_Sum(1:FileInfo.Pixels));
+                else
+                    PamMeta.Lifetime{i} = zeros(1,FileInfo.Pixels);
+                end
                 clear PIE_MI;
                 %%% Reshapes pixel vector to image and normalizes to nomber of photons
                 PamMeta.Lifetime{i}=flipud(reshape(PamMeta.Lifetime{i},FileInfo.Lines,FileInfo.Lines)')./double(PamMeta.Image{i});

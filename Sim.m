@@ -782,7 +782,7 @@ delete(Obj);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Sim_Settings(Obj,~)
 global SimData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Sim'));
 
 File = h.Sim_File_List.Value;
 
@@ -1042,7 +1042,7 @@ SimData.General(File).Species = SimData.Species;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function File_List_Callback(~,e,mode)
 global SimData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Sim'));
 
 if mode == 0 %%% Key Press Function
     switch e.Key
@@ -1103,7 +1103,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Species_List_Callback(~,e,mode)
 global SimData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Sim'));
 
 if mode == 0 %%% Key Press Function
     switch e.Key
@@ -1149,7 +1149,7 @@ end
 %%% Start simulation procedure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Start_Simulation(~,~)
-h = guidata(gcf);
+h = guidata(findobj('Tag','Sim'));
 
 if isdir(h.Sim_Path.String)
     h.Sim_File_List.Enable = 'off';
@@ -1171,7 +1171,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_Simulation(~,~)
 global SimData
-h = guidata(gcf);
+h = guidata(findobj('Tag','Sim'));
 
 %%% ScanType
 Scan_Type = int16(h.Sim_Scan.Value);
@@ -1202,6 +1202,7 @@ for i = 1:numel(SimData.Species);
     D = sqrt(2*SimData.Species(i).D*10^6/Freq);
     
     wr = zeros(4,1); wz = zeros(4,1); MB = zeros(4,1); BP = zeros(4,1);dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
+    %%% Species specific parameters for used colors
     for j = 1:SimData.Species(i).Color
         wr(j) = SimData.Species(i).wr(j);
         wz(j) = SimData.Species(i).wz(j);
@@ -1211,6 +1212,7 @@ for i = 1:numel(SimData.Species);
         dY(j) = SimData.Species(i).dY(j);
         dZ(j) = SimData.Species(i).dZ(j);
     end
+    %%% Species specific parameters set to 0 for unused colors
     for j = (SimData.Species(i).Color+1):4
         wr(j) = 0;
         wz(j) = 0;
@@ -1230,7 +1232,7 @@ for i = 1:numel(SimData.Species);
             BS_x, BS_y, BS_z,... %%% Box size [nm]                              double
             PosX, PosY, PosZ,... %%% Starting position                          double
             D,... %%% Diffusion coefficient (as sigma of normal distribution)   double
-            Scan_Type,... %%% 0:Point,  1: Raster, 2:Line,  3:Circle            int16
+            Scan_Type,... %%% 1:Point,  2: Raster, 3:Line,  4:Circle            int16
             X_Step, Y_Step,... %%% Pixel/line size for Raster/Line scan         double
             X_Px, Y_Px,...  %%% Number of pixels/lines                          double
             X_t, Y_t,...    %%%  Time per pixel/line [ticks]                    int64
@@ -1283,8 +1285,22 @@ switch h.Sim_Save.Value
             end
         end
     case 3
+        Header.Frames = Frames;
+        Header.FrameTime = double(Simtime/Frames);
+        Header.Lines = Y_Px;
+        Header.Freq = Freq;
+        Header.Info.Species(:) = SimData.Species(:);
+        Header.Info.General = SimData.General(h.Sim_File_List.Value);
+        for i=1:4
+            Sim_Photons{i,1} = sort(Sim_Photons{i,1});
+            Sim_Photons{i,2} = uint16(ones(size(Sim_Photons{i,1})));
+        end
+        File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_' num2str(h.Sim_File_List.Value) '.sim']);        
+        save(File,'Sim_Photons','Header');
+        
 end
 
+clear mex
 
 
 

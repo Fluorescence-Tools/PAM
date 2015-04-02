@@ -195,7 +195,8 @@ if Mode==0 %%% Loads user values
             '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
             '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
             '*.ht3','HydraHarp400 TTTR file (*.ht3)';...
-            '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)'};
+            '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)';...
+            '*.sim','Pam Simulation file'};
 
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
@@ -1043,17 +1044,17 @@ else
     Current=[];
 end
 
-if Mode==1 %%% Saves user values    
-    Profiledir = [pwd filesep 'profiles'];    
-    if ~isempty(Current) %% Saves loaded profile
-        Profile=Current;
-        save(fullfile(Profiledir,'Profile.mat'),'Profile');
-        save(fullfile(Profiledir,Profile),'-struct','UserValues');
-    else
-        load([Profiledir filesep 'Profile.mat']); %% Saves current profile
-        save(fullfile(Profiledir,Profile),'-struct','UserValues');
-    end    
+%%% Saves user values    
+Profiledir = [pwd filesep 'profiles'];
+if ~isempty(Current) %% Saves loaded profile
+    Profile=Current;
+    save(fullfile(Profiledir,'Profile.mat'),'Profile');
+    save(fullfile(Profiledir,Profile),'-struct','UserValues');
+else
+    load([Profiledir filesep 'Profile.mat']); %% Saves current profile
+    save(fullfile(Profiledir,Profile),'-struct','UserValues');
 end
+
 
 
 
