@@ -2656,6 +2656,28 @@ if strcmpi(clickType,'Right-click')
 
     BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
 
+    %%% If Global Cuts, Update all other species
+    if species == 1
+        ChangedParameterName = BurstData.NameArray{param};
+        if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+            %%% cycle through the number of other species
+            for j = 2:numel(BurstData.Cut)
+                %%% Check if the parameter already exists in the species j
+                ParamList = vertcat(BurstData.Cut{j}{:});
+                if ~isempty(ParamList)
+                    ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                    CheckParam = strcmp(ParamList,ChangedParameterName);
+                    if any(CheckParam)
+                        %%% do nothing
+                    else %%% Parameter is new to species
+                        BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+                    end
+                else %%% Parameter is new to GlobalCut
+                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+                end
+            end
+        end
+    end
     UpdateCutTable(h);
     UpdateCuts();
     %UpdateCorrections;
@@ -3508,8 +3530,10 @@ if BurstData.SelectedSpecies == 1
                     elseif index(2) == 4 %%% Parameter was deleted
                         BurstData.Cut{j}(CheckParam) = [];
                     end
-                else %%% Parameter is new to GlobalCut
-                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
+                else %%% Parameter is new to species
+                    if index(2) ~= 4 %%% Parameter added or changed
+                        BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
+                    end
                 end
             else %%% Parameter is new to GlobalCut
                 BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
