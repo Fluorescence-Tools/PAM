@@ -2955,9 +2955,9 @@ switch e.Key
             UserValues.PIE.Router(end+1)=0;
             UserValues.PIE.From(end+1)=0;
             UserValues.PIE.To(end+1)=0;  
-            UserValues.PIE.Duty_Cycle(Sel)=[];
+            UserValues.PIE.Duty_Cycle(end+1)=0;
             UserValues.PIE.IRF{end+1} = [];
-            UserValues.PIE.ScatterPattern(Sel) = [];
+            UserValues.PIE.ScatterPattern{end+1} = [];
             UserValues.PIE.Name{end+1}='Comb.: ';
             for i=Sel;
                 UserValues.PIE.Name{end}=[UserValues.PIE.Name{end} UserValues.PIE.Name{i} '+'];
