@@ -1937,7 +1937,7 @@ if ~isempty(PIE)
             %% Calculates image
             if h.MT_Use_Image.Value
                 %%% Goes back from total microtime to file microtime
-                PIE_MT=mod(PIE_MT,FileInfo.MeasurementTime);
+                PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
                 %%% Calculates Pixel vector
                 Pixeltimes=0;
                 for j=1:FileInfo.Lines
@@ -4072,7 +4072,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         
         %%% Selects and sorts photons;
         Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.SyncPeriod;        
-        [Photons,Index]=sort(mod(Photons,FileInfo.MeasurementTime));
+        [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         
         %%% Calculates Pixel vector

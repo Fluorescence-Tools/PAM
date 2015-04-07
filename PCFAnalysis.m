@@ -978,16 +978,16 @@ switch mode
         Exp.axes.XLabel.String = 'Bin';
         Exp.axes.XLabel.FontSize = 14;        
         %% Adds colorbar
-        Exp.colbar = colorbar(...
+        Exp.colorbar = colorbar(...
             'peer',Exp.axes,...
             'FontSize',12,...
             'Units','points',...
             'Position', [Scale*size(CData,2)+60 5 10 Scale*size(CData,1)],...
             'Location','eastoutside');
         if strcmp(h.Carpet_Normalize.Checked,'on')
-            Exp.colbar.Label.String = 'Normalized G({\it\tau{}})';
+            Exp.colorbar.Label.String = 'Normalized G({\it\tau{}})';
         else
-            Exp.colbar.Label.String = 'G({\it\tau{}})';
+            Exp.colorbar.Label.String = 'G({\it\tau{}})';
         end
         Exp.colbar.Label.FontSize = 14;         
 end

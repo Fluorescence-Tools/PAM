@@ -125,7 +125,7 @@ switch (Type)
             end
             %%% Creates linebreak entries
             if isempty(Linetimes)
-                FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
+                FileInfo.LineTimes(:,i)=linspace(0,FileInfo.ImageTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
             elseif numel(Linetimes)==FileInfo.Lines+1
                 FileInfo.LineTimes(:,i)=Linetimes+Totaltime;
             elseif numel(Linetimes)<FileInfo.Lines+1
@@ -302,9 +302,7 @@ switch (Type)
             usedMI = max(cellfun(@numel,cellfun(@unique,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)),'UniformOutput',false)));
             FileInfo.TACRange = (FileInfo.SyncPeriod/usedMI)*FileInfo.MI_Bins;
         end
-    case {4}
-        %%4 : *.ht3 files from HydraHarp400
-        %%5 : *.ht3 files from FabSurf
+    case {4} %%4 : *.ht3 files from HydraHarp400
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
         %%% General FileInfo
@@ -371,8 +369,7 @@ switch (Type)
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
-    case {5}
-        %%5 : *.ht3 files from FabSurf
+    case {5} %%5 : *.ht3 files from FabSurf
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'FabSurf-HydraHarp';
         %%% General FileInfo
