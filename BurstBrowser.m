@@ -5823,21 +5823,21 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
-                    title(['rhoGG = ' num2str(rho)]);
+                    title(['rhoGG = ' num2str(rho) ' ns']);
                 case h.axes_rRRvsTauRR
                     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
                     BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
-                    title(['rhoRR = ' num2str(rho)]);
+                    title(['rhoRR = ' num2str(rho) ' ns']);
                 case h.axes_rBBvsTauBB
                     BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
                     BurstMeta.Plots.Fits.PerrinBB(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
-                    title(['rhoBB = ' num2str(rho)]);
+                    title(['rhoBB = ' num2str(rho) ' ns']);
             end
         end
     elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
