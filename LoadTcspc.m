@@ -224,6 +224,7 @@ switch (Type)
         FileInfo.Card = Card;
         FileInfo.MI_Bins = MI_Bins;
         FileInfo.MeasurementTime = [];
+        FileInfo.ImageTime = [];
         FileInfo.SyncPeriod = [];
         FileInfo.TACRange = TACRange; %in seconds
         FileInfo.Lines = 1;
@@ -295,6 +296,7 @@ switch (Type)
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+        FileInfo.ImageTime = FileInfo.MeasurementTime;
         
         if isempty(FileInfo.TACRange)
             %%% try to read the TACrange from SyncPeriod and number of used
@@ -310,6 +312,7 @@ switch (Type)
         FileInfo.Type=Type;
         FileInfo.MI_Bins=[];
         FileInfo.MeasurementTime=[];
+        FileInfo.ImageTime = [];
         FileInfo.SyncPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
@@ -367,6 +370,7 @@ switch (Type)
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+        FileInfo.ImageTime =  FileInfo.MeasurementTime;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
     case {5} %%5 : *.ht3 files from FabSurf
@@ -377,6 +381,7 @@ switch (Type)
         FileInfo.Type=Type;
         FileInfo.MI_Bins=[];
         FileInfo.MeasurementTime=[];
+        FileInfo.ImageTime = [];
         FileInfo.SyncPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];

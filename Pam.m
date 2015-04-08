@@ -1836,10 +1836,10 @@ FileInfo.FileName={'Nothing loaded'};
 
 PamMeta=[];
 PamMeta.MI_Hist=repmat({zeros(4096,1)},numel(UserValues.Detector.Name),1);
-PamMeta.Trace=repmat({0:0.01:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime)},numel(UserValues.PIE.Name),1);
+PamMeta.Trace=repmat({0:0.01:FileInfo.MeasurementTime},numel(UserValues.PIE.Name),1);
 PamMeta.Image=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
-PamMeta.TimeBins=0:0.01:(FileInfo.NumberOfFiles*FileInfo.MeasurementTime);
+PamMeta.TimeBins=0:0.01:FileInfo.MeasurementTime;
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
@@ -3806,7 +3806,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/FileInfo.NumberOfFiles/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
@@ -3924,7 +3924,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Calculates Intensity traces
                 for j=1:Bins
                     %%% Intensity tracefor channel 1
-                    PairInt{1}(:,j)= histc(Data1{j},1:10:ceil(FileInfo.NumberOfFiles*FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{1}(:,j)= histc(Data1{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 1
                     CumInt = cumsum(PairInt{1}(:,j));
                     CumInt(CumInt==0)=1;
@@ -3933,7 +3933,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     CumMI = [CumMI(1); diff(CumMI)];
                     PairMI{1}(:,j) = CumMI./PairInt{1}(:,j);
                     %%% Intensity tracefor channel 2
-                    PairInt{2}(:,j)=histc(Data2{j},1:10:ceil(FileInfo.NumberOfFiles*FileInfo.MeasurementTime*FileInfo.ScanFreq));
+                    PairInt{2}(:,j)=histc(Data2{j},1:10:ceil(FileInfo.MeasurementTime*FileInfo.ScanFreq));
                     %%% Mean arrival time trace for channel 2
                     CumInt = cumsum(PairInt{2}(:,j));
                     CumInt(CumInt==0)=1;
@@ -4132,7 +4132,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Frames=FileInfo.NumberOfFiles;
         FileNames=FileInfo.FileName;
         Path=FileInfo.Path;
-        Imagetime=FileInfo.MeasurementTime;
+        Imagetime=FileInfo.ImageTime;
         Lines=FileInfo.Lines;
         Fi=PamMeta.Fi;
         M=PamMeta.M;
