@@ -4636,9 +4636,9 @@ ShiftParams(4) = BurstMeta.TauFit.IRFLength;
 
 %%% initialize inputs for fit
 Decay = G*(1-3*l1)*BurstMeta.TauFit.FitData.Decay_Par+(2-3*l2)*BurstMeta.TauFit.FitData.Decay_Per;
-BurstMeta.TauFit.TACRange = BurstData.FileInfo.SyncPeriod*1E9;
+BurstMeta.TauFit.TACRange = BurstData.FileInfo.TACRange;
 if ~isfield(BurstData.FileInfo,'Resolution')
-    BurstMeta.TauFit.TACChannelWidth = BurstData.FileInfo.SyncPeriod*1E9/BurstData.FileInfo.MI_Bins;
+    BurstMeta.TauFit.TACChannelWidth = BurstMeta.TauFit.TACRange*1E9/BurstData.FileInfo.MI_Bins;
 elseif isfield(BurstData.FileInfo,'Resolution') %%% HydraHarp Data
     BurstMeta.TauFit.TACChannelWidth = BurstData.FileInfo.Resolution/1000;
 end
@@ -4752,8 +4752,8 @@ switch obj
                 for i = shift_range
                     %%% Update Progressbar
                     %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata,Conv_Type),...
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
                         x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;

@@ -1092,9 +1092,9 @@ ShiftParams(4) = TauFitData.IRFLength;
 
 %%% initialize inputs for fit
 Decay = G*(1-3*l1)*TauFitData.FitData.Decay_Par+(2-3*l2)*TauFitData.FitData.Decay_Per;
-TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
+TauFitData.TACRange = FileInfo.TACRange*1E9;
 if ~isfield(FileInfo,'Resolution')
-    TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/FileInfo.MI_Bins;
+    TauFitData.TACChannelWidth = FileInfo.TACRange*1E9/FileInfo.MI_Bins;
 elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = FileInfo.Resolution/1000;
 end

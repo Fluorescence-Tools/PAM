@@ -4890,7 +4890,9 @@ end
 %%% Append other important parameters/values to BurstData structure
 
 if isfield(FileInfo,'TACRange')
-    BurstData.TACrange = FileInfo.TACRange;
+    BurstData.TACRange = FileInfo.TACRange;
+else
+    BurstData.TACRange = FileInfo.SyncPeriod;
 end
 BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
@@ -5820,6 +5822,7 @@ end
 TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/double(BurstData.FileInfo.MI_Bins);
 TauFitBurstData.BAMethod = BurstData.BAMethod;
 TauFitBurstData.SyncPeriod = BurstData.SyncPeriod;
+TauFitBurstData.TACRange = BurstData.FileInfo.TACRange*1E9;
 TauFitBurstData.MI_Bins = double(BurstData.FileInfo.MI_Bins);
 TauFitBurst();
 Update_Display([],[],1);

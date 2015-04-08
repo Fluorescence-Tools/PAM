@@ -1029,7 +1029,6 @@ Irf = TauFitBurstData.FitData.IRF_Par{chan}+2*TauFitBurstData.FitData.IRF_Per{ch
 Irf = Irf-min(Irf(Irf~=0));
 Irf = Irf./sum(Irf);
 Irf = [Irf zeros(1,numel(Decay)-numel(Irf))];
-TauFitBurstData.TACRange = TauFitBurstData.SyncPeriod*1E9;
 Scatter = TauFitBurstData.FitData.Scatter_Par{chan} + 2*TauFitBurstData.FitData.Scatter_Per{chan};
 Scatter = Scatter./sum(Scatter);
 
