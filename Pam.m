@@ -3308,7 +3308,7 @@ if any(mode==2)
     List=cell(numel(UserValues.Detector.Name),1);
     for i=1:numel(List)
         %%% Calculates Hex code for detector color
-        Hex_color=dec2hex(UserValues.Detector.Color(i,:)*255)';
+        Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
         List{i}=['<HTML><FONT color=#' Hex_color(:)' '>'... Sets entry color in HTML
             UserValues.Detector.Name{i}... Detector Name
             ': Detector: ' num2str(UserValues.Detector.Det(i))... Detector Number
@@ -3652,7 +3652,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     %%% Calculates the photon start times in clock ticks
     Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
     %%% Uses truncated Filename
-    FileName=FileInfo.FileName{1}(1:end-5);
+    switch FileInfo.FileType
+        case {'FabsurfSPC','SPC'}
+            FileName = FileInfo.FileName{1}(1:end-5);
+        case {'HydraHarü','FabSurf-HydraHarp','Simulation'}
+            FileName = FileInfo.FileName{1}(1:end-4);
+        otherwise
+            FileName = FileInfo.FileName{1}(1:end-5);                
+    end
     drawnow;    
     %%% For every active combination
     for i=1:numel(Cor_A)      

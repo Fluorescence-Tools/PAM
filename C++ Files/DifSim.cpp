@@ -91,6 +91,7 @@ void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, 
             case 1: /// Point measurement
                 x = 0;
                 y = 0;
+                break;
             case 2: /// Raster scan (includes point and line)
                 x = fmod((double)(t / x_t), x_px) * x_step + x0;
                 y = fmod((double)(t / y_t), y_px) * y_step + y0;
