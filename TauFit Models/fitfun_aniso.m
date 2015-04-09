@@ -48,7 +48,8 @@ z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
 z_par = z_par./sum(z_par);
 z_par = z_par(ignore:end);
 z_par = z_par./sum(z_par);
-z_par = z_par.*sum(y(1,:)) + bg_par;
+%z_par = z_par.*sum(y(1,:)) + bg_par;
+z_par = z_par.*(1-bg_par)+bg_par./numel(z_par);z_par = z_par.*sum(y(1,:));
 z_par = z_par';
 
 %%% Calculate the perpendicular Intensity Decay
@@ -64,7 +65,8 @@ z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
 z_per = z_per./sum(z_per);
 z_per = z_per(ignore:end);
 z_per = z_per./sum(z_per);
-z_per = z_per.*sum(y(2,:)) + bg_per;
+%z_per = z_per.*sum(y(2,:)) + bg_per;
+z_per = z_per.*(1-bg_per)+bg_per./numel(z_per);z_per = z_per.*sum(y(2,:));
 z_per = z_per';
 
 % %%% Calculate the perpendicular t Decay

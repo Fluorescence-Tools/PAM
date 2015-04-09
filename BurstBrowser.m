@@ -2435,7 +2435,7 @@ switch mode
         BurstMeta.TauFit.FitType = 'Single Exponential';
         ChangePlotType(h.PlotTypePopumenu,[]);
     case 2
-        %%% Initialize Plots in Global Variable
+        %%% reset plots
         obj = [findall(h.BurstBrowser,'Type','stair');...
             findall(h.BurstBrowser,'Type','line');...
             findall(h.BurstBrowser,'Type','bar')];
@@ -2501,6 +2501,7 @@ if isfield(BurstMeta,'fFCS')
 end
 if isfield(BurstMeta,'TauFit')
     BurstMeta = rmfield(BurstMeta,'TauFit');
+    BurstMeta.TauFit.FitType = h.TauFit.FitMethod_Popupmenu.String{h.TauFit.FitMethod_Popupmenu.Value};
 end
 if isfield(BurstMeta,'Data')
     BurstMeta = rmfield(BurstMeta,'Data');
@@ -4956,7 +4957,7 @@ switch obj
         BurstMeta.Plots.TauFit.FitResult.YData = fitres;
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot_Text.Visible = 'on';
-        h.TauFit.Result_Plot_Text.String = sprintf('rho = %1.2f ns\nr0 = %2.2f\nr_inf = %3.2f',param(1)*TACtoTime,param(2),param(3));
+        h.TauFit.Result_Plot_Text.String = sprintf('rho = %1.2f ns\nr0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
         h.TauFit.Result_Plot_Text.Position = [0.8*h.TauFit.Result_Plot.XLim(2) 0.9*h.TauFit.Result_Plot.YLim(2)];
         
         BurstMeta.Plots.TauFit.Residuals.XData = x*TACtoTime;

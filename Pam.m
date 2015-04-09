@@ -3655,7 +3655,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     switch FileInfo.FileType
         case {'FabsurfSPC','SPC'}
             FileName = FileInfo.FileName{1}(1:end-5);
-        case {'HydraHarü','FabSurf-HydraHarp','Simulation'}
+        case {'HydraHar?','FabSurf-HydraHarp','Simulation'}
             FileName = FileInfo.FileName{1}(1:end-4);
         otherwise
             FileName = FileInfo.FileName{1}(1:end-5);                
@@ -4889,11 +4889,8 @@ elseif BAMethod == 5
 end
 %%% Append other important parameters/values to BurstData structure
 
-if isfield(FileInfo,'TACRange')
-    BurstData.TACRange = FileInfo.TACRange;
-else
-    BurstData.TACRange = FileInfo.SyncPeriod;
-end
+
+BurstData.TACRange = FileInfo.TACRange;
 BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
@@ -5819,7 +5816,11 @@ switch BurstData.BAMethod
         TauFitBurstData.XData_Per{3} = (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])) - BurstData.PIE.From(12);
 end
 %%% Read out relevant parameters
-TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/double(BurstData.FileInfo.MI_Bins);
+if ~isfield(BurstData.FileInfo,'Resolution')
+    TauFitBurstData.TAC_Bin = BurstData.FileInfo.TACRange*1E9/double(BurstData.FileInfo.MI_Bins);
+else % HydraHarp
+    TauFitBurstData.TAC_Bin = BurstData.FileInfo.Resolution/1000;
+end
 TauFitBurstData.BAMethod = BurstData.BAMethod;
 TauFitBurstData.SyncPeriod = BurstData.SyncPeriod;
 TauFitBurstData.TACRange = BurstData.FileInfo.TACRange*1E9;

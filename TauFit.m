@@ -1391,8 +1391,8 @@ h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
 function DetermineGFactor(obj,~)
 global TauFitData FileInfo
 h = guidata(obj);
-TauFitData.TACRange = FileInfo.SyncPeriod*1E9;
-TauFitData.TACChannelWidth = FileInfo.SyncPeriod*1E9/double(FileInfo.MI_Bins);
+TauFitData.TACRange = FileInfo.TACRange*1E9;
+TauFitData.TACChannelWidth = FileInfo.TACRange*1E9/double(FileInfo.MI_Bins);
 %%% Read out the data from the plots
 MI = h.Plots.Decay_Par.XData;
 Decay_Par = h.Plots.Decay_Par.YData;

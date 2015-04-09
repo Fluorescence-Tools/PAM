@@ -46,5 +46,5 @@ z = (1-sc).*z + sc*Scatter;
 %z = z./sum(z);
 z = z(ignore:end);
 z = z./sum(z);
-z = z.*sum(y)+bg;
+z = z.*(1-bg)+bg./numel(z);z = z.*sum(y);
 z=z';
