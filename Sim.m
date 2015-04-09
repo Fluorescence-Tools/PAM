@@ -45,6 +45,39 @@ h.Sim_Panel = uibuttongroup(...
     'Position',[0 0 1 1]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%% Panel for progressbar
+h.Progress_Panel = uibuttongroup(...
+    'Parent',h.Sim,...
+    'Tag','Progress_Panel',...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.004 0.955 0.992 0.035]);
+%%% Axes for progressbar
+h.Progress_Axes = axes(...
+    'Parent',h.Progress_Panel,...
+    'Tag','Progress_Axes',...
+    'Units','normalized',...
+    'Color',Look.Control,...
+    'Position',[0 0 1 1]);
+h.Progress_Axes.XTick=[]; h.Progress_Axes.YTick=[];
+%%% Progress and filename text
+h.Progress_Text=text(...
+    'Parent',h.Progress_Axes,...
+    'Tag','Progress_Text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'FontWeight','bold',...
+    'String','',...
+    'Interpreter','none',...
+    'HorizontalAlignment','center',...
+    'BackgroundColor','none',...
+    'Color',Look.Fore,...
+    'Position',[0.5 0.5]);
+
 %% File parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% General Sim Settings Panel
@@ -56,7 +89,7 @@ h.Sim_File_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.502 0.8 0.496 0.2]);
+    'Position',[0.502 0.75 0.496 0.2]);
 
 %%% Button to start simulation
 h.Sim_Start = uicontrol(...
@@ -102,7 +135,7 @@ h.Sim_Path = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',pwd,...
+    'String',UserValues.File.SimPath,...
     'Position',[0.49 0.8 0.5 0.15]);
 
 %%% Editbox for filename
@@ -144,7 +177,7 @@ h.Sim_General_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.002 0.8 0.496 0.2]);
+    'Position',[0.002 0.75 0.496 0.2]);
 
 %%% Scanning type selection
 h.Sim_Scan = uicontrol(...
@@ -391,7 +424,7 @@ h.Text_T{1} = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'String','Pixel time [?s]:',...
+    'String','Pixel time [µs]:',...
     'Position',[0.01 0.02 0.25 0.1]);
 %%% Pixel time in x
 h.Sim_Px_Time{1} = uicontrol(...
@@ -460,7 +493,7 @@ h.Sim_Species_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.002 0.4 0.746 0.4]);
+    'Position',[0.002 0.35 0.746 0.4]);
 
 %%% Button to start simulation
 h.Sim_List = uicontrol(...
@@ -691,7 +724,7 @@ end
         'HorizontalAlignment','left',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'String','D [?m?/s]:',...
+        'String','D [µm²/s]:',...
         'Position',[0.18 0.35 0.08 0.05]);
     h.Sim_D = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -781,7 +814,7 @@ delete(Obj);
 %%% Function that recalculates and adjusts simulation parameters %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Sim_Settings(Obj,~)
-global SimData
+global SimData UserValues
 h = guidata(findobj('Tag','Sim'));
 
 File = h.Sim_File_List.Value;
@@ -790,13 +823,14 @@ switch Obj
     
     case h.Sim_Folder %%% Select filepath callback     
         try
-        Path = uigetdir(h.Sim_Path.String,'Select path for saving');
+            Path = uigetdir(h.Sim_Path.String,'Select path for saving');
         catch
             Path = uigetdir(pwd,'Select path for saving');
-        end
-        
+        end        
         if any(Path~=0)
             h.Sim_Path.String = Path;
+            UserValues.File.SimPath = Path;
+            LSUserValues(1);
         end
         
     case h.Sim_FileName %%% Change filename
@@ -1158,7 +1192,9 @@ if isdir(h.Sim_Path.String)
     for i = 1:numel(h.Sim_File_List.String)
         File_List_Callback([],[],3);
         drawnow
+%         profile on
         Do_Simulation;
+%         profile viewer
         h.Sim_File_List.Value = h.Sim_File_List.Value+1;
     end
     h.Sim_File_List.Enable = 'on';
@@ -1172,6 +1208,11 @@ end
 function Do_Simulation(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
+
+Pool = gcp;
+if isempty(Pool)
+    parpool('local');
+end
 
 %%% ScanType
 Scan_Type = int16(h.Sim_Scan.Value);
@@ -1219,43 +1260,75 @@ for i = 1:numel(SimData.Species);
         MB(j) = 0;
         BP(j) = 0;
     end
-    Photons = cell(NoP,4);
-    for j = 1:NoP
+    Photons1 = cell(NoP,1);
+    Photons2 = cell(NoP,1);
+    Photons3 = cell(NoP,1);
+    Photons4 = cell(NoP,1);
+    
+    fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
+    fclose(fid);
+    if fid == -1
+        return;
+    end
+    
+    Update = timer(...
+        'StartFcn',{@Update_Progress,1,i,numel(SimData.Species),NoP},...
+        'TimerFcn', {@Update_Progress,2,i,numel(SimData.Species),NoP},...
+        'StopFcn', {@Update_Progress,3,i,numel(SimData.Species),NoP},...
+        'Period',1,...
+        'ExecutionMode','fixedDelay');
+    start(Update)
+    
+    parfor j = 1:NoP
         %%% Generates starting position
         PosX=BS_x*rand(1);
         PosY=BS_y*rand(1);
         PosZ=BS_z*rand(1);
         
-        %%% Performs simulation for 4 color diffusion (no FRET)
-        [Photons1, Photons2, Photons3, Photons4, ~, ~, ~] = DifSim(...
-            Simtime,... %%% Total simulation time [ticks]                       int64
-            BS_x, BS_y, BS_z,... %%% Box size [nm]                              double
-            PosX, PosY, PosZ,... %%% Starting position                          double
-            D,... %%% Diffusion coefficient (as sigma of normal distribution)   double
-            Scan_Type,... %%% 1:Point,  2: Raster, 3:Line,  4:Circle            int16
-            X_Step, Y_Step,... %%% Pixel/line size for Raster/Line scan         double
-            X_Px, Y_Px,...  %%% Number of pixels/lines                          double
-            X_t, Y_t,...    %%%  Time per pixel/line [ticks]                    int64
-            wr(1), wz(1),... %%% Lateral/axial focus size [nm]                  double
-            MB(1),... %%% Molecular brightness [Hz]                             double
-            BP(1),... %%% Bleaching probability                                 double
-            dX(1), dY(1), dZ(1),... %%% Focus shift                             double
-            wr(2), wz(2),MB(2),BP(2),dX(2), dY(2), dZ(2),... %%% Second color
-            wr(3), wz(3),MB(3),BP(3),dX(3), dY(3), dZ(3),... %%% Third color
-            wr(4), wz(4),MB(4),BP(4),dX(4), dY(4), dZ(4));   %%% Forth color   
-        
-        %%% Transfers photons to cell array for storing
-        Photons{j,1} = Photons1;
-        Photons{j,2} = Photons2;
-        Photons{j,3} = Photons3;
-        Photons{j,4} = Photons4;
-        clear Photons1 Photons2 Photons3 Photons4
+        Frametime = Simtime/Frames;
+        for k=1:Frames
+            
+            %%% Performs simulation for 4 color diffusion (no FRET)
+            [photons1, photons2, photons3, photons4, PosX, PosY, PosZ] = DifSim(...
+                Frametime,... %%% Total simulation time [ticks]                       int64
+                BS_x, BS_y, BS_z,... %%% Box size [nm]                              double
+                PosX, PosY, PosZ,... %%% Starting position                          double
+                D,... %%% Diffusion coefficient (as sigma of normal distribution)   double
+                Scan_Type,... %%% 1:Point,  2: Raster, 3:Line,  4:Circle            int16
+                X_Step, Y_Step,... %%% Pixel/line size for Raster/Line scan         double
+                X_Px, Y_Px,...  %%% Number of pixels/lines                          double
+                X_t, Y_t,...    %%%  Time per pixel/line [ticks]                    int64
+                wr(1), wz(1),... %%% Lateral/axial focus size [nm]                  double
+                MB(1),... %%% Molecular brightness [Hz]                             double
+                BP(1),... %%% Bleaching probability                                 double
+                dX(1), dY(1), dZ(1),... %%% Focus shift                             double
+                wr(2), wz(2),MB(2),BP(2),dX(2), dY(2), dZ(2),... %%% Second color
+                wr(3), wz(3),MB(3),BP(3),dX(3), dY(3), dZ(3),... %%% Third color
+                wr(4), wz(4),MB(4),BP(4),dX(4), dY(4), dZ(4));   %%% Forth color
+            
+            %%% Transfers photons to cell array for storing
+            Photons1{j} = [Photons1{j}; photons1+(k-1)*Frametime];
+            Photons2{j} = [Photons2{j}; photons2+(k-1)*Frametime];
+            Photons3{j} = [Photons3{j}; photons3+(k-1)*Frametime];
+            Photons4{j} = [Photons4{j}; photons4+(k-1)*Frametime];
+        end
+
+        FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
+        fprintf(FID,['Particle' num2str(j) '\n']);
+        fclose(FID);
     end
+    %%% Combines photons for all particles
+    Photons_total{i,1} = cell2mat(Photons1);
+    Photons_total{i,2} = cell2mat(Photons2);
+    Photons_total{i,3} = cell2mat(Photons3);
+    Photons_total{i,4} = cell2mat(Photons4);
+    clear Photons1 Photons2 Photons3 Photons4;
     
-    for j = 1:4 %%% Combines photons for all particles
-        Photons_total{i,j} = cell2mat(Photons(:,j));
-    end
-    clear Photons;
+    stop(Update);
+
+    
+    
+    
 end
 
 Sim_Photons = cell(4,1);
@@ -1302,8 +1375,23 @@ end
 
 clear mex
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Updates Progressbar during simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_Progress(~,~,mode,Species,NoS,NoP)
+h = guidata(findobj('Tag','Sim'));
 
-
+switch mode
+    case 1 %%% Simulation starts
+        Progress(0,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);
+    case 2 %%% Simulation progress update
+        FID = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'r');
+        Text = fread(FID);
+        fclose(FID);
+        Progress(sum(Text==10)/NoP,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);
+    case 3 %%% Simulation finished
+        Progress(1,h.Progress_Axes,h.Progress_Text);
+end
 
 
 

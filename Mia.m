@@ -865,14 +865,14 @@ if isempty(h.Mia)
         %%% Same AR for both channels
         h.Mia_Correlation_Same = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
-            'Style','checkbox',...
+            'Style','popup',...
             'Units','normalized',...
             'FontSize',12,...
-            'BackgroundColor', Look.Back,...
+            'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Value',1,...
             'Position',[0.02 0.22, 0.64 0.06],...
-            'String','Use Same Region');
+            'String',{'Individual Channels', 'Channel1','Channel2','Both'});
         %%% Selects data saving procedure
         h.Mia_Correlation_Save = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
@@ -2623,13 +2623,29 @@ switch (h.Mia_Correlation_FramesUse.Value)
             clear Data;
         end
         
-        if h.Mia_Correlation_Same.Value && ~isempty(Use{1}) && ~isempty(Use{2})
-           MIAData.AR{1} = Use{1}.*Use{2}; 
-           MIAData.AR{2} = Use{1}.*Use{2}; 
-           Use{1} = MIAData.AR{1};
-           Use{2} = MIAData.AR{2};
-           Update_Plots([],[],1,[1 2]);
+        if numel(Use)==2 && ~isempty(Use{1}) && ~isempty(Use{2})
+            switch h.Mia_Correlation_Same.Value
+                case 1 %%% Individual channels
+                case 2 %%% Channel 1
+                    MIAData.AR{1} = Use{1};
+                    MIAData.AR{2} = Use{1};
+                    Use{2} = MIAData.AR{2};
+                    Update_Plots([],[],1,[1 2]);
+                case 3 %%% Channel 2
+                    MIAData.AR{1} = Use{2};
+                    MIAData.AR{2} = Use{2};
+                    Use{1} = MIAData.AR{1};
+                    Update_Plots([],[],1,[1 2]);
+                case 4 %%% Both channels
+                    MIAData.AR{1} = logical(Use{1}.*Use{2});
+                    MIAData.AR{2} = logical(Use{1}.*Use{2});
+                    Use{1} = MIAData.AR{1};
+                    Use{2} = MIAData.AR{2};
+                    Update_Plots([],[],1,[1 2]);
+            end
+            
         end
+        
         
 end
 

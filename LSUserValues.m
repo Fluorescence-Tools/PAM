@@ -172,6 +172,10 @@ if Mode==0 %%% Loads user values
         S.File.PCFPath=pwd;
     end
     P.File.PCFPath = S.File.PCFPath;
+    if ~isfield(S.File,'SimPath')
+        S.File.SimPath=pwd;
+    end
+    P.File.SimPath = S.File.SimPath;
     
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
