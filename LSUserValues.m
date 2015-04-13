@@ -466,6 +466,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
+    %%% Checks, if BurstSearch.SaveTotalPhotonStream exists
+    if ~isfield (S.BurstSearch,'SaveTotalPhotonStream')
+        S.BurstSearch.SaveTotalPhotonStream=0;
+        disp('UserValues.BurstSearch.SaveTotalPhotonStream was incomplete');    
+    end
+    P.BurstSearch.SaveTotalPhotonStream = S.BurstSearch.SaveTotalPhotonStream;
     %%% Checks, if BurstSearch.TauFit subfield exists
     if ~isfield (S.BurstSearch,'TauFit')
         S.BurstSearch.TauFit=[];

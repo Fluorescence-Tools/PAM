@@ -1407,6 +1407,15 @@ end
     h.Burst_Button_Menu_LoadData = uimenu(h.Burst_Button_Menu,...
             'Label','Load Performed BurstSearch',...
             'Callback',@Load_Performed_BurstSearch);
+    h.Burst_Button_Menu_SaveTotalPhotonStream = uimenu(h.Burst_Button_Menu,...
+        'Label','Save Total Photons Stream for correlation analysis',...
+        'Callback',@Calculate_Settings);
+    switch UserValues.BurstSearch.SaveTotalPhotonStream
+        case 0
+            h.Burst_Button_Menu_SaveTotalPhotonStream.Checked = 'off';
+        case 1
+            h.Burst_Button_Menu_SaveTotalPhotonStream.Checked = 'on';
+    end
     h.Burst_Button.UIContextMenu = h.Burst_Button_Menu;
     %%% Button to start burstwise Lifetime Fitting
     h.BurstLifetime_Button = uicontrol(...
@@ -2085,6 +2094,14 @@ elseif obj == h.MI_ScatterPattern
         h.MI_ScatterPattern.Checked = 'on';
     end
     Update_Display([],[],4);
+elseif obj == h.Burst_Button_Menu_SaveTotalPhotonStream
+    if strcmp(obj.Checked,'on')
+        UserValues.BurstSearch.SaveTotalPhotonStream = 0;
+        obj.Checked = 'off';
+    else
+        UserValues.BurstSearch.SaveTotalPhotonStream = 1;
+        obj.Checked = 'on';
+    end
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -4326,6 +4343,14 @@ Macrotime_dummy = cell(Number_of_Chunks,1);
 Microtime_dummy = cell(Number_of_Chunks,1);
 Channel_dummy = cell(Number_of_Chunks,1);
 
+if UserValues.BurstSearch.SaveTotalPhotonStream
+    start_all = cell(Number_of_Chunks,1);
+    stop_all = cell(Number_of_Chunks,1);
+    Macrotime_all = cell(Number_of_Chunks,1);
+    Microtime_all = cell(Number_of_Chunks,1);
+    Channel_all = cell(Number_of_Chunks,1);
+end
+
 for i = 1:Number_of_Chunks
     Progress((i-1)/Number_of_Chunks,h.Progress_Axes, h.Progress_Text,'Performing Burst Search...');
     if any(BAMethod == [1 2]) %ACBS 2 Color
@@ -4472,12 +4497,30 @@ for i = 1:Number_of_Chunks
         Microtime_dummy{i}{j} = AllPhotons_Microtime(start(j):stop(j));
         Channel_dummy{i}{j} = Channel(start(j):stop(j));
     end
+    if UserValues.BurstSearch.SaveTotalPhotonStream
+        %%% Save start/stop
+        start_all{i} = start; stop_all{i} = stop;
+        %%% Save whole photon stream
+        Macrotime_all{i} = AllPhotons;
+        Microtime_all{i} = AllPhotons_Microtime;
+        Channel_all{i} = Channel;
+        % Macrotime_all{i} = uint64(AllPhotons);
+        % Microtime_all{i} = uint16(AllPhotons_Microtime);
+        % Channel_all{i} = uint8(Channel);
+    end
 end
 %%% Concatenate data from chunks
 Macrotime = vertcat(Macrotime_dummy{:});
 Microtime = vertcat(Microtime_dummy{:});
 Channel = vertcat(Channel_dummy{:});
 
+if UserValues.BurstSearch.SaveTotalPhotonStream
+    start_all = vertcat(start_all{:});
+    stop_all = vertcat(stop_all{:});
+    Macrotime_all = vertcat(Macrotime_all{:});
+    Microtime_all = vertcat(Microtime_all{:});
+    Channel_all = vertcat(Channel_all{:});
+end
 %% Parameter Calculation
 Progress(0,h.Progress_Axes, h.Progress_Text, 'Calculating Burstwise Parameters...');
 
@@ -5085,7 +5128,22 @@ save(BurstFileName,'BurstData');
 %%% that can be loaded at a later timepoint
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
 PhotonsFileName = GenerateName(PhotonsFileName);
+%Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
+%Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
+%Channel = cellfun(@uint8,Channel,'UniformOutput',false);
 save(PhotonsFileName,'Macrotime','Microtime','Channel');
+%%% Save the whole photon stream for fFCS with Donor-Only inclusion or 
+%%% purified FCS (inclusion of time window around burst)
+if UserValues.BurstSearch.SaveTotalPhotonStream
+    PhotonsFileName = [FullFileName '.aps']; %%% .bps is all-photon-stream
+    PhotonsFileName = GenerateName(PhotonsFileName);
+    PhotonStream.start = start_all;
+    PhotonStream.stop = stop_all;
+    PhotonStream.Macrotime = Macrotime_all;
+    PhotonStream.Microtime = Microtime_all;
+    PhotonStream.Channel = Channel_all;
+    save(PhotonsFileName,'PhotonStream');
+end
 
 %%% Set BurstBrowserPath Path to FilePath
 UserValues.File.BurstBrowserPath = FileInfo.Path;
