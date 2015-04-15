@@ -15,389 +15,277 @@
 using namespace std;
 using namespace tr1;
 
-///////////////////////////////////////////////////////////////////////////
-/// Single color diffusion simulation /////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////
-void Simulate_Diffusion(__int64 maxtime, double bs_x, double bs_y, double bs_z, double posx, double posy, double posz, double d, // Box and Particle parameters
-                               __int16 scan_type, double x_step, double y_step, double x_px, double y_px, __int64 x_t, __int64 y_t, // Scan parameters 
-                               double wr_b, double wz_b, double mb_b, double bp_b, double dx_b, double dy_b, double dz_b,  // Color parameters blue    
-                               double wr_y, double wz_y, double mb_y, double bp_y, double dx_y, double dy_y, double dz_y,  // Color parameters yellow
-                               double wr_r, double wz_r, double mb_r, double bp_r, double dx_r, double dy_r, double dz_r,  // Color parameters red
-                               double wr_ir, double wz_ir, double mb_ir, double bp_ir, double dx_ir, double dy_ir, double dz_ir,  // Color parameters ir
-                               __int64 *Photons_b, __int64 *C_b, // Output parameters blue
-                               __int64 *Photons_y, __int64 *C_y, // Output parameters yellow
-                               __int64 *Photons_r, __int64 *C_r, // Output parameters red
-                               __int64 *Photons_ir, __int64 *C_ir, // Output parameters ir
-                               double *Final_x, double *Final_y, double *Final_z) //Final particle position
-
+void Simulate_Diffusion(
+        __int64 SimTime,  double *Box,
+        double ScanType, double *Step, double *Pixel, double *ScanTicks,
+        double D, double *Pos,
+        double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
+        double *ExP, double *DetP, double *BlP,
+        double *Rates, double *Cross,
+        double *Macrotimes, unsigned char *Channel, __int64 *NPhotons)        
 {
     /// Counting variable definition
-	__int64 t = 0;
+	__int64 i = 0;
+    unsigned char j = 0;
+    unsigned char k = 0;
+    unsigned char m = 0;
+    unsigned char n = 0;
+    unsigned char p = 0;
+    unsigned char q = 0;
+    double FRET[4];
+    double CROSS[4];
+    double prob;
 
     /// Random number generator
 	mt19937 mt; // initialize mersenne twister engine
     mt.seed((unsigned long)time(NULL)); // engine seeding
     //normal distribtion for diffusion
-	normal_distribution<double> normal(0.0, d); //mu = 0.0, sigma = 1.0
-
-    double pb_b;    /// Current particle brightness; is 0 or mb_b
-    pb_b = mb_b;
-    double pb_y;    /// Current particle brightness; is 0 or mb_y
-    pb_y = mb_y;
-    double pb_r;    /// Current particle brightness; is 0 or mb_r
-    pb_r = mb_r;
-    double pb_ir;    /// Current particle brightness; is 0 or mb_ir
-    pb_ir = mb_ir;
-    double P_em;  /// Emission probability
-    double P_bl;  /// Bleaching probability
- 
-
+	normal_distribution<double> normal(0.0, D); //mu = 0.0, sigma = 1.0
+    
+    double Ex;
+//     double Em;
+//     double Bl;
+    
+    /// Determines active colors (Excitation probability > 1E-10, because 0 is not always exactly 0)
+    bool Active [4][2];    
+    for (p = 0; p<4; p++)
+    {
+        if ((ExP[4*p] + ExP[4*p+1] + ExP[4*p+2] + ExP[4*p+3]) > 1E-10)
+        {
+            Active [p][0] = true;
+            Active [p][1] = true;
+        }
+        else
+        {
+            Active [p][0] = false;
+            Active [p][1] = false;
+        }
+    }
+    
     /// Starting point of focus
-    double x0 = -x_px*x_step/2;
-    double y0 = -y_px*y_step/2;
+    double x0 = -Pixel[0]*Step[0]/2;
+    double y0 = -Pixel[0]*Step[0]/2;
     /// Initializes focus positions
     double x = 0;
     double y = 0;
- 
-    ///////////////////////////////////////////////////////////////////////
-    /// Main loop going through all time points ///////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-    for (t=0;t<maxtime;t++) 
+    
+    for (i=0; i<SimTime; i++) 
     {
         /// Particle movement /////////////////////////////////////////////
-        posx = posx + normal(mt); // Go one step in x direction
-        posy = posy + normal(mt); // Go one step in y direction
-        if (bs_z > 0) { posz = posz + normal(mt); } // Go one step in z direction, if not 2D
-        
-        
+        Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
+        Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+        if (Box[2] > 0) { Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+        else { Box[2] = 0; } // Puts particle inside plane
+                
         /// Particle exits border /////////////////////////////////////////
-        if ((posx < 0.0) || (posx > bs_x) || (posy < 0.0) || (posy > bs_y) || (posz < 0.0) || (posz > bs_z))
+        if ((Pos[0] < 0.0) || (Pos[0] > Box[0]) || (Pos[1] < 0.0) || (Pos[1] > Box[1]) || (Pos[2] < 0.0) || (Pos[2] > Box[2]))
         {
             // Unbleach on box border crossing
-            pb_b = mb_b; 
-            pb_y = mb_y; 
-            pb_r = mb_r; 
-            pb_ir = mb_ir
-                    ; 
+            for (p = 0; p<4; p++) { Active[p][0] = Active[p][1]; }
             // Put particle back on the other side
-            posx = fmod((posx + bs_x), bs_x);
-            posy = fmod((posy + bs_y), bs_y);
-            if (bs_z > 0) { posz = fmod((posz + bs_z), bs_z) ; } 
+            Pos[0] = fmod((Pos[0] + Box[0]), Box[0]);
+            Pos[1] = fmod((Pos[1] + Box[1]), Box[1]);
+            if (Box[2] > 0) { Pos[2] = fmod((Pos[2] + Box[2]), Box[2]) ; } 
         }
         
         /// Focus movement ////////////////////////////////////////////////
-        switch (scan_type)
+        switch ((int)ScanType)
         {
             case 1: /// Point measurement
                 x = 0;
                 y = 0;
                 break;
             case 2: /// Raster scan (includes point and line)
-                x = fmod((double)(t / x_t), x_px) * x_step + x0;
-                y = fmod((double)(t / y_t), y_px) * y_step + y0;
+                x = fmod((double)(i / ScanTicks[0]), Pixel[0]) * Step[0] + x0;
+                y = fmod((double)(i / ScanTicks[1]), Pixel[1]) * Step[1] + x0;
                 break;
             case 3: /// Line scan
-                x = fmod((double)(t / x_t), x_px) * x_step + x0;
+                x = fmod((double)(i / ScanTicks[0]), Pixel[0]) * Step[0] + x0;
                 y = 0;
                 break;
             default: 
                 x = 0;
                 y = 0;
+                break;
         }
         
-        ///////////////////////////////////////////////////////////////////
-        /// Generate photons for blue, only if not bleached ///////////////
-        ///////////////////////////////////////////////////////////////////
-        if (pb_b > 0)
-        {
-            /// Calculates 3D gaussian emission profile
-            P_em = pb_b*exp(-2*(((posx-bs_x/2+dx_b-x)*(posx-bs_x/2+dx_b-x))+((posy-bs_y/2+dy_b-y)*(posy-bs_y/2+dy_b-y)))/(wr_b*wr_b) -2*((posz-bs_z/2+dz_b)*(posz-bs_z/2+dz_b))/(wz_b*wz_b));
-            /// Calculates bleaching probability
-            P_bl = bp_b*P_em;
-            /// Checks, if particle bleaches
-            if (P_bl > 0.0)
-            {
-                /// Create binomial distribution for bleaching probability
-                binomial_distribution<__int64, double> binomial1(1, P_bl);
-                /// Bleaches particle with probability
-                if ((double)binomial1(mt)) { pb_b = 0; }
-            }
-
-            /// Only roll if P_em is larger than 0.01% = 1E-4
-            if (P_em > 1E-4) 
-            {
-                /// Create binomial distribution for photon probability
-                binomial_distribution<__int64, double> binomial2(1, P_em);
-                /// Generates photons with probability    
-                if ((double)binomial2(mt))
-                {
-                    /// Adds photon to list at time t 
-                    Photons_b[C_b[0]] = (__int64)t;
-                    /// Adde one to number of photons
-                    C_b[0]++;
-                }
-            }
-        }
-        ///////////////////////////////////////////////////////////////////
-        /// Generate photons for yellow, only if not bleached /////////////
-        ///////////////////////////////////////////////////////////////////
-        if (pb_y > 0)
-        {
-            /// Calculates 3D gaussian emission profile
-            P_em = pb_y*exp(-2*(((posx-bs_x/2+dx_y-x)*(posx-bs_x/2+dx_y-x))+((posy-bs_y/2+dy_y-y)*(posy-bs_y/2+dy_y-y)))/(wr_y*wr_y) -2*((posz-bs_z/2+dz_y)*(posz-bs_z/2+dz_y))/(wz_y*wz_y));
-            /// Calculates bleaching probability
-            P_bl = bp_y*P_em;
-            /// Checks, if particle bleaches
-            if (P_bl > 0.0)
-            {
-                /// Create binomial distribution for bleaching probability
-                binomial_distribution<__int64, double> binomial1(1, P_bl);
-                /// Bleaches particle with probability
-                if ((double)binomial1(mt)) { pb_y = 0; }
-            }
-
-            /// Only roll if P_em_g is larger than 0.01% = 1E-4
-            if (P_em > 1E-4) 
-            {
-                /// Create binomial distribution for photon probability
-                binomial_distribution<__int64, double> binomial2(1, P_em);
-                /// Generates photons with probability    
-                if ((double)binomial2(mt))
-                {
-                    /// Adds photon to list at time t 
-                    Photons_y[C_y[0]] = (__int64)t;
-                    /// Adde one to number of photons
-                    C_y[0]++;
-                }
-            }
-        }
-        ///////////////////////////////////////////////////////////////////
-        /// Generate photons for red, only if not bleached ////////////////
-        ///////////////////////////////////////////////////////////////////
-        if (pb_r > 0)
-        {
-            /// Calculates 3D gaussian emission profile
-            P_em = pb_r*exp(-2*(((posx-bs_x/2+dx_r-x)*(posx-bs_x/2+dx_r-x))+((posy-bs_y/2+dy_r-y)*(posy-bs_y/2+dy_r-y)))/(wr_r*wr_r) -2*((posz-bs_z/2+dz_r)*(posz-bs_z/2+dz_r))/(wz_r*wz_r));
-            /// Calculates bleaching probability
-            P_bl = bp_y*P_em;
-            /// Checks, if particle bleaches
-            if (P_bl > 0.0)
-            {
-                /// Create binomial distribution for bleaching probability
-                binomial_distribution<__int64, double> binomial1(1, P_bl);
-                /// Bleaches particle with probability
-                if ((double)binomial1(mt)) { pb_r = 0; }
-            }
-
-            /// Only roll if P_em_g is larger than 0.01% = 1E-4
-            if (P_em > 1E-4) 
-            {
-                /// Create binomial distribution for photon probability
-                binomial_distribution<__int64, double> binomial2(1, P_em);
-                /// Generates photons with probability    
-                if ((double)binomial2(mt))
-                {
-                    /// Adds photon to list at time t 
-                    Photons_r[C_r[0]] = (__int64)t;
-                    /// Adde one to number of photons
-                    C_r[0]++;
-                }
-            }
-        }
-        ///////////////////////////////////////////////////////////////////
-        /// Generate photons for ir, only if not bleached /////////////////
-        ///////////////////////////////////////////////////////////////////
-        if (pb_ir > 0)
-        {
-            /// Calculates 3D gaussian emission profile
-            P_em = pb_ir*exp(-2*(((posx-bs_x/2+dx_ir-x)*(posx-bs_x/2+dx_ir-x))+((posy-bs_y/2+dy_ir-y)*(posy-bs_y/2+dy_ir-y)))/(wr_ir*wr_ir) -2*((posz-bs_z/2+dz_ir)*(posz-bs_z/2+dz_ir))/(wz_ir*wz_ir));
-            /// Calculates bleaching probability
-            P_bl = bp_ir*P_em;
-            /// Checks, if particle bleaches
-            if (P_bl > 0.0)
-            {
-                /// Create binomial distribution for bleaching probability
-                binomial_distribution<__int64, double> binomial1(1, P_bl);
-                /// Bleaches particle with probability
-                if ((double)binomial1(mt)) { pb_ir = 0; }
-            }
-
-            /// Only roll if P_em_g is larger than 0.01% = 1E-4
-            if (P_em > 1E-4) 
-            {
-                /// Create binomial distribution for photon probability
-                binomial_distribution<__int64, double> binomial2(1, P_em);
-                /// Generates photons with probability    
-                if ((double)binomial2(mt))
-                {
-                    /// Adds photon to list at time t 
-                    Photons_ir[C_ir[0]] = (__int64)t;
-                    /// Adde one to number of photons
-                    C_ir[0]++;
-                }
-            }
-        }
         
+        ///////////////////////////////////////////////////////////////////
+        /// Photon generation /////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////
+        /// j determines excitation color (accounts for PIE cycle)
+        /// k determines excited dye (accounts for direct excitation)
+        /// m determines emition dye (accounts for FRET of multi-step FRET)
+        /// n determines detection channel (daccounts for cross-talk)
+        
+        ///////////////////////////////////////////////////////////////////
+        /// Laser Color (PIE) /////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////
+        for (j=0; j<4; j++) 
+        {            
+            ///////////////////////////////////////////////////////////////
+            /// Excited dye (Direct excitation) ///////////////////////////
+            ///////////////////////////////////////////////////////////////
+            for (k=0; k<4; k++)
+            {
+                if (Active[k][0] && ExP[4*j+k]>0) /// Only calculates, if particle is active/not bleached and direct excitation enabled
+                {
+                    /// Calculate absolute excitation probability
+                    Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
+                    + (Pos[1]-Box[1]/2+ShiftY[j]-y)*(Pos[1]-Box[1]/2+ShiftY[j]-y))/(Wr[j]*Wr[j]) ///Y
+                    -2*(Pos[2]-Box[2]/2+ShiftZ[j])*(Pos[2]-Box[2]/2+ShiftZ[j])/(Wz[j]*Wz[j])); ///Z
+                    if (Ex > 1E-4) /// Only roll if Excitation is larger than 0.01% = 1E-4
+                    {
+                        /// Create binomial distribution for excitation probability
+                        binomial_distribution<__int64, double> binomial(1, Ex);
+                        if ((double) binomial(mt))/// Generates photons with probability
+                        {                            
+                            ///////////////////////////////////////////////
+                            //// Emitting dye (FRET) //////////////////////
+                            ///////////////////////////////////////////////                            
+                            m = k;
+                            while (m<4) /// Determines emitting dye (Only downward transfer possible)
+                            {
+                                for (p=m; p<4; p++) /// Extracts current FRET rates
+                                { 
+                                    if (Active[p][1]) { FRET[p] = Rates[4*m+p]; } /// Dye is active
+                                    else { FRET[p] = 0; } /// Dye is not active
+                                } 
+                                for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
+                                
+                                if ((FRET[3]-1) > 1E-4) /// FRET is feasíble
+                                {
+                                    for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; }  /// Calculates cummulative FRET Probabilites
+                                    /// Generates uniform distributed random number between 0 and 1
+                                    uniform_real_distribution<double> equal_dist(0.0,1.0);
+                                    prob = equal_dist(mt);
+                                    for (p=m; p<4; p++) /// Determines em. dye according to rates
+                                    { if (prob<=FRET[p]) { break; } }
+                                    
+                                    if  (p == m) { break; } /// No FRET occured
+                                    else if (p == 3) { m = 3; break; } /// FRET to lowest energy dye occuded, therefor no more FRET possible
+                                    else { m = p; } /// FRET occured; next round of checks starts
+                                }
+                                else { break; } /// No FRET can occure, therefore ex.dye = em.dye
+                            }
+                            if (BlP[m] > 0.0) /// If bleaching is enabled
+                            {
+                                binomial_distribution<__int64, double> binomial(1, BlP[m]);
+                                if ( ((double) binomial(mt)) ) /// Bleaches particle
+                                { Active[m][0] = false; }
+                                
+                            }
+                            if (Active[m][0]) // If particle doesn't bleach
+                            {                                
+                                ///////////////////////////////////////////
+                                /// Determines detection channel //////////
+                                ///////////////////////////////////////////
+                                for (p=0; p<4; p++) { CROSS[p] = Cross[4*m+p]; } /// Extracts crosstalk rates
+                                for (p=1; p<4; p++) { CROSS[p] = CROSS[p] + CROSS[p-1]; } /// Extracts cummulative crosstalk rates
+                                
+                                if ((CROSS[3]-1) > 1E-5) /// Crosstalk is realistic
+                                {
+                                    for (p=0; p<4; p++) { CROSS[p] = CROSS[p]/CROSS[3]; }  /// Calculates cummulative detection probabilites
+                                    uniform_real_distribution<double> equal_dist(0.0,1.0);
+                                    prob = equal_dist(mt);
+                                    for (n=m; n<4; n++) /// Determines detection color
+                                    { if (prob<=CROSS[n]) { break; } }
+                                }
+                                else {n = m; } /// No crosstalk, therefore detection channel == emitting dye                                
+                                
+                                ///////////////////////////////////////////
+                                /// Determines, if photon was emitteddetected
+                                ///////////////////////////////////////////
+                                if (DetP[4*m+n] > 1E-5)
+                                {
+                                    binomial_distribution<__int64, double> binomial(1, DetP[4*m+n]);
+                                    if ( ((double) binomial(mt)) ) /// Bleaches particle
+                                    {
+                                        /// Adds photon
+                                        Macrotimes[NPhotons[0]] = (double) i;
+                                        // 2 bits each for:    laser      ex. dye    em. dye    det.
+                                        Channel[NPhotons[0]] = (j << 6) | (k << 4) | (m << 2) | n ;
+                                        NPhotons[0]++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
-
-    Final_x[0] = posx;
-    Final_y[0] = posy;
-    Final_z[0] = posz;
-
-	return;
-
 }
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////
 /// Defines input parameter and function to be used ///////////////////////
 /// This function is called by matlab /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prhs[])
-{
-	///////////////////////////////////////////////////////////////////////
-	/// Parameters defining general simulation parameters /////////////
-	///////////////////////////////////////////////////////////////////////
-    // simulation time in clockticks
-	__int64 maxtime = (__int64)mxGetScalar(prhs[0]);
-    // Box dimentions in nm/points
-	double bs_x = (double)mxGetScalar(prhs[1]);
-    double bs_y = (double)mxGetScalar(prhs[2]);
-    double bs_z = (double)mxGetScalar(prhs[3]); 
-    // Starting position
-    double posx = (double)mxGetScalar(prhs[4]);
-    double posy = (double)mxGetScalar(prhs[5]);
-    double posz = (double)mxGetScalar(prhs[6]);
-    // Diffusion coefficient as sigma of gaussian diffusion steps
-    double d = (double)mxGetScalar(prhs[7]);
+{    
+    if(nrhs!=18)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","18 inputs required."); }
+    if (nlhs!=3)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","3 outputs required."); }
     
-	///////////////////////////////////////////////////////////////////////
-    /// Parameters defining scanning type /////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-    /// Scan type: 
-    /// 0: Raster scan (includes point and line)
-    /// 1: Circle scan
-    __int16 scan_type = (__int16)mxGetScalar(prhs[8]);
-    /// Diameter in x and y in nm/points
-    double x_step = (double)mxGetScalar(prhs[9]);
-	double y_step = (double)mxGetScalar(prhs[10]);
-    /// Number of pixels/lines
-    double x_px = (double)mxGetScalar(prhs[11]);
-	double y_px = (double)mxGetScalar(prhs[12]);
-    /// Pixel/Line time in ticks
-    __int64 x_t = (__int64)mxGetScalar(prhs[13]);
-	__int64 y_t = (__int64)mxGetScalar(prhs[14]);
     
-	//////////////////////////////////////////////////////////////////////
-	/// First color parameters ///////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////
-	double wr_b = (double)mxGetScalar(prhs[15]);
-	double wz_b = (double)mxGetScalar(prhs[16]);
-	double mb_b = (double)mxGetScalar(prhs[17]);
-	double bp_b = (double)mxGetScalar(prhs[18]);
-    double dx_b = (double)mxGetScalar(prhs[19]);
-    double dy_b = (double)mxGetScalar(prhs[20]);
-    double dz_b = (double)mxGetScalar(prhs[21]);
+    // General and Scanning parameters
+    __int64 SimTime = (__int64)mxGetScalar(prhs[0]);
+    double *Box = mxGetPr(prhs[1]);
+    double ScanType = mxGetScalar(prhs[2]);
+    double *Step = mxGetPr(prhs[3]);
+    double *Pixel = mxGetPr(prhs[4]);
+    double *ScanTicks = mxGetPr(prhs[5]);
+    
+    // Particle Parameters
+    double D = mxGetScalar(prhs[6]);  
+    double *Pos = mxGetPr(prhs[7]);
 
-    ///////////////////////////////////////////////////////////////////////
-	/// Second color parameters ///////////////////////////////////////////
-	///////////////////////////////////////////////////////////////////////
-    double wr_y = (double)mxGetScalar(prhs[22]);
-    double wz_y = (double)mxGetScalar(prhs[23]);
-    double mb_y = (double)mxGetScalar(prhs[24]);
-    double bp_y = (double)mxGetScalar(prhs[25]);
-    double dx_y = (double)mxGetScalar(prhs[26]);
-    double dy_y = (double)mxGetScalar(prhs[27]);
-    double dz_y = (double)mxGetScalar(prhs[28]);
-    
-    ///////////////////////////////////////////////////////////////////////
-    /// Third color parameters ////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-    double wr_r = (double)mxGetScalar(prhs[29]);
-    double wz_r = (double)mxGetScalar(prhs[30]);
-    double mb_r = (double)mxGetScalar(prhs[31]);
-    double bp_r = (double)mxGetScalar(prhs[32]);
-    double dx_r = (double)mxGetScalar(prhs[33]);
-    double dy_r = (double)mxGetScalar(prhs[34]);
-    double dz_r = (double)mxGetScalar(prhs[35]);
-    
-    ///////////////////////////////////////////////////////////////////////
-    /// Forth color parameters ////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-    double wr_ir = (double)mxGetScalar(prhs[36]);
-    double wz_ir = (double)mxGetScalar(prhs[37]);
-    double mb_ir = (double)mxGetScalar(prhs[38]);
-    double bp_ir = (double)mxGetScalar(prhs[39]);
-    double dx_ir = (double)mxGetScalar(prhs[40]);
-    double dy_ir = (double)mxGetScalar(prhs[41]);
-    double dz_ir = (double)mxGetScalar(prhs[42]);
+    // Color Parameters
+    double *Wr = mxGetPr(prhs[8]);
+    double *Wz = mxGetPr(prhs[9]);
+    double *ShiftX = mxGetPr(prhs[10]);
+    double *ShiftY = mxGetPr(prhs[11]);
+    double *ShiftZ = mxGetPr(prhs[12]);
+    double *ExP = mxGetPr(prhs[13]);
+    double *DetP =  mxGetPr(prhs[14]);
+    double *BlP = mxGetPr(prhs[15]);
+    double *Rates =  mxGetPr(prhs[16]);
+    double *Cross = mxGetPr(prhs[17]);
+        
     
 
-    ///////////////////////////////////////////////////////////////////////
-    /// Allocates memory for output parameters ////////////////////////////
-    ///////////////////////////////////////////////////////////////////////
-    /// Photons
-    __int64 *Photons_b;
-    Photons_b=(__int64*) mxCalloc(maxtime, sizeof(__int64));
-    __int64 *Photons_y;
-    Photons_y=(__int64*) mxCalloc(maxtime, sizeof(__int64));
-    __int64 *Photons_r;
-    Photons_r=(__int64*) mxCalloc(maxtime, sizeof(__int64));
-    __int64 *Photons_ir;
-    Photons_ir=(__int64*) mxCalloc(maxtime, sizeof(__int64));
+    double *Macrotimes;
+    Macrotimes = (double*) mxCalloc(4*SimTime, sizeof(double));
+    unsigned char *Channel;
+    Channel = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));
+    __int64 *NPhotons;
+    NPhotons=(__int64*) mxCalloc(1, sizeof(__int64));
     
-    /// Final particle position
-    double *Final_x;
-    double *Final_y;
-    double *Final_z;
-    Final_x=(double*) mxCalloc(1, sizeof(double));
-    Final_y=(double*) mxCalloc(1, sizeof(double));
-    Final_z=(double*) mxCalloc(1, sizeof(double));
-    /// Counts per channel
-    __int64 *C_b;
-    C_b=(_int64*) mxCalloc(1, sizeof(__int64));
-    __int64 *C_y;
-    C_y=(_int64*) mxCalloc(1, sizeof(__int64));
-    __int64 *C_r;
-    C_r=(_int64*) mxCalloc(1, sizeof(__int64));
-    __int64 *C_ir;
-    C_ir=(_int64*) mxCalloc(1, sizeof(__int64));
-
-    ///////////////////////////////////////////////////////////////////////
-    /// Simulate 4Col Dif |#Ticks| Bixsize in nm| Start position  | D| Scan Type| Scan dim.     | Px/Lines  |T per p/l|| 
-    Simulate_Diffusion(maxtime, bs_x, bs_y, bs_z, posx, posy, posz, d, scan_type, x_step, y_step, x_px, y_px, x_t, y_t,
-            wr_b, wz_b, mb_b, bp_b, dx_b, dy_b, dz_b, // Blue parameters  
-            wr_y, wz_y, mb_y, bp_y, dx_y, dy_y, dz_y, // Yellow parameters  
-            wr_r, wz_r, mb_r, bp_r, dx_r, dy_r, dz_r, // Red parameters  
-            wr_ir, wz_ir, mb_ir, bp_ir, dx_ir, dy_ir, dz_ir, // IR parameters  
-            Photons_b, C_b, Photons_y, C_y, Photons_r, C_r, Photons_ir, C_ir, // Photon output parameters     
-            Final_x, Final_y, Final_z);// Final particle position  
-
-    const mwSize dims_b[]={(double)C_b[0],1};
-    const mwSize dims_y[]={(double)C_y[0],1};
-    const mwSize dims_r[]={(double)C_r[0],1};
-    const mwSize dims_ir[]={(double)C_ir[0],1};
-    const mwSize dims_X[]={1,1};
-    const mwSize dims_Y[]={1,1};
-    const mwSize dims_Z[]={1,1};
+    Simulate_Diffusion(
+        SimTime, Box, // General parameters
+        ScanType, Step, Pixel, ScanTicks, // Scanning parameters
+        D, Pos, // Particle parameters
+        Wr, Wz, ShiftX, ShiftY, ShiftZ, // Focus parameters
+        ExP, DetP, BlP, 
+        Rates, Cross, // Parameter containing FRET/Crosstalk rates
+        Macrotimes, Channel, NPhotons); // Outputparameters
+        
+    const mwSize NP[]={NPhotons[0],1};
+    const mwSize SizePos[]={3,1};
      
-    plhs[0] = mxCreateNumericArray(2, dims_b, mxINT64_CLASS, mxREAL);
-    plhs[1] = mxCreateNumericArray(2, dims_y, mxINT64_CLASS, mxREAL);
-    plhs[2] = mxCreateNumericArray(2, dims_r, mxINT64_CLASS, mxREAL);
-    plhs[3] = mxCreateNumericArray(2, dims_ir, mxINT64_CLASS, mxREAL);
-    plhs[4] = mxCreateNumericArray(2, dims_X, mxDOUBLE_CLASS, mxREAL);
-    plhs[5] = mxCreateNumericArray(2, dims_Y, mxDOUBLE_CLASS, mxREAL);
-    plhs[6] = mxCreateNumericArray(2, dims_Z, mxDOUBLE_CLASS, mxREAL);
+    double* Final_Pos;
+    Final_Pos =(double*) mxCalloc(3, sizeof(double));
+    Final_Pos[0] = Pos[0];
+    Final_Pos[1] = Pos[1];
+    Final_Pos[2] = Pos[2];
+    
+    plhs[0] = mxCreateNumericArray(2, NP, mxDOUBLE_CLASS, mxREAL);
+    plhs[1] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
+    plhs[2] = mxCreateNumericArray(2, SizePos, mxDOUBLE_CLASS, mxREAL);
+    
+    mxSetData(plhs[0], Macrotimes);
+    mxSetData(plhs[1], Channel);
+    mxSetData(plhs[2], Final_Pos);
 
-    mxSetData(plhs[0], Photons_b);
-    mxSetData(plhs[1], Photons_y);
-    mxSetData(plhs[2], Photons_r);
-    mxSetData(plhs[3], Photons_ir);
-    mxSetData(plhs[4], Final_x);
-    mxSetData(plhs[5], Final_y);
-    mxSetData(plhs[6], Final_z);
-
-
+        
 }

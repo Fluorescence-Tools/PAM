@@ -3854,7 +3854,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 Bins=str2double(h.Cor_Pair_Bins.String);
                 Dist=[0,str2num(h.Cor_Pair_Dist.String)]; %#ok<ST2NM>
                 Dist= Dist(Dist<Bins); 
-                Times = Times*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                Times = (Times*FileInfo.SyncPeriod*FileInfo.ScanFreq);
                 Maxtime = max(diff(Times));
                 %% Channel 1 calculations
                 Data = []; MI = [];
@@ -3875,7 +3875,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 [Data,Index] = sort(Data);
                 MI = MI(Index);
                 Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
-%                 Maxtime = Data(end)-Data(1);
                 Data1 = cell(Bins,1);
                 MI1 = cell(Bins,1);
                 Valid = find(PamMeta.Selected_MT_Patches);
@@ -3945,6 +3944,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             if numel(PairInfo.Time)<Cor_Times
                                 PairInfo.Time=Cor_Times;
                             end
+                            
                             %%% Ch2xCh1
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
                             %%% Adjusts correlation times to longest
@@ -3970,8 +3970,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 for j=1:Bins
                     %%% Intensity tracefor channel 1
                     for k = 2:numel(Data1{j})
-                       Data1{j}{k} = Data1{j}{k}+Times(k-1);
-                       Data2{j}{k} = Data2{j}{k}+Times(k-1);
+                       Data1{j}{k} = Data1{j}{k}+Times(k);
+                       Data2{j}{k} = Data2{j}{k}+Times(k);
                     end
                     Data1{j} = cell2mat(Data1{j}');
                     Data2{j} = cell2mat(Data2{j}');

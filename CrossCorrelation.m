@@ -19,7 +19,7 @@ if nargin < 4
 end
 %%% Calculates a pseudologarithmic timeaxis:
 %%% [1:21 20:2:41 45:4:81 ....]
-Timeaxis_Exponent=ceil(log2(Maxtime/10));
+Timeaxis_Exponent=floor(log2(Maxtime/10));
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
 Timeaxis(Timeaxis<1)=1;
@@ -41,7 +41,7 @@ Divisor=ones(numel(Timeaxis),1);
 Divisor(22:end)=2.^(floor((10:(numel(Divisor)-12))/10));
 %%% Does additional normalizing
 for i=1:numel(Cor_Array)
-    Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
+    Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
     %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
 end
