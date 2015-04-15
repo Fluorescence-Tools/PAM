@@ -6530,12 +6530,7 @@ switch obj
                     %%% Calculates average and standard error of mean (without tinv_table yet
                     if numel(Cor_Array)>1
                         Cor_Average=mean(Cor_Array,2);
-                        %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-                        %%% Averages files before saving to reduce errorbars
-                        Amplitude=sum(Cor_Array,1);
-                        Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-                        Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-
+                        Cor_SEM=std(Cor_Array,0,2);
                     else
                         Cor_Average=Cor_Array{1};
                         Cor_SEM=Cor_Array{1};

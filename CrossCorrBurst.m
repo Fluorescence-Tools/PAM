@@ -73,6 +73,7 @@ if error_estimate
         Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}~=-1,1,'last'));
     end
     Cor_Array = cell2mat(Cor_Res);
+    Timeaxis = Timeaxis(1:size(Cor_Array,1));
         
 else
     Cor_Total = sum(horzcat(Cor_Array{:}),2);
