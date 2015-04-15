@@ -4515,8 +4515,16 @@ Microtime = vertcat(Microtime_dummy{:});
 Channel = vertcat(Channel_dummy{:});
 
 if UserValues.BurstSearch.SaveTotalPhotonStream
-    start_all = vertcat(start_all{:});
-    stop_all = vertcat(stop_all{:});
+    start = [];
+    stop = [];
+    count = 0;
+    for i = 1:Number_of_Chunks
+        start = [start; start_all{i}+count];
+        stop = [stop; stop_all{i}+count];
+        count = count + numel(Macrotime_all{i});
+    end
+    start_all = start;
+    stop_all = stop;
     Macrotime_all = vertcat(Macrotime_all{:});
     Microtime_all = vertcat(Microtime_all{:});
     Channel_all = vertcat(Channel_all{:});

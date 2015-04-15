@@ -6353,7 +6353,7 @@ ApplyCorrections(obj,[]);
 %%%%%%% Normal Correlation of Burst Photon Streams %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Correlate_Bursts(obj,~)
-global BurstData BurstTCSPCData AllPhotons UserValues
+global BurstData BurstTCSPCData PhotonStream UserValues
 h = guidata(obj);
 %%% Set Up Progress Bar
 h_waitbar = waitbar(0,'Correlating...');
@@ -6400,7 +6400,8 @@ switch obj
         MT = vertcat(MT{:});
         CH = BurstTCSPCData.Channel(BurstData.Selected);
         CH = vertcat(CH{:});
-
+        
+        waitbar(0,h_waitbar,'Correlating...');
         count = 0;
         for i=1:NumChans
             for j=1:NumChans
@@ -6460,27 +6461,126 @@ switch obj
                 end 
             end
         end
+
     case h.CorrelateWindow_Button
-        if isempty(AllPhotons)
+        if isempty(PhotonStream)
             return;
         end
-        %%% find selected bursts
-        MT = AllPhotons.Macrotime(BurstData.Selected);
-        MT = vertcat(MT{:});
-        CH = AllPhotons.Channel(BurstData.Selected);
-        CH = vertcat(CH{:});
+        start = PhotonStream.start(BurstData.Selected);
+      	stop = PhotonStream.stop(BurstData.Selected);
+        
+        
+        start_tw = zeros(numel(start),1);
+        stop_tw = zeros(numel(stop),1);
+        use = ones(numel(start),1);
+        %%% loop over selected bursts
+        waitbar(0,h_waitbar,'Including Time Window...');
+        tw = 1000; %%% photon window of 100 photons
+        
+        start_tw = start - tw;
+        stop_tw = stop + tw;
+        
+        for i = 1:numel(start_tw)
+            %%% Check if ANY burst falls into the time window
+            val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
+            %%% Check if they are of the same species
+            inval = val & (~BurstData.Selected);
+            %%% if there are bursts of another species in the timewindow,
+            %%% --> remove it
+            if sum(inval) > 0
+                use(i) = 0;
+            end
+            waitbar(i/numel(start));
+        end
+        
+        %%% Construct reduced Macrotime and Channel vector
+        waitbar(0,h_waitbar,'Preparing Photon Stream...');
+        MT = cell(sum(use),1);
+        CH = cell(sum(use),1);
+        k=1;
+        for i = 1:numel(start_tw)
+            if use(i)
+                MT{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT{k} = MT{k}-MT{k}(1) +1;
+                CH{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
+                k = k+1;
+            end
+            waitbar(i/numel(start_tw));
+        end
+        
+        %%% Apply different correlation algorithm
+        %%% (Burstwise correlation with correct summation and normalization)
+
+        waitbar(0,h_waitbar,'Correlating...');
+        count = 0;
+        for i=1:NumChans
+            for j=1:NumChans
+                if CorrMat(i,j)
+                    MT1 = cell(numel(MT),1);
+                    MT2 = cell(numel(MT),1);
+                    for k = 1:numel(MT)
+                        MT1{k} = MT{k}(ismember(CH{k},Chan{i}));
+                        MT2{k} = MT{k}(ismember(CH{k},Chan{j}));
+                    end
+                    %%% Calculates the maximum inter-photon time in clock ticks
+                    Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+                    %%% Do Correlation
+                    [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime);
+                    Cor_Times = Cor_Times*BurstData.SyncPeriod;
+                    
+                    %%% Calculates average and standard error of mean (without tinv_table yet
+                    if numel(Cor_Array)>1
+                        Cor_Average=mean(Cor_Array,2);
+                        %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+                        %%% Averages files before saving to reduce errorbars
+                        Amplitude=sum(Cor_Array,1);
+                        Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+                        Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+
+                    else
+                        Cor_Average=Cor_Array{1};
+                        Cor_SEM=Cor_Array{1};
+                    end
+                    
+                    %%% Save the correlation file
+                    %%% Generates filename
+                    Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                        %%% Increases counter, until no file is found
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        end
+                    end
+                    
+                    Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+                    %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+                    Counts = [0 ,0];
+                    Valid = 1:size(Cor_Array,2);
+                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                    count = count+1;waitbar(count/NCor);
+                end 
+            end
+        end
+        
 end
+        
 delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Photons(obj,~)
-global AllPhotonsData
+global PhotonStream BurstData
 h = guidata(obj);
+%%% Set Up Progress Bar
+h_waitbar = waitbar(0,'...');
 switch obj
     case h.LoadAllPhotons_Button
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-        if isempty(AllPhotonsData)
+        if isempty(PhotonStream)
             waitbar(0,h_waitbar,'Loading Photon Data');
             if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
                 %%% load if it exists
@@ -6495,17 +6595,11 @@ switch obj
                 %%% Store the correct Path
                 BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
             end
-            AllPhotonsData.Macrotime = Macrotime;
-            AllPhotonsData.Microtime = Microtime;
-            AllPhotonsData.Channel = Channel;
-            %%% start and stop of bursts
-            AllPhotonsData.Start = start;
-            AllPhotonsData.Stop = stop;
-            clear Macrotime Microtime Channel
         end
         %%% Enable CorrelateWindow Button
         h.CorrelateWindow_Button.Enable = 'on';
 end
+delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Change GUI to 2cMFD or 3cMFD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
