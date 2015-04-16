@@ -3975,8 +3975,9 @@ h.TauFit.SpeciesSelect.Value = 1;
 %%%%%%% Updates Microtime Histograms in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_MicrotimeHistograms(obj,~)
-global BurstData BurstMeta BurstTCSPCData UserValues
+global BurstData BurstMeta BurstTCSPCData UserValues PhotonStream
 h = guidata(obj);
+h_waitbar = waitbar(0,'Preparing Data...');
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
@@ -4008,11 +4009,126 @@ switch obj
         species2 = h.fFCS_Species2_popupmenu.Value + 1;BurstMeta.fFCS.Names{2} = h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value};
         valid_species1 = UpdateCuts(species1);
         valid_species2 = UpdateCuts(species2);
-
-        %%% find selected bursts
-        MI_total = BurstTCSPCData.Microtime(valid_total);MI_total = vertcat(MI_total{:});
-        CH_total = BurstTCSPCData.Channel(valid_total);CH_total = vertcat(CH_total{:});
-        MT_total = BurstTCSPCData.Macrotime(valid_total);MT_total = vertcat(MT_total{:});
+        
+        use_timewindow = 0;
+        if use_timewindow
+            if isempty(PhotonStream)
+                return;
+            end
+            start = PhotonStream.start(valid_total);
+            stop = PhotonStream.stop(valid_total);
+            
+            use_time = 1; %%% use time or photon window
+            if use_time
+                %%% histogram the Macrotimes in bins of 10 ms
+                bw = ceil(10E-3./BurstData.SyncPeriod);
+                bins_time = 0:bw:PhotonStream.Macrotime(end);
+                if ~isfield(PhotonStream,'MT_bin')
+                    waitbar(0,h_waitbar,'Preparing Data...');
+                    [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
+                    [~,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                end
+                [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
+                [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
+                [~, start_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.start),bins_time);
+                [~, stop_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.stop),bins_time);
+                
+                use = ones(numel(start),1);
+                %%% loop over selected bursts
+                waitbar(0,h_waitbar,'Including Time Window...');
+                tw = 5; %%% photon window of (2*tw+1)*10ms
+                
+                start_tw = start_bin - tw;
+                stop_tw = stop_bin + tw;
+                
+                for i = 1:numel(start_tw)
+                    %%% Check if ANY burst falls into the time window
+                    val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
+                    %%% Check if they are of the same species
+                    inval = val & (~BurstData.Selected);
+                    %%% if there are bursts of another species in the timewindow,
+                    %%% --> remove it
+                    if sum(inval) > 0
+                        use(i) = 0;
+                    end
+                    waitbar(i/numel(start));
+                end
+                
+                %%% Construct reduced Macrotime and Channel vector
+                waitbar(0,h_waitbar,'Preparing Photon Stream...');
+                MT_total = cell(sum(use),1);
+                CH_total = cell(sum(use),1);
+                MI_total = cell(sum(use),1);
+                k=1;
+                for i = 1:numel(start_tw)
+                    if use(i)
+                        range = PhotonStream.first_idx(start_tw(i)):(PhotonStream.first_idx(stop_tw(i)+1)-1);
+                        MT_total{k} = PhotonStream.Macrotime(range);
+                        MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
+                        CH_total{k} = PhotonStream.Channel(range);
+                        MI_total{k} = PhotonStream.Microtime(range);
+                        %val = (PhotonStream.MT_bin > start_tw(i)) & (PhotonStream.MT_bin < stop_tw(i) );
+                        %MT{k} = PhotonStream.Macrotime(val);
+                        %MT{k} = MT{k}-MT{k}(1) +1;
+                        %CH{k} = PhotonStream.Channel(val);
+                        k = k+1;
+                    end
+                    waitbar(i/numel(start_tw));
+                end
+            else
+                use = ones(numel(start),1);
+                %%% loop over selected bursts
+                waitbar(0,h_waitbar,'Including Time Window...');
+                tw = 100; %%% photon window of 100 photons
+                
+                start_tw = start - tw;
+                stop_tw = stop + tw;
+                
+                for i = 1:numel(start_tw)
+                    %%% Check if ANY burst falls into the time window
+                    val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
+                    %%% Check if they are of the same species
+                    inval = val & (~BurstData.Selected);
+                    %%% if there are bursts of another species in the timewindow,
+                    %%% --> remove it
+                    if sum(inval) > 0
+                        use(i) = 0;
+                    end
+                    waitbar(i/numel(start));
+                end
+                
+                %%% Construct reduced Macrotime and Channel vector
+                waitbar(0,h_waitbar,'Preparing Photon Stream...');
+                MT_total = cell(sum(use),1);
+                CH_total = cell(sum(use),1);
+                MI_total = cell(sum(use),1);
+                k=1;
+                for i = 1:numel(start_tw)
+                    if use(i)
+                        MT_total{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
+                        CH_total{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
+                        MI_total{k} = PhotonStream.Microtime(start_tw(i):stop_tw(i));
+                        k = k+1;
+                    end
+                    waitbar(i/numel(start_tw));
+                end
+            end
+            
+            %%% Store burstwise photon stream
+            BurstMeta.fFCS.Photons.MT_total = MT_total;
+            BurstMeta.fFCS.Photons.MI_total = MI_total;
+            BurstMeta.fFCS.Photons.CH_total = CH_total;
+        else
+            %%% find selected bursts
+            MI_total = BurstTCSPCData.Microtime(valid_total);
+            CH_total = BurstTCSPCData.Channel(valid_total);
+            MT_total = BurstTCSPCData.Macrotime(valid_total);
+        end
+        delete(h_waitbar);
+        
+        MI_total = vertcat(MI_total{:});
+        CH_total = vertcat(CH_total{:});
+        MT_total = vertcat(MT_total{:});
         %MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
         MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
         CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
@@ -4093,6 +4209,35 @@ switch obj
         [MT_total_perp,idx] = sort(MT_total_perp);
         MI_total_perp = MI_total_perp(idx);
         
+        %%% Burstwise treatment if using time window
+        if use_timewindow
+            BurstMeta.fFCS.Photons.MI_total_par = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
+            BurstMeta.fFCS.Photons.MI_total_perp = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
+            BurstMeta.fFCS.Photons.MT_total_par = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
+            BurstMeta.fFCS.Photons.MT_total_perp = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
+            for k = 1:numel(BurstMeta.fFCS.Photons.MT_total)
+                for i = 1:numel(ParChans)
+                    BurstMeta.fFCS.Photons.MI_total_par{k} = vertcat(BurstMeta.fFCS.Photons.MI_total_par{k},...
+                        BurstMeta.fFCS.Photons.MI_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == ParChans(i)) -...
+                        limit_low_par(i+1) + 1 +...
+                        dif_par(i));
+                    BurstMeta.fFCS.Photons.MT_total_par{k} = vertcat(BurstMeta.fFCS.Photons.MT_total_par{k},...
+                        BurstMeta.fFCS.Photons.MT_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == ParChans(i)));
+                    BurstMeta.fFCS.Photons.MI_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MI_total_perp{k},...
+                        BurstMeta.fFCS.Photons.MI_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)) -...
+                        limit_low_perp(i+1) + 1 +...
+                        dif_perp(i));
+                    BurstMeta.fFCS.Photons.MT_total_perp{k} = vertcat(BurstMeta.fFCS.Photons.MT_total_perp{k},...
+                        BurstMeta.fFCS.Photons.MT_total{k}(BurstMeta.fFCS.Photons.CH_total{k} == PerpChans(i)));
+                end
+
+                %%% sort photons
+                [BurstMeta.fFCS.Photons.MT_total_par{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_par{k});
+                BurstMeta.fFCS.Photons.MI_total_par{k} = BurstMeta.fFCS.Photons.MI_total_par{k}(idx);
+                [BurstMeta.fFCS.Photons.MT_total_perp{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_perp{k});
+                BurstMeta.fFCS.Photons.MI_total_perp{k} = BurstMeta.fFCS.Photons.MI_total_perp{k}(idx);
+            end
+        end
         %%% Downsampling if checked
         %%% New binwidth in picoseconds
         if UserValues.BurstBrowser.Downsample_fFCS
@@ -4123,10 +4268,12 @@ switch obj
         BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp); 
 
         %%% Store Photon Vectors of total photons in BurstMeta
-        BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
-        BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
-        BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
-        BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+        if ~use_timewindow
+            BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
+            BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
+            BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
+            BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+        end
         %%% Plot the Microtime histograms
         BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
         BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par;
@@ -4389,65 +4536,123 @@ filters_par{1} = BurstMeta.fFCS.filters_par(1,:)';
 filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
-%%% Split Data in 10 time bins for errorbar calculation
-Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
-count = 0;
-for i=1:NumChans
-    for j=1:NumChans
-        if CorrMat(i,j)
-            %%% Calculates the maximum inter-photon time in clock ticks
-            Maxtime=max(diff(Times));
-            Data1 = cell(10,1);
-            Data2 = cell(10,1);
-            Weights1 = cell(10,1);
-            Weights2 = cell(10,1);
-            for k = 1:10
-                Data1{k} = MT_par( MT_par > Times(k) &...
-                    MT_par <= Times(k+1)) - Times(k);
-                Weights1{k} = filters_par{i}(MI_par( MT_par > Times(k) &...
-                    MT_par <= Times(k+1)) );
-                Data2{k} = MT_perp( MT_perp > Times(k) &...
-                    MT_perp <= Times(k+1)) - Times(k);
-                Weights2{k} = filters_perp{j}(MI_perp(MT_perp > Times(k) &...
-                    MT_perp <= Times(k+1)) );
-            end
-            %%% Do Correlation
-            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
-            Cor_Times=Cor_Times*BurstData.SyncPeriod;
-            %%% Calculates average and standard error of mean (without tinv_table yet
-            if numel(Cor_Array)>1
-                Cor_Average=mean(Cor_Array,2);
-                %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-                %%% Averages files before saving to reduce errorbars
-                Amplitude=sum(Cor_Array,1);
-                Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-                Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
 
-            else
-                Cor_Average=Cor_Array{1};
-                Cor_SEM=Cor_Array{1};
-            end
-            %%% Save the correlation file
-            %%% Generates filename
-            Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                %%% Increases counter, until no file is found
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+use_timewindow = 0;
+if ~use_timewindow
+    %%% Split Data in 10 time bins for errorbar calculation
+    Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
+    count = 0;
+    for i=1:NumChans
+        for j=1:NumChans
+            if CorrMat(i,j)
+                %%% Calculates the maximum inter-photon time in clock ticks
+                Maxtime=max(diff(Times));
+                Data1 = cell(10,1);
+                Data2 = cell(10,1);
+                Weights1 = cell(10,1);
+                Weights2 = cell(10,1);
+                for k = 1:10
+                    Data1{k} = MT_par( MT_par > Times(k) &...
+                        MT_par <= Times(k+1)) - Times(k);
+                    Weights1{k} = filters_par{i}(MI_par( MT_par > Times(k) &...
+                        MT_par <= Times(k+1)) );
+                    Data2{k} = MT_perp( MT_perp > Times(k) &...
+                        MT_perp <= Times(k+1)) - Times(k);
+                    Weights2{k} = filters_perp{j}(MI_perp(MT_perp > Times(k) &...
+                        MT_perp <= Times(k+1)) );
                 end
-            end
+                %%% Do Correlation
+                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                Cor_Times=Cor_Times*BurstData.SyncPeriod;
+                %%% Calculates average and standard error of mean (without tinv_table yet
+                if numel(Cor_Array)>1
+                    Cor_Average=mean(Cor_Array,2);
+                    %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+                    %%% Averages files before saving to reduce errorbars
+                    Amplitude=sum(Cor_Array,1);
+                    Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+                    Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
 
-            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            Counts = [numel(MT_par) numel(MT_perp)]/(BurstData.SyncPeriod*max([MT_par;MT_perp]))/1000;
-            Valid = 1:10;
-            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-            count = count +1;waitbar(count/4);
-        end 
+                else
+                    Cor_Average=Cor_Array{1};
+                    Cor_SEM=Cor_Array{1};
+                end
+                %%% Save the correlation file
+                %%% Generates filename
+                Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+                %%% Checks, if file already exists
+                if  exist(Current_FileName,'file')
+                    k=1;
+                    %%% Adds 1 to filename
+                    Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                    %%% Increases counter, until no file is found
+                    while exist(Current_FileName,'file')
+                        k=k+1;
+                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                    end
+                end
+
+                Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+                Counts = [numel(MT_par) numel(MT_perp)]/(BurstData.SyncPeriod*max([MT_par;MT_perp]))/1000;
+                Valid = 1:10;
+                save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                count = count +1;waitbar(count/4);
+            end 
+        end
+    end
+else
+    waitbar(0,h_waitbar,'Correlating...');
+    count = 0;
+    for i=1:NumChans
+        for j=1:NumChans
+            if CorrMat(i,j)
+                MT1 = BurstMeta.fFCS.Photons.MT_total_par;
+                MT2 = BurstMeta.fFCS.Photons.MT_total_perp;
+                %%% prepare weights
+                Weights1 = cell(numel(MT1),1);
+                Weights2 = cell(numel(MT1),1);
+                for k = 1:numel(MT1)
+                    Weights1{k} = filters_par{i}(BurstMeta.fFCS.Photons.MI_total_par{k});
+                    Weights2{k} = filters_perp{j}(BurstMeta.fFCS.Photons.MI_total_perp{k});
+                end
+                %%% Calculates the maximum inter-photon time in clock ticks
+                Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+                %%% Do Correlation
+                [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime,Weights1,Weights2);
+                Cor_Times = Cor_Times*BurstData.SyncPeriod;
+
+                %%% Calculates average and standard error of mean (without tinv_table yet
+                if numel(Cor_Array)>1
+                    Cor_Average=mean(Cor_Array,2);
+                    Cor_SEM=std(Cor_Array,0,2);
+                else
+                    Cor_Average=Cor_Array{1};
+                    Cor_SEM=Cor_Array{1};
+                end
+
+                %%% Save the correlation file
+                %%% Generates filename
+                Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+                %%% Checks, if file already exists
+                if  exist(Current_FileName,'file')
+                    k=1;
+                    %%% Adds 1 to filename
+                    Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                    %%% Increases counter, until no file is found
+                    while exist(Current_FileName,'file')
+                        k=k+1;
+                        Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                    end
+                end
+
+                Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+                %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+                Counts = [0 ,0];
+                Valid = 1:size(Cor_Array,2);
+                save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                count = count +1;waitbar(count/4);
+            end 
+        end
     end
 end
 delete(h_waitbar);
@@ -6469,42 +6674,96 @@ switch obj
         start = PhotonStream.start(BurstData.Selected);
       	stop = PhotonStream.stop(BurstData.Selected);
         
-        
-        start_tw = zeros(numel(start),1);
-        stop_tw = zeros(numel(stop),1);
-        use = ones(numel(start),1);
-        %%% loop over selected bursts
-        waitbar(0,h_waitbar,'Including Time Window...');
-        tw = 1000; %%% photon window of 100 photons
-        
-        start_tw = start - tw;
-        stop_tw = stop + tw;
-        
-        for i = 1:numel(start_tw)
-            %%% Check if ANY burst falls into the time window
-            val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
-            %%% Check if they are of the same species
-            inval = val & (~BurstData.Selected);
-            %%% if there are bursts of another species in the timewindow,
-            %%% --> remove it
-            if sum(inval) > 0
-                use(i) = 0;
+        use_time = 1; %%% use time or photon window
+        if use_time
+            %%% histogram the Macrotimes in bins of 10 ms
+            bw = ceil(10E-3./BurstData.SyncPeriod); 
+            bins_time = 0:bw:PhotonStream.Macrotime(end);
+            if ~isfield(PhotonStream,'MT_bin')
+                waitbar(0,h_waitbar,'Preparing Data...');
+                [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
+                [~,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
             end
-            waitbar(i/numel(start));
-        end
-        
-        %%% Construct reduced Macrotime and Channel vector
-        waitbar(0,h_waitbar,'Preparing Photon Stream...');
-        MT = cell(sum(use),1);
-        CH = cell(sum(use),1);
-        k=1;
-        for i = 1:numel(start_tw)
-            if use(i)
-                MT{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT{k} = MT{k}-MT{k}(1) +1;
-                CH{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
-                k = k+1;
+            [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
+            [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
+            [~, start_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.start),bins_time);
+            [~, stop_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.stop),bins_time);
+
+            use = ones(numel(start),1);
+            %%% loop over selected bursts
+            waitbar(0,h_waitbar,'Including Time Window...');
+            tw = 5; %%% photon window of (2*tw+1)*10ms
+
+            start_tw = start_bin - tw;
+            stop_tw = stop_bin + tw;
+
+            for i = 1:numel(start_tw)
+                %%% Check if ANY burst falls into the time window
+                val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
+                %%% Check if they are of the same species
+                inval = val & (~BurstData.Selected);
+                %%% if there are bursts of another species in the timewindow,
+                %%% --> remove it
+                if sum(inval) > 0
+                    use(i) = 0;
+                end
+                waitbar(i/numel(start));
             end
-            waitbar(i/numel(start_tw));
+
+            %%% Construct reduced Macrotime and Channel vector
+            waitbar(0,h_waitbar,'Preparing Photon Stream...');
+            MT = cell(sum(use),1);
+            CH = cell(sum(use),1);
+            k=1;
+            for i = 1:numel(start_tw)
+                if use(i)
+                    range = PhotonStream.first_idx(start_tw(i)):(PhotonStream.first_idx(stop_tw(i)+1)-1);
+                    MT{k} = PhotonStream.Macrotime(range);
+                    MT{k} = MT{k}-MT{k}(1) +1;
+                    CH{k} = PhotonStream.Channel(range);
+                    %val = (PhotonStream.MT_bin > start_tw(i)) & (PhotonStream.MT_bin < stop_tw(i) );
+                    %MT{k} = PhotonStream.Macrotime(val);
+                    %MT{k} = MT{k}-MT{k}(1) +1;
+                    %CH{k} = PhotonStream.Channel(val);
+                    k = k+1;
+                end
+                waitbar(i/numel(start_tw));
+            end
+        else
+            use = ones(numel(start),1);
+            %%% loop over selected bursts
+            waitbar(0,h_waitbar,'Including Time Window...');
+            tw = 100; %%% photon window of 100 photons
+
+            start_tw = start - tw;
+            stop_tw = stop + tw;
+
+            for i = 1:numel(start_tw)
+                %%% Check if ANY burst falls into the time window
+                val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
+                %%% Check if they are of the same species
+                inval = val & (~BurstData.Selected);
+                %%% if there are bursts of another species in the timewindow,
+                %%% --> remove it
+                if sum(inval) > 0
+                    use(i) = 0;
+                end
+                waitbar(i/numel(start));
+            end
+
+            %%% Construct reduced Macrotime and Channel vector
+            waitbar(0,h_waitbar,'Preparing Photon Stream...');
+            MT = cell(sum(use),1);
+            CH = cell(sum(use),1);
+            k=1;
+            for i = 1:numel(start_tw)
+                if use(i)
+                    MT{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT{k} = MT{k}-MT{k}(1) +1;
+                    CH{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
+                    k = k+1;
+                end
+                waitbar(i/numel(start_tw));
+            end
         end
         
         %%% Apply different correlation algorithm

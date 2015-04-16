@@ -31,7 +31,7 @@ parfor i=1:numel(Data1)
     if ~isempty(Data1{i}) && ~isempty(Data2{i})
         %%% Does the crosscorrelation        
         Cor_Array{i}=Do_CCF(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
-        %%% Truncates to leangth of Timeaxis
+        %%% Truncates to length of Timeaxis
         Cor_Array{i}=Cor_Array{i}(1:numel(Timeaxis))';  
     end
 end
@@ -59,18 +59,19 @@ if error_estimate
     %%% 1) Select Nbursts times out of pool (may select double)
     bootstrap = 50;
     selected = randi(numel(Data1),numel(Data1),bootstrap);
-
+    
+    Cor_Res = cell(1,bootstrap);
     for i = 1:bootstrap
         sel = selected(:,i);
         norm_temp = Norm(sel); norm_temp = sum(horzcat(norm_temp{:}),2);
         Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1);
         Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1);
         Cor_Total_temp = Cor_Array(sel);Cor_Total_temp = sum(horzcat(Cor_Total_temp{:}),2);
-        Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp' - 1;
+        Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
     end
     
     for i = 1:numel(Cor_Res)
-        Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}~=-1,1,'last'));
+        Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
     end
     Cor_Array = cell2mat(Cor_Res);
     Timeaxis = Timeaxis(1:size(Cor_Array,1));
