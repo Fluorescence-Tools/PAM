@@ -493,7 +493,7 @@ h.Sim_Species_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.002 0.5 0.597 0.25]);
+    'Position',[0.002 0.5 0.496 0.25]);
 
 %%% Button to start simulation
 h.Sim_List = uicontrol(...
@@ -520,7 +520,7 @@ h.Sim_Name = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String','Species 1',...
     'Callback',@Sim_Settings,...
-    'Position',[0.21 0.9 0.79 0.1]);
+    'Position',[0.21 0.9 0.78 0.1]);
 
 %%% Color selection
 h.Sim_Color = uicontrol(...
@@ -533,7 +533,7 @@ h.Sim_Color = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String',{'1Color','2Color','3Color','4Color'},...
     'Callback',@Sim_Settings,...
-    'Position',[0.21 0.78 0.1 0.1]);
+    'Position',[0.21 0.78 0.12 0.1]);
 
 %%% FRET type selection
 h.Sim_FRET = uicontrol(...
@@ -546,7 +546,7 @@ h.Sim_FRET = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String',{'No FRET','Static FRET','Dynamic FRET'},...
     'Callback',@Sim_Settings,...
-    'Position',[0.32 0.78 0.18 0.1]);
+    'Position',[0.34 0.78 0.2 0.1]);
 
 %%% Text
 h.Text_Brightness = uicontrol(...
@@ -557,7 +557,7 @@ h.Text_Brightness = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String',{'Brightness', '[kHz]'},...
-    'Position',[0.285 0.56 0.1 0.18]);
+    'Position',[0.31 0.56 0.12 0.18]);
 %%% Text
 h.Text_Focus_Size = uicontrol(...
     'Parent',h.Sim_Species_Panel,...
@@ -566,8 +566,8 @@ h.Text_Focus_Size = uicontrol(...
     'Style','text',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Focus Size', 'Lateral/Axial [nm]'},...
-    'Position',[0.39 0.56 0.15 0.18]);
+    'String',{'Focus Size [nm]', 'Lateral/Axial '},...
+    'Position',[0.44 0.56 0.18 0.18]);
 %%% Text
 h.Text_Focus_Shift = uicontrol(...
     'Parent',h.Sim_Species_Panel,...
@@ -577,7 +577,7 @@ h.Text_Focus_Shift = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String','Focus Shift in X\Y\Z [nm]',...
-    'Position',[0.545 0.56 0.25 0.12]);
+    'Position',[0.63 0.56 0.28 0.12]);
 
 
 for i=1:4
@@ -591,7 +591,7 @@ for i=1:4
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String',['Color ' num2str(i) ':'],...
-        'Position',[0.21 0.54-0.1*i 0.08 0.08]);
+        'Position',[0.21 0.54-0.1*i 0.1 0.08]);
     %%% Brightness 
     h.Sim_Brightness{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -602,7 +602,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','1000',...
         'Callback',@Sim_Settings,...
-        'Position',[0.3 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.33 0.54-0.1*i 0.08 0.08]);
     %%% Focus size lateral
     h.Sim_wr{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -613,7 +613,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','200',...
         'Callback',@Sim_Settings,...
-        'Position',[0.4 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.45 0.54-0.1*i 0.08 0.08]);
     %%% Focus size axial
     h.Sim_wz{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -624,7 +624,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','0',...
         'Callback',@Sim_Settings,...
-        'Position',[0.47 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.54 0.54-0.1*i 0.06 0.08]);
     %%% Focus Shift X
     h.Sim_dX{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -635,7 +635,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','1000',...
         'Callback',@Sim_Settings,...
-        'Position',[0.57 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.64 0.54-0.1*i 0.08 0.08]);
     %%% Focus Shift Y
     h.Sim_dY{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -646,7 +646,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','0',...
         'Callback',@Sim_Settings,...
-        'Position',[0.64 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.73 0.54-0.1*i 0.08 0.08]);
     %%% Focus Shift X
     h.Sim_dZ{i} = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -657,7 +657,7 @@ for i=1:4
         'ForegroundColor', Look.Fore,...
         'String','0',...
         'Callback',@Sim_Settings,...
-        'Position',[0.71 0.54-0.1*i 0.06 0.08]);
+        'Position',[0.82 0.54-0.1*i 0.08 0.08]);
 end
     h.Text_Diff = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
@@ -668,7 +668,7 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String','D [µm²/s]:',...
-        'Position',[0.21 0.04 0.1 0.08]);
+        'Position',[0.21 0.04 0.12 0.08]);
     h.Sim_D = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
         'Units','normalized',...
@@ -678,8 +678,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','1',...
         'Callback',@Sim_Settings,...
-        'Position',[0.27 0.04 0.06 0.08]);
-    
+        'Position',[0.33 0.04 0.08 0.08]);    
     h.Text_N = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
         'Units','normalized',...
@@ -689,7 +688,7 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String','Number of particles:',...
-        'Position',[0.37 0.06 0.35 0.08]);
+        'Position',[0.5 0.04 0.22 0.08]);
     h.Sim_N = uicontrol(...
         'Parent',h.Sim_Species_Panel,...
         'Units','normalized',...
@@ -699,12 +698,84 @@ end
         'ForegroundColor', Look.Fore,...
         'String','10',...
         'Callback',@Sim_Settings,...
-        'Position',[0.57 0.06 0.06 0.08]);
+        'Position',[0.73 0.04 0.08 0.08]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+
 %% Advanced parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_Advanced_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Advanced Settings',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.502 0.5 0.496 0.25]);
+%%% Parameter display selection
+h.Sim_Param_Plot = uicontrol(...
+    'Parent',h.Sim_Advanced_Panel,...
+    'Units','normalized',...
+    'Style','popup',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',{'Exitation probability','Crosstalk','Detection probability','Bleaching probability'},...
+    'Callback',@Sim_Settings,...
+    'Position',[0.01 0.88 0.25 0.1]);
 
+%%% Text
+h.Text_FromTo = uicontrol(...
+    'Parent',h.Sim_Advanced_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','text',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','From \ To',...
+    'Position',[0.01 0.74 0.12 0.08]);
+
+for i=1:4
+    %%% Text
+    h.Text_Param1{i} = uicontrol(...
+        'Parent',h.Sim_Advanced_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String',['Color ' num2str(i) ':'],...
+        'Position',[0.01 0.74-0.12*i 0.1 0.08]);
+    %%% Text
+    h.Text_Param2{i} = uicontrol(...
+        'Parent',h.Sim_Advanced_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String',['Color ' num2str(i) ':'],...
+        'Position',[0.02+0.1*i 0.74 0.1 0.08]);
+   for j=1:4
+       %%% Brightness
+       h.Sim_Param{i,j} = uicontrol(...
+           'Parent',h.Sim_Advanced_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'Style','edit',...
+           'BackgroundColor', Look.Control,...
+           'ForegroundColor', Look.Fore,...
+           'String','1',...
+           'Callback',@Sim_Settings,...
+           'Position',[0.03+0.1*i 0.74-0.12*j 0.08 0.08]);             
+   end
+    
+end
 
 
 %% Global variable initialization
@@ -726,7 +797,6 @@ SimData.Species(1).Name = 'Species 1';
 SimData.Species(1).Color = 1;
 SimData.Species(1).FRET = 1;
 SimData.Species(1).Brightness = [1000,1000,1000,1000];
-SimData.Species(1).Bleaching = [0,0,0,0];
 SimData.Species(1).D = 1;
 SimData.Species(1).N = 10;
 SimData.Species(1).wr = [200, 200, 200, 200];
@@ -734,6 +804,13 @@ SimData.Species(1).wz = [1000, 1000, 1000, 1000];
 SimData.Species(1).dX = [0 0 0 0];
 SimData.Species(1).dY = [0 0 0 0];
 SimData.Species(1).dZ = [0 0 0 0];
+
+SimData.Species(1).ExP = diag(ones(4,1));
+SimData.Species(1).Cross = diag(ones(4,1));
+SimData.Species(1).DetP = ones(4,4);
+SimData.Species(1).BlP = zeros(4,4);
+
+
 SimData.General(1).Species = SimData.Species(1);
 
 guidata(h.Sim,h); 
@@ -868,7 +945,20 @@ switch Obj
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
     case h.Sim_Freq
-        SimData.General(File).Freq =  str2double(h.Sim_Freq.String); 
+        SimData.General(File).Freq =  str2double(h.Sim_Freq.String);
+        Sel=h.Sim_List.Value(1);
+        for i=1:numel(h.Sim_List.String)
+            for j=1:4
+                SimData.Species(i).Brightness(j) = SimData.General(File).Freq...
+                                                 * SimData.Species(i).ExP(j,j)...
+                                                 * SimData.Species(i).DetP(j,j)...
+                                                 /(sum(SimData.Species(i).Cross(j,:)));
+                if i == Sel
+                    h.Sim_Brightness{j}.String = num2str(SimData.Species(i).Brightness(j));
+                end
+            end
+        end
+             
     case h.Sim_Time %%% Simulation Time
         %%% Update number of frames
         Factor=str2double(h.Sim_Time.String)/SimData.General(File).SimTime;
@@ -942,7 +1032,7 @@ switch Obj
         SimData.General(File).Time(2) = str2double(h.Sim_Px_Time{2}.String);
         SimData.General(File).Time(3) = str2double(h.Sim_Px_Time{3}.String);
         SimData.General(File).SimTime = str2double(h.Sim_Time.String);
-        
+       
     case h.Sim_Color %%% Defines number of colors
         Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).Color = h.Sim_Color.Value;
@@ -979,11 +1069,20 @@ switch Obj
         Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).Brightness(i)=str2double(h.Sim_Brightness{i}.String);
-        end
-    case h.Sim_Bleaching %%% Changed bleaching probability
-        Sel=h.Sim_List.Value(1);
-        for i=1:4
-            SimData.Species(Sel).Bleaching(i)=str2double(h.Sim_Bleaching{i}.String);
+            ExP_Old = SimData.Species(Sel).ExP(i,i);
+            SimData.Species(i).ExP(i,i) = SimData.Species(Sel).Brightness(i)...
+                                        / SimData.General(File).Freq...
+                                        /SimData.Species(Sel).DetP(i,i)...
+                                        *(sum(SimData.Species(Sel).Cross(:,i)));
+            for j=1:4
+                if j~=i
+                    SimData.Species(Sel).ExP(j,i) = SimData.Species(Sel).ExP(i,i)/ExP_Old.*SimData.Species(Sel).ExP(j,i);
+                end
+                if h.Sim_Param_Plot.Value == 1
+                    h.Sim_Param{j,i}.String = num2str(SimData.Species(Sel).ExP(j,i));
+                end
+            end
+                                    
         end
     case h.Sim_D %%% Changed Diffusion coefficient
         Sel=h.Sim_List.Value(1);
@@ -1015,6 +1114,61 @@ switch Obj
         Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).dZ(i)=str2double(h.Sim_dZ{i}.String);
+        end
+        
+    case h.Sim_Param_Plot %%% Changed ptotted advanced parameters
+        Sel=h.Sim_List.Value(1);
+        for i=1:4
+            for j=1:4
+                switch h.Sim_Param_Plot.Value
+                    case 1 %%% Exitation probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).ExP(i,j));
+                    case 2 %%% Crosstalk
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).Cross(i,j));
+                    case 3 %%% Detection probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).DetP(i,j));
+                    case 4 %%% Bleaching probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).BlP(i,j));   
+                end
+            end
+        end
+    case h.Sim_Param %%% Changed advanced parameter
+        Sel=h.Sim_List.Value(1);
+        for i=1:4
+            for j=1:4
+                switch h.Sim_Param_Plot.Value
+                    case 1 %%% Exitation probability
+                        SimData.Species(Sel).ExP(i,j) = str2double(h.Sim_Param{i,j}.String);
+                    case 2 %%% Crosstalk
+                        Cross = str2double(h.Sim_Param{i,j}.String);
+                        if i==j
+                            Cross = 1;
+                            h.Sim_Param{i,j}.String = '1';
+                        end
+                        SimData.Species(Sel).Cross(i,j) = Cross;
+                    case 3 %%% Detection probability
+                        Det = str2double(h.Sim_Param{i,j}.String);
+                        if Det<0
+                            h.Sim_Param{i,j}.String = '0';
+                            Det = 0;
+                        elseif Det>1
+                            h.Sim_Param{i,j}.String = '1';
+                            Det = 1;
+                        end
+                        SimData.Species(Sel).DetP(i,j) = Det;                        
+                    case 4 %%% Bleaching probability
+                        SimData.Species(Sel).BlP(i,j) = str2double(h.Sim_Param{i,j}.String);                        
+                end
+            end
+        end
+        
+        for i=1:4
+            SimData.Species(Sel).Brightness(i) = SimData.General(File).Freq...
+                * SimData.Species(Sel).ExP(i,i)...
+                * SimData.Species(Sel).DetP(i,i)...
+                /(sum(SimData.Species(Sel).Cross(:,i)));
+            
+            h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
         end
 end
 
@@ -1118,13 +1272,25 @@ switch mode
         h.Sim_N.String = num2str(SimData.Species(Sel).N);
         for i=1:4
             h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
-            h.Sim_Bleching{i}.String = num2str(SimData.Species(Sel).Bleaching(i));
             h.Sim_wr{i}.String = num2str(SimData.Species(Sel).wr(i));
             h.Sim_wz{i}.String = num2str(SimData.Species(Sel).wz(i));
             h.Sim_dX{i}.String = num2str(SimData.Species(Sel).dX(i));
             h.Sim_dY{i}.String = num2str(SimData.Species(Sel).dY(i));
-            h.Sim_dZ{i}.String = num2str(SimData.Species(Sel).dZ(i));            
+            h.Sim_dZ{i}.String = num2str(SimData.Species(Sel).dZ(i)); 
+            for j=1:4
+               switch h.Sim_Param_Plot.Value
+                    case 1 %%% Exitation probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).ExP(i,j));
+                    case 2 %%% Crosstalk
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).Cross(i,j));
+                    case 3 %%% Detection probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).DetP(i,j));
+                    case 4 %%% Bleaching probability
+                        h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).BlP(i,j));   
+               end
+            end
         end
+
         Sim_Settings(h.Sim_Color,[]);       
 end
 
@@ -1158,10 +1324,10 @@ function Do_Simulation(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
 
-% Pool = gcp;
-% if isempty(Pool)
-%     parpool('local');
-% end
+Pool = gcp;
+if isempty(Pool)
+    parpool('local');
+end
 
 %%% ScanType
 Scan_Type = h.Sim_Scan.Value;
@@ -1186,37 +1352,46 @@ Pixel(2) = str2double(h.Sim_Px{2}.String);
 ScanTicks(2) = str2double(h.Sim_Px_Time{2}.String)*Freq*10^-3; 
 
 Photons_total = cell(numel(SimData.Species),4);
+MI_total = cell(numel(SimData.Species),4);
+
 for i = 1:numel(SimData.Species);
     
     NoP = SimData.Species(i).N;
     D = sqrt(2*SimData.Species(i).D*10^6/Freq);
     
     wr = zeros(4,1); wz = zeros(4,1); 
-    ExP = zeros(4,4); DetP = zeros(4,4); BlP = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
-    FRET = zeros(4,4); Cross = zeros(4,4);
+    FRET = zeros(4,4);
+   
+    %%% Detection probability
+    DetP = SimData.Species(i).DetP;
+
+    %%% Excitation probability (including direct excitation)
+    ExP = SimData.Species(i).ExP;
     
+    %%% Crosstalk
+    SimData.Species(i).Cross(1:5:16) = 1;
+    Cross = zeros(4,4);
+    for j=1:4
+        for k=1:4
+            Cross(j,k) =  DetP(j,j)/DetP(k,j)*SimData.Species(i).Cross(j,k);
+        end
+    end
     
-    
+    BlP = SimData.Species(i).BlP;
+
     %%% Species specific parameters for used colors
     for j = 1:SimData.Species(i).Color
         wr(j) = SimData.Species(i).wr(j);
         wz(j) = SimData.Species(i).wz(j);
-        ExP(j,j) = SimData.Species(i).Brightness(j)/Freq*10^3;
-        DetP(j,j) = 1;
-        DetP(:,j) = 1;
-        BlP(j) = SimData.Species(i).Bleaching(j);
-        FRET(j,j) = 1;
-        FRET(:,j) = 1;
-        Cross(j,j) = 1;
         dX(j) = SimData.Species(i).dX(j);
         dY(j) = SimData.Species(i).dY(j);
         dZ(j) = SimData.Species(i).dZ(j);
     end
-    Photons1 = cell(NoP,1);
-    Photons2 = cell(NoP,1);
-    Photons3 = cell(NoP,1);
-    Photons4 = cell(NoP,1);
+    Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
+    Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
+    Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
+    Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
     
     fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
     fclose(fid);
@@ -1235,11 +1410,9 @@ for i = 1:numel(SimData.Species);
     for j = 1:NoP
         %%% Generates starting position
         Pos=BS.*rand(1,3);
-
-        
         Frametime = Simtime/Frames;
-        for k=1:Frames
-                       
+        
+        for k=1:Frames                       
             [Photons, Channel, Pos] = DifSim(...
                 Frametime, BS,... General Parameters
                 Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
@@ -1248,8 +1421,7 @@ for i = 1:numel(SimData.Species);
                 dX,dY,dZ,... Focus shift parameters
                 ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
                 FRET, Cross); %%% Relative FRET and Crosstalk rates
-            
-            
+             
             %%% Channel is a 8 bit number that defines the exact photon type
             %%% bits 0,1 for exitation laser
             %%% bits 2,3 for exited dye
@@ -1258,10 +1430,13 @@ for i = 1:numel(SimData.Species);
             
             %%% Assigns photons according to detection channel
             Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
+            MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))*16];
             Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
+            MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))*16];
             Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
+            MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))*16];
             Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-            
+            MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))*16];            
         end
 
         FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
@@ -1270,26 +1445,29 @@ for i = 1:numel(SimData.Species);
     end
     %%% Combines photons for all particles
     Photons_total{i,1} = cell2mat(Photons1);
+    MI_total{i,1} = cell2mat(MI1);
     Photons_total{i,2} = cell2mat(Photons2);
+    MI_total{i,2} = cell2mat(MI2);
     Photons_total{i,3} = cell2mat(Photons3);
+    MI_total{i,3} = cell2mat(MI3);
     Photons_total{i,4} = cell2mat(Photons4);
-    clear Photons1 Photons2 Photons3 Photons4;
+    MI_total{i,4} = cell2mat(MI4);
+    clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
     
     stop(Update);
-
-    
-    
-    
 end
 
 Sim_Photons = cell(4,1);
+Sim_MI = cell(4,1);
 for i=1:4 %%% Combines photons of all species
     Sim_Photons{i} = cell2mat(Photons_total(:,i));
+    Sim_MI{i} = cell2mat(MI_total(:,i));
 end
-clear Photons_total
+clear Photons_total MI_total
 switch h.Sim_Save.Value    
     case 1 %%% Save to workspace
         assignin('base',['Sim_Photons_' num2str(h.Sim_File_List.Value)],Sim_Photons);
+        assignin('base',['Sim_MI_' num2str(h.Sim_File_List.Value)],Sim_MI);
     case 2 %%% Saves as TIFF
         for i=1:4            
             if ~isempty(Sim_Photons{i})
@@ -1316,12 +1494,11 @@ switch h.Sim_Save.Value
         Header.Info.Species(:) = SimData.Species(:);
         Header.Info.General = SimData.General(h.Sim_File_List.Value);
         for i=1:4
-            Sim_Photons{i,1} = sort(Sim_Photons{i,1});
-            Sim_Photons{i,2} = uint16(ones(size(Sim_Photons{i,1})));
+            [Sim_Photons{i,1},Index] = sort(Sim_Photons{i,1});
+            Sim_Photons{i,2} = Sim_MI{i,1}(Index);
         end
         File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_' num2str(h.Sim_File_List.Value) '.sim']);        
-        save(File,'Sim_Photons','Header');
-        
+        save(File,'Sim_Photons','Header');      
 end
 
 clear mex

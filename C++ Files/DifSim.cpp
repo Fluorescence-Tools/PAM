@@ -170,7 +170,7 @@ void Simulate_Diffusion(
                             }
                             if (BlP[m] > 0.0) /// If bleaching is enabled
                             {
-                                binomial_distribution<__int64, double> binomial(1, BlP[m]);
+                                binomial_distribution<__int64, double> binomial(1, BlP[4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle
                                 { Active[m][0] = false; }
                                 
@@ -188,13 +188,13 @@ void Simulate_Diffusion(
                                     for (p=0; p<4; p++) { CROSS[p] = CROSS[p]/CROSS[3]; }  /// Calculates cummulative detection probabilites
                                     uniform_real_distribution<double> equal_dist(0.0,1.0);
                                     prob = equal_dist(mt);
-                                    for (n=m; n<4; n++) /// Determines detection color
+                                    for (n=0; n<4; n++) /// Determines detection color
                                     { if (prob<=CROSS[n]) { break; } }
                                 }
                                 else {n = m; } /// No crosstalk, therefore detection channel == emitting dye                                
                                 
                                 ///////////////////////////////////////////
-                                /// Determines, if photon was emitteddetected
+                                /// Determines, if photon was emitted/detected
                                 ///////////////////////////////////////////
                                 if (DetP[4*m+n] > 1E-5)
                                 {
@@ -207,6 +207,14 @@ void Simulate_Diffusion(
                                         Channel[NPhotons[0]] = (j << 6) | (k << 4) | (m << 2) | n ;
                                         NPhotons[0]++;
                                     }
+                                }
+                                else if (DetP[4*m+n] >= 1)
+                                {
+                                    /// Adds photon
+                                    Macrotimes[NPhotons[0]] = (double) i;
+                                    // 2 bits each for:    laser      ex. dye    em. dye    det.
+                                    Channel[NPhotons[0]] = (j << 6) | (k << 4) | (m << 2) | n ;
+                                    NPhotons[0]++;
                                 }
                             }
                         }
