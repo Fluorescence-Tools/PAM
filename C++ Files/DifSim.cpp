@@ -46,22 +46,9 @@ void Simulate_Diffusion(
 //     double Em;
 //     double Bl;
     
-    /// Determines active colors (Excitation probability > 1E-10, because 0 is not always exactly 0)
-    bool Active [4][2];    
-    for (p = 0; p<4; p++)
-    {
-        if ((ExP[4*p] + ExP[4*p+1] + ExP[4*p+2] + ExP[4*p+3]) > 1E-10)
-        {
-            Active [p][0] = true;
-            Active [p][1] = true;
-        }
-        else
-        {
-            Active [p][0] = false;
-            Active [p][1] = false;
-        }
-    }
-    
+    /// Sets all colors to active
+    bool Active [4] = {true, true, true, true};   
+
     /// Starting point of focus
     double x0 = -Pixel[0]*Step[0]/2;
     double y0 = -Pixel[0]*Step[0]/2;
@@ -81,7 +68,7 @@ void Simulate_Diffusion(
         if ((Pos[0] < 0.0) || (Pos[0] > Box[0]) || (Pos[1] < 0.0) || (Pos[1] > Box[1]) || (Pos[2] < 0.0) || (Pos[2] > Box[2]))
         {
             // Unbleach on box border crossing
-            for (p = 0; p<4; p++) { Active[p][0] = Active[p][1]; }
+            for (p = 0; p<4; p++) { Active[p] = true; }
             // Put particle back on the other side
             Pos[0] = fmod((Pos[0] + Box[0]), Box[0]);
             Pos[1] = fmod((Pos[1] + Box[1]), Box[1]);
@@ -128,7 +115,7 @@ void Simulate_Diffusion(
             ///////////////////////////////////////////////////////////////
             for (k=0; k<4; k++)
             {
-                if (Active[k][0] && ExP[4*j+k]>0) /// Only calculates, if particle is active/not bleached and direct excitation enabled
+                if (Active[k] && ExP[4*j+k]>0) /// Only calculates, if particle is not bleached and direct excitation enabled
                 {
                     /// Calculate absolute excitation probability
                     Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
@@ -148,7 +135,7 @@ void Simulate_Diffusion(
                             {
                                 for (p=m; p<4; p++) /// Extracts current FRET rates
                                 { 
-                                    if (Active[p][1]) { FRET[p] = Rates[4*m+p]; } /// Dye is active
+                                    if (Active[p]) { FRET[p] = Rates[4*m+p]; } /// Dye is active
                                     else { FRET[p] = 0; } /// Dye is not active
                                 } 
                                 for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
@@ -172,10 +159,10 @@ void Simulate_Diffusion(
                             {
                                 binomial_distribution<__int64, double> binomial(1, BlP[4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle
-                                { Active[m][0] = false; }
+                                { Active[m] = false; }
                                 
                             }
-                            if (Active[m][0]) // If particle doesn't bleach
+                            if (Active[m]) // If particle doesn't bleach
                             {                                
                                 ///////////////////////////////////////////
                                 /// Determines detection channel //////////
