@@ -1490,7 +1490,8 @@ switch mode
             end
         end
 
-        Sim_Settings(h.Sim_Color,[]);       
+        Sim_Settings(h.Sim_Color,[]); 
+        Sim_Settings(h.Sim_FRET,[]);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -1580,7 +1581,7 @@ for i = 1:numel(SimData.Species);
         case 1
             FRET = diag(ones(4,1));
         case 2
-            FRET = (SimData.Species(1).R0./SimData.Species(1).R).^6;
+            FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
             FRET(1:5:16) = 1;
         case 3
             FRET = diag(ones(4,1));

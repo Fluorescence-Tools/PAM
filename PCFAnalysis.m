@@ -1563,17 +1563,25 @@ switch mode
         Bins = 0;
         for i = Sel
             PCFData.Cor(end).Color = PCFData.Cor(end).Color + PCFData.Cor(i).Color;
+            %%% Adjusts correlation lenght
+            if (size(PCFData.Cor(end).Cor(:,1),1) <= size(PCFData.Cor(i).Cor(:,1),1))
+                Size = size(PCFData.Cor(end).Cor(:,1),1);  
+            else
+                Size = size(PCFData.Cor(i).Cor(:,1),1);  
+                PCFData.Cor(end).Cor = PCFData.Cor(end).Cor(1:Size,:);
+            end
             %%% Weighted average of subsets;
-            PCFData.Cor(end).Cor(:,1) = (Bins*PCFData.Cor(end).Cor(:,1) + numel(PCFData.Cor(i).Bins)*PCFData.Cor(i).Cor(:,1))/(Bins+numel(PCFData.Cor(i).Bins));            
+            PCFData.Cor(end).Cor(:,1) = (Bins*PCFData.Cor(end).Cor(:,1) + numel(PCFData.Cor(i).Bins)*PCFData.Cor(i).Cor(1:Size,1))/(Bins+numel(PCFData.Cor(i).Bins));
             %%% Needed for SEM calculation
             N1 = Bins^2-Bins;
             N2 = numel(PCFData.Cor(i).Bins)^2-numel(PCFData.Cor(i).Bins);
             N =  (Bins+numel(PCFData.Cor(i).Bins))^2-(Bins+numel(PCFData.Cor(i).Bins));
             %%% Standard error of mean for two subsets of data with errors
             PCFData.Cor(end).Cor(:,3) = sqrt(N1/N*PCFData.Cor(end).Cor(:,3).^2+...
-                                             N2/N*PCFData.Cor(i).Cor(:,3).^2+...
-                                             Bins*numel(PCFData.Cor(i).Bins)/(Bins+numel(PCFData.Cor(i).Bins))/N*...
-                                             (PCFData.Cor(end).Cor(:,1)+PCFData.Cor(i).Cor(:,1)).^2);
+                N2/N*PCFData.Cor(i).Cor(1:Size,3).^2+...
+                Bins*numel(PCFData.Cor(i).Bins)/(Bins+numel(PCFData.Cor(i).Bins))/N*...
+                (PCFData.Cor(end).Cor(:,1)+PCFData.Cor(i).Cor(1:Size,1)).^2);
+            
             Bins = Bins + numel(PCFData.Cor(i).Bins);   
         end
         PCFData.Cor(end).Cor(:,1) = PCFData.Cor(end).Cor(:,1);
@@ -1608,7 +1616,7 @@ switch mode
             end
         end
     case 7 %%% Save correlation
-        for i = Sel
+        for i = sort(Sel)
             [FileName,PathName] = uiputfile('*.mcor','Save Pair Correlation',UserValues.File.FCSPath);
             if any(FileName~=0)
                 UserValues.File.FCSPath = PathName;
