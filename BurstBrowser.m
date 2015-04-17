@@ -4010,7 +4010,7 @@ switch obj
         valid_species1 = UpdateCuts(species1);
         valid_species2 = UpdateCuts(species2);
         
-        use_timewindow = 0;
+        use_timewindow = 1;
         if use_timewindow
             if isempty(PhotonStream)
                 return;
@@ -4022,11 +4022,17 @@ switch obj
             if use_time
                 %%% histogram the Macrotimes in bins of 10 ms
                 bw = ceil(10E-3./BurstData.SyncPeriod);
-                bins_time = 0:bw:PhotonStream.Macrotime(end);
+                bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
                 if ~isfield(PhotonStream,'MT_bin')
                     waitbar(0,h_waitbar,'Preparing Data...');
                     [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
-                    [~,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                    [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                    used_tw = zeros(numel(bins_time),1);
+                    used_tw(PhotonStream.unique) = PhotonStream.first_idx;
+                    while sum(used_tw == 0) > 0
+                        used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
+                    end
+                    PhotonStream.first_idx = used_tw;
                 end
                 [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
                 [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
@@ -4036,16 +4042,16 @@ switch obj
                 use = ones(numel(start),1);
                 %%% loop over selected bursts
                 waitbar(0,h_waitbar,'Including Time Window...');
-                tw = 5; %%% photon window of (2*tw+1)*10ms
+                tw = 2; %%% photon window of (2*tw+1)*10ms
                 
-                start_tw = start_bin - tw;
-                stop_tw = stop_bin + tw;
+                start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
+                stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
                 
                 for i = 1:numel(start_tw)
                     %%% Check if ANY burst falls into the time window
                     val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
                     %%% Check if they are of the same species
-                    inval = val & (~BurstData.Selected);
+                    inval = val & (~valid_total);
                     %%% if there are bursts of another species in the timewindow,
                     %%% --> remove it
                     if sum(inval) > 0
@@ -4537,7 +4543,7 @@ filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 
-use_timewindow = 0;
+use_timewindow = 1;
 if ~use_timewindow
     %%% Split Data in 10 time bins for errorbar calculation
     Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
@@ -4608,12 +4614,18 @@ else
             if CorrMat(i,j)
                 MT1 = BurstMeta.fFCS.Photons.MT_total_par;
                 MT2 = BurstMeta.fFCS.Photons.MT_total_perp;
+                MIpar = BurstMeta.fFCS.Photons.MI_total_par;
+                MIperp = BurstMeta.fFCS.Photons.MI_total_perp;
+                inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
+                MT1(inval) = []; MT2(inval) = [];
+                MIpar(inval) = [];
+                MIperp(inval) = [];
                 %%% prepare weights
                 Weights1 = cell(numel(MT1),1);
                 Weights2 = cell(numel(MT1),1);
                 for k = 1:numel(MT1)
-                    Weights1{k} = filters_par{i}(BurstMeta.fFCS.Photons.MI_total_par{k});
-                    Weights2{k} = filters_perp{j}(BurstMeta.fFCS.Photons.MI_total_perp{k});
+                    Weights1{k} = filters_par{i}(MIpar{k});
+                    Weights2{k} = filters_perp{j}(MIperp{k});
                 end
                 %%% Calculates the maximum inter-photon time in clock ticks
                 Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
@@ -6678,11 +6690,17 @@ switch obj
         if use_time
             %%% histogram the Macrotimes in bins of 10 ms
             bw = ceil(10E-3./BurstData.SyncPeriod); 
-            bins_time = 0:bw:PhotonStream.Macrotime(end);
+            bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
             if ~isfield(PhotonStream,'MT_bin')
                 waitbar(0,h_waitbar,'Preparing Data...');
                 [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
-                [~,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                used_tw = zeros(numel(bins_time),1);
+                used_tw(PhotonStream.unique) = PhotonStream.first_idx;
+                while sum(used_tw == 0) > 0
+                    used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
+                end
+                PhotonStream.first_idx = used_tw;
             end
             [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
             [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
@@ -6692,10 +6710,10 @@ switch obj
             use = ones(numel(start),1);
             %%% loop over selected bursts
             waitbar(0,h_waitbar,'Including Time Window...');
-            tw = 5; %%% photon window of (2*tw+1)*10ms
+            tw = 3; %%% photon window of (2*tw+1)*10ms
 
-            start_tw = start_bin - tw;
-            stop_tw = stop_bin + tw;
+            start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
+            stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
 
             for i = 1:numel(start_tw)
                 %%% Check if ANY burst falls into the time window
@@ -6733,7 +6751,7 @@ switch obj
             use = ones(numel(start),1);
             %%% loop over selected bursts
             waitbar(0,h_waitbar,'Including Time Window...');
-            tw = 100; %%% photon window of 100 photons
+            tw = 50; %%% photon window of 100 photons
 
             start_tw = start - tw;
             stop_tw = stop + tw;
