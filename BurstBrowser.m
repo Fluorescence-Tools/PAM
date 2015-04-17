@@ -4010,7 +4010,7 @@ switch obj
         valid_species1 = UpdateCuts(species1);
         valid_species2 = UpdateCuts(species2);
         
-        use_timewindow = 1;
+        use_timewindow = 0;
         if use_timewindow
             if isempty(PhotonStream)
                 return;
@@ -4543,7 +4543,7 @@ filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 
-use_timewindow = 1;
+use_timewindow = 0;
 if ~use_timewindow
     %%% Split Data in 10 time bins for errorbar calculation
     Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
