@@ -1374,7 +1374,9 @@ switch mode
         H.Residuals.YLabel.String = {'Weighted'; 'residuals'};
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
-        H.FCS_Plots=copyobj(h.FCS_Axes.Children(end-sort([Active*2-1; Active*2])+1),H.FCS);
+        UseCurves = sort(numel(h.FCS_Axes.Children)+1-[Active*2-1; Active*2]);
+        
+        H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
         if h.Export_FitsLegend.Value
             H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
         else
@@ -1383,9 +1385,9 @@ switch mode
             for i=1:numel(LegendString)
                 LegendString{i} = LegendString{i}(7:end);
             end
-            H.FCS_Legend=legend(H.FCS,H.FCS_Plots(1:2:end-1),LegendString,'Interpreter','none');
+            H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:2),LegendString,'Interpreter','none');
         end
-        H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(Active),H.Residuals);          
+        H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);          
         %% Toggles box and grid
         if h.Export_Grid.Value
             grid(H.FCS,'on');

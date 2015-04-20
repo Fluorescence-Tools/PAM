@@ -165,20 +165,18 @@ h.Sim_File_List = uicontrol(...
     'KeyPressFcn',{@File_List_Callback,0},...
     'Position',[0.01 0.01 0.98 0.6]);
 
-%% General parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% General parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% General Sim Settings Panel
 h.Sim_General_Panel = uibuttongroup(...
-    'Parent',h.Sim_Panel,...
+    'Parent',h.Sim,...
     'Units','normalized',...
-    'Title','General Settings',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.002 0.75 0.496 0.2]);
-
+    'Position', [0.002 0.75 0.496 0.2]);
 %%% Scanning type selection
 h.Sim_Scan = uicontrol(...
     'Parent',h.Sim_General_Panel,...
@@ -188,7 +186,7 @@ h.Sim_Scan = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Point','Raster','Line','Circle'},...
+    'String',{'Point','Raster','Line','Circle','Camera'},...
     'Callback',@Sim_Settings,...
     'Position',[0.01 0.8 0.12 0.15]);
 
@@ -1032,6 +1030,7 @@ switch Obj
     case h.Sim_Scan %%% Scanning type
       switch h.Sim_Scan.Value
           case 1 %%% Point measurement
+              h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='off';
               h.Text_F.Visible='off';
               for i=1:2
@@ -1047,6 +1046,7 @@ switch Obj
                   h.Text_T{i}.Visible='off';
               end
           case 2 %%% Raster scan
+              h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='on';
               h.Text_F.Visible='on';
               for i=1:2
@@ -1062,6 +1062,7 @@ switch Obj
                   h.Text_T{i}.Visible='on';
               end
           case 3 %%% Line scan
+              h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='off';
               h.Text_F.Visible='off';
               h.Sim_Px{1}.Visible='on';
@@ -1083,6 +1084,7 @@ switch Obj
               h.Sim_Px_Time{3}.Visible='off';
               h.Text_T{3}.Visible='off';
           case 4 %%% Circle scan
+              h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='off';
               h.Text_F.Visible='off';
               h.Sim_Px{1}.Visible='on';
@@ -1103,6 +1105,22 @@ switch Obj
               end
               h.Sim_Px_Time{2}.Visible='on';
               h.Text_T{2}.Visible='on';
+          case 5 %%% Camera mode
+              h.Sim_Frames.Visible='on';
+              h.Sim_Freq.Visible = 'off';
+              h.Text_F.Visible='on';
+              for i=[1,2]
+                  h.Sim_Px{i}.Visible='on';
+                  h.Sim_Size{i}.Visible='on';
+                  h.Sim_Dim{i}.Visible='on';
+                  h.Text_P{i}.Visible='on';
+                  h.Text_S{i}.Visible='on';
+                  h.Text_D{i}.Visible='on';
+                  h.Sim_Px_Time{i}.Visible='off';
+                  h.Text_T{i}.Visible='off';
+              end
+              h.Sim_Px_Time{3}.Visible='on';
+              h.Text_T{3}.Visible='on';
       end
       SimData.General(File).ScanType = h.Sim_Scan.Value;
       
@@ -1248,7 +1266,7 @@ switch Obj
         for i=1:4
             SimData.Species(Sel).Brightness(i)=str2double(h.Sim_Brightness{i}.String);
             ExP_Old = SimData.Species(Sel).ExP(i,i);
-            SimData.Species(i).ExP(i,i) = SimData.Species(Sel).Brightness(i)...
+            SimData.Species(Sel).ExP(i,i) = SimData.Species(Sel).Brightness(i)...
                                         / SimData.General(File).Freq...
                                         /SimData.Species(Sel).DetP(i,i)...
                                         *(sum(SimData.Species(Sel).Cross(:,i)));
@@ -1507,9 +1525,13 @@ if isdir(h.Sim_Path.String)
     for i = 1:numel(h.Sim_File_List.String)
         File_List_Callback([],[],3);
         drawnow
-%         profile on
-        Do_Simulation;
-%         profile viewer
+        if h.Sim_Scan.Value<5
+            Do_PointSim;
+        else
+            profile on
+            Do_CameraSim;
+            profile viewer
+        end
         h.Sim_File_List.Value = h.Sim_File_List.Value+1;
     end
     h.Sim_File_List.Enable = 'on';
@@ -1518,9 +1540,9 @@ if isdir(h.Sim_Path.String)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
-%%% Peforms actual simulation procedure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Peforms actual simulation procedure for point detector observation %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_Simulation(~,~)
+function Do_PointSim(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
 
@@ -1716,6 +1738,128 @@ switch h.Sim_Save.Value
 end
 
 clear mex
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Peforms actual simulation procedure for camera observation %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_CameraSim(~,~)
+global SimData
+h = guidata(findobj('Tag','Sim'));
+
+%%% Box Size
+BS(1) = str2double(h.Sim_BS{1}.String);
+BS(2) = str2double(h.Sim_BS{2}.String);
+%%% Frames
+Frames = str2double(h.Sim_Frames.String);
+
+%%% Pixel/Line info
+Step(1) = str2double(h.Sim_Size{1}.String); 
+Pixel(1) = str2double(h.Sim_Px{1}.String);
+Step(2) = str2double(h.Sim_Size{2}.String); 
+Pixel(2) = str2double(h.Sim_Px{2}.String); 
+
+
+for i = 1:numel(SimData.Species)
+    
+    NoP = SimData.Species(i).N;
+    D = 0;
+    
+    wr = zeros(4,1); 
+    dX = zeros(4,1); dY = zeros(4,1);
+          
+    %%% Species specific parameters for used colors
+    for j = 1:SimData.Species(i).Color
+        wr(j) = SimData.Species(i).wr(j);
+        dX(j) = SimData.Species(i).dX(j);
+        dY(j) = SimData.Species(i).dY(j);
+    end
+    
+
+    
+    if BS(1)<Pixel(1)*Step(1)
+        BS(1)=Pixel(1)*Step(1);
+    end
+    if BS(2)<Pixel(2)*Step(2)
+        BS(2)=Pixel(2)*Step(2);
+    end
+    
+    if log10(BS(1)*BS(2))>8
+       Resize = ceil(sqrt((BS(1)*BS(2))/1e8));
+       PxSize = floor(Step/Resize);
+       BS = round(BS/Resize);
+    else
+        Resize = 1;
+        PxSize = floor(Step);
+    end
+    Pos = ceil(repmat(BS,[NoP,1]).*rand(NoP,2));
+    Pos(Pos==0) = 1;
+    
+    Image = cell(4,Frames);
+    Int = cell(4,1);
+    
+    Final = uint16(zeros(Pixel(1),Pixel(2),Frames));
+    
+    if D>1e-4
+        for m = 1:Frames
+            for j = 1:SimData.Species(i).Color
+                
+                Pos = Pos + D*randn(NoP,2);
+                Pos(Pos==0) = 1;
+                
+                Filter = fspecial('gaussian',round(5*wr(j)/Resize),wr(j)/Resize/2);
+                FSize = size(Filter,1);
+                Int{j} = zeros(BS(1)+FSize, BS(2)+FSize);
+                for k=1:NoP
+                    Int{j}(Pos(k,1):(Pos(k,1)-1+FSize),Pos(k,2):(Pos(k,2)-1+FSize)) = Int{j}(Pos(k,1):(Pos(k,1)-1+FSize),Pos(k,2):(Pos(k,2)-1+FSize)) + Filter;
+                end
+                
+                Int{j} = Int{j}(((1:(PxSize(1)*Pixel(1)))+(floor((BS(1)-(PxSize(1)*Pixel(1)))/2))),...
+                    ((1:(PxSize(2)*Pixel(2)))+(floor((BS(2)-(PxSize(2)*Pixel(2)))/2))));
+                
+                Int{j} = squeeze(sum(reshape(Int{j}, PxSize(1), []),1));
+                Int{j} = squeeze(sum(reshape(Int{j}, Pixel(1), [], Pixel(2)),2));
+                
+                Image{j,m} = SimData.Species(i).Brightness(j)*1000*SimData.General(i).Time(3)*Int{j};
+                test = Image{j,m};
+                test(test>1e-4) = poissrnd(test(test>1e-4));
+                test = uint16(test);
+                Image{j,m} = uint16(poissrnd(Image{j,m}));
+            end
+        end        
+    else
+        for k=1:NoP
+           for j = 1:SimData.Species(i).Color
+               Filter = fspecial('gaussian',round(5*wr(j)/Resize),wr(j)/Resize/2);
+               FSize = size(Filter,1);
+               Shift = round(mod(Pos(k,:),PxSize));
+               Int{j} = Filter;
+               Int{j}(end+PxSize,end+PxSize) = 0;
+               Int{j} = circshift(Int{j},Shift);
+               Px = floor(size(Int{j})./PxSize);
+               
+               Int{j} = Int{j}(1:Px(1)*PxSize(1),1:Px(1)*PxSize(1));
+               
+               Int{j} = squeeze(sum(reshape(Int{j}, PxSize(1), []),1));
+               Int{j} = squeeze(sum(reshape(Int{j}, Px(1), [], Px(2)),2));              
+           end          
+           
+        end
+        
+        
+        
+    end
+
+    clear Image;
+    
+    
+
+end
+
+
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Updates Progressbar during simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
