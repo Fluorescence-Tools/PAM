@@ -932,6 +932,25 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.fFCS_UseIRF was incomplete');    
     end 
     P.BurstBrowser.fFCS_UseIRF = S.BurstBrowser.fFCS_UseIRF;
+    %%% Check, if BurstBrowser.Downsample_fFCS_Time subfield exists
+    %%% Stores the desired MI Bin time in ps
+    if ~isfield(S.BurstBrowser, 'Downsample_fFCS_Time')
+        S.BurstBrowser.Downsample_fFCS_Time=100;
+        disp('UserValues.BurstBrowser.Downsample_fFCS_Time was incomplete');    
+    end 
+    P.BurstBrowser.Downsample_fFCS_Time = S.BurstBrowser.Downsample_fFCS_Time;
+    %%% Check, if BurstBrowser.fFCS_UseTimewindow subfield exists
+    if ~isfield(S.BurstBrowser, 'fFCS_UseTimewindow')
+        S.BurstBrowser.fFCS_UseTimewindow=0;
+        disp('UserValues.BurstBrowser.fFCS_UseTimewindow was incomplete');    
+    end 
+    P.BurstBrowser.fFCS_UseTimewindow = S.BurstBrowser.fFCS_UseTimewindow;
+    %%% Check, if BurstBrowser.Corr_TimeWindowSize subfield exists
+    if ~isfield(S.BurstBrowser, 'Corr_TimeWindowSize')
+        S.BurstBrowser.Corr_TimeWindowSize=5;
+        disp('UserValues.BurstBrowser.Corr_TimeWindowSize was incomplete');    
+    end 
+    P.BurstBrowser.Corr_TimeWindowSize = S.BurstBrowser.Corr_TimeWindowSize;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');

@@ -1,7 +1,7 @@
 function BurstBrowser(~,~)
 
 hfig=findobj('Name','BurstBrowser');
-global UserValues BurstMeta BurstData BurstTCSPCData
+global UserValues %BurstMeta BurstData BurstTCSPCData
 addpath([pwd filesep 'TauFit Models']);
 LSUserValues(0);
 Look=UserValues.Look;
@@ -1011,6 +1011,17 @@ if isempty(hfig)
         'String','Correlate with time window',...
         'Callback',@Correlate_Bursts,...
         'Enable','off');  
+    
+    h.CorrelateWindow_Edit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.SecondaryTabCorrelationPanel,...
+        'Units','normalized',...
+        'Position',[0.5 0.35 0.3 0.05],...
+        'Tag','CorrelationTable',...
+        'String',num2str(UserValues.BurstBrowser.Corr_TimeWindowSize),...
+        'Callback',@UpdateOptions,...
+        'Enable','off');
+    
     %% Secondary tab options
     
     %%% Display Options Panel
@@ -1285,6 +1296,19 @@ if isempty(hfig)
         'String','Use Scatter Pattern for fFCS',...
         'Tag','Downsample_fFCS',...
         'Value', UserValues.BurstBrowser.fFCS_UseIRF,...
+        'Units','normalized',...
+        'Position',[0.1 0.68 0.5 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
+    
+    h.fFCS_UseTimeWindow = uicontrol('Style','checkbox',...
+        'Parent',h.DataProcessingPanel,...
+        'String','Include Time Window for fFCS',...
+        'Tag','fFCS_UseTimeWindow',...
+        'Value', UserValues.BurstBrowser.fFCS_UseTimewindow,...
         'Units','normalized',...
         'Position',[0.1 0.68 0.5 0.07],...
         'FontSize',12,...
@@ -2513,7 +2537,7 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(~,~)
 h = guidata(gcbo);
-global BurstData UserValues BurstMeta
+global BurstData UserValues BurstMeta PhotonsStream
 if ~isempty(BurstData) && UserValues.BurstBrowser.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
@@ -2541,7 +2565,7 @@ if FileName == 0
     return;
 end
 %%% clear global variable
-clearvars -global BurstData BurstTCSPCData
+clearvars -global BurstData BurstTCSPCData PhotonStream
 
 LSUserValues(0);
 UserValues.File.BurstBrowserPath=PathName;
@@ -2635,6 +2659,10 @@ switch obj
         end 
     case h.fFCS_UseIRF
         UserValues.BurstBrowser.fFCS_UseIRF = obj.Value;
+    case h.CorrelateWindow_Edit
+        UserValues.BurstBrowser.Corr_TimeWindowSize = str2double(obj.String);
+    case h.fFCS_UseTimeWindow
+        UserValues.BurstBrowser.fFCS_UseTimewindow = obj.Value;
 end
 LSUserValues(1);
     
@@ -4010,8 +4038,7 @@ switch obj
         valid_species1 = UpdateCuts(species1);
         valid_species2 = UpdateCuts(species2);
         
-        use_timewindow = 0;
-        if use_timewindow
+        if UserValues.BurstBrowser.fFCS_UseTimewindow
             if isempty(PhotonStream)
                 return;
             end
@@ -4042,7 +4069,7 @@ switch obj
                 use = ones(numel(start),1);
                 %%% loop over selected bursts
                 waitbar(0,h_waitbar,'Including Time Window...');
-                tw = 2; %%% photon window of (2*tw+1)*10ms
+                tw = UserValues.BurstBrowser.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
                 
                 start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
                 stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
@@ -6710,7 +6737,7 @@ switch obj
             use = ones(numel(start),1);
             %%% loop over selected bursts
             waitbar(0,h_waitbar,'Including Time Window...');
-            tw = 3; %%% photon window of (2*tw+1)*10ms
+            tw = UserValues.BurstBrowser.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
 
             start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
             stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
@@ -6870,6 +6897,7 @@ switch obj
         end
         %%% Enable CorrelateWindow Button
         h.CorrelateWindow_Button.Enable = 'on';
+        h.CorrelateWindow_Edit.Enable = 'on';
 end
 delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
