@@ -858,6 +858,11 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Corrections.r0_blue was incomplete');    
     end 
     P.BurstBrowser.Corrections.r0_blue = S.BurstBrowser.Corrections.r0_blue;
+    %%% Checks, if BurstBrowser.Display subfield exists
+    if ~isfield (S.BurstBrowser,'Display')
+        S.BurstBrowser.Display=[];
+        disp('UserValues.BurstBrowser.Display was incomplete');    
+    end
     P.BurstBrowser.Display = [];
     %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
     if ~isfield (S.BurstBrowser.Display,'NumberOfBinsX')
@@ -901,56 +906,55 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');    
     end
     P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
-    %%% Check, if BurstBrowser.PrintPath subfield exists
-    if ~isfield(S.BurstBrowser, 'PrintPath')
-        S.BurstBrowser.PrintPath=pwd;
-        disp('UserValues.BurstBrowser.PrintPath was incomplete');    
+    %%% Checks, if BurstBrowser.Settings subfield exists
+    if ~isfield (S.BurstBrowser,'Settings')
+        S.BurstBrowser.Settings=[];
+        disp('UserValues.BurstBrowser.Settings was incomplete');    
+    end
+    P.BurstBrowser.Settings = [];
+    %%% Check, if BurstBrowser.Settings.PrintPath subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'PrintPath')
+        S.BurstBrowser.Settings.PrintPath=pwd;
+        disp('UserValues.BurstBrowser.Settings.PrintPath was incomplete');    
     end 
-    P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
-    %%% Check, if BurstBrowser.SaveOnClose subfield exists
-    if ~isfield(S.BurstBrowser, 'SaveOnClose')
-        S.BurstBrowser.SaveOnClose=0;
-        disp('UserValues.BurstBrowser.SaveOnClose was incomplete');    
+    P.BurstBrowser.Settings.PrintPath = S.BurstBrowser.Settings.PrintPath;
+    %%% Check, if BurstBrowser.Settings.SaveOnClose subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'SaveOnClose')
+        S.BurstBrowser.Settings.SaveOnClose=0;
+        disp('UserValues.BurstBrowser.Settings.SaveOnClose was incomplete');    
     end 
-    P.BurstBrowser.SaveOnClose = S.BurstBrowser.SaveOnClose;
-    %%% Check, if BurstBrowser.Downsample_fFCS subfield exists
-    if ~isfield(S.BurstBrowser, 'Downsample_fFCS')
-        S.BurstBrowser.Downsample_fFCS=0;
-        disp('UserValues.BurstBrowser.Downsample_fFCS was incomplete');    
+    P.BurstBrowser.Settings.SaveOnClose = S.BurstBrowser.Settings.SaveOnClose;
+    %%% Check, if BurstBrowser.Settings.fFCS_UseIRF subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseIRF')
+        S.BurstBrowser.Settings.fFCS_UseIRF=1;
+        disp('UserValues.BurstBrowser.Settings.fFCS_UseIRF was incomplete');    
     end 
-    P.BurstBrowser.Downsample_fFCS = S.BurstBrowser.Downsample_fFCS;
-    %%% Check, if BurstBrowser.Downsample_fFCS_Time subfield exists
+    P.BurstBrowser.Settings.fFCS_UseIRF = S.BurstBrowser.Settings.fFCS_UseIRF;
+    %%% Check, if BurstBrowser.Settings.Downsample_fFCS subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Downsample_fFCS')
+        S.BurstBrowser.Settings.Downsample_fFCS=0;
+        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS was incomplete');    
+    end 
+    P.BurstBrowser.Settings.Downsample_fFCS = S.BurstBrowser.Settings.Downsample_fFCS;
+    %%% Check, if BurstBrowser.Settings.Downsample_fFCS_Time subfield exists
     %%% Stores the desired MI Bin time in ps
-    if ~isfield(S.BurstBrowser, 'Downsample_fFCS_Time')
-        S.BurstBrowser.Downsample_fFCS_Time=100;
-        disp('UserValues.BurstBrowser.Downsample_fFCS_Time was incomplete');    
+    if ~isfield(S.BurstBrowser.Settings, 'Downsample_fFCS_Time')
+        S.BurstBrowser.Settings.Downsample_fFCS_Time=100;
+        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS_Time was incomplete');    
     end 
-    P.BurstBrowser.Downsample_fFCS_Time = S.BurstBrowser.Downsample_fFCS_Time;
-    %%% Check, if BurstBrowser.fFCS_UseIRF subfield exists
-    if ~isfield(S.BurstBrowser, 'fFCS_UseIRF')
-        S.BurstBrowser.fFCS_UseIRF=1;
-        disp('UserValues.BurstBrowser.fFCS_UseIRF was incomplete');    
+    P.BurstBrowser.Settings.Downsample_fFCS_Time = S.BurstBrowser.Settings.Downsample_fFCS_Time;
+    %%% Check, if BurstBrowser.Settings.fFCS_UseTimewindow subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseTimewindow')
+        S.BurstBrowser.Settings.fFCS_UseTimewindow=0;
+        disp('UserValues.BurstBrowser.Settings.fFCS_UseTimewindow was incomplete');    
     end 
-    P.BurstBrowser.fFCS_UseIRF = S.BurstBrowser.fFCS_UseIRF;
-    %%% Check, if BurstBrowser.Downsample_fFCS_Time subfield exists
-    %%% Stores the desired MI Bin time in ps
-    if ~isfield(S.BurstBrowser, 'Downsample_fFCS_Time')
-        S.BurstBrowser.Downsample_fFCS_Time=100;
-        disp('UserValues.BurstBrowser.Downsample_fFCS_Time was incomplete');    
+    P.BurstBrowser.Settings.fFCS_UseTimewindow = S.BurstBrowser.Settings.fFCS_UseTimewindow;
+    %%% Check, if BurstBrowser.Settings.Corr_TimeWindowSize subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Corr_TimeWindowSize')
+        S.BurstBrowser.Settings.Corr_TimeWindowSize=5;
+        disp('UserValues.BurstBrowser.Settings.Corr_TimeWindowSize was incomplete');    
     end 
-    P.BurstBrowser.Downsample_fFCS_Time = S.BurstBrowser.Downsample_fFCS_Time;
-    %%% Check, if BurstBrowser.fFCS_UseTimewindow subfield exists
-    if ~isfield(S.BurstBrowser, 'fFCS_UseTimewindow')
-        S.BurstBrowser.fFCS_UseTimewindow=0;
-        disp('UserValues.BurstBrowser.fFCS_UseTimewindow was incomplete');    
-    end 
-    P.BurstBrowser.fFCS_UseTimewindow = S.BurstBrowser.fFCS_UseTimewindow;
-    %%% Check, if BurstBrowser.Corr_TimeWindowSize subfield exists
-    if ~isfield(S.BurstBrowser, 'Corr_TimeWindowSize')
-        S.BurstBrowser.Corr_TimeWindowSize=5;
-        disp('UserValues.BurstBrowser.Corr_TimeWindowSize was incomplete');    
-    end 
-    P.BurstBrowser.Corr_TimeWindowSize = S.BurstBrowser.Corr_TimeWindowSize;
+    P.BurstBrowser.Settings.Corr_TimeWindowSize = S.BurstBrowser.Settings.Corr_TimeWindowSize;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
