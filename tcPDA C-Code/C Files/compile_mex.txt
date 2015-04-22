@@ -1,0 +1,26 @@
+How to compile .c(pp) files with mex in matlab:
+
+mex [Options] .c_source_file(s) 
+Example:
+
+From the NewPam Directory, the current build for files is:
+Windows:
+mex -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg.c" "C Files\src\randist\binomial.c" "C Files\src\randist\multinomial.c" "C Files\src\randist\specfunc\gamma.c" "C Files\src\sys\numcores.c" "C Files\src\sys\memalloc.c"
+Mac OS X/UNIX:
+mex -largeArrayDims -v -O -pthread -I"C Files/src" "C Files/src/eval_prob_3c_bg.c" "C Files/src/randist/binomial.c" "C Files/src/randist/multinomial.c" "C Files/src/randist/specfunc/gamma.c" "C Files/src/sys/numcores.c" "C Files/src/sys/memalloc.c"
+
+
+Options: -v: verbose
+	-g 	Debug Symbols
+	-O 	Optimizations:
+	-O 	is equal to: /O2 /Oy- /DNDEBUG in Visual Studio. See https://msdn.microsoft.com/en-us/library/k1ack8f1.aspx for possible FLAGS.
+		To use in MATLAB, an example: mex -largeArrayDims -v OPTIMFLAGS="/Ox" -I"C Files\src" "C Files\src\eval_prob_3c_bg.c" "C Files\src\randist\binomial.c" "C Files\src\randist\multinomial.c" "C Files\src\randist\specfunc\gamma.c" "C Files\src\sys\numcores.c" "C Files\src\sys\memalloc.c"
+	
+	-I"PATH" 	Location of Header files (.h)
+	-L"PATH" 	Location of compiled libary (.lib)
+	
+	-largeArrayDims 	necessary for large double (Matrix)
+
+Old:
+Compile with GSL (Gnu Scientific Library):
+mex -largeArrayDims -O "C Files\src\eval_prob_3c_bg.c" -I"C:\gsl-1.16" -L"C:\gsl-1.16\lib\x64\Release" cblas.lib gsl.lib
