@@ -4246,7 +4246,7 @@ switch obj
         MI_total_perp = MI_total_perp(idx);
         
         %%% Burstwise treatment if using time window
-        if use_timewindow
+        if UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
             BurstMeta.fFCS.Photons.MI_total_par = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
             BurstMeta.fFCS.Photons.MI_total_perp = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
             BurstMeta.fFCS.Photons.MT_total_par = cell(numel(BurstMeta.fFCS.Photons.MT_total),1);
@@ -4304,7 +4304,7 @@ switch obj
         BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp); 
 
         %%% Store Photon Vectors of total photons in BurstMeta
-        if ~use_timewindow
+        if ~UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
             BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
             BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
             BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
