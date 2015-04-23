@@ -1419,10 +1419,10 @@ switch mode
         end
         if h.Export_Box.Value
             H.FCS.Box = 'on';
-            H.Residuals_Plots.Box = 'on';
+            H.Residuals.Box = 'on';
         else
             H.FCS.Box = 'off';
-            H.Residuals_Plots.Box = 'off';            
+            H.Residuals.Box = 'off';            
         end
       
         H.Fig.Color = [1 1 1];
