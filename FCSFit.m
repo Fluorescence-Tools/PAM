@@ -766,6 +766,10 @@ if ~isempty(FileName)
     UserValues.File.FCS_Standard=FileName;
     LSUserValues(1);
     
+    %%% change encoding on mac
+    if ismac
+        feature('DefaultCharacterSet', 'windows-1252');
+    end
     %%% Reads in the selected fit function file
     fid = fopen(FileName);
     Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
