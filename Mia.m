@@ -1781,6 +1781,7 @@ if any(mode==1)
                 Frame=round(h.Mia_Frame_Slider(i).Value);
                 Image=double(MIAData.Data{i,1}(:,:,Frame));
                 Image=round(63*(Image-min(min(Image)))/(max(max(Image))-min(min(Image))))+2;
+                Image(isnan(Image)) = 2;
                 Image=reshape(Colormap(Image,:),[size(Image,1),size(Image,2),3]);
                 h.Plots.Image(i,1).CData=Image;
                 h.Mia_Image_Axes(i,1).XLim=[0 size(Image,2)]+0.5;

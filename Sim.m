@@ -1599,7 +1599,7 @@ for i = 1:numel(SimData.Species);
     %%% Bleaching probability (1/avg(#EmittedPhotons)
     BlP = SimData.Species(i).BlP;
     %%% Calculates relative energy transfer rates
-    switch h.Sim_FRET.Value
+    switch SimData.Species(i).FRET
         case 1
             FRET = diag(ones(4,1));
         case 2
@@ -1770,7 +1770,7 @@ for i = 1:numel(SimData.Species)
     end   
     
     NoP = SimData.Species(i).N;
-    D = sqrt(2*SimData.Species(i).D*10^6*SimData.General(i).Time(3));
+    D = sqrt(2*SimData.Species(i).D*10^6*SimData.General.Time(3));
     
     wr = zeros(4,1);
     dX = zeros(4,1); dY = zeros(4,1);
@@ -1795,7 +1795,7 @@ for i = 1:numel(SimData.Species)
     end
     
     %%% Calculates relative energy transfer rates
-    switch h.Sim_FRET.Value
+    switch SimData.Species(i).FRET
         case 1
             FRET = diag(ones(4,1));
         case 2
@@ -1811,7 +1811,14 @@ for i = 1:numel(SimData.Species)
     end
 
     %%% Once FRET etc. is enabled
-    Total = repmat({uint16(zeros(Pixel(1),Pixel(2),Frames))}, SimData.Species(i).Color, SimData.Species(i).Color);
+    if exist('Total','var')
+        while size(Total,1) < SimData.Species(i).Color
+            Total(end+1,:) = deal({uint16(zeros(Pixel(1),Pixel(2),Frames))});
+            Total(:,end+1) = deal({uint16(zeros(Pixel(1),Pixel(2),Frames))});
+        end
+    else
+        Total = repmat({uint16(zeros(Pixel(1),Pixel(2),Frames))}, SimData.Species(i).Color, SimData.Species(i).Color);
+    end
     
     Px_Total = floor(BS./Step);
     Start = floor((Px_Total-Pixel)/2);
@@ -1820,7 +1827,7 @@ for i = 1:numel(SimData.Species)
     for j = 1:SimData.Species(i).Color
         Filter{j} = fspecial('gaussian',4*wr(j),wr(j)/2);
         Px = floor(size(Filter{j})./Step);
-        Filter{j} = Filter{j}(1:Px(1)*Step(1),1:Px(2)*Step(2));
+        Filter{j} = single(Filter{j}(1:Px(1)*Step(1),1:Px(2)*Step(2)));
     end
     
     if D == 0 %%% Static particles
@@ -1838,7 +1845,7 @@ for i = 1:numel(SimData.Species)
             bleach = zeros(SimData.Species(i).Color,1); 
             while any(Bleach == 0)                
                 for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(j,:).*BlP(j,:))./sum(FRET(find(Bleach==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(i).Time(3)));
+                    bleach(j) = exprnd(1./(sum(ExP(j,:).*BlP(j,:))./sum(FRET(find(Bleach==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)));
                 end
                 bleach(bleach==Inf) = Frames+1;
                 bleach(Bleach~=0) = Inf;
@@ -1980,7 +1987,7 @@ for i = 1:numel(SimData.Species)
                 
                 for j = 1:SimData.Species(i).Color
                     for n = 1:SimData.Species(i).Color
-                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General(i).Time(3)*Prob(j,n);
+                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)*Prob(j,n);
                         Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
@@ -1993,7 +2000,7 @@ for i = 1:numel(SimData.Species)
         Pos(Pos==0) = 1;
         Bleach = zeros(SimData.Species(i).Color,NoP);
         for m = 1:Frames
-            Pos = Pos + round(D*rand(NoP,2));
+            Pos = Pos + round(D*randn(NoP,2));
             
             %%% Puts particles back into box;
             %%% Unbleaches
@@ -2014,7 +2021,7 @@ for i = 1:numel(SimData.Species)
                 %%% Tests for bleaching
                 bleach = zeros(SimData.Species(i).Color,1);
                 for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(:,j).*BlP(:,j))./sum(FRET(find(Bleach(:,k)==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(i).Time(3)));
+                    bleach(j) = exprnd(1./(sum(ExP(:,j).*BlP(:,j))./sum(FRET(find(Bleach(:,k)==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)));
                 end
               
                 %%% Particle is spread out over PSF into pixels 
@@ -2023,18 +2030,11 @@ for i = 1:numel(SimData.Species)
                     Shift = round(mod(Pos(k,:),Step));
                     Location{j} = floor(Pos(k,:)./Step);
                              
-                    Int{j} = zeros(size(Filter{j})+Step);
+                    Int{j} = zeros(size(Filter{j})+Step,'single');
                     Int{j}((1:size(Filter{j},1))+Shift(1),(1:size(Filter{j},1))+Shift(2)) = Filter{j};
-                    
-                    b = cellfun(@single,Filter,'UniformOutput',false);
-                    
-                    a{j} = zeros(size(Filter{j})+Step);
-                    a{j} = zeros(size(Filter{j})+Step,'single');
-                    a{j}((1:size(Filter{j},1))+Shift(1),(1:size(Filter{j},1))+Shift(2)) = b{j};
                     
                     Px = floor(size(Int{j})./Step);                    
                     
-%                     Int{j} = Int{j}(1:Px(1)*Step(1),1:Px(1)*Step(1));
                     Int{j} = squeeze(sum(reshape(Int{j}, Step(1), []),1));
                     Int{j} = squeeze(sum(reshape(Int{j}, Px(1), [], Px(2)),2));
                     
@@ -2156,7 +2156,7 @@ for i = 1:numel(SimData.Species)
                 %%% Calculates actual photons
                 for j = 1:SimData.Species(i).Color
                     for n = 1:SimData.Species(i).Color
-                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General(i).Time(3)*Prob(j,n);
+                        Image = double(Int{j})*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)*Prob(j,n);
                         Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
                             Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
@@ -2164,11 +2164,22 @@ for i = 1:numel(SimData.Species)
                 end
             end            
         end 
-    end
-
-    a=1;
-    
-    
+    end  
+end
+switch h.Sim_Save.Value
+    case 1 %%% Save to workspace
+        assignin('base',['Sim_Camera_' num2str(h.Sim_File_List.Value)],Total);
+    case 2 %%% Saves as TIFF
+        for i = 1:size(Total,1)
+            for j = 1:size(Total,2)
+                %%% Write File Name to save as tif
+                File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_Ex' num2str(i) '_Det' num2str(j) '_F' num2str(h.Sim_File_List.Value) '.tif']);
+                imwrite(Total{i,j}(:,:,1),File,'tif','Compression','lzw');
+                for k=2:Frames;
+                    imwrite(Total{i,j}(:,:,k),File,'tif','WriteMode','append','Compression','lzw');
+                end
+            end
+        end
 end
 
 
@@ -2193,84 +2204,6 @@ switch mode
     case 3 %%% Simulation finished
         Progress(1,h.Progress_Axes,h.Progress_Text);
 end
-
-
-
-
-
-function BlaBla
-
-
-    
-    if log10(BS(1)*BS(2))>8
-       Resize = ceil(sqrt((BS(1)*BS(2))/1e8));
-       PxSize = floor(Step/Resize);
-       BS = round(BS/Resize);
-    else
-        Resize = 1;
-        PxSize = floor(Step);
-    end
-    Pos = ceil(repmat(BS,[NoP,1]).*rand(NoP,2));
-    Pos(Pos==0) = 1;
-    
-    Image = cell(4,Frames);
-    Int = cell(4,1);
-    
-    Final = uint16(zeros(Pixel(1),Pixel(2),Frames));
-    Px_Total = floor(BS./PxSize);
-    Start = floor((Px_Total-Pixel)/2);
-    Stop = floor((Px_Total+Pixel)/2);
-    
-    if D>1e-4
-        for m = 1:Frames
-            for j = 1:SimData.Species(i).Color
-                
-                Pos = Pos + D*randn(NoP,2);
-                Pos(Pos==0) = 1;
-                
-                Filter = fspecial('gaussian',round(5*wr(j)/Resize),wr(j)/Resize/2);
-                FSize = size(Filter,1);
-                Int{j} = zeros(BS(1)+FSize, BS(2)+FSize);
-                for k=1:NoP
-                    Int{j}(Pos(k,1):(Pos(k,1)-1+FSize),Pos(k,2):(Pos(k,2)-1+FSize)) = Int{j}(Pos(k,1):(Pos(k,1)-1+FSize),Pos(k,2):(Pos(k,2)-1+FSize)) + Filter;
-                end
-                
-                Int{j} = Int{j}(((1:(PxSize(1)*Pixel(1)))+(floor((BS(1)-(PxSize(1)*Pixel(1)))/2))),...
-                    ((1:(PxSize(2)*Pixel(2)))+(floor((BS(2)-(PxSize(2)*Pixel(2)))/2))));
-                
-                Int{j} = squeeze(sum(reshape(Int{j}, PxSize(1), []),1));
-                Int{j} = squeeze(sum(reshape(Int{j}, Pixel(1), [], Pixel(2)),2));
-                
-                Image{j,m} = SimData.Species(i).Brightness(j)*1000*SimData.General(i).Time(3)*Int{j};
-                test = Image{j,m};
-                test(test>1e-4) = poissrnd(test(test>1e-4));
-                test = uint16(test);
-                Image{j,m} = uint16(poissrnd(Image{j,m}));
-            end
-        end        
-    else
-        
-            for j = 1:SimData.Species(i).Color
-                Filter = fspecial('gaussian',round(5*wr(j)/Resize),wr(j)/Resize/2);
-                FSize = size(Filter,1);
-                Shift = round(mod(Pos(k,:),PxSize));
-                Location = floor(Pos(k,:),PxSize);
-                Int{j} = Filter;
-                Int{j}(end+PxSize,end+PxSize) = 0;
-                Int{j} = circshift(Int{j},Shift);
-                Px = floor(size(Int{j})./PxSize);
-                
-                Int{j} = Int{j}(1:Px(1)*PxSize(1),1:Px(1)*PxSize(1));
-                
-                Int{j} = squeeze(sum(reshape(Int{j}, PxSize(1), []),1));
-                Int{j} = squeeze(sum(reshape(Int{j}, Px(1), [], Px(2)),2));
-                
-
-        end
-
-
-    end
-    clear Image;
 
 
 
