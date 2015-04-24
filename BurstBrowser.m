@@ -6644,70 +6644,73 @@ switch obj
         end
         %%% find selected bursts
         MT = BurstTCSPCData.Macrotime(BurstData.Selected);
-        MT = vertcat(MT{:});
+        %MT = vertcat(MT{:});
         CH = BurstTCSPCData.Channel(BurstData.Selected);
-        CH = vertcat(CH{:});
+        %CH = vertcat(CH{:});
         
-        waitbar(0,h_waitbar,'Correlating...');
-        count = 0;
-        for i=1:NumChans
-            for j=1:NumChans
-                if CorrMat(i,j)
-                    MT1 = MT(ismember(CH,Chan{i}));
-                    MT2 = MT(ismember(CH,Chan{j}));
-                    %%% Split Data in 10 time bins for errorbar calculation
-                    Times = ceil(linspace(0,max([MT1;MT2]),11));
-                    %%% Calculates the maximum inter-photon time in clock ticks
-                    Maxtime=max(diff(Times))/UserValues.Settings.Pam.Cor_Divider;
-                    Data1 = cell(10,1);
-                    Data2 = cell(10,1);
-                    for k = 1:10
-                        Data1{k} = MT1( MT1 > Times(k) &...
-                            MT1 <= Times(k+1)) - Times(k);
-                        Data2{k} = MT2( MT2 > Times(k) &...
-                            MT2 <= Times(k+1)) - Times(k);
-                        Data1{k} = Data1{k}/UserValues.Settings.Pam.Cor_Divider;
-                        Data2{k} = Data2{k}/UserValues.Settings.Pam.Cor_Divider;
-                    end
-                    %%% Do Correlation
-                    [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                    Cor_Times = Cor_Times*BurstData.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
-                    %%% Calculates average and standard error of mean (without tinv_table yet
-                    if numel(Cor_Array)>1
-                        Cor_Average=mean(Cor_Array,2);
-                        %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-                        %%% Averages files before saving to reduce errorbars
-                        Amplitude=sum(Cor_Array,1);
-                        Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-                        Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-
-                    else
-                        Cor_Average=Cor_Array{1};
-                        Cor_SEM=Cor_Array{1};
-                    end
-                    %%% Save the correlation file
-                    %%% Generates filename
-                    Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
-                    %%% Checks, if file already exists
-                    if  exist(Current_FileName,'file')
-                        k=1;
-                        %%% Adds 1 to filename
-                        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                        %%% Increases counter, until no file is found
-                        while exist(Current_FileName,'file')
-                            k=k+1;
-                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                        end
-                    end
-
-                    Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-                    Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
-                    Valid = 1:10;
-                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-                    count = count+1;waitbar(count/NCor);
-                end 
-            end
+        for k = 1:numel(MT)
+            MT{k} = MT{k}-MT{k}(1) +1;
         end
+%        waitbar(0,h_waitbar,'Correlating...');
+%        count = 0;
+%         for i=1:NumChans
+%             for j=1:NumChans
+%                 if CorrMat(i,j)
+%                     MT1 = MT(ismember(CH,Chan{i}));
+%                     MT2 = MT(ismember(CH,Chan{j}));
+%                     %%% Split Data in 10 time bins for errorbar calculation
+%                     Times = ceil(linspace(0,max([MT1;MT2]),11));
+%                     %%% Calculates the maximum inter-photon time in clock ticks
+%                     Maxtime=max(diff(Times))/UserValues.Settings.Pam.Cor_Divider;
+%                     Data1 = cell(10,1);
+%                     Data2 = cell(10,1);
+%                     for k = 1:10
+%                         Data1{k} = MT1( MT1 > Times(k) &...
+%                             MT1 <= Times(k+1)) - Times(k);
+%                         Data2{k} = MT2( MT2 > Times(k) &...
+%                             MT2 <= Times(k+1)) - Times(k);
+%                         Data1{k} = Data1{k}/UserValues.Settings.Pam.Cor_Divider;
+%                         Data2{k} = Data2{k}/UserValues.Settings.Pam.Cor_Divider;
+%                     end
+%                     %%% Do Correlation
+%                     [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+%                     Cor_Times = Cor_Times*BurstData.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
+%                     %%% Calculates average and standard error of mean (without tinv_table yet
+%                     if numel(Cor_Array)>1
+%                         Cor_Average=mean(Cor_Array,2);
+%                         %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+%                         %%% Averages files before saving to reduce errorbars
+%                         Amplitude=sum(Cor_Array,1);
+%                         Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+%                         Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+% 
+%                     else
+%                         Cor_Average=Cor_Array{1};
+%                         Cor_SEM=Cor_Array{1};
+%                     end
+%                     %%% Save the correlation file
+%                     %%% Generates filename
+%                     Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+%                     %%% Checks, if file already exists
+%                     if  exist(Current_FileName,'file')
+%                         k=1;
+%                         %%% Adds 1 to filename
+%                         Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+%                         %%% Increases counter, until no file is found
+%                         while exist(Current_FileName,'file')
+%                             k=k+1;
+%                             Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+%                         end
+%                     end
+% 
+%                     Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+%                     Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+%                     Valid = 1:10;
+%                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+%                     count = count+1;waitbar(count/NCor);
+%                 end 
+%             end
+%         end
 
     case h.CorrelateWindow_Button
         if isempty(PhotonStream)
@@ -6813,61 +6816,59 @@ switch obj
                 waitbar(i/numel(start_tw));
             end
         end
-        
-        %%% Apply different correlation algorithm
-        %%% (Burstwise correlation with correct summation and normalization)
-
-        waitbar(0,h_waitbar,'Correlating...');
-        count = 0;
-        for i=1:NumChans
-            for j=1:NumChans
-                if CorrMat(i,j)
-                    MT1 = cell(numel(MT),1);
-                    MT2 = cell(numel(MT),1);
-                    for k = 1:numel(MT)
-                        MT1{k} = MT{k}(ismember(CH{k},Chan{i}));
-                        MT2{k} = MT{k}(ismember(CH{k},Chan{j}));
-                    end
-                    %%% Calculates the maximum inter-photon time in clock ticks
-                    Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
-                    %%% Do Correlation
-                    [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime);
-                    Cor_Times = Cor_Times*BurstData.SyncPeriod;
-                    
-                    %%% Calculates average and standard error of mean (without tinv_table yet
-                    if numel(Cor_Array)>1
-                        Cor_Average=mean(Cor_Array,2);
-                        Cor_SEM=std(Cor_Array,0,2);
-                    else
-                        Cor_Average=Cor_Array{1};
-                        Cor_SEM=Cor_Array{1};
-                    end
-                    
-                    %%% Save the correlation file
-                    %%% Generates filename
-                    Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
-                    %%% Checks, if file already exists
-                    if  exist(Current_FileName,'file')
-                        k=1;
-                        %%% Adds 1 to filename
-                        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                        %%% Increases counter, until no file is found
-                        while exist(Current_FileName,'file')
-                            k=k+1;
-                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                        end
-                    end
-                    
-                    Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-                    %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
-                    Counts = [0 ,0];
-                    Valid = 1:size(Cor_Array,2);
-                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-                    count = count+1;waitbar(count/NCor);
-                end 
+end
+     
+%%% Apply different correlation algorithm
+%%% (Burstwise correlation with correct summation and normalization)
+waitbar(0,h_waitbar,'Correlating...');
+count = 0;
+for i=1:NumChans
+    for j=1:NumChans
+        if CorrMat(i,j)
+            MT1 = cell(numel(MT),1);
+            MT2 = cell(numel(MT),1);
+            for k = 1:numel(MT)
+                MT1{k} = MT{k}(ismember(CH{k},Chan{i}));
+                MT2{k} = MT{k}(ismember(CH{k},Chan{j}));
             end
-        end
-        
+            %%% Calculates the maximum inter-photon time in clock ticks
+            Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+            %%% Do Correlation
+            [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime);
+            Cor_Times = Cor_Times*BurstData.SyncPeriod;
+
+            %%% Calculates average and standard error of mean (without tinv_table yet
+            if size(Cor_Array,2)>1
+                Cor_Average=mean(Cor_Array,2);
+                Cor_SEM=std(Cor_Array,0,2);
+            else
+                Cor_Average=Cor_Array{1};
+                Cor_SEM=Cor_Array{1};
+            end
+
+            %%% Save the correlation file
+            %%% Generates filename
+            Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+            %%% Checks, if file already exists
+            if  exist(Current_FileName,'file')
+                k=1;
+                %%% Adds 1 to filename
+                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                %%% Increases counter, until no file is found
+                while exist(Current_FileName,'file')
+                    k=k+1;
+                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                end
+            end
+
+            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+            %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+            Counts = [0 ,0];
+            Valid = 1:size(Cor_Array,2);
+            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+            count = count+1;waitbar(count/NCor);
+        end 
+    end
 end
         
 delete(h_waitbar);

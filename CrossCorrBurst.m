@@ -73,9 +73,11 @@ if error_estimate
     end
     
     for i = 1:numel(Cor_Res)
-        Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
+        Cor_Res{i}(find(Cor_Res{i}(~isnan(Cor_Res{i}))==-1,1,'first'):end) = 0;
+        %Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
     end
     Cor_Array = cell2mat(Cor_Res);
+    Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
     Timeaxis = Timeaxis(1:size(Cor_Array,1));
         
 else
