@@ -7022,6 +7022,7 @@ UpdateCorrections([],[])
 function ExportGraphs(obj,~)
 global BurstData UserValues
 h = guidata(obj);
+fontsize = 40;
 switch obj
     case h.Export1DX_Menu
         %%% Create a new figure with aspect ratio appropiate for the current plot
@@ -7112,11 +7113,12 @@ switch obj
             %%% increase LineWidth of Axes
             panel_copy.Children(i).LineWidth = 3;
             %%% Increase FontSize
-            panel_copy.Children(i).FontSize = 50;
+            panel_copy.Children(i).FontSize = fontsize;
             %%% Reorganize Axes Positions
            switch i
                case 1
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
+                    panel_copy.Children(i).YTickLabelRotation = 270;
                case 2
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                case 3
