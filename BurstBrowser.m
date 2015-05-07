@@ -4555,7 +4555,7 @@ axis(h.axes_fFCS_ReconstructionPerpResiduals,'tight');
 %%%%%%% Does fFCS Correlation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_fFCS(~,~)
-global BurstMeta BurstData
+global BurstMeta BurstData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% Set Up Progress Bar
 h_waitbar = waitbar(0,'Correlating...');
@@ -4573,8 +4573,8 @@ filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 
-use_timewindow = 0;
-if ~use_timewindow
+
+if ~UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
     %%% Split Data in 10 time bins for errorbar calculation
     Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
     count = 0;
