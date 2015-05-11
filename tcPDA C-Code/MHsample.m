@@ -211,7 +211,7 @@ switch Display
             handles.text.String = num2str(acceptance);
             drawnow;
         end 
-    case 'tcPDA'
+    case 'tcPDA_mcmc'
         %%% check if a figure exists
         h = findobj('Tag',Display);
         if isempty(h) %%% create new figure, depending on the model

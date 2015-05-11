@@ -111,11 +111,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
 	float *d_fgg;
 	float *d_fgr;
 	
-	float *d_NBGbb;       				/* NBGbb = numel(BGbb)-1 */
-	float *d_NBGbg;
-	float *d_NBGbr;
-	float *d_NBGgg;
-	float *d_NBGgr;
+	int *d_NBGbb;       				/* NBGbb = numel(BGbb)-1 */
+	int *d_NBGbg;
+	int *d_NBGbr;
+	int *d_NBGgg;
+	int *d_NBGgr;
 	
 	float *d_BGbb;       				/* Background corrections */
 	float *d_BGbg;
@@ -152,11 +152,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     check_cuda_errors( cudaMalloc((void **) &d_fgr, size_burst_matrix) );   
 
 	/* NBG */
-    check_cuda_errors( cudaMalloc((void **) &d_NBGbb, sizeof(float)) );   
-    check_cuda_errors( cudaMalloc((void **) &d_NBGbg, sizeof(float)) );   
-    check_cuda_errors( cudaMalloc((void **) &d_NBGbr, sizeof(float)) );   
-    check_cuda_errors( cudaMalloc((void **) &d_NBGgg, sizeof(float)) );   
-    check_cuda_errors( cudaMalloc((void **) &d_NBGgr, sizeof(float)) );   
+    check_cuda_errors( cudaMalloc((void **) &d_NBGbb, sizeof(int)) );   
+    check_cuda_errors( cudaMalloc((void **) &d_NBGbg, sizeof(int)) );   
+    check_cuda_errors( cudaMalloc((void **) &d_NBGbr, sizeof(int)) );   
+    check_cuda_errors( cudaMalloc((void **) &d_NBGgg, sizeof(int)) );   
+    check_cuda_errors( cudaMalloc((void **) &d_NBGgr, sizeof(int)) );   
 
 	/* Background */
     check_cuda_errors( cudaMalloc((void **) &d_BGbb, size_burst_matrix) );   
@@ -193,11 +193,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     check_cuda_errors( cudaMemcpy(d_fgg, ((float *)mxGetData(prhs[3])), size_burst_matrix, cudaMemcpyHostToDevice) );
     check_cuda_errors( cudaMemcpy(d_fgr, ((float *)mxGetData(prhs[4])), size_burst_matrix, cudaMemcpyHostToDevice) );
     
-    check_cuda_errors( cudaMemcpy(d_NBGbb, ((float *)mxGetData(prhs[5])), sizeof(float), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(d_NBGbg, ((float *)mxGetData(prhs[6])), sizeof(float), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(d_NBGbr, ((float *)mxGetData(prhs[7])), sizeof(float), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(d_NBGgg, ((float *)mxGetData(prhs[8])), sizeof(float), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(d_NBGgr, ((float *)mxGetData(prhs[9])), sizeof(float), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(d_NBGbb, ((int *)mxGetData(prhs[5])), sizeof(int), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(d_NBGbg, ((int *)mxGetData(prhs[6])), sizeof(int), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(d_NBGbr, ((int *)mxGetData(prhs[7])), sizeof(int), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(d_NBGgg, ((int *)mxGetData(prhs[8])), sizeof(int), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(d_NBGgr, ((int *)mxGetData(prhs[9])), sizeof(int), cudaMemcpyHostToDevice) );
     
     check_cuda_errors( cudaMemcpy(d_BGbb, ((float *)mxGetData(prhs[10])), size_burst_matrix, cudaMemcpyHostToDevice) );
     check_cuda_errors( cudaMemcpy(d_BGbg, ((float *)mxGetData(prhs[11])), size_burst_matrix, cudaMemcpyHostToDevice) );
@@ -222,11 +222,11 @@ void mexFunction( int nlhs, mxArray *plhs[],
     check_cuda_errors( cudaMemcpy(&(d_thread_data->fgg), &d_fgg, sizeof(float*), cudaMemcpyHostToDevice) );
     check_cuda_errors( cudaMemcpy(&(d_thread_data->fgr), &d_fgr, sizeof(float*), cudaMemcpyHostToDevice) );
 
-    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbb), &d_NBGbb, sizeof(float*), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbg), &d_NBGbg, sizeof(float*), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbr), &d_NBGbr, sizeof(float*), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGgg), &d_NBGgg, sizeof(float*), cudaMemcpyHostToDevice) );
-    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGgr), &d_NBGgr, sizeof(float*), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbb), &d_NBGbb, sizeof(int*), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbg), &d_NBGbg, sizeof(int*), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGbr), &d_NBGbr, sizeof(int*), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGgg), &d_NBGgg, sizeof(int*), cudaMemcpyHostToDevice) );
+    check_cuda_errors( cudaMemcpy(&(d_thread_data->NBGgr), &d_NBGgr, sizeof(int*), cudaMemcpyHostToDevice) );
 
     check_cuda_errors( cudaMemcpy(&(d_thread_data->BGbb), &d_BGbb, sizeof(float*), cudaMemcpyHostToDevice) );
     check_cuda_errors( cudaMemcpy(&(d_thread_data->BGbg), &d_BGbg, sizeof(float*), cudaMemcpyHostToDevice) );
@@ -334,13 +334,13 @@ __global__ void eval_prob_3c_bg(tcpda_data *thread_data)
             
             /* trinomal calculation */
             int bg_bb;
-            for (size_t a=0; a <= MIN(thread_data->fbb[j], thread_data->NBGbb[j]) ; a++) {
+            for (size_t a=0; a <= MIN(thread_data->fbb[j], *thread_data->NBGbb) ; a++) {
                 bg_bb = a;
                 int bg_bg;
-                for (size_t b=0; b <= MIN(thread_data->fbg[j], thread_data->NBGbg[j]) ; b++) {
+                for (size_t b=0; b <= MIN(thread_data->fbg[j], *thread_data->NBGbg) ; b++) {
                     bg_bg = b;
                     int bg_br;
-                        for (size_t c=0; c <= MIN(thread_data->fbr[j], thread_data->NBGbr[j]) ; c++) {
+                        for (size_t c=0; c <= MIN(thread_data->fbr[j], *thread_data->NBGbr) ; c++) {
                         bg_br = c;
                         
                         float background[3] = {thread_data->p_bb[i], thread_data->p_bg[i], p_br};
@@ -361,10 +361,10 @@ __global__ void eval_prob_3c_bg(tcpda_data *thread_data)
             /* bionomal calculation */
 
             size_t bg_gg;
-            for (size_t a=0; a <= MIN(thread_data->fgg[j], thread_data->NBGgg[j]) ; a++) {
+            for (size_t a=0; a <= MIN(thread_data->fgg[j], *thread_data->NBGgg) ; a++) {
                 bg_gg = a;
                 size_t bg_gr;
-                for (size_t b=0; b <= MIN(thread_data->fgr[j], thread_data->NBGgr[j]) ; b++) {
+                for (size_t b=0; b <= MIN(thread_data->fgr[j], *thread_data->NBGgr) ; b++) {
                     bg_gr = b;
                     
                    /* Subtract Background counts for FRET evaluation */

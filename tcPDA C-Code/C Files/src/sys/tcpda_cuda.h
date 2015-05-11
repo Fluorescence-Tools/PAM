@@ -16,11 +16,11 @@ typedef struct tcpda_data_struct {
 	float *fgg;
 	float *fgr;
 	
-	float *NBGbb;       /* NBGbb = numel(BGbb)-1 */
-	float *NBGbg;
-	float *NBGbr;
-	float *NBGgg;
-	float *NBGgr;
+	int *NBGbb;       /* NBGbb = numel(BGbb)-1 */
+	int *NBGbg;
+	int *NBGbr;
+	int *NBGgg;
+	int *NBGgr;
 	
 	float *BGbb;       /* Background corrections */
 	float *BGbg;
