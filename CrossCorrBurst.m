@@ -47,12 +47,12 @@ Countrate2 = cell(numel(Cor_Array),1);
 for i=1:numel(Cor_Array)
     Norm{i} = Maxtime(i)-Timeaxis;
     Norm{i}(Timeaxis>Maxtime(i)) = 0;
-%     for j = 1:numel(Timeaxis)
-%         Countrate1{i}(j) = sum(Weights1{i}(Data1{i} <= (Maxtime(i)-Timeaxis(j))));
-%         Countrate2{i}(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))));
-%     end
-    Countrate1{i} = sum(Weights1{i});
-    Countrate2{i} = sum(Weights2{i});
+    for j = 1:numel(Timeaxis)
+        Countrate1{i}(j) = sum(Weights1{i}(Data1{i} <= (Maxtime(i)-Timeaxis(j))));
+        Countrate2{i}(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))));
+    end
+     %Countrate1{i} = sum(Weights1{i});
+     %Countrate2{i} = sum(Weights2{i});
 end
 
 error_estimate = 1;
@@ -66,10 +66,11 @@ if error_estimate
     for i = 1:bootstrap
         sel = selected(:,i);
         norm_temp = Norm(sel); norm_temp = sum(horzcat(norm_temp{:}),2);
-        Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1)./sum(Maxtime(sel));
-        Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1)./sum(Maxtime(sel));
+        Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1);%./sum(Maxtime(sel));
+        Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1);%./sum(Maxtime(sel));
         Cor_Total_temp = Cor_Array(sel);Cor_Total_temp = sum(horzcat(Cor_Total_temp{:}),2);
-        Cor_Res{i} = Cor_Total_temp./norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+        Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+        %Cor_Res{i} = Cor_Total_temp./norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
     end
     
     for i = 1:numel(Cor_Res)
