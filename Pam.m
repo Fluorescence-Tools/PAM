@@ -2392,6 +2392,10 @@ if any(mode==6)
         To=numel(PamMeta.MI_Hist{Det});
         h.MI_Phasor_To.String=num2str(To);        
     end
+    
+    if(size(UserValues.Phasor.Reference,2) < To)
+        UserValues.Phasor.Reference(end,To) = 0;
+    end
     %%% Plots Reference histogram 
     Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 Shift]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;

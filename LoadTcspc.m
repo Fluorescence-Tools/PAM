@@ -489,7 +489,7 @@ switch (Type)
         %%% General FileInfo
         FileInfo.NumberOfFiles=numel(FileName);
         FileInfo.Type=Type;
-        FileInfo.MI_Bins=4096;
+        FileInfo.MI_Bins=2^16;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;   
         %%% Initializes microtime and macotime arrays

@@ -2797,8 +2797,7 @@ function ROI_Look(~,~,mode,ROI)
 h = guidata(findobj('Tag','Phasor'));
 
 switch mode
-    case 1
-        %% ROI main control click
+    case 1 %% ROI main control click
         Type=h.Phasor.SelectionType; 
         switch Type
             case 'normal'
@@ -2866,16 +2865,14 @@ switch mode
                     Plot_Phasor([],[],0,1:10);
                 end
         end
-    case 2
-        %% ROI linewidth
+    case 2 %% ROI linewidth
         if ROI==7
             h.Phasor_Fraction.LineWidth=str2double(h.ROI_Width{ROI}.String);
         else
             h.Phasor_ROI(ROI,1).LineWidth=str2double(h.ROI_Width{ROI}.String);
             h.Phasor_ROI(ROI,2).LineWidth=str2double(h.ROI_Width{ROI}.String);
         end
-    case 3
-        %% ROI linestyle
+    case 3 %% ROI linestyle
         if ROI==7
             h.Phasor_Fraction.LineStyle=h.ROI_Style{ROI}.String;
         else
@@ -2891,8 +2888,7 @@ function FRET_Look(~,~,mode,Line)
 h=guidata(findobj('Tag','Phasor'));
 
 switch mode
-    case 1
-        %% Changes FRET line color
+    case 1 %% Changes FRET line color
         Type=h.Phasor.SelectionType;
         switch Type                
             case 'extend'
@@ -2912,20 +2908,16 @@ switch mode
                     end
                 end
         end
-    case 2
-        %% Changes FRET line width
+    case 2 %% Changes FRET line width
         h.Phasor_FRET(Line,1).LineWidth=str2double(h.FRET_Line(Line,2).String);
         if Line==4
             h.Phasor_FRET(5,1).LineWidth=str2double(h.FRET_Line(4,2).String);
         end
-    case 3
-        %% Changes FRET line style
+    case 3 %% Changes FRET line style
         h.Phasor_FRET(Line,1).LineStyle=h.FRET_Line(Line,3).String;
-    case 4
-        %% Changes FRET marker style
+    case 4 %% Changes FRET marker style
         h.Phasor_FRET(Line,2).Marker=h.FRET_Line(Line,4).String;
-    case 5
-        %% Changes FRET marker size
+    case 5 %% Changes FRET marker size
         h.Phasor_FRET(Line,2).MarkerSize=str2double(h.FRET_Line(Line,5).String);        
 end
 

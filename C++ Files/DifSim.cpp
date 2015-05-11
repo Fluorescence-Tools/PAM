@@ -21,8 +21,10 @@ void Simulate_Diffusion(
         double D, double *Pos,
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
-        double *Rates, double *Cross,
-        double *Macrotimes, unsigned char *Channel, __int64 *NPhotons)        
+        double *LT,
+        double *Rates, double *Cross,        
+        double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64 *NPhotons,
+        unsigned long Time)        
 {
     /// Counting variable definition
 	__int64 i = 0;
@@ -35,10 +37,10 @@ void Simulate_Diffusion(
     double FRET[4];
     double CROSS[4];
     double prob;
-
+    
     /// Random number generator
 	mt19937 mt; // initialize mersenne twister engine
-    mt.seed((unsigned long)time(NULL)); // engine seeding
+    mt.seed((unsigned long)time(NULL) + Time); // engine seeding
     //normal distribtion for diffusion
 	normal_distribution<double> normal(0.0, D); //mu = 0.0, sigma = 1.0
     
@@ -96,7 +98,6 @@ void Simulate_Diffusion(
                 break;
         }
         
-        
         ///////////////////////////////////////////////////////////////////
         /// Photon generation /////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////
@@ -127,6 +128,8 @@ void Simulate_Diffusion(
                         binomial_distribution<__int64, double> binomial(1, Ex);
                         if ((double) binomial(mt))/// Generates photons with probability
                         {                            
+                            Microtimes[NPhotons[0]] = (unsigned short)j*16384; /// PIE Laser pulse for microtime
+                            
                             ///////////////////////////////////////////////
                             //// Emitting dye (FRET) //////////////////////
                             ///////////////////////////////////////////////                            
@@ -140,6 +143,13 @@ void Simulate_Diffusion(
                                 } 
                                 for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
                                 
+                                if (LT[m]>0)
+                                {
+                                    geometric_distribution<unsigned short> exponential(FRET[3]/LT[m]); /// FRET modified exponential distribution for lifetime
+                                    Microtimes[NPhotons[0]] = Microtimes[NPhotons[0]] + exponential(mt); /// Convolutes with lifetime of current dye
+                                }
+
+                                
                                 if ((FRET[3]-1) > 1E-4) /// FRET is feasíble
                                 {
                                     for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; }  /// Calculates cummulative FRET Probabilites
@@ -150,7 +160,6 @@ void Simulate_Diffusion(
                                     { if (prob<=FRET[p]) { break; } }
                                     
                                     if  (p == m) { break; } /// No FRET occured
-                                    else if (p == 3) { m = 3; break; } /// FRET to lowest energy dye occuded, therefor no more FRET possible
                                     else { m = p; } /// FRET occured; next round of checks starts
                                 }
                                 else { break; } /// No FRET can occure, therefore ex.dye = em.dye
@@ -178,7 +187,7 @@ void Simulate_Diffusion(
                                     for (n=0; n<4; n++) /// Determines detection color
                                     { if (prob<=CROSS[n]) { break; } }
                                 }
-                                else {n = m; } /// No crosstalk, therefore detection channel == emitting dye                                
+                                else { n = m; } /// No crosstalk, therefore detection channel == emitting dye                                
                                 
                                 ///////////////////////////////////////////
                                 /// Determines, if photon was emitted/detected
@@ -186,7 +195,7 @@ void Simulate_Diffusion(
                                 if (DetP[4*m+n] > 1E-5)
                                 {
                                     binomial_distribution<__int64, double> binomial(1, DetP[4*m+n]);
-                                    if ( ((double) binomial(mt)) ) /// Bleaches particle
+                                    if ( ((double) binomial(mt)) ) /// Detects particle
                                     {
                                         /// Adds photon
                                         Macrotimes[NPhotons[0]] = (double) i;
@@ -204,6 +213,7 @@ void Simulate_Diffusion(
                                     NPhotons[0]++;
                                 }
                             }
+                            Microtimes[NPhotons[0]] = 0; /// Resets microtime, if no photons were detected 
                         }
                     }
                 }
@@ -217,10 +227,10 @@ void Simulate_Diffusion(
 ///////////////////////////////////////////////////////////////////////////
 void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=18)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","18 inputs required."); }
-    if (nlhs!=3)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","3 outputs required."); }
+    if(nrhs!=20)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","20 inputs required."); }
+    if (nlhs!=4)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","4 outputs required."); }
     
     
     // General and Scanning parameters
@@ -244,15 +254,20 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
     double *ExP = mxGetPr(prhs[13]);
     double *DetP =  mxGetPr(prhs[14]);
     double *BlP = mxGetPr(prhs[15]);
-    double *Rates =  mxGetPr(prhs[16]);
-    double *Cross = mxGetPr(prhs[17]);
+    double *LT = mxGetPr(prhs[16]);
+    double *Rates =  mxGetPr(prhs[17]);
+    double *Cross = mxGetPr(prhs[18]);
+    
+    unsigned long Time = mxGetScalar(prhs[19]);
         
     
 
     double *Macrotimes;
     Macrotimes = (double*) mxCalloc(4*SimTime, sizeof(double));
+    unsigned short *Microtimes;
+    Microtimes = (unsigned short*) mxCalloc(4*SimTime, sizeof(unsigned short));
     unsigned char *Channel;
-    Channel = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));
+    Channel = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));    
     __int64 *NPhotons;
     NPhotons=(__int64*) mxCalloc(1, sizeof(__int64));
     
@@ -261,9 +276,11 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
         ScanType, Step, Pixel, ScanTicks, // Scanning parameters
         D, Pos, // Particle parameters
         Wr, Wz, ShiftX, ShiftY, ShiftZ, // Focus parameters
-        ExP, DetP, BlP, 
+        ExP, DetP, BlP, // Excitation, Detection and Bleching Probabilities
+        LT, // Lifetime
         Rates, Cross, // Parameter containing FRET/Crosstalk rates
-        Macrotimes, Channel, NPhotons); // Outputparameters
+        Macrotimes, Microtimes, Channel, NPhotons,// Output parameters
+        Time); // Additional random seed value
         
     const mwSize NP[]={NPhotons[0],1};
     const mwSize SizePos[]={3,1};
@@ -275,12 +292,14 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
     Final_Pos[2] = Pos[2];
     
     plhs[0] = mxCreateNumericArray(2, NP, mxDOUBLE_CLASS, mxREAL);
-    plhs[1] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
-    plhs[2] = mxCreateNumericArray(2, SizePos, mxDOUBLE_CLASS, mxREAL);
+    plhs[1] = mxCreateNumericArray(2, NP, mxUINT16_CLASS, mxREAL);
+    plhs[2] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
+    plhs[3] = mxCreateNumericArray(2, SizePos, mxDOUBLE_CLASS, mxREAL);
     
     mxSetData(plhs[0], Macrotimes);
-    mxSetData(plhs[1], Channel);
-    mxSetData(plhs[2], Final_Pos);
+    mxSetData(plhs[1], Microtimes);
+    mxSetData(plhs[2], Channel);
+    mxSetData(plhs[3], Final_Pos);
 
         
 }

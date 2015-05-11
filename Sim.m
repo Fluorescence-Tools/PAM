@@ -176,6 +176,7 @@ h.Sim_General_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
+    'Title', 'General Settings',...
     'Position', [0.002 0.75 0.496 0.2]);
 %%% Scanning type selection
 h.Sim_Scan = uicontrol(...
@@ -214,6 +215,29 @@ for i=1:3
         'Callback',@Sim_Settings,...
         'Position',[0.26+(i-1)*0.1 0.62 0.09 0.1]);
 end
+
+%%% Text
+h.Text_MIRange = uicontrol(...
+    'Parent',h.Sim_General_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','text',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Microtime Range [ns]:',...
+    'Position',[0.63 0.62 0.23 0.1]);
+
+h.Sim_MIRange = uicontrol(...
+    'Parent',h.Sim_General_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','edit',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','80',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.86 0.62 0.09 0.1]);
 
 %%% Text
 h.Text_SF = uicontrol(...
@@ -776,6 +800,106 @@ for i=1:4
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Lifetime parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_Lifetime_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Lifetime Settings',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.752 0.5 0.121 0.25]);
+%%% Parameter display selection
+h.Sim_UseLT = uicontrol(...
+    'Parent',h.Sim_Lifetime_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'FontSize',12,...
+    'Value', 1,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Use Lifetime [ns]',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.04 0.88 0.92 0.1]);
+   for i=1:4
+       h.Text_LT{i} = uicontrol(...
+           'Parent',h.Sim_Lifetime_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'HorizontalAlignment','left',...
+           'Style','text',...
+           'BackgroundColor', Look.Back,...
+           'ForegroundColor', Look.Fore,...
+           'String',['Color ', num2str(i), ':'],...
+           'Position',[0.04 0.74-0.15*i 0.38 0.08]);
+       h.Sim_LT{i} = uicontrol(...
+           'Parent',h.Sim_Lifetime_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'Style','edit',...
+           'BackgroundColor', Look.Control,...
+           'ForegroundColor', Look.Fore,...
+           'String','4.0',...
+           'Callback',@Sim_Settings,...
+           'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
+   end
+   
+%% Noise parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_Noise_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Noise Settings',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.877 0.5 0.121 0.25]);
+%%% Parameter display selection
+h.Sim_UseNoise = uicontrol(...
+    'Parent',h.Sim_Noise_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'FontSize',12,...
+    'Value', 0,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Apply Noise [kHz]',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.04 0.88 0.92 0.1]);
+
+   for i=1:4
+       %%% Noise
+       h.Text_Noise{i} = uicontrol(...
+           'Parent',h.Sim_Noise_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'HorizontalAlignment','left',...
+           'Style','text',...
+           'BackgroundColor', Look.Back,...
+           'ForegroundColor', Look.Fore,...
+           'String',['Color ', num2str(i), ':'],...
+           'Position',[0.04 0.74-0.15*i 0.38 0.08]);
+       
+       %%% Noise
+       h.Sim_Noise{i} = uicontrol(...
+           'Parent',h.Sim_Noise_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'Style','edit',...
+           'BackgroundColor', Look.Control,...
+           'ForegroundColor', Look.Fore,...
+           'String','0.2',...
+           'Callback',@Sim_Settings,...
+           'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
+   end
+
 %% Förster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Advanced Sim Settings Panel
@@ -945,6 +1069,9 @@ SimData.General(1).Size = [50 50];
 SimData.General(1).Dim = [5000 5000];
 SimData.General(1).Time = [100 10 1];
 SimData.General(1).ScanType = 1;
+SimData.General(1).UseNoise = 0;
+SimData.General(1).Noise = [0.2 0.2 0.2 0.2];
+SimData.General(1).MIRange = 80;
 
 SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
@@ -963,6 +1090,8 @@ SimData.Species(1).ExP = diag(ones(4,1));
 SimData.Species(1).Cross = diag(ones(4,1));
 SimData.Species(1).DetP = ones(4,4);
 SimData.Species(1).BlP = zeros(4,4);
+SimData.Species(1).UseLT = 1;
+SimData.Species(1).LT = 4*ones(4,1);
 
 SimData.Species(1).R0 = zeros(4,4);
 SimData.Species(1).R0(2,1) = 63;
@@ -1045,6 +1174,10 @@ switch Obj
                   h.Sim_Px_Time{i}.Visible='off';
                   h.Text_T{i}.Visible='off';
               end
+              h.Sim_UseNoise.String = 'Apply Noise [kHz]';
+              h.Sim_Lifetime_Panel.Visible = 'on';
+              h.Sim_MIRange.Visible = 'on';
+              h.Text_MIRange.Visible = 'on';
           case 2 %%% Raster scan
               h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='on';
@@ -1061,6 +1194,10 @@ switch Obj
                   h.Sim_Px_Time{i}.Visible='on';
                   h.Text_T{i}.Visible='on';
               end
+              h.Sim_UseNoise.String = 'Apply Noise [kHz]';
+              h.Sim_Lifetime_Panel.Visible = 'on';
+              h.Sim_MIRange.Visible = 'on';
+              h.Text_MIRange.Visible = 'on';
           case 3 %%% Line scan
               h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='off';
@@ -1083,6 +1220,10 @@ switch Obj
               end
               h.Sim_Px_Time{3}.Visible='off';
               h.Text_T{3}.Visible='off';
+              h.Sim_UseNoise.String = 'Apply Noise [kHz]';
+              h.Sim_Lifetime_Panel.Visible = 'on';
+              h.Sim_MIRange.Visible = 'on';
+              h.Text_MIRange.Visible = 'on';
           case 4 %%% Circle scan
               h.Sim_Freq.Visible = 'on';
               h.Sim_Frames.Visible='off';
@@ -1105,6 +1246,10 @@ switch Obj
               end
               h.Sim_Px_Time{2}.Visible='on';
               h.Text_T{2}.Visible='on';
+              h.Sim_UseNoise.String = 'Apply Noise [kHz]';
+              h.Sim_Lifetime_Panel.Visible = 'on';
+              h.Sim_MIRange.Visible = 'on';
+              h.Text_MIRange.Visible = 'on';
           case 5 %%% Camera mode
               h.Sim_Frames.Visible='on';
               h.Sim_Freq.Visible = 'off';
@@ -1121,14 +1266,18 @@ switch Obj
               end
               h.Sim_Px_Time{3}.Visible='on';
               h.Text_T{3}.Visible='on';
+              h.Sim_UseNoise.String = 'Apply Noise [kHz/pixel]';
+              h.Sim_Lifetime_Panel.Visible = 'off';
+              h.Sim_MIRange.Visible = 'off';
+              h.Text_MIRange.Visible = 'off';
       end
       SimData.General(File).ScanType = h.Sim_Scan.Value;
       
-    case h.Sim_BS
+    case h.Sim_BS %%% Box Size changed
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
-    case h.Sim_Freq
+    case h.Sim_Freq %%% Simulation Frequency changed
         SimData.General(File).Freq =  str2double(h.Sim_Freq.String);
         Sel=h.Sim_List.Value(1);
         for i=1:numel(h.Sim_List.String)
@@ -1142,6 +1291,9 @@ switch Obj
                 end
             end
         end
+        
+    case h.Sim_MIRange %%% Microtime range was changed
+        SimData.General(File).MIRange = str2double(h.Sim_MIRange.String);
              
     case h.Sim_Time %%% Simulation Time
         %%% Update number of frames
@@ -1216,6 +1368,13 @@ switch Obj
         SimData.General(File).Time(2) = str2double(h.Sim_Px_Time{2}.String);
         SimData.General(File).Time(3) = str2double(h.Sim_Px_Time{3}.String);
         SimData.General(File).SimTime = str2double(h.Sim_Time.String);
+           
+    case h.Sim_UseNoise %%% Toggles, if noise is applied
+        SimData.General(File).UseNoise = h.Sim_UseNoise.Value;
+    case h.Sim_Noise %%% Noise values changed
+        for i=1:4
+            SimData.General(File).Noise(i) = str2double(h.Sim_Noise{i}.String);
+        end
        
     case h.Sim_Color %%% Defines number of colors
         Sel=h.Sim_List.Value(1);
@@ -1310,6 +1469,15 @@ switch Obj
         Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).dZ(i)=str2double(h.Sim_dZ{i}.String);
+        end
+        
+    case h.Sim_UseLT %%% Toggles, if lifetime is used
+        Sel=h.Sim_List.Value(1);
+        SimData.Species(Sel).UseLT = h.Sim_UseLT.Value; 
+    case h.Sim_LT %%% Lifetime was changed
+        Sel=h.Sim_List.Value(1);
+        for i=1:4
+            SimData.Species(Sel).LT(i) = str2double(h.Sim_LT{i}.String); 
         end
         
     case h.Sim_Param_Plot %%% Changed ptotted advanced parameters
@@ -1437,6 +1605,12 @@ switch mode
             h.Sim_Size{i}.String = num2str(SimData.General(Sel).Size(i));
             h.Sim_Dim{i}.String = num2str(SimData.General(Sel).Dim(i));
         end
+        h.Sim_UseNoise.Value = SimData.General(Sel).UseNoise;
+        for i=1:4
+            h.Sim_Noise{i}.String = num2str(SimData.General(Sel).Noise(i));
+         end
+        h.Sim_MIRange.String = num2str(SimData.General(Sel).MIRange);
+        
         Species = cell(numel(SimData.Species),1);
         for i=1:numel(SimData.Species)
             Species{i} = SimData.Species(i).Name;
@@ -1483,6 +1657,7 @@ switch mode
         h.Sim_FRET.Value = SimData.Species(Sel).FRET;
         h.Sim_D.String = num2str(SimData.Species(Sel).D);
         h.Sim_N.String = num2str(SimData.Species(Sel).N);
+        h.Sim_UseLT.Value = SimData.Species(Sel).UseLT;
         for i=1:4
             h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
             h.Sim_wr{i}.String = num2str(SimData.Species(Sel).wr(i));
@@ -1490,6 +1665,7 @@ switch mode
             h.Sim_dX{i}.String = num2str(SimData.Species(Sel).dX(i));
             h.Sim_dY{i}.String = num2str(SimData.Species(Sel).dY(i));
             h.Sim_dZ{i}.String = num2str(SimData.Species(Sel).dZ(i)); 
+            h.Sim_LT{i}.String = num2str(SimData.Species(Sel).LT(i));
             for j=1:4
                switch h.Sim_Param_Plot.Value
                     case 1 %%% Exitation probability
@@ -1608,8 +1784,12 @@ for i = 1:numel(SimData.Species);
         case 3
             FRET = diag(ones(4,1));
     end
-    
-    
+    %%% Lifetime of the colors
+    if SimData.Species(i).UseLT
+        LT = SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*2^16;
+    else
+        LT = [0 0 0 0];
+    end
     for j=SimData.Species(i).Color+1:4
        ExP(j,:) = 0; 
        FRET(j,:) = 0;
@@ -1643,20 +1823,24 @@ for i = 1:numel(SimData.Species);
         'ExecutionMode','fixedDelay');
     start(Update)
     
-    for j = 1:NoP
+    parfor j = 1:NoP
         %%% Generates starting position
         Pos=BS.*rand(1,3);
         Frametime = Simtime/Frames;
         
-        for k=1:Frames                       
-            [Photons, Channel, Pos] = DifSim(...
+        for k=1:Frames 
+            Time = clock;
+            
+            [Photons,  MI, Channel, Pos] = DifSim(...
                 Frametime, BS,... General Parameters
                 Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
                 D,Pos,... Particle parameters
                 wr,wz,... Focus parameters
                 dX,dY,dZ,... Focus shift parameters
                 ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
-                FRET, Cross); %%% Relative FRET and Crosstalk rates
+                LT,... %%% Lifetime of the different colors
+                FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                uint32(Time(end)*1000+k+j)); %%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
              
             %%% Channel is a 8 bit number that defines the exact photon type
             %%% bits 0,1 for exitation laser
@@ -1666,13 +1850,20 @@ for i = 1:numel(SimData.Species);
             
             %%% Assigns photons according to detection channel
             Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
-            MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))*16];
             Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
-            MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))*16];
             Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
-            MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))*16];
             Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-            MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))*16];            
+            if SimData.Species(i).UseLT 
+                MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
+                MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
+                MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
+                MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
+            else
+                MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
+                MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
+                MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
+                MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
+            end
         end
 
         FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
@@ -1699,6 +1890,32 @@ for i=1:4 %%% Combines photons of all species
     Sim_Photons{i} = cell2mat(Photons_total(:,i));
     Sim_MI{i} = cell2mat(MI_total(:,i));
 end
+
+if h.Sim_UseNoise.Value
+    for i=1:4
+        if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
+           AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
+           Noise = [];
+           while (isempty(Noise) || Noise(end)<Simtime)
+               if isempty(Noise)
+                   Noise = cumsum(exprnd(AIPT,[10000 1]));
+               else
+                   Noise = [Noise; cumsum(exprnd(AIPT,[10000 1]))+Noise(end)]; %#ok<AGROW>
+               end
+           end
+           Noise (Noise>Simtime) = []; %#ok<AGROW>
+           MI_Noise = uint16(2^16*rand(numel(Noise),1));
+           
+           Sim_Photons{i} = [Sim_Photons{i}; Noise];
+           Sim_MI{i} = [Sim_MI{i}; MI_Noise];
+           [Sim_Photons{i}, Index] = sort(Sim_Photons{i});
+           Sim_MI{i} = Sim_MI{i}(Index);
+           clear Noise MI_Noise Index;
+        end
+    end
+end
+
+
 clear Photons_total MI_total
 switch h.Sim_Save.Value    
     case 1 %%% Save to workspace
@@ -1722,7 +1939,7 @@ switch h.Sim_Save.Value
                 end
             end
         end
-    case 3
+    case 3 %%% Save as .sim file for pam
         Header.Frames = Frames;
         Header.FrameTime = double(Simtime/Frames);
         Header.Lines = Pixel(2);
@@ -2166,6 +2383,19 @@ for i = 1:numel(SimData.Species)
         end 
     end  
 end
+
+if h.Sim_UseNoise.Value
+    for i=1:4
+        
+        for j=1:4
+            if str2double(h.Sim_Noise{i}.String) > 0 && size(Total,1)>=i && size(Total,2)>=j
+               Noise = str2double(h.Sim_Noise{i}.String)*1000/SimData.General.Time(3);                
+               Total{i,j} = Total{i,j} + uint16(poissrnd(Noise,size(Total{i,j})));
+            end            
+        end
+    end
+end
+
 switch h.Sim_Save.Value
     case 1 %%% Save to workspace
         assignin('base',['Sim_Camera_' num2str(h.Sim_File_List.Value)],Total);
@@ -2181,10 +2411,6 @@ switch h.Sim_Save.Value
             end
         end
 end
-
-
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
