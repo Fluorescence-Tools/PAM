@@ -2423,7 +2423,7 @@ for i=Images %%% Plots Phasor Data
         Image=reshape(ImageColor(Int(:),:),size(Int,1),size(Int,2),3);
         
         %%% Selects, which masks are applied
-        if strfind(cell2mat({h.Phasor_ROI.Visible}),'on')>0
+        if strfind(cell2mat({h.Phasor_ROI.Visible}),'on')>0 
             %% ROIs selected
             Mask=zeros(size(Image));
             roi=zeros(size(Image,1),size(Image,2),6);
@@ -2469,7 +2469,7 @@ for i=Images %%% Plots Phasor Data
             %%% Averages ROI color
             Mask(ROI>0)=Mask(ROI>0)./ROI(ROI>0);
             ROI=ROI>0;
-        elseif strcmp(h.Phasor_Fraction.Visible,'on')
+        elseif strcmp(h.Phasor_Fraction.Visible,'on') 
             %% Fraction line
             %%% Determines Fraction line colormap
             switch h.Fraction_Color.Value

@@ -1,8 +1,17 @@
-function Pam
+function Output = Pam (SubFunction)
 global UserValues FileInfo PamMeta TcspcData
 h.Pam=findobj('Tag','Pam');
 
-if ~isempty(h.Pam) % Gives focus to Pam figure if it already exists
+if nargin>0 %%% Used to extract subfunctions from Pam
+    if ischar(SubFunction) && (exist(SubFunction)==2) %#ok<EXIST>
+        Output = str2func(SubFunction);
+    else
+        Output = [];
+    end
+    return;
+end
+
+if ~isempty(h.Pam) %%% Gives focus to Pam figure if it already exists
     figure(h.Pam); return;
 end     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
