@@ -4204,7 +4204,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Intensity=reshape(Intensity,[Lines,Lines]);
         Intensity=flip(Intensity',1);
-        save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path'); 
+        Type = FileInfo.Type;
+        save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type'); 
         
         h.Image_Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
     end

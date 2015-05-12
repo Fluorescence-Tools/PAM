@@ -433,6 +433,11 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Label','Average Pixels',...
         'Tag','E_Button',...
         'Callback',@List_Callback);
+    h.Export_ROIs = uimenu(...
+        'Parent',h.List_Menu,...
+        'Label','Export ROIs',...
+        'Tag','ExportROIs',...
+        'Callback',@List_Callback);
     
     %%% Listbox of all loaded files
     h.List = uicontrol(...
@@ -1611,9 +1616,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Deletes\Selects\Unselects files for plotting %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function List_Callback(~,e)
+function List_Callback(Obj,e)
 h = guidata(findobj('Tag','Phasor'));
-global PhasorData
+global PhasorData UserValues
 
 %%% Only executes if a valid key was pressed
 if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rightarrow','leftarrow','add'}))
@@ -1702,55 +1707,161 @@ if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rig
     
     %%% Starts plotting; plots phasor and the new images (free)
     Plot_Phasor([],[],1,[free 10]);    
-elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% Creates an averaged data entry
-    %%% Finds selected files
-    Sel = h.List.Value;          
-    for i = Sel
-        %%% Loades Data
-        PhasorData.Data{end+1} = PhasorData.Data{i};
-        PhasorData.Files{end+1,1} = [PhasorData.Files{i,1} ' (Avg)'];
-        PhasorData.Files{end,2} = PhasorData.Files{i,2};
-        PhasorData.Selected_Region{end+1} = false(size(PhasorData.Data{end}.g));
-        
-        G = PhasorData.Data{end}.g; G(end+2,end+2) = 0;
-        S = PhasorData.Data{end}.s; S(end+2,end+2) = 0;
-        Int = PhasorData.Data{end}.Intensity; Int(end+2,end+2) = 0;
-        
-        g=zeros(size(G));
-        s=zeros(size(G));
-        int=zeros(size(Int));
-        
-        %%% Applies moving average to data
-        for j=0:2
-            for k=0:2
-                g=g+circshift(G.*Int,[j,k,0]);
-                s=s+circshift(S.*Int,[j,k,0]);
-                int=int+circshift(Int,[j,k,0]);
+elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
+    switch Obj
+        case h.Average_Data %%% Moving average of phasor data
+            %%% Finds selected files
+            Sel = h.List.Value;
+            for i = Sel
+                %%% Loades Data
+                PhasorData.Data{end+1} = PhasorData.Data{i};
+                PhasorData.Files{end+1,1} = [PhasorData.Files{i,1} ' (Avg)'];
+                PhasorData.Files{end,2} = PhasorData.Files{i,2};
+                PhasorData.Selected_Region{end+1} = false(size(PhasorData.Data{end}.g));
+                
+                G = PhasorData.Data{end}.g; G(end+2,end+2) = 0;
+                S = PhasorData.Data{end}.s; S(end+2,end+2) = 0;
+                Int = PhasorData.Data{end}.Intensity; Int(end+2,end+2) = 0;
+                
+                g=zeros(size(G));
+                s=zeros(size(G));
+                int=zeros(size(Int));
+                
+                %%% Applies moving average to data
+                for j=0:2
+                    for k=0:2
+                        g=g+circshift(G.*Int,[j,k,0]);
+                        s=s+circshift(S.*Int,[j,k,0]);
+                        int=int+circshift(Int,[j,k,0]);
+                    end
+                end
+                g=g./int; g(isnan(g))=0;
+                s=s./int; s(isnan(s))=0;
+                PhasorData.Data{end}.g=g(2:end-1,2:end-1);
+                PhasorData.Data{end}.s=s(2:end-1,2:end-1);
+                %%% Uses file for phasor calculation
+                PhasorData.Selected(end+1)=1;
+                if sum(PhasorData.Plot(1:9)~=0)<9
+                    %%% Plots file in first free image plot
+                    free=find(PhasorData.Plot(1:9)==0,1,'first');
+                    PhasorData.Plot(free)=numel(PhasorData.Data);
+                    %%% Changes filename to blue, to indicate that it is plotted
+                    PhasorData.List{end+1}=['<HTML><FONT color="blue">' PhasorData.Files{end,1} ' Plot: ' num2str(free(end)) '</Font></html>'];
+                else
+                    %%% Changes filename to red, if no free plots are available
+                    free = [];
+                    PhasorData.List{end+1}=['<HTML><FONT color="red">' PhasorData.Files{end,1} '</Font></html>'];
+                end
+                %%% Updates list
+                h.List.String=PhasorData.List;
+                %%% Selects the last enty in list
+                h.List.Value=size(PhasorData.Files,1);
+                %%% Starts plotting; plots phasor and the new images (free)
+                Plot_Phasor([],[],1,[free 10]);
             end
-        end
-        g=g./int; g(isnan(g))=0;
-        s=s./int; s(isnan(s))=0;
-        PhasorData.Data{end}.g=g(2:end-1,2:end-1);
-        PhasorData.Data{end}.s=s(2:end-1,2:end-1);
-        %%% Uses file for phasor calculation
-        PhasorData.Selected(end+1)=1;
-        if sum(PhasorData.Plot(1:9)~=0)<9
-            %%% Plots file in first free image plot
-            free=find(PhasorData.Plot(1:9)==0,1,'first');
-            PhasorData.Plot(free)=numel(PhasorData.Data);
-            %%% Changes filename to blue, to indicate that it is plotted
-            PhasorData.List{end+1}=['<HTML><FONT color="blue">' PhasorData.Files{end,1} ' Plot: ' num2str(free(end)) '</Font></html>'];
-        else
-            %%% Changes filename to red, if no free plots are available
-            free = [];
-            PhasorData.List{end+1}=['<HTML><FONT color="red">' PhasorData.Files{end,1} '</Font></html>'];
-        end
-        %%% Updates list
-        h.List.String=PhasorData.List;
-        %%% Selects the last enty in list
-        h.List.Value=size(PhasorData.Files,1);
-        %%% Starts plotting; plots phasor and the new images (free)
-        Plot_Phasor([],[],1,[free 10]);
+        case h.Export_ROIs %%% Reloads raw data and saves the selected ROI photons
+            %%% Finds first selected file
+            Sel = h.List.Value(1);
+            
+            Pam = findobj('Tag','Pam');
+            if ~isempty(Pam);
+                close(Pam);
+            end
+            
+            global TcspcData FileInfo %#ok<TLEV>           
+            UserValues.File.Path = PhasorData.Data{Sel}.Path;
+            LSUserValues(1);            
+            %%% Loads original data
+            if isfield(PhasorData.Data{Sel},'Type')
+                LoadTcspc([],[],[],[],[],h.Phasor,PhasorData.Data{Sel}.FileNames,PhasorData.Data{Sel}.Type)
+            else
+                LoadTcspc([],[],[],[],[],h.Phasor)
+            end
+            
+            
+            %%% Extracts mask for ROIs
+            Pixel=str2double(h.Phasor_Res.String);
+            THmin=str2double(h.THmin.String);
+            THmax=str2double(h.THmax.String);
+            Mask = cell(6,1);
+            for j=1:6
+                if strcmp(h.Phasor_ROI(j,1).Visible,'on')
+                    %% Rectangular ROI
+                    Pos=h.Phasor_ROI(j,1).Position;
+                    %%% Generates ROI map
+                    ROI= PhasorData.Data{Sel}.g>=Pos(1) &...
+                        PhasorData.Data{Sel}.g<=(Pos(1)+Pos(3)) &...
+                        PhasorData.Data{Sel}.s>=Pos(2) &...
+                        PhasorData.Data{Sel}.s<=(Pos(2)+Pos(4)) &...
+                        PhasorData.Data{Sel}.Intensity >= THmin &...
+                        PhasorData.Data{Sel}.Intensity <= THmax;
+                    Mask{j} = find(flip(ROI',2));
+                elseif strcmp(h.Phasor_ROI(j,2).Visible,'on')
+                    %% Ellipoid ROI
+                    %%% Determins position of ROI
+                    x=round(Pixel*(h.Phasor_ROI(j,2).XData+0.1));
+                    y=round(Pixel*(h.Phasor_ROI(j,2).YData+0.1));
+                    x(x<1)=1; y(y<1)=1;
+                    Map=zeros(1.3*Pixel);
+                    %%% Transforms ROI position into pixelmap
+                    Map(sub2ind(size(Map),x,y))=1;
+                    %%% Fills ROI pixelmap
+                    Map=mod(cumsum(Map),2);  
+                    %%% Finds valid pixel
+                    G=round((PhasorData.Data{Sel}.g+0.1)*Pixel);
+                    G(isnan(G) | G<1)=1;
+                    S=round((PhasorData.Data{Sel}.s+0.1)*Pixel);
+                    S(isnan(S) | S<1)=1;
+                    %%% Generates ROI map
+                    ROI=Map(sub2ind(size(Map),G,S))==1 &...
+                        PhasorData.Data{Sel}.Intensity >= THmin &...
+                        PhasorData.Data{Sel}.Intensity <= THmax;
+                    Mask{j} = find(flip(ROI',2));
+                end
+            end            
+            %%% Calculate pixel times
+            Pixeltimes=0;
+            for j=1:FileInfo.Lines
+                Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+            end
+            
+            %%% Extracts photons for each ROI
+            Mask_MT = cell(numel(TcspcData.MT),6);
+            Mask_MI = cell(numel(TcspcData.MI),6);
+            for i=1:numel(TcspcData.MT)
+                if ~isempty(TcspcData.MT{i})
+                    PIE_MT = {};
+                    PIE_MI = {};
+                    TPhoton = numel(TcspcData.MT{i});
+                    NPhoton = 0;
+                    j = 1;
+                    while NPhoton<TPhoton
+                        MT = TcspcData.MT{i}((TcspcData.MT{i}>((j-1)*FileInfo.ImageTime/FileInfo.SyncPeriod)) & (TcspcData.MT{i}<=((j)*FileInfo.ImageTime/FileInfo.SyncPeriod)));
+                        MI = TcspcData.MI{i}((NPhoton+1):(NPhoton+numel(MT)));
+                        NPhoton = NPhoton+numel(MT);
+                        j = j+1;
+                        Image=cumsum(histc(mod(MT,FileInfo.ImageTime/FileInfo.SyncPeriod),Pixeltimes))+1;
+                        Pixel = cumsum(histc(Image,1:max(Image)))+1;
+                        Pixel = Pixel(1:numel(MT));
+                        for k=1:6
+                            if ~isempty(Mask{k})
+                                Valid = ismember(Pixel,Mask{k});
+                                Mask_MT{i,k} = [Mask_MT{i,k}; MT(Valid)];
+                                Mask_MI{i,k} = [Mask_MI{i,k}; MI(Valid)];
+                            end
+                        end
+                    end               
+                end
+            end
+            %%% Saves Files
+            for i=1:6
+                if ~isempty(Mask{i})
+                    MT = reshape(Mask_MT(:,i),size(TcspcData.MT));
+                    MI = reshape(Mask_MI(:,i),size(TcspcData.MI));
+                    Info = FileInfo;
+                    save(fullfile(PhasorData.Files{Sel,2},[PhasorData.Files{Sel,1}(1:end-4) '_ROI' num2str(i) '.ppf']),'MT','MI','Info');
+                end                
+            end     
     end
 end
 
