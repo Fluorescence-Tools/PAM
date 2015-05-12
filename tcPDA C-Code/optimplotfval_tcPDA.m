@@ -48,7 +48,7 @@ global tcPDAstruct
 handles = guidata(gcbo);
 
 if iteration == 0
-    plotfval = plot(iteration,fval,'kd','MarkerFaceColor',[1 0 1]);
+    %plotfval = plot(iteration,fval,'kd','MarkerFaceColor',[1 0 1]);
     %axes(handles.axes_chi2);
     plotfval = plot(iteration,fval,'kd','MarkerFaceColor',[1 0 1]);
     title(sprintf('Current Function Value: %g',fval),'interp','none');

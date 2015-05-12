@@ -46,7 +46,8 @@ Countrate2 = cell(numel(Cor_Array),1);
 
 for i=1:numel(Cor_Array)
     Norm{i} = Maxtime(i)-Timeaxis;
-    Norm{i}(Timeaxis>Maxtime(i)) = 0;
+    Norm{i}(Norm{i}<0) = 0;
+    %Norm{i}(Timeaxis>Maxtime(i)) = 0;
     for j = 1:numel(Timeaxis)
         Countrate1{i}(j) = sum(Weights1{i}(Data1{i} <= (Maxtime(i)-Timeaxis(j))));
         Countrate2{i}(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))));
