@@ -7219,37 +7219,40 @@ else
     FileName = BurstData.FileNameSPC;
 end
 FigureName = [FileName '_' FigureName];
-        
-%%% Get Path to save File
-FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
-UserValues.BurstBrowser.PrintPath = PathName;
-LSUserValues(1);
-%%% print figure
-hfig.PaperPositionMode = 'auto';
-dpi = 300;
-switch FilterIndex
-    case 1
-        print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi));
-    case 2
-        % Make changing paper type possible
-        set(hfig,'PaperType','<custom>');
 
-        % Set units to all be the same
-        set(hfig,'PaperUnits','inches');
-        set(hfig,'Units','inches');
-
-        % Set the page size and position to match the figure's dimensions
-        position = get(hfig,'Position');
-        set(hfig,'PaperPosition',[0,0,position(3:4)]);
-        set(hfig,'PaperSize',position(3:4));
-        set(hfig,'InvertHardCopy', 'off');
-
-        print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
-    case 3
-        print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
+directly_save = 0;
+if directly_save
+    %%% Get Path to save File
+    FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
+    [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+    UserValues.BurstBrowser.PrintPath = PathName;
+    LSUserValues(1);
+    %%% print figure
+    hfig.PaperPositionMode = 'auto';
+    dpi = 300;
+    switch FilterIndex
+        case 1
+            print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi));
+        case 2
+            % Make changing paper type possible
+            set(hfig,'PaperType','<custom>');
+            
+            % Set units to all be the same
+            set(hfig,'PaperUnits','inches');
+            set(hfig,'Units','inches');
+            
+            % Set the page size and position to match the figure's dimensions
+            position = get(hfig,'Position');
+            set(hfig,'PaperPosition',[0,0,position(3:4)]);
+            set(hfig,'PaperSize',position(3:4));
+            set(hfig,'InvertHardCopy', 'off');
+            
+            print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
+        case 3
+            print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
+    end
+    close(hfig);
 end
-close(hfig);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
