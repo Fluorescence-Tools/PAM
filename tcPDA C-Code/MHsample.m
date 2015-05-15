@@ -142,14 +142,17 @@ n_param = sum(plot_params);
 h = findobj('Tag','MCMC_Plot');
 if isempty(h) %%% create new figure, depending on the model
     %%% initialize plots
-    handles.Figure=figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8]); 
-    subplot(n_param+1,1,1);
+    handles.Figure=figure('Tag','MCMC_Plot','Units','normalized','Position',[0.2 0.1 0.6 0.8]);
+    %%% distribute plots in two columns and ceil((n_param+1)/2) rows (+1
+    %%% for p plot)
+    n_rows = ceil((n_param+1)/2);
+    subplot(n_rows,2,1);
     handles.plot_p = plot(prob(1:count));
     ylabel('log likelihood');
     j = 1;
     for i = 1:numel(plot_params)
         if plot_params(i)
-            subplot(n_param+1,1,j+1);
+            subplot(n_rows,2,j+1);
             handles.plot_param(j) = plot(samples(1:count,j));
             ylabel(param_names(i));
             j = j+1;
