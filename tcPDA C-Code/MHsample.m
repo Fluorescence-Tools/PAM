@@ -168,7 +168,7 @@ else
     j = 1;
     for i = 1:numel(plot_params)
         if plot_params(i)
-            handles.plot_param(j).YData = samples(1:count,j);
+            handles.plot_param(j).YData = samples(1:count,i);
             j = j+1;
         end
         
