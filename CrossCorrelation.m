@@ -23,7 +23,7 @@ Timeaxis_Exponent=floor(log2(Maxtime/10));
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
 Timeaxis(Timeaxis<1)=1;
-Timeaxis=cumsum([0;Timeaxis]);
+Timeaxis=cumsum([1;Timeaxis]);
 
 Cor_Array=repmat({[]},numel(Data1),1);
 parfor i=1:numel(Data1)
@@ -58,4 +58,5 @@ end
 Cor_Array=cell2mat(Cor_Array');
 Timeaxis=Timeaxis(1:max(Array_Length));
 %%% Shift timeaxis to center of bins
-Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
+%Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
+%Timeaxis = Timeaxis + Divisor(1:numel(Timeaxis))/2;

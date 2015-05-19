@@ -791,6 +791,8 @@ if ~isempty(FileName)
         FCSMeta.Model.Function=[FCSMeta.Model.Function Text(i)];
     end
     FCSMeta.Model.Function=cell2mat(FCSMeta.Model.Function);
+    %%% Convert to function handle
+    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function(5:end)]);
     %%% Extracts parameter names and initial values
     FCSMeta.Model.Params=cell(NParams,1);
     FCSMeta.Model.Value=zeros(NParams,1);
@@ -1221,7 +1223,8 @@ for i=1:size(FCSMeta.Plots,1)
             case 3
                 %% Normalizes to G(0) of the fit
                 P=FCSMeta.Params(:,i);x=0;
-                eval(FCSMeta.Model.Function);
+                %eval(FCSMeta.Model.Function);
+                OUT = feval(FCSMeta.Model.Function,P,x);
                 B=OUT;
                 if isnan(B) || B==0 || isinf(B)
                     B=1;
@@ -1253,14 +1256,16 @@ for i=1:size(FCSMeta.Plots,1)
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
         x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000); %plot fit function in higher binning than data!
-        eval(FCSMeta.Model.Function);
+        %eval(FCSMeta.Model.Function);
+        OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
         FCSMeta.Plots{i,2}.YData=OUT/B;      
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
         x=FCSMeta.Data{i,1};
-        eval(FCSMeta.Model.Function);
+        %eval(FCSMeta.Model.Function);
+        OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         if h.Fit_Weights.Value
             Residuals=(FCSMeta.Data{i,2}-OUT)./FCSMeta.Data{i,3};
@@ -1442,7 +1447,8 @@ switch mode
         for i=1:numel(FCS.Time)
             P=FCS.Params(i,:);
             x=FCS.Time{i};
-            eval(FCSMeta.Model.Function);
+            %eval(FCSMeta.Model.Function);
+            OUT = feval(FCSMeta.Model.Function,P,x);
             OUT=real(OUT);
             FCS.Fit{i}=OUT;
             FCS.Residuals{i,1}=(FCS.Data{i}-FCS.Fit{i})./FCS.Error{i};
@@ -1636,7 +1642,8 @@ P(~Fixed)=Fit_Params;
 %%% Assigns parameters from table to fixed parameters
 P(Fixed)=FCSMeta.Params(Fixed,file);
 %%% Applies function on parameters
-eval(FCSMeta.Model.Function);
+%eval(FCSMeta.Model.Function);
+OUT = feval(FCSMeta.Model.Function,P,x);
 %%% Applies weights
 Out=OUT./Weights;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1677,7 +1684,8 @@ for i=find(Active)'
   X(1:Points(k))=[]; 
   k=k+1;
   %%% Calculates function for current file
-  eval(FCSMeta.Model.Function);
+  %eval(FCSMeta.Model.Function);
+  OUT = feval(FCSMeta.Model.Function,P,x);
   Out=[Out;OUT]; 
 end
 Out=Out./Weights;
