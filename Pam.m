@@ -3637,8 +3637,9 @@ h.Progress_Axes.Color=[1 0 0];
 
 if mode==2 %%% For Multiple Correlation
     %%% Select file to be loaded
-    [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-                                        '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
+    [File, Path, Type] = uigetfile(UserValues.File.SPC_FileTypes,'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
+%     [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+%                                         '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
     if ~iscell(File) && ~all(File==0) %%% If exactly one file was selected
         File={File};
         NCors=1;
