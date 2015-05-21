@@ -3636,19 +3636,38 @@ h.Progress_Text.String = 'Correlating';
 h.Progress_Axes.Color=[1 0 0];
 
 if mode==2 %%% For Multiple Correlation
+    %%% following code is for remembering the last used FileType
+    LSUserValues(0);    
+    %%% Loads all possible file types
+    Filetypes = UserValues.File.SPC_FileTypes;
+    %%% Finds last used file type
+    Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
+    %%% Puts last uses file type to front
+    Fileorder = 1:size(Filetypes,1);
+    Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
+    Filetypes = Filetypes(Fileorder,:);
     %%% Select file to be loaded
-    [File, Path, Type] = uigetfile(UserValues.File.SPC_FileTypes,'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
-%     [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
-%                                         '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');    
+    [File, Path, Type] = uigetfile(Filetypes,'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+    %     [File, Path, Type] = uigetfile({'*0.spc','B&H-SPC files recorded with FabSurf (*0.spc)';...
+    %                                         '*_m1.spc','B&H-SPC files recorded with B&H-Software (*_m1.spc)'}, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+    %%% Determines actually selected file type
+    if Type~=0
+        Type = Fileorder(Type);
+    end
+    %%% Save the selected file type
+    UserValues.File.OpenTCSPC_FilterIndex = Type;
     if ~iscell(File) && ~all(File==0) %%% If exactly one file was selected
         File={File};
         NCors=1;
+        LSUserValues(1);
     elseif ~iscell(File) && all(File==0) %%% If no file was selected
         File=[];
         NCors=[];
     else %%% If several files were selected
         NCors=1:size(File,2);
-    end  
+        LSUserValues(1);
+
+    end
 else %%% Single File correlation
     File=[];
     NCors=1;
