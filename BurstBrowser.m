@@ -7031,13 +7031,14 @@ UpdateCorrections([],[])
 function ExportGraphs(obj,~)
 global BurstData UserValues
 h = guidata(obj);
-fontsize = 40;
+fontsize = 24;
+size_pixels = 500;
 switch obj
     case h.Export1DX_Menu
         %%% Create a new figure with aspect ratio appropiate for the current plot
         %%% i.e. 1.2*[x y]
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
+        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_x,hfig);
@@ -7067,7 +7068,7 @@ switch obj
         FigureName = BurstData.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
+        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_y,hfig);
@@ -7101,7 +7102,7 @@ switch obj
         FigureName = BurstData.NameArray{h.ParameterListY.Value};
     case h.Export2D_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*1000),round(1.2*900*AspectRatio)];
+        pos = [1,1, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
@@ -7124,20 +7125,21 @@ switch obj
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
             %%% Reorganize Axes Positions
-           switch i
-               case 1
+           switch panel_copy.Children(i).Tag
+               case 'Axes_1D_Y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-               case 2
+               case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
-               case 3
+                    xlabel(panel_copy.Children(i),'');
+               case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
            end
         end
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*1000),round(1.2*1000*AspectRatio)];
+        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabLifetimePanel,hfig);
@@ -7201,7 +7203,7 @@ switch obj
         FigureName = 'LifetimePlots';
     case h.ExportEvsTau_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*500),round(1.2*500*AspectRatio)];
+        pos = [1,1, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_EvsTauGG,hfig);
