@@ -7032,6 +7032,10 @@ function ExportGraphs(obj,~)
 global BurstData UserValues
 h = guidata(obj);
 fontsize = 24;
+if ispc
+    fontsize = fontsize/1.2;
+end
+
 size_pixels = 500;
 switch obj
     case h.Export1DX_Menu
@@ -7045,7 +7049,7 @@ switch obj
         %%% Rescale Position
         axes_copy.Position = [0.15 0.17 0.8 0.8];
         %%% Increase fontsize
-        axes_copy.FontSize = 50;
+        axes_copy.FontSize = fontsize;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
         %%% Reset XAxis Location
@@ -7062,8 +7066,8 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',50);
-        ylabel('Frequency','FontSize',50);
+        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',fontsize);
+        ylabel('Frequency','FontSize',fontsize);
         %%% Construct Name
         FigureName = BurstData.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
