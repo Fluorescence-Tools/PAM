@@ -1399,7 +1399,7 @@ switch mode
                 end
             end
             Color = [0 0 0];
-            for i = 1:numel(Sel)
+            for i = Sel
                 Color = Color + PCFData.ROI.Color{i};
             end
             

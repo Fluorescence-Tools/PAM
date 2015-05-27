@@ -59,11 +59,25 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Tag','LoadFit',...
         'Label','Load Fit Function',...
         'Callback',{@Load_Fit,1});
-    %%% File menu for fitting
-    h.DoFit = uimenu(...
+    %%% File menu to stop fitting
+    h.AbortFit = uimenu(...
         'Parent',h.FCSFit,...
+        'Tag','AbortFit',...
+        'Label',' Stop....'); 
+    h.StopFit = uimenu(...
+        'Parent',h.AbortFit,...
+        'Tag','StopFit',...
+        'Label','...Fit',...
+        'Callback',@Stop_FCSFit);   
+    %%% File menu for fitting
+    h.StartFit = uimenu(...
+        'Parent',h.FCSFit,...
+        'Tag','StartFit',...
+        'Label','Start...');
+    h.DoFit = uimenu(...
+        'Parent',h.StartFit,...
         'Tag','Fit',...
-        'Label','Fit',...
+        'Label','...Fit',...
         'Callback',@Do_FCSFit);
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -556,7 +570,7 @@ end
     FCSMeta.Model=[];
     FCSMeta.Fits=[];
     FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
-    
+    FCSMeta.FitInProgress = 0;    
     
     guidata(h.FCSFit,h); 
     Load_Fit([],[],0);
@@ -1482,6 +1496,15 @@ end
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Stops fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Stop_FCSFit(~,~)
+global FCSMeta
+h = guidata(findobj('Tag','FCSFit'));
+FCSMeta.FitInProgress = 0;
+h.Fit_Table.Enable='on';
+h.FCSFit.Name='FCS Fit';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1490,6 +1513,7 @@ function Do_FCSFit(~,~)
 global FCSMeta UserValues
 h = guidata(findobj('Tag','FCSFit'));
 %%% Indicates fit in progress
+FCSMeta.FitInProgress = 1;
 h.FCSFit.Name='FCS Fit  FITTING';
 h.Fit_Table.Enable='off';
 drawnow;
@@ -1515,6 +1539,9 @@ opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
 if sum(Global)==0
     %% Individual fits, not global
     for i=find(Active)';
+        if ~FCSMeta.FitInProgress
+            break;
+        end
         %%% Reads in parameters
         XData=FCSMeta.Data{i,1};
         YData=FCSMeta.Data{i,2};
@@ -1578,6 +1605,7 @@ else
         Lb=[Lb lb(~Fixed(i,:) & ~Global)];
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
+    %%% Puts current Data into global variable to be able to stop fitting
     %%% Performs fit
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
     %%% calculate confidence intervals
@@ -1616,6 +1644,7 @@ end
 %%% Indicates end of fitting procedure
 h.Fit_Table.Enable='on';
 h.FCSFit.Name='FCS Fit';
+FCSMeta.FitInProgress = 0;
 %%% Updates table values and plots
 Update_Table([],[],2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1626,8 +1655,14 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{1}:    X values of current file
 %%% Data{2}:    Weights of current file
 %%% Data{3}:    Indentifier of current file
-
 global FCSMeta
+
+drawnow;
+if ~FCSMeta.FitInProgress
+    Out = zeros(size(Data{2}));
+    return;
+end
+
 h = guidata(findobj('Tag','FCSFit'));
 
 x=Data{1};
@@ -1654,9 +1689,14 @@ function [Out] = Fit_Global(Fit_Params,Data)
 %%% Data{1}:    X values of all files
 %%% Data{2}:    Weights of all files
 %%% Data{3}:    Length indentifier for X and Weights data of each file
-
 global FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
+
+drawnow;
+if ~FCSMeta.FitInProgress
+    Out = zeros(size(Data{2}));
+    return;
+end
 
 X=Data{1};
 Weights=Data{2};

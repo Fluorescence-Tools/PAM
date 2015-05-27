@@ -57,6 +57,7 @@ if min(Array_Length)~=max(Array_Length)
 end
 Cor_Array=cell2mat(Cor_Array');
 Timeaxis=Timeaxis(1:max(Array_Length));
+Timeaxis(22:end) = Timeaxis(22:end)-1;
 %%% Shift timeaxis to center of bins
 %Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
 %Timeaxis = Timeaxis + Divisor(1:numel(Timeaxis))/2;
