@@ -806,7 +806,8 @@ if ~isempty(FileName)
     end
     FCSMeta.Model.Function=cell2mat(FCSMeta.Model.Function);
     %%% Convert to function handle
-    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function(5:end)]);
+    FunctionStart = strfind(FCSMeta.Model.Function,'=');
+    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function((FunctionStart(1)+1):end)]);
     %%% Extracts parameter names and initial values
     FCSMeta.Model.Params=cell(NParams,1);
     FCSMeta.Model.Value=zeros(NParams,1);
@@ -1343,6 +1344,7 @@ h.Residuals_Axes.YLim=[RMin-0.1*abs(RMin) RMax+0.05*RMax+0.0001];
 %%% 1: Change X scaling
 %%% 2: Export to figure
 %%% 3: Export to Workspace
+%%% 4: Export Params to Clipboard
 function Plot_Menu_Callback(Obj,~,mode)
 h = guidata(findobj('Tag','FCSFit'));
 global FCSMeta FCSData
@@ -1469,7 +1471,7 @@ switch mode
         end
         %%% Copies data to workspace
         assignin('base','FCS',FCS);
-    case 4 %%% Exports Fit Result to Excel Sheet
+    case 4 %%% Exports Fit Result to Clipboard
         FitResult = cell(numel(FCSData.FileName),1);
         for i = 1:numel(FCSData.FileName)
             FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
@@ -1487,7 +1489,7 @@ switch mode
             end
         end
         FitResult = horzcat(Params,horzcat(FitResult{:}));
-        mat2clip(FitResult);
+        Mat2clip(FitResult);
 end
 
 
@@ -1505,7 +1507,6 @@ h = guidata(findobj('Tag','FCSFit'));
 FCSMeta.FitInProgress = 0;
 h.Fit_Table.Enable='on';
 h.FCSFit.Name='FCS Fit';
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1657,6 +1658,7 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{3}:    Indentifier of current file
 global FCSMeta
 
+%%% Aborts Fit
 drawnow;
 if ~FCSMeta.FitInProgress
     Out = zeros(size(Data{2}));
@@ -1692,6 +1694,7 @@ function [Out] = Fit_Global(Fit_Params,Data)
 global FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
 
+%%% Aborts Fit
 drawnow;
 if ~FCSMeta.FitInProgress
     Out = zeros(size(Data{2}));
@@ -1734,7 +1737,7 @@ Out=Out./Weights;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% Mat2Clip copies contents of numeric or cell array to clipboard %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function out = mat2clip(a, delim)
+function Mat2clip(a, delim)
 
 %MAT2CLIP  Copies matrix to system clipboard.
 %
@@ -1781,10 +1784,10 @@ function out = mat2clip(a, delim)
 %
 % Inspired by NUM2CLIP by Grigor Browning (File ID: 8472) Matlab FEX.
 
-error(nargchk(1, 2, nargin, 'struct'));
+narginchk(1, 2);
 
-if ndims(a) ~= 2
- error('mat2clip:Only2D', 'Only 2-D matrices are allowed.');
+if ~ismatrix(a)
+ error('Mat2clip:Only2D', 'Only 2-D matrices are allowed.');
 end
 
 % each element is separated by tabs and each row is separated by a NEWLINE
@@ -1792,30 +1795,30 @@ end
 sep = {'\t', '\n', ''};
 
 if nargin == 2
- if ischar(delim)
-   sep{1} = delim;
- else
-   error('mat2clip:CharacterDelimiter', ...
-     'Only character array for delimiters');
- end
+    if ischar(delim)
+        sep{1} = delim;
+    else
+        error('Mat2clip:CharacterDelimiter', ...
+            'Only character array for delimiters');
+    end
 end
 
 % try to determine the format of the numeric elements.
 switch get(0, 'Format')
- case 'short'
-   fmt = {'%s', '%0.5f' , '%d'};
- case 'shortE'
-   fmt = {'%s', '%0.5e' , '%d'};
- case 'shortG'
-   fmt = {'%s', '%0.5g' , '%d'};
- case 'long'
-   fmt = {'%s', '%0.15f', '%d'};
- case 'longE'
-   fmt = {'%s', '%0.15e', '%d'};
- case 'longG'
-   fmt = {'%s', '%0.15g', '%d'};
- otherwise
-   fmt = {'%s', '%0.5f' , '%d'};
+    case 'short'
+        fmt = {'%s', '%0.5f' , '%d'};
+    case 'shortE'
+        fmt = {'%s', '%0.5e' , '%d'};
+    case 'shortG'
+        fmt = {'%s', '%0.5g' , '%d'};
+    case 'long'
+        fmt = {'%s', '%0.15f', '%d'};
+    case 'longE'
+        fmt = {'%s', '%0.15e', '%d'};
+    case 'longG'
+        fmt = {'%s', '%0.15g', '%d'};
+    otherwise
+        fmt = {'%s', '%0.5f' , '%d'};
 end
 
 if iscell(a)  % cell array
@@ -1863,16 +1866,16 @@ elseif isinteger(a) || islogical(a)  % integer types and logical
    b=sprintf(sprintf('%s%s', tmp{:}), a(:));
 
 elseif ischar(a)  % character array
-   % if multiple rows, convert to a single line with line breaks
-   if size(a, 1) > 1
-     b = cellstr(a);
-     b = [sprintf('%s\n', b{1:end-1}), b{end}];
-   else
-     b = a;
-   end
-
+    % if multiple rows, convert to a single line with line breaks
+    if size(a, 1) > 1
+        b = cellstr(a);
+        b = [sprintf('%s\n', b{1:end-1}), b{end}];
+    else
+        b = a;
+    end
+    
 else
-   error('mat2clip:InvalidDataType', ...
+   error('Mat2clip:InvalidDataType', ...
      ['Invalid data type. ', ...
      'Only cells, strings, and numeric data types are allowed.']);
 

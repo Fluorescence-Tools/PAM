@@ -61,12 +61,30 @@ h.LoadFit = uimenu(h.File,...
     'Tag','LoadFit',...
     'Label','Load Fit Function',...
     'Callback',{@Load_Fit,1});
+%%% File menu to stop fitting
+h.AbortFit = uimenu(...
+    'Parent',h.MIAFit,...
+    'Tag','AbortFit',...
+    'Label',' Stop....');
+h.StopFit = uimenu(...
+    'Parent',h.AbortFit,...
+    'Tag','StopFit',...
+    'Label','...Fit',...
+    'Callback',@Stop_MIAFit);
+%%% File menu for fitting
+h.StartFit = uimenu(...
+    'Parent',h.MIAFit,...
+    'Tag','StartFit',...
+    'Label','Start...');
 %%% File menu for fitting
 h.DoFit = uimenu(...
-    'Parent',h.MIAFit,...
+    'Parent',h.StartFit,...
     'Tag','Fit',...
-    'Label','Fit',...
+    'Label','...Fit',...
     'Callback',@Do_MIAFit);
+
+ 
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -505,6 +523,13 @@ h.Main_Tab = uitabgroup(...
         'Checked','off',...
         'Tag','MIAFit_Plot_Export2Base',...
         'Callback',{@Plot_Menu_Callback,2});
+    h.MIAFit_Plot_Export2Clip = uimenu(...
+        'Parent',h.MIAFit_Plot_Menu,...
+        'Label','Export to clipboard',...
+        'Checked','off',...
+        'Tag','MIAFit_Plot_Export2Clip',...
+        'Callback',{@Plot_Menu_Callback,4});
+    
     %% On axis plots
 %%% On axis plots tab
 h.On_Axis_Tab= uitab(...
@@ -703,6 +728,7 @@ MIAFitMeta.Plots=cell(0);
 MIAFitMeta.Model=[];
 MIAFitMeta.Fits=[];
 MIAFitMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
+MIAFitMeta.FitInProgress = 0;
 
 guidata(h.MIAFit,h);
 Load_Fit([],[],0);
@@ -882,6 +908,9 @@ if ~isempty(FileName)
         MIAFitMeta.Model.Function=[MIAFitMeta.Model.Function Text(i)];
     end
     MIAFitMeta.Model.Function=cell2mat(MIAFitMeta.Model.Function);
+    %%% Convert to function handle
+    FunctionStart = strfind(MIAFitMeta.Model.Function,'=');
+    eval(['MIAFitMeta.Model.Function = @(P,x,y) ' MIAFitMeta.Model.Function((FunctionStart(1)+1):end)]);
     %%% Extracts parameter names, initial values and bounds
     MIAFitMeta.Model.Params=cell(NParams,1);
     MIAFitMeta.Model.Value=zeros(NParams,1);
@@ -963,9 +992,8 @@ switch mode
                             B = 1;
                         end
                     case 3 %% Normalizes to G(0) of the fit
-                        P = MIAFitMeta.Params(:,File); x = 0; y = 0; %#ok<NASGU>
-                        eval(MIAFitMeta.Model.Function);
-                        B = OUT;
+                        P = MIAFitMeta.Params(:,File); x = 0; y = 0;
+                        B = feval(MIAFitMeta.Model.Function,P,x,y);
                         if isnan(B) || B==0 || isinf(B)
                             B = 1;
                         end
@@ -1111,8 +1139,8 @@ switch mode
                             case 7 %%% Correlation image
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                             case 8 %%% Fit image
-                                P=MIAFitMeta.Params(:,File); %#ok<NASGU>
-                                eval(MIAFitMeta.Model.Function);
+                                P=MIAFitMeta.Params(:,File);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1120,8 +1148,8 @@ switch mode
                                 end
                                 Data = real(OUT)/B;
                             case 9 %%% Residuals image
-                                P=MIAFitMeta.Params(:,File); %#ok<NASGU>
-                                eval(MIAFitMeta.Model.Function);
+                                P=MIAFitMeta.Params(:,File);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
                                 Out = real(OUT)/B;
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
@@ -1175,8 +1203,8 @@ switch mode
                             case 10 %%% Correlation surf
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                             case 11 %%% Fit surf
-                                P=MIAFitMeta.Params(:,File); %#ok<NASGU>
-                                eval(MIAFitMeta.Model.Function);
+                                P=MIAFitMeta.Params(:,File);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1232,8 +1260,8 @@ switch mode
                         Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         Error = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         
-                        P=MIAFitMeta.Params(:,File); %#ok<NASGU>
-                        eval(MIAFitMeta.Model.Function);
+                        P=MIAFitMeta.Params(:,File);
+                        OUT = feval(MIAFitMeta.Model.Function,P,x,y);
                         if h.Omit_Center.Value
                             OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                 (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1304,6 +1332,25 @@ switch mode
                h.Export_Table.Data{NumY,end} = [];
            end
        end
+    case 4 %%% Exports Fit Result to Clipboard
+        FitResult = cell(numel(MIAFitData.FileName),1);
+        for i = 1:numel(MIAFitData.FileName)
+            FitResult{i} = cell(size(MIAFitMeta.Params,1)+2,1);
+            FitResult{i}{1} = MIAFitData.FileName{i};
+            FitResult{i}{2} = str2double(h.Fit_Table.Data{i,end});
+            for j = 3:(size(MIAFitMeta.Params,1)+2)
+                FitResult{i}{j} = MIAFitMeta.Params(j-2,i);
+            end
+        end
+        [~,ModelName,~] = fileparts(MIAFitMeta.Model.Name);
+        Params = vertcat({ModelName;'Chi2'},MIAFitMeta.Model.Params);
+%         if h.Conf_Interval.Value
+%             for i = 1:numel(MIAFitData.FileName)
+%                 FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell(MIAFitMeta.Confidence_Intervals{i})));
+%             end
+%         end
+        FitResult = horzcat(Params,horzcat(FitResult{:}));
+        Mat2clip(FitResult);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1361,9 +1408,8 @@ for i=1:size(MIAFitMeta.Plots,1)
                     B = 1;
                 end
             case 3 %% Normalizes to G(0) of the fit
-                P = MIAFitMeta.Params(:,i); x = 0; y = 0; %#ok<NASGU>
-                eval(MIAFitMeta.Model.Function);
-                B = OUT;
+                P = MIAFitMeta.Params(:,i); x = 0; y = 0;
+                B = feval(MIAFitMeta.Model.Function,P,x,y);
                 if isnan(B) || B==0 || isinf(B)
                     B = 1;
                 end
@@ -1404,8 +1450,8 @@ for i=1:size(MIAFitMeta.Plots,1)
             MIAFitMeta.Plots{i,4}.UData=0;
         end
         %% Calculates fit y data and updates fit plot
-        P=MIAFitMeta.Params(:,i); %#ok<NASGU>
-        eval(MIAFitMeta.Model.Function);
+        P=MIAFitMeta.Params(:,i);
+        OUT = feval(MIAFitMeta.Model.Function,P,x,y);
         OUT=real(OUT);
         if h.Omit_Center.Value
            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
@@ -1912,7 +1958,15 @@ UserValues.MIAFit.PlotStyleAll = h.Style_Table.Data(end,:);
 LSUserValues(1);
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Stops fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Stop_MIAFit(~,~)
+global MIAFitMeta
+h = guidata(findobj('Tag','MIAFit'));
+MIAFitMeta.FitInProgress = 0;
+h.Fit_Table.Enable='on';
+h.MIAFit.Name='MIA Fit';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1922,6 +1976,7 @@ h = guidata(findobj('Tag','MIAFit'));
 %%% Indicates fit in progress
 h.MIAFit.Name = 'MIA Fit  FITTING';
 h.Fit_Table.Enable = 'off';
+MIAFitMeta.FitInProgress = 1;
 drawnow;
 %%% Reads parameters from table
 Fixed = cell2mat(h.Fit_Table.Data(1:end-1,5:3:end-1));
@@ -2036,11 +2091,9 @@ end
 %%% Indicates end of fitting procedure
 h.Fit_Table.Enable='on';
 h.MIAFit.Name='MIA Fit';
+MIAFitMeta.FitInProgress = 0;
 %%% Updates table values and plots
 Update_Table([],[],2);
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for individual fits %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2050,12 +2103,18 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{2}:    y values of current file
 %%% Data{3}:    Weights of current file
 %%% Data{4}:    Indentifier of current file
-
 global MIAFitMeta
 h = guidata(findobj('Tag','MIAFit'));
 
-x = Data{1}; %#ok<NASGU>
-y = Data{2}; %#ok<NASGU>
+%%% Aborts Fit
+drawnow;
+if ~MIAFitMeta.FitInProgress
+    Out = zeros(size(Data{2}));
+    return;
+end
+
+x = Data{1};
+y = Data{2};
 Weights = Data{3};
 Omit = Data{4};
 file = Data{5};
@@ -2066,16 +2125,14 @@ P = zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
 P(~Fixed) = Fit_Params;
 %%% Assigns parameters from table to fixed parameters
-P(Fixed) = MIAFitMeta.Params(Fixed,file); %#ok<NASGU>
+P(Fixed) = MIAFitMeta.Params(Fixed,file);
 %%% Applies function on parameters
-eval(MIAFitMeta.Model.Function);
+OUT = feval(MIAFitMeta.Model.Function,P,x,y);
 if h.Omit_Center.Value
     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) = Omit;  %#ok<NODEF>
 end
 %%% Applies weights
 Out=OUT./Weights;
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for global fits %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2089,6 +2146,11 @@ function [Out] = Fit_Global(Fit_Params,Data)
 global MIAFitMeta
 h = guidata(findobj('Tag','MIAFit'));
 
+%%% Aborts Fit
+if ~MIAFitMeta.FitInProgress
+    Out = zeros(size(Data{2}));
+    return;
+end
 
 X=Data{1};
 Y=Data{2};
@@ -2118,16 +2180,167 @@ for i=find(Active)'
   x = X(1:Points(k)); y = Y(1:Points(k));
   X(1:Points(k))=[]; Y(1:Points(k)) = []; 
   %%% Calculates function for current file
-  eval(MIAFitMeta.Model.Function);
+  OUT = feval(MIAFitMeta.Model.Function,P,x,y);
   if h.Omit_Center.Value
-      OUT(x==0 & y==0) = Omit(k); %#ok<AGROW>
+      OUT(x==0 & y==0) = Omit(k);
   end
   Out=[Out;OUT]; 
   k=k+1;
 end
 Out=Out./Weights;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Mat2Clip copies contents of numeric or cell array to clipboard %%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Mat2clip(a, delim)
 
+%MAT2CLIP  Copies matrix to system clipboard.
+%
+% MAT2CLIP(A) copies the contents of 2-D matrix A to the system clipboard.
+% A can be a numeric array (floats, integers, logicals), character array,
+% or a cell array. The cell array can have mixture of data types.
+%
+% Each element of the matrix will be separated by tabs, and each row will
+% be separated by a NEWLINE character. For numeric elements, it tries to
+% preserve the current FORMAT. The copied matrix can be pasted into
+% spreadsheets.
+%
+% OUT = MAT2CLIP(A) returns the actual string that was copied to the
+% clipboard.
+%
+% MAT2CLIP(A, DELIM) uses DELIM as the delimiter between columns. The
+% default is tab (\t).
+%
+% Example:
+%   format long g
+%   a = {'hello', 123;pi, 'bye'}
+%   mat2clip(a);
+%   % paste into a spreadsheet
+%
+%   format short
+%   data = {
+%     'YPL-320', 'Male',   38, true,  uint8(176);
+%     'GLI-532', 'Male',   43, false, uint8(163);
+%     'PNI-258', 'Female', 38, true,  uint8(131);
+%     'MIJ-579', 'Female', 40, false, uint8(133) }
+%   mat2clip(data);
+%   % paste into a spreadsheet
+%
+%   mat2clip(data, '|');   % using | as delimiter
+%
+% See also CLIPBOARD.
+
+% VERSIONS:
+%   v1.0 - First version
+%   v1.1 - Now works with all numeric data types. Added option to specify
+%          delimiter character.
+%
+% Copyright 2009 The MathWorks, Inc.
+%
+% Inspired by NUM2CLIP by Grigor Browning (File ID: 8472) Matlab FEX.
+
+narginchk(1, 2);
+
+if ~ismatrix(a)
+ error('Mat2clip:Only2D', 'Only 2-D matrices are allowed.');
+end
+
+% each element is separated by tabs and each row is separated by a NEWLINE
+% character.
+sep = {'\t', '\n', ''};
+
+if nargin == 2
+    if ischar(delim)
+        sep{1} = delim;
+    else
+        error('Mat2clip:CharacterDelimiter', ...
+            'Only character array for delimiters');
+    end
+end
+
+% try to determine the format of the numeric elements.
+switch get(0, 'Format')
+    case 'short'
+        fmt = {'%s', '%0.5f' , '%d'};
+    case 'shortE'
+        fmt = {'%s', '%0.5e' , '%d'};
+    case 'shortG'
+        fmt = {'%s', '%0.5g' , '%d'};
+    case 'long'
+        fmt = {'%s', '%0.15f', '%d'};
+    case 'longE'
+        fmt = {'%s', '%0.15e', '%d'};
+    case 'longG'
+        fmt = {'%s', '%0.15g', '%d'};
+    otherwise
+        fmt = {'%s', '%0.5f' , '%d'};
+end
+
+if iscell(a)  % cell array
+   a = a';
+
+   floattypes = cellfun(@isfloat, a);
+   inttypes = cellfun(@isinteger, a);
+   logicaltypes = cellfun(@islogical, a);
+   strtypes = cellfun(@ischar, a);
+
+   classType = zeros(size(a));
+   classType(strtypes) = 1;
+   classType(floattypes) = 2;
+   classType(inttypes) = 3;
+   classType(logicaltypes) = 3;
+   if any(~classType(:))
+     error('mat2clip:InvalidDataTypeInCell', ...
+       ['Invalid data type in the cell array. ', ...
+       'Only strings and numeric data types are allowed.']);
+   end
+   sepType = ones(size(a));
+   sepType(end, :) = 2; sepType(end) = 3;
+   tmp = [fmt(classType(:));sep(sepType(:))];
+
+   b=sprintf(sprintf('%s%s', tmp{:}), a{:});
+
+elseif isfloat(a)  % floating point number
+   a = a';
+
+   classType = repmat(2, size(a));
+   sepType = ones(size(a));
+   sepType(end, :) = 2; sepType(end) = 3;
+   tmp = [fmt(classType(:));sep(sepType(:))];
+
+   b=sprintf(sprintf('%s%s', tmp{:}), a(:));
+
+elseif isinteger(a) || islogical(a)  % integer types and logical
+   a = a';
+
+   classType = repmat(3, size(a));
+   sepType = ones(size(a));
+   sepType(end, :) = 2; sepType(end) = 3;
+   tmp = [fmt(classType(:));sep(sepType(:))];
+
+   b=sprintf(sprintf('%s%s', tmp{:}), a(:));
+
+elseif ischar(a)  % character array
+    % if multiple rows, convert to a single line with line breaks
+    if size(a, 1) > 1
+        b = cellstr(a);
+        b = [sprintf('%s\n', b{1:end-1}), b{end}];
+    else
+        b = a;
+    end
+    
+else
+   error('Mat2clip:InvalidDataType', ...
+     ['Invalid data type. ', ...
+     'Only cells, strings, and numeric data types are allowed.']);
+
+end
+
+clipboard('copy', b);
+
+if nargout
+ out = b;
+end
 
 
 
