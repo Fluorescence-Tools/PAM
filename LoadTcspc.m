@@ -8,6 +8,9 @@ if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
     Filetypes = UserValues.File.SPC_FileTypes;
     %%% Finds last used file type
     Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
+    if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1  
+        Lastfile = 1;
+    end
     %%% Puts last uses file type to front
     Fileorder = 1:size(Filetypes,1);
     Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];

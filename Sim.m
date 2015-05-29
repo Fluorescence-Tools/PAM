@@ -112,6 +112,7 @@ h.Sim_Save = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
+    'Value',3,...
     'String',{'Save to workspace', 'Save as TIFFs', 'Save as .sim'},...
     'Position',[0.12 0.8 0.25 0.15]);
 
@@ -1105,6 +1106,8 @@ SimData.Species(1).R = 50*ones(4,4);
 
 SimData.General(1).Species = SimData.Species(1);
 
+SimData.Stat = 0;
+
 
 guidata(h.Sim,h); 
 
@@ -1692,28 +1695,46 @@ end
 %%% Start simulation procedure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Start_Simulation(~,~)
+global SimData
 h = guidata(findobj('Tag','Sim'));
 
-if isdir(h.Sim_Path.String)
-    h.Sim_File_List.Enable = 'off';
-    h.Sim_File_List.Value = 1;
-    
-    for i = 1:numel(h.Sim_File_List.String)
-        File_List_Callback([],[],3);
-        drawnow
-        if h.Sim_Scan.Value<5
-            Do_PointSim;
-        else
-            profile on
-            Do_CameraSim;
-            profile viewer
-        end
-        h.Sim_File_List.Value = h.Sim_File_List.Value+1;
-    end
+if strcmp(h.Sim_Start.String, 'Stop')
     h.Sim_File_List.Enable = 'on';
     h.Sim_File_List.Value = 1;
+    SimData.Start = 0;
+    h.Sim_Start.String = 'Start';
     File_List_Callback([],[],3);
 end
+
+if ~isdir(h.Sim_Path.String)
+    return;
+end
+h.Sim_File_List.Enable = 'off';
+h.Sim_File_List.Value = 1;
+h.Sim_Start.String = 'Stop';
+SimData.Start = 1;
+
+for i = 1:numel(h.Sim_File_List.String)
+    File_List_Callback([],[],3);
+    drawnow
+    if ~SimData.Start %%% Aborts Simulation
+       return; 
+    end
+    if h.Sim_Scan.Value<5
+        Do_PointSim;
+    else
+        profile on
+        Do_CameraSim;
+        profile viewer
+    end
+    h.Sim_File_List.Value = h.Sim_File_List.Value+1;
+end
+h.Sim_File_List.Enable = 'on';
+h.Sim_File_List.Value = 1;
+SimData.Start = 0;
+h.Sim_Start.String = 'Start';
+File_List_Callback([],[],3);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Peforms actual simulation procedure for point detector observation %%%%
@@ -1753,7 +1774,9 @@ Photons_total = cell(numel(SimData.Species),4);
 MI_total = cell(numel(SimData.Species),4);
 
 for i = 1:numel(SimData.Species);
-    
+    if ~SimData.Start %%% Aborts Simulation
+       return; 
+    end
     NoP = SimData.Species(i).N;
     D = sqrt(2*SimData.Species(i).D*10^6/Freq);
     
