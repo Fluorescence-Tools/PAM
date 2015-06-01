@@ -907,11 +907,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');    
     end
     P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
+    %%% Checks, if BurstBrowser.Display.KDE subfield exists
+    if ~isfield (S.BurstBrowser.Display,'KDE')
+        S.BurstBrowser.Display.KDE=0;
+        disp('UserValues.BurstBrowser.Display.KDE was incomplete');    
+    end
+    P.BurstBrowser.Display.KDE = S.BurstBrowser.Display.KDE;
+     %%% Checks, if BurstBrowser.Display.ColorMapInvert subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorMapInvert')
+        S.BurstBrowser.Display.ColorMapInvert=0;
+        disp('UserValues.BurstBrowser.Display.ColorMapInvert was incomplete');    
+    end
+    P.BurstBrowser.Display.ColorMapInvert = S.BurstBrowser.Display.ColorMapInvert;
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
         disp('UserValues.BurstBrowser.Settings was incomplete');    
     end
+    
     P.BurstBrowser.Settings = [];
     %%% Check, if BurstBrowser.Settings.PrintPath subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PrintPath')
