@@ -3134,6 +3134,7 @@ if obj == h.ColorMapPopupmenu
         UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
     else %%% custom colormap
         colormapeditor;
+        return;
     end
 end
 if obj == h.SmoothKDE
@@ -3183,7 +3184,7 @@ BurstMeta.Plots.Main_Plot(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = ones(size(H,1),size(H,2));
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.Main_Plot(2).XData = xbins;
 BurstMeta.Plots.Main_Plot(2).YData = ybins;
@@ -3269,9 +3270,9 @@ else
 end
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
-    eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+    eval(['colormap(h.BurstBrowser,' UserValues.BurstBrowser.Display.ColorMap ')']);
 else
-    colormap(UserValues.BurstBrowser.Display.ColorMap);
+    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
 end
 if UserValues.BurstBrowser.Display.ColorMapInvert
     colormap(flipud(colormap));
@@ -6019,7 +6020,7 @@ BurstMeta.Plots.EvsTauGG(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauGG(1).AlphaData = (H>0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.EvsTauGG(1).AlphaData = ones(size(H,1),size(H,2));
+    BurstMeta.Plots.EvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.EvsTauGG(2).XData = xbins;
 BurstMeta.Plots.EvsTauGG(2).YData = ybins;
@@ -6039,7 +6040,7 @@ BurstMeta.Plots.EvsTauRR(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauRR(1).AlphaData = (H>0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.EvsTauRR(1).AlphaData = ones(size(H,1),size(H,2));
+    BurstMeta.Plots.EvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.EvsTauRR(2).XData = xbins;
 BurstMeta.Plots.EvsTauRR(2).YData = ybins;
@@ -6055,7 +6056,7 @@ BurstMeta.Plots.rGGvsTauGG(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rGGvsTauGG(1).AlphaData = ones(size(H,1),size(H,2));
+    BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
 BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
@@ -6070,7 +6071,7 @@ BurstMeta.Plots.rRRvsTauRR(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rRRvsTauRR(1).AlphaData = ones(size(H,1),size(H,2));
+    BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
@@ -6091,7 +6092,7 @@ if any(BurstData.BAMethod == [3,4])
     if ~UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = (H>0);
     elseif UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = ones(size(H,1),size(H,2));
+        BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
     BurstMeta.Plots.E_BtoGRvsTauBB(2).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).YData = ybins;
@@ -6111,7 +6112,7 @@ if any(BurstData.BAMethod == [3,4])
     if ~UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rBBvsTauBB(1).AlphaData = (H>0);
     elseif UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.rBBvsTauBB(1).AlphaData = ones(size(H,1),size(H,2));
+        BurstMeta.Plots.rBBvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
     BurstMeta.Plots.rBBvsTauBB(2).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(2).YData = ybins;
