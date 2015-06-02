@@ -913,12 +913,31 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.KDE was incomplete');    
     end
     P.BurstBrowser.Display.KDE = S.BurstBrowser.Display.KDE;
-     %%% Checks, if BurstBrowser.Display.ColorMapInvert subfield exists
+    %%% Checks, if BurstBrowser.Display.ColorMapInvert subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorMapInvert')
         S.BurstBrowser.Display.ColorMapInvert=0;
         disp('UserValues.BurstBrowser.Display.ColorMapInvert was incomplete');    
     end
     P.BurstBrowser.Display.ColorMapInvert = S.BurstBrowser.Display.ColorMapInvert;
+    %%% Checks, if BurstBrowser.Display.ColorLine1 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine1')
+        S.BurstBrowser.Display.ColorLine1=[0 0 1];
+        disp('UserValues.BurstBrowser.Display.ColorLine1 was incomplete');    
+    end
+    P.BurstBrowser.Display.ColorLine1 = S.BurstBrowser.Display.ColorLine1;
+    %%% Checks, if BurstBrowser.Display.ColorLine2 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine2')
+        S.BurstBrowser.Display.ColorLine2=[1 0 0];
+        disp('UserValues.BurstBrowser.Display.ColorLine2 was incomplete');    
+    end
+    P.BurstBrowser.Display.ColorLine2 = S.BurstBrowser.Display.ColorLine2;
+    %%% Checks, if BurstBrowser.Display.ColorLine3 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine3')
+        S.BurstBrowser.Display.ColorLine3=[0 1 0];
+        disp('UserValues.BurstBrowser.Display.ColorLine3 was incomplete');    
+    end
+    P.BurstBrowser.Display.ColorLine3 = S.BurstBrowser.Display.ColorLine3;
+    
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];

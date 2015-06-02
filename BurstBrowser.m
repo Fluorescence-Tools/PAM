@@ -25,7 +25,7 @@ if isempty(hfig)
     %'KeyPressFcn',@Bowser_KeyPressFcn,...
     whitebg(h.BurstBrowser, Look.Fore);
     set(h.BurstBrowser,'Color',Look.Back);
-    
+   
     %%% define menu items
     h.File_Menu = uimenu(...
         'Parent',h.BurstBrowser,...
@@ -1172,7 +1172,12 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    Colormaps_String = {'jet','hot','bone','gray','parula'};
+    Colormaps_String = {'jet','hot','bone','gray','parula','custom'};
+    if ischar(UserValues.BurstBrowser.Display.ColorMap)
+        colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
+    else
+        colormap_val = numel(Colormaps_String);
+    end
     h.ColorMapPopupmenu = uicontrol(...
         'Style','popupmenu',...
         'Parent',h.DisplayOptionsPanel,...
@@ -1183,7 +1188,7 @@ if isempty(hfig)
         'FontSize',12,...
         'Tag','ColorMapPopupmenu',...
         'String',Colormaps_String,...
-        'Value',find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap)),...
+        'Value',colormap_val,...
         'Callback',@UpdatePlot...
         );
     
@@ -1254,6 +1259,73 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdatePlot...
         );
+    
+    h.ColorLine1 = uicontrol('Style','pushbutton',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','',...
+        'Tag','ColorLine1',...
+        'Units','normalized',...
+        'Position',[0.15 0.1 0.07 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine1,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+        
+    h.ColorLine2 = uicontrol('Style','pushbutton',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','',...
+        'Tag','ColorLine2',...
+        'Units','normalized',...
+        'Position',[0.35 0.1 0.07 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine2,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine3 = uicontrol('Style','pushbutton',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','',...
+        'Tag','ColorLine3',...
+        'Units','normalized',...
+        'Position',[0.55 0.1 0.07 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine3,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine1Text = uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Line 1',...
+        'Tag','ColorLine1Text',...
+        'Units','normalized',...
+        'Position',[0.05 0.1 0.1 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+     h.ColorLine2Text = uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Line 2',...
+        'Tag','ColorLine2Text',...
+        'Units','normalized',...
+        'Position',[0.25 0.1 0.1 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+     h.ColorLine3Text = uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Line 3',...
+        'Tag','ColorLine3Text',...
+        'Units','normalized',...
+        'Position',[0.45 0.1 0.1 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
     %%% Data Processing Options Panel
     h.DataProcessingPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
@@ -2356,7 +2428,11 @@ if isempty(hfig)
     %% set UserValues in GUI
     UpdateCorrections([],[]);
     %%% Update ColorMap
-    eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+    if ischar(UserValues.BurstBrowser.Display.ColorMap)
+        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+    else
+        colormap(UserValues.BurstBrowser.Display.ColorMap);
+    end
     %%% Re-Enable Menu
     h.File_Menu.Enable = 'on';
 else
@@ -3054,7 +3130,11 @@ if obj == h.ContourOffset_edit
     UpdateLifetimePlots([],[]);
 end
 if obj == h.ColorMapPopupmenu
-    UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
+    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'custom')
+        UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
+    else %%% custom colormap
+        colormapeditor;
+    end
 end
 if obj == h.SmoothKDE
     UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;
@@ -3188,7 +3268,11 @@ else
     axis(h.axes_1d_y,'tight');
 end
 %%% Update ColorMap
-eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+if ischar(UserValues.BurstBrowser.Display.ColorMap)
+    eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+else
+    colormap(UserValues.BurstBrowser.Display.ColorMap);
+end
 if UserValues.BurstBrowser.Display.ColorMapInvert
     colormap(flipud(colormap));
 end
@@ -7092,7 +7176,7 @@ h.CorrectionsTable.Data = Corrections_Data;
 UpdateCorrections([],[])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportGraphs(obj,~)
 global BurstData UserValues
@@ -7179,7 +7263,14 @@ switch obj
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
-        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        else
+            colormap(UserValues.BurstBrowser.Display.ColorMap);
+        end
+        if UserValues.BurstBrowser.Display.ColorMapInvert
+            colormap(h.BurstBrowser,flipud(colormap));
+        end
         %%% Remove non-axes object
         for i = 1:numel(panel_copy.Children)
             if ~strcmp(panel_copy.Children(i),'axes')
@@ -7216,7 +7307,11 @@ switch obj
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
-        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        else
+            colormap(UserValues.BurstBrowser.Display.ColorMap);
+        end
         if any(BurstData.BAMethod == [1,2])
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
@@ -7281,7 +7376,11 @@ switch obj
         %%% set Background Color to white
         axes_copy.Color = [1 1 1];
         %%% Update ColorMap
-        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        else
+            colormap(UserValues.BurstBrowser.Display.ColorMap);
+        end
         FigureName = 'E vs. TauGG';
 end
 %%% Combine the Original FileName and the parameter names
@@ -7325,6 +7424,42 @@ if directly_save
     end
     close(hfig);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function UpdateLineColor(obj,~)
+global BurstMeta UserValues
+h = guidata(obj);
+fields = fieldnames(BurstMeta.Plots.Fits);
+switch obj
+    case h.ColorLine1
+        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine1);
+        UserValues.BurstBrowser.Display.ColorLine1 = c;
+        n=1;
+    case h.ColorLine2
+        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine2);
+        UserValues.BurstBrowser.Display.ColorLine2 = c;
+        n=2;
+    case h.ColorLine3
+        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine3);
+        UserValues.BurstBrowser.Display.ColorLine3 = c;
+        n=3;
+end
+
+obj.BackgroundColor = c;
+
+%%% Change Color of Line Plots
+for i = 1:numel(fields)
+  if n <= numel(BurstMeta.Plots.Fits.(fields{i}))
+      if strcmp(BurstMeta.Plots.Fits.(fields{i})(n).Type,'line')
+        BurstMeta.Plots.Fits.(fields{i})(n).Color = c;
+      end
+  end
+end
+
+LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
