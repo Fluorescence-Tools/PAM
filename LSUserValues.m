@@ -994,7 +994,19 @@ if Mode==0 %%% Loads user values
         S.tcPDA = [];
     end
     P.tcPDA = S.tcPDA;
+    
+    if ~isfield(S.tcPDA, 'PathName')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.PathName" missing');
+        S.tcPDA.PathName = pwd;
+    end
+    P.tcPDA.PathName = S.tcPDA.PathName;
 
+    if ~isfield(S.tcPDA, 'FileName')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.FileName" missing');
+        S.tcPDA.FileName = '';
+    end
+    P.tcPDA.FileName = S.tcPDA.FileName;
+    
     if ~isfield(S.tcPDA, 'corrections')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections" missing');
         S.tcPDA.corrections = [];

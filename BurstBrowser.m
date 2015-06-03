@@ -3063,6 +3063,10 @@ switch BurstData.BAMethod
         save(newfilename, 'tcPDAstruct', 'timebin')
 end
 delete(h_waitbar);
+
+%%% Set tcPDA Path to BurstBrowser Path
+UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
