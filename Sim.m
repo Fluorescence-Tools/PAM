@@ -1704,6 +1704,7 @@ if strcmp(h.Sim_Start.String, 'Stop')
     SimData.Start = 0;
     h.Sim_Start.String = 'Start';
     File_List_Callback([],[],3);
+    return;
 end
 
 if ~isdir(h.Sim_Path.String)

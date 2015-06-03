@@ -1746,8 +1746,16 @@ end
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(~,~,mode,channel)
-h = guidata(findobj('Tag','Mia'));
+
 global MIAData UserValues
+Fig = gcf;
+%%% This speeds display up
+if strcmp(Fig.Tag,'Mia') 
+    h = guidata(Fig);
+else
+    h = guidata(findobj('Tag','Mia'));
+end
+
 
 h.Mia_Progress_Text.String = 'Updating plots';
 h.Mia_Progress_Axes.Color=[1 0 0];  
@@ -1758,7 +1766,7 @@ if any(mode==1)
         %% Selects colormap
         switch h.Mia_Image_Colormap(i).Value
             case 1
-                Colormap = [1 0 0; gray(64)];
+                Colormap = uint8(255*[1 0 0; gray(64)]);
                 h.Mia_Image_Colormap(i).BackgroundColor = UserValues.Look.Control;
             case 2
                 Colormap = [0 0 0; jet(64)];
@@ -1787,7 +1795,6 @@ if any(mode==1)
                 h.Mia_Image_Axes(i,1).XLim=[0 size(Image,2)]+0.5;
                 h.Mia_Image_Axes(i,1).YLim=[0 size(Image,1)]+0.5;
             end
-            drawnow;
         end
         
         %% Plots second image
@@ -1812,8 +1819,8 @@ if any(mode==1)
                 h.Mia_Image_Axes(i,2).XLim=[0 size(Image,2)]+0.5;
                 h.Mia_Image_Axes(i,2).YLim=[0 size(Image,1)]+0.5;
             end
-            drawnow;
         end
+        drawnow
     end
 end
 
@@ -2129,9 +2136,18 @@ h.Mia_Progress_Axes.Color=UserValues.Look.Control;
 %%% Moves through frames %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Frame(~,e,mode,channel)
-global MIAData
-h = guidata(findobj('Tag','Mia'));
+global MIAData Test
 
+tic;
+
+Fig = gcf;
+%%% This speeds display up
+if strcmp(Fig.Tag,'Mia') 
+    h = guidata(Fig);
+else
+    h = guidata(findobj('Tag','Mia'));
+end
+% profile on
 if size(MIAData.Data,1)>0
     %%% Determins slider in case of listener callback
     if nargin<4
@@ -2209,6 +2225,9 @@ if size(MIAData.Data,1)>0
     h.Mia_FrameUse(1).Value=MIAData.Use(1,str2double(h.Mia_Frame(1).String));
     h.Mia_FrameUse(2).Value=MIAData.Use(2,str2double(h.Mia_Frame(2).String));
 end
+
+Test(end+1) = toc;
+% profile viewer
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
