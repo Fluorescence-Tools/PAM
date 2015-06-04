@@ -2643,7 +2643,7 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(~,~)
 h = guidata(gcbo);
-global BurstData UserValues BurstMeta PhotonsStream
+global BurstData UserValues BurstMeta PhotonStream BurstTCSPCData
 if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
@@ -2665,13 +2665,16 @@ if isfield(BurstMeta,'Data')
     BurstMeta = rmfield(BurstMeta,'Data');
 end
 LSUserValues(0);
-[FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+[FileName,PathName,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
 if FileName == 0
     return;
 end
 %%% clear global variable
-clearvars -global BurstData BurstTCSPCData PhotonStream
+%clearvars -global BurstData BurstTCSPCData PhotonStream
+BurstData = [];
+BurstTCSPCData = [];
+PhotonStream = [];
 
 LSUserValues(0);
 UserValues.File.BurstBrowserPath=PathName;
@@ -2681,13 +2684,70 @@ BurstData.FileName = fullfile(PathName,FileName);
 %%% Determine if an APBS or DCBS file was loaded
 %%% This is important because for APBS, the donor only lifetime can be
 %%% determined from the measurement!
-if ~isempty(strfind(FileName,'APBS'))
+if ~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
     %%% Enable the donor only lifetime checkbox
     h.DonorLifetimeFromDataCheckbox.Enable = 'on';
     %%% Crosstalk/direct excitation can be determined!
     %%% set flag:
     BurstMeta.APBS = 1;
 end
+
+%%% Convert old File Format to new
+if FilterIndex == 2 % KBA file was loaded
+    %%% Convert NameArray
+    NameArray{strcmp(NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
+    NameArray{strcmp(NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
+    NameArray{strcmp(NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
+    NameArray{strcmp(NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
+    NameArray{strcmp(NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
+    NameArray{strcmp(NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
+    NameArray{strcmp(NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
+    NameArray{strcmp(NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
+    NameArray{strcmp(NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
+    NameArray{strcmp(NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
+    if sum(strcmp(NameArray,'tau(green)')) > 0
+        NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
+        NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
+        DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
+        DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
+    end
+    NameArray{end+1} = 'Anisotropy GG';
+    NameArray{end+1} = 'Anisotropy RR';
+    %%% Caculate Anisotropies
+    DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
+        (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));  
+    DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
+        (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));  
+    
+    BurstData.NameArray = NameArray;
+    BurstData.DataArray = DataArray;
+    BurstData.BAMethod = Data.BAMethod;
+    BurstData.FileType = Data.Filetype;
+    BurstData.TACrange = Data.TACrange;
+    BurstData.SyncPeriod = 1./Data.SyncRate;
+    
+    BurstData.FileInfo.MI_Bins = 4096;
+    BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
+        Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
+        Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
+    BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
+        Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
+        Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
+    
+    %%% Calculate IRF microtime histogram
+    for i = 1:6
+        BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
+    end
+    BurstData.ScatterPattern = BurstData.IRF;
+
+    BurstTCSPCData.Macrotime = Data.Macrotime;
+    BurstTCSPCData.Microtime = Data.Microtime;
+    BurstTCSPCData.Channel = Data.Channel;
+    BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
+    BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
+    BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
+end
+
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
     %find positions of Efficiency and Stoichiometry in NameArray
     posE = find(strcmp(BurstData.NameArray,'Efficiency'));
@@ -5993,9 +6053,16 @@ ApplyCorrections;
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
-global BurstData
-save(BurstData.FileName,'BurstData');
-
+global BurstData BurstTCSPCData
+h_waitbar = waitbar(0,'Saving...');
+if strcmp(BurstData.FileName(end-2:end),'bur') %bur file, normal save
+    save(BurstData.FileName,'BurstData');
+elseif strcmp(BurstData.FileName(end-2:end),'kba') % kba file, convert to bur
+    save([BurstData.FileName(1:end-4) '_kba.bur'],'BurstData');
+    %%% also save BurstTCSPCData
+    save([BurstData.FileName(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
+end
+delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
