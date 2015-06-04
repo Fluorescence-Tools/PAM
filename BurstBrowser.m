@@ -1172,9 +1172,14 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    Colormaps_String = {'jet','hot','bone','gray','parula','custom'};
+    Colormaps_String = {'jet','jetvar','hot','bone','gray','parula'};
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
-        colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
+        try
+            colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
+        catch 
+            colormap_val = 1;
+            UserValues.BurstBrowser.Display.ColorMap = Colormaps_String(1);
+        end
     else
         colormap_val = numel(Colormaps_String);
     end
@@ -3194,11 +3199,10 @@ if obj == h.ContourOffset_edit
     UpdateLifetimePlots([],[]);
 end
 if obj == h.ColorMapPopupmenu
-    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'custom')
+    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
         UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
     else %%% custom colormap
-        colormapeditor;
-        return;
+        UserValues.BurstBrowser.Display.ColorMap = jetvar;
     end
 end
 if obj == h.SmoothKDE
@@ -7820,7 +7824,35 @@ while mod(numel(invec),newbin) ~= 0
 end
 outv = sum(reshape(invec,newbin,numel(invec)/newbin),1)';
 
+function out = jetvar(m)
 
+% JETVAR Variant of Jet colormap.
+% 
+% Usage: OUT = JETVAR(M)
+% 
+% This returns an M-by-3 matrix containing a variant of the Jet colormap.
+% Instead of starting at dark blue as Jet does, it starts at white. It goes
+% to pure blue from white, and then continues exactly as Jet does, ranging
+% through shades blue, cyan, green, yellow, and red, and ending with dark
+% red. M should be at least 10 to ensure there is at least one white color.
+% 
+% Inputs:
+%   -M: Length of colormap (optional, default is the length of the current
+%   figure's colormap).
+% 
+% Outputs:
+%   -OUT: M-by-3 colormap.
+% 
+% See also: JET, HSV, HOT, PINK, FLAG, COLORMAP, RGBPLOT.
+
+if nargin < 1
+    m = size(get(gcf, 'colormap'), 1);
+end
+out = jet(m);
+% Modify the output starting at 1 before where Jet outputs pure blue.
+n = find(out(:, 3) == 1, 1) - 1;
+out(1:n, 1:2) = repmat((n:-1:1)'/n, [1 2]);
+out(1:n, 3) = 1;
 
 
 
