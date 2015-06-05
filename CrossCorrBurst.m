@@ -45,7 +45,7 @@ Countrate1 = cell(numel(Cor_Array),1);
 Countrate2 = cell(numel(Cor_Array),1);
 
 for i=1:numel(Cor_Array)
-    Norm{i} = Maxtime(i)-Timeaxis;
+    Norm{i} = Maxtime(i)-Timeaxis+1;
     Norm{i}(Norm{i}<0) = 0;
     %Norm{i}(Timeaxis>Maxtime(i)) = 0;
     for j = 1:numel(Timeaxis)
