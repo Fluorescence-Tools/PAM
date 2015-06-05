@@ -2715,6 +2715,11 @@ if FilterIndex == 2 % KBA file was loaded
         NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
         DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
         DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
+    else %%% create zero value arrays
+        NameArray{end+1} = 'Lifetime GG [ns]';
+        NameArray{end+1} = 'Lifetime RR [ns]';
+        DataArray(:,end+1) = zeros(size(DataArray,1),1);
+        DataArray(:,end+1) = zeros(size(DataArray,1),1);
     end
     NameArray{end+1} = 'Anisotropy GG';
     NameArray{end+1} = 'Anisotropy RR';
@@ -2732,18 +2737,25 @@ if FilterIndex == 2 % KBA file was loaded
     BurstData.SyncPeriod = 1./Data.SyncRate;
     
     BurstData.FileInfo.MI_Bins = 4096;
-    BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
-        Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
-        Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
-    BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
-        Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
-        Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
+    if isfield(Data,'PIEChannels')
+        BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
+            Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
+            Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
+        BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
+            Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
+            Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
+    elseif isfield(Data,'fFCS')
+        BurstData.PIE.From = Data.fFCS.lower;
+        BurstData.PIE.To = Data.fFCS.upper;
+    end
     
     %%% Calculate IRF microtime histogram
-    for i = 1:6
-        BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
+    if isfield(Data,'IRFmicrotime')
+        for i = 1:6
+            BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
+        end
+        BurstData.ScatterPattern = BurstData.IRF;
     end
-    BurstData.ScatterPattern = BurstData.IRF;
 
     BurstTCSPCData.Macrotime = Data.Macrotime;
     BurstTCSPCData.Microtime = Data.Microtime;
@@ -7066,6 +7078,10 @@ for i=1:NumChans
                 MT1{k} = MT{k}(ismember(CH{k},Chan{i}));
                 MT2{k} = MT{k}(ismember(CH{k},Chan{j}));
             end
+            %%% find empty bursts
+            inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
+            %%% exclude empty bursts
+            MT1 = MT1(~inval); MT2 = MT2(~inval);
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             %%% Do Correlation
@@ -7111,7 +7127,7 @@ delete(h_waitbar);
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Photons(obj,~)
-global PhotonStream BurstData
+global PhotonStream BurstData UserValues
 h = guidata(obj);
 %%% Set Up Progress Bar
 h_waitbar = waitbar(0,'...');
@@ -7130,8 +7146,7 @@ switch obj
                     return;
                 end
                 load('-mat',fullfile(PathName,FileName));
-                %%% Store the correct Path
-                BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+
             end
         end
         %%% Enable CorrelateWindow Button

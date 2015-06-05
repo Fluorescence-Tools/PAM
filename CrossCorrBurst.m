@@ -24,7 +24,7 @@ Timeaxis_Exponent=floor(log2(MaxMaxtime/10));
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
 Timeaxis(Timeaxis<1)=1;
-Timeaxis=cumsum([0;Timeaxis]);
+Timeaxis=cumsum([1;Timeaxis]);
 
 Cor_Array=repmat({[]},numel(Data1),1);
 parfor i=1:numel(Data1)
@@ -81,7 +81,7 @@ if error_estimate
     Cor_Array = cell2mat(Cor_Res);
     Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
     Timeaxis = Timeaxis(1:size(Cor_Array,1));
-        
+    Timeaxis(22:end) = Timeaxis(22:end)-1;    
 else
     Cor_Total = sum(horzcat(Cor_Array{:}),2);
     
@@ -98,6 +98,6 @@ else
     Cor_Array = Cor_Array-1;
     Cor_Array=Cor_Array(1:find(Cor_Array~=-1,1,'last'));
     Timeaxis = Timeaxis(1:numel(Cor_Array));
+    Timeaxis(22:end) = Timeaxis(22:end)-1;
 end
-%%% Shift timeaxis to center of bins
-Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
+
