@@ -40,7 +40,7 @@ if isempty(hfig)
         'Tag','Load_Burst_Data');
     
     %%% Save Analysis State
-    h.Load_Bursts = uimenu(...
+    h.Save_Bursts = uimenu(...
         'Parent',h.File_Menu,...
         'Label','Save Analysis State',...
         'Callback',@Save_Analysis_State_Callback,...
@@ -328,6 +328,12 @@ if isempty(hfig)
         'Label','Export Species to PDA',...
         'Tag','ExportSpeciesToPDAMenuItem',...
         'Callback',@Export_To_PDA);
+    
+    h.ExportMicrotimePattern = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Export Microtime Pattern',...
+        'Tag','ExportMicrotimePatternMenuItem',...
+        'Callback',@Export_Microtime_Pattern);
     
     %%% Define Species List
     h.SpeciesList = uicontrol(...
@@ -3143,6 +3149,54 @@ delete(h_waitbar);
 
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Export Microtime Pattern for fFCS analysis %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Export_Microtime_Pattern(~,~)
+global BurstData BurstTCSPCData UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
+SelectedSpecies = h.SpeciesList.Value;
+SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
+
+%Valid = UpdateCuts(SelectedSpecies);
+h_waitbar = waitbar(0,'Exporting...');
+%%% Load associated .bps file, containing Macrotime, Microtime and Channel
+if isempty(BurstTCSPCData)
+    waitbar(0,h_waitbar,'Loading Photon Data');
+    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+        %%% load if it exists
+        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+    else
+        %%% else ask for the file
+        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+        if FileName == 0
+            return;
+        end
+        load('-mat',fullfile(PathName,FileName));
+        %%% Store the correct Path in TauFitBurstData
+        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+    end
+    BurstTCSPCData.Macrotime = Macrotime;
+    BurstTCSPCData.Microtime = Microtime;
+    BurstTCSPCData.Channel = Channel;
+    clear Macrotime Microtime Channel
+end
+waitbar(0,h_waitbar,'Exporting...');
+%%% find selected bursts
+MI = BurstTCSPCData.Microtime(BurstData.Selected);
+CH = BurstTCSPCData.Channel(BurstData.Selected);
+
+MI = vertcat(MI{:});
+CH = vertcat(CH{:});
+
+hMI = cell(6,1);
+for i = 1:6 %%% 6 Channels (GG1,GG2,GR1,GR2,RR1,RR2)
+   hMI{i} = histc(MI(CH == i),0:(BurstData.FileInfo.MI_Bins-1)); 
+end
+species = SelectedSpeciesName;
+newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '.mi'];
+save(newfilename, 'hMI', 'species');
+delete(h_waitbar);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4218,7 +4272,7 @@ h_waitbar = waitbar(0,'Preparing Data...');
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    h_waitbar = waitbar(0,'Loading Photon Data');
+    waitbar(0,h_waitbar,'Loading Photon Data...');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -4236,7 +4290,7 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
-    close(h_waitbar);
+    waitbar(0,h_waitbar,'Preparing Data...');
 end
 switch obj
     case h.Plot_Microtimes_button %%% fFCS
@@ -4249,6 +4303,7 @@ switch obj
         
         if UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
             if isempty(PhotonStream)
+                delete(h_waitbar);
                 return;
             end
             start = PhotonStream.start(valid_total);
@@ -7122,6 +7177,9 @@ for i=1:NumChans
     end
 end
 
+%%% Update FCSFit Path
+UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
+LSUserValues(1);
 delete(h_waitbar);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
