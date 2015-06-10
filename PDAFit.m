@@ -623,9 +623,11 @@ switch mode
 end
 
 function Start_PDA_Fit(~,~)
-global UserValues PDAstruct PDAMeta
+global PDAstruct PDAMeta
 h = guidata(findobj('Tag','PDAFit'));
-
+%%% disable StartFit Button
+h.StartFit_Button.Enable = 'off';
+PDAMeta.FitMethod = 'Hist';
 %% Prepare Fit Inputs
 if PDAMeta.PreparationDone == 0
     %%% find valid bins (chosen by thresholds min/max)
@@ -633,41 +635,57 @@ if PDAMeta.PreparationDone == 0
         ((PDAstruct.Data.NF+PDAstruct.Data.NG) < str2double(h.NumberOfPhotMax_Edit.String));
 
     maxN = max((PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid)));
-    %%% Evaluate Background probability
-    PBG = poisspdf([0:maxN],str2double(h.BGdonor_Edit.String));
-    PBR = poisspdf([0:maxN],str2double(h.BGacc_Edit.String));
-    PBG(PBG<1E-3) = 0;
-    PBR(PBR<1E-3) = 0;
-    PBG = PBG./sum(PBG);
-    PBR = PBR./sum(PBR);
-    NBG = find(PBG~=0,1,'last')-1; %maximum number of background photons to consider
-    NBR = find(PBR~=0,1,'last')-1;
-
-    %%% prepare epsilon grid
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Epsilon Grid...');
-
-    E_grid = linspace(0,1,str2double(h.NumberOfBinsE_Edit.String)+1);
-    R_grid = linspace(0,5*str2double(h.R0_Edit.String),100000)';
-    epsEgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*((E_grid+str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))./(1-E_grid))).^(-1);
-    epsRgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*(((str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))+(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6)))./(1-(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6))))).^(-1);
-    PN = histcounts((PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid)),1:(maxN+1));
-
-    [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Probability Library...');
-    PNF = binopdf(NF, N, eps);
-
-    PDAMeta.E_grid = E_grid;
-    PDAMeta.R_grid = R_grid;
-    PDAMeta.epsEgrid = epsEgrid;
-    PDAMeta.epsRgrid = epsRgrid;
-    PDAMeta.PN = PN;
-    PDAMeta.PNF = PNF;
-    PDAMeta.Grid.NF = NF;
-    PDAMeta.Grid.N = N;
-    PDAMeta.Grid.eps = eps;
-    PDAMeta.maxN = maxN;
-    PDAMeta.P = CalcHistLib(PN,PNF,NF,N,PBG,PBR,NBG,NBR);
     
+    %%% evaluate the background probabilities
+    BGgg = poisspdf(0:1:maxN,str2double(h.BGdonor_Edit.String)*PDAstruct.timebin*1E3);
+    BGgr = poisspdf(0:1:maxN,str2double(h.BGacc_Edit.String)*PDAstruct.timebin*1E3);
+    
+    method = 'cdf';
+    switch method
+        case 'pdf'
+            %determine boundaries for background inclusion
+            BGgg(BGgg<1E-2) = [];
+            BGgr(BGgr<1E-2) = [];
+        case 'cdf'
+             %%% evaluate the background probabilities
+            CDF_BGgg = poisscdf(0:1:maxN,str2double(h.BGdonor_Edit.String)*PDAstruct.timebin*1E3);
+            CDF_BGgr = poisscdf(0:1:maxN,str2double(h.BGacc_Edit.String)*PDAstruct.timebin*1E3);
+            %determine boundaries for background inclusion
+            threshold = 0.95;
+            BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
+            BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+    end
+    PDAMeta.PBG = BGgg./sum(BGgg);
+    PDAMeta.PBR = BGgr./sum(BGgr);
+    PDAMeta.NBG = numel(BGgg)-1;
+    PDAMeta.NBR = numel(BGgr)-1;
+                
+    if strcmp(PDAMeta.FitMethod,'Hist')
+        %%% prepare epsilon grid
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Epsilon Grid...');
+
+        E_grid = linspace(0,1,str2double(h.NumberOfBinsE_Edit.String)+1);
+        R_grid = linspace(0,5*str2double(h.R0_Edit.String),100000)';
+        epsEgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*((E_grid+str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))./(1-E_grid))).^(-1);
+        epsRgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*(((str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))+(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6)))./(1-(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6))))).^(-1);
+        PN = histcounts((PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid)),1:(maxN+1));
+
+        [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Probability Library...');
+        PNF = binopdf(NF, N, eps);
+
+        PDAMeta.E_grid = E_grid;
+        PDAMeta.R_grid = R_grid;
+        PDAMeta.epsEgrid = epsEgrid;
+        PDAMeta.epsRgrid = epsRgrid;
+        PDAMeta.PN = PN;
+        PDAMeta.PNF = PNF;
+        PDAMeta.Grid.NF = NF;
+        PDAMeta.Grid.N = N;
+        PDAMeta.Grid.eps = eps;
+        PDAMeta.maxN = maxN;
+        PDAMeta.P = CalcHistLib(PN,PNF,NF,N,PDAMeta.PBG,PDAMeta.PBR,PDAMeta.NBG,PDAMeta.NBR);
+    end
     PDAMeta.PreparationDone = 1;
 end
 
@@ -700,7 +718,25 @@ for i = 1:5
     end
 end
 fitopts = optimset('MaxFunEvals', 500,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfvalPDA);
-fitpar = fminsearchbnd(@(x) PDAHistogramFit(x), fitpar, LB, UB, fitopts);
+if strcmp(PDAMeta.FitMethod,'Hist')
+    fitpar = fminsearchbnd(@(x) PDAHistogramFit(x), fitpar, LB, UB, fitopts);
+elseif strcmp(PDAMeta.FitMethod,'MLE')
+    fitpar = fminsearchbnd(@(x) PDA_MLE_Fit(x), fitpar, LB, UB, fitopts);
+    %%% For Updating the Result Plot, use MC sampling
+    [~] = PDAMonteCarloFit(fitpar);
+    %%% Update Plots
+    h.FitHist.YData = PDAMeta.hFit;
+    h.Residuals.YData = PDAMeta.w_res;
+    count = 1;
+    for i = 1:5
+        if PDAMeta.Active(i)
+            h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
+            count = count +1;
+        end
+    end   
+elseif strcmp(PDAMeta.FitMethod,'MC')   
+    fitpar = fminsearchbnd(@(x) PDAMonteCarloFit(x), fitpar, LB, UB, fitopts);
+end
         
 %% Update GUI after performed fit
 %%% Convert amplitudes to fractions
@@ -744,6 +780,9 @@ end
 
 %%% Set Axis limits
 xlim(h.GaussAxes,[min(fitpar(:,2)-3*fitpar(:,3)), max(fitpar(:,2)+3*fitpar(:,3))]);
+
+%%% reenable StartFit Button
+h.StartFit_Button.Enable = 'on';
 
 function [P] = CalcHistLib(PN,PFr,k,N,PBG,PBR,NBG,NBR)
 global PDAMeta
@@ -794,11 +833,59 @@ else
     end    
 end
 
+function logL = PDA_MLE_Fit(fitpar)
+global PDAMeta PDAstruct
+h = guidata(findobj('Tag','PDAFit'));
+
+%%% fitpar vector is linearized by fminsearch, restructure
+fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
+N_gauss = size(fitpar,1);
+
+steps = 5;
+L = cell(N_gauss,1); %%% Likelihood per Gauss
+for i = 1:N_gauss
+    %%% define Gaussian distribution of distances
+    xR = (fitpar(i,2)-3*fitpar(i,3)):(6*fitpar(i,3)/steps):(fitpar(i,2)+3*fitpar(i,3));
+    PR = normpdf(xR,fitpar(i,2),fitpar(i,3));
+    PR = PR'./sum(PR);
+    %%% Calculate E values for R grid
+    E = 1./(1+(xR./str2double(h.R0_Edit.String)).^6);
+    epsGR = 1-(1+str2double(h.Crosstalk_Edit.String)+(((str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String))) + E) * str2double(h.Gamma_Edit.String))./(1-E)).^(-1);
+    
+    %%% Calculate the vector of likelihood values
+    P = eval_prob_2c_bg(PDAstruct.Data.NG,PDAstruct.Data.NF,...
+                PDAMeta.NBG,PDAMeta.NBR,...
+                PDAMeta.PBG',PDAMeta.PBR',...
+                epsGR');
+    P = log(P) + repmat(log(PR'),numel(PDAstruct.Data.NG),1);
+    Lmax = max(P,[],2);
+    P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
+    %P_res = sum(P);
+    %%% Treat case when all burst produced zero probability
+    %P_res = P;
+    P(isnan(P)) = -Inf;
+    L{i} = P;
+end
+
+%%% normalize amplitudes
+fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
+PA = fitpar(:,1);
+
+L = horzcat(L{:});
+L = L + repmat(log(PA'),numel(PDAstruct.Data.NG),1);
+Lmax = max(L,[],2);
+L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
+%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+%%% Reset these values to -Inf
+L(isnan(L)) = -Inf;
+logL = sum(L);
+%%% since the algorithm minimizes, it is important to minimize the negative
+%%% log likelihood, i.e. maximize the likelihood
+logL = -logL;
+
 function chi2 = PDAHistogramFit(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','PDAFit'));
-
-Pfinal = zeros(str2double(h.NumberOfBins_Edit.String),1);
 
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
@@ -830,6 +917,66 @@ error(error == 0) = 1;
 PDAMeta.w_res = (PDAMeta.hProx-PDAMeta.hFit)./error;
 chi2 = sum((PDAMeta.w_res.^2))/(str2double(h.NumberOfBins_Edit.String)-numel(fitpar)-1);
 
+function chi2 = PDAMonteCarloFit(fitpar)
+global PDAMeta PDAstruct
+h = guidata(findobj('Tag','PDAFit'));
+
+%%% fitpar vector is linearized by fminsearch, restructure
+fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
+N_gauss = size(fitpar,1);
+%%% normalize Amplitudes
+fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
+A = fitpar(:,1);
+%read corrections
+mBG_gg = str2double(h.BGdonor_Edit.String);
+mBG_gr = str2double(h.BGacc_Edit.String);
+cr = str2double(h.Crosstalk_Edit.String);
+de = str2double(h.DirectEx_Edit.String);
+gamma = str2double(h.Gamma_Edit.String);
+R0 = str2double(h.R0_Edit.String);
+sampling = 10;
+BSD = PDAMeta.BSD;
+dur = PDAstruct.timebin.*1E3;
+H_meas = PDAMeta.hProx';
+%pool = gcp;
+%sampling = pool.NumWorkers;
+PRH = cell(sampling,N_gauss);
+for j = 1:N_gauss
+    for i = 1:sampling
+        r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
+        E = 1./(1+(r./R0).^6);
+        eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+        BG_gg = poissrnd(mBG_gg.*dur);
+        BG_gr = poissrnd(mBG_gr.*dur);
+        BSD_bg = BSD-BG_gg-BG_gr;
+        PRH{i,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+    end
+end
+H_res_dummy = zeros(numel(PDAMeta.hProx),N_gauss);
+for i = 1:N_gauss
+    %H_res_dummy(:,i) = histc(vertcat(PRH{:,i}),0:0.02:1)/sampling;
+    H_res_dummy(:,i) = histcounts(vertcat(PRH{:,i}),linspace(0,1,str2double(h.NumberOfBins_Edit.String)+1));
+end
+%H_res_dummy = H_res_dummy(1:50,:);
+H_res = zeros(numel(PDAMeta.hProx),1);
+for i = 1:N_gauss
+    H_res = H_res + A(i).*H_res_dummy(:,i);
+end
+H_res = sum(H_meas)*H_res./sum(H_res);
+%H_res= H_res(1:50)/sampling;
+%calculate chi2
+dev = (H_res-H_meas)./sqrt(H_meas);
+% dev = (H_res-H_meas)./sqrt(H_meas);
+dev(~isfinite(dev))=0;
+chi2 = sum(dev.^2)./sum(H_meas~=0);
+
+PDAMeta.hFit = H_res;
+PDAMeta.w_res = dev;
+hFit_Ind = cell(N_gauss,1);
+for i = 1:N_gauss
+    hFit_Ind{i} = sum(H_meas).*A(i).*H_res_dummy(:,i)./sum(H_res_dummy(:,1));
+end
+PDAMeta.hFit_Ind = hFit_Ind;
 
 function [Pe] = Generate_P_of_eps(RDA,sigma)
 h = guidata(findobj('Tag','PDAFit'));

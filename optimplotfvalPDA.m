@@ -48,17 +48,19 @@ else
     newY = [get(plotfval,'Ydata') fval];
     set(plotfval,'Xdata',newX, 'Ydata',newY);
     set(get(gca,'Title'),'String',sprintf('Current Function Value: %g',fval));
-
-    %%% Update Plots
-    h.FitHist.YData = PDAMeta.hFit;
-    h.Residuals.YData = PDAMeta.w_res;
-    count = 1;
-    for i = 1:5
-        if PDAMeta.Active(i)
-            h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
-            count = count +1;
-        end
-    end   
+    
+    if ~strcmp(PDAMeta.FitMethod,'MLE')
+        %%% Update Plots
+        h.FitHist.YData = PDAMeta.hFit;
+        h.Residuals.YData = PDAMeta.w_res;
+        count = 1;
+        for i = 1:5
+            if PDAMeta.Active(i)
+                h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
+                count = count +1;
+            end
+        end   
+    end
 end
 
 function plotvector(iteration,fval)
