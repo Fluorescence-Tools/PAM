@@ -6,9 +6,9 @@ Example:
 From the NewPam Directory, the current build for files is:
 Windows:
 mex -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg.c" "C Files\src\randist\binomial.c" "C Files\src\randist\multinomial.c" "C Files\src\randist\specfunc\gamma.c" "C Files\src\sys\numcores.c" "C Files\src\sys\memalloc.c"
+mex -largeArrayDims -v -O -I"tcPDA C-Code\C Files\src" "tcPDA C-Code\C Files\src\eval_prob_2c_bg.c" "tcPDA C-Code\C Files\src\randist\binomial.c" "tcPDA C-Code\C Files\src\randist\multinomial.c" "tcPDA C-Code\C Files\src\randist\specfunc\gamma.c" "tcPDA C-Code\C Files\src\sys\numcores.c" "tcPDA C-Code\C Files\src\sys\memalloc.c"
 Mac OS X/UNIX:
 mex -largeArrayDims -v -O -I"C Files/src" "C Files/src/eval_prob_3c_bg.c" "C Files/src/randist/binomial.c" "C Files/src/randist/multinomial.c" "C Files/src/randist/specfunc/gamma.c" "C Files/src/sys/numcores.c" "C Files/src/sys/memalloc.c"
-
 mex -largeArrayDims -v -O -I"C Files/src" "tcPDA C-Code/C Files/src/eval_prob_3c_bg.c" "tcPDA C-Code/C Files/src/randist/binomial.c" "tcPDA C-Code/C Files/src/randist/multinomial.c" "tcPDA C-Code/C Files/src/randist/specfunc/gamma.c" "tcPDA C-Code/C Files/src/sys/numcores.c" "tcPDA C-Code/C Files/src/sys/memalloc.c"
 
 
