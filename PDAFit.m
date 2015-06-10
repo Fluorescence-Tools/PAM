@@ -40,7 +40,11 @@ if isempty(hfig)
         'Label','Load PDA Data',...
         'Callback',@Load_PDA_Data,...
         'Tag','Load_PDA_Data');
-    
+    h.Save_PDA = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','Save PDA Project',...
+        'Callback',@Save_PDA_Project,...
+        'Tag','Save_PDA_Project');
     %%% Define panels
     h.MainPlotPanel = uibuttongroup(...
         'Parent',h.PDA,...
@@ -557,17 +561,62 @@ global PDAstruct UserValues PDAMeta
 h = guidata(findobj('Tag','PDAFit'));
 [FileName,PathName] = uigetfile({'*.pda','*.pda file'},'Select *.pda file',...
     UserValues.File.BurstBrowserPath,'Multiselect','off');
+if FileName == 0
+    return;
+end
 
-load('-mat',fullfile(PathName,FileName));
 %%% clear PDAstruct
 PDAstruct = [];
-PDAstruct.Data = PDA;
-PDAstruct.timebin = timebin;
-PDAstruct.FileName = FileName;
-PDAstruct.Path = PathName;
+PDAMeta = [];
+
+load('-mat',fullfile(PathName,FileName));
+
+%%% Check what was loaded
+%%% Data from BurstBrowser has PDA structure, whereas previously fit data
+%%% only has PDAstruct
+if exist('PDA','var')
+    PDAstruct.Data = PDA;
+    PDAstruct.timebin = timebin;
+    PDAstruct.FileName = FileName;
+    PDAstruct.Path = PathName;
+    if isfield(PDA,'Corrections');
+        PDAstruct.Corrections = PDA.Corrections;
+        PDAstruct.Corrections.DirectExcitation_GR = 0;
+    end
+    if isfield(PDA,'Background');
+        PDAstruct.Corrections.BackgroundDonor = PDA.Background.Background_GGpar+PDA.Background.Background_GGperp;
+        PDAstruct.Corrections.BackgroundAcceptor = PDA.Background.Background_GRpar+PDA.Background.Background_GRperp;
+    end
+end
+ %%% Fill in Corrections and Background
+h.Crosstalk_Edit.String = num2str(PDAstruct.Corrections.CrossTalk_GR);
+h.DirectEx_Edit.String = num2str(PDAstruct.Corrections.DirectExcitation_GR);
+h.Gamma_Edit.String = num2str(PDAstruct.Corrections.Gamma_GR);
+h.R0_Edit.String = num2str(PDAstruct.Corrections.FoersterRadius);
+h.BGdonor_Edit.String = num2str(PDAstruct.Corrections.BackgroundDonor);
+h.BGacc_Edit.String = num2str(PDAstruct.Corrections.BackgroundAcceptor);
+
+%%% Fill in FitTable
+if isfield(PDAstruct,'FitData')
+    h.Fit_Table.Data = PDAstruct.FitData;
+end
 h.Progress_Text.String = FileName;
 UpdateMainPlot([],[],1);
 PDAMeta.PreparationDone = 0;
+
+function Save_PDA_Project(~,~)
+global PDAstruct
+h = guidata(findobj('Tag','PDAFit'));
+%%% Store Corrections
+PDAstruct.Corrections.CrossTalk_GR = str2double(h.Crosstalk_Edit.String);
+PDAstruct.Corrections.DirectExcitation_GR = str2double(h.DirectEx_Edit.String);
+PDAstruct.Corrections.Gamma_GR = str2double(h.Gamma_Edit.String);
+PDAstruct.Corrections.FoersterRadius = str2double(h.R0_Edit.String);
+PDAstruct.Corrections.BackgroundDonor = str2double(h.BGdonor_Edit.String);
+PDAstruct.Corrections.BackgroundAcceptor = str2double(h.BGacc_Edit.String);
+%%% Store Fit Data
+PDAstruct.FitData = h.Fit_Table.Data;
+save(fullfile(PDAstruct.Path,PDAstruct.FileName),'PDAstruct');
 
 function UpdateMainPlot(~,~,mode,reset)
 global UserValues PDAstruct PDAMeta
@@ -629,9 +678,9 @@ global PDAstruct PDAMeta
 h = guidata(findobj('Tag','PDAFit'));
 %%% disable StartFit Button
 h.StartFit_Button.Enable = 'off';
-PDAMeta.FitMethod = 'Hist';
+PDAMeta.FitMethod = 'MC';
 %% Prepare Fit Inputs
-if PDAMeta.PreparationDone == 0
+if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     %%% find valid bins (chosen by thresholds min/max)
     valid = ((PDAstruct.Data.NF+PDAstruct.Data.NG) > str2double(h.NumberOfPhotMin_Edit.String)) & ...
         ((PDAstruct.Data.NF+PDAstruct.Data.NG) < str2double(h.NumberOfPhotMax_Edit.String));
@@ -719,13 +768,14 @@ for i = 1:5
         h.FitHistInd{i}.Visible = 'off';
     end
 end
-fitopts = optimset('MaxFunEvals', 500,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfvalPDA);
+fitopts = optimset('MaxFunEvals', 1000,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfvalPDA);
 if strcmp(PDAMeta.FitMethod,'Hist')
     fitpar = fminsearchbnd(@(x) PDAHistogramFit(x), fitpar, LB, UB, fitopts);
 elseif strcmp(PDAMeta.FitMethod,'MLE')
     fitpar = fminsearchbnd(@(x) PDA_MLE_Fit(x), fitpar, LB, UB, fitopts);
     %%% For Updating the Result Plot, use MC sampling
-    [~] = PDAMonteCarloFit(fitpar);
+    [chi2] = PDAMonteCarloFit(fitpar);
+    disp(['Chi2 = ' num2str(chi2)]);
     %%% Update Plots
     h.FitHist.YData = PDAMeta.hFit;
     h.Residuals.YData = PDAMeta.w_res;
@@ -967,10 +1017,10 @@ end
 H_res = sum(H_meas)*H_res./sum(H_res);
 %H_res= H_res(1:50)/sampling;
 %calculate chi2
-dev = (H_res-H_meas)./sqrt(H_meas);
-% dev = (H_res-H_meas)./sqrt(H_meas);
-dev(~isfinite(dev))=0;
-chi2 = sum(dev.^2)./sum(H_meas~=0);
+error = sqrt(H_meas);
+error(error == 0) = 1;
+dev = (H_meas-H_res)./error;
+chi2 = sum((dev.^2))/(str2double(h.NumberOfBins_Edit.String)-numel(fitpar)-1);
 
 PDAMeta.hFit = H_res;
 PDAMeta.w_res = dev;

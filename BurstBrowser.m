@@ -3117,6 +3117,8 @@ switch BurstData.BAMethod
         PDA.NF = PDA.NFP + PDA.NFS;
         PDA.NR = PDA.NRP + PDA.NRS;
         
+        PDA.Corrections = BurstData.Corrections;
+        PDA.Background = BurstData.Background;
         newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
         save(newfilename, 'PDA', 'timebin')
     case {3,4}
@@ -3141,7 +3143,7 @@ switch BurstData.BAMethod
         tcPDAstruct.NRR = NRRP + NRRS;
         tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
         tcPDAstruct.timebin = timebin*1000;
-        
+        tcPDAstruct.corrections = BurstData.Corrections;
         newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
         save(newfilename, 'tcPDAstruct', 'timebin')
 end
