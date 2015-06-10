@@ -6,6 +6,8 @@ hfig=findobj('Tag','PDAFit');
 LSUserValues(0);
 Look=UserValues.Look;
 
+addpath([pwd filesep 'tcPDA C-Code']);
+
 if isempty(hfig)
    %% Define main window
     h.PDA = figure(...
