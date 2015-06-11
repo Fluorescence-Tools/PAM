@@ -1,5 +1,5 @@
 function PDAFit(~,~)
-global UserValues
+global UserValues PDAMeta
 
 hfig=findobj('Tag','PDAFit');
 
@@ -8,8 +8,10 @@ Look=UserValues.Look;
 
 addpath([pwd filesep 'tcPDA C-Code']);
 
+PDAMeta.PDAMethod = 'Histogram Library'; % {'Histogram Library','MLE','MonteCarlo'}
+PDAMeta.FitMethod = 'Simplex'; % {'Simplex','Gradient-Based','Patternsearch'}
 if isempty(hfig)
-   %% Define main window
+    %% Define main window
     h.PDA = figure(...
         'Units','normalized',...
         'Name','PDAFit',...
@@ -24,9 +26,9 @@ if isempty(hfig)
         'Tag','PDAFit',...
         'Toolbar','figure',...
         'CloseRequestFcn',@Close_PDA);
-
+    
     whitebg(h.PDA, Look.Fore);
-    set(h.PDA,'Color',Look.Back); 
+    set(h.PDA,'Color',Look.Back);
     
     %%% define menu items
     h.File_Menu = uimenu(...
@@ -73,7 +75,7 @@ if isempty(hfig)
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Units','normalized',...
-        'Position',[0.8 0.25 0.2 0.7],...
+        'Position',[0.8 0.25 0.2 0.75],...
         'Tag','SettingsPanel');
     
     h.NumberOfBins_Text = uicontrol(...
@@ -85,7 +87,7 @@ if isempty(hfig)
         'FontSize',14,...
         'String','Number of Bins',...
         'Position',[0.05 0.95 0.55 0.03],...
-         'HorizontalAlignment','left',...
+        'HorizontalAlignment','left',...
         'Tag','NumberOfBins_Text');
     
     h.NumberOfBins_Edit = uicontrol(...
@@ -109,7 +111,7 @@ if isempty(hfig)
         'FontSize',14,...
         'String','Minimum Number per Bin',...
         'Position',[0.05 0.9 0.55 0.03],...
-         'HorizontalAlignment','left',...
+        'HorizontalAlignment','left',...
         'Tag','NumberOfPhotMin_Text');
     
     h.NumberOfPhotMin_Edit = uicontrol(...
@@ -330,6 +332,56 @@ if isempty(hfig)
         'Position',[0.7 0.4 0.25 0.03],...
         'Tag','R0_Edit');
     
+    h.PDAMethod_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.SettingsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'String','PDA Method',...
+        'FontSize',14,...
+        'Position',[0.05 0.25 0.35 0.03],...
+        'HorizontalAlignment','left',...
+        'Tag','PDAMethod_Text');
+    
+    h.PDAMethod_Popupmenu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.SettingsPanel,...
+        'BackgroundColor', Look.Fore,...
+        'ForegroundColor', Look.Back,...
+        'Units','normalized',...
+        'String',{'Histogram Library','MLE','MonteCarlo'},...
+        'Value',1,...
+        'FontSize',14,...
+        'Position',[0.4 0.25 0.55 0.03],...
+        'Tag','PDAMethod_Popupmenu',...
+        'Callback',@Update_Settings);
+    
+    h.FitMethod_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.SettingsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'String','Fit Method',...
+        'FontSize',14,...
+        'Position',[0.05 0.2 0.35 0.03],...
+        'HorizontalAlignment','left',...
+        'Tag','FitMethod_Text');
+    
+    h.FitMethod_Popupmenu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.SettingsPanel,...
+        'BackgroundColor', Look.Fore,...
+        'ForegroundColor', Look.Back,...
+        'Units','normalized',...
+        'String',{'Simplex','Gradient-Based','Patternsearch'},...
+        'Value',1,...
+        'FontSize',14,...
+        'Position',[0.4 0.2 0.55 0.03],...
+        'Tag','FitMethod_Popupmenu',...
+        'Callback',@Update_Settings);
+    
     h.StartFit_Button = uicontrol(...
         'Style','pushbutton',...
         'Parent',h.SettingsPanel,...
@@ -338,21 +390,21 @@ if isempty(hfig)
         'Units','normalized',...
         'String','Start Fit',...
         'FontSize',14,...
-        'Position',[0.1 0.2 0.25 0.08],...
+        'Position',[0.05 0.1 0.4 0.08],...
         'Tag','StartFit_Button',...
         'Callback',@Start_PDA_Fit);
     
     %%% Progress Bar
     h.Progress_Panel = uibuttongroup(...
-        'Parent',h.PDA,...
+        'Parent',h.FitTablePanel,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Units','normalized',...
-        'Position',[0.8 0.95 0.2 0.05],...
+        'Position',[0 0 0.4 0.2],...
         'Tag','ProgressPanel');
-     %%% Axes for progressbar
+    %%% Axes for progressbar
     h.Progress_Axes = axes(...
         'Parent',h.Progress_Panel,...
         'Tag','Progress_Axes',...
@@ -365,7 +417,7 @@ if isempty(hfig)
         'Parent',h.Progress_Axes,...
         'Tag','Progress_Text',...
         'Units','normalized',...
-        'FontSize',14,...
+        'FontSize',12,...
         'FontWeight','bold',...
         'String','Nothing loaded',...
         'Interpreter','none',...
@@ -389,7 +441,7 @@ if isempty(hfig)
         'XLim',[0 1],...
         'LineWidth',2,...
         'YLimMode','auto');
-    xlabel('Proximity Ratio');
+    xlabel('Proximity Ratio','Color',[1 1 1]);
     ylabel('#','Color',[1 1 1]);
     h.ResidualsPlot = axes(...
         'Parent',h.MainPlotPanel,...
@@ -410,7 +462,7 @@ if isempty(hfig)
         'GridAlpha',0.5,...
         'LineWidth',2,...
         'YLimMode','auto');
-    ylabel('w_{res}');
+    ylabel('w_{res}','Color',[1 1 1]);
     %%% Initialize plots
     data = abs(sum(peaks(51),1));
     fit = data.*(1 + 0.15*randn(1,51));
@@ -430,7 +482,7 @@ if isempty(hfig)
         'LineWidth',2);
     color = lines(5);
     for i = 1:5 %%% plots for individual hists
-         h.FitHistInd{i} = bar(h.MainPlot,...
+        h.FitHistInd{i} = bar(h.MainPlot,...
             linspace(0,1,51),...
             fit,...
             'EdgeColor',color(i,:),...
@@ -448,7 +500,7 @@ if isempty(hfig)
         'BarWidth',1,...
         'LineWidth',2);
     linkaxes([h.MainPlot,h.ResidualsPlot],'x');
-
+    
     %%% Fit Parameter Table
     rownames = {'Gauss1', 'Gauss2', 'Gauss3', 'Gauss4', 'Gauss5'};
     columnnames = {'Active','Amplitude','F','R_{DA}','F','sigma','F'};
@@ -465,7 +517,7 @@ if isempty(hfig)
         'BackgroundColor',[Look.Axes;Look.Fore],...
         'ForegroundColor',Look.Disabled,...
         'FontSize',12,...
-        'Position',[0 0 0.4 1],...
+        'Position',[0 0.2 0.4 0.8],...
         'RowName',rownames,...
         'ColumnName',columnnames,...
         'ColumnEditable',true(1,7),...
@@ -529,11 +581,11 @@ if isempty(hfig)
     end
     
     for i = 1:5
-    h.GaussPlot{i} = plot(h.GaussAxes,...
-        [0:0.1:150],...
-        gauss_dummy(i,:),...
-        'Color',color(i,:),...
-        'LineWidth',2);
+        h.GaussPlot{i} = plot(h.GaussAxes,...
+            [0:0.1:150],...
+            gauss_dummy(i,:),...
+            'Color',color(i,:),...
+            'LineWidth',2);
     end
     
     h.GaussPlotAll = plot(h.GaussAxes,...
@@ -545,10 +597,27 @@ if isempty(hfig)
     xlim(h.GaussAxes,[40 120]);
     
     %%% Re-enable menu
-     h.File_Menu.Enable = 'on';
-     
-     %%% store handles structe
-     guidata(h.PDA,h);
+    h.File_Menu.Enable = 'on';
+    
+    %%% Downscaling of FontSizes for PC
+    if ispc
+        scale_factor = 1/1.2;
+        fields = fieldnames(h); %%% loop through h structure
+        for i = 1:numel(fields)
+            if isprop(h.(fields{i}),'FontSize')
+                h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
+            end
+%             if isprop(h.(fields{i}),'Style')
+%                 if strcmp(h.(fields{i}).Style,'popupmenu')
+%                     h.(fields{i}).BackgroundColor = Look.Fore;
+%                     h.(fields{i}).ForegroundColor = Look.Back;
+%                 end
+%             end
+        end
+    end
+    
+    %% store handles structe
+    guidata(h.PDA,h);
 end
 
 function Close_PDA(~,~)
@@ -568,6 +637,7 @@ end
 %%% clear PDAstruct
 PDAstruct = [];
 PDAMeta = [];
+Update_Settings;
 
 load('-mat',fullfile(PathName,FileName));
 
@@ -588,7 +658,7 @@ if exist('PDA','var')
         PDAstruct.Corrections.BackgroundAcceptor = PDA.Background.Background_GRpar+PDA.Background.Background_GRperp;
     end
 end
- %%% Fill in Corrections and Background
+%%% Fill in Corrections and Background
 h.Crosstalk_Edit.String = num2str(PDAstruct.Corrections.CrossTalk_GR);
 h.DirectEx_Edit.String = num2str(PDAstruct.Corrections.DirectExcitation_GR);
 h.Gamma_Edit.String = num2str(PDAstruct.Corrections.Gamma_GR);
@@ -631,18 +701,18 @@ if reset == 1
 end
 
 switch mode
-    case {1,2} 
+    case {1,2}
         %%% 1 File Loaded, Plot Raw Data and Remove Fit Plots
         %%% 2 Value for raw Hist changed (min/max) Update Plots
         
         %%% find valid bins (chosen by thresholds min/max)
         valid = ((PDAstruct.Data.NF+PDAstruct.Data.NG) > str2double(h.NumberOfPhotMin_Edit.String)) & ...
             ((PDAstruct.Data.NF+PDAstruct.Data.NG) < str2double(h.NumberOfPhotMax_Edit.String));
-
+        
         %%% Calculate proximity ratio histogram
         PDAMeta.Prox = PDAstruct.Data.NF(valid)./(PDAstruct.Data.NG(valid)+PDAstruct.Data.NF(valid));
         PDAMeta.BSD = PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid);
-
+        
         PDAMeta.hProx = histcounts(PDAMeta.Prox, linspace(0,1,str2double(h.NumberOfBins_Edit.String)+1));
         PDAMeta.xProx = linspace(0,1,str2double(h.NumberOfBins_Edit.String)+1)+1/str2double(h.NumberOfBins_Edit.String)/2;
         PDAMeta.xProx = PDAMeta.xProx(1:end-1);
@@ -678,13 +748,13 @@ global PDAstruct PDAMeta
 h = guidata(findobj('Tag','PDAFit'));
 %%% disable StartFit Button
 h.StartFit_Button.Enable = 'off';
-PDAMeta.FitMethod = 'MC';
+
 %% Prepare Fit Inputs
 if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     %%% find valid bins (chosen by thresholds min/max)
     valid = ((PDAstruct.Data.NF+PDAstruct.Data.NG) > str2double(h.NumberOfPhotMin_Edit.String)) & ...
         ((PDAstruct.Data.NF+PDAstruct.Data.NG) < str2double(h.NumberOfPhotMax_Edit.String));
-
+    
     maxN = max((PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid)));
     
     %%% evaluate the background probabilities
@@ -698,7 +768,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             BGgg(BGgg<1E-2) = [];
             BGgr(BGgr<1E-2) = [];
         case 'cdf'
-             %%% evaluate the background probabilities
+            %%% evaluate the background probabilities
             CDF_BGgg = poisscdf(0:1:maxN,str2double(h.BGdonor_Edit.String)*PDAstruct.timebin*1E3);
             CDF_BGgr = poisscdf(0:1:maxN,str2double(h.BGacc_Edit.String)*PDAstruct.timebin*1E3);
             %determine boundaries for background inclusion
@@ -710,21 +780,21 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     PDAMeta.PBR = BGgr./sum(BGgr);
     PDAMeta.NBG = numel(BGgg)-1;
     PDAMeta.NBR = numel(BGgr)-1;
-                
-    if strcmp(PDAMeta.FitMethod,'Hist')
+    
+    if strcmp(PDAMeta.PDAMethod,'Histogram Library')
         %%% prepare epsilon grid
         Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Epsilon Grid...');
-
+        
         E_grid = linspace(0,1,str2double(h.NumberOfBinsE_Edit.String)+1);
         R_grid = linspace(0,5*str2double(h.R0_Edit.String),100000)';
         epsEgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*((E_grid+str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))./(1-E_grid))).^(-1);
         epsRgrid = 1-(1+str2double(h.Crosstalk_Edit.String)+str2double(h.Gamma_Edit.String)*(((str2double(h.DirectEx_Edit.String)/(1-str2double(h.DirectEx_Edit.String)))+(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6)))./(1-(1./(1+(R_grid./str2double(h.R0_Edit.String)).^6))))).^(-1);
         PN = histcounts((PDAstruct.Data.NF(valid)+PDAstruct.Data.NG(valid)),1:(maxN+1));
-
+        
         [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
         Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Probability Library...');
         PNF = binopdf(NF, N, eps);
-
+        
         PDAMeta.E_grid = E_grid;
         PDAMeta.R_grid = R_grid;
         PDAMeta.epsEgrid = epsEgrid;
@@ -758,21 +828,54 @@ LB(logical(fixed)) = fitpar(logical(fixed));
 UB(logical(fixed)) = fitpar(logical(fixed));
 
 PDAMeta.Active = Active;
+
+%%% Fixed for Patternsearch and fmincon
+if sum(fixed) == 0 %nothing is fixed
+    A = [];
+    b = [];
+elseif sum(fixed(:)) > 0
+    A = zeros(numel(fixed)); %NxN matrix with zeros
+    b = zeros(numel(fixed),1);
+    for i = 1:numel(fixed)
+        if fixed(i) == 1 %set diagonal to 1 and b to value --> 1*x = b
+            A(i,i) = 1;
+            b(i) = fitpar(i);
+        end
+    end
+end
 %% Do Fit
 %%% Make Fit Plot Visible
 h.FitHist.Visible = 'on';
 for i = 1:5
     if Active(i)
         h.FitHistInd{i}.Visible = 'on';
-    else 
+    else
         h.FitHistInd{i}.Visible = 'off';
     end
 end
-fitopts = optimset('MaxFunEvals', 1000,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfvalPDA);
-if strcmp(PDAMeta.FitMethod,'Hist')
-    fitpar = fminsearchbnd(@(x) PDAHistogramFit(x), fitpar, LB, UB, fitopts);
-elseif strcmp(PDAMeta.FitMethod,'MLE')
-    fitpar = fminsearchbnd(@(x) PDA_MLE_Fit(x), fitpar, LB, UB, fitopts);
+
+switch PDAMeta.PDAMethod
+    case 'Histogram Library'
+        fitfun = @(x) PDAHistogramFit(x);
+    case 'MLE'
+        fitfun = @(x) PDA_MLE_Fit(x);
+    case 'MonteCarlo'
+        fitfun = @(x) PDAMonteCarloFit(x);
+end
+
+switch PDAMeta.FitMethod
+    case 'Simplex'
+        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',@optimplotfvalPDA);
+        fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
+    case 'Gradient-Based'
+        fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','PlotFcns',@optimplotfvalPDA);
+        fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
+    case 'Patternsearch'
+        opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
+        fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
+end
+
+if strcmp(PDAMeta.PDAMethod,'MLE')
     %%% For Updating the Result Plot, use MC sampling
     [chi2] = PDAMonteCarloFit(fitpar);
     disp(['Chi2 = ' num2str(chi2)]);
@@ -785,11 +888,9 @@ elseif strcmp(PDAMeta.FitMethod,'MLE')
             h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
             count = count +1;
         end
-    end   
-elseif strcmp(PDAMeta.FitMethod,'MC')   
-    fitpar = fminsearchbnd(@(x) PDAMonteCarloFit(x), fitpar, LB, UB, fitopts);
+    end
 end
-        
+
 %% Update GUI after performed fit
 %%% Convert amplitudes to fractions
 fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
@@ -843,7 +944,7 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histogram Library...');
 P = cell(numel(PDAMeta.E_grid),1);
 PN_dummy = PN';
 %case 1, no background in either channel
-if NBG == 0 && NBR == 0  
+if NBG == 0 && NBR == 0
     PN_trans = repmat(PN_dummy,1,PDAMeta.maxN+1);
     for i = 1:numel(PDAMeta.E_grid)
         P_temp = PFr(:,:,i).*PN_trans;
@@ -864,17 +965,17 @@ else
         count = 1;
         for g = 0:NBG
             for r = 0:NBR
-                    PN_trans = repmat(PN_dummy(1+g+r:end),1,PDAMeta.maxN+1);%the total number of fluorescence photons is reduced
-                    P_temp = PBG(g+1)*PBR(r+1)*PFr(1:end-g-r,:,i).*PN_trans; %+1 since also zero is included
-                    E_temp = (k(1:end-g-r,:,i)+r)./(N(1:end-g-r,:,i)+g+r);
-                    E_dummy = E_temp(:);
-                    P_dummy = P_temp(:);
-                    invalid = E_dummy>1;
-                    E_dummy(invalid) = []; %unneccesary since P(E>1) = 0 anyway, however needed for histc to work
-                    P_dummy(invalid) = [];
-                    E_array{count} = E_dummy;
-                    P_array{count} = P_dummy;
-                    count = count+1;
+                PN_trans = repmat(PN_dummy(1+g+r:end),1,PDAMeta.maxN+1);%the total number of fluorescence photons is reduced
+                P_temp = PBG(g+1)*PBR(r+1)*PFr(1:end-g-r,:,i).*PN_trans; %+1 since also zero is included
+                E_temp = (k(1:end-g-r,:,i)+r)./(N(1:end-g-r,:,i)+g+r);
+                E_dummy = E_temp(:);
+                P_dummy = P_temp(:);
+                invalid = E_dummy>1;
+                E_dummy(invalid) = []; %unneccesary since P(E>1) = 0 anyway, however needed for histc to work
+                P_dummy(invalid) = [];
+                E_array{count} = E_dummy;
+                P_array{count} = P_dummy;
+                count = count+1;
             end
         end
         E_array = vertcat(E_array{:});
@@ -882,7 +983,7 @@ else
         [~,~,bin] = histcounts(E_array,linspace(0,1,str2double(h.NumberOfBins_Edit.String)+1));
         P{i} = accumarray(bin,P_array);
         Progress(i/numel(PDAMeta.E_grid),h.Progress_Axes,h.Progress_Text,'Calculating Histogram Library...');
-    end    
+    end
 end
 
 function logL = PDA_MLE_Fit(fitpar)
@@ -906,9 +1007,9 @@ for i = 1:N_gauss
     
     %%% Calculate the vector of likelihood values
     P = eval_prob_2c_bg(PDAstruct.Data.NG,PDAstruct.Data.NF,...
-                PDAMeta.NBG,PDAMeta.NBR,...
-                PDAMeta.PBG',PDAMeta.PBR',...
-                epsGR');
+        PDAMeta.NBG,PDAMeta.NBR,...
+        PDAMeta.PBG',PDAMeta.PBR',...
+        epsGR');
     P = log(P) + repmat(log(PR'),numel(PDAstruct.Data.NG),1);
     Lmax = max(P,[],2);
     P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
@@ -945,7 +1046,7 @@ N_gauss = size(fitpar,1);
 %%% normalize Amplitudes
 fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
 
-%P_of_eps_total = zeros(1,numel(PDAMeta.epsEgrid)); 
+%P_of_eps_total = zeros(1,numel(PDAMeta.epsEgrid));
 %%% create individual histograms
 P_Ind = cell(N_gauss,1);
 for i = 1:N_gauss
@@ -1051,24 +1152,32 @@ if de == 0
         (gamma)^(1/6).*...
         (1./(1-eps)-(1+crosstalk)).^(-1/6)- ...
         RDA).^2);
-
+    
 elseif de ~= 0
-
+    
     
     dRdeps = -((R0^6*gamma)./(crosstalk - eps - crosstalk*de - crosstalk*eps + de*eps + de*gamma + crosstalk*de*eps - de*eps*gamma) - ((R0^6*gamma - R0^6*eps*gamma)*(crosstalk - de - crosstalk*de + de*gamma + 1))./(crosstalk - eps - crosstalk*de - crosstalk*eps + de*eps + de*gamma + crosstalk*de*eps - de*eps*gamma).^2)./(6*(-(R0^6*gamma - R0^6*eps*gamma)./(crosstalk - eps - crosstalk*de - crosstalk*eps + de*eps + de*gamma + crosstalk*de*eps - de*eps*gamma)).^(5/6));
     P_Rofeps = (1/(sqrt(2*pi)*sigma)).*...
         exp(-(RDA - (-(R0^6*gamma - R0^6*eps*gamma)./(crosstalk - eps - crosstalk*de - crosstalk*eps + de*eps + de*gamma + crosstalk*de*eps - de*eps*gamma)).^(1/6)).^2./(2*sigma^2));
     Pe = dRdeps.*P_Rofeps;
-%         Pe = (PDA.R0/(6*sqrt(2*pi)*sigma)).*...
-%             ( (1 - PDA.de/(1-PDA.de)) ./ ((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+PDA.de/(1-PDA.de))).^(-5/6).*...
-%             (1-PDA.de/(1-PDA.de)).*...
-%             ((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+PDA.de/(1-PDA.de)).^(-2).*...
-%             (1/PDA.gamma).*(1-PDA.epsilon).^(-2).*...
-%             exp(...
-%             -1/(2*sigma^2).*...
-%             (PDA.R0.*...
-%             ((1-PDA.de/(1-PDA.de))./((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+(PDA.de/(1-PDA.de)))).^(1/6)-...
-%             RDA).^2);
+    %         Pe = (PDA.R0/(6*sqrt(2*pi)*sigma)).*...
+    %             ( (1 - PDA.de/(1-PDA.de)) ./ ((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+PDA.de/(1-PDA.de))).^(-5/6).*...
+    %             (1-PDA.de/(1-PDA.de)).*...
+    %             ((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+PDA.de/(1-PDA.de)).^(-2).*...
+    %             (1/PDA.gamma).*(1-PDA.epsilon).^(-2).*...
+    %             exp(...
+    %             -1/(2*sigma^2).*...
+    %             (PDA.R0.*...
+    %             ((1-PDA.de/(1-PDA.de))./((1/PDA.gamma)*((1./(1-PDA.epsilon))-1-PDA.crosstalk)+(PDA.de/(1-PDA.de)))).^(1/6)-...
+    %             RDA).^2);
 end
 Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe);
+
+function Update_Settings(~,~)
+global PDAMeta
+h = guidata(findobj('Tag','PDAFit'));
+
+% Update PDAMeta Structure
+PDAMeta.FitMethod = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
+PDAMeta.PDAMethod = h.PDAMethod_Popupmenu.String{h.PDAMethod_Popupmenu.Value};
