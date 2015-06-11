@@ -47,6 +47,17 @@ if isempty(hfig)
         'Label','Save PDA Project',...
         'Callback',@Save_PDA_Project,...
         'Tag','Save_PDA_Project');
+    
+    h.Export_Menu = uimenu(...
+        'Parent',h.PDA,...
+        'Label','Export',...
+        'Tag','Export_Menu',...
+        'Enable','on');
+    h.Export_Figure = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','Export Figure',...
+        'Callback',@Export_Figure,...
+        'Tag','Export_Figure');
     %%% Define panels
     h.MainPlotPanel = uibuttongroup(...
         'Parent',h.PDA,...
@@ -783,6 +794,8 @@ switch mode
                 h.GaussPlot{i}.Visible = 'off';
             end
         end
+        h.MainPlot.YTickMode = 'auto';
+        h.MainPlot.YTick = h.MainPlot.YTick(1:end-1);
     case 2 %%% Fit Update
 end
 
@@ -1253,3 +1266,39 @@ h = guidata(findobj('Tag','PDAFit'));
 % Update PDAMeta Structure
 PDAMeta.FitMethod = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
 PDAMeta.PDAMethod = h.PDAMethod_Popupmenu.String{h.PDAMethod_Popupmenu.Value};
+
+function Export_Figure(~,~)
+h = guidata(findobj('Tag','PDAFit'));
+
+fig = figure('Position',[100 ,100 ,900, 425],...
+    'Color',[1 1 1],...
+    'Resize','off');
+
+main_ax = copyobj(h.MainPlot,fig);
+res_ax = copyobj(h.ResidualsPlot,fig);
+main_ax.Children(end).Position = [1.3,1.09];
+main_ax.Color = [1 1 1];
+res_ax.Color = [1 1 1];
+main_ax.XColor = [0 0 0];
+main_ax.YColor = [0 0 0];
+res_ax.XColor = [0 0 0];
+res_ax.YColor = [0 0 0];
+main_ax.XLabel.Color = [0 0 0];
+main_ax.YLabel.Color = [0 0 0];
+res_ax.XLabel.Color = [0 0 0];
+res_ax.YLabel.Color = [0 0 0];
+main_ax.Units = 'pixel';
+res_ax.Units = 'pixel';
+main_ax.Position = [60 60 500 300];
+res_ax.Position = [60 360 500 50];
+gauss_ax = copyobj(h.GaussAxes,fig);
+gauss_ax.Color = [1 1 1];
+gauss_ax.XColor = [0 0 0];
+gauss_ax.YColor = [0 0 0];
+gauss_ax.XLabel.Color = [0 0 0];
+gauss_ax.YLabel.Color = [0 0 0];
+gauss_ax.Units = 'pixel';
+gauss_ax.Position = [650 60 225 300];
+gauss_ax.GridAlpha = 0.1;
+res_ax.GridAlpha = 0.1;
+gauss_ax.FontSize = 18;
