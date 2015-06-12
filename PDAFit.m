@@ -386,7 +386,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Fore,...
         'ForegroundColor', Look.Back,...
         'Units','normalized',...
-        'String',{'Simplex','Gradient-Based','Patternsearch'},...
+        'String',{'Simplex','Gradient-Based','Patternsearch','Gradient-Based (global)'},...
         'Value',1,...
         'FontSize',14,...
         'Position',[0.4 0.2 0.55 0.03],...
@@ -557,13 +557,14 @@ if isempty(hfig)
     
     %%% Fit Parameter Table
     rownames = {'Gauss1', 'Gauss2', 'Gauss3', 'Gauss4', 'Gauss5'};
-    columnnames = {'Active','Amplitude','F','R_{DA}','F','sigma','F'};
-    data = {true,1,true,50,false,2,false;...
-        false,1,false,50,false,2,false;...
-        false,1,false,50,false,2,false;...
-        false,1,false,50,false,2,false;...
-        false,1,false,50,false,2,false};
-    columnformat = {'logical','numeric','logical','numeric','logical','numeric','logical'};
+    columnnames = {'Active','Amplitude','F','RDA','LB','UB','F','sigma','LB','UB','F'};
+    data = {true,1,true,50,0,Inf,false,2,0,Inf,false;...
+        false,1,false,50,0,Inf,false,2,0,Inf,false;...
+        false,1,false,50,0,Inf,false,2,0,Inf,false;...
+        false,1,false,50,0,Inf,false,2,0,Inf,false;...
+        false,1,false,50,0,Inf,false,2,0,Inf,false};
+    columnwidth = {'auto','auto',30,'auto',30,30,30,'auto',30,30,30};
+    columnformat = {'logical','numeric','logical','numeric','numeric','numeric','logical','numeric','numeric','numeric','logical'};
     h.Fit_Table = uitable(...
         h.FitTablePanel,...
         'Tag','Fit_Table',...
@@ -574,8 +575,9 @@ if isempty(hfig)
         'Position',[0 0.2 0.4 0.8],...
         'RowName',rownames,...
         'ColumnName',columnnames,...
-        'ColumnEditable',true(1,7),...
+        'ColumnEditable',true(1,11),...
         'Data',data,...
+        'ColumnWidth',columnwidth,...
         'ColumnFormat',columnformat,...
         'CellEditCallback',[],...
         'CellSelectionCallback',[]);
@@ -599,7 +601,7 @@ if isempty(hfig)
         'LineWidth',2,...
         'YLimMode','auto',...
         'XLimMode','auto');
-    xlabel('# Photons per Bin');
+    xlabel('# Photons per Bin','Color',[1 1 1]);
     ylabel('Occurence','Color',[1 1 1]);
     h.BSDPlot = plot(h.BSDAxes,...
         [0:200],...
@@ -627,7 +629,7 @@ if isempty(hfig)
         'LineWidth',2,...
         'YLimMode','auto',...
         'XLimMode','auto');
-    xlabel('Distance [A]');
+    xlabel('Distance [A]','Color',[1 1 1]);
     ylabel('Probability','Color',[1 1 1]);
     gauss_dummy = zeros(5,150*10+1);
     for i = 1:5
@@ -868,18 +870,26 @@ end
 
 %% Read out fit parameters
 FitData = cellfun(@double,h.Fit_Table.Data);
+if any(isnan(FitData(:)))
+    disp('There were NaNs in the fit parameters. Aborting');
+    h.StartFit_Button.Enable = 'on';
+    h.ViewCurve_Button.Enable = 'on';
+    return;
+end
 Active = FitData(:,1);
 fitpar = [];
 fixed = [];
+LB = [];
+UB = [];
 for i = 1:5
     if Active(i)
-        fitpar = [fitpar;FitData(i,2:2:end-1)];
-        fixed = [fixed; FitData(i,3:2:end)];
+        fitpar = [fitpar;FitData(i,[2,4,8])];
+        fixed = [fixed; FitData(i,[3,7,11])];
+        LB = [LB; [0, FitData(i,[5,9])] ];
+        UB = [UB; [Inf, FitData(i,[6,10])] ];
     end
 end
 
-LB = zeros(size(fitpar,1),size(fitpar,2));
-UB = inf(size(fitpar,1),size(fitpar,2));
 LB(logical(fixed)) = fitpar(logical(fixed));
 UB(logical(fixed)) = fitpar(logical(fixed));
 
@@ -957,6 +967,11 @@ switch PDAMeta.FitMethod
     case 'Patternsearch'
         opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
         fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
+    case 'Gradient-Based (global)'
+        opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter','PlotFcns',@optimplotfvalPDA);
+        problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',A,'beq',b,'lb',LB,'ub',UB,'options',opts);
+        gs = GlobalSearch;
+        fitpar = run(gs,problem);
 end
 
 if strcmp(PDAMeta.PDAMethod,'MLE')
@@ -982,14 +997,14 @@ fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
 count = 1;
 for i = 1:5
     if Active(i)
-        FitData(i,2:2:end) = fitpar(count,:);
+        FitData(i,[2,4,8]) = fitpar(count,:);
         count = count+1;
     end
 end
 
 FitData = num2cell(FitData);
 for i = 1:5
-    for j = 1:2:7
+    for j = [1,3,7,11]
         FitData{i,j} = logical(FitData{i,j});
     end
 end
