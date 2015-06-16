@@ -1432,7 +1432,7 @@ end
     h.BurstLifetime_Button_Menu_StoreIRF = uimenu(h.BurstLifetime_Button_Menu,...
             'Label','Store Loaded IRF in *.bur file',...
             'Callback',@Store_IRF_Scat_inBur);
-    h.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.Burst_Button_Menu,...
+    h.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.BurstLifetime_Button_Menu,...
         'Label','Store Loaded Scatter Measurement in *.bur file',...
         'Callback',@Store_IRF_Scat_inBur);
     
@@ -1447,7 +1447,8 @@ end
         'String','Burstwise Lifetime',...
         'Callback',@BurstLifetime,...
         'Position',[0.75 0.84 0.24 0.07],...
-        'TooltipString',sprintf('Perform burstwise Lifetime Fit'));    
+        'TooltipString',sprintf('Perform burstwise Lifetime Fit'),...
+        'UIContextMenu',h.BurstLifetime_Button_Menu);    
     %%% Button to caluclate 2CDE filter
     h.NirFilter_Button = uicontrol(...
         'Parent',h.Burst_Panel,...
@@ -5931,12 +5932,32 @@ Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Store loaded IRF/Scatter Measurment in performed BurstSearch %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Store_IRF_Scat_inBur(~,~)
-global BurstData
+function Store_IRF_Scat_inBur(obj,~)
+global BurstData FileInfo TcspcData
+h = guidata(findobj('Tag','Pam'));
 if isempty(BurstData)
-    disp('No BurstData loaded...');
+    disp('No Burst Data loaded...');
     return;
 end
+h.Progress_Text.Stringffs = 'Saving changed MI pattern...';
+switch obj
+    case h.BurstLifetime_Button_Menu_StoreIRF
+        IRF = cell(numel(BurstData.PIE.Detector),1);
+        for i = 1:numel(BurstData.PIE.Detector)
+            IRF{i}=histc(TcspcData.MI{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)},0:(FileInfo.MI_Bins-1));
+        end
+        BurstData.IRF = IRF;
+    case h.BurstLifetime_Button_Menu_StoreScatter
+        Scatter = cell(numel(BurstData.PIE.Detector),1);
+        for i = 1:numel(BurstData.PIE.Detector)
+            Scatter{i}=histc(TcspcData.MI{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)},0:(FileInfo.MI_Bins-1));
+        end
+        BurstData.ScatterPattern = Scatter;
+end
+
+save(BurstData.FileName,'BurstData');
+Progress(1,h.Progress_Axes,h.Progress_Text);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%

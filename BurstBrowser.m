@@ -2460,6 +2460,8 @@ global BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 switch mode
     case 1
+        %%% Initialize BurstMeta.TauFit
+        BurstMeta.TauFit.FitType = h.TauFit.FitMethod_Popupmenu.String{h.TauFit.FitMethod_Popupmenu.Value};
         %%% Initialize Plots in Global Variable
         %%% Enables easy Updating later on
         BurstMeta.Plots = [];
@@ -4638,12 +4640,23 @@ switch obj
         %%% find selected bursts
         MI_total = BurstTCSPCData.Microtime(valid);MI_total = vertcat(MI_total{:});
         CH_total = BurstTCSPCData.Channel(valid);CH_total = vertcat(CH_total{:});
-        
-        switch h.TauFit.ChannelSelect.Value
-            case 1 %% GG
-                chan = [1,2];
-            case 2 %% RR
-                chan = [5,6];
+        switch BurstData.BAMethod
+            case {1,2} %%% 2color MFD
+                switch h.TauFit.ChannelSelect.Value
+                    case 1 %% GG
+                        chan = [1,2];
+                    case 2 %% RR
+                        chan = [5,6];
+                end
+            case {3,4}
+                switch h.TauFit.ChannelSelect.Value
+                    case 1 %% BB
+                        chan = [1,2];
+                    case 2 %% GG
+                        chan = [7,8];
+                    case 3 %% RR
+                        chan = [11,12];
+                end
         end
         MI_par = MI_total(CH_total == chan(1));
         MI_perp = MI_total(CH_total == chan(2));
@@ -7289,6 +7302,9 @@ if BAMethod == 3
     h.axes_EvsTauRR.Position = [(0.1+0.8/3) 0.55 (0.8/3) 0.4];
     h.axes_rGGvsTauGG.Position = [0.05 0.05 (0.8/3) 0.4];
     h.axes_rRRvsTauRR.Position = [(0.1+0.8/3) 0.05 (0.8/3) 0.4];
+    %% Change Lifetime Fit GUI
+    h.TauFit.ChannelSelect.String = {'BB','GG','RR'};
+    h.TauFit.ChannelSelect.Value = 1;
 elseif BAMethod == 2
     %%% move the three-color Corrections Tab to the Hide_Tab
     h.Main_Tab_Corrections_ThreeCMFD.Parent = h.Hide_Tab;
@@ -7320,6 +7336,9 @@ elseif BAMethod == 2
     h.axes_EvsTauRR.Position = [0.55 0.55 0.4 0.4];
     h.axes_rGGvsTauGG.Position = [0.05 0.05 0.4 0.4];
     h.axes_rRRvsTauRR.Position = [0.55 0.05 0.4 0.4];
+    %% Change Lifetime Fit GUI
+    h.TauFit.ChannelSelect.String = {'GG','RR'};
+    h.TauFit.ChannelSelect.Value = 1;
 end
 h.CorrectionsTable.RowName = Corrections_Rownames;
 h.CorrectionsTable.Data = Corrections_Data;
