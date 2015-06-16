@@ -1255,7 +1255,11 @@ case {1,2}
             %%% Calculate Background fraction
             bg = DUR.*background{chan};
             signal = sum(Mic{chan},1)';
-            fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+            if use_bg == 1
+                fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+            else
+                fraction_bg = zeros(size(bg,1),size(bg,2));
+            end
             
             scat = SCATTER{chan};
             model = MODEL{chan};
