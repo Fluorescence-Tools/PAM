@@ -1256,7 +1256,7 @@ case {1,2}
             bg = DUR.*background{chan};
             signal = sum(Mic{chan},1)';
             
-            use_bg = 0;
+            use_bg = 1;
             if use_bg == 1
                 fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
             else
