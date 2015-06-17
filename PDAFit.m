@@ -974,22 +974,30 @@ switch PDAMeta.FitMethod
         fitpar = run(gs,problem);
 end
 
-if strcmp(PDAMeta.PDAMethod,'MLE')
-    %%% For Updating the Result Plot, use MC sampling
-    [chi2] = PDAMonteCarloFit(fitpar);
-    %%% Update Plots
-    h.FitHist.YData = PDAMeta.hFit;
-    h.Residuals.YData = PDAMeta.w_res;
-    h.Chi2_Text.String = ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)];
-    count = 1;
-    for i = 1:5
-        if PDAMeta.Active(i)
-            h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
-            count = count +1;
+switch PDAMeta.PDAMethod
+    case 'Histogram Library'
+        chi2 = PDAHistogramFit(fitpar);
+    case 'MLE'
+        %%% For Updating the Result Plot, use MC sampling
+        chi2 = PDAMonteCarloFit(fitpar);
+        %%% Update Plots
+        h.FitHist.YData = PDAMeta.hFit;
+        h.Residuals.YData = PDAMeta.w_res;
+        count = 1;
+        for i = 1:5
+            if PDAMeta.Active(i)
+                h.FitHistInd{i}.YData = PDAMeta.hFit_Ind{count};
+                count = count +1;
+            end
         end
-    end
+    case 'MonteCarlo'
+        chi2 = PDAMonteCarloFit(fitpar);
+    otherwise
+        chi2 = 0;
 end
 
+h.Chi2_Text.String = ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)];
+    
 %% Update GUI after performed fit
 %%% Convert amplitudes to fractions
 fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
