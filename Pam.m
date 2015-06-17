@@ -5939,7 +5939,7 @@ if isempty(BurstData)
     disp('No Burst Data loaded...');
     return;
 end
-h.Progress_Text.Stringffs = 'Saving changed MI pattern...';
+h.Progress_Text.String = 'Saving changed MI pattern...';
 switch obj
     case h.BurstLifetime_Button_Menu_StoreIRF
         IRF = cell(numel(BurstData.PIE.Detector),1);
