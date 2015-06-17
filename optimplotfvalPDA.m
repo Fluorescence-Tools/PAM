@@ -46,10 +46,14 @@ else
     plotfval = findobj(get(gca,'Children'),'Tag','optimplotfval');
     newX = [get(plotfval,'Xdata') iteration];
     newY = [get(plotfval,'Ydata') fval];
+    tmp = sort(newY);
+    tmp = tmp(1:round(end/2));
+    set(gca, 'YLim', [min(tmp) max(tmp)*1.1]);
     set(plotfval,'Xdata',newX, 'Ydata',newY);
     set(get(gca,'Title'),'String',sprintf('Current Function Value: %g',fval));
     
-    if ~strcmp(PDAMeta.FitMethod,'MLE')
+    plott = 1;
+    if ~strcmp(PDAMeta.FitMethod,'MLE') && plott == 1
         %%% Update Plots
         h.FitHist.YData = PDAMeta.hFit;
         h.Residuals.YData = PDAMeta.w_res;
