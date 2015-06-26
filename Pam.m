@@ -3608,7 +3608,6 @@ function Correlate (~,~,mode)
 h=guidata(findobj('Tag','Pam'));
 global UserValues TcspcData FileInfo PamMeta
 
-
 h.Progress_Text.String = 'Correlating';
 h.Progress_Axes.Color=[1 0 0];
 
@@ -3879,25 +3878,33 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             TcspcData.MI{Det1(l),Rout1(l)}<=To1(l))];
                     end
                 end
-                %%% Sorts photons into spatial bins
-                [Data,Index] = sort(Data);
-                MI = MI(Index);
-                Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
-                Data1 = cell(Bins,1);
-                MI1 = cell(Bins,1);
+                %%% Sorts data                 
                 Valid = find(PamMeta.Selected_MT_Patches);
-                for j=1:Bins %%% Sorts photons by position bin
-                    DataBin = ceil(Data(mod(Data,1)<=j/Bins));
-                    MIBin = MI(mod(Data,1)<=j/Bins);
-                    MI = MI(mod(Data,1)>j/Bins);
-                    Data = Data(mod(Data,1)>j/Bins);                     
+                Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                [DataBin,Index] = sort(mod(Data,1));
+                Data = Data(Index);
+                MI = MI(Index);
+                
+                Borders = zeros(Bins+1,1);
+                for j=1:(Bins-1)
+                    Borders(j+1) =  find(DataBin>=j/Bins,1,'first')-1;
+                end
+                Borders(end)=numel(DataBin);
+                Borders = diff(Borders);
+                Data = mat2cell(Data,Borders,1);
+                MI = mat2cell(MI,Borders,1);
+                MI1=cell(Bins,1);
+                for j=1:Bins
+                    Data{j} = sort(Data{j});
+                    MI{j} = sort(MI{j});                    
                     k = 1;
-                    for m = Valid'
-                        Data1{j}{k} =DataBin((DataBin>=Times(m)) & (DataBin<Times(m+1)))-Times(m);
-                        MI1{j} = [MI1{j}; MIBin((DataBin>=Times(m)) & (DataBin<Times(m+1)))];
-                        k = k+1;
+                    for m = Valid'                        
+                        Data1{j}{k} = Data{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))-Times(m);
+                        MI1{j} = [MI1{j}; MI{j}((Data{j}==Times(m)) & (Data{j}<Times(m+1)))];
+                        k = k+1;                        
                     end
                 end
+                clear Data MI
                 %% Channel 2 calculations
                 if Cor_B(i) == Cor_A(i)
                     Data2 = Data1;
@@ -3917,25 +3924,31 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     %%% Sorts photons into spatial bins
-                    [Data,Index] = sort(Data);
-                    MI = MI(Index);
-                    Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
-%                     Maxtime = max([Maxtime,Data(end)-Data(1)]);
-                    Data2 = cell(Bins,1);
-                    MI2 = cell(Bins,1);
                     Valid = find(PamMeta.Selected_MT_Patches);
+                    Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                    [DataBin,Index] = sort(mod(Data,1));
+                    Data = Data(Index);
+                    MI = MI(Index);
+                    
+                    Borders = zeros(Bins+1,1);
+                    for j=1:(Bins-1)
+                        Borders(j+1) =  find(DataBin>=j/Bins,1,'first')-1;
+                    end
+                    Borders(end)=numel(DataBin);
+                    Borders = diff(Borders);
+                    Data = mat2cell(Data,Borders,1);
+                    MI = mat2cell(MI,Borders,1);
                     for j=1:Bins
-                        DataBin=ceil(Data(mod(Data,1)<=j/Bins));
-                        MIBin = MI(mod(Data,1)<=j/Bins);
-                        MI = MI(mod(Data,1)>j/Bins);
-                        Data=Data(mod(Data,1)>j/Bins);
+                        Data{j} = sort(Data{j});
+                        MI{j} = sort(MI{j});
                         k = 1;
                         for m = Valid'
-                            Data2{j}{k}=DataBin((DataBin>=Times(m)) & (DataBin<Times(m+1)))-Times(m);
-                            MI2{j} = [MI2{j}; MIBin((DataBin>=Times(m)) & (DataBin<Times(m+1)))];
+                            Data2{j}{k} = Data{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))-Times(m);
+                            MI2{j} = [MI1{j}; MI{j}((Data{j}==Times(m)) & (Data{j}<Times(m+1)))];
                             k = k+1;
                         end
                     end
+                    clear Data MI
                 end
                 %% Actually calculates the crosscorrelation
                 PairCor=cell(Bins,max(Dist),2);
@@ -3953,12 +3966,16 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                 PairInfo.Time=Cor_Times;
                             end
                             
-                            %%% Ch2xCh1
-                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
-                            %%% Adjusts correlation times to longest
-                            PairCor{j,l+1,2}=mean(Cor_Array,2);
-                            if numel(PairInfo.Time)<Cor_Times
-                                PairInfo.Time=Cor_Times;
+                            if l == 0
+                                PairCor{j,l+1,2} = PairCor{j,l+1,2};                                
+                            else
+                                %%% Ch2xCh1
+                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
+                                %%% Adjusts correlation times to longest
+                                PairCor{j,l+1,2}=mean(Cor_Array,2);
+                                if numel(PairInfo.Time)<Cor_Times
+                                    PairInfo.Time=Cor_Times;
+                                end
                             end
                         end                        
                     end

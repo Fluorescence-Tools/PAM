@@ -19,6 +19,7 @@ if nargin < 4
 end
 %%% Calculates a pseudologarithmic timeaxis:
 %%% [1:21 20:2:41 45:4:81 ....]
+
 Timeaxis_Exponent=floor(log2(Maxtime/10));
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
@@ -35,16 +36,30 @@ parfor i=1:numel(Data1)
     end
 end
 
-
 %%% Calculates divisor to account for the differently spaced bins
 Divisor=ones(numel(Timeaxis),1);
 Divisor(22:end)=2.^(floor((10:(numel(Divisor)-12))/10));
 %%% Does additional normalizing
+Norm = Maxtime-Timeaxis+1;
+if Norm < 0
+    Norm = 0;
+end
+
 for i=1:numel(Cor_Array)
-    Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
-    %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
+    parfor j = 1:numel(Timeaxis)
+        Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
+        Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
+    end 
+    Cor_Array{i} = Cor_Array{i}./Norm./Divisor./Countrate1'./Countrate2'-1;
     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
 end
+
+% for i=1:numel(Cor_Array)
+%     Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
+%     %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
+%     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
+% end
+
 
 %%% Makes sure all bins have the same size
 Array_Length=cellfun(@numel,Cor_Array);
@@ -58,6 +73,6 @@ end
 Cor_Array=cell2mat(Cor_Array');
 Timeaxis=Timeaxis(1:max(Array_Length));
 Timeaxis(22:end) = Timeaxis(22:end)-1;
-%%% Shift timeaxis to center of bins
-%Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
-%Timeaxis = Timeaxis + Divisor(1:numel(Timeaxis))/2;
+% %% Shift timeaxis to center of bins
+% Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;
+% Timeaxis = Timeaxis + Divisor(1:numel(Timeaxis))/2;

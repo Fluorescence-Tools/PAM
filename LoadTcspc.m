@@ -512,7 +512,7 @@ switch (Type)
             FileInfo.ImageTime = Header.FrameTime/Header.Freq;
             FileInfo.Lines = Header.Lines;
             FileInfo.Pixels = FileInfo.Lines^2;
-            FileInfo.ScanFreq = FileInfo.ImageTime/FileInfo.Lines;
+            FileInfo.ScanFreq = FileInfo.Lines/FileInfo.ImageTime;
             
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
             for j = 1:4               

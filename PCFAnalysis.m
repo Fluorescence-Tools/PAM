@@ -179,7 +179,19 @@ end
         'Position',[0.65 0.935, 0.07 0.02],...
         'Callback',{@Update_Plots,[1,2]},...
         'Enable','off',...
-        'String','200');    
+        'String','200');  
+        %%% Editbox for Intensity rebinning
+    h.PCF_ForwardBack = uicontrol(...
+        'Parent',h.Carpet_Panel,...
+        'Style','popup',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.74, 0.9375, 0.12 0.02],...
+        'Callback',{@Update_Plots,[1]},...
+        'Enable','off',...
+        'String',{'Average','Forward','Backward'});  
     %% Context menues
     %%% Contexmenu for Correlation Carpet
     h.Carpet_Menu = uicontextmenu;
@@ -566,6 +578,7 @@ h.Carpet_Intensity.Enable = 'on';
 h.Carpet_Intensity_Rebin.Enable = 'on';
 h.Cor_Min_Time.Enable = 'on';
 h.Cor_Max_Time.Enable = 'on';
+h.PCF_ForwardBack.Enable = 'on';
 h.Plot.Carpet.UIContextMenu = h.Carpet_Menu;
 h.Intensity_Axes.UIContextMenu = h.Mean_Menu;
 h.Plot.Carpet.ButtonDownFcn = {@Select_ROI,1};
@@ -697,7 +710,14 @@ if any(mode == 1) %%% Updates correlation/intensity/mean arrival time carpet
         Min = str2double(h.Carpet_Min_Time.String);
         Max = min([str2double(h.Carpet_Max_Time.String), size(PCFData.Data{File}.PairInfo.Time,1)]);
         if any(PCFData.Data{File}.PairInfo.Dist == Dist) %%% Plots PCF for selected distance
-            CData = PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,1);
+            switch h.PCF_ForwardBack.Value
+                case 1
+                    CData = mean(PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,:),4);
+                case 2
+                    CData = PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,1);
+                case 3
+                    CData = PCFData.Data{File}.PairCor(Min:Max,:,Dist+1,2);
+            end
             if strcmp(h.Carpet_Normalize.Checked,'on') %%% Normalized data per bin
                 CData = (CData-repmat(min(CData),[(Max-Min+1),1]))./repmat((max(CData)-min(CData)),[(Max-Min+1),1]);
                 CData(isnan(CData) | isinf(CData)) = 0;
@@ -1359,9 +1379,18 @@ switch mode
                 PCFData.Cor(end).File = File;
                 PCFData.Cor(end).Dist = Dist;
                 PCFData.Cor(end).Color = Color/numel(Sel);
-                PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),2);
+                switch h.PCF_ForwardBack.Value
+                    case 1
+                        PCFData.Cor(end).Cor(:,1) = mean(mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,:),4),2);
+                        PCFData.Cor(end).Cor(:,3) = std(mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,:),4),0,2)/sqrt(numel(Bins));
+                    case 2
+                        PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),2);
+                        PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),0,2)/sqrt(numel(Bins));
+                    case 3
+                        PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,2),2);
+                        PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,2),0,2)/sqrt(numel(Bins));
+                end
                 PCFData.Cor(end).Cor(:,2) = PCFData.Data{File}.PairInfo.Time;
-                PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),0,2)/sqrt(numel(Bins));
                 %%% Updates correlation list and plot
                 Update_Cors([],[],1);
                 else
@@ -1371,7 +1400,14 @@ switch mode
                         PCFData.Cor(end).File = File;
                         PCFData.Cor(end).Dist = Dist;
                         PCFData.Cor(end).Color = rand(1,3);
-                        PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,1);
+                        switch h.PCF_ForwardBack.Value
+                            case 1
+                                PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,i,Dist+1,:),4);
+                            case 2
+                                PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,1);
+                            case 3
+                                PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,2);
+                        end
                         PCFData.Cor(end).Cor(:,2) = PCFData.Data{File}.PairInfo.Time;
                         PCFData.Cor(end).Cor(:,3) = 0*PCFData.Cor(end).Cor(:,1);
                         %%% Updates correlation list and plot
@@ -1412,9 +1448,18 @@ switch mode
                     PCFData.Cor(end).File = File;
                     PCFData.Cor(end).Dist = Dist;
                     PCFData.Cor(end).Color = 1-Color/numel(Sel);
-                    PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),2);
+                    switch h.PCF_ForwardBack.Value
+                        case 1
+                            PCFData.Cor(end).Cor(:,1) = mean(mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,:),4),2);
+                            PCFData.Cor(end).Cor(:,3) = std(mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,:),4),0,2)/sqrt(numel(Bins));
+                        case 2
+                            PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),2);
+                            PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),0,2)/sqrt(numel(Bins));
+                        case 3
+                            PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,Bins,Dist+1,2),2);
+                            PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,2),0,2)/sqrt(numel(Bins));
+                    end
                     PCFData.Cor(end).Cor(:,2) = PCFData.Data{File}.PairInfo.Time;
-                    PCFData.Cor(end).Cor(:,3) = std(PCFData.Data{File}.PairCor(:,Bins,Dist+1,1),0,2)/sqrt(numel(Bins));
                     %%% Updates correlation list and plot
                     Update_Cors([],[],1);
                 else
@@ -1424,7 +1469,14 @@ switch mode
                         PCFData.Cor(end).File = File;
                         PCFData.Cor(end).Dist = Dist;
                         PCFData.Cor(end).Color = rand(1,3);
-                        PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,1);
+                        switch h.PCF_ForwardBack.Value
+                            case 1
+                                PCFData.Cor(end).Cor(:,1) = mean(PCFData.Data{File}.PairCor(:,i,Dist+1,:),4);
+                            case 2
+                                PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,1);
+                            case 3
+                                PCFData.Cor(end).Cor(:,1) = PCFData.Data{File}.PairCor(:,i,Dist+1,2);
+                        end
                         PCFData.Cor(end).Cor(:,2) = PCFData.Data{File}.PairInfo.Time;
                         PCFData.Cor(end).Cor(:,3) = 0*PCFData.Cor(end).Cor(:,1);
                         %%% Updates correlation list and plot
