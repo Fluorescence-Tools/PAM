@@ -2741,10 +2741,11 @@ if FilterIndex == 2 % KBA file was loaded
     BurstData.DataArray = DataArray;
     BurstData.BAMethod = Data.BAMethod;
     BurstData.FileType = Data.Filetype;
-    BurstData.TACrange = Data.TACrange;
+    BurstData.TACRange = Data.TACrange;
     BurstData.SyncPeriod = 1./Data.SyncRate;
     
     BurstData.FileInfo.MI_Bins = 4096;
+    BurstData.FileInfo.TACRange = Data.TACrange;
     if isfield(Data,'PIEChannels')
         BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
             Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
