@@ -3900,7 +3900,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     k = 1;
                     for m = Valid'                        
                         Data1{j}{k} = Data{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))-Times(m);
-                        MI1{j} = [MI1{j}; MI{j}((Data{j}==Times(m)) & (Data{j}<Times(m+1)))];
+                        MI1{j} = [MI1{j}; MI{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))];
                         k = k+1;                        
                     end
                 end
@@ -4018,6 +4018,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     CumMI = [CumMI(2); diff(CumMI)];
                     PairMI{2}(:,j) = CumMI./PairInt{2}(:,j);
                 end
+                clear Data1 Data2 MI1 MI2
                 PairInt{1} = PairInt{1}/10;
                 PairInt{2} = PairInt{2}/10;
                 PairMI{1}(isnan(PairMI{1}) | isinf(PairMI{1})) = 0;

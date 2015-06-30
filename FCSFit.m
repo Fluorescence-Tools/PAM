@@ -674,7 +674,9 @@ switch Type
             FCSData.FileName{end+1} = FileName{i}(1:end-5);
             FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
             FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+            FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
             FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+            FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
             %%% Creates new plots
             FCSMeta.Plots{end+1,1} = errorbar(...
                 FCSMeta.Data{end,1},...

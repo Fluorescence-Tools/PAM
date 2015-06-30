@@ -45,13 +45,14 @@ if Norm < 0
     Norm = 0;
 end
 
+
 for i=1:numel(Cor_Array)
-    parfor j = 1:numel(Timeaxis)
+    for j = 1:numel(Timeaxis)
         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
     end 
     Cor_Array{i} = Cor_Array{i}./Norm./Divisor./Countrate1'./Countrate2'-1;
-    Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
+    Cor_Array{i} = Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));   
 end
 
 % for i=1:numel(Cor_Array)
