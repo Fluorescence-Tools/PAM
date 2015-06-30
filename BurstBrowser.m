@@ -2707,71 +2707,153 @@ end
 
 %%% Convert old File Format to new
 if FilterIndex == 2 % KBA file was loaded
-    %%% Convert NameArray
-    NameArray{strcmp(NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
-    NameArray{strcmp(NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
-    NameArray{strcmp(NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
-    NameArray{strcmp(NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
-    NameArray{strcmp(NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
-    NameArray{strcmp(NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
-    NameArray{strcmp(NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
-    NameArray{strcmp(NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
-    NameArray{strcmp(NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
-    NameArray{strcmp(NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
-    if sum(strcmp(NameArray,'tau(green)')) > 0
-        NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
-        NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
-        DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
-        DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
-    else %%% create zero value arrays
-        NameArray{end+1} = 'Lifetime GG [ns]';
-        NameArray{end+1} = 'Lifetime RR [ns]';
-        DataArray(:,end+1) = zeros(size(DataArray,1),1);
-        DataArray(:,end+1) = zeros(size(DataArray,1),1);
+    switch Data.BAMethod
+        case {1,2} %%% 2 Color MFD
+            %%% Convert NameArray
+            NameArray{strcmp(NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
+            NameArray{strcmp(NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
+            NameArray{strcmp(NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
+            NameArray{strcmp(NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
+            NameArray{strcmp(NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
+            NameArray{strcmp(NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
+            NameArray{strcmp(NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
+            NameArray{strcmp(NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
+            NameArray{strcmp(NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
+            NameArray{strcmp(NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
+            if sum(strcmp(NameArray,'tau(green)')) > 0
+                NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
+                NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
+                DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
+                DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
+            else %%% create zero value arrays
+                NameArray{end+1} = 'Lifetime GG [ns]';
+                NameArray{end+1} = 'Lifetime RR [ns]';
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+            end
+            NameArray{end+1} = 'Anisotropy GG';
+            NameArray{end+1} = 'Anisotropy RR';
+            %%% Caculate Anisotropies
+            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
+                (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
+            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
+                (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
+            
+            BurstData.NameArray = NameArray;
+            BurstData.DataArray = DataArray;
+            BurstData.BAMethod = Data.BAMethod;
+            BurstData.FileType = Data.Filetype;
+            BurstData.TACRange = Data.TACrange;
+            BurstData.SyncPeriod = 1./Data.SyncRate;
+            
+            BurstData.FileInfo.MI_Bins = 4096;
+            BurstData.FileInfo.TACRange = Data.TACrange;
+            if isfield(Data,'PIEChannels')
+                BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
+                    Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
+                    Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
+                BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
+                    Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
+                    Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
+            elseif isfield(Data,'fFCS')
+                BurstData.PIE.From = Data.fFCS.lower;
+                BurstData.PIE.To = Data.fFCS.upper;
+            end
+            
+            %%% Calculate IRF microtime histogram
+            if isfield(Data,'IRFmicrotime')
+                for i = 1:6
+                    BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
+                end
+                BurstData.ScatterPattern = BurstData.IRF;
+            end
+            
+            BurstTCSPCData.Macrotime = Data.Macrotime;
+            BurstTCSPCData.Microtime = Data.Microtime;
+            BurstTCSPCData.Channel = Data.Channel;
+            BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
+            BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
+            BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
+        case {3,4} %%% 3Color MFD
+            %%% Convert NameArray
+            NameArray{strcmp(NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
+            NameArray{strcmp(NameArray,'TB - TR (PIE)')} = '|TBX-TRR| Filter';
+            NameArray{strcmp(NameArray,'TB - TG (PIE)')} = '|TBX-TGX| Filter';
+            NameArray{strcmp(NameArray,'Efficiency* (G -> R)')} = 'Efficiency GR';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> R)')} = 'Efficiency BR';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> G)')} = 'Efficiency BG';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> G+R)')} = 'Efficiency B->G+R';
+            NameArray{strcmp(NameArray,'Stochiometry (GR)')} = 'Stoichiometry GR';
+            NameArray{strcmp(NameArray,'Stochiometry (BG)')} = 'Stoichiometry BG';
+            NameArray{strcmp(NameArray,'Stochiometry (BR)')} = 'Stoichiometry BR';
+            if sum(strcmp(NameArray,'tau(green)')) > 0
+                NameArray{strcmp(NameArray,'tau(blue)')} = 'Lifetime BB [ns]';
+                NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
+                NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
+                DataArray(:,strcmp(NameArray,'Lifetime BB [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime BB [ns]'))*1E9;
+                DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
+                DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
+            else %%% create zero value arrays
+                NameArray{end+1} = 'Lifetime BB [ns]';
+                NameArray{end+1} = 'Lifetime GG [ns]';
+                NameArray{end+1} = 'Lifetime RR [ns]';
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+            end
+            NameArray{end+1} = 'Anisotropy BB';
+            NameArray{end+1} = 'Anisotropy GG';
+            NameArray{end+1} = 'Anisotropy RR';
+            %%% Caculate Anisotropies
+            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')))./...
+                (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')));
+            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
+                (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
+            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
+                (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
+            
+            BurstData.NameArray = NameArray;
+            BurstData.DataArray = DataArray;
+            BurstData.BAMethod = Data.BAMethod;
+            BurstData.FileType = Data.Filetype;
+            BurstData.TACRange = Data.TACrange;
+            BurstData.SyncPeriod = 1./Data.SyncRate;
+            
+            BurstData.FileInfo.MI_Bins = 4096;
+            BurstData.FileInfo.TACRange = Data.TACrange;
+            if isfield(Data,'PIEChannels')
+                BurstData.PIE.From = [Data.PIEChannels.fromBB1, Data.PIEChannels.fromBB2,...
+                    Data.PIEChannels.fromBG1, Data.PIEChannels.fromBG2,...
+                    Data.PIEChannels.fromBR1, Data.PIEChannels.fromBR2,...
+                    Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
+                    Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
+                    Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
+                BurstData.PIE.To = [Data.PIEChannels.toBB1, Data.PIEChannels.toBB2,...
+                    Data.PIEChannels.toBG1, Data.PIEChannels.toBG2,...
+                    Data.PIEChannels.toBR1, Data.PIEChannels.toBR2,...
+                    Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
+                    Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
+                    Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
+            elseif isfield(Data,'fFCS')
+                BurstData.PIE.From = Data.fFCS.lower;
+                BurstData.PIE.To = Data.fFCS.upper;
+            end
+            
+            %%% Calculate IRF microtime histogram
+            if isfield(Data,'IRFmicrotime')
+                for i = 1:12
+                    BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
+                end
+                BurstData.ScatterPattern = BurstData.IRF;
+            end
+            
+            BurstTCSPCData.Macrotime = Data.Macrotime;
+            BurstTCSPCData.Microtime = Data.Microtime;
+            BurstTCSPCData.Channel = Data.Channel;
+            BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
+            BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
+            BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
     end
-    NameArray{end+1} = 'Anisotropy GG';
-    NameArray{end+1} = 'Anisotropy RR';
-    %%% Caculate Anisotropies
-    DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
-        (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));  
-    DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
-        (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));  
-    
-    BurstData.NameArray = NameArray;
-    BurstData.DataArray = DataArray;
-    BurstData.BAMethod = Data.BAMethod;
-    BurstData.FileType = Data.Filetype;
-    BurstData.TACRange = Data.TACrange;
-    BurstData.SyncPeriod = 1./Data.SyncRate;
-    
-    BurstData.FileInfo.MI_Bins = 4096;
-    BurstData.FileInfo.TACRange = Data.TACrange;
-    if isfield(Data,'PIEChannels')
-        BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
-            Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
-            Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
-        BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
-            Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
-            Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
-    elseif isfield(Data,'fFCS')
-        BurstData.PIE.From = Data.fFCS.lower;
-        BurstData.PIE.To = Data.fFCS.upper;
-    end
-    
-    %%% Calculate IRF microtime histogram
-    if isfield(Data,'IRFmicrotime')
-        for i = 1:6
-            BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
-        end
-        BurstData.ScatterPattern = BurstData.IRF;
-    end
-
-    BurstTCSPCData.Macrotime = Data.Macrotime;
-    BurstTCSPCData.Microtime = Data.Microtime;
-    BurstTCSPCData.Channel = Data.Channel;
-    BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
-    BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
-    BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
 end
 
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
