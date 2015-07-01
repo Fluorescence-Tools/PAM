@@ -140,44 +140,49 @@ if Mode==0 %%% Loads user values
         disp('UserValues.File was incomplete');
     end
     P.File = [];
-    if ~isfield(S.File, 'Path')
+    if ~isfield(S.File, 'Path') || ~exist(S.File.Path,'dir')
         S.File.Path=pwd;
     end
     P.File.Path = S.File.Path;
-    if ~isfield(S.File, 'ExportPath')
+    if ~isfield(S.File, 'ExportPath') || isempty(S.File.ExportPath) || ~ischar(S.File.ExportPath) || ~exist(S.File.ExportPath,'dir')
         S.File.ExportPath=pwd;
     end
     P.File.ExportPath = S.File.ExportPath;
-    if ~isfield(S.File, 'PhasorPath')
+    if ~isfield(S.File, 'PhasorPath') || isempty(S.File.PhasorPath)  || ~ischar(S.File.PhasorPath) || ~exist(S.File.PhasorPath,'dir')
         S.File.PhasorPath=pwd;
     end
     P.File.PhasorPath = S.File.PhasorPath;
-    if ~isfield(S.File, 'FCSPath')
+    if ~isfield(S.File, 'FCSPath') || isempty(S.File.FCSPath)  || ~ischar(S.File.FCSPath) || ~exist(S.File.FCSPath,'dir')
         S.File.FCSPath=pwd;
     end
     P.File.FCSPath = S.File.FCSPath;
-    if ~isfield(S.File, 'MIAPath')
+    if ~isfield(S.File, 'MIAPath') || isempty(S.File.MIAPath)  || ~ischar(S.File.MIAPath) || ~exist(S.File.MIAPath,'dir')
         S.File.MIAPath=pwd;
     end 
     P.File.MIAPath = S.File.MIAPath;
-    if ~isfield(S.File, 'MIAFitPath')
+    if ~isfield(S.File, 'MIAFitPath') || isempty(S.File.MIAFitPath)  || ~ischar(S.File.MIAFitPath) || ~exist(S.File.MIAFitPath,'dir')
         S.File.MIAFitPath=pwd;
     end
     P.File.MIAFitPath = S.File.MIAFitPath;
-    if ~isfield(S.File, 'BurstBrowserPath')
+    if ~isfield(S.File, 'BurstBrowserPath') || isempty(S.File.BurstBrowserPath)  || ~ischar(S.File.BurstBrowserPath) || ~exist(S.File.BurstBrowserPath,'dir')
         S.File.BurstBrowserPath=pwd;
     end 
     P.File.BurstBrowserPath = S.File.BurstBrowserPath;
-    if ~isfield(S.File,'PCFPath')
+    if ~isfield(S.File,'PCFPath') || isempty(S.File.PCFPath)  || ~ischar(S.File.PCFPath) || ~exist(S.File.PCFPath,'dir')
         S.File.PCFPath=pwd;
     end
     P.File.PCFPath = S.File.PCFPath;
-    if ~isfield(S.File,'SimPath')
+    if ~isfield(S.File,'SimPath') || isempty(S.File.SimPath)  || ~ischar(S.File.SimPath) || ~exist(S.File.SimPath,'dir')
         S.File.SimPath=pwd;
     end
     P.File.SimPath = S.File.SimPath;
+    if ~isfield(S.File, 'PhasorTIFFPath') || isempty(S.File.PhasorTIFFPath)  || ~ischar(S.File.PhasorTIFFPath) || ~exist(S.File.PhasorTIFFPath,'dir')
+        S.File.PhasorTIFFPath=pwd;
+    end
+    P.File.PhasorTIFFPath = S.File.PhasorTIFFPath;
     
-    if ~isfield(S.File,'FCS_Standard')
+    
+    if ~isfield(S.File,'FCS_Standard') 
         S.File.FCS_Standard=[];
     end
     P.File.FCS_Standard = S.File.FCS_Standard;

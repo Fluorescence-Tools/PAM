@@ -1127,7 +1127,8 @@ Pam=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 BurstBrowser=findobj('Tag','BurstBrowser');
 TauFit=findobj('Tag','TauFit');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Pam) && isempty(TauFit) && isempty(BurstBrowser)
+PhasorTIFF = findobj('Tag','PhasorTIFF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Pam) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
     clear global -regexp UserValues
 end
 delete(Obj);

@@ -1541,7 +1541,7 @@ guidata(h.Phasor,h);
 %%% Closes Phasor and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_Phasor(Obj,~)
-clear global -regexp Phasor_Data
+clear global -regexp PhasorData
 Pam=findobj('Tag','Pam');
 FCSFit=findobj('Tag','FCSFit');
 MIAFit=findobj('Tag','MIAFit');
@@ -1550,7 +1550,8 @@ Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 BurstBrowser=findobj('Tag','BurstBrowser');
 TauFit=findobj('Tag','TauFit');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser)
+PhasorTIFF = findobj('Tag','PhasorTIFF');
+if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
     clear global -regexp UserValues
 end
 delete(Obj);

@@ -100,6 +100,11 @@ end
         'Tag','OpenPhasor',...
         'Label','Phasor',...
         'Callback',@Phasor);
+    h.OpenPhasorTIFF_Menu = uimenu(...
+        'Parent', h.AdvancedAnalysis_Menu,...
+        'Tag','OpenPhasorTIFF',...
+        'Label','PhasorTIFF',...
+        'Callback',@PhasorTIFF);
     h.OpenPCF_Menu = uimenu(...
         'Parent', h.AdvancedAnalysis_Menu,...
         'Tag','OpenPCF',...
@@ -1872,7 +1877,8 @@ Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 BurstBrowser=findobj('Tag','BurstBrowser');
 TauFit=findobj('Tag','TauFit');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit)
+PhasorTIFF = findobj('Tag','PhasorTIFF');
+if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit) && isempty(PhasorTIFF)
     clear global -regexp UserValues
 end
 delete(Obj);
@@ -3608,7 +3614,7 @@ function Correlate (~,~,mode)
 h=guidata(findobj('Tag','Pam'));
 global UserValues TcspcData FileInfo PamMeta
 
-h.Progress_Text.String = 'Correlating';
+h.Progress_Text.String = 'Starting Correlation';
 h.Progress_Axes.Color=[1 0 0];
 
 if mode==2 %%% For Multiple Correlation
@@ -3667,6 +3673,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
 
     
     if mode==2 %%% Loads new file
+        h.Progress_Text.String='Loading new file';
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,File{m},Type);
     end    
     %%% Finds the right combinations to correlate
@@ -3863,6 +3870,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 Dist= Dist(Dist<Bins); 
                 Times = (Times*FileInfo.SyncPeriod*FileInfo.ScanFreq);
                 Maxtime = max(diff(Times));
+                h.Progress_Text.String='Assigning photons to bins';
                 %% Channel 1 calculations
                 Data = []; MI = [];
                 %%% Combines all photons to one vector for channel 1
@@ -3959,22 +3967,21 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     for l=Dist %%% Goes through every selected bin distance
                         if (l+j)<=Bins %%% Checks if bin distance is valid
                             %%% Ch1xCh2
-                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1{j},Data2{j+l},Maxtime);
+                            [Cor_Array,Cor_Times] = CrossCorrelation(Data1{j},Data2{j+l},Maxtime);
                             %%% Adjusts correlation times to longest
-                            PairCor{j,l+1,1}=mean(Cor_Array,2);
-                            if numel(PairInfo.Time)<Cor_Times
-                                PairInfo.Time=Cor_Times;
-                            end
-                            
+                            PairCor{j,l+1,1} = mean(Cor_Array,2);
+                            if numel(PairInfo.Time) < numel(Cor_Times)
+                                PairInfo.Time = Cor_Times;
+                            end                            
                             if l == 0
                                 PairCor{j,l+1,2} = PairCor{j,l+1,2};                                
                             else
                                 %%% Ch2xCh1
-                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
+                                [Cor_Array,Cor_Times] = CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
                                 %%% Adjusts correlation times to longest
-                                PairCor{j,l+1,2}=mean(Cor_Array,2);
-                                if numel(PairInfo.Time)<Cor_Times
-                                    PairInfo.Time=Cor_Times;
+                                PairCor{j,l+1,2} = mean(Cor_Array,2);
+                                if numel(PairInfo.Time) < numel(Cor_Times)
+                                    PairInfo.Time = Cor_Times;
                                 end
                             end
                         end                        
