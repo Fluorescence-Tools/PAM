@@ -833,7 +833,7 @@ for i=1:numel(FileName)
         'Parent',h.XRes_Axes,...
         'XData',0,...
         'YData',zeros(1));
-    %%% On Axis X plot
+    %%% On Axis Y plot
     MIAFitMeta.Plots{end,4} = errorbar(...
         0,...
         MIAFitData.Data{end,1}(Center(1),Center(2)),...
@@ -854,7 +854,7 @@ for i=1:numel(FileName)
 end
 %%% Updates table and plot data and style to new size
 Update_Style([],[],1);
-Update_Table([],[],1);
+Update_Table([],[],1); %contains UpdatePlots, where the 2D plot is updated
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
