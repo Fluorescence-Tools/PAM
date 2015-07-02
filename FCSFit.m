@@ -598,8 +598,6 @@ if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty
 end
 delete(Obj);
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -750,7 +748,6 @@ end
 Update_Style([],[],1);
 Update_Table([],[],1);
     
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -833,9 +830,6 @@ if ~isempty(FileName)
     Update_Table([],[],0);
 end
 
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that updates fit table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -903,11 +897,14 @@ switch mode
         Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
         Data(end,4:3:end-1)=deal(num2cell(FCSMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
-        Data(:,1)=deal({true});
-        Data(:,5:3:end-1)=deal({false});
-        Data(:,6:3:end-1)=deal({false});
-        Data(:,1)=deal({true});
-        Data(:,end)=deal({'0'});
+        Data(1,5:3:end-1)=deal({false});
+        Data(2:3,5:3:end-1)=deal({[]});
+        Data(1,6:3:end-1)=deal({false});
+        Data(2:3,6:3:end-1)=deal({[]});
+        Data(1,1)=deal({true});
+        Data(2:3,1)=deal({[]});
+        Data(1,end)=deal({'0'});
+        Data(2:3,end)=deal({[]});
         h.Fit_Table.Data=Data;
         h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];        
         %%% Enables cell callback again
@@ -988,7 +985,7 @@ switch mode
                 %%% Apply value to global variables
                 FCSMeta.Params((e.Indices(2)-3)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
                 %%% Unfixes all files to prohibit fixed and global
-                h.Fit_Table.Data(:,e.Indices(2)-1)=deal({false});
+                h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
             end
         elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Global was changed => Applies to all files
@@ -1024,6 +1021,7 @@ switch mode
             end
         elseif e.Indices(2)==1
             %% Active was changed
+            a = 1;
         end       
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -1031,8 +1029,6 @@ end
 
 %%% Updates plots to changes models
 Update_Plots;
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes plotting style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1339,8 +1335,6 @@ h.FCS_Axes.XLim=[Min Max];
 h.FCS_Axes.YLim=[YMin-0.1*abs(YMin) YMax+0.05*YMax+0.0001];
 h.Residuals_Axes.YLim=[RMin-0.1*abs(RMin) RMax+0.05*RMax+0.0001];
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Context menu callbacks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1495,12 +1489,6 @@ switch mode
         Mat2clip(FitResult);
 end
 
-
-
-
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Stops fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1513,6 +1501,7 @@ h.FCSFit.Name='FCS Fit';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes fitting routine %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function Do_FCSFit(~,~)
 global FCSMeta UserValues
 h = guidata(findobj('Tag','FCSFit'));
@@ -1522,7 +1511,7 @@ h.FCSFit.Name='FCS Fit  FITTING';
 h.Fit_Table.Enable='off';
 drawnow;
 %%% Reads parameters from table
-Fixed = cell2mat(h.Fit_Table.Data(1:end-1,5:3:end-1));
+Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end-1));
 Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end-1));
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 lb = h.Fit_Table.Data(end-1,4:3:end-1);
@@ -1604,7 +1593,7 @@ else
             EData=[EData;edata(Min:Max)];
             Points(end+1)=numel(xdata(Min:Max));
         end
-        %%% Concaternates initial values and bounds for non fixed parameters
+        %%% Concatenates initial values and bounds for non fixed parameters
         Fit_Params=[Fit_Params; FCSMeta.Params(~Fixed(i,:)& ~Global,i)];
         Lb=[Lb lb(~Fixed(i,:) & ~Global)];
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
@@ -1651,6 +1640,7 @@ h.FCSFit.Name='FCS Fit';
 FCSMeta.FitInProgress = 0;
 %%% Updates table values and plots
 Update_Table([],[],2);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Actual fitting function for individual fits %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1714,7 +1704,7 @@ Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end));
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 P=zeros(numel(Global),1);
 
-%%% Asignes global parameters
+%%% Assigns global parameters
 P(Global)=Fit_Params(1:sum(Global));
 Fit_Params(1:sum(Global))=[];
 
