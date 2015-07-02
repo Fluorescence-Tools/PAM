@@ -15,14 +15,14 @@ if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
     Fileorder = 1:size(Filetypes,1);
     Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
     Filetypes = Filetypes(Fileorder,:);   
-    %%% Choose filey to be loaded
+    %%% Choose file to be loaded
     [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');   
     %%% Determines actually selected file type
     if Type~=0
         Type = Fileorder(Type);
     end
 
-else %%% Loads predifined Files
+else %%% Loads predefined Files
     Path = UserValues.File.Path;
 end
 %%% Only execues if any file was selected
