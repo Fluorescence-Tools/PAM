@@ -301,49 +301,49 @@ if Mode==0 %%% Loads user values
     end
     P.FCSFit = [];
     %%% Checks if FCSFit.Fit_Min subfield exists
-    if ~isfield (S.FCSFit, 'Fit_Min')
-        S.FCSFit.Fit_Min=0;
+    if ~isfield (S.FCSFit, 'Fit_Min') || numel(S.FCSFit.Fit_Min)~=1 || ~isnumeric(S.FCSFit.Fit_Min)
+        S.FCSFit.Fit_Min = 0;
         disp('UserValues.FCSFit.Fit_Min was incomplete');
     end
     P.FCSFit.Fit_Min = S.FCSFit.Fit_Min;
     %%% Checks if FCSFit.Fit_Min subfield exists
-    if ~isfield (S.FCSFit, 'Fit_Max')
+    if ~isfield (S.FCSFit, 'Fit_Max') || numel(S.FCSFit.Fit_Max)~=1 || ~isnumeric(S.FCSFit.Fit_Max)
         S.FCSFit.Fit_Max=1;
         disp('UserValues.FCSFit.Fit_Max was incomplete');
     end
     P.FCSFit.Fit_Max = S.FCSFit.Fit_Max;
     %%% Checks if FCSFit.Plot_Errorbars subfield exists
-    if ~isfield (S.FCSFit, 'Plot_Errorbars')
+    if ~isfield (S.FCSFit, 'Plot_Errorbars') || numel(S.FCSFit.Plot_Errorbars)~=1 || (~isnumeric(S.FCSFit.Plot_Errorbars) && ~islogical(S.FCSFit.Plot_Errorbars))
         S.FCSFit.Plot_Errorbars=1;
         disp('UserValues.FCSFit.Plot_Errorbars was incomplete');
     end
     P.FCSFit.Plot_Errorbars = S.FCSFit.Plot_Errorbars;
     %%% Checks if FCSFit.Fit_Tolerance subfield exists
-    if ~isfield (S.FCSFit, 'Fit_Tolerance')
+    if ~isfield (S.FCSFit, 'Fit_Tolerance') || numel(S.FCSFit.Fit_Tolerance)~=1 || ~isnumeric(S.FCSFit.Fit_Tolerance)
         S.FCSFit.Fit_Tolerance=1e-6;
         disp('UserValues.FCSFit.Fit_Tolerance was incomplete');
     end
     P.FCSFit.Fit_Tolerance = S.FCSFit.Fit_Tolerance;
     %%% Checks if FCSFit.Use_Weights subfield exists
-    if ~isfield (S.FCSFit, 'Use_Weights')
+    if ~isfield (S.FCSFit, 'Use_Weights') || numel(S.FCSFit.Use_Weights)~=1 || (~isnumeric(S.FCSFit.Use_Weights) && ~islogical(S.FCSFit.Use_Weights))
         S.FCSFit.Use_Weights=1;
         disp('UserValues.FCSFit.Use_Weights was incomplete');
     end
     P.FCSFit.Use_Weights = S.FCSFit.Use_Weights;
     %%% Checks if FCSFit.Max_Iterations subfield exists
-    if ~isfield (S.FCSFit, 'Max_Iterations')
+    if ~isfield (S.FCSFit, 'Max_Iterations') || numel(S.FCSFit.Max_Iterations)~=1 || ~isnumeric(S.FCSFit.Max_Iterations)
         S.FCSFit.Max_Iterations=1000;
         disp('UserValues.FCSFit.Max_Iterations was incomplete');
     end
     P.FCSFit.Max_Iterations = S.FCSFit.Max_Iterations;
     %%% Checks if FCSFit.NormalizationMethod subfield exists
-    if ~isfield (S.FCSFit, 'NormalizationMethod')
-        S.FCSFit.NormalizationMethod=1;
+    if ~isfield (S.FCSFit, 'NormalizationMethod') || numel(S.FCSFit.NormalizationMethod)~=1 || ~isnumeric(S.FCSFit.NormalizationMethod)
+        S.FCSFit.NormalizationMethod = 1;
         disp('UserValues.FCSFit.NormalizationMethod was incomplete');
     end
     P.FCSFit.NormalizationMethod = S.FCSFit.NormalizationMethod;
     %%% Checks if FCSFit.Conf_Interval subfield exists
-    if ~isfield (S.FCSFit, 'Conf_Interval')
+    if ~isfield (S.FCSFit, 'Conf_Interval') || numel(S.FCSFit.Conf_Interval)~=1 || (~isnumeric(S.FCSFit.Conf_Interval) && ~islogical(S.FCSFit.Conf_Interval))
         S.FCSFit.Conf_Interval=1;
         disp('UserValues.FCSFit.Conf_Interval was incomplete');
     end
