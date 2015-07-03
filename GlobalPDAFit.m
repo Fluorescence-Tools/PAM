@@ -2,15 +2,15 @@ function GlobalPDAFit(~,~)
 % GlobalPDAFit Global Analysis of PDA data
 %
 %      This is a beta version!
-%      
+%
 %      To use the program, simply call GlobalPDAFit at command line.
 %
-%      The PDAData structure contains original experimental data and a 
-%      number of parameters exported from BurstBrowser (gamma, 
+%      The PDAData structure contains original experimental data and a
+%      number of parameters exported from BurstBrowser (gamma,
 %      crosstalk, direct excitation, background, lifetime, anisotropy...).
 %
 %      Saving PDA project saves the above back into the PDA file.
-%      When data is saved in the global PDA program, the fit parameters obtained 
+%      When data is saved in the global PDA program, the fit parameters obtained
 %      after fitting are also saved back into the file.
 %
 %      The h structure contains the user interface.
@@ -28,8 +28,8 @@ Look=UserValues.Look;
 
 addpath([pwd filesep 'tcPDA C-Code']);
 
-PDAMeta.PDAMethod = 'Histogram Library'; % {'Histogram Library','MLE','MonteCarlo'}
-PDAMeta.FitMethod = 'Simplex'; % {'Simplex','Gradient-Based','Patternsearch'}
+%h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value} = 'Histogram Library'; % {'Histogram Library','MLE','MonteCarlo'}
+%h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value} = 'Simplex'; % {'Simplex','Gradient-Based','Patternsearch'}
 if isempty(h.GlobalPDAFit)
     %% Disables uitabgroup warning
     warning('off','MATLAB:uitabgroup:OldVersion');
@@ -108,7 +108,7 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.Menu.Fit,...
         'Tag','StopFit',...
         'Label','Stop',...
-        'Callback',@Stop_PDA_Fit); 
+        'Callback',@Stop_PDA_Fit);
     %%% Info Menu
     h.Menu.Info = uimenu(...
         'Parent',h.GlobalPDAFit,...
@@ -616,8 +616,7 @@ if isempty(h.GlobalPDAFit)
         'Value',1,...
         'FontSize',12,...
         'Position',[0.5 0.85 0.1 0.1],...
-        'Tag','PDAMethod_Popupmenu',...
-        'Callback',@Update_Settings);
+        'Tag','PDAMethod_Popupmenu');
     h.SettingsTab.FitMethod_Text = uicontrol(...
         'Style','text',...
         'Parent',h.SettingsTab.Panel,...
@@ -639,8 +638,7 @@ if isempty(h.GlobalPDAFit)
         'Value',1,...
         'FontSize',12,...
         'Position',[0.5 0.7 0.1 0.1],...
-        'Tag','FitMethod_Popupmenu',...
-        'Callback',@Update_Settings);
+        'Tag','FitMethod_Popupmenu');
     h.SettingsTab.OverSampling_Text = uicontrol(...
         'Style','text',...
         'Parent',h.SettingsTab.Panel,...
@@ -735,7 +733,6 @@ if mode==1 % new files are loaded
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
     h.ParametersTab.Table.Data(1:end-1,:)=[];
-    Update_Settings;
 end
 
 for i = 1:numel(FileName)
@@ -770,10 +767,10 @@ for i = 1:numel(FileName)
         %       .Background_GRperp
         %       ... maybe more in future
         % NOTE: direct excitation correction in Burst analysis is NOT the
-            % same as PDA, therefore we put it to zero. In PDA, this factor
-            % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
-            % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
-            % corrected double labeled molecule having no FRET at all.
+        % same as PDA, therefore we put it to zero. In PDA, this factor
+        % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
+        % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
+        % corrected double labeled molecule having no FRET at all.
         PDAData.Data{end+1} = PDA;
         PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Corrections');
         PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Background');
@@ -818,7 +815,7 @@ for i = 1:numel(PDAData.FileName)
     Progress(i/numel(PDAData.FileName),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Saving file(s)...');
     SavedData.Data = PDAData.Data{i};
     SavedData.timebin = PDAData.timebin(i);
-    SavedData.Corrections = PDAData.Corrections{i}; 
+    SavedData.Corrections = PDAData.Corrections{i};
     SavedData.Background = PDAData.Background{i};
     % for each dataset, all info from the table is saved (including active, global, fixed)
     SavedData.FitTable = h.FitTab.Table.Data(i,:);
@@ -984,7 +981,7 @@ switch mode
 end
 switch mode
     case {2,3}
-        %% Update the 'Single' tab plots 
+        %% Update the 'Single' tab plots
         % after load data
         % after popup change
         % during fitting, when the tab is changed to single
@@ -1157,7 +1154,7 @@ switch mode
         xlim(h.AllTab.Gauss_Axes,[min(Mini), max(Maxi)]);
     case 5 %% Live Plot update
         i = PDAMeta.file;
-        % PDAMeta.Comp{i} = index of the gaussian component that is used        
+        % PDAMeta.Comp{i} = index of the gaussian component that is used
         set(PDAMeta.Plots.Res_All{i},...
             'Visible', 'on',...
             'YData', PDAMeta.w_res{i});
@@ -1267,7 +1264,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
         NBG = numel(BGgg)-1;
         NBR = numel(BGgr)-1;
         
-        if strcmp(PDAMeta.PDAMethod,'Histogram Library')
+        if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
             %%% prepare epsilon grid
             Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
             Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
@@ -1372,7 +1369,7 @@ if any(isnan(PDAMeta.FitParams(:)))
     return;
 end
 
-% generate a cell array, with each cell a file, and the contents of the 
+% generate a cell array, with each cell a file, and the contents of the
 % cell is the gaussian components that are used per file during fitting.
 Comp = cell(numel(PDAData.FileName));
 comp = [];
@@ -1389,7 +1386,7 @@ end
 PDAMeta.Comp = Comp;
 
 
-%% 
+%%
 % In general, 3 ways can used for fixing parameters
 % passing them into the fit function, but fixing them again to their initial value in the fit function (least elegant)
 % passing them into the fit function and fixing their UB&LB to their initial value (used in PDAFit)
@@ -1422,13 +1419,13 @@ if sum(PDAMeta.Global) == 0
                 end
             end
         end
-
+        
         if obj == h.Menu.ViewFit
             %% Check if View_Curve was pressed
             %%% Only Update Plot and break
             Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
             Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-            switch PDAMeta.PDAMethod
+            switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMonteCarloFit(fitpar);
@@ -1440,7 +1437,7 @@ if sum(PDAMeta.Global) == 0
             %% Do Fit
             Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
             Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-            switch PDAMeta.PDAMethod
+            switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case 'Histogram Library'
                     fitfun = @(x) PDAHistogramFit_Single(x);
                 case 'MLE'
@@ -1453,7 +1450,7 @@ if sum(PDAMeta.Global) == 0
                     fitfun = @(x) PDAMonteCarloFit_Single(x);
             end
             
-            switch PDAMeta.FitMethod
+            switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                 case 'Simplex'
                     fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
                     fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
@@ -1477,7 +1474,7 @@ if sum(PDAMeta.Global) == 0
             end
         end
         % Calculate chi^2
-        %             switch PDAMeta.PDAMethod
+        %             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
         %                 case 'Histogram Library'
         %                     %chi2 = PDAHistogramFit_Single(fitpar);
         %                 case 'MLE'
@@ -1495,7 +1492,7 @@ if sum(PDAMeta.Global) == 0
         %                     chi2 = 0;
         %             end
         
-        % display final mean chi^2 
+        % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
         % Convert amplitudes to fractions
         fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(1:3:end));
@@ -1509,7 +1506,7 @@ else
     % PDAMeta.Fixed     = files x 15 logical
     % PDAMeta.FitParams = files x 15 double
     % PDAMeta.UB/LB     = 1     x 15 double
-
+    
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
     UB = PDAMeta.UB(PDAMeta.Global);
@@ -1529,14 +1526,14 @@ else
         return
     else
         %% Do Fit
-        switch PDAMeta.PDAMethod
+        switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
             case 'Histogram Library'
                 fitfun = @(x) PDAHistogramFit_Global(x);
             otherwise
                 msgbox('Use Histogram Library, others dont work yet for global')
                 return
         end
-        switch PDAMeta.FitMethod
+        switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
             case 'Simplex'
                 fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
                 fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
@@ -1548,10 +1545,10 @@ else
         PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
         fitpar(1:sum(PDAMeta.Global))=[];
         for i=find(PDAMeta.Active)'
-            PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)); 
-            fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[]; 
+            PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+            fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'Uniformoutput',false);
-        end    
+        end
     end
 end
 Progress(1, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Done');
@@ -1567,6 +1564,7 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 PDAMeta.FitInProgress = 0;
 h.FitTab.Table.Enable = 'on';
 
+% model for MLE fitting (not global) (doesn't work currently)
 function logL = PDA_MLE_Fit_Single(fitpar)
 global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1630,6 +1628,7 @@ logL = sum(L);
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
 
+% model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1678,7 +1677,7 @@ tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
 Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
 Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
-
+% model for normal histogram library fitting (global)
 function [mean_chi2] = PDAHistogramFit_Global(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1742,6 +1741,7 @@ Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting His
 Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
 
+% function that generates Equation 10 from Antonik 2006 J Phys Chem B
 function [Pe] = Generate_P_of_eps(RDA, sigma, i)
 global PDAMeta
 eps = PDAMeta.epsEgrid{i};
@@ -1782,6 +1782,7 @@ end
 Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe);
 
+% model for Monte Carle based fitting (not global) (doesn't work currently)
 function [chi2] = PDAMonteCarloFit_Single(fitpar, file)
 global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1848,14 +1849,7 @@ for j = comp
     hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
 end
 
-function Update_Settings(~,~)
-global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
-
-% Update PDAMeta Structure
-PDAMeta.FitMethod = h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value};
-PDAMeta.PDAMethod = h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value};
-
+% function to export the figures (doesn't work currently)
 function Export_Figure(~,~)
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
@@ -1892,6 +1886,7 @@ gauss_ax.GridAlpha = 0.1;
 res_ax.GridAlpha = 0.1;
 gauss_ax.FontSize = 18;
 
+% Update the Fit Tab
 function Update_FitTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
 global PDAMeta PDAData
@@ -2056,6 +2051,7 @@ switch mode
         %PDAMeta.PreparationDone = 0;
 end
 
+% Update the Parameters Tab
 function Update_ParamTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
 global PDAMeta PDAData
@@ -2154,91 +2150,7 @@ end
 %%% Enables cell callback again
 h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
 
-%% this function is no longer used
-% this function plots a realtime graph of chi^2 during fitting, it's called
-% in fitopts
-function stop = optimplotfvalPDA(x,optimValues,state,varargin)
-stop = false;
-switch state
-    case 'iter'
-        if isfield(optimValues,'fval')
-            if isscalar(optimValues.fval)
-                global PDAMeta
-                iteration = optimValues.iteration;
-                fval = optimValues.fval;
-                h = guidata(findobj('Tag','GlobalPDAFit'));
-                if iteration == 0
-                    plotfval = plot(iteration,fval,'kd','MarkerFaceColor',[1 0 1]);
-                    title(sprintf('Current Function Value: %g',fval),'interp','none');
-                    xlabel(sprintf('Iteration'),'interp','none');
-                    set(plotfval,'Tag','optimplotfvalPDA');
-                    ylabel(sprintf('Function value'),'interp','none')
-                else
-                    plotfval = findobj(get(gca,'Children'),'Tag','optimplotfvalPDA');
-                    newX = [get(plotfval,'Xdata') iteration];
-                    newY = [get(plotfval,'Ydata') fval];
-                    tmp = sort(newY);
-                    tmp = tmp(1:round(end/2));
-                    set(gca, 'YLim', [min(tmp) max(tmp)*1.1]);
-                    set(plotfval,'Xdata',newX, 'Ydata',newY);
-                    set(get(gca,'Title'),'String',sprintf('Current Function Value: %g',fval));
-                    if ~strcmp(PDAMeta.FitMethod,'MLE')
-                        %%% Update Plots
-                        i = PDAMeta.file;
-                        PDAMeta.Plots.Fit_All{i,1}.YData = PDAMeta.hFit{i};
-                        PDAMeta.Plots.Res_All{i}.YData = PDAMeta.w_res{i};
-                        for j = 2:6
-                            try
-                                PDAMeta.Plots.Fit_All{i,j}.YData = PDAMeta.hFit_Ind{i,j-1};
-                            end
-                        end
-                        if i == h.SingleTab.Popup.Value
-                            PDAMeta.Plots.Fit_Single{1,1}.YData = PDAMeta.hFit{i};
-                            PDAMeta.Plots.Res_Single.YData = PDAMeta.w_res{i};
-                            for j = 2:6
-                                try
-                                    PDAMeta.Plots.Fit_Single{1,j}.YData = PDAMeta.hFit_Ind{i,j-1};
-                                end
-                            end
-                        end
-                        
-                    end
-                end
-            else
-                plotvector(optimValues.iteration,optimValues.fval);
-            end
-        else
-            plotvector(optimValues.iteration,optimValues.residual);
-        end
-end
-
-%% this function is no longer used
-function plotvector(iteration,fval)
-% PLOTVECTOR creates or updates a bar plot of the function values or
-% residuals at the current iteration.
-if iteration == 0
-    xlabelText = sprintf('Number of function values: %g',length(fval));
-    % display up to the first 100 values
-    if numel(fval) > 100
-        xlabelText = {xlabelText,sprintf('Showing only the first 100 values')};
-        fval = fval(1:100);
-    end
-    plotfval = bar(fval);
-    title(sprintf('Current Function Values'),'interp','none');
-    set(plotfval,'edgecolor','none')
-    set(gca,'xlim',[0,1 + length(fval)])
-    xlabel(xlabelText,'interp','none')
-    set(plotfval,'Tag','optimplotfvalPDA');
-    ylabel(sprintf('Function value'),'interp','none')
-else
-    plotfval = findobj(get(gca,'Children'),'Tag','optimplotfvalPDA');
-    % display up to the first 100 values
-    if numel(fval) > 100
-        fval = fval(1:100);
-    end
-    set(plotfval,'Ydata',fval);
-end
-
+% function that generates random data at program start
 function SampleData
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2358,48 +2270,48 @@ end
 axis('tight');
 xlim(h.AllTab.Gauss_Axes,[40 120]);
 
-    function Todolist(~,~)
-        msgbox({...
-            'allow to set Epr limits for plotting and analysis';...
-            'remove everything from global that is not needed in global';...
-            'fix the export figure menu option again';...
-            'add a legend in the plots';...
-            'sigma cannot be zero or a very small number';...
-            'the chi^2 definition is not ok';...
-            'fix all other fitting algorithms';...
-            '';... %add lines here
-            ''} ,'To do list','modal');
-        
-        function Manual(~,~)
-            if ismac
-                macopen([],[],'/Global PDA Fitting.docx')
-            else
-                winopen('Global PDA Fitting.docx')
-            end
-            
-            function macopen(~,~,inp)
-                %MACOPEN Open a file or directory using the OPEN terminal utility on the MAC.
-                %   MACOPEN FILENAME opens the file or directory FILENAME using the
-                %   the OPEN terminal command.
-                %
-                %   Examples:
-                %
-                %     If you have Microsoft Word installed, then
-                %     macopen('/myDoc.docx')
-                %     opens that file in Microsoft Word if the file exists, and errors if
-                %     it doesn't.
-                %
-                %     macopen('/Applications')
-                %     opens a new Finder window, showing the contents of your /Applications
-                %     folder.
-                %
-                %   See also WINOPEN, OPEN, DOS, WEB.
-                
-                % Copyright 2012 - 2013 The MathWorks, Inc.
-                % Written: 16-Apr-2012, Varun Gandhi
-                if strcmpi('.',inp)
-                    inp = pwd;
-                end
-                syscmd = ['open ', inp, ' &'];
-                %disp(['Running the following in the Terminal: "', syscmd,'"']);
-                system(syscmd);
+% info menu - To do list
+function Todolist(~,~)
+msgbox({...
+    'allow to set Epr limits for plotting and analysis';...
+    'remove everything from global that is not needed in global';...
+    'fix the export figure menu option again';...
+    'add a legend in the plots';...
+    'sigma cannot be zero or a very small number';...
+    'the chi^2 definition is not ok';...
+    'fix all other fitting algorithms';...
+    '';...
+    ''} ,'To do list','modal');
+
+% Info menu - Manual callback
+function Manual(~,~)
+if ismac
+    inp = '/Global PDA Fitting.docx';
+    %MACOPEN Open a file or directory using the OPEN terminal utility on the MAC.
+    %   MACOPEN FILENAME opens the file or directory FILENAME using the
+    %   the OPEN terminal command.
+    %
+    %   Examples:
+    %
+    %     If you have Microsoft Word installed, then
+    %     macopen('/myDoc.docx')
+    %     opens that file in Microsoft Word if the file exists, and errors if
+    %     it doesn't.
+    %
+    %     macopen('/Applications')
+    %     opens a new Finder window, showing the contents of your /Applications
+    %     folder.
+    %
+    %   See also WINOPEN, OPEN, DOS, WEB.
+    
+    % Copyright 2012 - 2013 The MathWorks, Inc.
+    % Written: 16-Apr-2012, Varun Gandhi
+    if strcmpi('.',inp)
+        inp = pwd;
+    end
+    syscmd = ['open ', inp, ' &'];
+    %disp(['Running the following in the Terminal: "', syscmd,'"']);
+    system(syscmd);
+else
+    winopen('Global PDA Fitting.docx')
+end
