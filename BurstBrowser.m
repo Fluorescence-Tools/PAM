@@ -6347,10 +6347,18 @@ for t = 1:numel(timebin)
     end
     
     %%% 2.) Calculate Proximity Ratio Histogram
-    NGP = cellfun(@(x) sum((x==1)),PDAdata);
-    NGS = cellfun(@(x) sum((x==2)),PDAdata);
-    NFP = cellfun(@(x) sum((x==3)),PDAdata);
-    NFS = cellfun(@(x) sum((x==4)),PDAdata);
+    switch BurstData.BAMethod
+        case {1,2}
+            NGP = cellfun(@(x) sum((x==1)),PDAdata);
+            NGS = cellfun(@(x) sum((x==2)),PDAdata);
+            NFP = cellfun(@(x) sum((x==3)),PDAdata);
+            NFS = cellfun(@(x) sum((x==4)),PDAdata);
+        case {3,4}
+            NGP = cellfun(@(x) sum((x==7)),PDAdata);
+            NGS = cellfun(@(x) sum((x==8)),PDAdata);
+            NFP = cellfun(@(x) sum((x==9)),PDAdata);
+            NFS = cellfun(@(x) sum((x==10)),PDAdata);
+    end
 
     NG = NGP + NGS;
     NF = NFP + NFS;
