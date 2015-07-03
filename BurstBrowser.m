@@ -70,20 +70,7 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','MainTabGeneralPanel');
     
-    h.Main_Tab_Corrections= uitab(h.Main_Tab,...
-        'title','Corrections',...
-        'Tag','Main_Tab_Corrections'...
-        );
     
-    h.MainTabCorrectionsPanel = uibuttongroup(...
-        'Parent',h.Main_Tab_Corrections,...
-        'BackgroundColor', Look.Axes,...
-        'ForegroundColor', Look.Fore,...
-        'HighlightColor', Look.Control,...
-        'ShadowColor', Look.Shadow,...
-        'Units','normalized',...
-        'Position',[0 0 1 1],...
-        'Tag','MainTabCorrectionsPanel');
     %%% Define hide uitabgroup
     h.Hide_Tab =  uitabgroup(...
         'Parent',h.BurstBrowser,...
@@ -94,22 +81,6 @@ if isempty(hfig)
     h.Hide_Stuff = uitab(...
         'Parent',h.Hide_Tab,...
         'Tag','Hide_Stuff');
-    
-    h.Main_Tab_Corrections_ThreeCMFD= uitab(h.Hide_Tab,...
-        'title','Corrections (3C)',...
-        'Tag','Main_Tab_Corrections_ThreeCMFD'...
-        );
-    
-    h.MainTabCorrectionsThreeCMFDPanel = uibuttongroup(...
-        'Parent',h.Main_Tab_Corrections_ThreeCMFD,...
-        'BackgroundColor', Look.Axes,...
-        'ForegroundColor', Look.Fore,...
-        'HighlightColor', Look.Control,...
-        'ShadowColor', Look.Shadow,...
-        'Units','normalized',...
-        'Position',[0 0 1 1],...
-        'Tag','MainTabCorrectionsThreeCMFDPanel'...
-        );
     
     h.LifeTime_Menu = uicontextmenu;
     h.ExportLifetime_Menu = uimenu(...
@@ -139,6 +110,22 @@ if isempty(hfig)
         'Tag','MainTabLifetimePanel',...
         'UIContextMenu',h.LifeTime_Menu);
     
+    %%% sub-ensemble TCSPC tab
+    h.Main_Tab_TauFit= uitab(h.Main_Tab,...
+        'title','Lifetime Fitting',...
+        'Tag','Main_Tab_TauFit'...
+        );
+    
+    h.MainTabTauFitPanel = uibuttongroup(...
+        'Parent',h.Main_Tab_TauFit,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','MainTabTauFitPanel');
+    
     %%% fFCS main tab
     h.Main_Tab_fFCS= uitab(h.Main_Tab,...
         'title','filtered FCS',...
@@ -154,6 +141,38 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0 0 1 1],...
         'Tag','MainTabfFCSPanel');
+    
+    h.Main_Tab_Corrections= uitab(h.Main_Tab,...
+        'title','Corrections',...
+        'Tag','Main_Tab_Corrections'...
+        );
+    
+    h.MainTabCorrectionsPanel = uibuttongroup(...
+        'Parent',h.Main_Tab_Corrections,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','MainTabCorrectionsPanel');
+    h.Main_Tab_Corrections_ThreeCMFD= uitab(h.Hide_Tab,...
+        'title','Corrections (3C)',...
+        'Tag','Main_Tab_Corrections_ThreeCMFD'...
+        );
+    
+    h.MainTabCorrectionsThreeCMFDPanel = uibuttongroup(...
+        'Parent',h.Main_Tab_Corrections_ThreeCMFD,...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','MainTabCorrectionsThreeCMFDPanel'...
+        );
+    
+    
     %%% fFCS sub tabs for display of filter and filter matching
     h.fFCS_SubTabPar = uitabgroup(...
         'Parent',h.MainTabfFCSPanel,...
@@ -219,21 +238,6 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','fFCS_SubTabPerpReconstructionPanel');
     
-    %%% sub-ensemble TCSPC tab
-    h.Main_Tab_TauFit= uitab(h.Main_Tab,...
-        'title','Lifetime Fitting',...
-        'Tag','Main_Tab_TauFit'...
-        );
-    
-    h.MainTabTauFitPanel = uibuttongroup(...
-        'Parent',h.Main_Tab_TauFit,...
-        'BackgroundColor', Look.Axes,...
-        'ForegroundColor', Look.Fore,...
-        'HighlightColor', Look.Control,...
-        'ShadowColor', Look.Shadow,...
-        'Units','normalized',...
-        'Position',[0 0 1 1],...
-        'Tag','MainTabTauFitPanel');
     %% Secondary tab selection gui
     h.Secondary_Tab = uitabgroup(...
         'Parent',h.BurstBrowser,...
@@ -334,6 +338,19 @@ if isempty(hfig)
         'Label','Export Microtime Pattern',...
         'Tag','ExportMicrotimePatternMenuItem',...
         'Callback',@Export_Microtime_Pattern);
+    
+    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Export Species to 2C-PDA',...
+        'Tag','ExportSpeciesToPDA_2C_for3CMFD_MenuItem',...
+        'Callback',@Export_To_PDA,...
+        'Visible','off');
+    
+    h.DoTimeWindowAnalysis = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Time Window Analysis',...
+        'Tag','DoTimeWindowAnalysis',...
+        'Callback',@Time_Window_Analysis);
     
     %%% Define Species List
     h.SpeciesList = uicontrol(...
@@ -1664,6 +1681,10 @@ if isempty(hfig)
     xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR');
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR');
     title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1');
+    
+    %%% 07-2015 Disable Gamma from populations since it does not work
+    h.Corrections.ThreeCMFD.axes_gammaBR_threecolor.Visible = 'off';
+    h.Corrections.ThreeCMFD.axes_gammaBG_threecolor.Visible = 'off';
     
     h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -3120,7 +3141,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Photons for PDA analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Export_To_PDA(~,~)
+function Export_To_PDA(obj,~)
 global BurstData BurstTCSPCData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
@@ -3214,30 +3235,60 @@ switch BurstData.BAMethod
         newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
         save(newfilename, 'PDA', 'timebin')
     case {3,4}
-        NBBP = cellfun(@(x) sum((x==1)),PDAdata);
-        NBBS = cellfun(@(x) sum((x==2)),PDAdata);
-        NBGP = cellfun(@(x) sum((x==3)),PDAdata);
-        NBGS = cellfun(@(x) sum((x==4)),PDAdata);
-        NBRP = cellfun(@(x) sum((x==5)),PDAdata);
-        NBRS = cellfun(@(x) sum((x==6)),PDAdata);
-        NGGP = cellfun(@(x) sum((x==7)),PDAdata);
-        NGGS = cellfun(@(x) sum((x==8)),PDAdata);
-        NGRP = cellfun(@(x) sum((x==9)),PDAdata);
-        NGRS = cellfun(@(x) sum((x==10)),PDAdata);
-        NRRP = cellfun(@(x) sum((x==11)),PDAdata);
-        NRRS = cellfun(@(x) sum((x==12)),PDAdata);
-        
-        tcPDAstruct.NBB = NBBP + NBBS;
-        tcPDAstruct.NBG = NBGP + NBGS;
-        tcPDAstruct.NBR = NBRP + NBRS;
-        tcPDAstruct.NGG = NGGP + NGGS;
-        tcPDAstruct.NGR = NGRP + NGRS;
-        tcPDAstruct.NRR = NRRP + NRRS;
-        tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
-        tcPDAstruct.timebin = timebin*1000;
-        tcPDAstruct.corrections = BurstData.Corrections;
-        newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
-        save(newfilename, 'tcPDAstruct', 'timebin')
+        switch obj
+            case h.ExportSpeciesToPDAMenuItem
+                NBBP = cellfun(@(x) sum((x==1)),PDAdata);
+                NBBS = cellfun(@(x) sum((x==2)),PDAdata);
+                NBGP = cellfun(@(x) sum((x==3)),PDAdata);
+                NBGS = cellfun(@(x) sum((x==4)),PDAdata);
+                NBRP = cellfun(@(x) sum((x==5)),PDAdata);
+                NBRS = cellfun(@(x) sum((x==6)),PDAdata);
+                NGGP = cellfun(@(x) sum((x==7)),PDAdata);
+                NGGS = cellfun(@(x) sum((x==8)),PDAdata);
+                NGRP = cellfun(@(x) sum((x==9)),PDAdata);
+                NGRS = cellfun(@(x) sum((x==10)),PDAdata);
+                NRRP = cellfun(@(x) sum((x==11)),PDAdata);
+                NRRS = cellfun(@(x) sum((x==12)),PDAdata);
+
+                tcPDAstruct.NBB = NBBP + NBBS;
+                tcPDAstruct.NBG = NBGP + NBGS;
+                tcPDAstruct.NBR = NBRP + NBRS;
+                tcPDAstruct.NGG = NGGP + NGGS;
+                tcPDAstruct.NGR = NGRP + NGRS;
+                tcPDAstruct.NRR = NRRP + NRRS;
+                tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
+                tcPDAstruct.timebin = timebin*1000;
+                tcPDAstruct.corrections = BurstData.Corrections;
+                newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
+                save(newfilename, 'tcPDAstruct', 'timebin')
+            case h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem
+                PDA.NGP = zeros(total,1);
+                PDA.NGS = zeros(total,1);
+                PDA.NFP = zeros(total,1);
+                PDA.NFS = zeros(total,1);
+                PDA.NRP = zeros(total,1);
+                PDA.NRS = zeros(total,1);
+
+                PDA.NG = zeros(total,1);
+                PDA.NF = zeros(total,1);
+                PDA.NR = zeros(total,1);
+
+                PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
+                PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);
+                PDA.NFP = cellfun(@(x) sum((x==9)),PDAdata);
+                PDA.NFS = cellfun(@(x) sum((x==10)),PDAdata);
+                PDA.NRP = cellfun(@(x) sum((x==11)),PDAdata);
+                PDA.NRS = cellfun(@(x) sum((x==12)),PDAdata);
+
+                PDA.NG = PDA.NGP + PDA.NGS;
+                PDA.NF = PDA.NFP + PDA.NFS;
+                PDA.NR = PDA.NRP + PDA.NRS;
+
+                PDA.Corrections = BurstData.Corrections;
+                PDA.Background = BurstData.Background;
+                newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
+                save(newfilename, 'PDA', 'timebin')
+        end
 end
 delete(h_waitbar);
 
@@ -6226,6 +6277,103 @@ UpdateCorrections([],[]);
 ApplyCorrections;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Does Time Window Analysis of selected species %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Time_Window_Analysis(~,~)
+global BurstData BurstTCSPCData UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
+SelectedSpecies = h.SpeciesList.Value;
+SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
+
+%Valid = UpdateCuts(SelectedSpecies);
+h_waitbar = waitbar(0,'Calculating Histograms...');
+%%% Load associated .bps file, containing Macrotime, Microtime and Channel
+if isempty(BurstTCSPCData)
+    waitbar(0,h_waitbar,'Loading Photon Data');
+    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+        %%% load if it exists
+        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+    else
+        %%% else ask for the file
+        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+        if FileName == 0
+            return;
+        end
+        load('-mat',fullfile(PathName,FileName));
+        %%% Store the correct Path in TauFitBurstData
+        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+    end
+    BurstTCSPCData.Macrotime = Macrotime;
+    BurstTCSPCData.Microtime = Microtime;
+    BurstTCSPCData.Channel = Channel;
+    clear Macrotime Microtime Channel
+end
+waitbar(0,h_waitbar,'Calculating Histograms...');
+%%% find selected bursts
+MT = BurstTCSPCData.Macrotime(BurstData.Selected);
+CH = BurstTCSPCData.Channel(BurstData.Selected);
+
+xProx = linspace(0,1,51);
+timebin = {0.5E-3,1E-3,2E-3,3E-3,5E-3,10E-3};
+for t = 1:numel(timebin)
+    %%% 1.) Bin BurstData according to time bin
+    
+    duration = timebin{t}/BurstData.SyncPeriod;
+    %%% Get the maximum number of bins possible in data set
+    max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
+    %convert absolute macrotimes to relative macrotimes
+    bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
+    %bin the bursts according to dur, up to max_duration
+    bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
+    %remove last bin
+    last_bin = cellfun(@(x) find(x,1,'last'),bins,'UniformOutput',false);
+    for i = 1:numel(bins)
+        bins{i}(last_bin{i}) = 0;
+        %remove zero bins
+        bins{i}(bins{i} == 0) = [];
+    end
+    %total number of bins is:
+    n_bins = sum(cellfun(@numel,bins));
+    %construct cumsum of bins
+    cumsum_bins = cellfun(@(x) [0; cumsum(x)],bins,'UniformOutput',false);
+    %get channel information --> This is the only relavant information for PDA!
+    PDAdata = cell(n_bins,1);
+    index = 1;
+    for i = 1:numel(CH)
+        for j = 2:numel(cumsum_bins{i})
+            PDAdata{index,1} = CH{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
+            index = index + 1;
+        end
+    end
+    
+    %%% 2.) Calculate Proximity Ratio Histogram
+    NGP = cellfun(@(x) sum((x==1)),PDAdata);
+    NGS = cellfun(@(x) sum((x==2)),PDAdata);
+    NFP = cellfun(@(x) sum((x==3)),PDAdata);
+    NFS = cellfun(@(x) sum((x==4)),PDAdata);
+
+    NG = NGP + NGS;
+    NF = NFP + NFS;
+    
+    Prox = NF./(NG+NF);
+    
+    Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
+end
+
+x = xProx(1:end-1);
+figure;hold on;
+for i = 1:numel(timebin)
+    stairs(x,Hist{i});
+end
+
+for i = 1:numel(timebin)
+    leg{i} = [num2str(timebin{i}*1000) ' ms'];
+end
+legend(leg);
+delete(h_waitbar);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
@@ -7349,15 +7497,14 @@ end
 %%% unhide panel if change is TO 3cMFD
 if BAMethod == 3
     %% Change Tabs
-    %%% to keep the order of tabs, one first has to move Lifetime and fFCS
-    %%% tabs to the Hide_Panel
-    h.Main_Tab_Lifetime.Parent = h.Hide_Tab;
-    h.Main_Tab_fFCS.Parent = h.Hide_Tab;
-    %%% Then move the three-color Corrections Tab to Main Panel
+
+    %%% move the three-color Corrections Tab to Main Panel
     h.Main_Tab_Corrections_ThreeCMFD.Parent = h.Main_Tab;
     %%% Then add again the other tabs in correct order
     h.Main_Tab_Lifetime.Parent = h.Main_Tab;
     h.Main_Tab_fFCS.Parent = h.Main_Tab;
+    
+    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'on';
     %% Change correction table
     Corrections_Rownames = {'Gamma GR','Gamma BG','Gamma BR','Beta GR','Beta BG','Beta BR',...
         'Crosstalk GR','Crosstalk BG','Crosstalk BR','Direct Exc. GR','Direct Exc. BG','Direct Exc. BR',...
@@ -7404,6 +7551,7 @@ elseif BAMethod == 2
         'BG GG par','BG GG perp','BG GR par','BG GR perp','BG RR par','BG RR perp'};
     Corrections_Data = {1;1;0;0;0;0;0:0;0;0;1;1;0};
     %%% Hide 3cMFD corrections
+    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'off';
     h.DetermineGammaLifetimeThreeColorButton.Visible = 'off';
     h.FoersterRadiusBGEdit.Visible = 'off';
     h.FoersterRadiusBGText.Visible = 'off';
