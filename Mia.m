@@ -45,6 +45,12 @@ if isempty(h.Mia)
     'Label','...single color TIFFs',...
     'Callback',{@Mia_Load,1},...
     'Tag','Load_Mia_TIFF_SIngle');
+    %%% Load Data from Pam
+    h.Mia_Load_Pam = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...data from PAM',...
+    'Callback',{@Mia_Load,2},...
+    'Tag','Load_Mia_Pam');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for progressbar
@@ -142,9 +148,14 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Value',min([i,numel(UserValues.PIE.Name)]),...
+            'Value',1,...
             'Position',[0.12 1.34-0.49*i, 0.08 0.03],...
             'String',UserValues.PIE.Name);
+        if i ==2
+            h.Mia_PIE(i).String{end+1} = 'Nothing';
+            h.Mia_PIE(i).Value = numel(h.Mia_PIE(i).String);
+        end
+            
         %%% Text
         h.Text{end+1} = uicontrol(...
             'Parent',h.Mia_Image_Panel,...
@@ -1612,7 +1623,7 @@ delete(Obj);
 %%% Functions to load different data types %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Load(~,~,mode)
-global MIAData UserValues
+global MIAData UserValues FileInfo TcspcData
 h = guidata(findobj('Tag','Mia'));
 
 switch mode
@@ -1671,13 +1682,13 @@ switch mode
         MIAData.Data{1,1}=single.empty(0,0,0);        
         for i=1:numel(FileName1)  
             MIAData.FileName{1}{i}=FileName1{i};
-            FileInfo=imfinfo(fullfile(Path1,FileName1{i}));
-            for j=1:numel(FileInfo)
+            Info=imfinfo(fullfile(Path1,FileName1{i}));
+            for j=1:numel(Info)
                 %%% Updates progress bar
-                Progress(((j-1)+numel(FileInfo)*(i-1))/(numel(FileInfo)*numel(FileName1)),...
+                Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
                     h.Mia_Progress_Axes,...
                     h.Mia_Progress_Text,...
-                    ['Loading Frame ' num2str(j) ' of ' num2str(numel(FileInfo)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);                
+                    ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);                
                 MIAData.Data{1,1}(:,:,end+1)=single(imread(fullfile(Path1,FileName1{i}),'TIFF','Index',j));
             end
         end
@@ -1726,6 +1737,158 @@ switch mode
             end
         end
         %%% Updates frame settings for channel 2
+        h.Mia_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
+        h.Mia_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
+        h.Mia_Frame_Slider(2).Value=1;
+        h.Mia_Frame_Slider(2).Min=1;
+        h.Plots.ROI(2).Position=[10 10 200 200];
+        
+        %%% Links frames
+        h.Mia_Image_Link.Value = 1;
+        h.Mia_Image_Link.Visible = 'on';
+        Progress(1);  
+        %%% Updates plots
+        Mia_ROI([],[],1)
+        
+    case 2 %%% Loads data from Pam
+        Pam = guidata(findobj('Tag','Pam'));
+        %% Aborts, if not Data is loaded
+        if isempty(Pam) || all(cellfun(@isempty,TcspcData.MT))
+           return 
+        end
+        %% Clear current Data
+        MIAData.Data=[];
+        MIAData.Data{1,1} = single.empty(0,0,0);
+        %% Clears correlation data and plots
+        MIAData.Cor=cell(3,2);
+        for i=1:3
+            h.Plots.Cor(i,1).CData=zeros(1,1,3);
+            h.Plots.Cor(i,2).ZData=zeros(1);
+            h.Plots.Cor(i,2).CData=zeros(1,1,3);
+            h.Mia_Cor_Axes(i,1).Visible='off';
+            h.Mia_Cor_Axes(i,2).Visible='off';
+            h.Mia_Cor_Axes(i,3).Visible='off';
+            h.Mia_Cor_Axes(i,4).Visible='off';
+            h.Plots.Cor(i,1).Visible='off';
+            h.Plots.Cor(i,2).Visible='off';
+            h.Plots.Cor(i,3).Visible='off';
+            h.Plots.Cor(i,4).Visible='off';
+            h.Plots.Cor(i,5).Visible='off';
+            h.Plots.Cor(i,6).Visible='off';
+            h.Plots.Cor(i,7).Visible='off';
+        end
+        h.Mia_Cor_Frame_Slider.Min=0;
+        h.Mia_Cor_Frame_Slider.Max=0;
+        h.Mia_Cor_Frame_Slider.SliderStep=[1 1];
+        h.Mia_Cor_Frame_Slider.Value=0;        
+        %% Clears N&B data and plots
+        MIAData.NB=[];
+        h.Plots.NB(1).CData=zeros(1,1);
+        h.Plots.NB(2).CData=zeros(1,1);
+        h.Plots.NB(3).CData=zeros(1,1);
+        h.Plots.NB(4).YData=0;
+        h.Plots.NB(4).XData=0;
+        h.Plots.NB(5).CData=zeros(1,1);                 
+        %% Extracts data from Pam for channel 1
+        Sel = h.Mia_PIE(1).Value;
+        %%% Gets the photons
+        if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
+            Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel));
+        else
+            Stack = [];
+            for j = UserValues.PIE.Combined{Sel} %%% Combined channel
+                Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+            end
+        end
+        
+        %%% Calculates pixel times for each line and file
+        Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+        for j=1:FileInfo.NumberOfFiles
+            for k=1:FileInfo.Lines
+                Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+            end
+        end
+        
+        %%% Histograms photons to pixels
+        Stack = single(histc(Stack,Pixeltimes(:)));
+        %%% In case no photons exist
+        if numel(Stack)==0
+            Stack = zeros(size(Stack,1),1);
+        end
+        %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+        MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+        clear Stack;        
+        %% Updates frame settings for channel 1
+        %%% Unlinks framses
+        h.Mia_Image_Link.Value = 0;
+        h.Mia_Image_Link.Visible = 'off';
+        h.Mia_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
+        h.Mia_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
+        h.Mia_Correlation_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
+        h.Mia_Frame_Slider(1).Value=1;  
+        h.Mia_Frame_Slider(1).Min=1;
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3)); 
+        %% Stops function, if only one channel was loaded and clear channel 2
+        if h.Mia_PIE(2).Value == numel(h.Mia_PIE(2).String)
+            %%% Clears images
+            h.Plots.Image(2,1).CData=zeros(1,1,3);
+            h.Mia_Image_Axes(2,1).XLim=[0 1]+0.5;
+            h.Mia_Image_Axes(2,1).YLim=[0 1]+0.5;
+            h.Plots.Image(2,2).CData=zeros(1,1,3);
+            h.Mia_Image_Axes(2,2).XLim=[0 1]+0.5;
+            h.Mia_Image_Axes(2,2).YLim=[0 1]+0.5;
+            %%% Resets slider
+            h.Mia_Frame_Slider(2).SliderStep=[1 1];
+            h.Mia_Frame_Slider(2).Max=1;
+            h.Mia_Frame_Slider(2).Value=1;
+            h.Mia_Frame_Slider(2).Min=1;
+            h.Mia_Frame(2).String='1';
+            Progress(1);
+            %%% Updates plot
+            Mia_ROI([],[],1)
+            return;
+        end
+        %% Extracts data from Pam for channel 2
+        Sel = h.Mia_PIE(2).Value;
+        %%% Gets the photons
+        if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
+            Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel));
+        else
+            Stack = [];
+            for j = UserValues.PIE.Combined{Sel} %%% Combined channel
+                Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+            end
+        end
+        
+        %%% Calculates pixel times for each line and file
+        Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+        for j=1:FileInfo.NumberOfFiles
+            for k=1:FileInfo.Lines
+                Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+            end
+        end
+        
+        %%% Histograms photons to pixels
+        Stack = single(histc(Stack,Pixeltimes(:)));
+        %%% In case no photons exist
+        if numel(Stack)==0
+            Stack = zeros(size(Stack,1),1);
+        end
+        
+        %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+        MIAData.Data{2,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+        clear Stack; 
+        %% Updates frame settings for channel 2
         h.Mia_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
         h.Mia_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
         h.Mia_Frame_Slider(2).Value=1;
