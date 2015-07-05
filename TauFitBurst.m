@@ -1,4 +1,4 @@
-function TauFitBurst
+function TauFitBurst(~,~)
 global UserValues TauFitBurstData
 h.TauFitBurst = findobj('Tag','TauFitBurst');
 if isempty(h.TauFitBurst) % Creates new figure, if none exists
@@ -784,6 +784,17 @@ h.IRFShift_Edit.String = num2str(TauFitBurstData.IRFShift{1});
 guidata(h.TauFitBurst,h);
 Update_Plots(h.ChannelSelect_Popupmenu,[]);
 
+g = guidata(findobj('Tag','Pam'));
+if g.BurstLifetime_Checkbox.Value
+    clear g
+    % 'lifetime' checkbox is checked on the 'Burst analysis' tab,
+    % so lifetimes are fitted directly after burst analysis.
+    for i = 1:numel(h.ChannelSelect_Popupmenu.String)
+        h.ChannelSelect_Popupmenu.Value = i;
+        Start_Fit
+    end
+    Close_TauFit
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  General Function to Update Plots when something changed %%%%%%%%%%%%%%
@@ -1089,9 +1100,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Start Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Start_Fit(obj,~)
+function Start_Fit(~,~)
 global TauFitBurstData BurstData UserValues
-h = guidata(obj);
+h = guidata(findobj('Tag','TauFitBurst'));
+
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
 switch TauFitBurstData.BAMethod
