@@ -712,8 +712,8 @@ if exist('PDA','var')
         PDAstruct.Corrections.DirectExcitation_GR = 0;
     end
     if isfield(PDA,'Background');
-        PDAstruct.Background.BackgroundDonor = PDA.Background.Background_GGpar+PDA.Background.Background_GGperp;
-        PDAstruct.Background.BackgroundAcceptor = PDA.Background.Background_GRpar+PDA.Background.Background_GRperp;
+        PDAstruct.Corrections.BackgroundDonor = PDA.Background.Background_GGpar+PDA.Background.Background_GGperp;
+        PDAstruct.Corrections.BackgroundAcceptor = PDA.Background.Background_GRpar+PDA.Background.Background_GRperp;
     end
 end
 %%% Fill in Corrections and Background
