@@ -1435,11 +1435,11 @@ end
     %%% IRF/Scatter AFTER performed burst search using stored PIE settings
     h.BurstLifetime_Button_Menu = uicontextmenu;
     h.BurstLifetime_Button_Menu_StoreIRF = uimenu(h.BurstLifetime_Button_Menu,...
-            'Label','Store Loaded IRF in *.bur file',...
-            'Callback',@Store_IRF_Scat_inBur);
+            'Label','Store current IRF in *.bur file',...
+            'Callback',{@Store_IRF_Scat_inBur,0});
     h.BurstLifetime_Button_Menu_StoreScatter = uimenu(h.BurstLifetime_Button_Menu,...
-        'Label','Store Loaded Scatter Measurement in *.bur file',...
-        'Callback',@Store_IRF_Scat_inBur);
+        'Label','Store current Scatter and background measurement in *.bur file',...
+        'Callback',{@Store_IRF_Scat_inBur,1});
     
     %%% Button to start burstwise Lifetime Fitting
     h.BurstLifetime_Button = uicontrol(...
@@ -5168,96 +5168,8 @@ BurstData.PIE.Router = UserValues.PIE.Router(PIEChannels);
 BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
 BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
 
-%%% Save IRF and ScatterPattern, as well as background counts!
-switch BurstData.BAMethod
-    case {1,2}
-        %%% Read out the Microtime Histograms of the IRF for the two channels
-        hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
-        hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
-        hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
-        hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
-        hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
-        hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        BurstData.IRF = {hIRF_GGpar; hIRF_GGperp;...
-            hIRF_GRpar; hIRF_GRperp;...
-            hIRF_RRpar; hIRF_RRperp};
-        hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
-        hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
-        hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
-        hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
-        hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
-        hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
-            hScat_GRpar; hScat_GRperp;...
-            hScat_RRpar; hScat_RRperp};
-        
-        BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-        BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-        BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
-        BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
-        BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-        BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
-%         BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
-%             UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
-%             UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
-    case {3,4}
-        %%% Read out the Microtime Histograms of the IRF for the two channels
-        hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
-        hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
-        hIRF_BGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
-        hIRF_BGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
-        hIRF_BRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
-        hIRF_BRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1})};
-        hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2})};
-        hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1})};
-        hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2})};
-        hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
-        hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
-        BurstData.IRF = {hIRF_BBpar; hIRF_BBperp;...
-            hIRF_BGpar; hIRF_BGperp;...
-            hIRF_BRpar; hIRF_BRperp;...
-            hIRF_GGpar; hIRF_GGperp;...
-            hIRF_GRpar; hIRF_GRperp;...
-            hIRF_RRpar; hIRF_RRperp};
-        hScat_BBpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1})};
-        hScat_BBperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2})};
-        hScat_BGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1})};
-        hScat_BGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2})};
-        hScat_BRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1})};
-        hScat_BRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2})};
-        hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1})};
-        hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2})};
-        hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1})};
-        hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2})};
-        hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1})};
-        hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2})};
-        BurstData.ScatterPattern = {hScat_BBpar; hScat_BBperp;...
-            hScat_BGpar; hScat_BGperp;...
-            hScat_BRpar; hScat_BRperp;...
-            hScat_GGpar; hScat_GGperp;...
-            hScat_GRpar; hScat_GRperp;...
-            hScat_RRpar; hScat_RRperp};
-        
-        BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
-        BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
-        BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
-        BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
-        BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
-        BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
-        BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-        BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-        BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
-        BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
-        BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-        BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
-%         BurstData.Background = [UserValues.BurstBrowser.Corrections.Background_BBpar, UserValues.BurstBrowser.Corrections.Background_BBperp,...
-%             UserValues.BurstBrowser.Corrections.Background_BGpar, UserValues.BurstBrowser.Corrections.Background_BGperp,...
-%             UserValues.BurstBrowser.Corrections.Background_BRpar, UserValues.BurstBrowser.Corrections.Background_BRperp,...
-%             UserValues.BurstBrowser.Corrections.Background_GGpar, UserValues.BurstBrowser.Corrections.Background_GGperp,...
-%             UserValues.BurstBrowser.Corrections.Background_GRpar, UserValues.BurstBrowser.Corrections.Background_GRperp,...
-%             UserValues.BurstBrowser.Corrections.Background_RRpar, UserValues.BurstBrowser.Corrections.Background_RRperp];
-end
+% get the IRF, scatter decay and background from UserValues
+Store_IRF_Scat_inBur('nothing',[],[0,1])
 
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
@@ -6119,34 +6031,124 @@ TauFitBurstData.TACRange = BurstData.FileInfo.TACRange*1E9;
 TauFitBurstData.MI_Bins = double(BurstData.FileInfo.MI_Bins);
 TauFitBurst;
 Update_Display([],[],1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Store loaded IRF/Scatter Measurment in performed BurstSearch %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Store_IRF_Scat_inBur(obj,~)
-global BurstData FileInfo TcspcData
+function Store_IRF_Scat_inBur(obj,~,mode)
+global BurstData UserValues
+LSUserValues(0)
 h = guidata(findobj('Tag','Pam'));
 if isempty(BurstData)
     disp('No Burst Data loaded...');
     return;
 end
-h.Progress_Text.String = 'Saving changed MI pattern...';
-switch obj
-    case h.BurstLifetime_Button_Menu_StoreIRF
-        IRF = cell(numel(BurstData.PIE.Detector),1);
-        for i = 1:numel(BurstData.PIE.Detector)
-            IRF{i}=histc(TcspcData.MI{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)},0:(FileInfo.MI_Bins-1));
-        end
-        BurstData.IRF = IRF;
-    case h.BurstLifetime_Button_Menu_StoreScatter
-        Scatter = cell(numel(BurstData.PIE.Detector),1);
-        for i = 1:numel(BurstData.PIE.Detector)
-            Scatter{i}=histc(TcspcData.MI{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)},0:(FileInfo.MI_Bins-1));
-        end
-        BurstData.ScatterPattern = Scatter;
+
+if strcmp(obj,'nothing')
+    % function is called during Burst Analysis
+else
+    % function is called from right clicking the Burstwise lifetime button
+    h.Progress_Text.String = 'Saving changed MI pattern...';
 end
 
-save(BurstData.FileName,'BurstData');
-Progress(1,h.Progress_Axes,h.Progress_Text);
+if any(mode==0)
+    %% Save IRF
+    switch BurstData.BAMethod
+        case {1,2}
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            BurstData.IRF = {hIRF_GGpar; hIRF_GGperp;...
+                hIRF_GRpar; hIRF_GRperp;...
+                hIRF_RRpar; hIRF_RRperp};
+        case {3,4}
+            %%% Read out the Microtime Histograms of the IRF for the two channels
+            hIRF_BBpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hIRF_BBperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            hIRF_BGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hIRF_BGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            hIRF_BRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            hIRF_BRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            hIRF_GGpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
+            hIRF_GGperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
+            hIRF_GRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
+            hIRF_GRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
+            hIRF_RRpar = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
+            hIRF_RRperp = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
+            BurstData.IRF = {hIRF_BBpar; hIRF_BBperp;...
+                hIRF_BGpar; hIRF_BGperp;...
+                hIRF_BRpar; hIRF_BRperp;...
+                hIRF_GGpar; hIRF_GGperp;...
+                hIRF_GRpar; hIRF_GRperp;...
+                hIRF_RRpar; hIRF_RRperp};
+    end
+end
+if any(mode==1)
+    %% Save ScatterPattern, as well as background counts!
+    switch BurstData.BAMethod
+        case {1,2}
+            % Scatter patterns for all burst channels
+            hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            BurstData.ScatterPattern = {hScat_GGpar; hScat_GGperp;...
+                hScat_GRpar; hScat_GRperp;...
+                hScat_RRpar; hScat_RRperp};
+            % Background for all burst channels
+            BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+            BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+            BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+            BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+            BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+            BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+        case {3,4}
+            % Scatter patterns for all burst channels
+            hScat_BBpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hScat_BBperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,2})};
+            hScat_BGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hScat_BGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,2})};
+            hScat_BRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            hScat_BRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,2})};
+            hScat_GGpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,1})};
+            hScat_GGperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{4,2})};
+            hScat_GRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,1})};
+            hScat_GRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{5,2})};
+            hScat_RRpar = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,1})};
+            hScat_RRperp = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{6,2})};
+            BurstData.ScatterPattern = {hScat_BBpar; hScat_BBperp;...
+                hScat_BGpar; hScat_BGperp;...
+                hScat_BRpar; hScat_BRperp;...
+                hScat_GGpar; hScat_GGperp;...
+                hScat_GRpar; hScat_GRperp;...
+                hScat_RRpar; hScat_RRperp};
+            % Background for all burst channels
+            BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
+            BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+            BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
+            BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
+            BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
+            BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
+            BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+            BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+            BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+            BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+            BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+            BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+    end
+end
+
+if ~strcmp(obj,'nothing')
+    % function is called from right clicking the Burstwise lifetime button
+    save(BurstData.FileName,'BurstData');
+    Progress(1,h.Progress_Axes,h.Progress_Text);
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
