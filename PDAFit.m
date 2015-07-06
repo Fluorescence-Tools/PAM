@@ -715,6 +715,8 @@ if exist('PDA','var')
         PDAstruct.Corrections.BackgroundDonor = PDA.Background.Background_GGpar+PDA.Background.Background_GGperp;
         PDAstruct.Corrections.BackgroundAcceptor = PDA.Background.Background_GRpar+PDA.Background.Background_GRperp;
     end
+else
+    PDAstruct = SavedData;
 end
 %%% Fill in Corrections and Background
 h.Crosstalk_Edit.String = num2str(PDAstruct.Corrections.CrossTalk_GR);
@@ -744,7 +746,8 @@ PDAstruct.Corrections.BackgroundDonor = str2double(h.BGdonor_Edit.String);
 PDAstruct.Corrections.BackgroundAcceptor = str2double(h.BGacc_Edit.String);
 %%% Store Fit Data
 PDAstruct.FitData = h.Fit_Table.Data;
-save(fullfile(PDAstruct.Path,PDAstruct.FileName),'PDAstruct');
+SavedData = PDAstruct; %%% Saved under different name as used in GlobalPDAFit
+save(fullfile(PDAstruct.Path,PDAstruct.FileName),'SavedData');
 
 function UpdateMainPlot(~,~,mode,reset)
 global UserValues PDAstruct PDAMeta
