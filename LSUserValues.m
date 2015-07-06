@@ -484,6 +484,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.TauFit was incomplete');    
     end
     P.BurstSearch.TauFit = S.BurstSearch.TauFit;
+    %%% Checks, if BurstSearch.TauFit.Length subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'Length')
+        S.BurstSearch.TauFit.Length=cell(1,3);
+        disp('UserValues.BurstSearch.TauFit.Length was incomplete');    
+    end
+    P.BurstSearch.TauFit.Length = S.BurstSearch.TauFit.Length;
     %%% Checks, if BurstSearch.TauFit.StartPar subfield exists
     if ~isfield (S.BurstSearch.TauFit,'StartPar')
         S.BurstSearch.TauFit.StartPar={0,0,0};
