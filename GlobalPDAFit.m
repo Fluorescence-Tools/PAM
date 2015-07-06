@@ -1806,7 +1806,7 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 %%% Aborts Fit
 drawnow;
 if ~PDAMeta.FitInProgress
-    chi2 = 0;
+    chi2 = PDAMeta.chi2;
     return;
 end
 
