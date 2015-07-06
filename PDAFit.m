@@ -1382,8 +1382,7 @@ else
     set(plotfval,'Xdata',newX, 'Ydata',newY);
     set(get(gca,'Title'),'String',sprintf('Current Function Value: %g',fval));
     
-    plott = 1;
-    if ~strcmp(PDAMeta.FitMethod,'MLE') && plott == 1
+    if ~strcmp(PDAMeta.PDAMethod,'MLE')
         %%% Update Plots
         h.FitHist.YData = PDAMeta.hFit;
         h.Residuals.YData = PDAMeta.w_res;
