@@ -718,7 +718,7 @@ elseif any(TauFitBurstData.BAMethod == [3,4])
 end
 
 for i = 1:Number_of_Channels
-    TauFitBurstData.Length{i} = 0;
+    TauFitBurstData.Length{i} = UserValues.BurstSearch.TauFit.Length{i};
     TauFitBurstData.StartPar{i} = UserValues.BurstSearch.TauFit.StartPar{i};
     TauFitBurstData.ShiftPer{i} = UserValues.BurstSearch.TauFit.ShiftPer{i};
     TauFitBurstData.IRFLength{i} = UserValues.BurstSearch.TauFit.IRFLength{i};
@@ -735,18 +735,23 @@ TauFitBurstData.Background_Contribution{3} = 0;
 %%% The length of the shortest PIE channel
 
 
-for i = 1:Number_of_Channels
-TauFitBurstData.MaxLength{i} = min([numel(TauFitBurstData.hMI_Par{i}) numel(TauFitBurstData.hMI_Per{i})]);
-end
 %%% The Length Slider defaults to the length of the shortest PIE
 %%% channel and should not assume larger values
-h.Length_Slider.Min = 1;
-h.Length_Slider.Max = TauFitBurstData.MaxLength{1};
-h.Length_Slider.Value = TauFitBurstData.MaxLength{1};
 for i = 1:Number_of_Channels
-    TauFitBurstData.Length{i} = TauFitBurstData.MaxLength{i};
+    TauFitBurstData.MaxLength{i} = min([numel(TauFitBurstData.hMI_Par{i}) numel(TauFitBurstData.hMI_Per{i})]);
 end
+
+h.Length_Slider.Min = 1;
+h.Length_Slider.Max = TauFitBurstData.MaxLength{1}; %length of 1st channel is what opens at GUI startup
+for i = 1:Number_of_Channels
+    if isempty(TauFitBurstData.Length{i}) || TauFitBurstData.Length{i} > TauFitBurstData.MaxLength{i}
+        % length doesn't exist yet in UserValues or length is too large
+        TauFitBurstData.Length{i} = TauFitBurstData.MaxLength{i};
+    end
+end
+h.Length_Slider.Value = TauFitBurstData.Length{1};
 h.Length_Edit.String = num2str(TauFitBurstData.Length{1});
+
 %%% Start Parallel Slider can assume values from 0 (no shift) up to the
 %%% length of the shortest PIE channel minus the set length
 h.StartPar_Slider.Min = 0;
@@ -917,6 +922,7 @@ switch obj.Style
 end
 %%% Update UserValues
 for i = 1:numel(TauFitBurstData.StartPar)
+    UserValues.BurstSearch.TauFit.Length{i} = TauFitBurstData.Length{i};
     UserValues.BurstSearch.TauFit.StartPar{i} = TauFitBurstData.StartPar{i};
     UserValues.BurstSearch.TauFit.ShiftPer{i} = TauFitBurstData.ShiftPer{i};
     UserValues.BurstSearch.TauFit.IRFLength{i} = TauFitBurstData.IRFLength{i};
