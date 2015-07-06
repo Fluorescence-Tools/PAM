@@ -1314,8 +1314,8 @@ res_ax.XLabel.Color = [0 0 0];
 res_ax.YLabel.Color = [0 0 0];
 main_ax.Units = 'pixel';
 res_ax.Units = 'pixel';
-main_ax.Position = [60 60 500 300];
-res_ax.Position = [60 360 500 50];
+main_ax.Position = [75 60 475 300];
+res_ax.Position = [75 360 475 50];
 gauss_ax = copyobj(h.GaussAxes,fig);
 gauss_ax.Color = [1 1 1];
 gauss_ax.XColor = [0 0 0];
@@ -1326,7 +1326,7 @@ gauss_ax.Units = 'pixel';
 gauss_ax.Position = [650 60 225 300];
 gauss_ax.GridAlpha = 0.1;
 res_ax.GridAlpha = 0.1;
-gauss_ax.FontSize = 18;
+gauss_ax.FontSize = 15;
 
 function stop = optimplotfvalPDA(x,optimValues,state,varargin)
 % OPTIMPLOTFVAL Plot value of the objective function at each iteration.
