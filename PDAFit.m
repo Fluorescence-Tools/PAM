@@ -1209,8 +1209,8 @@ for j = 1:N_gauss
         r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
         E = 1./(1+(r./R0).^6);
         eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
-        BG_gg = poissrnd(mBG_gg.*dur);
-        BG_gr = poissrnd(mBG_gr.*dur);
+        BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
+        BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
         BSD_bg = BSD-BG_gg-BG_gr;
         PRH{i,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
     end

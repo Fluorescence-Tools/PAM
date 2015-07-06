@@ -1264,6 +1264,12 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
         NBG = numel(BGgg)-1;
         NBR = numel(BGgr)-1;
         
+        % assign current file to global cell
+        PDAMeta.PBG{i} = PBG;
+        PDAMeta.PBR{i} = PBR;
+        PDAMeta.NBG{i} = NBG;
+        PDAMeta.NBR{i} = NBR;
+            
         if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
             %%% prepare epsilon grid
             Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
@@ -1344,11 +1350,12 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
             end
+            % different files = different rows
+            % different Ps = different columns
+            PDAMeta.P(i,:) = P;
+            PDAMeta.PreparationDone = 1;
         end
-        % different files = different rows
-        % different Ps = different columns
-        PDAMeta.P(i,:) = P;
-        PDAMeta.PreparationDone = 1;
+        
     end
 end
 
@@ -1428,7 +1435,7 @@ if sum(PDAMeta.Global) == 0
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
-                    PDAMonteCarloFit(fitpar);
+                    PDAMonteCarloFit_Single(fitpar);
                     
                 case 'Histogram Library'
                     PDAHistogramFit_Single(fitpar);
@@ -1441,12 +1448,12 @@ if sum(PDAMeta.Global) == 0
                 case 'Histogram Library'
                     fitfun = @(x) PDAHistogramFit_Single(x);
                 case 'MLE'
-                    msgbox('doesnt work yet')
-                    return
+                    %msgbox('doesnt work yet')
+                    %return
                     fitfun = @(x) PDA_MLE_Fit_Single(x);
                 case 'MonteCarlo'
-                    msgbox('doesnt work yet')
-                    return
+                    %msgbox('doesnt work yet')
+                    %return
                     fitfun = @(x) PDAMonteCarloFit_Single(x);
             end
             
@@ -1455,8 +1462,8 @@ if sum(PDAMeta.Global) == 0
                     fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
                     fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
                 case 'Gradient-Based'
-                    msgbox('doesnt work yet')
-                    return
+                    %msgbox('doesnt work yet')
+                    %return
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
                     fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                 case 'Patternsearch'
@@ -1473,24 +1480,24 @@ if sum(PDAMeta.Global) == 0
                     fitpar = run(gs,problem);
             end
         end
-        % Calculate chi^2
-        %             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-        %                 case 'Histogram Library'
-        %                     %chi2 = PDAHistogramFit_Single(fitpar);
-        %                 case 'MLE'
-        %                     %%% For Updating the Result Plot, use MC sampling
-        %                     chi2 = PDAMonteCarloFit_Single(fitpar);
-        %                     %%% Update Plots
-        %                     h.FitTab.Bar.YData = PDAMeta.hFit;
-        %                     h.Res_Bar.YData = PDAMeta.w_res;
-        %                     for c = comp
-        %                         h.FitTab.BarInd{i}.YData = PDAMeta.hFit_Ind{c};
-        %                     end
-        %                 case 'MonteCarlo'
-        %                     chi2 = PDAMonteCarloFit_Single(fitpar);
-        %                 otherwise
-        %                     chi2 = 0;
-        %             end
+        %Calculate chi^2
+        switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+            case 'Histogram Library'
+                %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
+            case 'MLE'
+                %%% For Updating the Result Plot, use MC sampling
+                PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+                %%% Update Plots
+                h.FitTab.Bar.YData = PDAMeta.hFit;
+                h.Res_Bar.YData = PDAMeta.w_res;
+                for c = comp
+                    h.FitTab.BarInd{i}.YData = PDAMeta.hFit_Ind{c};
+                end
+            case 'MonteCarlo'
+                %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+            otherwise
+                PDAMeta.chi2 = 0;
+        end
         
         % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
@@ -1567,13 +1574,22 @@ h.FitTab.Table.Enable = 'on';
 % model for MLE fitting (not global) (doesn't work currently)
 function logL = PDA_MLE_Fit_Single(fitpar)
 global PDAMeta PDAData
-h = guidata(findobj('Tag','GlobalPDAFit'));
 
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    logL = 0;
+    return;
+end
+
+h = guidata(findobj('Tag','GlobalPDAFit'));
+fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
+file = PDAMeta.file;
 % Parameters
-cr = str2double(PDAData.Params{file,3});
-R0 = str2double(PDAData.Params{file,6});
-de = str2double(PDAData.Params{file,2});
-gamma = str2double(PDAData.Params{file,1});
+cr = PDAMeta.crosstalk(file);
+R0 = PDAMeta.R0(file);
+de = PDAMeta.directexc(file);
+gamma = PDAMeta.gamma(file);
 
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
@@ -1587,7 +1603,7 @@ for c = 1:5
     end
 end
 steps = 5;
-L = cell(N_gauss,1); %%% Likelihood per Gauss
+L = cell(numel(N_gauss),1); %%% Likelihood per Gauss
 for j = N_gauss
     %%% define Gaussian distribution of distances
     xR = (fitpar(j,2)-3*fitpar(j,3)):(6*fitpar(j,3)/steps):(fitpar(j,2)+3*fitpar(j,3));
@@ -1599,8 +1615,8 @@ for j = N_gauss
     
     %%% Calculate the vector of likelihood values
     P = eval_prob_2c_bg(PDAData.Data{file}.NG,PDAData.Data{file}.NF,...
-        PDAMeta{file}.NBG,PDAMeta{file}.NBR,...
-        PDAMeta{file}.PBG',PDAMeta{file}.PBR',...
+        PDAMeta.NBG{file},PDAMeta.NBR{file},...
+        PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
         epsGR');
     P = log(P) + repmat(log(PR'),numel(PDAData.Data{file}.NG),1);
     Lmax = max(P,[],2);
@@ -1614,7 +1630,7 @@ end
 
 %%% normalize amplitudes
 fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
-PA = fitpar(:,1);
+PA = fitpar(N_gauss,1);
 
 L = horzcat(L{:});
 L = L + repmat(log(PA'),numel(PDAData.Data{file}.NG),1);
@@ -1783,12 +1799,20 @@ Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe);
 
 % model for Monte Carle based fitting (not global) (doesn't work currently)
-function [chi2] = PDAMonteCarloFit_Single(fitpar, file)
+function [chi2] = PDAMonteCarloFit_Single(fitpar)
 global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    chi2 = 0;
+    return;
+end
+
+file = PDAMeta.file;
 %%% fitpar vector is linearized by fminsearch, restructure
-fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
+fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 FitTable = FitTable(1:end-3,2:3:end-1);
@@ -1799,17 +1823,17 @@ for j = 1:5
     end
 end
 %%% normalize Amplitudes
-fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
+fitpar(comp,1) = fitpar(comp,1)./sum(fitpar(comp,1));
 A = fitpar(:,1);
 
 %Parameters
-mBG_gg = str2double(PDAData.Params{file,4});
-mBG_gr = str2double(PDAData.Params{file,5});
+mBG_gg = PDAMeta.BGdonor(file);
+mBG_gr = PDAMeta.BGacc(file);
 dur = PDAData.timebin(file)*1E3;
-cr = str2double(PDAData.Params{file,3});
-R0 = str2double(PDAData.Params{file,6});
-de = str2double(PDAData.Params{file,2});
-gamma = str2double(PDAData.Params{file,1});
+cr = PDAMeta.crosstalk(file);
+R0 = PDAMeta.R0(file);
+de = PDAMeta.directexc(file);
+gamma = PDAMeta.gamma(file);
 Nobins = str2double(h.SettingsTab.NumberOfBins_Edit.String);
 sampling =str2double(h.SettingsTab.OverSampling_Edit.String);
 
@@ -1818,19 +1842,19 @@ BSD = PDAMeta.BSD{file};
 H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
-PRH = cell(sampling,comp);
+PRH = cell(sampling,max(comp));
 for j = comp
     for k = 1:sampling
         r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
         E = 1./(1+(r./R0).^6);
         eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
-        BG_gg = poissrnd(mBG_gg.*dur);
-        BG_gr = poissrnd(mBG_gr.*dur);
+        BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
+        BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
         BSD_bg = BSD-BG_gg-BG_gr;
         PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
     end
 end
-H_res_dummy = zeros(numel(PDAMeta.hProx{file}),comp);
+H_res_dummy = zeros(numel(PDAMeta.hProx{file}),max(comp));
 for j = comp
     H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1));
 end
@@ -1844,10 +1868,27 @@ error = sqrt(H_meas);
 error(error == 0) = 1;
 w_res = (H_meas-hFit)./error;
 chi2 = sum((w_res.^2))/(Nobins-numel(fitpar)-1);
-hFit_Ind = cell(comp,1);
+hFit_Ind = cell(max(comp),1);
 for j = comp
     hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
 end
+
+PDAMeta.w_res{file} = w_res;
+PDAMeta.hFit{file} = hFit;
+PDAMeta.chi2(file) = chi2;
+for c = PDAMeta.Comp{file};
+    PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
+end
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+
+if h.SettingsTab.LiveUpdate.Value
+    Update_Plots([],[],5)
+end
+tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
+Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
+Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
+
 
 % function to export the figures (doesn't work currently)
 function Export_Figure(~,~)
