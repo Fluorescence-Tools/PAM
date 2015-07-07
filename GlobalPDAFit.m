@@ -1446,7 +1446,6 @@ if sum(PDAMeta.Global) == 0
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMonteCarloFit_Single(fitpar);
-                    
                 case 'Histogram Library'
                     PDAHistogramFit_Single(fitpar);
             end
@@ -1540,8 +1539,16 @@ else
         
     %% Check if View_Curve was pressed
     if obj == h.Menu.ViewFit
-        msgbox('doesnt work yet for global')
-        return
+         %%% Only Update Plot and break
+        Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+        Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+        switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+            case {'MLE','MonteCarlo'}
+                %%% For Updating the Result Plot, use MC sampling
+                PDAMonteCarloFit_Global(fitpar);
+            case 'Histogram Library'
+                PDAHistogramFit_Global(fitpar);
+        end
     else
         %% Do Fit
         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
@@ -1591,6 +1598,8 @@ else
         for i=find(PDAMeta.Active)'
             PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
             fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+            % Convert amplitudes to fractions
+            PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2) = PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2)./sum(PDAMeta.FitParams(i,1:3:end));
             h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'Uniformoutput',false);
         end
     end
