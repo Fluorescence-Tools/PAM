@@ -6596,6 +6596,7 @@ switch mode
         save(fullfile(Path,File),'s');
     case 5 %% Correlate active ones in database
         for i = h.Database.List.Value
+            try
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
             UserValues.File.Path = PamMeta.Database{i,2};
@@ -6604,9 +6605,17 @@ switch mode
                 PamMeta.Database{i,1},...   %file
                 PamMeta.Database{i,3});     %type
             Correlate ([],[],1)
+                        % set filename color to green
+            Hex_color=dec2hex([0 1 0]*255)';
+            h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' tex '</Font></html>'];
+            catch
+                Hex_color=dec2hex([1 0 0]*255)';
+                h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' tex '</Font></html>'];
+            end
         end
     case 6 %% Burst analyse active ones in database
         for i = h.Database.List.Value
+            try
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
             UserValues.File.Path = PamMeta.Database{i,2};
@@ -6617,8 +6626,16 @@ switch mode
             Do_BurstAnalysis
             % depending on whether the '2CDE' and 'lifetime' checkboxes are
             % checked on the 'Burst analysis' tab, this might also be performed
-        end  
-    case 7 %% Loads selected files into Pam        
+            % set filename color to green
+            Hex_color=dec2hex([0 1 0]*255)';
+            h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' h.Database.List.String{i} '</Font></html>'];
+            catch
+                Hex_color=dec2hex([1 0 0]*255)';
+                h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' h.Database.List.String{i} '</Font></html>'];
+            end
+        end
+        % here some button to push, to put the colors back to black
+    case 7 %% Loads selected files into Pam
         %%% Caution! Only works if Path and filetype are the same for all files!        
         h.Progress_Text.String='Loading new file';
         % Path is unique per file in the database, so we have to store
