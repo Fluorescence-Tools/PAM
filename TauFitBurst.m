@@ -55,7 +55,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'Label','Logscale',...
         'Tag','Plot_Logscale_ResultPlot',...
         'Callback',@ChangeYScale);
-    
+
     %%% Main Microtime Plot
     h.Microtime_Plot = axes(...
         'Parent',h.TauFit_Panel,...
@@ -789,13 +789,28 @@ h.IRFShift_Edit.String = num2str(TauFitBurstData.IRFShift{1});
 guidata(h.TauFitBurst,h);
 Update_Plots(h.ChannelSelect_Popupmenu,[]);
 
+% if the lifetime checkbox is checked, lifetime fitting starts directly
+% after calling the TauFitBurst user interface
 g = guidata(findobj('Tag','Pam'));
 if g.BurstLifetime_Checkbox.Value
     clear g
     % 'lifetime' checkbox is checked on the 'Burst analysis' tab,
     % so lifetimes are fitted directly after burst analysis.
+    ha = h.TauFitBurst;
+    set(ha,'PaperPositionMode','auto');
+    % set y scale to log (just following the logic of the program)
+    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
+    ChangeYScale(h.Microtime_Plot_ChangeYScaleMenu_ResultPlot,[])
     for i = 1:numel(h.ChannelSelect_Popupmenu.String)
+        % loop through the different channels
         h.ChannelSelect_Popupmenu.Value = i;
+        Update_Plots(h.ChannelSelect_Popupmenu,[]);
+        % save an image of the data as shown, with all sliders set
+        print(ha,'-dtiff','-r150',[TauFitBurstData.FileName(1:end-4) '_data' num2str(i) '.tif'])
+        Pre_Fit
+        % save an image of the pre-fit as shown, with all sliders set
+        print(ha,'-dtiff','-r150',[TauFitBurstData.FileName(1:end-4) '_prefit' num2str(i) '.tif'])
+        % do the fitting
         Start_Fit
     end
     Close_TauFit
