@@ -1850,6 +1850,7 @@ end
         'String',[],...
         'BackgroundColor', Look.Axes,...
         'ForegroundColor', Look.Fore,...
+        'KeyPressFcn',{@Database,0},...
         'Position',[0.01 0.01 0.7 0.98]);   
     h.Database.Text = {};
     h.Database.Text{end+1} = uicontrol(...
@@ -6490,11 +6491,25 @@ if exist(filename, 'file')
     filename = [filename(1:end-4) '_' num2str(k) filename(end-3:end)];
 end
 
-function Database(~,~,mode)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Database(~,e,mode)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
+
+if mode == 0
+    switch e.Key
+        case 'delete'
+            mode = 2;
+        case 'return'
+            mode =7;
+    end
+end
+
 switch mode
-    case 1 % Add files to database
+    case 1 %% Add files to database
         %%% following code is for remembering the last used FileType
         LSUserValues(0);
         %%% Loads all possible file types
@@ -6547,8 +6562,7 @@ switch mode
         h.Database.Burst.Enable = 'on';
         h.Database.Save.Enable = 'on'; 
         h.Database.Delete.Enable = 'on';  
-    case 2 
-        %% Delete files from database
+    case 2 %% Delete files from database
         %remove rows from list
         h.Database.List.String(h.Database.List.Value) = [];
         %remove rows from database
@@ -6561,8 +6575,7 @@ switch mode
             h.Database.Save.Enable = 'off';
             h.Database.Delete.Enable = 'off';
         end
-    case 3 
-        %% Load database
+    case 3 %% Load database
         [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',UserValues.File.Path,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         PamMeta.Database = s.database;
@@ -6575,15 +6588,13 @@ switch mode
             h.Database.Save.Enable = 'on';
             h.Database.Delete.Enable = 'on';
         end
-    case 4 
-        %% Save complete database
+    case 4 %% Save complete database
         [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', UserValues.File.Path);
         s = struct;
         s.database = PamMeta.Database;
         s.str = h.Database.List.String;
         save(fullfile(Path,File),'s');
-    case 5 
-        %% Correlate active ones in database
+    case 5 %% Correlate active ones in database
         for i = h.Database.List.Value
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
@@ -6594,8 +6605,7 @@ switch mode
                 PamMeta.Database{i,3});     %type
             Correlate ([],[],1)
         end
-    case 6 
-        %% Burst analyse active ones in database
+    case 6 %% Burst analyse active ones in database
         for i = h.Database.List.Value
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
@@ -6607,6 +6617,16 @@ switch mode
             Do_BurstAnalysis
             % depending on whether the '2CDE' and 'lifetime' checkboxes are
             % checked on the 'Burst analysis' tab, this might also be performed
-        end     
+        end  
+    case 7 %% Loads selected files into Pam        
+        %%% Caution! Only works if Path and filetype are the same for all files!        
+        h.Progress_Text.String='Loading new file';
+        % Path is unique per file in the database, so we have to store
+        % it globally in UserValues each time
+        UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
+        LSUserValues(1)
+        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+            PamMeta.Database(h.Database.List.Value,1),...   %file
+            PamMeta.Database{h.Database.List.Value(1),3});     %type
 end
         
