@@ -1547,6 +1547,8 @@ else
         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
             case 'Histogram Library'
                 fitfun = @(x) PDAHistogramFit_Global(x);
+            case 'MLE'
+                fitfun = @(x) PDAMLEFit_Global(x);
             otherwise
                 msgbox('Use Histogram Library, others dont work yet for global')
                 return
@@ -1556,14 +1558,33 @@ else
                 fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
                 fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
             case 'Gradient-Based'
-                %msgbox('doesnt work yet')
-                %return
                 fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
                 fitpar = fmincon(fitfun, fitpar,[],[],[],[],LB,UB,[],fitopts);
-            otherwise
-                msgbox('Use Simplex, others dont work yet for global')
-                return
+            case 'Patternsearch'
+                opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
+                fitpar = patternsearch(fitfun, fitpar, [],[],[],[],LB,UB,[],opts);
+            case 'Gradient-Based (global)'
+                opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter');%,'PlotFcns',@optimplotfvalPDA);
+                problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',[],'beq',[],'lb',LB,'ub',UB,'options',opts);
+                gs = GlobalSearch;
+                fitpar = run(gs,problem);
         end
+        
+        %Calculate chi^2
+        switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+            case 'Histogram Library'
+                %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
+            case 'MLE'
+                %%% For Updating the Result Plot, use MC sampling
+                PDAMeta.FitInProgress = 1;
+                PDAMonteCarloFit_Global(fitpar);
+                PDAMeta.FitInProgress = 0;
+            case 'MonteCarlo'
+                %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+            otherwise
+                PDAMeta.chi2 = 0;
+        end
+        
         %%% Sort optimized fit parameters back into table
         PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
         fitpar(1:sum(PDAMeta.Global))=[];
@@ -1814,6 +1835,83 @@ elseif PDAMeta.directexc(i) ~= 0
 end
 Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe);
+
+function [mean_logL] = PDAMLEFit_Global(fitpar)
+global PDAMeta
+h = guidata(findobj('Tag','GlobalPDAFit'));
+
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    mean_logL = 0;
+    return;
+end
+
+P=zeros(numel(PDAMeta.Global),1);
+
+% define degrees of freedom here since we will loose fitpar
+DOF = numel(fitpar);
+
+%%% Assigns global parameters
+P(PDAMeta.Global)=fitpar(1:sum(PDAMeta.Global));
+fitpar(1:sum(PDAMeta.Global))=[];
+
+for i=find(PDAMeta.Active)'
+    PDAMeta.file = i;
+    %%% Sets non-fixed parameters
+    P(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)=fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+    %%% Sets fixed parameters
+    P(PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = PDAMeta.FitParams(i, (PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    %%% Calculates function for current file
+    
+    %%% normalize Amplitudes
+    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
+    
+    %%% calculate individual likelihoods
+    PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P);
+end
+mean_logL = mean(PDAMeta.chi2);
+
+function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
+global PDAMeta
+h = guidata(findobj('Tag','GlobalPDAFit'));
+
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    mean_chi2 = 0;
+    return;
+end
+
+P=zeros(numel(PDAMeta.Global),1);
+
+% define degrees of freedom here since we will loose fitpar
+DOF = numel(fitpar);
+
+%%% Assigns global parameters
+P(PDAMeta.Global)=fitpar(1:sum(PDAMeta.Global));
+fitpar(1:sum(PDAMeta.Global))=[];
+
+for i=find(PDAMeta.Active)'
+    PDAMeta.file = i;
+    %%% Sets non-fixed parameters
+    P(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)=fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+    %%% Sets fixed parameters
+    P(PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = PDAMeta.FitParams(i, (PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    %%% Calculates function for current file
+    
+    %%% normalize Amplitudes
+    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
+    
+    %%% create individual histograms
+    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
+end
+mean_chi2 = mean(PDAMeta.chi2);
+Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
 
 % model for Monte Carle based fitting (not global) (doesn't work currently)
 function [chi2] = PDAMonteCarloFit_Single(fitpar)
