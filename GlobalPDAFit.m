@@ -779,7 +779,7 @@ for i = 1:numel(FileName)
         PDAData.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
         clear PDA timebin
         PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
-    else % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
+    elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
         % SavedData %structure
         %   .Data %cell
         %       .NGP
@@ -796,6 +796,16 @@ for i = 1:numel(FileName)
         PDAData.Background{end+1} = SavedData.Background;
         % load fit table data from files
         PDAData.FitTable{end+1} = SavedData.FitTable;
+    elseif exist('PDAstruct','var')
+        %%% File is probably from old PDAFit
+        PDAData.Data{end+1} = PDAstruct.Data;
+        PDAData.timebin(end+1) = PDAstruct.timebin;
+        PDAData.Corrections{end+1} = PDAstruct.Corrections; %contains everything that was saved in BurstBrowser
+        PDAData.Background{end+1}.Background_GGpar = PDAstruct.Corrections.BackgroundDonor/2;
+        PDAData.Background{end}.Background_GGperp = PDAstruct.Corrections.BackgroundDonor/2;
+        PDAData.Background{end}.Background_GRpar = PDAstruct.Corrections.BackgroundAcceptor/2;
+        PDAData.Background{end}.Background_GRperp = PDAstruct.Corrections.BackgroundAcceptor/2;
+        PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
     end
 end
 PDAData.OriginalFitParams = PDAData.FitTable; %contains the fit table as it was originally displayed when opening the data
@@ -1467,13 +1477,13 @@ if sum(PDAMeta.Global) == 0
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
                     fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                 case 'Patternsearch'
-                    msgbox('doesnt work yet')
-                    return
+                    %msgbox('doesnt work yet')
+                    %return
                     opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
                     fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
                 case 'Gradient-Based (global)'
-                    msgbox('doesnt work yet')
-                    return
+                    %msgbox('doesnt work yet')
+                    %return
                     opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter');%,'PlotFcns',@optimplotfvalPDA);
                     problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',A,'beq',b,'lb',LB,'ub',UB,'options',opts);
                     gs = GlobalSearch;
@@ -1592,7 +1602,7 @@ de = PDAMeta.directexc(file);
 gamma = PDAMeta.gamma(file);
 
 %%% fitpar vector is linearized by fminsearch, restructure
-fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
+%fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
 Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 FitTable = FitTable(1:end-3,2:3:end-1);
@@ -1602,6 +1612,7 @@ for c = 1:5
         N_gauss = [N_gauss c];
     end
 end
+
 steps = 5;
 L = cell(numel(N_gauss),1); %%% Likelihood per Gauss
 for j = N_gauss
@@ -1629,7 +1640,7 @@ for j = N_gauss
 end
 
 %%% normalize amplitudes
-fitpar(:,1) = fitpar(:,1)./sum(fitpar(:,1));
+fitpar(N_gauss,1) = fitpar(N_gauss,1)./sum(fitpar(N_gauss,1));
 PA = fitpar(N_gauss,1);
 
 L = horzcat(L{:});
@@ -1806,8 +1817,11 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 %%% Aborts Fit
 drawnow;
 if ~PDAMeta.FitInProgress
-    chi2 = PDAMeta.chi2;
-    return;
+    if ~strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
+        chi2 = 0;
+        return;
+    end
+    %%% else continue
 end
 
 file = PDAMeta.file;
@@ -1898,8 +1912,8 @@ fig = figure('Position',[100 ,100 ,900, 425],...
     'Color',[1 1 1],...
     'Resize','off');
 
-main_ax = copyobj(h.MainPlot,fig);
-res_ax = copyobj(h.Res_BarPlot,fig);
+main_ax = copyobj(h.AllTab.Main_Axes,fig);
+res_ax = copyobj(h.AllTab.Res_Axes,fig);
 main_ax.Children(end).Position = [1.3,1.09];
 main_ax.Color = [1 1 1];
 res_ax.Color = [1 1 1];
@@ -1913,9 +1927,10 @@ res_ax.XLabel.Color = [0 0 0];
 res_ax.YLabel.Color = [0 0 0];
 main_ax.Units = 'pixel';
 res_ax.Units = 'pixel';
-main_ax.Position = [60 60 500 300];
-res_ax.Position = [60 360 500 50];
-gauss_ax = copyobj(h.GaussAxes,fig);
+main_ax.Position = [75 60 475 300];
+res_ax.Position = [75 360 475 50];
+main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
+gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
 gauss_ax.Color = [1 1 1];
 gauss_ax.XColor = [0 0 0];
 gauss_ax.YColor = [0 0 0];
@@ -1925,7 +1940,7 @@ gauss_ax.Units = 'pixel';
 gauss_ax.Position = [650 60 225 300];
 gauss_ax.GridAlpha = 0.1;
 res_ax.GridAlpha = 0.1;
-gauss_ax.FontSize = 18;
+gauss_ax.FontSize = 15;
 
 % Update the Fit Tab
 function Update_FitTable(~,e,mode)
