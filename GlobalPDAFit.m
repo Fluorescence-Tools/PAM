@@ -1502,6 +1502,9 @@ if sum(PDAMeta.Global) == 0
                 for c = comp
                     h.FitTab.BarInd{i}.YData = PDAMeta.hFit_Ind{c};
                 end
+                if isfield(PDAMeta,'Last_logL')
+                    PDAMeta = rmfield(PDAMeta,'Last_logL');
+                end
             case 'MonteCarlo'
                 %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
             otherwise
@@ -1586,6 +1589,9 @@ else
                 PDAMeta.FitInProgress = 1;
                 PDAMonteCarloFit_Global(fitpar);
                 PDAMeta.FitInProgress = 0;
+                if isfield(PDAMeta,'Last_logL')
+                    PDAMeta = rmfield(PDAMeta,'Last_logL');
+                end
             case 'MonteCarlo'
                 %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
             otherwise
@@ -1642,16 +1648,16 @@ gamma = PDAMeta.gamma(file);
 Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 FitTable = FitTable(1:end-3,2:3:end-1);
-N_gauss = [];
-for c = 1:5
-    if Fixed(file,3*c-2)==0 || FitTable(file,3*c-2)~=0
-        N_gauss = [N_gauss c];
-    end
-end
+% N_gauss = [];
+% for c = 1:5
+%     if Fixed(file,3*c-2)==0 || FitTable(file,3*c-2)~=0
+%         N_gauss = [N_gauss c];
+%     end
+% end
 
 steps = 5;
-L = cell(numel(N_gauss),1); %%% Likelihood per Gauss
-for j = N_gauss
+L = cell(5,1); %%% Likelihood per Gauss
+for j = PDAMeta.Comp{file}
     %%% define Gaussian distribution of distances
     xR = (fitpar(j,2)-3*fitpar(j,3)):(6*fitpar(j,3)/steps):(fitpar(j,2)+3*fitpar(j,3));
     PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
@@ -1676,8 +1682,8 @@ for j = N_gauss
 end
 
 %%% normalize amplitudes
-fitpar(N_gauss,1) = fitpar(N_gauss,1)./sum(fitpar(N_gauss,1));
-PA = fitpar(N_gauss,1);
+fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+PA = fitpar(PDAMeta.Comp{file},1);
 
 L = horzcat(L{:});
 L = L + repmat(log(PA'),numel(PDAData.Data{file}.NG),1);
@@ -1690,6 +1696,22 @@ logL = sum(L);
 %%% since the algorithm minimizes, it is important to minimize the negative
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
+
+
+%set(PDAMeta.Chi2_All, 'Visible','on','String', ['-logL = ' sprintf('%1.2f',logL)]);
+%set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['-logL = ' sprintf('%1.2f',logL)]);
+
+% if sum(PDAMeta.Global) == 0
+%     %%% if second iteration or more, update Progress Bar
+%     if isfield(PDAMeta,'Last_logL')
+%         progress = exp(logL-PDAMeta.Last_logL);
+%         tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
+%         Progress(progress, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
+%         Progress(progress, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
+%     end
+%     %%% store logL in PDAMeta
+%     PDAMeta.Last_logL = logL;
+% end
 
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar)
@@ -1882,6 +1904,19 @@ for i=find(PDAMeta.Active)'
 end
 mean_logL = mean(PDAMeta.chi2);
 
+%%% if second iteration or more, update Progress Bar
+if isfield(PDAMeta,'Last_logL')
+    progress = exp(mean_logL-PDAMeta.Last_logL);
+    if progress > 1
+        progress = 0.99;
+    end
+    Progress(progress, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+    Progress(progress, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+end
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. logL = ' sprintf('%1.2f',mean_logL)]);
+%%% store logL in PDAMeta
+PDAMeta.Last_logL = mean_logL;
+
 function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1943,14 +1978,14 @@ fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 FitTable = FitTable(1:end-3,2:3:end-1);
-comp = [];
-for j = 1:5
-    if Fixed(file,3*j-2)==0 || FitTable(file,3*j-2)~=0
-        comp = [comp j];
-    end
-end
+% comp = [];
+% for j = 1:5
+%     if Fixed(file,3*j-2)==0 || FitTable(file,3*j-2)~=0
+%         comp = [comp j];
+%     end
+% end
 %%% normalize Amplitudes
-fitpar(comp,1) = fitpar(comp,1)./sum(fitpar(comp,1));
+fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
 A = fitpar(:,1);
 
 %Parameters
@@ -1969,8 +2004,8 @@ BSD = PDAMeta.BSD{file};
 H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
-PRH = cell(sampling,max(comp));
-for j = comp
+PRH = cell(sampling,5);
+for j = PDAMeta.Comp{file}
     for k = 1:sampling
         r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
         E = 1./(1+(r./R0).^6);
@@ -1981,12 +2016,12 @@ for j = comp
         PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
     end
 end
-H_res_dummy = zeros(numel(PDAMeta.hProx{file}),max(comp));
-for j = comp
+H_res_dummy = zeros(numel(PDAMeta.hProx{file}),5);
+for j = PDAMeta.Comp{file}
     H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1));
 end
 hFit = zeros(numel(PDAMeta.hProx{file}),1);
-for j = comp
+for j = PDAMeta.Comp{file}
     hFit = hFit + A(j).*H_res_dummy(:,j);
 end
 hFit = sum(H_meas)*hFit./sum(hFit);
@@ -1995,8 +2030,8 @@ error = sqrt(H_meas);
 error(error == 0) = 1;
 w_res = (H_meas-hFit)./error;
 chi2 = sum((w_res.^2))/(Nobins-numel(fitpar)-1);
-hFit_Ind = cell(max(comp),1);
-for j = comp
+hFit_Ind = cell(5,1);
+for j = PDAMeta.Comp{file}
     hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
 end
 
