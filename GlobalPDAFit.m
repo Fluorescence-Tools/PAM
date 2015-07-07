@@ -1536,7 +1536,8 @@ else
         LB=[LB PDAMeta.LB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
         UB=[UB PDAMeta.UB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
     end
-    
+
+        
     %% Check if View_Curve was pressed
     if obj == h.Menu.ViewFit
         msgbox('doesnt work yet for global')
@@ -1554,6 +1555,11 @@ else
             case 'Simplex'
                 fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
                 fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
+            case 'Gradient-Based'
+                %msgbox('doesnt work yet')
+                %return
+                fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
+                fitpar = fmincon(fitfun, fitpar,[],[],[],[],LB,UB,[],fitopts);
             otherwise
                 msgbox('Use Simplex, others dont work yet for global')
                 return
