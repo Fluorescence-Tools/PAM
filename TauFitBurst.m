@@ -806,10 +806,10 @@ if g.BurstLifetime_Checkbox.Value
         h.ChannelSelect_Popupmenu.Value = i;
         Update_Plots(h.ChannelSelect_Popupmenu,[]);
         % save an image of the data as shown, with all sliders set
-        print(ha,'-dtiff','-r150',[TauFitBurstData.FileName(1:end-4) '_data' num2str(i) '.tif'])
+        print(ha,'-dtiff','-r150',GenerateName([TauFitBurstData.FileName(1:end-4) '_data' num2str(i) '.tif']))
         Pre_Fit
         % save an image of the pre-fit as shown, with all sliders set
-        print(ha,'-dtiff','-r150',[TauFitBurstData.FileName(1:end-4) '_prefit' num2str(i) '.tif'])
+        print(ha,'-dtiff','-r150',GenerateName([TauFitBurstData.FileName(1:end-4) '_prefit' num2str(i) '.tif']))
         % do the fitting
         Start_Fit
     end
