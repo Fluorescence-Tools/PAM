@@ -2884,6 +2884,10 @@ if FilterIndex == 2 % KBA file was loaded
     end
 end
 
+%%% Update Figure Name
+[~,name,~] = fileparts(BurstData.FileName);
+name = ['BurstBrowser - ' name];
+h.BurstBrowser.Name = name;
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
     %find positions of Efficiency and Stoichiometry in NameArray
     posE = find(strcmp(BurstData.NameArray,'Efficiency'));
