@@ -6314,7 +6314,7 @@ MT = BurstTCSPCData.Macrotime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
 
 xProx = linspace(0,1,51);
-timebin = {0.5E-3,1E-3,2E-3,3E-3,5E-3,10E-3};
+timebin = {10E-3,5E-3,3E-3,2E-3,1E-3,0.5E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
@@ -6368,10 +6368,30 @@ for t = 1:numel(timebin)
     Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
 end
 
-x = xProx(1:end-1);
+
 figure;hold on;
+a = 3;
 for i = 1:numel(timebin)
-    stairs(x,Hist{i});
+    x = xProx(1:end-1);
+    % slightly modify x-axis for each following dataset, to
+    % allow better visualization of the different datasets.
+    if i ~= 1
+        % i = 1: do nothing
+        % i = 2: shift each x value +5% of the x bin size
+        % i = 3: shift each x value -5% of the x bin size
+        % i = 4: shift each x value +10% of the x bin size
+        % i = 5: shift each x value -10% of the x bin size
+        % ...
+        diffx = mean(diff(x))/20;
+        if mod(i,2) == 0 %i = 2, 4, 6...
+            x = x + diffx*i/2;
+        else %i = 3, 5, 7...
+            x = x - diffx*(i-1)/2;
+        end
+    end
+    h = stairs(x,Hist{i});
+    set(h, 'Linewidth', a)
+    a = a-0.33;
 end
 
 for i = 1:numel(timebin)
