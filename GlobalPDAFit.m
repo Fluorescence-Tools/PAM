@@ -2054,41 +2054,60 @@ Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % function to export the figures (doesn't work currently)
 function Export_Figure(~,~)
+global PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
-fig = figure('Position',[100 ,100 ,900, 425],...
-    'Color',[1 1 1],...
-    'Resize','off');
-
-main_ax = copyobj(h.AllTab.Main_Axes,fig);
-res_ax = copyobj(h.AllTab.Res_Axes,fig);
-main_ax.Children(end).Position = [1.3,1.09];
-main_ax.Color = [1 1 1];
-res_ax.Color = [1 1 1];
-main_ax.XColor = [0 0 0];
-main_ax.YColor = [0 0 0];
-res_ax.XColor = [0 0 0];
-res_ax.YColor = [0 0 0];
-main_ax.XLabel.Color = [0 0 0];
-main_ax.YLabel.Color = [0 0 0];
-res_ax.XLabel.Color = [0 0 0];
-res_ax.YLabel.Color = [0 0 0];
-main_ax.Units = 'pixel';
-res_ax.Units = 'pixel';
-main_ax.Position = [75 60 475 300];
-res_ax.Position = [75 360 475 50];
-main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
-gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
-gauss_ax.Color = [1 1 1];
-gauss_ax.XColor = [0 0 0];
-gauss_ax.YColor = [0 0 0];
-gauss_ax.XLabel.Color = [0 0 0];
-gauss_ax.YLabel.Color = [0 0 0];
-gauss_ax.Units = 'pixel';
-gauss_ax.Position = [650 60 225 300];
-gauss_ax.GridAlpha = 0.1;
-res_ax.GridAlpha = 0.1;
-gauss_ax.FontSize = 15;
+for i = 1:(numel(PDAData.FileName)+1)
+    fig = figure('Position',[100 ,100 ,900, 425],...
+        'Color',[1 1 1],...
+        'Resize','off');
+    if i == 1 %generate figure for All Tab
+        main_ax = copyobj(h.AllTab.Main_Axes,fig);
+        res_ax = copyobj(h.AllTab.Res_Axes,fig);
+        gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
+    else %generate figure per Single Tab plot
+        h.SingleTab.Popup.Value = i;
+        Update_Plots([],[],2)
+        main_ax = copyobj(h.SingleTab.Main_Axes,fig);
+        res_ax = copyobj(h.SingleTab.Res_Axes,fig);
+        gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
+    end
+    %main_ax.Children(end).Position = [1.3,1.09];
+    main_ax.Children(end).String = ''; % = main_ax.Children(1:end-1);
+    main_ax.Color = [1 1 1];
+    res_ax.Color = [1 1 1];
+    main_ax.XColor = [0 0 0];
+    main_ax.YColor = [0 0 0];
+    res_ax.XColor = [0 0 0];
+    res_ax.YColor = [0 0 0];
+    main_ax.XLabel.Color = [0 0 0];
+    main_ax.YLabel.Color = [0 0 0];
+    res_ax.XLabel.Color = [0 0 0];
+    res_ax.YLabel.Color = [0 0 0];
+    main_ax.Units = 'pixel';
+    res_ax.Units = 'pixel';
+    main_ax.Position = [75 70 475 290];
+    res_ax.Position = [75 360 475 50];
+    main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
+    
+    gauss_ax.Color = [1 1 1];
+    gauss_ax.XColor = [0 0 0];
+    gauss_ax.YColor = [0 0 0];
+    gauss_ax.XLabel.Color = [0 0 0];
+    gauss_ax.YLabel.Color = [0 0 0];
+    gauss_ax.Units = 'pixel';
+    gauss_ax.Position = [650 70 225 290];
+    gauss_ax.GridAlpha = 0.1;
+    res_ax.GridAlpha = 0.1;
+    gauss_ax.FontSize = 15;
+    set(fig,'PaperPositionMode','auto');
+    if i == 1
+        print(fig,'-dtiff','-r150',GenerateName(fullfile(PDAData.PathName{1}, 'allPDAfits.tif')))
+    else
+        print(fig,'-dtiff','-r150',GenerateName(fullfile(PDAData.PathName{i-1}, [PDAData.FileName{i-1}(1:end-4) '.tif'])))
+    end
+    close(fig)
+end
 
 % Update the Fit Tab
 function Update_FitTable(~,e,mode)
@@ -2483,7 +2502,7 @@ msgbox({...
     'add a legend in the plots';...
     'sigma cannot be zero or a very small number';...
     'the chi^2 definition is not ok';...
-    'fix all other fitting algorithms';...
+    '';...
     '';...
     ''} ,'To do list','modal');
 
