@@ -3210,6 +3210,7 @@ end
 
 %now save channel wise photon numbers
 total = n_bins;
+newfilename = GenerateName([BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda']);
 switch BurstData.BAMethod
     case {1,2}
         PDA.NGP = zeros(total,1);
@@ -3236,7 +3237,6 @@ switch BurstData.BAMethod
         
         PDA.Corrections = BurstData.Corrections;
         PDA.Background = BurstData.Background;
-        newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
         save(newfilename, 'PDA', 'timebin')
     case {3,4}
         switch obj
@@ -3290,7 +3290,6 @@ switch BurstData.BAMethod
 
                 PDA.Corrections = BurstData.Corrections;
                 PDA.Background = BurstData.Background;
-                newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'];
                 save(newfilename, 'PDA', 'timebin')
         end
 end
