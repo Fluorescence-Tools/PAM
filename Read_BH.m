@@ -11,7 +11,7 @@ function [MT, MI, PLF, SyncRate] = Read_BH(FileName,NoE,Scanner,Card)
 
 FileID = fopen(FileName, 'r');
 switch Card
-    case 'SPC-140/150'
+    case 'SPC-140/150/830/130'
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% Data is arranged per 4 bytes
         %%%% Data is read in at 32 bits
