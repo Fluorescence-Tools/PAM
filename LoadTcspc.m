@@ -201,8 +201,8 @@ switch (Type)
             fclose(fid);
             if ~Corrupt %%% .set file was complete
                 %%% Determines exact .spc filetype to read
-                if (strcmp(Card,'140') || strcmp(Card,'150'))
-                    Card = 'SPC-140/150';
+                if (strcmp(Card,'140') || strcmp(Card,'150') || strcmp(Card,'830') || strcmp(Card,'130'))
+                    Card = 'SPC-140/150/830/130';
                 elseif strcmp(Card,'630')
                     if MI_Bins == 256
                         Card = 'SPC-630 256chs';
@@ -214,7 +214,7 @@ switch (Type)
                 TACRange = TACRange/TACGain;
             else %%% No .set file was found; use standard settings
                 h = msgbox('Setup (.set) file not found!');
-                Card = 'SPC-140/150';
+                Card = 'SPC-140/150/830/130';
                 MI_Bins = 4096;
                 TACRange = [];
                 pause(1)
@@ -223,7 +223,7 @@ switch (Type)
             
         else %if there is no set file, the B&H software was likely not used
             h_msg = msgbox('Setup (.set) file not found!');
-            Card = 'SPC-140/150';
+            Card = 'SPC-140/150/830/130';
             MI_Bins = 4096;
             TACRange = [];
             pause(1)
