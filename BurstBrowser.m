@@ -3263,6 +3263,7 @@ switch BurstData.BAMethod
                 tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
                 tcPDAstruct.timebin = timebin*1000;
                 tcPDAstruct.corrections = BurstData.Corrections;
+                tcPDAstruct.background = BurstData.Background;
                 newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
                 save(newfilename, 'tcPDAstruct', 'timebin')
             case h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem
