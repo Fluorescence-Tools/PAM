@@ -7380,6 +7380,7 @@ switch obj
         if isempty(PhotonStream)
             return;
         end
+        
         start = PhotonStream.start(BurstData.Selected);
         stop = PhotonStream.stop(BurstData.Selected);
         
