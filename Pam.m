@@ -1973,6 +1973,7 @@ end
         'Callback',{@Database,5},...
         'Position',[0.75 0.60 0.24 0.07],...
         'enable', 'off',...
+        'UserData',0,...
         'Tooltipstring', 'Make sure "Correlate" tab settings are correct!');  
     %%% Button to add files to the database
     h.Database.Burst = uicontrol(...
@@ -1986,6 +1987,7 @@ end
         'Callback',{@Database,6},...
         'Position',[0.75 0.52 0.24 0.07],...
         'enable', 'off',...
+        'UserData',0,...
         'Tooltipstring', 'Make sure "Burst analysis" tab settings are correct');  
     
 %% Mac upscaling of Font Sizes
@@ -6604,24 +6606,37 @@ switch mode
         s.str = h.Database.List.String;
         save(fullfile(Path,File),'s');
     case 5 %% Correlate active ones in database
+        if h.Database.Correlate.UserData == 0
+            h.Database.Correlate.UserData = 1;
+            h.Database.Correlate.String = 'Stop';
+        elseif h.Database.Correlate.UserData == 1
+            h.Database.Correlate.UserData = 0;
+        end
         for i = h.Database.List.Value
+            pause(0.01)
+            if h.Database.Correlate.UserData == 0
+               h.Database.Correlate.String = 'Correlate';
+               return 
+            end
             try
-            % Path is unique per file in the database, so we have to store
-            % it globally in UserValues each time
-            UserValues.File.Path = PamMeta.Database{i,2};
-            LSUserValues(1)
-            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
-                PamMeta.Database{i,1},...   %file
-                PamMeta.Database{i,3});     %type
-            Correlate ([],[],1)
-                        % set filename color to green
-            Hex_color=dec2hex([0 1 0]*255)';
-            h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' tex '</Font></html>'];
+                % Path is unique per file in the database, so we have to store
+                % it globally in UserValues each time
+                UserValues.File.Path = PamMeta.Database{i,2};
+                LSUserValues(1)
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                    PamMeta.Database{i,1},...   %file
+                    PamMeta.Database{i,3});     %type
+                Correlate ([],[],1)
+                % set filename color to green
+
+                h.Database.List.String{i} = ['<HTML><FONT color=00FF00>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
             catch
                 Hex_color=dec2hex([1 0 0]*255)';
-                h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' tex '</Font></html>'];
+                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
             end
         end
+        h.Database.Correlate.UserData = 0;
+        h.Database.Correlate.String = 'Correlate';
     case 6 %% Burst analyse active ones in database
         for i = h.Database.List.Value
             try
