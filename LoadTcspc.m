@@ -1,5 +1,5 @@
 function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Caller,FileName,Type)
-global UserValues TcspcData FileInfo
+global UserValues TcspcData FileInfo PamMeta
 
 if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
     %%% following code is for remembering the last used FileType
@@ -48,11 +48,38 @@ TcspcData.MI=cell(1,1);
 
 %%% Findes handles for progress axes and text
 if strcmp(Caller.Tag, 'Pam')
-h=guidata(Caller);
+    h=guidata(Caller);
+    %%% Add files to database
+    if ~isfield(PamMeta, 'Database')
+        %create database
+        PamMeta.Database = cell(0,3);
+    end
+    for i = 1:numel(FileName)
+        %%% Checks, if file already exists
+        Exist = 0;
+        for j=1:size(PamMeta.Database,1)
+           if strcmp(PamMeta.Database{j,1},FileName{i}) && strcmp(PamMeta.Database{j,2},Path)
+               Exist = 1;
+               break;
+           end
+        end
+        if ~Exist %%% Does not add file again
+            PamMeta.Database{end+1,1} = FileName{i};
+            PamMeta.Database{end,2} = Path;
+            PamMeta.Database{end,3} = Type;
+            h.Database.List.String{end+1} = [FileName{i} ' (path:' Path ')'];
+        end
+    end
 else %%% Creates empty struct, if it was called outside of PAM
     h.Progress_Axes = [];
     h.Progress_Text = [];
 end
+
+
+h.Database.Correlate.Enable = 'on';
+h.Database.Burst.Enable = 'on';
+h.Database.Save.Enable = 'on';
+h.Database.Delete.Enable = 'on';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Checks which file type was selected
@@ -101,7 +128,7 @@ switch (Type)
                 %%% Update Progress
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, PLF,~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150');
+                [MT, MI, PLF,~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
                 Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
                 Rout(Rout>numel(MI)) = [];
