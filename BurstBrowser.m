@@ -46,6 +46,14 @@ if isempty(hfig)
         'Callback',@Save_Analysis_State_Callback,...
         'Tag','Save_Analysis_State');
     
+    %%% Merge *.bur files
+    h.Merge_Files_Menu = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','Merge *.bur-files',...
+        'Callback',@Merge_bur_files,...
+        'Tag','Merge_Files_Menu',...
+        'Separator','on');
+    
     %define tabs
     %main tab
     h.Main_Tab = uitabgroup(...
@@ -3156,6 +3164,125 @@ UpdatePlot([]);
 UpdateLifetimePlots([],[]);
 DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Merge_bur_files(~,~)
+h = guidata(gcbo);
+global UserValues
+
+%%% Select files
+FileName = 1;
+PathName = UserValues.File.BurstBrowserPath;
+count = 0;
+while FileName ~= 0
+    [FileName,PathName] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', PathName, 'MultiSelect', 'on');
+    if ~iscell(FileName)
+        if FileName ~= 0
+            count = count+1;
+            Files{count,1} = fullfile(PathName,FileName);
+            Files{count,2} = FileName;
+        end
+    elseif iscell(FileName)
+        for i = 1:numel(FileName)
+            if FileName{i} ~= 0
+                count = count+1;
+                Files{count,1} = fullfile(PathName,FileName{i});
+                Files{count,2} = FileName{i};
+            end
+        end
+        FileName = FileName{end};
+    end
+end
+
+if size(Files,1) < 2
+    m = msgbox('Select more than one file!');
+    pause(1);
+    delete(m);
+    return;
+end
+%%% Load Files in CellArray
+MergeData = cell(size(Files,1),1);
+for i = 1:size(Files,1)
+    MergeData{i} = load(Files{i,1},'-mat');
+end
+
+%%% Create Arrays of Parameters
+for i=1:numel(MergeData)
+    MergedParameters.NameArray{i} = MergeData{i}.BurstData.NameArray;
+    try
+        MergedParameters.TACRange{i} = MergeData{i}.BurstData.TACRange;
+    catch
+        MergedParameters.TACRange{i} = MergeData{i}.BurstData.TACrange;
+    end
+    MergedParameters.BAMethod{i} = MergeData{i}.BurstData.BAMethod;
+    MergedParameters.Filetype{i} = MergeData{i}.BurstData.Filetype;
+    MergedParameters.SyncPeriod{i} = MergeData{i}.BurstData.SyncPeriod;
+    MergedParameters.FileInfo{i} = MergeData{i}.BurstData.FileInfo;
+    MergedParameters.PIE{i} = MergeData{i}.BurstData.PIE;
+    MergedParameters.IRF{i} = MergeData{i}.BurstData.IRF;
+    MergedParameters.ScatterPattern{i} = MergeData{i}.BurstData.ScatterPattern;
+    MergedParameters.Background{i} = MergeData{i}.BurstData.Background;
+    MergedParameters.FileNameSPC{i} = MergeData{i}.BurstData.FileNameSPC;
+    MergedParameters.PathName{i} = MergeData{i}.BurstData.PathName;
+    MergedParameters.FileName{i} = MergeData{i}.BurstData.FileName;
+    if isfield(MergeData{i}.BurstData,'Cut')
+        MergedParameters.Cut{i} = MergeData{i}.BurstData.Cut;
+    end
+    if isfield(MergeData{i}.BurstData,'SpeciesNames')
+        MergedParameters.SpeciesNames{i} = MergeData{i}.BurstData.SpeciesNames;
+    end
+    if isfield(MergeData{i}.BurstData,'SelectedSpecies')
+        MergedParameters.SelectedSpecies{i} = MergeData{i}.BurstData.SelectedSpecies;
+    end
+    MergedParameters.Corrections{i} = MergeData{i}.BurstData.Corrections;
+end
+%%% Use first file for general variables
+Merged = MergeData{1}.BurstData;
+%%% Concatenate DataArray
+for i =2:numel(MergeData)
+    Merged.DataArray = [Merged.DataArray;MergeData{i}.BurstData.DataArray];
+end
+
+%%% Add a new parameter (file number);
+Merged.NameArray{end+1} = 'File Number';
+filenumber = [];
+for i = 1:numel(MergeData)
+    filenumber = [filenumber; i*ones(size(MergeData{i}.BurstData.DataArray,1),1)];
+end
+Merged.DataArray(:,end+1) = filenumber;
+
+BurstData = Merged;
+BurstData.MergedParameters = MergedParameters;
+
+%%% Also Load *.bps files and concatenate
+MergeData = cell(size(Files,1),1);
+for i = 1:size(Files,1)
+    MergeData{i} = load([Files{i,1}(1:end-3) 'bps'],'-mat');
+end
+
+Macrotime = MergeData{1}.Macrotime;
+Microtime = MergeData{1}.Microtime;
+Channel = MergeData{1}.Channel;
+for i = 2:numel(MergeData)
+    Macrotime = vertcat(Macrotime,MergeData{i}.Macrotime);
+    Microtime = vertcat(Microtime,MergeData{i}.Microtime);
+    Channel = vertcat(Channel,MergeData{i}.Channel);
+end
+
+%%% Save merged data
+[FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fileparts(fileparts(Files{1,1})));
+if FileName == 0
+    m = msgbox('No valid filepath specified... Canceling');
+    pause(1);
+    delete(m);
+end
+BurstData.PathName = PathName;
+BurstData.FileName = fullfile(PathName,FileName);
+
+save(BurstData.FileName,'BurstData');
+save([BurstData.FileName(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
