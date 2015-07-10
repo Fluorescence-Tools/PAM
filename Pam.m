@@ -1511,7 +1511,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','lifetime',...
         'Position',[0.85 0.84 0.10 0.07],...
-        'TooltipString',sprintf('Calculate Burstwise Lifetime when doing Burst Search. All settings for lifetime analysis need to be correct!')); 
+        'TooltipString',sprintf('Calculate Burstwise Lifetime when doing Burst Search. All settings for lifetime analysis need to be set correctly beforehand!')); 
     %%%Edit to change the time constant for the filter
     h.NirFilter_Edit = uicontrol(...
         'Style','edit',...
@@ -1585,7 +1585,21 @@ end
         'Visible','off',...
         'Enable','off');
    
-
+    %%% Textbox showing the currently loaded/analyzed BurstData (*.bur)
+    %%% file
+     h.Burst_LoadedFile_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.Burst_Panel,...
+        'Tag','BurstParameter1_Edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','center',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','',...
+        'Position',[0.75 0.55 0.25 0.13],...
+        'TooltipString',sprintf(''));    
+    
     %%% Button to show a preview of the burst search
     h.BurstSearchPreview_Button = uicontrol(...
         'Parent',h.Burst_Panel,...
@@ -2040,7 +2054,7 @@ h.Pam.Visible='on';
 %%% Functions that executes upon closing of pam window %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_Pam(Obj,~)
-clear global -regexp PamMeta TcspcData FileInfo
+clear global -regexp PamMeta TcspcData FileInfo TauFitBurstData
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
 MIAFit=findobj('Tag','MIAFit');
@@ -2052,6 +2066,9 @@ TauFit=findobj('Tag','TauFit');
 PhasorTIFF = findobj('Tag','PhasorTIFF');
 if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit) && isempty(PhasorTIFF)
     clear global -regexp UserValues
+end
+if isempty(BurstBrowser)
+    clear global -regexp BurstData BurstTCSPCData PhotonStream
 end
 delete(Obj);
 
@@ -5382,11 +5399,13 @@ end
 UserValues.File.BurstBrowserPath=PathName;
 LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
+%%% Update FileName (if it was previously analyzed on a different computer)
+BurstData.FileName = fullfile(PathName,FileName);
 
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
 %%% a burst search has been done
-h.Burst_Button.ForegroundColor = [0 1 0];
+h.Burst_Button.ForegroundColor = [0 0.6 0];
 %%% Enable Lifetime and 2CDE Button
 h.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
@@ -5396,7 +5415,7 @@ if any(BurstData.BAMethod == [1,2])
         h.BurstLifetime_Button.ForegroundColor = [1 0 0];
     else
         %%% lifetime was fit
-        h.BurstLifetime_Button.ForegroundColor = [0 1 0];
+        h.BurstLifetime_Button.ForegroundColor = [0 0.6 0];
     end
 elseif any(BurstData.BAMethod == [3,4])
     if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
@@ -5404,29 +5423,31 @@ elseif any(BurstData.BAMethod == [3,4])
         h.BurstLifetime_Button.ForegroundColor = [1 0 0];
     else
         %%% lifetime was fit
-        h.BurstLifetime_Button.ForegroundColor = [0 1 0];
+        h.BurstLifetime_Button.ForegroundColor = [0 0.6 0];
     end
 end
 
 h.NirFilter_Button.Enable = 'on';
 %%% Check if NirFilter was calculated before
 if any(BurstData.BAMethod == [1,2])
-    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE',BurstData.NameArray))) == 0 )
-        %%% no lifetime fit
+    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
+        %%% no NirFilter
         h.NirFilter_Button.ForegroundColor = [1 0 0];
     else
-        %%% lifetime was fit
-        h.NirFilter_Button.ForegroundColor = [0 1 0];
+        %%% NirFilter was calcuated
+        h.NirFilter_Button.ForegroundColor = [0 0.6 0];
     end
 elseif any(BurstData.BAMethod == [3,4])
-    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR',BurstData.NameArray))) == 0 )
-        %%% no filter
+    if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData.NameArray))) == 0 )
+        %%% no NirFilter
         h.NirFilter_Button.ForegroundColor = [1 0 0];
     else
-        %%% filter was calculated
-        h.NirFilter_Button.ForegroundColor = [0 1 0];
+        %%% NirFilter was calculated
+        h.NirFilter_Button.ForegroundColor = [0 0.6 0];
     end
 end
+[~,h.Burst_LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
+[~,h.Burst_LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

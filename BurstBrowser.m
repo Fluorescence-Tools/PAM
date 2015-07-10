@@ -2533,7 +2533,21 @@ else
 end
 
 clearvars -global BurstData BurstTCSPCData
-
+if ~isempty(findobj('Tag','Pam'))
+    h_pam = guidata(findobj('Tag','Pam'));
+    %%% Reset loaded file textbox
+    h_pam.Burst_LoadedFile_Text.String = '';
+    h_pam.Burst_LoadedFile_Text.TooltipString = '';
+    %%% Set Analysis Buttons in Pam
+    %%% set the text of the BurstSearch Button to green color to indicate that
+    %%% a burst search has been done
+    h_pam.Burst_Button.ForegroundColor = Look.Fore;
+    %%% Disable Lifetime and 2CDE Button
+    h_pam.BurstLifetime_Button.Enable = 'off';
+    h_pam.BurstLifetime_Button.ForegroundColor = Look.Fore;
+    h_pam.NirFilter_Button.Enable = 'off';
+    h_pam.NirFilter_Button.ForegroundColor = Look.Fore;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Initializes/Resets Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2705,7 +2719,7 @@ end
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_BurstBrowser(~,~)
-global BurstData UserValues BurstTCSPCData
+global BurstData UserValues BurstTCSPCData PhotonStream
 if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
@@ -2717,7 +2731,7 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     end
 end
 
-clear global -regexp BurstMeta BurstTCSPCData
+clear global -regexp BurstMeta BurstTCSPCData PhotonStream
 Pam = findobj('Tag','Pam');
 if isempty(Pam)
     clear global -regexp BurstData
@@ -2773,6 +2787,21 @@ end
 BurstData = [];
 BurstTCSPCData = [];
 PhotonStream = [];
+%%% Reset Pam Burst GUI
+if ~isempty(findobj('Tag','Pam'))
+    h_pam = guidata(findobj('Tag','Pam'));
+    %%% Reset loaded file textbox
+    h_pam.Burst_LoadedFile_Text.String = '';
+    %%% Set Analysis Buttons in Pam
+    %%% set the text of the BurstSearch Button to green color to indicate that
+    %%% a burst search has been done
+    h_pam.Burst_Button.ForegroundColor = UserValues.Look.Fore;
+    %%% Disable Lifetime and 2CDE Button
+    h_pam.BurstLifetime_Button.Enable = 'off';
+    h_pam.BurstLifetime_Button.ForegroundColor = UserValues.Look.Fore;
+    h_pam.NirFilter_Button.Enable = 'off';
+    h_pam.NirFilter_Button.ForegroundColor = UserValues.Look.Fore;
+end
 
 LSUserValues(0);
 UserValues.File.BurstBrowserPath=PathName;
@@ -2953,6 +2982,57 @@ if ~isfield(BurstData,'DisplayName')
 end
 h.BurstBrowser.Name = ['BurstBrowser - ' BurstData.DisplayName];
 h.Progress_Text.String = BurstData.DisplayName;
+%%% If Pam is open, indicate that a file is loaded
+if ~isempty(findobj('Tag','Pam'))
+    h_pam = guidata(findobj('Tag','Pam'));
+    %%% Update Textbox
+    [~,h_pam.Burst_LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
+    [~,h.Burst_LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
+    %%% Set Analysis Buttons in Pam
+    %%% set the text of the BurstSearch Button to green color to indicate that
+    %%% a burst search has been done
+    h_pam.Burst_Button.ForegroundColor = [0 0.6 0];
+    %%% Enable Lifetime and 2CDE Button
+    h_pam.BurstLifetime_Button.Enable = 'on';
+    %%% Check if lifetime has been fit already
+    if any(BurstData.BAMethod == [1,2])
+        if (sum(BurstData.DataArray(:,strcmp('Lifetime GG [ns]',BurstData.NameArray))) == 0 )
+            %%% no lifetime fit
+            h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
+        else
+            %%% lifetime was fit
+            h_pam.BurstLifetime_Button.ForegroundColor = [0 1 0];
+        end
+    elseif any(BurstData.BAMethod == [3,4])
+        if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
+            %%% no lifetime fit
+            h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
+        else
+            %%% lifetime was fit
+            h_pam.BurstLifetime_Button.ForegroundColor = [0 1 0];
+        end
+    end
+
+    h_pam.NirFilter_Button.Enable = 'on';
+    %%% Check if NirFilter was calculated before
+    if any(BurstData.BAMethod == [1,2])
+        if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
+            %%% no lifetime fit
+            h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
+        else
+            %%% lifetime was fit
+            h_pam.NirFilter_Button.ForegroundColor = [0 0.6 0];
+        end
+    elseif any(BurstData.BAMethod == [3,4])
+        if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData.NameArray))) == 0 )
+            %%% no filter
+            h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
+        else
+            %%% filter was calculated
+            h_pam.NirFilter_Button.ForegroundColor = [0 0.6 0];
+        end
+    end
+end
 
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
     %find positions of Efficiency and Stoichiometry in NameArray
