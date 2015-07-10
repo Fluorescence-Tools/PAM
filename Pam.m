@@ -1596,8 +1596,8 @@ end
         'HorizontalAlignment','center',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'String','',...
-        'Position',[0.75 0.55 0.25 0.13],...
+        'String','no *.bur file loaded',...
+        'Position',[0.75 0.53 0.25 0.13],...
         'TooltipString',sprintf(''));    
     
     %%% Button to show a preview of the burst search
@@ -5297,7 +5297,7 @@ Progress(1,h.Progress_Axes, h.Progress_Text, 'Done');
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
 %%% a burst search has been done
-h.Burst_Button.ForegroundColor = [0 1 0];
+h.Burst_Button.ForegroundColor = [0 0.8 0];
 %%% Enable Lifetime and 2CDE Button
 h.BurstLifetime_Button.Enable = 'on';
 h.BurstLifetime_Button.ForegroundColor = [1 0 0];
@@ -5386,7 +5386,7 @@ end
 Progress(1,h.Progress_Axes, h.Progress_Text,tex);
 toc
 Update_Display([],[],1);
-h.NirFilter_Button.ForegroundColor = [0 1 0];
+h.NirFilter_Button.ForegroundColor = [0 0.8 0];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads a performed BurstSearch for further/re-analysis  %%%%%%%%%%%%%%%%
@@ -5409,7 +5409,7 @@ BurstData.FileName = fullfile(PathName,FileName);
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
 %%% a burst search has been done
-h.Burst_Button.ForegroundColor = [0 0.6 0];
+h.Burst_Button.ForegroundColor = [0 0.8 0];
 %%% Enable Lifetime and 2CDE Button
 h.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
@@ -5419,7 +5419,7 @@ if any(BurstData.BAMethod == [1,2])
         h.BurstLifetime_Button.ForegroundColor = [1 0 0];
     else
         %%% lifetime was fit
-        h.BurstLifetime_Button.ForegroundColor = [0 0.6 0];
+        h.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
     end
 elseif any(BurstData.BAMethod == [3,4])
     if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
@@ -5427,7 +5427,7 @@ elseif any(BurstData.BAMethod == [3,4])
         h.BurstLifetime_Button.ForegroundColor = [1 0 0];
     else
         %%% lifetime was fit
-        h.BurstLifetime_Button.ForegroundColor = [0 0.6 0];
+        h.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
     end
 end
 
@@ -5439,7 +5439,7 @@ if any(BurstData.BAMethod == [1,2])
         h.NirFilter_Button.ForegroundColor = [1 0 0];
     else
         %%% NirFilter was calcuated
-        h.NirFilter_Button.ForegroundColor = [0 0.6 0];
+        h.NirFilter_Button.ForegroundColor = [0 0.8 0];
     end
 elseif any(BurstData.BAMethod == [3,4])
     if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData.NameArray))) == 0 )
@@ -5447,7 +5447,7 @@ elseif any(BurstData.BAMethod == [3,4])
         h.NirFilter_Button.ForegroundColor = [1 0 0];
     else
         %%% NirFilter was calculated
-        h.NirFilter_Button.ForegroundColor = [0 0.6 0];
+        h.NirFilter_Button.ForegroundColor = [0 0.8 0];
     end
 end
 [~,h.Burst_LoadedFile_Text.String,~] = fileparts(BurstData.FileName);

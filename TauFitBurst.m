@@ -1533,7 +1533,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 %%% Change the Color of the Button in Pam
 hPam = findobj('Tag','Pam');
 handlesPam = guidata(hPam);
-handlesPam.BurstLifetime_Button.ForegroundColor = [0 1 0];
+handlesPam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
