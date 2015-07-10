@@ -3224,8 +3224,11 @@ for i=1:numel(MergeData)
     MergedParameters.ScatterPattern{i} = MergeData{i}.BurstData.ScatterPattern;
     MergedParameters.Background{i} = MergeData{i}.BurstData.Background;
     MergedParameters.FileNameSPC{i} = MergeData{i}.BurstData.FileNameSPC;
-    MergedParameters.PathName{i} = MergeData{i}.BurstData.PathName;
-    MergedParameters.FileName{i} = MergeData{i}.BurstData.FileName;
+    %%% use update path information
+    MergedParameters.PathName{i} = fileparts(Files{1,i});
+    MergedParameters.FileName{i} = Files{1,i};
+    %MergedParameters.PathName{i} = MergeData{i}.BurstData.PathName;
+    %MergedParameters.FileName{i} = MergeData{i}.BurstData.FileName;
     if isfield(MergeData{i}.BurstData,'Cut')
         MergedParameters.Cut{i} = MergeData{i}.BurstData.Cut;
     end
