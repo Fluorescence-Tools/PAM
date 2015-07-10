@@ -52,7 +52,7 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Tag','Main_Tab',...
         'Units','normalized',...
-        'Position',[0 0.01 0.65 0.98],...
+        'Position',[0 0 0.65 1],...
         'SelectionChangedFcn',@MainTabSelectionChange);
     
     h.Main_Tab_General = uitab(h.Main_Tab,...
@@ -70,6 +70,39 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','MainTabGeneralPanel');
     
+    
+    %%% Progress Bar
+    %%% Panel for progressbar
+    h.Progress_Panel = uibuttongroup(...
+        'Parent',h.BurstBrowser,...
+        'Tag','Progress_Panel',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0.65 0 0.35 0.03]);
+    %%% Axes for progressbar
+    h.Progress_Axes = axes(...
+        'Parent',h.Progress_Panel,...
+        'Tag','Progress_Axes',...
+        'Units','normalized',...
+        'Color',Look.Control,...
+        'Position',[0 0 1 1]);
+    h.Progress_Axes.XTick=[]; h.Progress_Axes.YTick=[];
+    %%% Progress and filename text
+    h.Progress_Text=text(...
+        'Parent',h.Progress_Axes,...
+        'Tag','Progress_Text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'FontWeight','bold',...
+        'String','Nothing loaded',...
+        'Interpreter','none',...
+        'HorizontalAlignment','center',...
+        'BackgroundColor','none',...
+        'Color',Look.Fore,...
+        'Position',[0.5 0.5]);
     
     %%% Define hide uitabgroup
     h.Hide_Tab =  uitabgroup(...
@@ -243,7 +276,7 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Tag','Secondary_Tab',...
         'Units','normalized',...
-        'Position',[0.65 0.01 0.34 0.98]);
+        'Position',[0.65 0.03 0.35 0.97]);
     
     h.Secondary_Tab_Selection = uitab(h.Secondary_Tab,...
         'title','Selection',...
@@ -2888,6 +2921,8 @@ end
 [~,name,~] = fileparts(BurstData.FileName);
 name = ['BurstBrowser - ' name];
 h.BurstBrowser.Name = name;
+h.Progress_Text.String = BurstData.FileName;
+
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
     %find positions of Efficiency and Stoichiometry in NameArray
     posE = find(strcmp(BurstData.NameArray,'Efficiency'));
@@ -3152,10 +3187,10 @@ SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
 %Valid = UpdateCuts(SelectedSpecies);
-h_waitbar = waitbar(0,'Exporting...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    waitbar(0,h_waitbar,'Loading Photon Data');
+    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -3174,7 +3209,7 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
 end
-waitbar(0,h_waitbar,'Exporting...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% find selected bursts
 MT = BurstTCSPCData.Macrotime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
@@ -3183,10 +3218,18 @@ timebin = 1E-3;
 duration = timebin/BurstData.SyncPeriod;
 %%% Get the maximum number of bins possible in data set
 max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
+
+Progress(0.1,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 %convert absolute macrotimes to relative macrotimes
 bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
+
+Progress(0.2,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 %bin the bursts according to dur, up to max_duration
 bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
+
+Progress(0.3,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %remove last bin
 last_bin = cellfun(@(x) find(x,1,'last'),bins,'UniformOutput',false);
 for i = 1:numel(bins)
@@ -3194,10 +3237,18 @@ for i = 1:numel(bins)
     %remove zero bins
     bins{i}(bins{i} == 0) = [];
 end
+
+Progress(0.4,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %total number of bins is:
 n_bins = sum(cellfun(@numel,bins));
+
+Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 %construct cumsum of bins
 cumsum_bins = cellfun(@(x) [0; cumsum(x)],bins,'UniformOutput',false);
+
+Progress(0.6,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 %get channel information --> This is the only relavant information for PDA!
 PDAdata = cell(n_bins,1);
 index = 1;
@@ -3207,6 +3258,8 @@ for i = 1:numel(CH)
         index = index + 1;
     end
 end
+
+Progress(0.7,h.Progress_Axes,h.Progress_Text,'Exporting...');
 
 %now save channel wise photon numbers
 total = n_bins;
@@ -3294,8 +3347,9 @@ switch BurstData.BAMethod
                 save(newfilename, 'PDA', 'timebin')
         end
 end
-delete(h_waitbar);
 
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3308,10 +3362,10 @@ SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
 %Valid = UpdateCuts(SelectedSpecies);
-h_waitbar = waitbar(0,'Exporting...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    waitbar(0,h_waitbar,'Loading Photon Data');
+    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -3330,7 +3384,7 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
 end
-waitbar(0,h_waitbar,'Exporting...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% find selected bursts
 MI = BurstTCSPCData.Microtime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
@@ -3342,10 +3396,14 @@ hMI = cell(6,1);
 for i = 1:6 %%% 6 Channels (GG1,GG2,GR1,GR2,RR1,RR2)
    hMI{i} = histc(MI(CH == i),0:(BurstData.FileInfo.MI_Bins-1)); 
 end
+
+Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 species = SelectedSpeciesName;
 newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '.mi'];
 save(newfilename, 'hMI', 'species');
-delete(h_waitbar);
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4417,11 +4475,11 @@ h.TauFit.SpeciesSelect.Value = 1;
 function Update_MicrotimeHistograms(obj,~)
 global BurstData BurstMeta BurstTCSPCData UserValues PhotonStream
 h = guidata(obj);
-h_waitbar = waitbar(0,'Preparing Data...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    waitbar(0,h_waitbar,'Loading Photon Data...');
+    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -4438,9 +4496,9 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
-    waitbar(0,h_waitbar,'Preparing Data...');
+    clear Macrotime Microtime Channel    
 end
+Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 switch obj
     case h.Plot_Microtimes_button %%% fFCS
         %%% Read out the bursts contained in the different species selections
@@ -4452,7 +4510,11 @@ switch obj
         
         if UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
             if isempty(PhotonStream)
-                delete(h_waitbar);
+                Progress(1,h.Progress_Axes,h.Progress_Text);
+                h.Progress_Text.String = BurstData.FileName;
+                m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab!');
+                pause(2)
+                delete(m)
                 return;
             end
             start = PhotonStream.start(valid_total);
@@ -4464,24 +4526,30 @@ switch obj
                 bw = ceil(10E-3./BurstData.SyncPeriod);
                 bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
                 if ~isfield(PhotonStream,'MT_bin')
-                    waitbar(0,h_waitbar,'Preparing Data...');
                     [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
+                    Progress(0.2,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                     [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                    Progress(0.4,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                     used_tw = zeros(numel(bins_time),1);
                     used_tw(PhotonStream.unique) = PhotonStream.first_idx;
                     while sum(used_tw == 0) > 0
                         used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
                     end
+                    Progress(0.6,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                     PhotonStream.first_idx = used_tw;
                 end
                 [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
                 [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
+                
+                Progress(0.8,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
+                
                 [~, start_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.start),bins_time);
                 [~, stop_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.stop),bins_time);
                 
+                Progress(1,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                 use = ones(numel(start),1);
                 %%% loop over selected bursts
-                waitbar(0,h_waitbar,'Including Time Window...');
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 tw = UserValues.BurstBrowser.Settings.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
                 
                 start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
@@ -4497,11 +4565,11 @@ switch obj
                     if sum(inval) > 0
                         use(i) = 0;
                     end
-                    waitbar(i/numel(start));
+                    Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 end
                 
                 %%% Construct reduced Macrotime and Channel vector
-                waitbar(0,h_waitbar,'Preparing Photon Stream...');
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 MT_total = cell(sum(use),1);
                 CH_total = cell(sum(use),1);
                 MI_total = cell(sum(use),1);
@@ -4519,12 +4587,12 @@ switch obj
                         %CH{k} = PhotonStream.Channel(val);
                         k = k+1;
                     end
-                    waitbar(i/numel(start_tw));
+                    Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 end
             else
                 use = ones(numel(start),1);
                 %%% loop over selected bursts
-                waitbar(0,h_waitbar,'Including Time Window...');
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 tw = 100; %%% photon window of 100 photons
                 
                 start_tw = start - tw;
@@ -4540,11 +4608,11 @@ switch obj
                     if sum(inval) > 0
                         use(i) = 0;
                     end
-                    waitbar(i/numel(start));
+                    Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 end
                 
                 %%% Construct reduced Macrotime and Channel vector
-                waitbar(0,h_waitbar,'Preparing Photon Stream...');
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 MT_total = cell(sum(use),1);
                 CH_total = cell(sum(use),1);
                 MI_total = cell(sum(use),1);
@@ -4556,7 +4624,7 @@ switch obj
                         MI_total{k} = PhotonStream.Microtime(start_tw(i):stop_tw(i));
                         k = k+1;
                     end
-                    waitbar(i/numel(start_tw));
+                    Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 end
             end
             
@@ -4576,7 +4644,8 @@ switch obj
             BurstMeta.fFCS.Photons.MI_total = MI_total;
             BurstMeta.fFCS.Photons.CH_total = CH_total;
         end
-        delete(h_waitbar);
+        
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
         
         MI_total = vertcat(MI_total{:});
         CH_total = vertcat(CH_total{:});
@@ -4777,10 +4846,13 @@ switch obj
             BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
             BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
         end
+        
     case h.TauFit.Plot_Microtimes_button %%% TauFit
         %%% Read out the bursts contained in the different species selections
         species = h.TauFit.SpeciesSelect.Value;
         valid = UpdateCuts(species);
+        
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
         
         %%% find selected bursts
         MI_total = BurstTCSPCData.Microtime(valid);MI_total = vertcat(MI_total{:});
@@ -4898,7 +4970,8 @@ switch obj
         h.TauFit.Result_Plot.Parent = h.TauFit.HidePanel;
         BurstMeta.Plots.TauFit.Residuals.YData = zeros(numel(BurstMeta.Plots.TauFit.Residuals.XData),1);
 end
-
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4988,7 +5061,7 @@ function Do_fFCS(~,~)
 global BurstMeta BurstData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% Set Up Progress Bar
-h_waitbar = waitbar(0,'Correlating...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
 Name = BurstMeta.fFCS.Names;
 CorrMat = true(2);
@@ -5067,7 +5140,6 @@ filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 %         end
 %     end
 % else
-waitbar(0,h_waitbar,'Correlating...');
 count = 0;
 for i=1:NumChans
     for j=1:NumChans
@@ -5122,12 +5194,13 @@ for i=1:NumChans
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-            count = count +1;waitbar(count/4);
+            count = count +1;
+            Progress(count/4,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
     end
 end
-%end
-delete(h_waitbar);
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates TauFit Plots  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6290,10 +6363,10 @@ SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
 %Valid = UpdateCuts(SelectedSpecies);
-h_waitbar = waitbar(0,'Calculating Histograms...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 if isempty(BurstTCSPCData)
-    waitbar(0,h_waitbar,'Loading Photon Data');
+    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -6312,7 +6385,7 @@ if isempty(BurstTCSPCData)
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
 end
-waitbar(0,h_waitbar,'Calculating Histograms...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% find selected bursts
 MT = BurstTCSPCData.Macrotime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
@@ -6370,6 +6443,7 @@ for t = 1:numel(timebin)
     Prox = NF./(NG+NF);
     
     Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
+    Progress(t/numel(timebin),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 end
 
 
@@ -6402,15 +6476,16 @@ for i = 1:numel(timebin)
     leg{i} = [num2str(timebin{i}*1000) ' ms'];
 end
 legend(leg);
-delete(h_waitbar);
 
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
 global BurstData BurstTCSPCData
-h_waitbar = waitbar(0,'Saving...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Saving...');
 if strcmp(BurstData.FileName(end-2:end),'bur') %bur file, normal save
     save(BurstData.FileName,'BurstData');
 elseif strcmp(BurstData.FileName(end-2:end),'kba') % kba file, convert to bur
@@ -6418,7 +6493,9 @@ elseif strcmp(BurstData.FileName(end-2:end),'kba') % kba file, convert to bur
     %%% also save BurstTCSPCData
     save([BurstData.FileName(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
 end
-delete(h_waitbar);
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7190,7 +7267,7 @@ function Correlate_Bursts(obj,~)
 global BurstData BurstTCSPCData PhotonStream UserValues
 h = guidata(obj);
 %%% Set Up Progress Bar
-h_waitbar = waitbar(0,'Correlating...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 
 %%% Read out the species name
 if (BurstData.SelectedSpecies == 1)
@@ -7209,7 +7286,7 @@ switch obj
     case h.Correlate_Button
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
         if isempty(BurstTCSPCData)
-            waitbar(0,h_waitbar,'Loading Photon Data');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
             if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
                 %%% load if it exists
                 load([BurstData.FileName(1:end-3) 'bps'],'-mat');
@@ -7227,7 +7304,7 @@ switch obj
             BurstTCSPCData.Microtime = Microtime;
             BurstTCSPCData.Channel = Channel;
             clear Macrotime Microtime Channel
-            waitbar(0,h_waitbar,'Correlating');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
         %%% find selected bursts
         MT = BurstTCSPCData.Macrotime(BurstData.Selected);
@@ -7312,7 +7389,7 @@ switch obj
             bw = ceil(10E-3./BurstData.SyncPeriod);
             bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
             if ~isfield(PhotonStream,'MT_bin')
-                waitbar(0,h_waitbar,'Preparing Data...');
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                 [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
                 [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
                 used_tw = zeros(numel(bins_time),1);
@@ -7329,7 +7406,8 @@ switch obj
             
             use = ones(numel(start),1);
             %%% loop over selected bursts
-            waitbar(0,h_waitbar,'Including Time Window...');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Including Time Window...');
+            
             tw = UserValues.BurstBrowser.Settings.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
             
             start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
@@ -7345,11 +7423,11 @@ switch obj
                 if sum(inval) > 0
                     use(i) = 0;
                 end
-                waitbar(i/numel(start));
+                Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
             end
             
             %%% Construct reduced Macrotime and Channel vector
-            waitbar(0,h_waitbar,'Preparing Photon Stream...');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
             MT = cell(sum(use),1);
             CH = cell(sum(use),1);
             k=1;
@@ -7365,12 +7443,12 @@ switch obj
                     %CH{k} = PhotonStream.Channel(val);
                     k = k+1;
                 end
-                waitbar(i/numel(start_tw));
+                Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
             end
         else
             use = ones(numel(start),1);
             %%% loop over selected bursts
-            waitbar(0,h_waitbar,'Including Time Window...');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Including Time Window...');
             tw = 50; %%% photon window of 100 photons
             
             start_tw = start - tw;
@@ -7386,11 +7464,11 @@ switch obj
                 if sum(inval) > 0
                     use(i) = 0;
                 end
-                waitbar(i/numel(start));
+                Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
             end
             
             %%% Construct reduced Macrotime and Channel vector
-            waitbar(0,h_waitbar,'Preparing Photon Stream...');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
             MT = cell(sum(use),1);
             CH = cell(sum(use),1);
             k=1;
@@ -7400,14 +7478,14 @@ switch obj
                     CH{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
                     k = k+1;
                 end
-                waitbar(i/numel(start_tw));
+                Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
             end
         end
 end
 
 %%% Apply different correlation algorithm
 %%% (Burstwise correlation with correct summation and normalization)
-waitbar(0,h_waitbar,'Correlating...');
+Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 count = 0;
 for i=1:NumChans
     for j=1:NumChans
@@ -7457,7 +7535,8 @@ for i=1:NumChans
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-            count = count+1;waitbar(count/NCor);
+            count = count+1;
+            Progress(count/NCor,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
     end
 end
@@ -7465,7 +7544,10 @@ end
 %%% Update FCSFit Path
 UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
 LSUserValues(1);
-delete(h_waitbar);
+
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7473,12 +7555,11 @@ function Load_Photons(obj,~)
 global PhotonStream BurstData UserValues
 h = guidata(obj);
 %%% Set Up Progress Bar
-h_waitbar = waitbar(0,'...');
 switch obj
     case h.LoadAllPhotons_Button
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
         if isempty(PhotonStream)
-            waitbar(0,h_waitbar,'Loading Photon Data');
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
             if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
                 %%% load if it exists
                 load([BurstData.FileName(1:end-3) 'aps'],'-mat');
@@ -7496,7 +7577,8 @@ switch obj
         h.CorrelateWindow_Button.Enable = 'on';
         h.CorrelateWindow_Edit.Enable = 'on';
 end
-delete(h_waitbar);
+Progress(1,h.Progress_Axes,h.Progress_Text);
+h.Progress_Text.String = BurstData.FileName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Change GUI to 2cMFD or 3cMFD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
