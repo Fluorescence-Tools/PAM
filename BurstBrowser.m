@@ -2991,7 +2991,7 @@ if ~isempty(findobj('Tag','Pam'))
     %%% Set Analysis Buttons in Pam
     %%% set the text of the BurstSearch Button to green color to indicate that
     %%% a burst search has been done
-    h_pam.Burst_Button.ForegroundColor = [0 0.6 0];
+    h_pam.Burst_Button.ForegroundColor = [0 0.8 0];
     %%% Enable Lifetime and 2CDE Button
     h_pam.BurstLifetime_Button.Enable = 'on';
     %%% Check if lifetime has been fit already
@@ -3001,7 +3001,7 @@ if ~isempty(findobj('Tag','Pam'))
             h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
         else
             %%% lifetime was fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [0 1 0];
+            h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
         end
     elseif any(BurstData.BAMethod == [3,4])
         if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
@@ -3009,7 +3009,7 @@ if ~isempty(findobj('Tag','Pam'))
             h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
         else
             %%% lifetime was fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [0 1 0];
+            h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
         end
     end
 
@@ -3021,7 +3021,7 @@ if ~isempty(findobj('Tag','Pam'))
             h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
         else
             %%% lifetime was fit
-            h_pam.NirFilter_Button.ForegroundColor = [0 0.6 0];
+            h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
         end
     elseif any(BurstData.BAMethod == [3,4])
         if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData.NameArray))) == 0 )
@@ -3029,7 +3029,7 @@ if ~isempty(findobj('Tag','Pam'))
             h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
         else
             %%% filter was calculated
-            h_pam.NirFilter_Button.ForegroundColor = [0 0.6 0];
+            h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
         end
     end
 end
