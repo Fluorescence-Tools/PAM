@@ -5917,7 +5917,7 @@ if any(isempty(BurstData.IRF)) || any(isempty(BurstData.ScatterPattern))
     return;
 end
 %% Prepare the data for lifetime fitting
-h.Progress_Text.String = 'Preparing Data for Lifetime Fit...';
+h.Progress_Text.String = 'Preparing Data for Lifetime Fit...';drawnow;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 if exist(fullfile(Path,[File '.bps']),'file') == 2
