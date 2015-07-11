@@ -1192,7 +1192,12 @@ try
     PDAMeta = rmfield(PDAMeta, 'directexc');
     PDAMeta = rmfield(PDAMeta, 'gamma');
 end
+calc = 1;
 for i = 1:numel(PDAData.FileName)
+    % if all files have the same parameters as the ALL row some things will only be calculated once
+    if ~isequal(cell2mat(h.ParametersTab.Table.Data(i,:)),cell2mat(h.ParametersTab.Table.Data(end,:)))
+        calc = 0;
+    end
     PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
     PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
     PDAMeta.crosstalk(i) = cell2mat(h.ParametersTab.Table.Data(i,3));
@@ -1223,66 +1228,77 @@ PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 %% Prepare Fit Inputs
 if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     PDAMeta.P = cell(numel(PDAData.FileName),NobinsE+1);
+    counter = 0;
+    maxN = 0;
     for i  = find(PDAMeta.Active)'
+        %%% find valid bins (chosen by thresholds min/max)
+        valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
+            ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
+        %%% find the maxN of all data
+        maxN = max(maxN, max((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i}))));
+    end
+    for i  = find(PDAMeta.Active)'
+        counter = counter + 1;
+        if calc
+            if counter > 1
+                %calculate some things only once
+                calc = 0;
+            end
+        else %not all files have the same parameters
+            calc = 1;
+        end
         if ~PDAMeta.FitInProgress
             break;
         end
-        %%% find valid bins (chosen by thresholds min/max)
-        valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
-            ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
-        
-        maxN = max((PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid)));
-        
-        %%% evaluate the background probabilities
-        BGgg = poisspdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
-        BGgr = poisspdf(0:1:maxN,PDAMeta.BGacc(i)*PDAData.timebin(i)*1E3);
-        
-        method = 'cdf';
-        switch method
-            case 'pdf'
-                %determine boundaries for background inclusion
-                BGgg(BGgg<1E-2) = [];
-                BGgr(BGgr<1E-2) = [];
-            case 'cdf'
-                %%% evaluate the background probabilities
-                CDF_BGgg = poisscdf(0:1:maxN,PDAMeta.BGdonor(i))*PDAData.timebin(i)*1E3;
-                CDF_BGgr = poisscdf(0:1:maxN,PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3;
-                %determine boundaries for background inclusion
-                threshold = 0.95;
-                BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
-                BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+
+        if calc
+            %%% evaluate the background probabilities
+            BGgg = poisspdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
+            BGgr = poisspdf(0:1:maxN,PDAMeta.BGacc(i)*PDAData.timebin(i)*1E3);
+            
+            method = 'cdf';
+            switch method
+                case 'pdf'
+                    %determine boundaries for background inclusion
+                    BGgg(BGgg<1E-2) = [];
+                    BGgr(BGgr<1E-2) = [];
+                case 'cdf'
+                    %%% evaluate the background probabilities
+                    CDF_BGgg = poisscdf(0:1:maxN,PDAMeta.BGdonor(i))*PDAData.timebin(i)*1E3;
+                    CDF_BGgr = poisscdf(0:1:maxN,PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3;
+                    %determine boundaries for background inclusion
+                    threshold = 0.95;
+                    BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
+                    BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+            end
+            PBG = BGgg./sum(BGgg);
+            PBR = BGgr./sum(BGgr);
+            NBG = numel(BGgg)-1;
+            NBR = numel(BGgr)-1;
         end
-        PBG = BGgg./sum(BGgg);
-        PBR = BGgr./sum(BGgr);
-        NBG = numel(BGgg)-1;
-        NBR = numel(BGgr)-1;
-        
         % assign current file to global cell
         PDAMeta.PBG{i} = PBG;
         PDAMeta.PBR{i} = PBR;
         PDAMeta.NBG{i} = NBG;
         PDAMeta.NBR{i} = NBR;
-            
+        
         if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
-            %%% prepare epsilon grid
-            Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
-            Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
-            E_grid = linspace(0,1,NobinsE+1);
-            R_grid = linspace(0,5*PDAMeta.R0(i),100000)';
-            epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
-            epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
-            PN = histcounts((PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid)),1:(maxN+1));
-            
-            [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
-            Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
-            PNF = binopdf(NF, N, eps);
-            
+            if calc
+                %%% prepare epsilon grid
+                Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
+                Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
+                
+                E_grid = linspace(0,1,NobinsE+1);
+                R_grid = linspace(0,5*PDAMeta.R0(i),100000)';
+                epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
+                epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
+                [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
+                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
+                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
+                PNF = binopdf(NF, N, eps);
+            end
+            PN = histcounts((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i})),1:(maxN+1));
             % assign current file to global cell
-            PDAMeta.PBG{i} = PBG;
-            PDAMeta.PBR{i} = PBR;
-            PDAMeta.NBG{i} = NBG;
-            PDAMeta.NBR{i} = NBR;
             PDAMeta.E_grid{i} = E_grid;
             PDAMeta.R_grid{i} = R_grid;
             PDAMeta.epsEgrid{i} = epsEgrid;
