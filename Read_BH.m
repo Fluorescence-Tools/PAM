@@ -18,7 +18,7 @@ switch Card
         %%%% The first photon frame (4 bytes) in the .spc file is added by the software and contains information
         %%%% about the Macro Time clock (resolution 0.1 ns) and the number of routing channels used during the measurement:
         %%%% byte 0,1,2     = macro time clock in 0.1 ns units ( for 50ns value 500 is set )
-        %%%%        SPC140/150: MT clock can be 50 ns or the Sync Rate (Only if external clocking is selected in measurement preferences rather than 50ns internal clock!)
+        %%%%        SPC130/830/140/150: MT clock can be 50 ns or the Sync Rate (Only if external clocking is selected in measurement preferences rather than 50ns internal clock!)
         %%%%        SPC630: MT clock is 50 ns
         %%%% byte 3 : bit 7 = 1 ( Invalid photon ),  bits 3-6 = number of routing bits,
         %%%%          bit 2 = 1 file with raw data ( for diagnostic mode only,
