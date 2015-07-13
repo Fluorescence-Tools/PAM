@@ -651,7 +651,43 @@ if isempty(h.GlobalPDAFit)
         'String','Live plot update',...
         'Value',0,...
         'Position',[0.4 0.025 0.1 0.2]);
-    
+    h.SettingsTab.FixSigmaAtFractionOfR = uicontrol(...
+        'Parent',h.SettingsTab.Panel,...
+        'Tag','FixSigmaAtFractionOfR',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Style','checkbox',...
+        'String','Fix Sigma at Fraction of R:',...
+        'Value',0,...
+        'Callback',@Update_GUI,...
+        'Position',[0.65 0.75 0.2 0.2]);
+    h.SettingsTab.SigmaAtFractionOfR_edit = uicontrol(...
+        'Style','edit',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'String','0.08',...
+        'FontSize',12,...
+        'Callback',[],...
+        'Position',[0.76 0.75 0.05 0.2],...
+        'Enable','off',...
+        'Tag','SigmaAtFractionOfR_edit');
+    h.SettingsTab.FixSigmaAtFractionOfR_Fix = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Value',0,...
+        'FontSize',12,...
+        'String','Fix?',...
+        'Callback',[],...
+        'Position',[0.82 0.75 0.05 0.2],...
+        'Enable','off',...
+        'Tag','FixSigmaAtFractionOfR_Fix');
     %% Other stuff
     %%% Re-enable menu
     h.Menu.File.Enable = 'on';
@@ -1377,6 +1413,7 @@ UB = h.FitTab.Table.Data(end  ,2:3:end-1);
 PDAMeta.UB = cellfun(@str2double,UB);
 FitTable = cellfun(@str2double,h.FitTab.Table.Data);
 PDAMeta.FitParams = FitTable(1:end-3,2:3:end-1);
+        
 clear LB UB FitTable
 
 if any(isnan(PDAMeta.FitParams(:)))
@@ -1388,8 +1425,8 @@ end
 % generate a cell array, with each cell a file, and the contents of the
 % cell is the gaussian components that are used per file during fitting.
 Comp = cell(numel(PDAData.FileName));
-comp = [];
 for i = find(PDAMeta.Active)'
+    comp = [];
     % the used gaussian fit components
     for c = 1:5
         if PDAMeta.Fixed(i,3*c-2)==false || PDAMeta.FitParams(i,3*c-2)~=0
@@ -1421,6 +1458,13 @@ if sum(PDAMeta.Global) == 0
         LB(fixed) = fitpar(fixed);
         UB(fixed) = fitpar(fixed);
         
+        %%% If sigma is fixed at fraction of R, add the parameter here
+        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+            fitpar(end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
+            fixed(end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+            LB(end+1) = 0;
+            UB(end+1) = 1;
+        end 
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
             A = [];
@@ -1512,8 +1556,21 @@ if sum(PDAMeta.Global) == 0
         
         % display final mean chi^2
         set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+        
+        %%% If sigma was fixed at fraction of R, update edit box here and
+        %%% remove from fitpar array
+        %%% if sigma is fixed at fraction of, read value here before reshape
+        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+             h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fitpar(end));
+             fitpar(end) = [];
+        end
         % Convert amplitudes to fractions
-        fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(1:3:end));
+        fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+        %%% if sigma is fixed at fraction of, change its value here
+        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+            fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
+            fitpar(3:3:end) = fraction.*fitpar(2:3:end);
+        end
         % put optimized values back in table
         h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([fitpar PDAMeta.chi2(i)]),'Uniformoutput',false);
     end
@@ -1524,6 +1581,16 @@ else
     % PDAMeta.Fixed     = files x 15 logical
     % PDAMeta.FitParams = files x 15 double
     % PDAMeta.UB/LB     = 1     x 15 double
+    
+    %%% If sigma is fixed at fraction of R, add the parameter here
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        PDAMeta.FitParams(:,end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
+        %%% Set either not fixed and global, or fixed and not global
+        PDAMeta.Global(:,end+1) = 1-h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+        PDAMeta.Fixed(:,end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
+        PDAMeta.LB(:,end+1) = 0;
+        PDAMeta.UB(:,end+1) = 1;
+    end 
     
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
@@ -1537,8 +1604,9 @@ else
         LB=[LB PDAMeta.LB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
         UB=[UB PDAMeta.UB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
     end
+    
+    
 
-        
     %% Check if View_Curve was pressed
     if obj == h.Menu.ViewFit
          %%% Only Update Plot and break
@@ -1597,15 +1665,34 @@ else
                 PDAMeta.chi2 = 0;
         end
         
+
         %%% Sort optimized fit parameters back into table
         PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
         fitpar(1:sum(PDAMeta.Global))=[];
         for i=find(PDAMeta.Active)'
             PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
             fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+        end
+        
+        %%% If sigma was fixed at fraction of R, update edit box here and
+        %%% remove from fitpar array
+        %%% if sigma is fixed at fraction of, read value here before reshape
+        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+             fraction = PDAMeta.FitParams(1,end);
+             h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fraction);
+             PDAMeta.FitParams(:,end) = [];
+             PDAMeta.Global(:,end) = [];
+             PDAMeta.Fixed(:,end) = [];
+        end
+        
+        for i = find(PDAMeta.Active)'
+            %%% if sigma is fixed at fraction of, change its value here
+            if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+                PDAMeta.FitParams(i,3:3:end) = fraction.*PDAMeta.FitParams(i,2:3:end);
+            end
             % Convert amplitudes to fractions
             PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2) = PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2)./sum(PDAMeta.FitParams(i,1:3:end));
-            h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'Uniformoutput',false);
+            h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str,num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'UniformOutput',false);
         end
     end
 end
@@ -1634,7 +1721,19 @@ if ~PDAMeta.FitInProgress
 end
 
 h = guidata(findobj('Tag','GlobalPDAFit'));
+
+%%% if sigma is fixed at fraction of, read value here before reshape
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fraction = fitpar(end);fitpar(end) = [];
+end
+
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
+
+%%% if sigma is fixed at fraction of, change its value here
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fitpar(:,3) = fraction.*fitpar(:,2);
+end
+
 file = PDAMeta.file;
 % Parameters
 cr = PDAMeta.crosstalk(file);
@@ -1644,9 +1743,9 @@ gamma = PDAMeta.gamma(file);
 
 %%% fitpar vector is linearized by fminsearch, restructure
 %fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
-Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
-FitTable = cellfun(@str2double,h.FitTab.Table.Data);
-FitTable = FitTable(1:end-3,2:3:end-1);
+% Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
+% FitTable = cellfun(@str2double,h.FitTab.Table.Data);
+% FitTable = FitTable(1:end-3,2:3:end-1);
 % N_gauss = [];
 % for c = 1:5
 %     if Fixed(file,3*c-2)==0 || FitTable(file,3*c-2)~=0
@@ -1684,6 +1783,7 @@ end
 fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
 PA = fitpar(PDAMeta.Comp{file},1);
 
+
 L = horzcat(L{:});
 L = L + repmat(log(PA'),numel(PDAData.Data{file}.NG),1);
 Lmax = max(L,[],2);
@@ -1696,21 +1796,6 @@ logL = sum(L);
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
 
-
-%set(PDAMeta.Chi2_All, 'Visible','on','String', ['-logL = ' sprintf('%1.2f',logL)]);
-%set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['-logL = ' sprintf('%1.2f',logL)]);
-
-% if sum(PDAMeta.Global) == 0
-%     %%% if second iteration or more, update Progress Bar
-%     if isfield(PDAMeta,'Last_logL')
-%         progress = exp(logL-PDAMeta.Last_logL);
-%         tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
-%         Progress(progress, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
-%         Progress(progress, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
-%     end
-%     %%% store logL in PDAMeta
-%     PDAMeta.Last_logL = logL;
-% end
 
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar)
@@ -1725,8 +1810,15 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
+%%% if sigma is fixed at fraction of, change its value here, and remove the
+%%% amplitude fit parameter so it does not mess up further uses of fitpar
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fraction = fitpar(end); fitpar(end) = [];
+    fitpar(3:3:end) = fraction.*fitpar(2:3:end);
+end
+
 %%% normalize Amplitudes
-fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(1:3:end));
+fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
 
 %%% create individual histograms
 hFit_Ind = cell(5,1);
@@ -1773,27 +1865,37 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-P=zeros(numel(PDAMeta.Global),1);
+
+FitParams = PDAMeta.FitParams;
+Global = PDAMeta.Global;
+Fixed = PDAMeta.Fixed;
 
 % define degrees of freedom here since we will loose fitpar
 DOF = numel(fitpar);
 
-%%% Assigns global parameters
-P(PDAMeta.Global)=fitpar(1:sum(PDAMeta.Global));
-fitpar(1:sum(PDAMeta.Global))=[];
+P=zeros(numel(Global),1);
 
+%%% Assigns global parameters
+P(Global)=fitpar(1:sum(Global));
+fitpar(1:sum(Global))=[];
+    
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     %%% Sets non-fixed parameters
-    P(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)=fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-    fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
+    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
-    P(PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = PDAMeta.FitParams(i, (PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
     
     %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
+    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
     
+    %%% if sigma is fixed at fraction of, change its value here
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        P(3:3:end) = P(end).*P(2:3:end);
+    end
+
     %%% create individual histograms
     hFit_Ind = cell(5,1);
     for c = PDAMeta.Comp{i}
@@ -1877,29 +1979,32 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-P=zeros(numel(PDAMeta.Global),1);
 
+FitParams = PDAMeta.FitParams;
+Global = PDAMeta.Global;
+Fixed = PDAMeta.Fixed;
 % define degrees of freedom here since we will loose fitpar
 DOF = numel(fitpar);
 
+P=zeros(numel(Global),1);
+
 %%% Assigns global parameters
-P(PDAMeta.Global)=fitpar(1:sum(PDAMeta.Global));
-fitpar(1:sum(PDAMeta.Global))=[];
+P(Global)=fitpar(1:sum(Global));
+fitpar(1:sum(Global))=[];
 
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     %%% Sets non-fixed parameters
-    P(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)=fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-    fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
+    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
-    P(PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = PDAMeta.FitParams(i, (PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-    %%% Calculates function for current file
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     
     %%% normalize Amplitudes
     P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
     
     %%% calculate individual likelihoods
-    PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P);
+    PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P);   
 end
 mean_logL = mean(PDAMeta.chi2);
 
@@ -1927,27 +2032,30 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-P=zeros(numel(PDAMeta.Global),1);
-
+FitParams = PDAMeta.FitParams;
+Global = PDAMeta.Global;
+Fixed = PDAMeta.Fixed;
 % define degrees of freedom here since we will loose fitpar
 DOF = numel(fitpar);
 
+P=zeros(numel(Global),1);
+
 %%% Assigns global parameters
-P(PDAMeta.Global)=fitpar(1:sum(PDAMeta.Global));
-fitpar(1:sum(PDAMeta.Global))=[];
+P(Global)=fitpar(1:sum(Global));
+fitpar(1:sum(Global))=[];
 
 for i=find(PDAMeta.Active)'
     PDAMeta.file = i;
     %%% Sets non-fixed parameters
-    P(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)=fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
-    fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
+    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
-    P(PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = PDAMeta.FitParams(i, (PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
     
     %%% normalize Amplitudes
     P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
-    
+
     %%% create individual histograms
     [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
 end
@@ -1972,11 +2080,16 @@ if ~PDAMeta.FitInProgress
 end
 
 file = PDAMeta.file;
+
+%%% if sigma is fixed at fraction of, read value here before reshape
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fraction = fitpar(end);fitpar(end) = [];
+end
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
-Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
-FitTable = cellfun(@str2double,h.FitTab.Table.Data);
-FitTable = FitTable(1:end-3,2:3:end-1);
+% Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
+% FitTable = cellfun(@str2double,h.FitTab.Table.Data);
+% FitTable = FitTable(1:end-3,2:3:end-1);
 % comp = [];
 % for j = 1:5
 %     if Fixed(file,3*j-2)==0 || FitTable(file,3*j-2)~=0
@@ -1986,6 +2099,11 @@ FitTable = FitTable(1:end-3,2:3:end-1);
 %%% normalize Amplitudes
 fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
 A = fitpar(:,1);
+
+%%% if sigma is fixed at fraction of, change its value here
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fitpar(:,3) = fraction.*fitpar(:,2);
+end
 
 %Parameters
 mBG_gg = PDAMeta.BGdonor(file);
@@ -2273,6 +2391,24 @@ switch mode
         %PDAMeta.PreparationDone = 0;
 end
 
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
+    %%% Disables cell callbacks, to prohibit double callback
+    h.FitTab.Table.CellEditCallback=[];
+    %%% Get Table Data
+    Data = h.FitTab.Table.Data;
+    %%% Read out fraction
+    fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
+    for i = 1:(size(Data,1)-2)
+        %%% Fix all sigmas
+        Data(i,9:9:end) = deal({true});
+        %%% set to fraction times distance
+        Data(i,8:9:end) = cellfun(@(x) num2str(fraction.*str2double(x)),Data(i,5:9:end),'UniformOutput',false);
+    end
+    %%% Set Table Data
+    h.FitTab.Table.Data = Data;
+    %%% Enables cell callback again
+    h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
+end
 % Update the Parameters Tab
 function Update_ParamTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2536,4 +2672,38 @@ if ismac
     system(syscmd);
 else
     winopen('Global PDA Fitting.docx')
+end
+
+% Updates GUI elements
+function Update_GUI(obj,~)
+h = guidata(obj);
+
+if obj == h.SettingsTab.FixSigmaAtFractionOfR
+    switch obj.Value
+        case 1
+            %%% Enable Check Box
+            h.SettingsTab.SigmaAtFractionOfR_edit.Enable = 'on';
+            h.SettingsTab.FixSigmaAtFractionOfR_Fix.Enable = 'on';
+            %%% Update FitParameter Table (fix all sigmas, set to value
+            %%% according to number in edit box)
+            Update_FitTable([],[],4);
+            %%% Disable Columns
+            h.FitTab.Table.ColumnEditable(8:9:end) = deal(false);
+            h.FitTab.Table.ColumnEditable(9:9:end) = deal(false);
+            h.FitTab.Table.ColumnEditable(10:9:end) = deal(false);
+        case 0
+            h.SettingsTab.SigmaAtFractionOfR_edit.Enable = 'off';
+            h.SettingsTab.FixSigmaAtFractionOfR_Fix.Enable = 'off';
+            %%% Reset the fixed status of the fit table
+            Data = h.FitTab.Table.Data;
+            for i = 1:(size(Data,1)-2)
+                %%% Fix all sigmas
+                Data(i,9:9:end) = deal({false});
+            end
+            h.FitTab.Table.Data = Data;
+            %%% Reenable Columns
+            h.FitTab.Table.ColumnEditable(8:9:end) = deal(true);
+            h.FitTab.Table.ColumnEditable(9:9:end) = deal(true);
+            h.FitTab.Table.ColumnEditable(10:9:end) = deal(true);
+    end
 end
