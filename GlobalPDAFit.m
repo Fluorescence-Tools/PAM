@@ -416,6 +416,66 @@ if isempty(h.GlobalPDAFit)
         'Tag','Params_Tab',...
         'Units','normalized',...
         'Position',[0 0 1 0.2]);
+    
+    %% Database tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     h.PDADatabase.Tab= uitab(...
+        'Parent',h.Tabgroup_Down,...
+        'Tag','PDADatabase_Tab',...
+        'Title','Database');    
+    %%% Database panel
+    h.PDADatabase.Panel = uibuttongroup(...
+        'Parent',h.PDADatabase.Tab,...
+        'Tag','PDADatabase_Panel',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0 1 1]);    
+    %%% Database list
+    h.PDADatabase.List = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_List',...
+        'Style','listbox',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'Max',2,...
+        'String',[],...
+        'BackgroundColor', Look.Axes,...
+        'ForegroundColor', Look.Fore,...
+        'KeyPressFcn',{@Database,0},...
+        'Tooltipstring', ['<html>'...
+                          'List of files in database <br>',...
+                          '<i>"return"</i>: Loads selected files <br>',...
+                          '<I>"delete"</i>: Removes selected files from list </b>'],...
+        'Position',[0.01 0.01 0.9 0.98]);   
+    %%% Button to add files to the database
+    h.PDADatabase.Load = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_Load_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Load',...
+        'Callback',{@Database,2},...
+        'Position',[0.93 0.55 0.05 0.15],...
+        'Tooltipstring', 'Load database from file');
+    %%% Button to add files to the database
+    h.PDADatabase.Save = uicontrol(...
+        'Parent',h.PDADatabase.Panel,...
+        'Tag','PDADatabase_Save_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Save',...
+        'Callback',{@Database,3},...
+        'Position',[0.93 0.35 0.05 0.15],...
+        'enable', 'off',...
+        'Tooltipstring', 'Save database to a file');
+    
     %% Fit tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     h.FitTab.Tab = uitab(...
@@ -688,6 +748,7 @@ if isempty(h.GlobalPDAFit)
         'Position',[0.82 0.75 0.05 0.2],...
         'Enable','off',...
         'Tag','FixSigmaAtFractionOfR_Fix');
+
     %% Other stuff
     %%% Re-enable menu
     h.Menu.File.Enable = 'on';
@@ -723,23 +784,32 @@ delete(findobj('Tag','GlobalPDAFit'));
 function Load_PDA_Data(~,~,mode)
 global PDAData UserValues
 h = guidata(findobj('Tag','GlobalPDAFit'));
-[FileName,PathName] = uigetfile({'*.pda','*.pda file'},'Select *.pda file',...
-    UserValues.File.BurstBrowserPath,'Multiselect','on');
 
-%%% Transforms to cell array, if only one file was selected
-if ~iscell(FileName)
-    FileName = {FileName};
+if mode ~= 3
+    %% Load or Add data
+    [FileName,p] = uigetfile({'*.pda','*.pda file'},'Select *.pda file',...
+        UserValues.File.BurstBrowserPath,'Multiselect','on');
+    %%% Transforms to cell array, if only one file was selected
+    if ~iscell(FileName)
+        FileName = {FileName};
+    end
+    %%% Only executes, if at least one file was selected
+    if all(FileName{1}==0)
+        return
+    end
+    PathName = cell(numel(FileName),1);
+    PathName(:) = {p};
+else
+    %% Database loading
+    FileName = PDAData.FileName;
+    PathName = PDAData.PathName;
 end
 
-%%% Only executes, if at least one file was selected
-if all(FileName{1}==0)
-    return
-end
+UserValues.File.BurstBrowserPath = PathName{1};
 
-UserValues.File.BurstBrowserPath = PathName;
-LSUserValues(1)
+LSUserValues(1);
 
-if mode==1 % new files are loaded
+if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.FileName = [];
     PDAData.PathName = [];
     PDAData.Data = [];
@@ -752,14 +822,17 @@ if mode==1 % new files are loaded
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
     h.ParametersTab.Table.Data(1:end-1,:)=[];
+    h.PDADatabase.List.String = [];
+    h.PDADatabase.Save.Enable = 'off';
+
 end
 
 for i = 1:numel(FileName)
     Progress(i/numel(FileName),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Loading file(s)...');
     Progress(i/numel(FileName),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Loading file(s)...');
-    load('-mat',fullfile(PathName,FileName{i}));
+    load('-mat',fullfile(PathName{i},FileName{i}));
     PDAData.FileName{end+1} = FileName{i};
-    PDAData.PathName{end+1} = PathName;
+    PDAData.PathName{end+1} = PathName{i};
     if exist('PDA','var') % file has not been saved before in GlobalPDAFit
         % PDA %structure
         % .NGP
@@ -826,6 +899,9 @@ for i = 1:numel(FileName)
         PDAData.Background{end}.Background_GRperp = PDAstruct.Corrections.BackgroundAcceptor/2;
         PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
     end
+    % add files to database table
+    h.PDADatabase.List.String{end+1} = [FileName{i} ' (path:' PathName{i} ')'];
+    h.PDADatabase.Save.Enable = 'on';
 end
 PDAData.OriginalFitParams = PDAData.FitTable; %contains the fit table as it was originally displayed when opening the data
 
@@ -2633,7 +2709,6 @@ function Todolist(~,~)
 msgbox({...
     'allow to set Epr limits for plotting and analysis';...
     'remove everything from global that is not needed in global';...
-    'fix the export figure menu option again';...
     'add a legend in the plots';...
     'sigma cannot be zero or a very small number';...
     'the chi^2 definition is not ok';...
@@ -2672,6 +2747,73 @@ if ismac
     system(syscmd);
 else
     winopen('Global PDA Fitting.docx')
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Database(~,e,mode)
+global UserValues PDAData
+LSUserValues(0);
+h = guidata(findobj('Tag','GlobalPDAFit'));
+
+if mode == 0
+    switch e.Key
+        case 'delete'
+            mode = 1;
+    end
+end
+
+switch mode
+    case 1 
+        %% Delete files from database
+        %remove rows from list
+        h.PDADatabase.List.String(h.PDADatabase.List.Value) = [];
+        %remove data from PDAData
+        PDAData.FileName(h.PDADatabase.List.Value) = [];
+        PDAData.PathName(h.PDADatabase.List.Value) = [];
+        PDAData.Data(h.PDADatabase.List.Value) = [];
+        PDAData.timebin(h.PDADatabase.List.Value) = [];
+        PDAData.Corrections(h.PDADatabase.List.Value) = [];
+        PDAData.Background(h.PDADatabase.List.Value) = [];
+        PDAData.FitTable(h.PDADatabase.List.Value) = [];
+        PDAData.OriginalFitParams = PDAData.FitTable;
+        h.FitTab.Table.RowName(h.PDADatabase.List.Value)=[];
+        h.FitTab.Table.Data(h.PDADatabase.List.Value,:)=[];
+        h.ParametersTab.Table.RowName(h.PDADatabase.List.Value)=[];
+        h.ParametersTab.Table.Data(h.PDADatabase.List.Value,:)=[];
+        
+        h.PDADatabase.List.Value = 1;
+        if size(h.PDADatabase.List.String, 1) < 1
+            % no files are left
+            h.PDADatabase.Save.Enable = 'off';
+            SampleData
+        else
+            Update_Plots([],[],3);
+            Update_FitTable([],[],1);
+            Update_ParamTable([],[],1);
+        end
+    case 2 
+        %% Load database
+        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.Path,'MultiSelect', 'off');
+        load('-mat',fullfile(Path,FileName));
+        PDAData.FileName = s.file;
+        PDAData.PathName = s.path;
+        Load_PDA_Data([],[],3);
+        h.PDADatabase.List.String = s.str;
+        clear s;
+        if size(h.PDADatabase.List.String, 1) > 0
+            % files are left
+            h.PDADatabase.Save.Enable = 'on';
+        end
+    case 3 
+        %% Save complete database
+        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.Path);
+        s = struct;
+        s.file = PDAData.FileName;
+        s.path = PDAData.PathName;
+        s.str = h.PDADatabase.List.String;
+        save(fullfile(Path,File),'s');
 end
 
 % Updates GUI elements
