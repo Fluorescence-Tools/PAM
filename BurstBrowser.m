@@ -4408,6 +4408,7 @@ global BurstData BurstMeta UserValues
 LSUserValues(0);
 h = guidata(obj);
 
+h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 %%% Change focus to CorrectionsTab
 %h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 indS = BurstMeta.posS;
