@@ -1888,7 +1888,7 @@ end
         'ForegroundColor', Look.Fore,...
         'KeyPressFcn',{@Database,0},...
         'Tooltipstring', ['<html>'...
-                          'List of filles in database <br>',...
+                          'List of files in database <br>',...
                           '<i>"return"</i>: Loads selected files <b>!!!Only works with same Path and Type!!!</b><br>',...
                           '<I>"delete"</i>: Removes selected files from list </b>'],...
         'Position',[0.01 0.01 0.7 0.98]);   
@@ -6628,10 +6628,8 @@ switch mode
                     PamMeta.Database{i,3});     %type
                 Correlate ([],[],1)
                 % set filename color to green
-
                 h.Database.List.String{i} = ['<HTML><FONT color=00FF00>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
             catch
-                Hex_color=dec2hex([1 0 0]*255)';
                 h.Database.List.String{i}=['<HTML><FONT color=FF0000>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
             end
         end
@@ -6651,11 +6649,10 @@ switch mode
             % depending on whether the '2CDE' and 'lifetime' checkboxes are
             % checked on the 'Burst analysis' tab, this might also be performed
             % set filename color to green
-            Hex_color=dec2hex([0 1 0]*255)';
-            h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' h.Database.List.String{i} '</Font></html>'];
+            h.Database.List.String{i}=['<HTML><FONT color=00FF00>' h.Database.List.String{i} '</Font></html>'];
             catch
-                Hex_color=dec2hex([1 0 0]*255)';
-                h.Database.List.String{i}=['<HTML><FONT color=#' Hex_color(:)' '>' h.Database.List.String{i} '</Font></html>'];
+                %set filename color to red
+                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' h.Database.List.String{i} '</Font></html>'];
             end
         end
         % here some button to push, to put the colors back to black
