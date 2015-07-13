@@ -3201,11 +3201,14 @@ if size(Files,1) < 2
     delete(m);
     return;
 end
+Progress(0,h.Progress_Axes,h.Progress_Text,'Merging files...');
 %%% Load Files in CellArray
 MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
     MergeData{i} = load(Files{i,1},'-mat');
 end
+
+Progress(0.2,h.Progress_Axes,h.Progress_Text,'Merging files...');
 
 %%% Create Arrays of Parameters
 for i=1:numel(MergeData)
@@ -3242,6 +3245,9 @@ for i=1:numel(MergeData)
 end
 %%% Use first file for general variables
 Merged = MergeData{1}.BurstData;
+
+Progress(0.2,h.Progress_Axes,h.Progress_Text,'Merging files...');
+
 %%% Concatenate DataArray
 for i =2:numel(MergeData)
     Merged.DataArray = [Merged.DataArray;MergeData{i}.BurstData.DataArray];
@@ -3258,11 +3264,15 @@ Merged.DataArray(:,end+1) = filenumber;
 BurstData = Merged;
 BurstData.MergedParameters = MergedParameters;
 
+Progress(0.3,h.Progress_Axes,h.Progress_Text,'Merging files...');
+
 %%% Also Load *.bps files and concatenate
 MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
     MergeData{i} = load([Files{i,1}(1:end-3) 'bps'],'-mat');
 end
+
+Progress(0.4,h.Progress_Axes,h.Progress_Text,'Merging files...');
 
 Macrotime = MergeData{1}.Macrotime;
 Microtime = MergeData{1}.Microtime;
@@ -3272,6 +3282,8 @@ for i = 2:numel(MergeData)
     Microtime = vertcat(Microtime,MergeData{i}.Microtime);
     Channel = vertcat(Channel,MergeData{i}.Channel);
 end
+
+Progress(0.6,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
 
 %%% Save merged data
 [FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fileparts(fileparts(Files{1,1})));
@@ -3284,7 +3296,10 @@ BurstData.PathName = PathName;
 BurstData.FileName = fullfile(PathName,FileName);
 
 save(BurstData.FileName,'BurstData');
+Progress(0.8,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
 save([BurstData.FileName(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
+
+Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
