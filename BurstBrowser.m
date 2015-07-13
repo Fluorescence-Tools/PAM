@@ -8064,12 +8064,12 @@ switch obj
         %%% Create a new figure with aspect ratio appropiate for the current plot
         %%% i.e. 1.2*[x y]
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
+        pos = [100,100, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_x,hfig);
         %%% Rescale Position
-        axes_copy.Position = [0.15 0.17 0.8 0.8];
+        axes_copy.Position = [0.15 0.19 0.8 0.78];
         %%% Increase fontsize
         axes_copy.FontSize = fontsize;
         %%% change Background Color
@@ -8077,6 +8077,8 @@ switch obj
         %%% change X/YColor Color Color
         axes_copy.XColor = [0,0,0];
         axes_copy.YColor = [0,0,0];
+        axes_copy.XLabel.Color = [0,0,0];
+        axes_copy.YLabel.Color = [0,0,0];
         %%% Reset XAxis Location
         axes_copy.XAxisLocation = 'bottom';
         %%% Make Ticks point Outwards
@@ -8097,7 +8099,7 @@ switch obj
         FigureName = BurstData.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
         AspectRatio = 0.7;
-        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
+        pos = [100,100, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_1d_y,hfig);
@@ -8106,14 +8108,16 @@ switch obj
         %%% Reverse XDir
         axes_copy.XDir = 'normal';
         %%% Rescale Position
-        axes_copy.Position = [0.18 0.17 0.8 0.8];
+        axes_copy.Position = [0.15 0.19 0.8 0.78];
         %%% Increase fontsize
-        axes_copy.FontSize = 50;
+        axes_copy.FontSize = fontsize;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
         %%% change X/YColor Color Color
         axes_copy.XColor = [0,0,0];
         axes_copy.YColor = [0,0,0];
+        axes_copy.XLabel.Color = [0,0,0];
+        axes_copy.YLabel.Color = [0,0,0];
         %%% Reset XAxis Location
         axes_copy.XAxisLocation = 'bottom';
         %%% Make Ticks point Outwards
@@ -8128,13 +8132,13 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',50);
-        ylabel('Frequency','FontSize',50);
+        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',fontsize);
+        ylabel('Frequency','FontSize',fontsize);
         %%% Construct Name
         FigureName = BurstData.NameArray{h.ParameterListY.Value};
     case h.Export2D_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
+        pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
@@ -8176,6 +8180,8 @@ switch obj
                     xlabel(panel_copy.Children(i),'');
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
+                    panel_copy.Children(i).XLabel.Color = [0 0 0];
+                    panel_copy.Children(i).YLabel.Color = [0 0 0];
             end
         end
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
@@ -8200,6 +8206,8 @@ switch obj
                 %%% change X/YColor Color Color
                 panel_copy.Children(i).XColor = [0,0,0];
                 panel_copy.Children(i).YColor = [0,0,0];
+                panel_copy.Children(i).XLabel.Color = [0,0,0];
+                panel_copy.Children(i).YLabel.Color = [0,0,0];
                 %%% increase LineWidth of Axes
                 panel_copy.Children(i).LineWidth = 3;
                 %%% Increase FontSize
@@ -8252,16 +8260,18 @@ switch obj
         FigureName = 'LifetimePlots';
     case h.ExportEvsTau_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
+        pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_EvsTauGG,hfig);
-        axes_copy.Position = [0.1 0.1 0.8 0.8];
+        axes_copy.Position = [0.17 0.17 0.8 0.8];
         %%% set Background Color to white
         axes_copy.Color = [1 1 1];
         %%% change X/YColor Color Color
         axes_copy.XColor = [0,0,0];
         axes_copy.YColor = [0,0,0];
+        axes_copy.XLabel.Color = [0,0,0];
+        axes_copy.YLabel.Color = [0,0,0];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
