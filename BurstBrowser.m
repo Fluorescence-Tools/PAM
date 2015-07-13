@@ -426,7 +426,7 @@ if isempty(hfig)
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
         'Units','normalized',...
-        'ForegroundColor',Look.Fore,...
+        'ForegroundColor',[0,0,0],...
         'Position',[0 0.2 1 0.3],...
         'Tag','CutTable',...
         'ColumnName',cname,...
@@ -613,7 +613,7 @@ if isempty(hfig)
         'ColumnFormat',Corrections_Columnformat,...
         'ColumnWidth','auto',...
         'CellEditCallback',@UpdateCorrections,...
-        'ForegroundColor',Look.Fore);
+        'ForegroundColor',[0,0,0]);
     
     h.TGX_TRR_text = uicontrol('Style','text',...
         'Tag','T_Threshold_Text',...
@@ -1626,9 +1626,9 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio');
-    ylabel(h.Corrections.TwoCMFD.axes_crosstalk,'#');
-    title(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio of Donor only');
+    xlabel(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_crosstalk,'#','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio of Donor only','Color',UserValues.Look.Fore);
     
     h.Corrections.TwoCMFD.axes_direct_excitation =  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -1641,9 +1641,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.TwoCMFD.axes_direct_excitation,'Stoichiometry (raw)');
+    xlabel(h.Corrections.TwoCMFD.axes_direct_excitation,'Stoichiometry (raw)','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_direct_excitation,'#');
-    title(h.Corrections.TwoCMFD.axes_direct_excitation,'Raw Stoichiometry of Acceptor only');
+    title(h.Corrections.TwoCMFD.axes_direct_excitation,'Raw Stoichiometry of Acceptor only','Color',UserValues.Look.Fore);
     
     h.Corrections.TwoCMFD.axes_gamma=  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -1656,9 +1656,9 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency');
-    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry');
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1');
+    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     
     h.Corrections.TwoCMFD.axes_gamma_lifetime =  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -1671,9 +1671,9 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime GG [ns]');
-    ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency');
-    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency vs. Lifetime GG');
+    xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
     %% Corrections - 3ColorMFD
     h.Corrections.ThreeCMFD.axes_crosstalk_BG =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1686,9 +1686,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Proximity Ratio BG');
-    ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'#');
-    title(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Blue dye only');
+    xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Proximity Ratio BG','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'#','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Blue dye only','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_crosstalk_BR =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1701,9 +1701,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Proximity Ratio BR');
-    ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'#');
-    title(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Blue dye only');
+    xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Proximity Ratio BR','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'#','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Blue dye only','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_direct_excitation_BG =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1716,9 +1716,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Stoichiometry BG (raw)');
-    ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'#');
-    title(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Green dye only');
+    xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Stoichiometry BG (raw)','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'#','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Green dye only','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_direct_excitation_BR =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1731,9 +1731,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Stoichiometry BR (raw)');
-    ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'#');
-    title(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Red dye only');
+    xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Stoichiometry BR (raw)','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'#','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Red dye only','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_gammaBG_threecolor=  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1746,9 +1746,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency* BG');
-    ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG');
-    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. Efficiency* BG for gammaBG = 1');
+    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency* BG','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. Efficiency* BG for gammaBG = 1','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_gammaBR_threecolor=  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1761,9 +1761,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR');
-    ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR');
-    title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1');
+    xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
     
     %%% 07-2015 Disable Gamma from populations since it does not work
     h.Corrections.ThreeCMFD.axes_gammaBR_threecolor.Visible = 'off';
@@ -1780,9 +1780,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Lifetime BB [ns]');
-    ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R');
-    title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R vs. Lifetime BB');
+    xlabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
     %% Define Axes in Lifetime Tab
     h.axes_EvsTauGG =  axes(...
         'Parent',h.MainTabLifetimePanel,...
@@ -1795,9 +1795,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_EvsTauGG,'Efficiency');
-    xlabel(h.axes_EvsTauGG,'Lifetime GG [ns]');
-    title(h.axes_EvsTauGG,'Efficiency vs. Lifetime GG');
+    ylabel(h.axes_EvsTauGG,'Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.axes_EvsTauGG,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_EvsTauGG,'Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
     
     h.axes_EvsTauRR =  axes(...
         'Parent',h.MainTabLifetimePanel,...
@@ -1810,9 +1810,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_EvsTauRR,'Efficiency');
-    xlabel(h.axes_EvsTauRR,'Lifetime RR [ns]');
-    title(h.axes_EvsTauRR,'Efficiency vs. Lifetime RR');
+    ylabel(h.axes_EvsTauRR,'Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.axes_EvsTauRR,'Lifetime RR [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_EvsTauRR,'Efficiency vs. Lifetime RR','Color',UserValues.Look.Fore);
     
     h.axes_rGGvsTauGG =  axes(...
         'Parent',h.MainTabLifetimePanel,...
@@ -1825,9 +1825,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rGGvsTauGG,'Anisotropy GG');
-    xlabel(h.axes_rGGvsTauGG,'Lifetime GG [ns]');
-    title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG');
+    ylabel(h.axes_rGGvsTauGG,'Anisotropy GG','Color',UserValues.Look.Fore);
+    xlabel(h.axes_rGGvsTauGG,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG','Color',UserValues.Look.Fore);
     
     h.axes_rRRvsTauRR=  axes(...
         'Parent',h.MainTabLifetimePanel,...
@@ -1840,9 +1840,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rRRvsTauRR,'Anisotropy RR');
-    xlabel(h.axes_rRRvsTauRR,'Lifetime RR [ns]');
-    title(h.axes_rRRvsTauRR,'Anisotropx RR vs. Lifetime RR');
+    ylabel(h.axes_rRRvsTauRR,'Anisotropy RR','Color',UserValues.Look.Fore);
+    xlabel(h.axes_rRRvsTauRR,'Lifetime RR [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_rRRvsTauRR,'Anisotropx RR vs. Lifetime RR','Color',UserValues.Look.Fore);
     
     %%% Define Axes for 3C
     %%% (For 3C, the four axes of 2C are shifted to the left and two
@@ -1858,9 +1858,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R');
-    xlabel(h.axes_E_BtoGRvsTauBB,'Lifetime BB [ns]');
-    title(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R vs. Lifetime BB');
+    ylabel(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R','Color',UserValues.Look.Fore);
+    xlabel(h.axes_E_BtoGRvsTauBB,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
     
     h.axes_rBBvsTauBB=  axes(...
         'Parent',h.Hide_Stuff,...
@@ -1873,9 +1873,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rBBvsTauBB,'Anisotropy BB');
-    xlabel(h.axes_rBBvsTauBB,'Lifetime BB [ns]');
-    title(h.axes_rBBvsTauBB,'Anisotropy BB vs. Lifetime BB');
+    ylabel(h.axes_rBBvsTauBB,'Anisotropy BB','Color',UserValues.Look.Fore);
+    xlabel(h.axes_rBBvsTauBB,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_rBBvsTauBB,'Anisotropy BB vs. Lifetime BB','Color',UserValues.Look.Fore);
     %% Define Axes in filtered FCS tab
     h.axes_fFCS_DecayPar =  axes(...
         'Parent',h.MainTabfFCSPanel,...
@@ -3859,9 +3859,9 @@ BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Displa
 
 axis(h.axes_general,'tight');
 %%% Update Labels
-xlabel(h.axes_general,h.ParameterListX.String{x});
-ylabel(h.axes_general,h.ParameterListY.String{y});
-xlabel(h.axes_1d_x,h.ParameterListX.String{x});
+xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
+ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
+xlabel(h.axes_1d_x,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 %xlabel(h.axes_1d_y,h.ParameterListY.String{y}, 'rot', -90);
 
 
@@ -4134,8 +4134,8 @@ BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
 
-xlabel(h.axes_general,h.ParameterListX.String{x});
-ylabel(h.axes_general,h.ParameterListY.String{y});
+xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
+ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
 
 %plot first histogram
 hx = sum(H{1},1);
@@ -4499,9 +4499,9 @@ if obj == h.FitGammaButton
     BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Update/Reset Axis Labels
-    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency');
-    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry');
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1');
+    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     %%% store for later use
     BurstMeta.Data.E_raw = E_raw;
     BurstMeta.Data.S_raw = S_raw;
@@ -4641,9 +4641,9 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BG_fit(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
-        xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency BG');
-        ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG');
-        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. Efficiency BG for gammaBG = 1');
+        xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency BG','Color',UserValues.Look.Fore);
+        ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. Efficiency BG for gammaBG = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBG_raw = EBG_raw;
         BurstMeta.Data.SBG_raw = SBG_raw;
@@ -4684,9 +4684,9 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BR_fit(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_BR_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
-        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR');
-        ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR');
-        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1');
+        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR','Color',UserValues.Look.Fore);
+        ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBR_raw = EBR_raw;
         BurstMeta.Data.SBR_raw = SBR_raw;
@@ -6662,9 +6662,9 @@ BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Displa
 axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
 
 %%% Update Axis Labels
-xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency');
-ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry');
-title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. Efficiency for gamma = 1');
+xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
+title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
 %%% Hide Fit
 BurstMeta.Plots.Fits.gamma.Visible = 'off';
 [e, s] = ginput(2);
