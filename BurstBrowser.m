@@ -134,7 +134,12 @@ if isempty(hfig)
         'Label','Export E vs TauGG Plot',...
         'Tag','ExportEvsTau_Menu',...
         'Callback',@ExportGraphs);
-    
+    h.ExportEvsTauBB_Menu = uimenu(...
+        'Parent',h.LifeTime_Menu,...
+        'Label','Export E(B->G+R) vs TauBB Plot',...
+        'Tag','ExportEvsTauBB_Menu',...
+        'Callback',@ExportGraphs,...
+        'Visible','off');
     h.Main_Tab_Lifetime= uitab(h.Main_Tab,...
         'title','Lifetime',...
         'Tag','Main_Tab_Lifetime'...
@@ -1656,9 +1661,9 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET FRET Efficiency','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     
     h.Corrections.TwoCMFD.axes_gamma_lifetime =  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -1672,8 +1677,8 @@ if isempty(hfig)
         'nextplot','add',...
         'View',[0 90]);
     xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
-    ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET FRET Efficiency','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET FRET Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
     %% Corrections - 3ColorMFD
     h.Corrections.ThreeCMFD.axes_crosstalk_BG =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1746,9 +1751,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency* BG','Color',UserValues.Look.Fore);
+    xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'FRET FRET Efficiency* BG','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG','Color',UserValues.Look.Fore);
-    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. Efficiency* BG for gammaBG = 1','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. FRET Efficiency* BG for gammaBG = 1','Color',UserValues.Look.Fore);
     
     h.Corrections.ThreeCMFD.axes_gammaBR_threecolor=  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -1761,9 +1766,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR','Color',UserValues.Look.Fore);
+    xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'FRET Efficiency* BR','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
-    title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. FRET Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
     
     %%% 07-2015 Disable Gamma from populations since it does not work
     h.Corrections.ThreeCMFD.axes_gammaBR_threecolor.Visible = 'off';
@@ -1781,13 +1786,13 @@ if isempty(hfig)
         'nextplot','add',...
         'View',[0 90]);
     xlabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
-    ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R','Color',UserValues.Look.Fore);
-    title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R','Color',UserValues.Look.Fore);
+    title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
     %% Define Axes in Lifetime Tab
     h.axes_EvsTauGG =  axes(...
         'Parent',h.MainTabLifetimePanel,...
         'Units','normalized',...
-        'Position',[0.05 0.55 0.4 0.4],...
+        'Position',[0.075 0.57 0.4 0.4],...
         'Tag','Main_Tab_Corrections_Plot_EvsTauGG',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1795,14 +1800,14 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_EvsTauGG,'Efficiency','Color',UserValues.Look.Fore);
-    xlabel(h.axes_EvsTauGG,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_EvsTauGG,'Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
+    ylabel(h.axes_EvsTauGG,'FRET Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.axes_EvsTauGG,'\tau_{D(A)} [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_EvsTauGG,'FRET Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
     
     h.axes_EvsTauRR =  axes(...
         'Parent',h.MainTabLifetimePanel,...
         'Units','normalized',...
-        'Position',[0.55 0.55 0.4 0.4],...
+        'Position',[0.575 0.57 0.4 0.4],...
         'Tag','Main_Tab_Corrections_Plot_EvsTauRR',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1810,14 +1815,14 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_EvsTauRR,'Efficiency','Color',UserValues.Look.Fore);
-    xlabel(h.axes_EvsTauRR,'Lifetime RR [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_EvsTauRR,'Efficiency vs. Lifetime RR','Color',UserValues.Look.Fore);
+    ylabel(h.axes_EvsTauRR,'FRET Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.axes_EvsTauRR,'\tau_{A} [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_EvsTauRR,'FRET Efficiency vs. Lifetime RR','Color',UserValues.Look.Fore);
     
     h.axes_rGGvsTauGG =  axes(...
         'Parent',h.MainTabLifetimePanel,...
         'Units','normalized',...
-        'Position',[0.05 0.05 0.4 0.4],...
+        'Position',[0.075 0.07 0.4 0.4],...
         'Tag','Main_Tab_Corrections_Plot_rGGvsTauGG',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1825,14 +1830,14 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rGGvsTauGG,'Anisotropy GG','Color',UserValues.Look.Fore);
-    xlabel(h.axes_rGGvsTauGG,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
+    ylabel(h.axes_rGGvsTauGG,'r_{D}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.075, 0.5, 0]);
+    xlabel(h.axes_rGGvsTauGG,'\tau_{D} [ns]','Color',UserValues.Look.Fore);
     title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG','Color',UserValues.Look.Fore);
     
     h.axes_rRRvsTauRR=  axes(...
         'Parent',h.MainTabLifetimePanel,...
         'Units','normalized',...
-        'Position',[0.55 0.05 0.4 0.4],...
+        'Position',[0.575 0.07 0.4 0.4],...
         'Tag','Main_Tab_Corrections_Plot_rRRvsTauRR',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1840,9 +1845,9 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rRRvsTauRR,'Anisotropy RR','Color',UserValues.Look.Fore);
-    xlabel(h.axes_rRRvsTauRR,'Lifetime RR [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_rRRvsTauRR,'Anisotropx RR vs. Lifetime RR','Color',UserValues.Look.Fore);
+    ylabel(h.axes_rRRvsTauRR,'r_{A}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.075, 0.5, 0]);
+    xlabel(h.axes_rRRvsTauRR,'\tau_{A} [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_rRRvsTauRR,'Anisotropy RR vs. Lifetime RR','Color',UserValues.Look.Fore);
     
     %%% Define Axes for 3C
     %%% (For 3C, the four axes of 2C are shifted to the left and two
@@ -1850,7 +1855,7 @@ if isempty(hfig)
     h.axes_E_BtoGRvsTauBB =  axes(...
         'Parent',h.Hide_Stuff,...
         'Units','normalized',...
-        'Position',[(0.15+0.8*2/3) 0.55 0.8/3 0.4],...
+        'Position',[(0.15+0.8*2/3)+0.025 0.57 0.8/3 0.4],...
         'Tag','Main_Tab_Corrections_Plot_EBtoGRvsTauBB',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1858,14 +1863,14 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R','Color',UserValues.Look.Fore);
-    xlabel(h.axes_E_BtoGRvsTauBB,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_E_BtoGRvsTauBB,'Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
+    ylabel(h.axes_E_BtoGRvsTauBB,'FRET Efficiency B->G+R','Color',UserValues.Look.Fore);
+    xlabel(h.axes_E_BtoGRvsTauBB,'\tau_{BB} [ns]','Color',UserValues.Look.Fore);
+    title(h.axes_E_BtoGRvsTauBB,'FRET Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
     
     h.axes_rBBvsTauBB=  axes(...
         'Parent',h.Hide_Stuff,...
         'Units','normalized',...
-        'Position',[(0.15+0.8*2/3) 0.05 0.8/3 0.4],...
+        'Position',[(0.15+0.8*2/3)+0.025 0.07 0.8/3 0.4],...
         'Tag','Main_Tab_Corrections_Plot_rBBvsTauBB',...
         'Box','on',...
         'XColor',Look.Fore,...
@@ -1873,8 +1878,8 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'View',[0 90]);
-    ylabel(h.axes_rBBvsTauBB,'Anisotropy BB','Color',UserValues.Look.Fore);
-    xlabel(h.axes_rBBvsTauBB,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
+    ylabel(h.axes_rBBvsTauBB,'r_{BB}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.12, 0.5, 0]);
+    xlabel(h.axes_rBBvsTauBB,'\tau_{BB} [ns]','Color',UserValues.Look.Fore);
     title(h.axes_rBBvsTauBB,'Anisotropy BB vs. Lifetime BB','Color',UserValues.Look.Fore);
     %% Define Axes in filtered FCS tab
     h.axes_fFCS_DecayPar =  axes(...
@@ -2633,6 +2638,7 @@ global BurstMeta UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% supress warning associated with constant Z data and contour plots
 warning('off','MATLAB:contour:ConstantData');
+warning('off','MATLAB:gui:array:InvalidArrayShape');
 switch mode
     case 1
         %%% Initialize BurstMeta.TauFit
@@ -2970,10 +2976,10 @@ if FilterIndex == 2 % KBA file was loaded
             NameArray{strcmp(NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
             NameArray{strcmp(NameArray,'TB - TR (PIE)')} = '|TBX-TRR| Filter';
             NameArray{strcmp(NameArray,'TB - TG (PIE)')} = '|TBX-TGX| Filter';
-            NameArray{strcmp(NameArray,'Efficiency* (G -> R)')} = 'Efficiency GR';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> R)')} = 'Efficiency BR';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> G)')} = 'Efficiency BG';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> G+R)')} = 'Efficiency B->G+R';
+            NameArray{strcmp(NameArray,'FRET Efficiency* (G -> R)')} = 'FRET Efficiency GR';
+            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> R)')} = 'FRET Efficiency BR';
+            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> G)')} = 'FRET Efficiency BG';
+            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> G+R)')} = 'FRET Efficiency B->G+R';
             NameArray{strcmp(NameArray,'Stochiometry (GR)')} = 'Stoichiometry GR';
             NameArray{strcmp(NameArray,'Stochiometry (BG)')} = 'Stoichiometry BG';
             NameArray{strcmp(NameArray,'Stochiometry (BR)')} = 'Stoichiometry BR';
@@ -3053,6 +3059,44 @@ if FilterIndex == 2 % KBA file was loaded
     end
 end
 
+%%% Fix missing "FRET" in Efficiency naming (NameArray)
+if any(BurstData.BAMethod == [1,2])
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
+    %%% also fix Cuts 
+    if isfield(BurstData,'Cut')
+        for i = 1:numel(BurstData.Cut) %%% loop over species
+            for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
+                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency')
+                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency';
+                end
+            end
+        end
+    end
+elseif any(BurstData.BAMethod == [3,4])
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency GR')} = 'FRET Efficiency GR'; 
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BG')} = 'FRET Efficiency BG'; 
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BR')} = 'FRET Efficiency BR'; 
+    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency B->G+R')} = 'FRET Efficiency B->G+R'; 
+    %%% also fix Cuts 
+    if isfield(BurstData,'Cut')
+        for i = 1:numel(BurstData.Cut) %%% loop over species
+            for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
+                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency GR')
+                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency GR';
+                end
+                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BG')
+                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency BG';
+                end 
+                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BR')
+                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency BR';
+                end
+                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency B->G+R')
+                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency B->G+R';
+                end
+            end
+        end
+    end
+end
 %%% Update Figure Name
 if ~isfield(BurstData,'DisplayName')
     [~,BurstData.DisplayName,~] = fileparts(BurstData.FileName);
@@ -3112,15 +3156,15 @@ if ~isempty(findobj('Tag','Pam'))
 end
 
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
-    %find positions of Efficiency and Stoichiometry in NameArray
-    posE = find(strcmp(BurstData.NameArray,'Efficiency'));
+    %find positions of FRET Efficiency and Stoichiometry in NameArray
+    posE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
     %%% Compatibility check for old BurstExplorer Data
     if sum(strcmp(BurstData.NameArray,'Stoichiometry')) == 0
         BurstData.NameArray{strcmp(BurstData.NameArray,'Stochiometry')} = 'Stoichiometry';
     end
     posS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
 elseif any(BurstData.BAMethod == [3,4]) %%% Three-Color MFD
-    posE = find(strcmp(BurstData.NameArray,'Efficiency GR'));
+    posE = find(strcmp(BurstData.NameArray,'FRET Efficiency GR'));
     posS = find(strcmp(BurstData.NameArray,'Stoichiometry GR'));
 end
 %%% store posE and posS in BurstMeta
@@ -4412,7 +4456,7 @@ h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 %%% Change focus to CorrectionsTab
 %h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 indS = BurstMeta.posS;
-%indE = find(strcmp(BurstData.NameArray,'Efficiency'));
+%indE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
 indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
 indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
 indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
@@ -4440,7 +4484,7 @@ Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Bac
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
-    %% plot raw Efficiency for S>0.9
+    %% plot raw FRET Efficiency for S>0.9
     x_axis = linspace(0,0.3,50);
     Smin = 0.9;
     S_threshold = (data_for_corrections(:,indS)>Smin);
@@ -4500,9 +4544,9 @@ if obj == h.FitGammaButton
     BurstMeta.Plots.gamma_fit(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Update/Reset Axis Labels
-    xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+    xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     %%% store for later use
     BurstMeta.Data.E_raw = E_raw;
     BurstMeta.Data.S_raw = S_raw;
@@ -4642,9 +4686,9 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BG_fit(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_BG_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
-        xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'Efficiency BG','Color',UserValues.Look.Fore);
+        xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'FRET Efficiency BG','Color',UserValues.Look.Fore);
         ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG','Color',UserValues.Look.Fore);
-        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. Efficiency BG for gammaBG = 1','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry BG vs. FRET Efficiency BG for gammaBG = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBG_raw = EBG_raw;
         BurstMeta.Data.SBG_raw = SBG_raw;
@@ -4685,9 +4729,9 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.gamma_BR_fit(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_BR_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% Update/Reset Axis Labels
-        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'Efficiency* BR','Color',UserValues.Look.Fore);
+        xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'FRET Efficiency* BR','Color',UserValues.Look.Fore);
         ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
-        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
+        title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. FRET Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
         %%% store for later use
         BurstMeta.Data.EBR_raw = EBR_raw;
         BurstMeta.Data.SBR_raw = SBR_raw;
@@ -6504,7 +6548,7 @@ NRR = NRR - Dur.*BG_RR;
 %%% Apply CrossTalk and DirectExcitation Corrections
 NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
 
-%%% Recalculate Efficiency and Stoichiometry
+%%% Recalculate FRET Efficiency and Stoichiometry
 E = NGR./(NGR + gamma_gr.*NGG);
 if UserValues.BurstBrowser.Corrections.UseBeta == 1
     S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR./beta_gr);
@@ -6557,9 +6601,9 @@ BurstData.DataArray(:,ind_rRR) = rRR;
 if any(BurstData.BAMethod == [3,4])
     %% FRET Efficiencies and Stoichiometries
     %%% Read out indices of parameters
-    indE1A = strcmp(BurstData.NameArray,'Efficiency B->G+R');
-    indEBG = strcmp(BurstData.NameArray,'Efficiency BG');
-    indEBR = strcmp(BurstData.NameArray,'Efficiency BR');
+    indE1A = strcmp(BurstData.NameArray,'FRET Efficiency B->G+R');
+    indEBG = strcmp(BurstData.NameArray,'FRET Efficiency BG');
+    indEBR = strcmp(BurstData.NameArray,'FRET Efficiency BR');
     indSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
     indSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
     indNBB = strcmp(BurstData.NameArray,'Number of Photons (BB)');
@@ -6594,7 +6638,7 @@ if any(BurstData.BAMethod == [3,4])
     %%% Apply CrossTalk and DirectExcitation Corrections
     NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
     NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
-    %%% Recalculate Efficiency and Stoichiometry
+    %%% Recalculate FRET Efficiency and Stoichiometry
     E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR);
     EBG = (gamma_gr.*NBG)./(gamma_br.*NBB.*(1-EGR)+ gamma_gr.*NBG);
     EBR = (NBR - EGR.*(gamma_gr.*NBG+NBR))./(gamma_br.*NBB + NBR - EGR.*(gamma_br.*NBB + gamma_gr.*NBG + NBR));
@@ -6663,9 +6707,9 @@ BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Displa
 axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
 
 %%% Update Axis Labels
-xlabel(h.Corrections.TwoCMFD.axes_gamma,'Efficiency','Color',UserValues.Look.Fore);
+xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
 ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
-title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
 %%% Hide Fit
 BurstMeta.Plots.Fits.gamma.Visible = 'off';
 [e, s] = ginput(2);
@@ -6819,6 +6863,7 @@ h.Progress_Text.String = BurstData.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
 global BurstData BurstTCSPCData
+h = guidata(findobj('Tag','BurstBrowser'));
 Progress(0,h.Progress_Axes,h.Progress_Text,'Saving...');
 if strcmp(BurstData.FileName(end-2:end),'bur') %bur file, normal save
     save(BurstData.FileName,'BurstData');
@@ -6920,7 +6965,7 @@ axis(h.axes_rRRvsTauRR,'tight');
 if any(BurstData.BAMethod == [3,4])
     idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
     idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
-    idxE1A = strcmp('Efficiency B->G+R',BurstData.NameArray);
+    idxE1A = strcmp('FRET Efficiency B->G+R',BurstData.NameArray);
     %% Plot E1A vs. tauBB
     valid = (datatoplot(:,idx_tauBB) > 0.01);
     [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[51 51], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [0 1]);
@@ -6971,7 +7016,7 @@ idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
 idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
 idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
 idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = strcmp('Efficiency',BurstData.NameArray);
+idxE = strcmp('FRET Efficiency',BurstData.NameArray);
 %% Add Fits
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
@@ -7007,7 +7052,7 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     x);
             elseif obj == h.DynamicFRETManual_Menu
                 %%% Query using edit box
-                y = inputdlg({'Efficiency 1','Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+                y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
                 y = cellfun(@str2double,y);
                 if any(isnan(y))
                     return;
@@ -7196,6 +7241,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MainTabSelectionChange(obj,e)
 h = guidata(obj);
+if isempty(h)
+    return;
+end
 if e.NewValue == h.Main_Tab_Lifetime
     if isempty(h.axes_EvsTauGG.Children)
         %%% Update Lifetime Plots
@@ -7990,10 +8038,26 @@ if BAMethod == 3
     h.axes_E_BtoGRvsTauBB.Parent = h.MainTabLifetimePanel;
     h.axes_rBBvsTauBB.Parent = h.MainTabLifetimePanel;
     %%% Change Position of 2Color-Plots
-    h.axes_EvsTauGG.Position = [0.05 0.55 (0.8/3) 0.4];
-    h.axes_EvsTauRR.Position = [(0.1+0.8/3) 0.55 (0.8/3) 0.4];
-    h.axes_rGGvsTauGG.Position = [0.05 0.05 (0.8/3) 0.4];
-    h.axes_rRRvsTauRR.Position = [(0.1+0.8/3) 0.05 (0.8/3) 0.4];
+    h.axes_EvsTauGG.Position = [0.05 0.57 (0.8/3) 0.4];
+    h.axes_EvsTauRR.Position = [(0.1+0.8/3)+0.0125 0.57 (0.8/3) 0.4];
+    h.axes_rGGvsTauGG.Position = [0.05 0.07 (0.8/3) 0.4];
+    h.axes_rRRvsTauRR.Position = [(0.1+0.8/3)+0.0125 0.07 (0.8/3) 0.4];
+    
+    %%% Change axes in lifetime tab
+    h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency GR';
+    h.axes_EvsTauGG.XLabel.String = '\tau_{GG} [ns]';
+    h.axes_EvsTauGG.Title.String = 'FRET Efficiency GR vs. Lifetime GG';
+    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency GR';
+    h.axes_EvsTauRR.XLabel.String = '\tau_{RR} [ns]';
+    h.axes_EvsTauRR.Title.String = 'FRET Efficiency GR vs. Lifetime RR';
+    h.axes_rGGvsTauGG.XLabel.String = '\tau_{GG} [ns]';
+    h.axes_rGGvsTauGG.YLabel.String = 'r_{GG}';
+    h.axes_rGGvsTauGG.YLabel.Position= [-0.12, 0.5, 0];
+    h.axes_rRRvsTauRR.XLabel.String = '\tau_{RR} [ns]';
+    h.axes_rRRvsTauRR.YLabel.String = 'r_{RR}';
+    h.axes_rRRvsTauRR.YLabel.Position= [-0.12, 0.5, 0];
+    %%% Unhide TauBB Export Option
+    h.ExportEvsTauBB_Menu.Visible = 'on';
     %% Change Lifetime Fit GUI
     h.TauFit.ChannelSelect.String = {'BB','GG','RR'};
     h.TauFit.ChannelSelect.Value = 1;
@@ -8030,13 +8094,29 @@ elseif BAMethod == 2
     h.axes_E_BtoGRvsTauBB.Parent = h.Hide_Stuff;
     h.axes_rBBvsTauBB.Parent =  h.Hide_Stuff;
     %%% Change Position of 2Color-Plots
-    h.axes_EvsTauGG.Position = [0.05 0.55 0.4 0.4];
-    h.axes_EvsTauRR.Position = [0.55 0.55 0.4 0.4];
-    h.axes_rGGvsTauGG.Position = [0.05 0.05 0.4 0.4];
-    h.axes_rRRvsTauRR.Position = [0.55 0.05 0.4 0.4];
+    h.axes_EvsTauGG.Position = [0.075 0.57 0.4 0.4];
+    h.axes_EvsTauRR.Position = [0.575 0.57 0.4 0.4];
+    h.axes_rGGvsTauGG.Position = [0.075 0.07 0.4 0.4];
+    h.axes_rRRvsTauRR.Position = [0.575 0.07 0.4 0.4];
+    
+    %%% Change axes in lifetime tab
+    h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
+    h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
+    h.axes_EvsTauGG.Title.String = 'FRET Efficiency vs. Lifetime GG';
+    h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
+    h.axes_EvsTauGG.XLabel.String = '\tau_{A} [ns]';
+    h.axes_EvsTauRR.Title.String = 'FRET Efficiency vs. Lifetime RR';
+    h.axes_rGGvsTauGG.XLabel.String = '\tau_{D} [ns]';
+    h.axes_rGGvsTauGG.YLabel.String = 'r_{D}';
+    h.axes_rGGvsTauGG.YLabel.Position= [-0.075, 0.5, 0];
+    h.axes_rRRvsTauRR.XLabel.String = '\tau_{A} [ns]';
+    h.axes_rRRvsTauRR.YLabel.String = 'r_{A}';
+    h.axes_rRRvsTauRR.YLabel.Position= [-0.075, 0.5, 0];
     %% Change Lifetime Fit GUI
     h.TauFit.ChannelSelect.String = {'GG','RR'};
     h.TauFit.ChannelSelect.Value = 1;
+    %%% Hide TauBB Export Option
+    h.ExportEvsTauBB_Menu.Visible = 'off';
     %% Change Correlation Table
     Names = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','GX1','GX2','RR'};
     h.Correlation_Table.RowName = Names;
@@ -8143,6 +8223,7 @@ switch obj
         hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabGeneralPanel,hfig);
+        panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
@@ -8188,10 +8269,12 @@ switch obj
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
         AspectRatio = 1;
-        pos = [1,1, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
+        pos = [100,100, round(1.6*size_pixels),round(1.6*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
         %%% Copy axes to figure
         panel_copy = copyobj(h.MainTabLifetimePanel,hfig);
+        panel_copy.ShadowColor = [1 1 1];
+        panel_copy.HighlightColor = [1 1 1];
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
@@ -8201,6 +8284,7 @@ switch obj
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
         if any(BurstData.BAMethod == [1,2])
+            fontsize = 22;
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
@@ -8212,28 +8296,30 @@ switch obj
                 %%% increase LineWidth of Axes
                 panel_copy.Children(i).LineWidth = 3;
                 %%% Increase FontSize
-                panel_copy.Children(i).FontSize = 30;
+                panel_copy.Children(i).FontSize = fontsize;
                 %%% Make Bold
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
                 title(panel_copy.Children(i),'');
                 %%% move axes up and left
-                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.0325 0.0325 0 0];
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
+                panel_copy.Children(i).YLabel.Units = 'normalized';
+                panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
                 %%% Add rotational correlation time
                 if isfield(BurstData,'Parameters')
                     switch i
                         case 1
                             %%%rRR vs TauRR
                             if ~isempty(BurstData.Parameters.rhoRR)
-                                str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoRR(1));
+                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
                                 if numel(BurstData.Parameters.rhoRR) > 1
                                     str = [str(1:4) '_1' str(5:end)];
                                     for j=2:numel(BurstData.Parameters.rhoRR)
-                                        str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoRR(j))];
+                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
                                     end
                                 end
                             end
-                            text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',20);
                             %'BackgroundColor',[1 1 1],...
@@ -8241,15 +8327,92 @@ switch obj
                         case 2
                             %%%rGG vs TauGG
                             if ~isempty(BurstData.Parameters.rhoGG)
-                                str = sprintf('\\rho = %1.1f ns',BurstData.Parameters.rhoGG(1));
+                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
                                 if numel(BurstData.Parameters.rhoGG) > 1
                                     str = [str(1:4) '_1' str(5:end)];
                                     for j=2:numel(BurstData.Parameters.rhoGG)
-                                        str = [str sprintf(['\n\\rho_' num2str(j) ' = %1.1f ns'],BurstData.Parameters.rhoGG(j))];
+                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
                                     end
                                 end
                             end
-                            text(0.775*panel_copy.Children(i).XLim(2),0.85*panel_copy.Children(i).YLim(2),str,...
+                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',20);
+                            %'BackgroundColor',[1 1 1],...
+                            %'EdgeColor',[0 0 0]);
+                    end
+                end
+            end
+        elseif any(BurstData.BAMethod == [3,4])
+            hfig.Position(3) = hfig.Position(3)*1.55;
+            %hfig.Position(4) = hfig.Position(3)*1.1;
+            fontsize = 22;
+            for i = 1:numel(panel_copy.Children)
+                %%% Set the Color of Axes to white
+                panel_copy.Children(i).Color = [1 1 1];
+                %%% change X/YColor Color Color
+                panel_copy.Children(i).XColor = [0,0,0];
+                panel_copy.Children(i).YColor = [0,0,0];
+                panel_copy.Children(i).XLabel.Color = [0,0,0];
+                panel_copy.Children(i).YLabel.Color = [0,0,0];
+                %%% increase LineWidth of Axes
+                panel_copy.Children(i).LineWidth = 3;
+                %%% Increase FontSize
+                panel_copy.Children(i).FontSize = fontsize;
+                %%% Make Bold
+                %panel_copy.Children(i).FontWeight = 'bold';
+                %%% disable titles
+                title(panel_copy.Children(i),'');
+                %%% move axes up and left
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
+                panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                %%% Add rotational correlation time
+                if isfield(BurstData,'Parameters')
+                    switch i
+                        case 1
+                            %%%rBB vs TauBB
+                            if ~isempty(BurstData.Parameters.rhoBB)
+                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(1))];
+                                if numel(BurstData.Parameters.rhoBB) > 1
+                                    str = [str(1:4) '_1' str(5:end)];
+                                    for j=2:numel(BurstData.Parameters.rhoBB)
+                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
+                                    end
+                                end
+                            end
+                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',20);
+                            %'BackgroundColor',[1 1 1],...
+                            %'EdgeColor',[0 0 0]);
+                        case 3
+                            %%%rRR vs TauRR
+                            if ~isempty(BurstData.Parameters.rhoRR)
+                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
+                                if numel(BurstData.Parameters.rhoRR) > 1
+                                    str = [str(1:4) '_1' str(5:end)];
+                                    for j=2:numel(BurstData.Parameters.rhoRR)
+                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                    end
+                                end
+                            end
+                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',20);
+                            %'BackgroundColor',[1 1 1],...
+                            %'EdgeColor',[0 0 0]);
+                        case 4
+                            %%%rGG vs TauGG
+                            if ~isempty(BurstData.Parameters.rhoGG)
+                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
+                                if numel(BurstData.Parameters.rhoGG) > 1
+                                    str = [str(1:4) '_1' str(5:end)];
+                                    for j=2:numel(BurstData.Parameters.rhoGG)
+                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                    end
+                                end
+                            end
+                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',20);
                             %'BackgroundColor',[1 1 1],...
@@ -8266,6 +8429,8 @@ switch obj
         %%% Copy axes to figure
         axes_copy = copyobj(h.axes_EvsTauGG,hfig);
         axes_copy.Position = [0.17 0.17 0.8 0.8];
+        axes_copy.Title.Visible = 'off';
+        axes_copy.XLabel.String = '\tau_{D(A)} [ns]';
         %%% set Background Color to white
         axes_copy.Color = [1 1 1];
         %%% change X/YColor Color Color
@@ -8280,12 +8445,36 @@ switch obj
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
         FigureName = 'E vs. TauGG';
+    case h.ExportEvsTauBB_Menu
+        AspectRatio = 1;
+        pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1]);
+        %%% Copy axes to figure
+        axes_copy = copyobj(h.axes_E_BtoGRvsTauBB,hfig);
+        axes_copy.Position = [0.17 0.17 0.8 0.8];
+        axes_copy.Title.Visible = 'off';
+        %%% set Background Color to white
+        axes_copy.Color = [1 1 1];
+        %%% change X/YColor Color Color
+        axes_copy.XColor = [0,0,0];
+        axes_copy.YColor = [0,0,0];
+        axes_copy.XLabel.Color = [0,0,0];
+        axes_copy.YLabel.Color = [0,0,0];
+        %%% Update ColorMap
+        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        else
+            colormap(UserValues.BurstBrowser.Display.ColorMap);
+        end
+        FigureName = 'E vs. TauBB';
 end
 %%% Combine the Original FileName and the parameter names
-if strcmp(BurstData.FileNameSPC,'_m1')
-    FileName = BurstData.FileNameSPC(1:end-3);
-else
-    FileName = BurstData.FileNameSPC;
+if isfield(BurstData,'FileNameSPC')
+    if strcmp(BurstData.FileNameSPC,'_m1')
+        FileName = BurstData.FileNameSPC(1:end-3);
+    else
+        FileName = BurstData.FileNameSPC;
+    end
 end
 FigureName = [FileName '_' FigureName];
 
