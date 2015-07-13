@@ -8074,6 +8074,8 @@ switch obj
         axes_copy.FontSize = fontsize;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
+        %%% change ForeGround Color Color
+        axes_copy.Color = [0,0,0];
         %%% Reset XAxis Location
         axes_copy.XAxisLocation = 'bottom';
         %%% Make Ticks point Outwards
@@ -8108,6 +8110,8 @@ switch obj
         axes_copy.FontSize = 50;
         %%% change Background Color
         axes_copy.Color = [1,1,1];
+        %%% change ForeGround Color Color
+        axes_copy.Color = [0,0,0];
         %%% Reset XAxis Location
         axes_copy.XAxisLocation = 'bottom';
         %%% Make Ticks point Outwards
@@ -8153,6 +8157,8 @@ switch obj
         for i = 1:numel(panel_copy.Children)
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
+            %%% change ForeGround Color Color
+            panel_copy.Children(i).Color = [0,0,0];
             %%% increase LineWidth of Axes
             panel_copy.Children(i).LineWidth = 3;
             %%% Increase FontSize
@@ -8188,6 +8194,8 @@ switch obj
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
+                %%% Set the Color of Font to black
+                panel_copy.Children(i).Color = [0,0,0];
                 %%% increase LineWidth of Axes
                 panel_copy.Children(i).LineWidth = 3;
                 %%% Increase FontSize
@@ -8247,6 +8255,8 @@ switch obj
         axes_copy.Position = [0.1 0.1 0.8 0.8];
         %%% set Background Color to white
         axes_copy.Color = [1 1 1];
+        %%% Set the Color of Font to black
+        axes_copy.Color = [0,0,0];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
