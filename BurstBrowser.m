@@ -3295,7 +3295,9 @@ for i=1:numel(MergeData)
     if isfield(MergeData{i}.BurstData,'SelectedSpecies')
         MergedParameters.SelectedSpecies{i} = MergeData{i}.BurstData.SelectedSpecies;
     end
-    MergedParameters.Corrections{i} = MergeData{i}.BurstData.Corrections;
+    if isfield(MergeData{i}.BurstData,'Corrections')
+        MergedParameters.Corrections{i} = MergeData{i}.BurstData.Corrections;
+    end
 end
 %%% Use first file for general variables
 Merged = MergeData{1}.BurstData;
