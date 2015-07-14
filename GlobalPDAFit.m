@@ -63,17 +63,17 @@ if isempty(h.GlobalPDAFit)
     h.Menu.Load = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Load File(s)...',...
-        'Callback',{@Load_PDA_Data, 1},...
+        'Callback',{@Load_PDA, 1},...
         'Tag','Load');
     h.Menu.Add = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Add File(s)...',...
-        'Callback',{@Load_PDA_Data, 2},...
+        'Callback',{@Load_PDA, 2},...
         'Tag','Add');
     h.Menu.Save = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Save to File(s)',...
-        'Callback',@Save_PDA_Project,...
+        'Callback',@Save_PDA,...
         'Tag','Save');
     h.Menu.Export = uimenu(...
         'Parent',h.Menu.File,...
@@ -750,6 +750,19 @@ if isempty(h.GlobalPDAFit)
         'Position',[0.82 0.75 0.05 0.2],...
         'Enable','off',...
         'Tag','FixSigmaAtFractionOfR_Fix');
+    h.SettingsTab.OuterBins_Fix = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Value',0,...
+        'FontSize',12,...
+        'String','w_res limits?',...
+        'Tooltipstring', 'do not take the first and last Epr bin into account when calculating the chi^2 and thus when fitting. Only works for Histogram Library!!!',...
+        'Callback',[],...
+        'Position',[0.65 0.5 0.2 0.2],...
+        'Tag','OuterBins_Fix');
 
     %% Other stuff
     %%% Re-enable menu
@@ -783,7 +796,8 @@ function Close_PDA(~,~)
 clearvars -global PDAData PDAMeta
 delete(findobj('Tag','GlobalPDAFit'));
 
-function Load_PDA_Data(~,~,mode)
+% Load data that was exported in BurstBrowser
+function Load_PDA(~,~,mode)
 global PDAData UserValues
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
@@ -914,7 +928,8 @@ Update_Plots([],[],3);
 Update_FitTable([],[],1);
 Update_ParamTable([],[],1);
 
-function Save_PDA_Project(~,~)
+% Save data and fit table back into each individual file 
+function Save_PDA(~,~)
 global PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
 for i = 1:numel(PDAData.FileName)
@@ -929,6 +944,7 @@ for i = 1:numel(PDAData.FileName)
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
+% Function that groups things that concern the plots
 function Update_Plots(~,~,mode,reset)
 % function creates and/or updates the plots after:
 % mode = 1: after fitting
@@ -1288,6 +1304,7 @@ switch mode
         end
 end
 
+% File menu - view/start fitting
 function Start_PDA_Fit(obj,~)
 global PDAData PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -1682,8 +1699,6 @@ else
         LB=[LB PDAMeta.LB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
         UB=[UB PDAMeta.UB(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global)];
     end
-    
-    
 
     %% Check if View_Curve was pressed
     if obj == h.Menu.ViewFit
@@ -1781,13 +1796,200 @@ Update_Plots([],[],1)
 h.Menu.Fit.Enable = 'on';
 PDAMeta.FitInProgress = 0;
 
+% File menu - stop fitting
 function Stop_PDA_Fit(~,~)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 PDAMeta.FitInProgress = 0;
 h.FitTab.Table.Enable = 'on';
 
-% model for MLE fitting (not global) (doesn't work currently)
+% model for normal histogram library fitting (not global)
+function [chi2] = PDAHistogramFit_Single(fitpar)
+global PDAMeta
+h = guidata(findobj('Tag','GlobalPDAFit'));
+i = PDAMeta.file;
+
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    chi2 = 0;
+    return;
+end
+
+%%% if sigma is fixed at fraction of, change its value here, and remove the
+%%% amplitude fit parameter so it does not mess up further uses of fitpar
+if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+    fraction = fitpar(end); fitpar(end) = [];
+    fitpar(3:3:end) = fraction.*fitpar(2:3:end);
+end
+
+%%% normalize Amplitudes
+fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+
+%%% create individual histograms
+hFit_Ind = cell(5,1);
+for c = PDAMeta.Comp{i}
+    [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+    P_eps = fitpar(3*c-2).*Pe;
+    hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+    for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+        hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+    end
+end
+hFit = sum(horzcat(hFit_Ind{:}),2)';
+
+%%% Calculate Chi2
+error = sqrt(PDAMeta.hProx{i});
+error(error == 0) = 1;
+w_res = (PDAMeta.hProx{i}-hFit)./error;
+if ~h.SettingsTab.OuterBins_Fix
+    chi2 = sum((w_res.^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
+else
+    chi2 = sum(((w_res(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
+    w_res(1) = 0;
+    w_res(end) = 0;
+end
+PDAMeta.w_res{i} = w_res;
+PDAMeta.hFit{i} = hFit;
+PDAMeta.chi2(i) = chi2;
+for c = PDAMeta.Comp{i};
+    PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
+end
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
+
+if h.SettingsTab.LiveUpdate.Value
+    Update_Plots([],[],5)
+end
+tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
+Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
+Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
+
+% model for normal histogram library fitting (global)
+function [mean_chi2] = PDAHistogramFit_Global(fitpar)
+global PDAMeta
+h = guidata(findobj('Tag','GlobalPDAFit'));
+
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    mean_chi2 = 0;
+    return;
+end
+
+
+FitParams = PDAMeta.FitParams;
+Global = PDAMeta.Global;
+Fixed = PDAMeta.Fixed;
+
+% define degrees of freedom here since we will loose fitpar
+DOF = numel(fitpar);
+
+P=zeros(numel(Global),1);
+
+%%% Assigns global parameters
+P(Global)=fitpar(1:sum(Global));
+fitpar(1:sum(Global))=[];
+    
+for i=find(PDAMeta.Active)'
+    PDAMeta.file = i;
+    %%% Sets non-fixed parameters
+    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
+    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
+    %%% Sets fixed parameters
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
+    %%% Calculates function for current file
+    
+    %%% normalize Amplitudes
+    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
+    
+    %%% if sigma is fixed at fraction of, change its value here
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        P(3:3:end) = P(end).*P(2:3:end);
+    end
+
+    %%% create individual histograms
+    hFit_Ind = cell(5,1);
+    for c = PDAMeta.Comp{i}
+        [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
+        P_eps = P(3*c-2).*Pe;
+        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+        end
+    end
+    hFit = sum(horzcat(hFit_Ind{:}),2)';
+    
+    %%% Calculate Chi2
+    error = sqrt(PDAMeta.hProx{i});
+    error(error == 0) = 1;
+    PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
+    PDAMeta.hFit{i} = hFit;
+    if ~h.SettingsTab.OuterBins_Fix
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-DOF-1);
+    else
+        % disregard last bins
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-2-DOF-1);
+        PDAMeta.w_res{i}(1) = 0;
+        PDAMeta.w_res{i}(end) = 0;
+    end
+    if i == h.SingleTab.Popup.Value
+        set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
+    end
+    for c = PDAMeta.Comp{i};
+        PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
+    end
+    if h.SettingsTab.LiveUpdate.Value
+        Update_Plots([],[],5)
+    end 
+end
+mean_chi2 = mean(PDAMeta.chi2);
+Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+
+% function that generates Equation 10 from Antonik 2006 J Phys Chem B
+function [Pe] = Generate_P_of_eps(RDA, sigma, i)
+global PDAMeta
+eps = PDAMeta.epsEgrid{i};
+if PDAMeta.directexc(i) == 0
+    % generate gaussian distributions of PDA.epsilon weights
+    % Eq 10 in Antonik 2006 c Phys Chem B
+    Pe = PDAMeta.R0(i)/(6*sqrt(2*pi)*sigma)*...
+        (PDAMeta.gamma(i))^(1/6)*...
+        1./(1-eps).^2 .* ...
+        (1./(1-eps) - (1+PDAMeta.crosstalk(i))).^(-7/6) .* ...
+        exp(...
+        -1/(2*sigma^2)*...
+        (PDAMeta.R0(i).*...
+        (PDAMeta.gamma(i))^(1/6).*...
+        (1./(1-eps)-(1+PDAMeta.crosstalk(i))).^(-1/6)- ...
+        RDA).^2);
+elseif PDAMeta.directexc(i) ~= 0
+    dRdeps = -((PDAMeta.R0(i)^6*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
+        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
+        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
+        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))...
+        - ((PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))*(PDAMeta.crosstalk(i)...
+        - PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) + PDAMeta.directexc(i)*PDAMeta.gamma(i) + 1))./...
+        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i)...
+        - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
+        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i)).^2)./...
+        (6*(-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
+        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps...
+        + PDAMeta.directexc(i)*PDAMeta.gamma(i) + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps -...
+        PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(5/6));
+    P_Rofeps = (1/(sqrt(2*pi)*sigma)).*...
+        exp(-(RDA - (-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./...
+        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
+        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i) +...
+        PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(1/6)).^2./(2*sigma^2));
+    Pe = dRdeps.*P_Rofeps;
+end
+Pe(~isfinite(Pe)) = 0;
+Pe = Pe./sum(Pe);
+
+% model for MLE fitting (not global)
 function logL = PDA_MLE_Fit_Single(fitpar)
 global PDAMeta PDAData
 
@@ -1874,178 +2076,7 @@ logL = sum(L);
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
 
-
-% model for normal histogram library fitting (not global)
-function [chi2] = PDAHistogramFit_Single(fitpar)
-global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
-i = PDAMeta.file;
-
-%%% Aborts Fit
-drawnow;
-if ~PDAMeta.FitInProgress
-    chi2 = 0;
-    return;
-end
-
-%%% if sigma is fixed at fraction of, change its value here, and remove the
-%%% amplitude fit parameter so it does not mess up further uses of fitpar
-if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-    fraction = fitpar(end); fitpar(end) = [];
-    fitpar(3:3:end) = fraction.*fitpar(2:3:end);
-end
-
-%%% normalize Amplitudes
-fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
-
-%%% create individual histograms
-hFit_Ind = cell(5,1);
-for c = PDAMeta.Comp{i}
-    [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-    P_eps = fitpar(3*c-2).*Pe;
-    hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-    for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-        hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-    end
-end
-hFit = sum(horzcat(hFit_Ind{:}),2)';
-
-%%% Calculate Chi2
-error = sqrt(PDAMeta.hProx{i});
-error(error == 0) = 1;
-w_res = (PDAMeta.hProx{i}-hFit)./error;
-chi2 = sum((w_res.^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
-PDAMeta.w_res{i} = w_res;
-PDAMeta.hFit{i} = hFit;
-PDAMeta.chi2(i) = chi2;
-for c = PDAMeta.Comp{i};
-    PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
-end
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
-set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
-
-if h.SettingsTab.LiveUpdate.Value
-    Update_Plots([],[],5)
-end
-tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
-Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
-Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
-
-% model for normal histogram library fitting (global)
-function [mean_chi2] = PDAHistogramFit_Global(fitpar)
-global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
-
-%%% Aborts Fit
-drawnow;
-if ~PDAMeta.FitInProgress
-    mean_chi2 = 0;
-    return;
-end
-
-
-FitParams = PDAMeta.FitParams;
-Global = PDAMeta.Global;
-Fixed = PDAMeta.Fixed;
-
-% define degrees of freedom here since we will loose fitpar
-DOF = numel(fitpar);
-
-P=zeros(numel(Global),1);
-
-%%% Assigns global parameters
-P(Global)=fitpar(1:sum(Global));
-fitpar(1:sum(Global))=[];
-    
-for i=find(PDAMeta.Active)'
-    PDAMeta.file = i;
-    %%% Sets non-fixed parameters
-    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
-    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
-    %%% Sets fixed parameters
-    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
-    %%% Calculates function for current file
-    
-    %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
-    
-    %%% if sigma is fixed at fraction of, change its value here
-    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-        P(3:3:end) = P(end).*P(2:3:end);
-    end
-
-    %%% create individual histograms
-    hFit_Ind = cell(5,1);
-    for c = PDAMeta.Comp{i}
-        [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
-        P_eps = P(3*c-2).*Pe;
-        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-        end
-    end
-    hFit = sum(horzcat(hFit_Ind{:}),2)';
-    
-    %%% Calculate Chi2
-    error = sqrt(PDAMeta.hProx{i});
-    error(error == 0) = 1;
-    PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
-    PDAMeta.hFit{i} = hFit;
-    PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-DOF-1);
-    set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
-    for c = PDAMeta.Comp{i};
-        PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
-    end
-    if h.SettingsTab.LiveUpdate.Value
-        Update_Plots([],[],5)
-    end
-end
-mean_chi2 = mean(PDAMeta.chi2);
-Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
-
-% function that generates Equation 10 from Antonik 2006 J Phys Chem B
-function [Pe] = Generate_P_of_eps(RDA, sigma, i)
-global PDAMeta
-eps = PDAMeta.epsEgrid{i};
-if PDAMeta.directexc(i) == 0
-    % generate gaussian distributions of PDA.epsilon weights
-    % Eq 10 in Antonik 2006 c Phys Chem B
-    Pe = PDAMeta.R0(i)/(6*sqrt(2*pi)*sigma)*...
-        (PDAMeta.gamma(i))^(1/6)*...
-        1./(1-eps).^2 .* ...
-        (1./(1-eps) - (1+PDAMeta.crosstalk(i))).^(-7/6) .* ...
-        exp(...
-        -1/(2*sigma^2)*...
-        (PDAMeta.R0(i).*...
-        (PDAMeta.gamma(i))^(1/6).*...
-        (1./(1-eps)-(1+PDAMeta.crosstalk(i))).^(-1/6)- ...
-        RDA).^2);
-elseif PDAMeta.directexc(i) ~= 0
-    dRdeps = -((PDAMeta.R0(i)^6*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
-        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
-        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
-        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))...
-        - ((PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))*(PDAMeta.crosstalk(i)...
-        - PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) + PDAMeta.directexc(i)*PDAMeta.gamma(i) + 1))./...
-        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i)...
-        - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
-        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i)).^2)./...
-        (6*(-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
-        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps...
-        + PDAMeta.directexc(i)*PDAMeta.gamma(i) + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps -...
-        PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(5/6));
-    P_Rofeps = (1/(sqrt(2*pi)*sigma)).*...
-        exp(-(RDA - (-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./...
-        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
-        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i) +...
-        PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(1/6)).^2./(2*sigma^2));
-    Pe = dRdeps.*P_Rofeps;
-end
-Pe(~isfinite(Pe)) = 0;
-Pe = Pe./sum(Pe);
-
+% model for MLE fitting (global)
 function [mean_logL] = PDAMLEFit_Global(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2099,50 +2130,7 @@ set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. logL = ' sprintf('%1.2f',m
 %%% store logL in PDAMeta
 PDAMeta.Last_logL = mean_logL;
 
-function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
-global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
-
-%%% Aborts Fit
-drawnow;
-if ~PDAMeta.FitInProgress
-    mean_chi2 = 0;
-    return;
-end
-
-FitParams = PDAMeta.FitParams;
-Global = PDAMeta.Global;
-Fixed = PDAMeta.Fixed;
-% define degrees of freedom here since we will loose fitpar
-DOF = numel(fitpar);
-
-P=zeros(numel(Global),1);
-
-%%% Assigns global parameters
-P(Global)=fitpar(1:sum(Global));
-fitpar(1:sum(Global))=[];
-
-for i=find(PDAMeta.Active)'
-    PDAMeta.file = i;
-    %%% Sets non-fixed parameters
-    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
-    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
-    %%% Sets fixed parameters
-    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
-    %%% Calculates function for current file
-    
-    %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
-
-    %%% create individual histograms
-    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
-end
-mean_chi2 = mean(PDAMeta.chi2);
-Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
-
-% model for Monte Carle based fitting (not global) (doesn't work currently)
+% Model for Monte Carle based fitting (not global) 
 function [chi2] = PDAMonteCarloFit_Single(fitpar)
 global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2246,62 +2234,117 @@ tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
 Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
 Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
-
-% function to export the figures (doesn't work currently)
-function Export_Figure(~,~)
-global PDAData
+% Model for Monte Carle based fitting (global) 
+function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
+global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
-for i = 1:(numel(PDAData.FileName)+1)
-    fig = figure('Position',[100 ,100 ,900, 425],...
-        'Color',[1 1 1],...
-        'Resize','off');
-    if i == 1 %generate figure for All Tab
-        main_ax = copyobj(h.AllTab.Main_Axes,fig);
-        res_ax = copyobj(h.AllTab.Res_Axes,fig);
-        gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
-    else %generate figure per Single Tab plot
-        h.SingleTab.Popup.Value = i;
-        Update_Plots([],[],2)
-        main_ax = copyobj(h.SingleTab.Main_Axes,fig);
-        res_ax = copyobj(h.SingleTab.Res_Axes,fig);
-        gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
-    end
-    %main_ax.Children(end).Position = [1.3,1.09];
-    main_ax.Children(end).String = ''; % = main_ax.Children(1:end-1);
-    main_ax.Color = [1 1 1];
-    res_ax.Color = [1 1 1];
-    main_ax.XColor = [0 0 0];
-    main_ax.YColor = [0 0 0];
-    res_ax.XColor = [0 0 0];
-    res_ax.YColor = [0 0 0];
-    main_ax.XLabel.Color = [0 0 0];
-    main_ax.YLabel.Color = [0 0 0];
-    res_ax.XLabel.Color = [0 0 0];
-    res_ax.YLabel.Color = [0 0 0];
-    main_ax.Units = 'pixel';
-    res_ax.Units = 'pixel';
-    main_ax.Position = [75 70 475 290];
-    res_ax.Position = [75 360 475 50];
-    main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
+%%% Aborts Fit
+drawnow;
+if ~PDAMeta.FitInProgress
+    mean_chi2 = 0;
+    return;
+end
+
+FitParams = PDAMeta.FitParams;
+Global = PDAMeta.Global;
+Fixed = PDAMeta.Fixed;
+% define degrees of freedom here since we will loose fitpar
+DOF = numel(fitpar);
+
+P=zeros(numel(Global),1);
+
+%%% Assigns global parameters
+P(Global)=fitpar(1:sum(Global));
+fitpar(1:sum(Global))=[];
+
+for i=find(PDAMeta.Active)'
+    PDAMeta.file = i;
+    %%% Sets non-fixed parameters
+    P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
+    fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
+    %%% Sets fixed parameters
+    P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
+    %%% Calculates function for current file
     
-    gauss_ax.Color = [1 1 1];
-    gauss_ax.XColor = [0 0 0];
-    gauss_ax.YColor = [0 0 0];
-    gauss_ax.XLabel.Color = [0 0 0];
-    gauss_ax.YLabel.Color = [0 0 0];
-    gauss_ax.Units = 'pixel';
-    gauss_ax.Position = [650 70 225 290];
-    gauss_ax.GridAlpha = 0.1;
-    res_ax.GridAlpha = 0.1;
-    gauss_ax.FontSize = 15;
-    set(fig,'PaperPositionMode','auto');
-    if i == 1
-        print(fig,'-dtiff','-r150',GenerateName(fullfile(PDAData.PathName{1}, 'allPDAfits.tif')))
-    else
-        print(fig,'-dtiff','-r150',GenerateName(fullfile(PDAData.PathName{i-1}, [PDAData.FileName{i-1}(1:end-4) '.tif'])))
+    %%% normalize Amplitudes
+    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
+
+    %%% create individual histograms
+    [PDAMeta.chi2(i)] = PDAMonteCarloFit_Single(P);
+end
+mean_chi2 = mean(PDAMeta.chi2);
+Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
+
+% Function to export the figures
+function Export_Figure(~,~)
+global PDAData UserValues
+h = guidata(findobj('Tag','GlobalPDAFit'));
+
+% use uiputfile to generate a folder name in a specified location
+[File, Path] = uiputfile({'*.*', 'Folder name'},...
+    'Specify directory name',...
+    fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']));
+Path = GenerateName(fullfile(Path, File),2);
+
+if isempty(File)
+    return
+else
+    clear File
+    for i = 1:(numel(PDAData.FileName)+1)
+        fig = figure('Position',[100 ,100 ,900, 425],...
+            'Color',[1 1 1],...
+            'Resize','off');
+        if i == 1 %generate figure for All Tab
+            main_ax = copyobj(h.AllTab.Main_Axes,fig);
+            res_ax = copyobj(h.AllTab.Res_Axes,fig);
+            gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
+        else %generate figure per Single Tab plot
+            h.SingleTab.Popup.Value = i-1;
+            Update_Plots([],[],2)
+            main_ax = copyobj(h.SingleTab.Main_Axes,fig);
+            res_ax = copyobj(h.SingleTab.Res_Axes,fig);
+            gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
+        end
+        main_ax.Children(end).Position = [1.3,1.09];
+        %main_ax.Children(end).String = main_ax.Children(1:end-1);
+        %main_ax.Children(end).String = ''; 
+        main_ax.Color = [1 1 1];
+        res_ax.Color = [1 1 1];
+        main_ax.XColor = [0 0 0];
+        main_ax.YColor = [0 0 0];
+        res_ax.XColor = [0 0 0];
+        res_ax.YColor = [0 0 0];
+        main_ax.XLabel.Color = [0 0 0];
+        main_ax.YLabel.Color = [0 0 0];
+        res_ax.XLabel.Color = [0 0 0];
+        res_ax.YLabel.Color = [0 0 0];
+        main_ax.Units = 'pixel';
+        res_ax.Units = 'pixel';
+        main_ax.Position = [75 70 475 290];
+        res_ax.Position = [75 360 475 50];
+        main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
+        
+        gauss_ax.Color = [1 1 1];
+        gauss_ax.XColor = [0 0 0];
+        gauss_ax.YColor = [0 0 0];
+        gauss_ax.XLabel.Color = [0 0 0];
+        gauss_ax.YLabel.Color = [0 0 0];
+        gauss_ax.Units = 'pixel';
+        gauss_ax.Position = [650 70 225 290];
+        gauss_ax.GridAlpha = 0.1;
+        res_ax.GridAlpha = 0.1;
+        gauss_ax.FontSize = 15;
+        %set(fig,'PaperPositionMode','auto');
+        if i == 1
+            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, 'All.tif'),1))
+        else
+            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{i-1}(1:end-4) '.tif']),1))
+        end
+        close(fig)
     end
-    close(fig)
 end
 
 % Update the Fit Tab
@@ -2393,6 +2436,28 @@ switch mode
         a = size(h.FitTab.Table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
         for i = a:(size(Data,1)-3) % i = 4:5
             Data(i,:) = PDAData.FitTable{i};
+        end
+        for i = 1:15 % all fittable parameters
+            if all(cell2mat(Data(1:end-3,3*i+1)))
+                % this parameter is global for all files
+                % so make the ALL row also global
+                Data(end-2,3*i+1) = {true};
+                % make the fix checkbox false
+                Data(end-2,3*i) = {false};
+                % make the ALL row the mean of all values for that parameter
+                Data(end-2,3*i-1) = {num2str(mean(cellfun(@str2double,Data(1:end-3,3*i-1))))};
+            else
+                % this parameter is not global for all files
+                % so make it not global for all files
+                Data(1:end-2,3*i+1) = {false};
+            end
+            if all(cell2mat(Data(1:end-3,3*i)))
+                % all of the fix checkboxes are true
+                % make the ALL fix checkbox true
+                Data(end-2,3*i) = {true};
+            else
+                Data(end-2,3*i) = {false};
+            end           
         end
         h.FitTab.Table.Data=Data;
         %%% Enables cell callback again
@@ -2487,6 +2552,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
     %%% Enables cell callback again
     h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
 end
+
 % Update the Parameters Tab
 function Update_ParamTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2586,7 +2652,7 @@ end
 %%% Enables cell callback again
 h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
 
-% function that generates random data at program start
+% Function that generates random data when there is nothing to show
 function SampleData
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2706,7 +2772,7 @@ end
 axis('tight');
 xlim(h.AllTab.Gauss_Axes,[40 120]);
 
-% info menu - To do list
+% Info menu - To do list
 function Todolist(~,~)
 msgbox({...
     'allow to set Epr limits for plotting and analysis';...
@@ -2714,7 +2780,11 @@ msgbox({...
     'add a legend in the plots';...
     'sigma cannot be zero or a very small number';...
     'the chi^2 definition is not ok';...
-    '';...
+    'possibility to plot the actual E instead of Epr';...
+    'dynamic PDA fit';...
+    'brightness corrected PDA';...
+    'when you press determine gamma, take the actual DA molecules instead of a rough S selection';...
+    'put the optimplotfval into the gauss plot, so fitting can be evaluated per iteration, rather than per function sampling';...
     '';...
     ''} ,'To do list','modal');
 
@@ -2751,9 +2821,7 @@ else
     winopen('Global PDA Fitting.docx')
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Database management
 function Database(~,e,mode)
 global UserValues PDAData
 LSUserValues(0);
@@ -2797,11 +2865,11 @@ switch mode
         end
     case 2 
         %% Load database
-        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.Path,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.BurstBrowserPath,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         PDAData.FileName = s.file;
         PDAData.PathName = s.path;
-        Load_PDA_Data([],[],3);
+        Load_PDA([],[],3);
         h.PDADatabase.List.String = s.str;
         clear s;
         if size(h.PDADatabase.List.String, 1) > 0
@@ -2810,7 +2878,7 @@ switch mode
         end
     case 3 
         %% Save complete database
-        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.Path);
+        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.BurstBrowserPath);
         s = struct;
         s.file = PDAData.FileName;
         s.path = PDAData.PathName;
