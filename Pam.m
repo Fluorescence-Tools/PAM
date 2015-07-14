@@ -5264,7 +5264,7 @@ end
 
 %%% Save the Burst Data
 BurstFileName = [FullFileName '.bur'];
-BurstFileName = GenerateName(BurstFileName);
+BurstFileName = GenerateName(BurstFileName, 1);
 %%% Store the FileName of the *.bur file
 BurstData.FileName = BurstFileName;
 save(BurstFileName,'BurstData');
@@ -5273,7 +5273,7 @@ save(BurstFileName,'BurstData');
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
 PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
-PhotonsFileName = GenerateName(PhotonsFileName);
+PhotonsFileName = GenerateName(PhotonsFileName, 1);
 %Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
 %Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
 %Channel = cellfun(@uint8,Channel,'UniformOutput',false);
@@ -5282,7 +5282,7 @@ save(PhotonsFileName,'Macrotime','Microtime','Channel');
 %%% purified FCS (inclusion of time window around burst)
 if UserValues.BurstSearch.SaveTotalPhotonStream
     PhotonsFileName = [FullFileName '.aps']; %%% .bps is all-photon-stream
-    PhotonsFileName = GenerateName(PhotonsFileName);
+    PhotonsFileName = GenerateName(PhotonsFileName, 1);
     PhotonStream.start = start_all;
     PhotonStream.stop = stop_all;
     PhotonStream.Macrotime = Macrotime_all;
