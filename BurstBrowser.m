@@ -398,6 +398,12 @@ if isempty(hfig)
         'Tag','DoTimeWindowAnalysis',...
         'Callback',@Time_Window_Analysis);
     
+    h.ExportPDA_PN_Donoronly = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Export Photon Count Distribution of Donor only Species for PDA',...
+        'Tag','ExportPDA_PN_Donoronly',...
+        'Callback',@Export_To_PDA);
+    
     %%% Define Species List
     h.SpeciesList = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -3566,7 +3572,9 @@ global BurstData BurstTCSPCData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
-
+if obj == h.ExportPDA_PN_Donoronly
+    SelectedSpeciesName = 'DonorOnly';
+end
 %Valid = UpdateCuts(SelectedSpecies);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
