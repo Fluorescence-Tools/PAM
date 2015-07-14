@@ -2613,6 +2613,8 @@ switch mode
             tmp(i,6) = PDAData.Corrections{i}.FoersterRadius;
         end
         Data(size(h.ParametersTab.Table.Data,1):(end-1),:) = num2cell(tmp(size(h.ParametersTab.Table.Data,1):end,:));
+        % put the ALL row to the mean of the loaded data 
+        Data(end,:) = num2cell(mean(cell2mat(Data(1:end-1,:)),1));
         %%% Adds new files
         h.ParametersTab.Table.Data = Data;
         PDAMeta.PreparationDone = 0;
