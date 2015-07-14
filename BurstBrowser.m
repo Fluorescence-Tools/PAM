@@ -3642,7 +3642,7 @@ Progress(0.7,h.Progress_Axes,h.Progress_Text,'Exporting...');
 
 %now save channel wise photon numbers
 total = n_bins;
-newfilename = GenerateName([BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda']);
+newfilename = GenerateName([BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
 switch BurstData.BAMethod
     case {1,2}
         PDA.NGP = zeros(total,1);
