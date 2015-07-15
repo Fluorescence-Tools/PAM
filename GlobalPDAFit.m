@@ -842,85 +842,93 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     h.PDADatabase.Save.Enable = 'off';
 
 end
-
+errorstr = cell(0,1);
+a = 1;
 for i = 1:numel(FileName)
     Progress(i/numel(FileName),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Loading file(s)...');
     Progress(i/numel(FileName),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Loading file(s)...');
-    load('-mat',fullfile(PathName{i},FileName{i}));
-    PDAData.FileName{end+1} = FileName{i};
-    PDAData.PathName{end+1} = PathName{i};
-    if exist('PDA','var') % file has not been saved before in GlobalPDAFit
-        % PDA %structure
-        % .NGP
-        % ....
-        % .NR
-        % .Corrections %structure
-        %       .CrossTalk_GR
-        %       .DirectExcitation_GR
-        %       .Gamma_GR
-        %       .Beta_GR
-        %       .GfactorGreen
-        %       .GfactorRed
-        %       .DonorLifetime
-        %       .AcceptorLifetime
-        %       .FoersterRadius
-        %       .LinkerLength
-        %       .r0_green
-        %       .r0_red
-        %       ... maybe more in future
-        % .Background %structure
-        %       .Background_GGpar
-        %       .Background_GGperp
-        %       .Background_GRpar
-        %       .Background_GRperp
-        %       ... maybe more in future
-        % NOTE: direct excitation correction in Burst analysis is NOT the
-        % same as PDA, therefore we put it to zero. In PDA, this factor
-        % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
-        % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
-        % corrected double labeled molecule having no FRET at all.
-        PDAData.Data{end+1} = PDA;
-        PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Corrections');
-        PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Background');
-        PDAData.timebin(end+1) = timebin;
-        PDAData.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
-        PDAData.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
-        clear PDA timebin
-        PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
-    elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
-        % SavedData %structure
-        %   .Data %cell
-        %       .NGP
-        %       ....
-        %       .NR
-        %   .Corrections %structure
-        %           see above
-        %   .Background %structure
-        %           see above
-        %   .FitParams %1 x 47 cell
-        PDAData.Data{end+1} = SavedData.Data;
-        PDAData.timebin(end+1) = SavedData.timebin;
-        PDAData.Corrections{end+1} = SavedData.Corrections;
-        PDAData.Background{end+1} = SavedData.Background;
-        % load fit table data from files
-        PDAData.FitTable{end+1} = SavedData.FitTable;
-    elseif exist('PDAstruct','var')
-        %%% File is probably from old PDAFit
-        PDAData.Data{end+1} = PDAstruct.Data;
-        PDAData.timebin(end+1) = PDAstruct.timebin;
-        PDAData.Corrections{end+1} = PDAstruct.Corrections; %contains everything that was saved in BurstBrowser
-        PDAData.Background{end+1}.Background_GGpar = PDAstruct.Corrections.BackgroundDonor/2;
-        PDAData.Background{end}.Background_GGperp = PDAstruct.Corrections.BackgroundDonor/2;
-        PDAData.Background{end}.Background_GRpar = PDAstruct.Corrections.BackgroundAcceptor/2;
-        PDAData.Background{end}.Background_GRperp = PDAstruct.Corrections.BackgroundAcceptor/2;
-        PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
+    if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
+        load('-mat',fullfile(PathName{i},FileName{i}));
+        PDAData.FileName{end+1} = FileName{i};
+        PDAData.PathName{end+1} = PathName{i};
+        if exist('PDA','var') % file has not been saved before in GlobalPDAFit
+            % PDA %structure
+            % .NGP
+            % ....
+            % .NR
+            % .Corrections %structure
+            %       .CrossTalk_GR
+            %       .DirectExcitation_GR
+            %       .Gamma_GR
+            %       .Beta_GR
+            %       .GfactorGreen
+            %       .GfactorRed
+            %       .DonorLifetime
+            %       .AcceptorLifetime
+            %       .FoersterRadius
+            %       .LinkerLength
+            %       .r0_green
+            %       .r0_red
+            %       ... maybe more in future
+            % .Background %structure
+            %       .Background_GGpar
+            %       .Background_GGperp
+            %       .Background_GRpar
+            %       .Background_GRperp
+            %       ... maybe more in future
+            % NOTE: direct excitation correction in Burst analysis is NOT the
+            % same as PDA, therefore we put it to zero. In PDA, this factor
+            % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
+            % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
+            % corrected double labeled molecule having no FRET at all.
+            PDAData.Data{end+1} = PDA;
+            PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Corrections');
+            PDAData.Data{end} = rmfield(PDAData.Data{end}, 'Background');
+            PDAData.timebin(end+1) = timebin;
+            PDAData.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
+            PDAData.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
+            clear PDA timebin
+            PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
+        elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
+            % SavedData %structure
+            %   .Data %cell
+            %       .NGP
+            %       ....
+            %       .NR
+            %   .Corrections %structure
+            %           see above
+            %   .Background %structure
+            %           see above
+            %   .FitParams %1 x 47 cell
+            PDAData.Data{end+1} = SavedData.Data;
+            PDAData.timebin(end+1) = SavedData.timebin;
+            PDAData.Corrections{end+1} = SavedData.Corrections;
+            PDAData.Background{end+1} = SavedData.Background;
+            % load fit table data from files
+            PDAData.FitTable{end+1} = SavedData.FitTable;
+        elseif exist('PDAstruct','var')
+            %%% File is probably from old PDAFit
+            PDAData.Data{end+1} = PDAstruct.Data;
+            PDAData.timebin(end+1) = PDAstruct.timebin;
+            PDAData.Corrections{end+1} = PDAstruct.Corrections; %contains everything that was saved in BurstBrowser
+            PDAData.Background{end+1}.Background_GGpar = PDAstruct.Corrections.BackgroundDonor/2;
+            PDAData.Background{end}.Background_GGperp = PDAstruct.Corrections.BackgroundDonor/2;
+            PDAData.Background{end}.Background_GRpar = PDAstruct.Corrections.BackgroundAcceptor/2;
+            PDAData.Background{end}.Background_GRperp = PDAstruct.Corrections.BackgroundAcceptor/2;
+            PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
+        end
+        % add files to database table
+        h.PDADatabase.List.String{end+1} = [FileName{i} ' (path:' PathName{i} ')'];
+        h.PDADatabase.Save.Enable = 'on';
+    else
+        errorstr{a} = ['File ' FileName{i} ' on path ' PathName{i} ' could not be found. File omitted from database.'];
+        a = a+1;
     end
-    % add files to database table
-    h.PDADatabase.List.String{end+1} = [FileName{i} ' (path:' PathName{i} ')'];
-    h.PDADatabase.Save.Enable = 'on';
 end
 PDAData.OriginalFitParams = PDAData.FitTable; %contains the fit table as it was originally displayed when opening the data
-
+if a > 1
+    msgbox(errorstr)
+end
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
 
@@ -2872,11 +2880,13 @@ switch mode
         PDAData.FileName = s.file;
         PDAData.PathName = s.path;
         Load_PDA([],[],3);
-        h.PDADatabase.List.String = s.str;
+        %h.PDADatabase.List.String = s.str;
         clear s;
         if size(h.PDADatabase.List.String, 1) > 0
             % files are left
             h.PDADatabase.Save.Enable = 'on';
+        else
+            SampleData
         end
     case 3 
         %% Save complete database
@@ -2884,7 +2894,7 @@ switch mode
         s = struct;
         s.file = PDAData.FileName;
         s.path = PDAData.PathName;
-        s.str = h.PDADatabase.List.String;
+        %s.str = h.PDADatabase.List.String;
         save(fullfile(Path,File),'s');
 end
 
