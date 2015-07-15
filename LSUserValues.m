@@ -115,23 +115,35 @@ if Mode==0 %%% Loads user values
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Checks, if fields exist
-    if ~isfield (S, 'Look') || any(~isfield(S.Look, {'Back';'Fore';'Control';'Axes';'Disabled';'Shadow'}));
+    if ~isfield (S, 'Look') || any(~isfield(S.Look, {'Back';'Fore';'Control';'Axes';'Disabled';'Shadow';'AxesFore';'List';'ListFore';'Table1';'Table2';'TableFore'}));
         S.Look=[];
         S.Look.Back=[0.2 0.2 0.2];
         S.Look.Fore=[1 1 1];
         S.Look.Control=[0.4 0.4 0.4];
-        S.Look.Axes=[0.8 0.8 0.8];
         S.Look.Disabled=[0 0 0];
         S.Look.Shadow=[0.4 0.4 0.4];
+        S.Look.Axes=[0.8 0.8 0.8];
+        S.Look.AxesFore=[0 0 0];
+        S.Look.List=[0.8 0.8 0.8];
+        S.Look.ListFore=[0 0 0];
+        S.Look.Table1=[0.9 0.9 0.9];
+        S.Look.Table2=[0.8 0.8 0.8];
+        S.Look.TableFore=[0 0 0];
         disp('UserValues.Look was incomplete');
     end
     P.Look = [];
     P.Look.Back = S.Look.Back;
     P.Look.Fore = S.Look.Fore;
     P.Look.Control = S.Look.Control;
-    P.Look.Axes = S.Look.Axes;
     P.Look.Disabled = S.Look.Disabled;
     P.Look.Shadow = S.Look.Shadow;
+    P.Look.Axes = S.Look.Axes;
+    P.Look.AxesFore = S.Look.AxesFore;
+    P.Look.List = S.Look.List;
+    P.Look.ListFore = S.Look.ListFore;
+    P.Look.Table1=S.Look.Table1;
+    P.Look.Table2=S.Look.Table2;
+    P.Look.TableFore=S.Look.TableFore;
     %% File: Last used Paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Checks, if fields exist

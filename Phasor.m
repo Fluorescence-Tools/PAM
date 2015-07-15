@@ -458,8 +458,8 @@ if isempty(h.Phasor) % Creates new figure, if none exists
     h.List = uicontrol(...
         'Parent',h.Settings_Panel,...
         'Units','normalized',...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
+        'BackgroundColor', Look.List,...
+        'ForegroundColor', Look.ListFore,...
         'KeyPressFcn',@List_Callback,...
         'Callback',{@Plot_Phasor,1,1:10},...
         'Max',5,...
@@ -2175,6 +2175,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
         case {6, 6.5} %%% Fraction line
             %%% Disables callback, to avoit multiple executions
             h.Phasor.WindowButtonMotionFcn=[];
+            h.Phasor_Fraction.UserData = 0;
             %%% Ony executes, if mouse moved
             if all((Pos-Start)~=0)
                 h.Phasor_Fraction.XData=[Start(1) Pos(1)];
@@ -2560,6 +2561,8 @@ elseif h.Main_Tab.SelectedTab == h.Single_Tab
 else
     Images = [];
 end
+Map=cell(6,1);
+Z1=[];
 for i=Images %%% Plots Phasor Data
     if PhasorData.Plot(i)~=0 
         %%% Changes the plot title
@@ -2593,38 +2596,45 @@ for i=Images %%% Plots Phasor Data
                         PhasorData.Data{PhasorData.Plot(i)}.s>=Pos(2) &...
                         PhasorData.Data{PhasorData.Plot(i)}.s<=(Pos(2)+Pos(4)) &...
                         PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
-                        PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;                    
+                        PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;  
+                    %%% Applies ROI color
+                    Mask(:,:,1)=Mask(:,:,1)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(1);
+                    Mask(:,:,2)=Mask(:,:,2)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(2);
+                    Mask(:,:,3)=Mask(:,:,3)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(3);
                 elseif strcmp(h.Phasor_ROI(j,2).Visible,'on')
                     %% Ellipoid ROI
-                    %%% Determins position of ROI
-                    x=round(Pixel*(h.Phasor_ROI(j,2).XData+0.1));
-                    y=round(Pixel*(h.Phasor_ROI(j,2).YData+0.1));
-                    x(x<1)=1; y(y<1)=1;
-                    Map=zeros(1.3*Pixel);
-                    %%% Transforms ROI position into pixelmap
-                    Map(sub2ind(size(Map),x,y))=1;
-                    %%% Fills ROI pixelmap
-                    Map=mod(cumsum(Map),2);  
+                    if isempty(Map{j})
+                        %%% Determins position of ROI
+                        x=round(Pixel*(h.Phasor_ROI(j,2).XData+0.1));
+                        y=round(Pixel*(h.Phasor_ROI(j,2).YData+0.1));
+                        x(x<1)=1; y(y<1)=1;
+                        Map{j}=zeros(1.3*Pixel);
+                        %%% Transforms ROI position into pixelmap
+                        Map{j}(sub2ind(size(Map{j}),x,y))=1;
+                        %%% Fills ROI pixelmap
+                        Map{j}=mod(cumsum(Map{j}),2);
+                    end
                     %%% Finds valid pixel
                     G=round((PhasorData.Data{PhasorData.Plot(i)}.g+0.1)*Pixel);
                     G(isnan(G) | G<1)=1;
                     S=round((PhasorData.Data{PhasorData.Plot(i)}.s+0.1)*Pixel);
-                    S(isnan(S) | S<1)=1;
+                    S(isnan(S) | S<1)=1;  
+                    Index=sub2ind(size(Map{j}),G,S);
                     %%% Generates ROI map
-                    roi(:,:,j)=Map(sub2ind(size(Map),G,S))==1 &...
+                    roi(:,:,j)=Map{j}(Index) &...
                         PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
-                        PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;
+                        PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;                            
+                    %%% Applies ROI color
+                    Mask(:,:,1)=Mask(:,:,1)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(1);
+                    Mask(:,:,2)=Mask(:,:,2)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(2);
+                    Mask(:,:,3)=Mask(:,:,3)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(3);                    
                 end
-                %%% Applies ROI color
-                Mask(:,:,1)=Mask(:,:,1)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(1);
-                Mask(:,:,2)=Mask(:,:,2)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(2);
-                Mask(:,:,3)=Mask(:,:,3)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(3);
             end
             %%% Generates total ROI map
             ROI=repmat(sum(roi,3),[1 1 3]);
             %%% Averages ROI color
-            Mask(ROI>0)=Mask(ROI>0)./ROI(ROI>0);
             ROI=ROI>0;
+            Mask(ROI)=Mask(ROI)./ROI(ROI);
         elseif strcmp(h.Phasor_Fraction.Visible,'on') 
             %% Fraction line
             %%% Determines Fraction line colormap
@@ -2638,23 +2648,25 @@ for i=Images %%% Plots Phasor Data
                 case 4
                     FractionColor=[0 0 0; gray(16)];
             end
-                    
-            %%% Calculate Map
-            Width=str2double(h.ROI_Size{7}.String);
-            x=h.Phasor_Fraction.XData;
-            y=h.Phasor_Fraction.YData;            
-            x=linspace(x(1),x(2),16);
-            y=linspace(y(1),y(2),16);
             
-            step=1/Pixel;           
-            X=-0.1:step:1.2;
-            Y=-0.1:step:1.2;
-            
-            [X1,Y1,Z1]=meshgrid(X,Y,x);
-            [~,~,Z2]=meshgrid(X,Y,y);
-            Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
-            [Min,Ind]=min(Dist,[],3);
-            Map=(Ind.*(Min<=Width))';
+            if isempty(Z1)
+                %%% Calculate Map
+                Width=str2double(h.ROI_Size{7}.String);
+                x=h.Phasor_Fraction.XData;
+                y=h.Phasor_Fraction.YData;
+                x=linspace(x(1),x(2),16);
+                y=linspace(y(1),y(2),16);
+                
+                step=1/Pixel;
+                X=-0.1:step:1.2;
+                Y=-0.1:step:1.2;
+                
+                [X1,Y1,Z1]=meshgrid(X,Y,x);
+                [~,~,Z2]=meshgrid(X,Y,y);
+                Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
+                [Min,Ind]=min(Dist,[],3);
+                Map=(Ind.*(Min<=Width))';
+            end
             %%% Finds valid pixel
             G=round((PhasorData.Data{PhasorData.Plot(i)}.g+0.1)*Pixel);
             G(isnan(G) | G<1)=1;
@@ -2748,7 +2760,7 @@ for i=Images %%% Plots Phasor Data
         end
         
         %%% Uses applies selected region to Single plot
-        if i==10            
+        if i==10
            Image(repmat(PhasorData.Selected_Region{PhasorData.Plot(10)},[1 1 3]))=1-Image(repmat(PhasorData.Selected_Region{PhasorData.Plot(10)},[1 1 3]));
         end
         
