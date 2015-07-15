@@ -1331,11 +1331,12 @@ try
     PDAMeta = rmfield(PDAMeta, 'directexc');
     PDAMeta = rmfield(PDAMeta, 'gamma');
 end
+allsame = 1;
 calc = 1;
 for i = 1:numel(PDAData.FileName)
     % if all files have the same parameters as the ALL row some things will only be calculated once
     if ~isequal(cell2mat(h.ParametersTab.Table.Data(i,:)),cell2mat(h.ParametersTab.Table.Data(end,:)))
-        calc = 0;
+        allsame = 0;
     end
     PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
     PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
@@ -1367,7 +1368,7 @@ PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 %% Prepare Fit Inputs
 if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     PDAMeta.P = cell(numel(PDAData.FileName),NobinsE+1);
-    counter = 0;
+    counter = 1;
     maxN = 0;
     for i  = find(PDAMeta.Active)'
         %%% find valid bins (chosen by thresholds min/max)
@@ -1377,19 +1378,15 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
         maxN = max(maxN, max((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i}))));
     end
     for i  = find(PDAMeta.Active)'
-        counter = counter + 1;
-        if calc
-            if counter > 1
-                %calculate some things only once
-                calc = 0;
-            end
-        else %not all files have the same parameters
-            calc = 1;
-        end
         if ~PDAMeta.FitInProgress
             break;
         end
-
+        if counter > 1
+            if allsame
+                %calculate some things only once
+                calc = 0;
+            end
+        end
         if calc
             %%% evaluate the background probabilities
             BGgg = poisspdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
@@ -1503,7 +1500,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             PDAMeta.P(i,:) = P;
             PDAMeta.PreparationDone = 1;
         end
-        
+        counter = counter + 1;
     end
 end
 
@@ -1850,7 +1847,7 @@ hFit = sum(horzcat(hFit_Ind{:}),2)';
 error = sqrt(PDAMeta.hProx{i});
 error(error == 0) = 1;
 w_res = (PDAMeta.hProx{i}-hFit)./error;
-if ~h.SettingsTab.OuterBins_Fix
+if ~h.SettingsTab.OuterBins_Fix.Value
     chi2 = sum((w_res.^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
 else
     chi2 = sum(((w_res(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
@@ -1933,7 +1930,7 @@ for i=find(PDAMeta.Active)'
     error(error == 0) = 1;
     PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
     PDAMeta.hFit{i} = hFit;
-    if ~h.SettingsTab.OuterBins_Fix
+    if ~h.SettingsTab.OuterBins_Fix.Value
         PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-DOF-1);
     else
         % disregard last bins
