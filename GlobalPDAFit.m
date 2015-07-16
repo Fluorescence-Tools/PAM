@@ -398,8 +398,8 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.SingleTab.Main_Panel,...
         'Units','normalized',...
         'FontSize',12,...
-        'BackgroundColor', [0 0 0],...
-        'ForegroundColor', [1 1 1],...
+        'BackgroundColor', [1 1 1],...
+        'ForegroundColor', [0 0 0],...
         'Style','popupmenu',...
         'String',{'Nothing selected'},...
         'Value',1,...
@@ -650,8 +650,8 @@ if isempty(h.GlobalPDAFit)
     h.SettingsTab.PDAMethod_Popupmenu = uicontrol(...
         'Style','popupmenu',...
         'Parent',h.SettingsTab.Panel,...
-         'BackgroundColor',[0 0 0],...
-        'ForegroundColor',[1 1 1],...
+        'BackgroundColor',[1 1 1],...
+        'ForegroundColor',[0 0 0],...
         'Units','normalized',...
         'String',{'Histogram Library','MLE','MonteCarlo'},...
         'Value',1,...
@@ -672,8 +672,8 @@ if isempty(h.GlobalPDAFit)
     h.SettingsTab.FitMethod_Popupmenu = uicontrol(...
         'Style','popupmenu',...
         'Parent',h.SettingsTab.Panel,...
-        'BackgroundColor', [0 0 0],...
-        'ForegroundColor', [1 1 1],...
+        'BackgroundColor', [1 1 1],...
+        'ForegroundColor', [0 0 0],...
         'Units','normalized',...
         'String',{'Simplex','Gradient-Based','Patternsearch','Gradient-Based (global)'},...
         'Value',1,...
@@ -763,6 +763,21 @@ if isempty(h.GlobalPDAFit)
         'Callback',[],...
         'Position',[0.65 0.5 0.2 0.2],...
         'Tag','OuterBins_Fix');
+    
+    h.SettingsTab.Use_Brightness_Corr = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.SettingsTab.Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Value',0,...
+        'FontSize',12,...
+        'String','Brightness Correction',...
+        'Tooltipstring', '',...
+        'Callback',{@Load_Brightness_Reference,1},...
+        'ButtonDownFcn',{@Load_Brightness_Reference,2},...
+        'Position',[0.65 0.3 0.2 0.2],...
+        'Tag','Use_Brightness_Corr');
 
     %% Other stuff
     %%% Re-enable menu
@@ -834,6 +849,7 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.Background = [];
     PDAData.OriginalFitParams = [];
     PDAData.FitTable = [];
+    PDAData.BrightnessReference = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
@@ -1082,6 +1098,26 @@ switch mode
                 'Linestyle','--',...
                 'Visible','off');
             % burst size distribution plot
+            if isempty(PDAData.BrightnessReference)
+                PDAMeta.Plots.BSD_Reference = plot(h.AllTab.BSD_Axes,...
+                    xBSD,...
+                    hBSD,...
+                    'Color','m',...
+                    'LineStyle','--',...
+                    'Visible','off',...
+                    'LineWidth',2);
+            else
+                PDAMeta.Plots.BSD_Reference = plot(h.AllTab.BSD_Axes,...
+                    xBSD,...
+                    PDAData.BrightnessReference.PN(xBSD),...
+                    'Color','m',...
+                    'LineStyle','--',...
+                    'LineWidth',2,...
+                    'Visible','off');
+            end
+            if h.SettingsTab.Use_Brightness_Corr.Value
+                PDAMeta.Plots.BSD_Reference.Visible = 'on';
+            end
             PDAMeta.Plots.BSD_All{i} = plot(h.AllTab.BSD_Axes,...
                 xBSD,...
                 hBSD,...
@@ -1377,6 +1413,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
         %%% find the maxN of all data
         maxN = max(maxN, max((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i}))));
     end
+
     for i  = find(PDAMeta.Active)'
         if ~PDAMeta.FitInProgress
             break;
@@ -1449,6 +1486,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             %% Calculate Histogram Library (CalcHistLib)
             Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
             Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+            PDAMeta.HistLib = [];
             P = cell(1,numel(E_grid));
             PN_dummy = PN';
             %case 1, no bacNFground in either channel
@@ -1463,16 +1501,17 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     P_temp = P_temp(valid);
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+                    %%% Store bin,valid and P_temp variables for brightness
+                    %%% correction
+                    PDAMeta.HistLib.bin{i}{j} = bin;
+                    PDAMeta.HistLib.P_array{i}{j} = P_temp;
+                    PDAMeta.HistLib.valid{i}{j} = valid;
+
+                    PN_trans = repmat(PN_dummy,1,maxN+1);
+                    PN_trans = PN_trans(:);
+                    PN_trans = PN_trans(PDAMeta.HistLib.valid{i}{j});
+                    P{1,j} = accumarray(PDAMeta.HistLib.bin{i}{j},PDAMeta.HistLib.P_array{i}{j}.*PN_trans);
                 end
-                PN_trans = repmat(PN_dummy,1,maxN+1);
-                PN_trans = PN_trans(:);
-                PN_trans = PN_trans(valid);
-                P{1,j} = accumarray(bin,P_temp.*PN_trans);
-                %%% Store bin,valid and P_temp variables for brightness
-                %%% correction
-                PDAMeta.HistLib.bin{i} = bin;
-                PDAMeta.HistLib.P_array{i} = P_temp;
-                PDAMeta.HistLib.valid{i} = valid;
             else
                 for j = 1:numel(E_grid)
                     bin = cell((NBG+1)*(NBR+1),1);
@@ -1492,6 +1531,13 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                             count = count+1;
                         end
                     end
+                    
+                    %%% Store bin,valid and P_array variables for brightness
+                    %%% correction
+                    PDAMeta.HistLib.bin{i}{j} = bin;
+                    PDAMeta.HistLib.P_array{i}{j} = P_array;
+                    PDAMeta.HistLib.valid{i}{j} = valid;
+                            
                     P{1,j} = zeros(Nobins,1);
                     count = 1;
                     for g = 0:NBG
@@ -1506,11 +1552,6 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
-                %%% Store bin,valid and P_temp variables for brightness
-                %%% correction
-                PDAMeta.HistLib.bin{i} = bin;
-                PDAMeta.HistLib.P_array{i} = P_array;
-                PDAMeta.HistLib.valid{i} = valid;
             end
             % different files = different rows
             % different Ps = different columns
@@ -1827,7 +1868,7 @@ h.FitTab.Table.Enable = 'on';
 
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar)
-global PDAMeta
+global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
 i = PDAMeta.file;
 
@@ -1851,6 +1892,15 @@ fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.
 %%% create individual histograms
 hFit_Ind = cell(5,1);
 for c = PDAMeta.Comp{i}
+    if h.SettingsTab.Use_Brightness_Corr.Value
+        %%% If brightness correction is to be performed, determine the relative
+        %%% brightness based on current distance and correction factors
+        Qr = calc_relative_brightness(fitpar(3*c-1),i);
+        %%% Rescale the PN;
+        PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr, i);
+        %%% Recalculate the P array of this file
+        PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
+    end
     [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
     P_eps = fitpar(3*c-2).*Pe;
     hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -2945,3 +2995,91 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             h.FitTab.Table.ColumnEditable(10:9:end) = deal(true);
     end
 end
+
+% functio for loading of brightness reference, i.e. donor only sample
+function Load_Brightness_Reference(obj,~,mode)
+global PDAData UserValues PDAMeta
+
+load_file = 0;
+
+switch mode
+    case 1
+        if obj.Value == 1
+            if isempty(PDAData.BrightnessReference)
+                load_file = 1;
+            end
+            PDAMeta.Plots.BSD_Reference.Visible = 'on';
+        else
+            PDAMeta.Plots.BSD_Reference.Visible = 'off';
+        end
+    case 2
+        load_file = 1;
+end
+            
+            
+if load_file
+    %%% Load data
+    [FileName,p] = uigetfile({'*.pda','*.pda file'},'Select *.pda file containing a Donor only measurement',...
+        UserValues.File.BurstBrowserPath,'Multiselect','off');
+    
+    if all(FileName==0)
+        return
+    end
+    
+    load(fullfile(p,FileName),'-mat');
+    PDAData.BrightnessReference.N = PDA.NG;
+    PDAData.BrightnessReference.PN = histcounts(PDAData.BrightnessReference.N,1:(max(PDAData.BrightnessReference.N)+1));
+    
+    %%% Update Plot
+    PDAMeta.Plots.BSD_Reference.XData = 1:max(PDAData.BrightnessReference.N);
+    PDAMeta.Plots.BSD_Reference.YData = PDAData.BrightnessReference.PN;
+end
+
+%%% Scale Photon Count Distribution to lower brightness (linear scaling,
+%%% approximately correct)
+function [ PN_scaled ] = scalePN(PN, scale_factor, file )
+global PDAMeta
+PN_scaled = interp1(scale_factor*[1:1:numel(PN)],PN,[1:1:numel(PN)]);
+PN_scaled(isnan(PN_scaled)) = 0;
+PN_scaled = PN_scaled(1:numel(PDAMeta.PN{file}));
+PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{file});
+%%% Calculate the relative brightness based on FRET value
+function Qr = calc_relative_brightness(R,file)
+global PDAMeta
+de = PDAMeta.directexc(file);
+ct = PDAMeta.crosstalk(file);
+gamma = PDAMeta.gamma(file);
+E = 1/(1+(R/PDAMeta.R0(file)).^6);
+Qr = (1-de)*(1-E) + (gamma/(1+ct))*(de+E*(1-de));
+%%% Re-calculate the P array based on changed PN (brightness correction)
+function P = recalculate_P(PN_scaled,file)
+global PDAMeta
+h = guidata(findobj('Tag','GlobalPDAFit'));
+Nobins = str2double(h.SettingsTab.NumberOfBins_Edit.String);
+NobinsE = str2double(h.SettingsTab.NumberOfBinsE_Edit.String);
+
+PN  = PN_scaled';
+P = cell(1,NobinsE);
+if PDAMeta.NBG{file} == 0 && PDAMeta.NBR{file} == 0
+    for j = 1:NobinsE+1
+        PN_trans = repmat(PN,1,PDAMeta.maxN{file}+1);
+        PN_trans = PN_trans(:);
+        PN_trans = PN_trans(PDAMeta.HistLib.valid{file}{j});
+        P{1,j} = accumarray(PDAMeta.HistLib.bin{file}{j},PDAMeta.HistLib.P_array{file}{j}.*PN_trans);
+    end
+else
+    for j = 1:NobinsE+1
+        P{1,j} = zeros(Nobins,1);
+        count = 1;
+        for g = 0:PDAMeta.NBG{file}
+            for r = 0:PDAMeta.NBR{file}
+                PN_trans = repmat(PN(1+g+r:end),1,PDAMeta.maxN{file}+1);%the total number of fluorescence photons is reduced
+                PN_trans = PN_trans(:);
+                PN_trans = PN_trans(PDAMeta.HistLib.valid{file}{j}{count});
+                P{1,j} = P{1,j} + accumarray(PDAMeta.HistLib.bin{file}{j}{count},PDAMeta.HistLib.P_array{file}{j}{count}.*PN_trans);
+                count = count+1;
+            end
+        end
+    end
+end
+                    
