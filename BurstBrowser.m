@@ -3087,39 +3087,41 @@ if FilterIndex == 2 % KBA file was loaded
     end
 end
 
-%%% Fix missing "FRET" in Efficiency naming (NameArray)
-if any(BurstData.BAMethod == [1,2])
-    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
-    %%% also fix Cuts 
-    if isfield(BurstData,'Cut')
-        for i = 1:numel(BurstData.Cut) %%% loop over species
-            for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
-                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency')
-                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency';
+try
+    %%% Fix missing "FRET" in Efficiency naming (NameArray)
+    if any(BurstData.BAMethod == [1,2])
+        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
+        %%% also fix Cuts
+        if isfield(BurstData,'Cut')
+            for i = 1:numel(BurstData.Cut) %%% loop over species
+                for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
+                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency')
+                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency';
+                    end
                 end
             end
         end
-    end
-elseif any(BurstData.BAMethod == [3,4])
-    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency GR')} = 'FRET Efficiency GR'; 
-    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BG')} = 'FRET Efficiency BG'; 
-    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BR')} = 'FRET Efficiency BR'; 
-    BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency B->G+R')} = 'FRET Efficiency B->G+R'; 
-    %%% also fix Cuts 
-    if isfield(BurstData,'Cut')
-        for i = 1:numel(BurstData.Cut) %%% loop over species
-            for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
-                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency GR')
-                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency GR';
-                end
-                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BG')
-                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency BG';
-                end 
-                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BR')
-                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency BR';
-                end
-                if strcmp(BurstData.Cut{i}{j}{1},'Efficiency B->G+R')
-                    BurstData.Cut{i}{j}{1} = 'FRET Efficiency B->G+R';
+    elseif any(BurstData.BAMethod == [3,4])
+        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency GR')} = 'FRET Efficiency GR';
+        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BG')} = 'FRET Efficiency BG';
+        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BR')} = 'FRET Efficiency BR';
+        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency B->G+R')} = 'FRET Efficiency B->G+R';
+        %%% also fix Cuts
+        if isfield(BurstData,'Cut')
+            for i = 1:numel(BurstData.Cut) %%% loop over species
+                for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
+                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency GR')
+                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency GR';
+                    end
+                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BG')
+                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency BG';
+                    end
+                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BR')
+                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency BR';
+                    end
+                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency B->G+R')
+                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency B->G+R';
+                    end
                 end
             end
         end
