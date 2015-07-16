@@ -1453,47 +1453,64 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             PN_dummy = PN';
             %case 1, no bacNFground in either channel
             if NBG == 0 && NBR == 0
-                PN_trans = repmat(PN_dummy,1,maxN+1);
                 for j = 1:numel(E_grid)
-                    P_temp = PNF(:,:,j).*PN_trans;
+                    P_temp = PNF(:,:,j);
                     E_temp = NF(:,:,j)./N(:,:,j);
-                    E_dummy = E_temp(:);
-                    P_dummy = P_temp(:);
-                    invalid = E_dummy>1;
-                    E_dummy(invalid) = []; %unneccesary since P(E>1) = 0 anyway, however needed for histc to work
-                    P_dummy(invalid) = [];
-                    [~,~,bin] = histcounts(E_dummy,linspace(0,1,Nobins+1));
-                    P{1,j} = accumarray(bin,P_dummy);
+                    [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                    valid = (bin ~= 0);
+                    P_temp = P_temp(:);
+                    bin = bin(valid);
+                    P_temp = P_temp(valid);
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
+                PN_trans = repmat(PN_dummy,1,maxN+1);
+                PN_trans = PN_trans(:);
+                PN_trans = PN_trans(valid);
+                P{1,j} = accumarray(bin,P_temp.*PN_trans);
+                %%% Store bin,valid and P_temp variables for brightness
+                %%% correction
+                PDAMeta.HistLib.bin{i} = bin;
+                PDAMeta.HistLib.P_array{i} = P_temp;
+                PDAMeta.HistLib.valid{i} = valid;
             else
                 for j = 1:numel(E_grid)
-                    E_array = cell((NBG+1)*(NBG+1),1);
-                    P_array = cell((NBR+1)*(NBR+1),1);
+                    bin = cell((NBG+1)*(NBR+1),1);
+                    P_array = cell((NBG+1)*(NBR+1),1);
+                    valid = cell((NBG+1)*(NBG+1),1);
+                    count = 1;
+                    for g = 0:NBG
+                        for r = 0:NBR
+                            P_temp = PBG(g+1)*PBR(r+1)*PNF(1:end-g-r,:,j); %+1 since also zero is included
+                            E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
+                            [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                            valid{count} = (bin{count} ~= 0);
+                            P_temp = P_temp(:);
+                            bin{count} = bin{count}(valid{count});
+                            P_temp = P_temp(valid{count});
+                            P_array{count} = P_temp;
+                            count = count+1;
+                        end
+                    end
+                    P{1,j} = zeros(Nobins,1);
                     count = 1;
                     for g = 0:NBG
                         for r = 0:NBR
                             PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
-                            P_temp = PBG(g+1)*PBR(r+1)*PNF(1:end-g-r,:,j).*PN_trans; %+1 since also zero is included
-                            E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
-                            E_dummy = E_temp(:);
-                            P_dummy = P_temp(:);
-                            invalid = E_dummy>1;
-                            E_dummy(invalid) = []; %unneccesary since P(E>1) = 0 anyway, however needed for histc to work
-                            P_dummy(invalid) = [];
-                            E_array{count} = E_dummy;
-                            P_array{count} = P_dummy;
+                            PN_trans = PN_trans(:);
+                            PN_trans = PN_trans(valid{count});
+                            P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
                             count = count+1;
                         end
                     end
-                    E_array = vertcat(E_array{:});
-                    P_array = vertcat(P_array{:});
-                    [~,~,bin] = histcounts(E_array,linspace(0,1,Nobins+1));
-                    P{1,j} = accumarray(bin,P_array);
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
+                %%% Store bin,valid and P_temp variables for brightness
+                %%% correction
+                PDAMeta.HistLib.bin{i} = bin;
+                PDAMeta.HistLib.P_array{i} = P_array;
+                PDAMeta.HistLib.valid{i} = valid;
             end
             % different files = different rows
             % different Ps = different columns
