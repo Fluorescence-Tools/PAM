@@ -68,6 +68,11 @@ end
         'Tag','Database_Add',...
         'Label','Add Tcspc Files to Database',...
         'Callback',{@Database,1});
+    h.Export.Add = uimenu(...
+        'Parent', h.File,...
+        'Tag','Export_Add',...
+        'Label','Add Tcspc Files to Export Database',...
+        'Callback',{@Export_Database,1});
     
     h.AdvancedAnalysis_Menu = uimenu(...
         'Parent',h.Pam,...
@@ -1910,30 +1915,6 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.75 0.90 0.24 0.07]);
-% %%% Button to add files to the database
-%     h.Database.Add = uicontrol(...
-%         'Parent',h.Database.Panel,...
-%         'Tag','Database_Add_Button',...
-%         'Units','normalized',...
-%         'FontSize',12,...
-%         'BackgroundColor', Look.Control,...
-%         'ForegroundColor', Look.Fore,...
-%         'String','Add file(s)',...
-%         'Callback',{@Database,1},...
-%         'Position',[0.75 0.84 0.24 0.07]);
-%     %%% Button to add files to the database
-%     h.Database.Delete = uicontrol(...
-%         'Parent',h.Database.Panel,...
-%         'Tag','Database_Delete_Button',...
-%         'Units','normalized',...
-%         'FontSize',12,...
-%         'BackgroundColor', Look.Control,...
-%         'ForegroundColor', Look.Fore,...
-%         'String','Delete file(s)',...
-%         'enable', 'off',...
-%         'Callback',{@Database,2},...
-%         'Position',[0.75 0.76 0.24 0.07]);  
-        %%% Button to add files to the database
     h.Database.Load = uicontrol(...
         'Parent',h.Database.Panel,...
         'Tag','Database_Load_Button',...
@@ -1996,6 +1977,98 @@ end
         'enable', 'off',...
         'UserData',0,...
         'Tooltipstring', 'Make sure "Burst analysis" tab settings are correct');  
+    %% Export tab
+    h.Export.Tab= uitab(...
+        'Parent',h.Var_Tab,...
+        'Tag','Export_Tab',...
+        'Title','Export');    
+    %%% Database panel
+    h.Export.Panel = uibuttongroup(...
+        'Parent',h.Export.Tab,...
+        'Tag','Export_Panel',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Position',[0 0 1 1]);    
+    %%% Database list
+    h.Export.List = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_List',...
+        'Style','listbox',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'Max',2,...
+        'String',[],...
+        'BackgroundColor', Look.List,...
+        'ForegroundColor', Look.ListFore,...
+        'KeyPressFcn',{@Export_Database,0},...
+        'Tooltipstring', ['<html>'...
+                          'List of file groups in export database <br>'],...
+        'Position',[0.01 0.01 0.7 0.98]);  
+    h.Export.PIE = uitable(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_PIE',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', [Look.Table1;Look.Table2],...
+        'ForegroundColor', Look.TableFore,...
+        'RowName',[UserValues.PIE.Name,{'All'}],...
+        'ColumnFormat',{'logical'},...
+        'ColumnEditable',true,...
+        'Data',false(numel(UserValues.PIE.Name)+1,1),...
+        'Position',[0.73 0.51 0.25 0.48]);
+    h.Export.Text = {};
+    h.Export.Text{end+1} = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','left',...
+        'String','Manage export',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.75 0.42 0.24 0.07]);
+    h.Export.Load = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_Load_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Load database',...
+        'Callback',{@Export_Database,3},...
+        'Position',[0.75 0.34 0.24 0.07],...
+        'Tooltipstring', 'Load export database from file');
+    %%% Button to add files to the database
+    h.Export.Save = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_Save_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Save database',...
+        'Callback',{@Export_Database,4},...
+        'Position',[0.75 0.26 0.24 0.07],...
+        'enable', 'off',...
+        'Tooltipstring', 'Save exportdatabase to a file');
+    %%% Button to add files to the database
+    h.Export.TIFF = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_TIFF_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Export TIFFs',...
+        'Callback',{@Export_Database,5},...
+        'Position',[0.75 0.16 0.24 0.07],...
+        'enable', 'off',...
+        'UserData',0,...
+        'Tooltipstring', 'Exports selected files as TIFF!');  
+
     
 %% Mac upscaling of Font Sizes
 if ismac
@@ -2752,7 +2825,7 @@ h.Progress_Axes.Color=UserValues.Look.Control;
 %%% Export_Image_Total menu: Plots image and exports it into workspace
 %%% Export_Image_File menu: Exports Pixels x Pixels x FileNumber into workspace
 function PIE_List_Functions(obj,ed)
-global UserValues TcspcData FileInfo PamMeta
+global UserValues FileInfo PamMeta
 h = guidata(findobj('Tag','Pam'));
 
 %% Determines which buttons was pressed, if function was not called via key press 
@@ -2801,7 +2874,7 @@ switch e.Key
         UserValues.PIE.IRF{end+1} = [];
         UserValues.PIE.ScatterPattern{end+1} = [];
         %%% Reset Correlation Table Data Matrix
-        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
+        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);      
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
@@ -2809,6 +2882,9 @@ switch e.Key
         Update_Display([],[],0);
         %%% Updates correlation table
         Update_Cor_Table(obj);
+        %%% Add channel to Export table
+        h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+        h.Export.PIE.Data{end+1} = h.Export.PIE.Data{end};  
     case {'delete';'subtract'} %%% Delete button or "del"-Key or "-"-Key 
         %% Deletes selected channels 
         %%% in UserValues 
@@ -2854,8 +2930,10 @@ switch e.Key
         Update_Display([],[],1:5)
         %%% Updates correlation table
         Update_Cor_Table(obj);
-    case 'c' 
-        %% Changes color of selected channels
+        %%% Remove channels in Export table
+        h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+        h.Export.PIE.Data{Sel} = [];  
+    case 'c' %%% Changes color of selected channels
         %%% Opens menu to choose color
         color=uisetcolor;
         %%% Checks, if color was selected
@@ -2866,8 +2944,7 @@ switch e.Key
         end
         %%% Updates Plots
         Update_Display([],[],1:5)
-    case 'leftarrow'
-        %% Moves first selected channel up    
+    case 'leftarrow' %%% Moves first selected channel up    
         if Sel(1)>1
             %%% Shifts UserValues
             UserValues.PIE.Color([Sel(1)-1 Sel(1)],:)=UserValues.PIE.Color([Sel(1) Sel(1)-1],:);
@@ -2900,9 +2977,11 @@ switch e.Key
             Update_Display([],[],1);
             %%% Updates correlation table
             Update_Cor_Table(obj);
+            %%% Move channels in Export table
+            h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+            h.Export.PIE.Data([Sel(1)-1 Sel(1)]) = h.Export.PIE.Data([Sel(1) Sel(1)-1]);
         end  
-    case 'rightarrow'
-        %% Moves first selected channel down 
+    case 'rightarrow' %%% Moves first selected channel down 
         if Sel(1)<numel(h.PIE_List.String);
             %%% Shifts UserValues
             UserValues.PIE.Color([Sel(1) Sel(1)+1],:)=UserValues.PIE.Color([Sel(1)+1 Sel(1)],:);
@@ -2934,233 +3013,18 @@ switch e.Key
             %%% Updates plots
             Update_Display([],[],1);        
             %%% Updates correlation table
-            Update_Cor_Table(obj);         
+            Update_Cor_Table(obj); 
+            %%% Move channels in Export table
+            h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+            h.Export.PIE.Data([Sel(1) Sel(1)+1]) = h.Export.PIE.Data([Sel(1)+1 Sel(1)]);
         end
-    case 'Export_Raw_Total'
-        %% Exports macrotime and microtime as one vector for each PIE channel
-        h.Progress_Text.String = 'Exporting';
-        h.Progress_Axes.Color=[1 0 0];
-        drawnow;
-        for i=Sel
-            Det=UserValues.PIE.Detector(i);
-            Rout=UserValues.PIE.Router(i);
-            From=UserValues.PIE.From(i);
-            To=UserValues.PIE.To(i); 
-            if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
-                MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;   
-            elseif Det == 0 %%% Combined PIE channel
-                MI =[];
-                MT = [];
-                Name = '';
-                for j = UserValues.PIE.Combined{i}
-                    Det=UserValues.PIE.Detector(j);
-                    Rout=UserValues.PIE.Router(j);
-                    From=UserValues.PIE.From(j);
-                    To=UserValues.PIE.To(j);
-                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
-                        MI=[MI; TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];                        
-                        MT=[MT; TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];      
-                    end   
-                    Name = [Name UserValues.PIE.Name{j} '_'];
-                end
-                [MT,Index] = sort(MT);
-                MI = MI(Index);
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
-            end
-        end
-    case 'Export_Raw_File'        
-        %% Exports macrotime and microtime as a cell for each PIE channel
-        h.Progress_Text.String = 'Exporting';
-        h.Progress_Axes.Color=[1 0 0];
-        drawnow;
-        for i=Sel
-            Det=UserValues.PIE.Detector(i);
-            Rout=UserValues.PIE.Router(i);
-            From=UserValues.PIE.From(i);
-            To=UserValues.PIE.To(i);
-            
-            if Det>0 && all(size(TcspcData.MI) >= [Det Rout])  %%% Normal PIE channel               
-                MI=cell(FileInfo.NumberOfFiles,1);
-                MT=cell(FileInfo.NumberOfFiles,1);                
-                MT{1}=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
-                MI{1}=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
-                MT{1}=MT{1}(MI{1}>=From & MI{1}<=To);
-                MI{1}=MI{1}(MI{1}>=From & MI{1}<=To);
-                if FileInfo.NumberOfFiles>1
-                    for j=2:(FileInfo.NumberOfFiles)
-                        MI{j}=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
-                        MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
-                        MT{j}=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
-                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.SyncPeriod);
-                    end
-                end
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;   
-            elseif Det == 0 %%% Combined PIE channel
-                MI=cell(FileInfo.NumberOfFiles,1);
-                MT=cell(FileInfo.NumberOfFiles,1);
-                Name = '';
-                for j = UserValues.PIE.Combined{i}
-                    Det=UserValues.PIE.Detector(j);
-                    Rout=UserValues.PIE.Router(j);
-                    From=UserValues.PIE.From(j);
-                    To=UserValues.PIE.To(j);
-                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
-                        mt=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
-                        mi=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
-                        mt=mt(mi>=From & mi<=To);
-                        mi=mi(mi>=From & mi<=To);
-                        MI{1}=[MI{1}; mi];
-                        MT{1}=[MT{1}; mt];
-                        if FileInfo.NumberOfFiles>1
-                            for k=2:FileInfo.NumberOfFiles
-                                mt=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
-                                mi=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
-                                mt=mt(mi>=From & mi<=To);
-                                mi=mi(mi>=From & mi<=To);
-                                MI{k}=[MI{k}; mi];
-                                MT{k}=[MT{k}; mt];
-                            end
-                        end
-                    end
-                    Name = [Name UserValues.PIE.Name{j} '_'];
-                end
-                for k = 1:FileInfo.NumberOfFiles
-                    [MT{k},Index] = sort(MT{k});
-                    MI{k} = MI{k}(Index);
-                end
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
-            end
-
-        end 
-    case 'Export_Image_Total'
-        %% Plots image and exports it into workspace
-        h.Progress_Text.String = 'Exporting';
-        h.Progress_Axes.Color=[1 0 0];
-        drawnow;
-        for i=Sel
-            %%% Changes combined PIE channel name to make it compatible
-            %%% with Matlab variable names
-            if strfind(UserValues.PIE.Name{i},'Comb.:')
-                Name = '';
-                for j = UserValues.PIE.Combined{i}
-                    Name = [Name UserValues.PIE.Name{j} '_'];
-                end
-            else
-                Name = [UserValues.PIE.Name{i} '_'];
-            end
-            %%% Exports intensity image
-            if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 2
-                assignin('base',[Name 'Image'],PamMeta.Image{i});
-                figure('Name',[UserValues.PIE.Name{i} '_Image']);
-                imagesc(PamMeta.Image{i});
-            end
-            %%% Exports mean arrival time image
-            if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 3
-                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
-                figure('Name',[UserValues.PIE.Name{i} '_LT']);
-                imagesc(PamMeta.Lifetime{i});
-            end
-        end
-        %%% gives focus back to Pam
-        figure(h.Pam);
-    case 'Export_Image_File'
-        %% Exports image stack into workspace
-        h.Progress_Text.String = 'Exporting';
-        h.Progress_Axes.Color=[1 0 0];
-        drawnow;
-        for i=Sel
-            %%% Gets the photons
-            if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
-                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
-            else
-                Stack = [];
-                for j = UserValues.PIE.Combined{i} %%% Combined channel
-                    Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
-                end                
-            end
-            
-            %%% Calculates pixel times for each line and file                
-            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-            for j=1:FileInfo.NumberOfFiles
-                for k=1:FileInfo.Lines
-                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-                end
-            end
-            
-            %%% Histograms photons to pixels
-            Stack=uint16(histc(Stack,Pixeltimes(:)));
-            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
-            %%% Exports matrix to workspace
-            if strfind(UserValues.PIE.Name{i},'Comb.:')
-                Name = '';
-                for j = UserValues.PIE.Combined{i}
-                    Name = [Name UserValues.PIE.Name{j} '_'];
-                end
-                assignin('base',[Name 'Image'],Stack);
-            else
-                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
-            end          
-        end
-    case 'Export_Image_Tiff'
-        %% Exports image stack into workspace
-        Path=uigetdir(UserValues.File.ExportPath,'Select folder to save TIFFs');
-        if all(Path~=0)
-            h.Progress_Text.String = 'Exporting';
-            h.Progress_Axes.Color=[1 0 0];
-            drawnow;
-            UserValues.File.ExportPath=Path;
-            LSUserValues(1);
-            for i=Sel
-                %%% Gets the photons
-                if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
-                    Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
-                else
-                    Stack = [];
-                    for j = UserValues.PIE.Combined{i} %%% Combined channel
-                        Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
-                            TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                            TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
-                    end
-                end
-                
-                %%% Calculates pixel times for each line and file
-                Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-                for j=1:FileInfo.NumberOfFiles
-                    for k=1:FileInfo.Lines
-                        Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                        Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-                    end
-                end
-                
-                %%% Histograms photons to pixels
-                Stack=uint16(histc(Stack,Pixeltimes(:)));
-                %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-                Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
-                
-                File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
-                imwrite(Stack(:,:,1),File,'tif','Compression','lzw');
-                for j=2:size(Stack,3)
-                    imwrite(Stack(:,:,j),File,'tif','WriteMode','append','Compression','lzw');
-                end
-            end
-            Progress((i-1)/numel(Sel),h.Progress_Axes,h.Progress_Text,'Exporting:')
-        end
-    case 'Combine'
-        %% Generates a combined PIE channel from existing PIE channels
+    case {'Export_Raw_Total',... %%% Exports macrotime and microtime as one vector for each PIE channel
+           'Export_Raw_File',... %%% Exports macrotime and microtime as a cell for each PIE channelPam_Export([],e,Sel);
+           'Export_Image_Total',... %%% Plots image and exports it into workspace
+           'Export_Image_File',... %%% Exports image stack into workspace
+           'Export_Image_Tiff'} %%% Exports image stack into workspace
+       Pam_Export([],e,Sel);
+    case 'Combine' %%% Generates a combined PIE channel from existing PIE channels
         %%% Does not combine single
         if numel(Sel)>1 && isempty(cell2mat(UserValues.PIE.Combined(Sel)))
             
@@ -3185,9 +3049,11 @@ switch e.Key
             Update_Display([],[],0);
             %%% Updates correlation table
             Update_Cor_Table(obj);
+            %%% Add channel to Export table
+            h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+            h.Export.PIE.Data{end+1} = h.Export.PIE.Data{end};
         end        
-    case 'PIE_Select'
-        %%% Enable manual selection
+    case 'PIE_Select' %%% Enable manual selection
         [x,~] = ginput(2);
         %%% Read out which Axis was clicked to get the Detector/Routing
         Clicked_Axis = gca;
@@ -3242,6 +3108,8 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         UserValues.PIE.Name{Sel}=h.PIE_Name.String;
         %%% Updates correlation table
         Update_Cor_Table(obj);
+        %%% Rename channels in Export table
+        h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
     %%% Updates PIE detector
     elseif obj == h.PIE_Detector
         UserValues.PIE.Detector(Sel)=str2double(h.PIE_Detector.String);
@@ -3714,6 +3582,9 @@ switch e.Key
             Update_Data([],[],0,0);
             Update_Detector_Channels([],[],[1,2]);
             Update_Display([],[],0);
+            %%% Update export table
+            h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+            h.Export.PIE.Data = false(numel(UserValues.PIE.Name)+1,1);
         end
     case 'duplicate'
         %% Duplicates selected profile
@@ -6517,7 +6388,7 @@ function Database(~,e,mode)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 
-if mode == 0
+if mode == 0 %%% Checks, which key was pressed
     switch e.Key
         case 'delete'
             mode = 2;
@@ -6674,4 +6545,369 @@ switch mode
             PamMeta.Database(h.Database.List.Value,1),...   %file
             PamMeta.Database{h.Database.List.Value(1),3});     %type
 end
-        
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions concerning database for quick export %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+function Export_Database(~,e,mode)
+global UserValues PamMeta
+h = guidata(findobj('Tag','Pam'));
+
+if mode == 0 %%% Checks, which key was pressed
+    switch e.Key
+        case 'delete'
+            mode = 2;
+        case 'return'
+            mode =7;
+    end
+end
+
+switch mode
+    case 1 %% Add files to database
+        LSUserValues(0);        
+        while true %%% Continuously askes for more files, till none was selected
+            %%% following code is for remembering the last used FileType
+            %%% Loads all possible file types
+            Filetypes = UserValues.File.SPC_FileTypes;
+            %%% Finds last used file type
+            Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
+            if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1
+                Lastfile = 1;
+            end
+            %%% Puts last used file type to front
+            Fileorder = 1:size(Filetypes,1);
+            Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
+            Filetypes = Filetypes(Fileorder,:);
+            %%% Choose file to be loaded
+            [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+            %%% Determines actually selected file type
+            if Type~=0
+                Type = Fileorder(Type);
+            end
+            
+            %%% Only execues if any file was selected
+            if ~iscell(FileName) && all(FileName==0)
+                break
+            end
+            %%% Save the selected file type
+            UserValues.File.OpenTCSPC_FilterIndex = Type;
+            %%% Transforms FileName into cell, if it is not already
+            %%%(e.g. when only one file was selected)
+            if ~iscell(FileName)
+                FileName = {FileName};
+            end
+            %%% Saves Path
+            UserValues.File.Path = Path;
+            LSUserValues(1);
+            %%% Sorts FileName by alphabetical order
+            FileName=sort(FileName);
+            %% Add files to export database
+            if ~isfield(PamMeta, 'Export')
+                %create export database
+                PamMeta.Export = cell(0,3);
+            end
+            % add new files to database
+            PamMeta.Export{end+1,1} = FileName;
+            PamMeta.Export{end,2} = Path;
+            PamMeta.Export{end,3} = Type;
+            h.Export.List.String{end+1} = [num2str(numel(FileName)) ' Files: ' FileName{1} ' (path:' Path ')'];
+            
+            h.Export.TIFF.Enable = 'on';
+        end
+    case 2 %% Delete files from database
+        %remove rows from list
+        h.Export.List.String(h.Export.List.Value) = [];
+        %remove rows from database
+        PamMeta.Export(h.Export.List.Value, :) = [];
+        h.Export.List.Value = 1;
+    case 3 %% Load database
+        [FileName, Path] = uigetfile({'*.edb', 'Export Database file'}, 'Choose export database to load',UserValues.File.Path,'MultiSelect', 'off');
+        if all(FileName==0)
+            return
+        end
+        load('-mat',fullfile(Path,FileName));
+        PamMeta.Export = s.export;
+        h.Export.List.String = s.str;
+        clear s;
+    case 4 %% Save complete database
+        [File, Path] = uiputfile({'*.edb', 'Database file'}, 'Save export database', UserValues.File.Path);
+        if all(FileName==0)
+            return
+        end
+        s = struct;
+        s.export = PamMeta.Export;
+        s.str = h.Export.List.String;
+        save(fullfile(Path,File),'s');
+    case 5 %% Export PIE channels as TIFF
+        if h.Export.TIFF.UserData == 0
+            h.Export.TIFF.UserData = 1;
+            h.Export.TIFF.String = 'Stop';
+        elseif h.Export.TIFF.UserData == 1
+            h.Export.TIFF.UserData = 0;
+        end
+        Sel = h.Export.PIE.Data;
+        if numel(Sel)==0
+            return;
+        end
+        event.Key = 'Export_Image_Tiff';
+        for i = h.Export.List.Value
+            pause(0.01)
+            if h.Export.TIFF.UserData == 0
+                h.Export.TIFF.String = 'Export TIFFs';
+                return
+            end
+            try
+                % Path is unique per file in the database, so we have to store
+                % it globally in UserValues each time
+                UserValues.File.Path = PamMeta.Export{i,2};
+                LSUserValues(1)
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                    PamMeta.Export{i,1},...   %file
+                    PamMeta.Export{i,3});     %type
+                
+                
+                Pam_Export([],event,Sel,1)
+                % set filename color to green
+                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            catch
+                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            end
+        end
+        h.Database.Correlate.UserData = 0;
+        h.Database.Correlate.String = 'Export';
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions that actially export data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Pam_Export(~,e,Sel,mode)
+global UserValues TcspcData FileInfo PamMeta
+h = guidata(findobj('Tag','Pam'));
+if nargin<4
+    mode = 0;
+end
+switch e.Key
+    case 'Export_Raw_Total'%%% Exports macrotime and microtime as one vector for each PIE channel
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
+        drawnow;
+        for i=Sel
+            Det=UserValues.PIE.Detector(i);
+            Rout=UserValues.PIE.Router(i);
+            From=UserValues.PIE.From(i);
+            To=UserValues.PIE.To(i);
+            if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
+                MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
+                MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+            elseif Det == 0 %%% Combined PIE channel
+                MI =[];
+                MT = [];
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Det=UserValues.PIE.Detector(j);
+                    Rout=UserValues.PIE.Router(j);
+                    From=UserValues.PIE.From(j);
+                    To=UserValues.PIE.To(j);
+                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
+                        MI=[MI; TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];
+                        MT=[MT; TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)];
+                    end
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                [MT,Index] = sort(MT);
+                MI = MI(Index);
+                assignin('base',[Name 'MI'],MI); clear MI;
+                assignin('base',[Name 'MT'],MT); clear MT;
+            end
+        end
+    case 'Export_Raw_File' %%% Exports macrotime and microtime as a cell for each PIE channel
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
+        drawnow;
+        for i=Sel
+            Det=UserValues.PIE.Detector(i);
+            Rout=UserValues.PIE.Router(i);
+            From=UserValues.PIE.From(i);
+            To=UserValues.PIE.To(i);
+            
+            if Det>0 && all(size(TcspcData.MI) >= [Det Rout])  %%% Normal PIE channel
+                MI=cell(FileInfo.NumberOfFiles,1);
+                MT=cell(FileInfo.NumberOfFiles,1);
+                MT{1}=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
+                MI{1}=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout}(1));
+                MT{1}=MT{1}(MI{1}>=From & MI{1}<=To);
+                MI{1}=MI{1}(MI{1}>=From & MI{1}<=To);
+                if FileInfo.NumberOfFiles>1
+                    for j=2:(FileInfo.NumberOfFiles)
+                        MI{j}=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
+                        MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
+                        MT{j}=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
+                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.SyncPeriod);
+                    end
+                end
+                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
+                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+            elseif Det == 0 %%% Combined PIE channel
+                MI=cell(FileInfo.NumberOfFiles,1);
+                MT=cell(FileInfo.NumberOfFiles,1);
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Det=UserValues.PIE.Detector(j);
+                    Rout=UserValues.PIE.Router(j);
+                    From=UserValues.PIE.From(j);
+                    To=UserValues.PIE.To(j);
+                    if all (size(TcspcData.MI) >= [Det Rout]) && Det>0
+                        mt=TcspcData.MT{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
+                        mi=TcspcData.MI{Det,Rout}(1:FileInfo.LastPhoton{Det,Rout,1});
+                        mt=mt(mi>=From & mi<=To);
+                        mi=mi(mi>=From & mi<=To);
+                        MI{1}=[MI{1}; mi];
+                        MT{1}=[MT{1}; mt];
+                        if FileInfo.NumberOfFiles>1
+                            for k=2:FileInfo.NumberOfFiles
+                                mt=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
+                                mi=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(k-1)+1):FileInfo.LastPhoton{Det,Rout}(k));
+                                mt=mt(mi>=From & mi<=To);
+                                mi=mi(mi>=From & mi<=To);
+                                MI{k}=[MI{k}; mi];
+                                MT{k}=[MT{k}; mt];
+                            end
+                        end
+                    end
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                for k = 1:FileInfo.NumberOfFiles
+                    [MT{k},Index] = sort(MT{k});
+                    MI{k} = MI{k}(Index);
+                end
+                assignin('base',[Name 'MI'],MI); clear MI;
+                assignin('base',[Name 'MT'],MT); clear MT;
+            end
+            
+        end
+    case 'Export_Image_Total'%%% Plots image and exports it into workspace
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
+        drawnow;
+        for i=Sel
+            %%% Changes combined PIE channel name to make it compatible
+            %%% with Matlab variable names
+            if strfind(UserValues.PIE.Name{i},'Comb.:')
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+            else
+                Name = [UserValues.PIE.Name{i} '_'];
+            end
+            %%% Exports intensity image
+            if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 2
+                assignin('base',[Name 'Image'],PamMeta.Image{i});
+                figure('Name',[UserValues.PIE.Name{i} '_Image']);
+                imagesc(PamMeta.Image{i});
+            end
+            %%% Exports mean arrival time image
+            if h.MT_Image_Export.Value == 1 || h.MT_Image_Export.Value == 3
+                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
+                figure('Name',[UserValues.PIE.Name{i} '_LT']);
+                imagesc(PamMeta.Lifetime{i});
+            end
+        end
+        %%% gives focus back to Pam
+        figure(h.Pam);
+    case 'Export_Image_File' %%% Exports image stack into workspace
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
+        drawnow;
+        for i=Sel
+            %%% Gets the photons
+            if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
+                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+            else
+                Stack = [];
+                for j = UserValues.PIE.Combined{i} %%% Combined channel
+                    Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                end
+            end
+            
+            %%% Calculates pixel times for each line and file
+            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+            for j=1:FileInfo.NumberOfFiles
+                for k=1:FileInfo.Lines
+                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+                end
+            end
+            
+            %%% Histograms photons to pixels
+            Stack=uint16(histc(Stack,Pixeltimes(:)));
+            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+            %%% Exports matrix to workspace
+            if strfind(UserValues.PIE.Name{i},'Comb.:')
+                Name = '';
+                for j = UserValues.PIE.Combined{i}
+                    Name = [Name UserValues.PIE.Name{j} '_'];
+                end
+                assignin('base',[Name 'Image'],Stack);
+            else
+                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
+            end
+        end
+    case 'Export_Image_Tiff' %%% Exports image stack as TIFF
+        if mode == 0
+            Path=uigetdir(UserValues.File.ExportPath,'Select folder to save TIFFs');
+        else
+            Path = UserValues.File.Path;
+        end
+        if all(Path==0)
+            return;
+        end
+        h.Progress_Text.String = 'Exporting';
+        h.Progress_Axes.Color=[1 0 0];
+        drawnow;
+        UserValues.File.ExportPath=Path;
+        LSUserValues(1);
+        for i=Sel
+            %%% Gets the photons
+            if UserValues.PIE.Detector(i)~=0 %%% Normal PIE channel
+                Stack=TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i));
+            else
+                Stack = [];
+                for j = UserValues.PIE.Combined{i} %%% Combined channel
+                    Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                end
+            end
+            
+            %%% Calculates pixel times for each line and file
+            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+            for j=1:FileInfo.NumberOfFiles
+                for k=1:FileInfo.Lines
+                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+                end
+            end
+            
+            %%% Histograms photons to pixels
+            Stack=uint16(histc(Stack,Pixeltimes(:)));
+            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+            
+            File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
+            imwrite(Stack(:,:,1),File,'tif','Compression','lzw');
+            for j=2:size(Stack,3)
+                imwrite(Stack(:,:,j),File,'tif','WriteMode','append','Compression','lzw');
+            end
+        end
+        Progress((i-1)/numel(Sel),h.Progress_Axes,h.Progress_Text,'Exporting:')
+end

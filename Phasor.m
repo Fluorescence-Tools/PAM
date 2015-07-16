@@ -528,6 +528,21 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'FontSize',11,...
         'Style', 'text',...
         'String','Size');
+    
+    h.ROI_Live = uicontrol(...
+        'Parent',h.ROI_Panel,...
+        'Units','normalized',...
+        'Position',[0.46 0.92 0.25 0.07],...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Tag','ROI_Live',...
+        'FontSize',12,...
+        'Style', 'check',...
+        'Value',0,...
+        'ToolTipString', ['<html>Live ROI Update: <br>',...
+            'Toggle live update for ROIs and Fraction<br>'],...
+        'String','Live Update');
+    
     for i=1:6
         %%% Box to change ROI color
         h.ROI_Color{i} = uicontrol(...
@@ -2116,6 +2131,11 @@ if strcmp('Phasor',get(gcf,'Tag'));
             %%% Make ROI rectangle visible
             if all(h.Phasor_ROI(Key,1).Position(3:4)>0)
                 h.Phasor_ROI(Key,1).Visible='on';
+                if h.ROI_Live.Value
+                    tic;
+                    Plot_Phasor([],[],0,1:10)
+                    pause(toc);
+                end
             else
                 h.Phasor_ROI(Key,1).Visible='off';
             end
@@ -2166,11 +2186,16 @@ if strcmp('Phasor',get(gcf,'Tag'));
                 h.Phasor_ROI(Key,2).YData=[y(1:2:end); flipud(y(2:2:end)); y(1)];
                 %%% Makes ROI visible
                 h.Phasor_ROI(Key,2).Visible='on';
+                if h.ROI_Live.Value
+                    tic;
+                    Plot_Phasor([],[],0,1:10)
+                    pause(toc);
+                end
             else
                 %%% Hides ROI, if no ROI was selected
                 h.Phasor_ROI(Key,2).Visible='off';
             end
-            %%% Enables callback
+            %%% Enables callback            
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,5,Start,Key}; 
         case {6, 6.5} %%% Fraction line
             %%% Disables callback, to avoit multiple executions
@@ -2181,6 +2206,11 @@ if strcmp('Phasor',get(gcf,'Tag'));
                 h.Phasor_Fraction.XData=[Start(1) Pos(1)];
                 h.Phasor_Fraction.YData=[Start(2) Pos(2)];
                 h.Phasor_Fraction.Visible='on';
+                if h.ROI_Live.Value
+                    tic;
+                    Plot_Phasor([],[],0,1:10)
+                    pause(toc);
+                end
             else
                 %%% Hides Fraction line,
                 h.Phasor_Fraction.Visible='off';
