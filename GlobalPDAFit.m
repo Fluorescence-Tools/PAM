@@ -1897,7 +1897,10 @@ for c = PDAMeta.Comp{i}
         %%% brightness based on current distance and correction factors
         Qr = calc_relative_brightness(fitpar(3*c-1),i);
         %%% Rescale the PN;
-        PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr, i);
+        PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
+        %%% fit PN_scaled to match PN of file
+        PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
+        PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
         %%% Recalculate the P array of this file
         PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
     end
@@ -2093,18 +2096,26 @@ R0 = PDAMeta.R0(file);
 de = PDAMeta.directexc(file);
 gamma = PDAMeta.gamma(file);
 
-%%% fitpar vector is linearized by fminsearch, restructure
-%fitpar = reshape(fitpar,[numel(fitpar)/3, 3]);
-% Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
-% FitTable = cellfun(@str2double,h.FitTab.Table.Data);
-% FitTable = FitTable(1:end-3,2:3:end-1);
-% N_gauss = [];
-% for c = 1:5
-%     if Fixed(file,3*c-2)==0 || FitTable(file,3*c-2)~=0
-%         N_gauss = [N_gauss c];
-%     end
-% end
-
+if h.SettingsTab.Use_Brightness_Corr.Value
+        %%% If brightness correction is to be performed, determine the relative
+        %%% brightness based on current distance and correction factors
+        PN_scaled = cell(5,1);
+        for c = PDAMeta.Comp{file}
+            Qr = calc_relative_brightness(fitpar(c,2),file);
+            %%% Rescale the PN;
+            PN_scaled{c} = scalePN(PDAData.BrightnessReference.PN,Qr);
+            PN_scaled{c} = smooth(PN_scaled{c},10);
+            PN_scaled{c} = PN_scaled{c}./sum(PN_scaled{c});
+        end
+        %%% calculate the relative probabilty
+        P_norm = sum(horzcat(PN_scaled{:}),2);
+        for c = PDAMeta.Comp{file}
+            PN_scaled{c}(P_norm~=0) = PN_scaled{c}(P_norm~=0)./P_norm(P_norm~=0);
+            %%% We don't want zero probabilities here!
+            PN_scaled{c}(PN_scaled{c} == 0) = eps;
+        end
+end
+    
 steps = 5;
 L = cell(5,1); %%% Likelihood per Gauss
 for j = PDAMeta.Comp{file}
@@ -2124,9 +2135,12 @@ for j = PDAMeta.Comp{file}
     P = log(P) + repmat(log(PR'),numel(PDAData.Data{file}.NG),1);
     Lmax = max(P,[],2);
     P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
-    %P_res = sum(P);
+    
+    if h.SettingsTab.Use_Brightness_Corr.Value
+        %%% Add Brightness Correction Probabilty here
+        P = P + log(PN_scaled{j}(PDAData.Data{file}.NG + PDAData.Data{file}.NF));
+    end
     %%% Treat case when all burst produced zero probability
-    %P_res = P;
     P(isnan(P)) = -Inf;
     L{j} = P;
 end
@@ -2225,15 +2239,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
 end
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
-% Fixed = cell2mat(h.FitTab.Table.Data(1:end-2,3:3:end-1));
-% FitTable = cellfun(@str2double,h.FitTab.Table.Data);
-% FitTable = FitTable(1:end-3,2:3:end-1);
-% comp = [];
-% for j = 1:5
-%     if Fixed(file,3*j-2)==0 || FitTable(file,3*j-2)~=0
-%         comp = [comp j];
-%     end
-% end
+
 %%% normalize Amplitudes
 fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
 A = fitpar(:,1);
@@ -2254,6 +2260,32 @@ gamma = PDAMeta.gamma(file);
 Nobins = str2double(h.SettingsTab.NumberOfBins_Edit.String);
 sampling =str2double(h.SettingsTab.OverSampling_Edit.String);
 
+if h.SettingsTab.Use_Brightness_Corr.Value
+        %%% If brightness correction is to be performed, determine the relative
+        %%% brightness based on current distance and correction factors
+        BSD_scaled = cell(5,1);
+        for c = PDAMeta.Comp{file}
+            Qr = calc_relative_brightness(fitpar(c,2),file);
+            %%% Rescale the PN;
+            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);
+            %%% fit PN_scaled to match PN of file
+            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{file}));
+            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{file});
+            
+            PN_scaled = ceil(PN_scaled); % round to integer
+            BSD_scaled{c} = zeros(sum(PN_scaled),1);
+            count = 0;
+            for i = 1:numel(PN_scaled)
+                BSD_scaled{c}(count+1:count+PN_scaled(i)) = i;
+                count = count+PN_scaled(i);
+            end
+            %%% BSD_scaled contains too many bursts now, remove randomly
+            BSD_scaled{c} = BSD_scaled{c}(randperm(numel(BSD_scaled{c})));
+            BSD_scaled{c} = BSD_scaled{c}(1:numel(PDAMeta.BSD{file}));
+        end
+        
+        
+end
 
 BSD = PDAMeta.BSD{file};
 H_meas = PDAMeta.hProx{file}';
@@ -2261,6 +2293,9 @@ H_meas = PDAMeta.hProx{file}';
 %sampling = pool.NumWorkers;
 PRH = cell(sampling,5);
 for j = PDAMeta.Comp{file}
+    if h.SettingsTab.Use_Brightness_Corr.Value
+        BSD = BSD_scaled{j};
+    end
     for k = 1:sampling
         r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
         E = 1./(1+(r./R0).^6);
@@ -3037,12 +3072,10 @@ end
 
 %%% Scale Photon Count Distribution to lower brightness (linear scaling,
 %%% approximately correct)
-function [ PN_scaled ] = scalePN(PN, scale_factor, file )
-global PDAMeta
+function [ PN_scaled ] = scalePN(PN, scale_factor)
 PN_scaled = interp1(scale_factor*[1:1:numel(PN)],PN,[1:1:numel(PN)]);
 PN_scaled(isnan(PN_scaled)) = 0;
-PN_scaled = PN_scaled(1:numel(PDAMeta.PN{file}));
-PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{file});
+
 %%% Calculate the relative brightness based on FRET value
 function Qr = calc_relative_brightness(R,file)
 global PDAMeta
