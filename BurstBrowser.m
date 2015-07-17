@@ -398,11 +398,11 @@ if isempty(hfig)
         'Tag','DoTimeWindowAnalysis',...
         'Callback',@Time_Window_Analysis);
     
-    h.ExportPDA_PN_Donoronly = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Export Photon Count Distribution of Donor only Species for PDA',...
-        'Tag','ExportPDA_PN_Donoronly',...
-        'Callback',@Export_To_PDA);
+%     h.ExportPDA_PN_Donoronly = uimenu(...
+%         'Parent',h.SpeciesListMenu,...
+%         'Label','Export Photon Count Distribution of Donor only Species for PDA',...
+%         'Tag','ExportPDA_PN_Donoronly',...
+%         'Callback',@Export_To_PDA);
     
     %%% Define Species List
     h.SpeciesList = uicontrol(...
@@ -3586,9 +3586,6 @@ global BurstData BurstTCSPCData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
-if obj == h.ExportPDA_PN_Donoronly
-    SelectedSpeciesName = 'DonorOnly';
-end
 %Valid = UpdateCuts(SelectedSpecies);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
@@ -3613,59 +3610,22 @@ if isempty(BurstTCSPCData)
     clear Macrotime Microtime Channel
 end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
+%% Export FRET Species
 %%% find selected bursts
 MT = BurstTCSPCData.Macrotime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
 %%% Hard-Code 1ms here
 timebin = 1E-3;
 duration = timebin/BurstData.SyncPeriod;
-%%% Get the maximum number of bins possible in data set
-max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
 
-Progress(0.1,h.Progress_Axes,h.Progress_Text,'Exporting...');
-
-%convert absolute macrotimes to relative macrotimes
-bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
-
-Progress(0.2,h.Progress_Axes,h.Progress_Text,'Exporting...');
-
-%bin the bursts according to dur, up to max_duration
-bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
-
-Progress(0.3,h.Progress_Axes,h.Progress_Text,'Exporting...');
-%remove last bin
-last_bin = cellfun(@(x) find(x,1,'last'),bins,'UniformOutput',false);
-for i = 1:numel(bins)
-    bins{i}(last_bin{i}) = 0;
-    %remove zero bins
-    bins{i}(bins{i} == 0) = [];
-end
-
-Progress(0.4,h.Progress_Axes,h.Progress_Text,'Exporting...');
-%total number of bins is:
-n_bins = sum(cellfun(@numel,bins));
+PDAdata = Bursts_to_Timebins(MT,CH,duration);
 
 Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
 
-%construct cumsum of bins
-cumsum_bins = cellfun(@(x) [0; cumsum(x)],bins,'UniformOutput',false);
-
-Progress(0.6,h.Progress_Axes,h.Progress_Text,'Exporting...');
-
-%get channel information --> This is the only relavant information for PDA!
-PDAdata = cell(n_bins,1);
-index = 1;
-for i = 1:numel(CH)
-    for j = 2:numel(cumsum_bins{i})
-        PDAdata{index,1} = CH{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
-        index = index + 1;
-    end
-end
-
-Progress(0.7,h.Progress_Axes,h.Progress_Text,'Exporting...');
-
+%%% Save Brightness Reference?
+save_brightness_reference = 1;
 %now save channel wise photon numbers
-total = n_bins;
+total = numel(PDAdata);
 newfilename = GenerateName([BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
 switch BurstData.BAMethod
     case {1,2}
@@ -3693,6 +3653,14 @@ switch BurstData.BAMethod
         
         PDA.Corrections = BurstData.Corrections;
         PDA.Background = BurstData.Background;
+        if save_brightness_reference
+            posS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+            donly = (BurstData.DataArray(:,posS) > 0.95);
+            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+            NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
+            NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
+            PDA.BrightnessReference.N = NGP + NGS;
+        end
         save(newfilename, 'PDA', 'timebin')
     case {3,4}
         switch obj
@@ -3720,6 +3688,23 @@ switch BurstData.BAMethod
                 tcPDAstruct.timebin = timebin*1000;
                 tcPDAstruct.corrections = BurstData.Corrections;
                 tcPDAstruct.background = BurstData.Background;
+                
+                if save_brightness_reference
+                    posSGR = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
+                    posSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
+                    posSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
+                    gonly = (BurstData.DataArray(:,posSGR) > 0.95) & (BurstData.DataArray(:,posSBG) < 0.05);
+                    GOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(gonly),BurstTCSPCData.Channel(gonly),duration);
+                    NGP = cellfun(@(x) sum((x==7)),GOnly_PDA);
+                    NGS = cellfun(@(x) sum((x==8)),GOnly_PDA);
+                    tcPDAstruct.BrightnessReference.NG = NGP + NGS;
+                    bonly = (BurstData.DataArray(:,posSBR) > 0.95) & (BurstData.DataArray(:,posSBG) > 0.95);
+                    BOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(bonly),BurstTCSPCData.Channel(bonly),duration);
+                    NBP = cellfun(@(x) sum((x==1)),BOnly_PDA);
+                    NBS = cellfun(@(x) sum((x==2)),BOnly_PDA);
+                    tcPDAstruct.BrightnessReference.NB = NBP + NBS;
+                end
+                
                 newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
                 save(newfilename, 'tcPDAstruct', 'timebin')
             case h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem
@@ -3747,6 +3732,16 @@ switch BurstData.BAMethod
 
                 PDA.Corrections = BurstData.Corrections;
                 PDA.Background = BurstData.Background;
+                
+                if save_brightness_reference
+                    posSGR = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
+                    posSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
+                    donly = (BurstData.DataArray(:,posSGR) > 0.95) & (BurstData.DataArray(:,posSBG) < 0.05);
+                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+                    NGP = cellfun(@(x) sum((x==7)),DOnly_PDA);
+                    NGS = cellfun(@(x) sum((x==8)),DOnly_PDA);
+                    PDA.BrightnessReference.N = NGP + NGS;
+                end
                 save(newfilename, 'PDA', 'timebin')
         end
 end
@@ -3755,6 +3750,42 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Slice Bursts in time bins for  PDA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function PDAdata = Bursts_to_Timebins(MT,CH,duration)
+%%% Get the maximum number of bins possible in data set
+max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
+
+%convert absolute macrotimes to relative macrotimes
+bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
+
+%bin the bursts according to dur, up to max_duration
+bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
+
+%remove last bin
+last_bin = cellfun(@(x) find(x,1,'last'),bins,'UniformOutput',false);
+for i = 1:numel(bins)
+    bins{i}(last_bin{i}) = 0;
+    %remove zero bins
+    bins{i}(bins{i} == 0) = [];
+end
+
+%total number of bins is:
+n_bins = sum(cellfun(@numel,bins));
+
+%construct cumsum of bins
+cumsum_bins = cellfun(@(x) [0; cumsum(x)],bins,'UniformOutput',false);
+
+%get channel information --> This is the only relavant information for PDA!
+PDAdata = cell(n_bins,1);
+index = 1;
+for i = 1:numel(CH)
+    for j = 2:numel(cumsum_bins{i})
+        PDAdata{index,1} = CH{i}(cumsum_bins{i}(j-1)+1:cumsum_bins{i}(j));
+        index = index + 1;
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Microtime Pattern for fFCS analysis %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

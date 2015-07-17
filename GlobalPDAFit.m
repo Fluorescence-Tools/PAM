@@ -903,6 +903,9 @@ for i = 1:numel(FileName)
             PDAData.timebin(end+1) = timebin;
             PDAData.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
             PDAData.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
+            if isfield(PDA,'BrightnessReference')
+                PDAData.BrightnessReference = PDA.BrightnessReference;
+            end
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
         elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
@@ -920,6 +923,7 @@ for i = 1:numel(FileName)
             PDAData.timebin(end+1) = SavedData.timebin;
             PDAData.Corrections{end+1} = SavedData.Corrections;
             PDAData.Background{end+1} = SavedData.Background;
+            PDAData.BrightnessReference = SavedData.BrightnessReference;
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -2282,9 +2286,7 @@ if h.SettingsTab.Use_Brightness_Corr.Value
             %%% BSD_scaled contains too many bursts now, remove randomly
             BSD_scaled{c} = BSD_scaled{c}(randperm(numel(BSD_scaled{c})));
             BSD_scaled{c} = BSD_scaled{c}(1:numel(PDAMeta.BSD{file}));
-        end
-        
-        
+        end  
 end
 
 BSD = PDAMeta.BSD{file};
