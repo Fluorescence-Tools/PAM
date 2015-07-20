@@ -2006,7 +2006,8 @@ end
         'KeyPressFcn',{@Export_Database,0},...
         'Tooltipstring', ['<html>'...
                           'List of file groups in export database <br>'],...
-        'Position',[0.01 0.01 0.7 0.98]);  
+        'Position',[0.01 0.01 0.6 0.98]);  
+    %%% Table containig the PIE channels to export
     h.Export.PIE = uitable(...
         'Parent',h.Export.Panel,...
         'Tag','Export_PIE',...
@@ -2016,9 +2017,18 @@ end
         'ForegroundColor', Look.TableFore,...
         'RowName',[UserValues.PIE.Name,{'All'}],...
         'ColumnFormat',{'logical'},...
+        'ColumnWidth',{15},...
         'ColumnEditable',true,...
         'Data',false(numel(UserValues.PIE.Name)+1,1),...
-        'Position',[0.73 0.51 0.25 0.48]);
+        'Position',[0.63 0.51 0.35 0.48]);      
+    %%% Changes the size of the ROW names
+    drawnow
+    Export_PIE = findjobj(h.Export.PIE);
+    Names = Export_PIE.getComponent(4);
+    Names.setPreferredSize(java.awt.Dimension(175,100));
+    Names = Names.getComponent(0);
+    Names.setSize(175,100);
+    
     h.Export.Text = {};
     h.Export.Text{end+1} = uicontrol(...
         'Parent',h.Export.Panel,...
@@ -2029,7 +2039,7 @@ end
         'String','Manage export',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.75 0.42 0.24 0.07]);
+        'Position',[0.65 0.42 0.24 0.07]);
     h.Export.Load = uicontrol(...
         'Parent',h.Export.Panel,...
         'Tag','Export_Load_Button',...
@@ -2039,7 +2049,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Load database',...
         'Callback',{@Export_Database,3},...
-        'Position',[0.75 0.34 0.24 0.07],...
+        'Position',[0.65 0.34 0.24 0.07],...
         'Tooltipstring', 'Load export database from file');
     %%% Button to add files to the database
     h.Export.Save = uicontrol(...
@@ -2051,7 +2061,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Save database',...
         'Callback',{@Export_Database,4},...
-        'Position',[0.75 0.26 0.24 0.07],...
+        'Position',[0.65 0.26 0.24 0.07],...
         'enable', 'off',...
         'Tooltipstring', 'Save exportdatabase to a file');
     %%% Button to add files to the database
@@ -2064,10 +2074,12 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Export TIFFs',...
         'Callback',{@Export_Database,5},...
-        'Position',[0.75 0.16 0.24 0.07],...
+        'Position',[0.65 0.16 0.24 0.07],...
         'enable', 'off',...
         'UserData',0,...
         'Tooltipstring', 'Exports selected files as TIFF!');  
+    
+
 
     
 %% Mac upscaling of Font Sizes
@@ -2674,7 +2686,7 @@ if any(mode==6)
     h.MI_Phasor_Axes.XLim=[From To];    
 end
 
-%% Detector Calibration plot update
+%% Detector Calibration plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==7)
     if isfield(PamMeta.Det_Calib,'Hist') && ~isempty(PamMeta.Det_Calib.Shift)
         % uncorrected MI histogram (blue)
@@ -2932,7 +2944,7 @@ switch e.Key
         Update_Cor_Table(obj);
         %%% Remove channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
-        h.Export.PIE.Data{Sel} = [];  
+        h.Export.PIE.Data(Sel) = [];  
     case 'c' %%% Changes color of selected channels
         %%% Opens menu to choose color
         color=uisetcolor;
@@ -3051,7 +3063,7 @@ switch e.Key
             Update_Cor_Table(obj);
             %%% Add channel to Export table
             h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
-            h.Export.PIE.Data{end+1} = h.Export.PIE.Data{end};
+            h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);
         end        
     case 'PIE_Select' %%% Enable manual selection
         [x,~] = ginput(2);
@@ -6550,7 +6562,7 @@ end
 %%% Functions concerning database for quick export %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 function Export_Database(~,e,mode)
-global UserValues PamMeta
+global UserValues PamMeta FileInfo
 h = guidata(findobj('Tag','Pam'));
 
 if mode == 0 %%% Checks, which key was pressed
@@ -6613,6 +6625,7 @@ switch mode
             h.Export.List.String{end+1} = [num2str(numel(FileName)) ' Files: ' FileName{1} ' (path:' Path ')'];
             
             h.Export.TIFF.Enable = 'on';
+            h.Export.Save.Enable = 'on';
         end
     case 2 %% Delete files from database
         %remove rows from list
@@ -6620,6 +6633,10 @@ switch mode
         %remove rows from database
         PamMeta.Export(h.Export.List.Value, :) = [];
         h.Export.List.Value = 1;
+        if numel(h.Export.List.String)<1
+            h.Export.TIFF.Enable = 'off';
+            h.Export.Save.Enable = 'off';
+        end  
     case 3 %% Load database
         [FileName, Path] = uigetfile({'*.edb', 'Export Database file'}, 'Choose export database to load',UserValues.File.Path,'MultiSelect', 'off');
         if all(FileName==0)
@@ -6629,6 +6646,8 @@ switch mode
         PamMeta.Export = s.export;
         h.Export.List.String = s.str;
         clear s;
+        h.Export.TIFF.Enable = 'on';
+        h.Export.Save.Enable = 'on';
     case 4 %% Save complete database
         [File, Path] = uiputfile({'*.edb', 'Database file'}, 'Save export database', UserValues.File.Path);
         if all(FileName==0)
@@ -6645,7 +6664,7 @@ switch mode
         elseif h.Export.TIFF.UserData == 1
             h.Export.TIFF.UserData = 0;
         end
-        Sel = h.Export.PIE.Data;
+        Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
         end
@@ -6654,6 +6673,8 @@ switch mode
             pause(0.01)
             if h.Export.TIFF.UserData == 0
                 h.Export.TIFF.String = 'Export TIFFs';
+                h.Progress_Text.String = FileInfo.FileName{1};
+                h.Progress_Axes.Color=UserValues.Look.Control;
                 return
             end
             try
@@ -6665,16 +6686,17 @@ switch mode
                     PamMeta.Export{i,1},...   %file
                     PamMeta.Export{i,3});     %type
                 
-                
                 Pam_Export([],event,Sel,1)
                 % set filename color to green
                 h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             catch
                 h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             end
+            h.Progress_Text.String = FileInfo.FileName{1};
+            h.Progress_Axes.Color = UserValues.Look.Control;
         end
-        h.Database.Correlate.UserData = 0;
-        h.Database.Correlate.String = 'Export';
+        h.Export.TIFF.UserData = 0;
+        h.Export.TIFF.String = 'Export TIFFs';
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
