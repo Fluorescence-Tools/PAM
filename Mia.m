@@ -1743,14 +1743,35 @@ switch mode
         for i=1:numel(FileName1)  
             MIAData.FileName{1}{i}=FileName1{i};
             Info=imfinfo(fullfile(Path1,FileName1{i}));
-            for j=1:numel(Info)
-                %%% Updates progress bar
-                Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
-                    h.Mia_Progress_Axes,...
-                    h.Mia_Progress_Text,...
-                    ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);                
-                MIAData.Data{1,1}(:,:,end+1)=single(imread(fullfile(Path1,FileName1{i}),'TIFF','Index',j));
+            
+            %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==5 && numel(Stop)==5
+                    h.Mia_Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_Cor_Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_Cor_Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_Cor_Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                end
             end
+            
+            TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
+            for j=1:numel(Info)
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);
+                end
+                TIFF_Handle.setDirectory(j);
+                MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
+            end
+            TIFF_Handle.close(); % Close tif reference   
         end
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -1786,14 +1807,18 @@ switch mode
         MIAData.Data{2,1}=single.empty(0,0,0);
         for i=1:numel(FileName2)
             MIAData.FileName{2}{i}=FileName2{i};
-            FileInfo=imfinfo(fullfile(Path2,FileName2{i}));
-            for j=1:numel(FileInfo)
-                %%% Updates progress bar
-                Progress(((j-1)+numel(FileInfo)*(i-1))/(numel(FileInfo)*numel(FileName2)),...
-                    h.Mia_Progress_Axes,...
-                    h.Mia_Progress_Text,...
-                    ['Loading Frame ' num2str(j) ' of ' num2str(numel(FileInfo)) ' in File ' num2str(i) ' of ' num2str(numel(FileName2)) ' for Channel 2']);
-                MIAData.Data{2,1}(:,:,end+1)=single(imread(fullfile(Path2,FileName2{i}),'TIFF','Index',j));
+            Info=imfinfo(fullfile(Path2,FileName2{i}));
+            TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
+            for j=1:numel(Info)
+                if mod(j,10)==0
+                    %%% Updates progress bar
+                    Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName2)),...
+                        h.Mia_Progress_Axes,...
+                        h.Mia_Progress_Text,...
+                        ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName2)) ' for Channel 2']);
+                end
+                TIFF_Handle.setDirectory(j);
+                MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
             end
         end
         %%% Updates frame settings for channel 2
@@ -1811,8 +1836,11 @@ switch mode
         Mia_ROI([],[],1)
         
     case 2 %%% Loads data from Pam
-        Pam = guidata(findobj('Tag','Pam'));
-        %% Aborts, if not Data is loaded
+        %% Aborts, if not Data is loaded or Pam is closed
+        if isempty(findobj('Tag','Pam'));
+            return;
+        end
+        Pam = guidata(findobj('Tag','Pam'));        
         if isempty(Pam) || all(cellfun(@isempty,TcspcData.MT))
            return 
         end
@@ -1850,6 +1878,20 @@ switch mode
         h.Plots.NB(4).XData=0;
         h.Plots.NB(5).CData=zeros(1,1);                 
         %% Extracts data from Pam for channel 1
+        %%% Automatically updates image properties
+        h.Mia_Image_Frame.String = num2str(FileInfo.ImageTime);
+        h.Mia_Image_Line.String = num2str(FileInfo.ImageTime./FileInfo.Lines*1000);
+        h.Mia_Cor_Fit_Table.Data(15,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines*1000)};
+        h.Mia_Image_Pixel.String = num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000);
+        h.Mia_Cor_Fit_Table.Data(13,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000)};
+        if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
+            h.Mia_Image_Size.String = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
+            h.Mia_Cor_Fit_Table.Data(11,:) = {num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000)};
+        else
+            h.Mia_Image_Size.String = '50';
+            h.Mia_Cor_Fit_Table.Data(11,:) = {'50'};
+        end
+        
         Sel = h.Mia_PIE(1).Value;
         %%% Gets the photons
         if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
@@ -1866,7 +1908,7 @@ switch mode
         end
         
         %%% Calculates pixel times for each line and file
-        Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+        Pixeltimes=zeros(FileInfo(1).Lines^2,FileInfo(1).NumberOfFiles);
         for j=1:FileInfo.NumberOfFiles
             for k=1:FileInfo.Lines
                 Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);

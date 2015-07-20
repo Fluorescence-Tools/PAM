@@ -6569,8 +6569,8 @@ if mode == 0 %%% Checks, which key was pressed
     switch e.Key
         case 'delete'
             mode = 2;
-        case 'return'
-            mode =7;
+%         case 'return'
+%             mode =7;
     end
 end
 
@@ -6685,7 +6685,6 @@ switch mode
                 LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
                     PamMeta.Export{i,1},...   %file
                     PamMeta.Export{i,3});     %type
-                
                 Pam_Export([],event,Sel,1)
                 % set filename color to green
                 h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
@@ -6926,10 +6925,40 @@ switch e.Key
             Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
             
             File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
-            imwrite(Stack(:,:,1),File,'tif','Compression','lzw');
-            for j=2:size(Stack,3)
-                imwrite(Stack(:,:,j),File,'tif','WriteMode','append','Compression','lzw');
+            
+            TIFF_handle = Tiff(File, 'w');
+            Tagstruct.ImageLength = FileInfo.Lines;
+            Tagstruct.ImageWidth = FileInfo.Lines;
+            Tagstruct.Compression = 5; %1==None; 5==LZW
+            Tagstruct.SampleFormat = 1; %UInt
+            Tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+            Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
+            Tagstruct.SamplesPerPixel = 1;
+            Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
+                Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n'];
+            else
+                Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'PixelSize [nm]: ' '50' '\n'];
             end
+            TIFF_handle.setTag(Tagstruct);
+
+            for j=1:size(Stack,3)                
+                TIFF_handle.write(Stack(:,:,j));
+                if j<size(Stack,3)
+                    TIFF_handle.writeDirectory();
+                    TIFF_handle.setTag(Tagstruct);
+                end
+            end
+             TIFF_handle.close()
+
         end
         Progress((i-1)/numel(Sel),h.Progress_Axes,h.Progress_Text,'Exporting:')
 end
