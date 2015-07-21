@@ -129,12 +129,12 @@ end
         'Parent', h.AdvancedAnalysis_Menu,...
         'Separator','on',...
         'Tag','SaveIRF_Menu',...
-        'Label','Save Measurement as IRF for ALL PIE Channels',...
+        'Label','Save Measurement as IRF for all PIE Channels',...
         'Callback',@SaveIRF);
     h.SaveScatter_Menu = uimenu(...
         'Parent', h.AdvancedAnalysis_Menu,...
         'Tag','SaveScatter_Menu',...
-        'Label','Save Measurement as Scatter',...
+        'Label','Save Measurement as Scatter/Background',...
         'Callback',@SaveScatter);
     
     
@@ -228,7 +228,8 @@ end
         'Parent',h.MI_Menu,...
         'Label','Plot as log scale',...
         'Tag','MI_Log',...
-        'Callback',@MI_Axes_Menu);
+        'Checked',UserValues.Settings.Pam.PlotLog,...
+        'Callback',@Calculate_Settings);
     %%% Contextmenu for individual microtime axes
     h.MI_Menu_Individual = uicontextmenu;
     %%% Menu for Log scal plotting
@@ -236,19 +237,22 @@ end
         'Parent',h.MI_Menu_Individual,...
         'Label','Plot as log scale',...
         'Tag','MI_Log',...
-        'Callback',@MI_Axes_Menu);
+        'Checked',UserValues.Settings.Pam.PlotLog,...
+        'Callback',@Calculate_Settings);
     %%% Menu for Enabling/Disabling IRF Plotting
     h.MI_IRF = uimenu(...
         'Parent',h.MI_Menu_Individual,...
         'Label','Plot IRF',...
         'Separator','on',...
         'Tag','MI_IRF',...
+        'Checked',UserValues.Settings.Pam.PlotIRF,...
         'Callback',@Calculate_Settings);
     %%% Menu for Enabling/Disabling Scatter Pattern Plotting
     h.MI_ScatterPattern = uimenu(...
         'Parent',h.MI_Menu_Individual,...
         'Label','Plot Scatter Pattern',...
         'Tag','MI_ScatterPattern',...
+        'Checked',UserValues.Settings.Pam.PlotScat,...
         'Callback',@Calculate_Settings);
     %%% All microtime axes
     h.MI_All_Axes = axes(...
@@ -2355,24 +2359,41 @@ elseif obj == h.Cor_Divider_Menu
     Divider=inputdlg('New divider:');
     if ~isempty(Divider)
         h.Cor_Divider_Menu.Label=['Divider: ' cell2mat(Divider)];
-       UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));       
+        UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));
     end
+elseif obj == h.MI_Log_Ind || obj == h.MI_Log
+    %%% Puts Y-axis in log scale
+    if strcmp(h.MI_Log.Checked,'off')
+        UserValues.Settings.Pam.PlotLog = 'on';
+        h.MI_Log.Checked='on';
+        h.MI_Log_Ind.Checked='on';
+    else
+        UserValues.Settings.Pam.PlotLog = 'off';
+        h.MI_Log.Checked='off';
+        h.MI_Log_Ind.Checked='off';
+    end
+    Update_Display([],[],9)
+    Update_Display([],[],5)
 elseif obj == h.MI_IRF
     %%% Switches IRF Check Display
     if strcmp(h.MI_IRF.Checked,'on')
         h.MI_IRF.Checked = 'off';
+        UserValues.Settings.Pam.PlotIRF = 'off';
     else
         h.MI_IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
     end
-    Update_Display([],[],4);
+    Update_Display([],[],8);
 elseif obj == h.MI_ScatterPattern
     %%% Switches IRF Check Display
     if strcmp(h.MI_ScatterPattern.Checked,'on')
         h.MI_ScatterPattern.Checked = 'off';
+        UserValues.Settings.Pam.PlotScat = 'off';
     else
         h.MI_ScatterPattern.Checked = 'on';
+        UserValues.Settings.Pam.PlotScat = 'on';
     end
-    Update_Display([],[],4);
+    Update_Display([],[],8);
 elseif obj == h.Burst_Button_Menu_SaveTotalPhotonStream
     if strcmp(obj.Checked,'on')
         UserValues.BurstSearch.SaveTotalPhotonStream = 0;
@@ -2404,8 +2425,11 @@ h = guidata(findobj('Tag','Pam'));
 %%% 5: PIE patches
 %%% 6: Phasor Plot
 %%% 7: Detector Calibration
+%%% 8: Plot IRF or Scatter Pattern
+%%% 9: Y-axis log
+
 if nargin<3 || any(mode==0)
-    mode=[1:5, 6];
+    mode=[1:5, 6, 8, 9];
 end
 
 
@@ -2607,35 +2631,102 @@ if any(mode==4)
             h.Plots.MI_Ind{i}.Color=UserValues.Detector.Color(UserValues.Detector.Plots(i),:);
             %%% Set XLim to Microtime Range
             h.Plots.MI_Ind{i}.Parent.XLim = [1 FileInfo.MI_Bins];
-            if (UserValues.PIE.Detector(Sel) == UserValues.Detector.Det(UserValues.Detector.Plots(i)))...
-                    && (UserValues.PIE.Router(Sel) == UserValues.Detector.Rout(UserValues.Detector.Plots(i)))
-                if strcmp(h.MI_IRF.Checked,'on')
-                    %%% Plot IRF/Scatter Pattern in PIE Channel range
-                    h.Plots.MI_Ind_IRF{i}.XData = 1:numel(UserValues.PIE.IRF{Sel});
-                    h.Plots.MI_Ind_IRF{i}.YData = UserValues.PIE.IRF{Sel}./max(UserValues.PIE.IRF{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
-                    h.Plots.MI_Ind_IRF{i}.Visible = 'on';
-                else
-                    if ishandle(h.Plots.MI_Ind_IRF{i})
-                        h.Plots.MI_Ind_IRF{i}.Visible = 'off';
+        end
+    end
+    %%% Resets PIE patch scale
+    if isfield(h.Plots,'PIE_Patches')
+        for i=1:numel(h.Plots.PIE_Patches)
+            if ishandle(h.Plots.PIE_Patches{i})
+                YData=h.Plots.PIE_Patches{i}.Parent.YLim;
+                h.Plots.PIE_Patches{i}.YData=[YData(2), YData(1), YData(1), YData(2)];
+                %%% Moves selected PIE patch to top (but below curve)
+                if i==Sel
+                    uistack(h.Plots.PIE_Patches{i},'top');
+                    uistack(h.Plots.PIE_Patches{i},'down',3);
+                end
+            end
+        end
+    end
+end
+
+if any(mode==8)
+    %% Plot IRFs on the individual microtime plots
+    if strcmp(h.MI_IRF.Checked,'on')
+        for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
+            for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                % find which detector is selected for the current individual microtime plot
+                detector = h.MI_Individual{i, 2*j+2}.Value;
+                % loop through PIE channels
+                for k = 1:numel(UserValues.PIE.IRF)
+                    if ~isempty(UserValues.PIE.IRF{k})
+                        FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
+                        if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
+                                && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
+                            %%% Plot IRF in PIE Channel range
+                            h.Plots.MI_Ind_IRF{i,j}.Visible = 'on';
+                            h.Plots.MI_Ind_IRF{i,j}.XData = 1:numel(UserValues.PIE.IRF{k});
+                             if isequal(h.Plots.MI_Ind_IRF{i,j}.YData,[0 0])
+                                 % no IRF has been plotted yet on microtime plot (i,j)
+                                 h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
+                             end
+                            if max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}) == 0
+                                % there is no data, so just show the IRF
+                                norm = 1;
+                            else
+                                norm = max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}(FromTo));
+                            end
+                            h.Plots.MI_Ind_IRF{i,j}.YData(FromTo) = UserValues.PIE.IRF{k}(FromTo)./max(UserValues.PIE.IRF{k}(FromTo)).*norm;
+                        end
                     end
                 end
-                
-                if strcmp(h.MI_ScatterPattern.Checked,'on')
-                    %%% Plot IRF/Scatter Pattern in PIE Channel range
-                    h.Plots.MI_Ind_Scat{i}.XData = 1:numel(UserValues.PIE.ScatterPattern{Sel});
-                    h.Plots.MI_Ind_Scat{i}.YData = UserValues.PIE.ScatterPattern{Sel}./max(UserValues.PIE.ScatterPattern{Sel}).*max(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
-                    h.Plots.MI_Ind_Scat{i}.Visible = 'on';
-                else
-                    if ishandle(h.Plots.MI_Ind_Scat{i})
-                        h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+            end
+        end
+    else
+        for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
+            for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                if ishandle(h.Plots.MI_Ind_IRF{i,j})
+                    h.Plots.MI_Ind_IRF{i,j}.Visible = 'off';
+                end
+            end
+        end
+    end
+    %% Plot Scatter Patterns on the individual microtime plots
+    if strcmp(h.MI_ScatterPattern.Checked,'on')
+         for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
+            for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                % find which detector is selected for the current individual microtime plot
+                detector = h.MI_Individual{i, 2*j+2}.Value;
+                % loop through PIE channels
+                for k = 1:numel(UserValues.PIE.ScatterPattern)
+                    if ~isempty(UserValues.PIE.ScatterPattern{k})
+                        FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
+                        if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
+                                && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
+                            %%% Plot scatter in PIE Channel range
+                            h.Plots.MI_Ind_Scat{i,j}.Visible = 'on';
+                            h.Plots.MI_Ind_Scat{i,j}.XData = 1:numel(UserValues.PIE.ScatterPattern{k});
+                             if isequal(h.Plots.MI_Ind_Scat{i,j}.YData,[0 0])
+                                 % no scatter has been plotted yet on microtime plot (i,j)
+                                 h.Plots.MI_Ind_Scat{i,j}.YData = zeros(numel(UserValues.PIE.ScatterPattern{k}),1);
+                             end
+                            if max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}) == 0
+                                % there is no data, so just show the
+                                % scatter
+                                norm = 1;
+                            else
+                                norm = max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}(FromTo));
+                            end
+                            h.Plots.MI_Ind_Scat{i,j}.YData(FromTo) = UserValues.PIE.ScatterPattern{k}(FromTo)./max(UserValues.PIE.ScatterPattern{k}(FromTo)).*norm;
+                        end
                     end
                 end
-            else
-                if ishandle(h.Plots.MI_Ind_IRF{i})
-                    h.Plots.MI_Ind_IRF{i}.Visible = 'off';
-                end
-                if ishandle(h.Plots.MI_Ind_Scat{i})
-                    h.Plots.MI_Ind_Scat{i}.Visible = 'off';
+            end
+        end
+    else
+        for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
+            for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                if ishandle(h.Plots.MI_Ind_Scat{i,j})
+                    h.Plots.MI_Ind_Scat{i,j}.Visible = 'off';
                 end
             end
         end
@@ -2713,6 +2804,30 @@ if any(mode==7)
         h.Plots.Calib_Sel.YData=sum(Cor_Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
         
+    end
+end
+
+%% Plot Y-axis in log %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% this has to be before mode == 5 PIE Patches!
+if any(mode==9)
+    if strcmp(h.MI_Log.Checked, 'on')
+        for i=1:(size(h.MI_Individual,2)/2-1)
+            for j=1:size(h.MI_Individual,1)
+                h.MI_Individual{j,2*i+1}.YScale='Log';
+            end
+        end
+        h.MI_All_Axes.YScale='Log';
+        h.MI_Phasor_Axes.YScale='Log';
+        h.MI_Calib_Axes.YScale='Log';
+    else
+        h.MI_All_Axes.YScale='Linear';
+        for i=1:(size(h.MI_Individual,2)/2-1)
+            for j=1:size(h.MI_Individual,1)
+                h.MI_Individual{j,2*i+1}.YScale='Linear';
+            end
+        end
+        h.MI_Phasor_Axes.YScale='Linear';
+        h.MI_Calib_Axes.YScale='Linear';
     end
 end
 
@@ -3148,40 +3263,6 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
 end
 Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Callback functions of Microtime plots and UIContextmenues  %%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function MI_Axes_Menu(obj,~)
-h = guidata(findobj('Tag','Pam'));
-if obj == h.MI_Log || obj == h.MI_Log_Ind
-    if strcmp(h.MI_Log.Checked,'off')
-        for i=1:(size(h.MI_Individual,2)/2-1)
-            for j=1:size(h.MI_Individual,1)
-                h.MI_Individual{j,2*i+1}.YScale='Log';
-            end
-        end       
-        h.MI_All_Axes.YScale='Log';
-        h.MI_Phasor_Axes.YScale='Log';
-        h.MI_Calib_Axes.YScale='Log';
-        h.MI_Log.Checked='on';
-        h.MI_Log_Ind.Checked='on';
-    else
-        h.MI_All_Axes.YScale='Linear';
-        for i=1:(size(h.MI_Individual,2)/2-1)
-            for j=1:size(h.MI_Individual,1)
-                h.MI_Individual{j,2*i+1}.YScale='Linear';
-            end
-        end  
-        h.MI_Phasor_Axes.YScale='Linear';
-        h.MI_Calib_Axes.YScale='Linear';
-        h.MI_Log.Checked='off';
-        h.MI_Log_Ind.Checked='off';
-    end
-end
-
-Update_Display([],[],5);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Selects/Unselects macrotime sections  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3326,7 +3407,6 @@ else
 end
 %% Creates individual microtime channels
 if any(mode==1);
-
     %%% Deletes existing microtime tabs
     if isfield(h,'MI_Individual')
         cellfun(@delete,h.MI_Individual(:,1))
@@ -3386,12 +3466,14 @@ if any(mode==1);
             h.Plots.MI_Ind_Scat{i,j}=line(...
                 'Parent',h.MI_Individual{i,2*(1+j)-1},...
                 'Color',[0.5 0.5 0.5],...
+                'LineStyle',':',...
                 'XData',[0 1],...
                 'YData',[0 0],...
                 'Visible','off');
             h.Plots.MI_Ind_IRF{i,j}=line(...
                 'Parent',h.MI_Individual{i,2*(1+j)-1},...
-                'Color',[0.25 0.25 0.25],...
+                'Color','k',...
+                'LineStyle',':',...
                 'XData',[0 1],...
                 'YData',[0 0],...
                 'Visible','off');
@@ -3420,7 +3502,7 @@ if any(mode==2)
 end
 %% Saves new tabs in guidata
 guidata(h.Pam,h)
-Update_Display([],[],4:5);
+Update_Display([],[],[4, 5, 8]);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5710,19 +5792,36 @@ if strcmp(FileInfo.FileName{1},'Nothing loaded')
     return;
 end
 h = guidata(findobj('Tag','Pam'));
+colorr = h.Progress_Axes.Color;
+strr = h.Progress_Text.String;
+h.Progress_Text.String = 'Saving IRF';
+h.Progress_Axes.Color=[1 0 0];
 switch obj
     case h.SaveIRF_Menu
         %%% Update the IRF for ALL PIE channel
         for i=1:numel(UserValues.PIE.Name)
-            UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+            if isempty(UserValues.PIE.Combined{i})
+                UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+            end
         end
     case h.PIE_IRF
         %%% Find selected channels
         Sel=h.PIE_List.Value;
-        %%% Update IRF of selected channel
-        UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
+        if isempty(UserValues.PIE.Combined{Sel})
+            %%% Update IRF of selected channel
+            UserValues.PIE.IRF{Sel}(FromTo) = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
+        else
+            uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
+            return
+        end
 end
+h.MI_IRF.Checked = 'on';
+UserValues.Settings.Pam.PlotIRF = 'on';
 LSUserValues(1);
+Update_Display([],[],8)
+h.Progress_Text.String = strr;
+h.Progress_Axes.Color=colorr;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5731,9 +5830,16 @@ global UserValues PamMeta TcspcData FileInfo
 h=guidata(findobj('Tag','Pam'));
 
 for i=1:numel(UserValues.PIE.Name)
-    UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+    if isempty(UserValues.PIE.Combined{i})
+        UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+    end
 end
 
+uiwait(msgbox('If scatter is used as background for burst analysis, the correct burst method and channels have to be selected','Important','modal'));
+
+% PamMeta.Info contains the total photons, channel photons.... information
+% per PIE Channel
+% Store the channel count rates in the UserValues.BurstSearch structure.
 BAMethod = UserValues.BurstSearch.Method;
 switch BAMethod
     case {1,2}
@@ -5793,7 +5899,10 @@ switch BAMethod
             PamMeta.Info{...
             (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}))}(4);
 end
+h.MI_ScatterPattern.Checked = 'on';
+UserValues.Settings.Pam.PlotScat = 'on';
 LSUserValues(1);
+Update_Display([],[],8)
 h.SaveScatter_Button.ForegroundColor = [0 1 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Open TauFitBurst Window for Burstwise Lifetime Fitting %%%%%%%%%%%%%%%%
