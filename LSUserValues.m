@@ -301,12 +301,30 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
     end   
     P.Settings.Pam.Cor_Divider = S.Settings.Pam.Cor_Divider;
-    %%% Checksm if Pam.Cor_Selection subfield exists
+    %%% Checks if Pam.Cor_Selection subfield exists
     if ~isfield (S.Settings.Pam, 'Cor_Selection')
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
     P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;   
+    %%% Checks if Pam.PlotIRF subfield exists
+    if ~isfield (S.Settings.Pam, 'PlotIRF')
+        S.Settings.Pam.PlotIRF='off';
+        disp('UserValues.Settings.Pam.PlotIRF was incomplete');
+    end
+    P.Settings.Pam.PlotIRF = S.Settings.Pam.PlotIRF;   
+    %%% Checks if Pam.PlotScat subfield exists
+    if ~isfield (S.Settings.Pam, 'PlotScat')
+        S.Settings.Pam.PlotScat='off';
+        disp('UserValues.Settings.Pam.PlotScat was incomplete');
+    end
+    P.Settings.Pam.PlotScat = S.Settings.Pam.PlotScat;  
+    %%% Checksm if Pam.PlotLog subfield exists
+    if ~isfield (S.Settings.Pam, 'PlotLog')
+        S.Settings.Pam.PlotLog='off';
+        disp('UserValues.Settings.Pam.PlotLog was incomplete');
+    end
+    P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;   
     %% FCSFit
     %%% Checks, if FCSFit subfield exists
     if ~isfield (S, 'FCSFit')
