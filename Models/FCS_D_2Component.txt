@@ -1,5 +1,6 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-Simple one component, 3D normal diffusion FCS model.
+Simple two component, 3D normal diffusion FCS model.
+Brightnesses are assumed to be equal.
 Diffusion coefficient and focus size are both parameters
 One exponential triplet component
 

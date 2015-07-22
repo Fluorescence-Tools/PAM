@@ -1,5 +1,5 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-Simples RICS model. 
+Simple RICS model. 
 -> One 3D diffusion component.
 -> No Triplet/blinking terms. 
 -> No Shift between correlations.

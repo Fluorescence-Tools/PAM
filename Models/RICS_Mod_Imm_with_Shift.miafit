@@ -1,6 +1,6 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 CrossCorrelation RICS model
--> two 3D diffusion components - mobile & immobile
+-> two 3D components - mobile & immobile
 -> No Triplet/blinking terms. 
 -> Shift between excitation foci implemented (sx and sy)
 
