@@ -4919,7 +4919,7 @@ if numel(BurstData.SpeciesNames) > 1
     else
         h.fFCS_Species2_popupmenu.Value = 1;
     end
-    h.Plot_Microtimes_button.Enable = 'off';
+    h.Plot_Microtimes_button.Enable = 'on';
 else %%% Set to empty
     h.fFCS_Species1_popupmenu.String = '-';
     h.fFCS_Species1_popupmenu.Value = 1;
@@ -4976,8 +4976,8 @@ switch obj
             if isempty(PhotonStream)
                 Progress(1,h.Progress_Axes,h.Progress_Text);
                 h.Progress_Text.String = BurstData.DisplayName;
-                m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab!');
-                pause(2)
+                m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab, or unselect time window for fFCS!');
+                pause(5)
                 delete(m)
                 return;
             end
