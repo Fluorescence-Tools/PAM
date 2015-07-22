@@ -1120,7 +1120,7 @@ end
             '"rightarrow" moves channel down \n'...
             'Rightclick to open contextmenu with additional functions;']),...
         'UIContextMenu',h.PIE_List_Menu,...
-        'Callback',{@Update_Display,1:4},...
+        'Callback',{@Update_Display,1:5},...
         'KeyPressFcn',@PIE_List_Functions,...
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
@@ -2659,6 +2659,8 @@ if any(mode==8)
                 % loop through PIE channels
                 for k = 1:numel(UserValues.PIE.IRF)
                     if ~isempty(UserValues.PIE.IRF{k})
+                        % combined channels will either not be in
+                        % UserValues.PIE.IRF, or will be empty
                         FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
@@ -2699,6 +2701,8 @@ if any(mode==8)
                 % loop through PIE channels
                 for k = 1:numel(UserValues.PIE.ScatterPattern)
                     if ~isempty(UserValues.PIE.ScatterPattern{k})
+                        % combined channels will either not be in
+                        % UserValues.PIE.ScatterPattern, or will be empty
                         FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
@@ -2710,8 +2714,7 @@ if any(mode==8)
                                  h.Plots.MI_Ind_Scat{i,j}.YData = zeros(numel(UserValues.PIE.ScatterPattern{k}),1);
                              end
                             if max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}) == 0
-                                % there is no data, so just show the
-                                % scatter
+                                % there is no data, so just show the scatter
                                 norm = 1;
                             else
                                 norm = max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}(FromTo));
@@ -2850,7 +2853,13 @@ if any(mode==5)
         Det=UserValues.PIE.Detector(i);
         Rout=UserValues.PIE.Router(i);
         %%% Reduces color saturation
-        Color=(UserValues.PIE.Color(i,:)+3*UserValues.Look.Axes)/4;
+        if i == Sel
+            % make selected PIE channel patch a little darker
+            Color=(UserValues.PIE.Color(i,:)+2.5*UserValues.Look.Axes)/4;
+        else
+            Color=(UserValues.PIE.Color(i,:)+3*UserValues.Look.Axes)/4;
+        end
+        
         %%% Finds detector channels containing PIE channel
         Channel1=find(UserValues.Detector.Det==Det);
         Channel2=find(UserValues.Detector.Rout==Rout);
