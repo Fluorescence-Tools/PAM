@@ -3577,6 +3577,7 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
 UpdateLifetimePlots([],[]);
+Update_fFCS_GUI([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Remove Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3589,6 +3590,7 @@ if numel(get(h.SpeciesList,'String')) > 1 %remove selected field
     set(h.SpeciesList,'Value',val-1);
     set(h.SpeciesList,'String',BurstData.SpeciesNames);
 end
+Update_fFCS_GUI([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Rename Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3603,6 +3605,7 @@ if ~isempty(NewName)
     BurstData.SpeciesNames{SelectedSpecies} = NewName{1};
     set(h.SpeciesList,'String',BurstData.SpeciesNames);
 end
+Update_fFCS_GUI([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Photons for PDA analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
