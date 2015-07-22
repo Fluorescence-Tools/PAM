@@ -5801,10 +5801,9 @@ if strcmp(FileInfo.FileName{1},'Nothing loaded')
     return;
 end
 h = guidata(findobj('Tag','Pam'));
-colorr = h.Progress_Axes.Color;
-strr = h.Progress_Text.String;
 h.Progress_Text.String = 'Saving IRF';
 h.Progress_Axes.Color=[1 0 0];
+pause(0.5)
 switch obj
     case h.SaveIRF_Menu
         %%% Update the IRF for ALL PIE channel
@@ -5818,7 +5817,7 @@ switch obj
         Sel=h.PIE_List.Value;
         if isempty(UserValues.PIE.Combined{Sel})
             %%% Update IRF of selected channel
-            UserValues.PIE.IRF{Sel}(FromTo) = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
+            UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
         else
             uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
             return
@@ -5828,8 +5827,8 @@ h.MI_IRF.Checked = 'on';
 UserValues.Settings.Pam.PlotIRF = 'on';
 LSUserValues(1);
 Update_Display([],[],8)
-h.Progress_Text.String = strr;
-h.Progress_Axes.Color=colorr;
+h.Progress_Text.String = FileInfo.FileName{1};
+h.Progress_Axes.Color = UserValues.Look.Control;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
@@ -5837,7 +5836,9 @@ h.Progress_Axes.Color=colorr;
 function SaveScatter(~,~)
 global UserValues PamMeta TcspcData FileInfo
 h=guidata(findobj('Tag','Pam'));
-
+h.Progress_Text.String = 'Saving Scatter/Background';
+h.Progress_Axes.Color=[1 0 0];
+pause(0.5)
 for i=1:numel(UserValues.PIE.Name)
     if isempty(UserValues.PIE.Combined{i})
         UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
@@ -5913,6 +5914,8 @@ UserValues.Settings.Pam.PlotScat = 'on';
 LSUserValues(1);
 Update_Display([],[],8)
 h.SaveScatter_Button.ForegroundColor = [0 1 0];
+h.Progress_Text.String = FileInfo.FileName{1};
+h.Progress_Axes.Color = UserValues.Look.Control;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Open TauFitBurst Window for Burstwise Lifetime Fitting %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
