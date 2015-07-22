@@ -923,7 +923,9 @@ for i = 1:numel(FileName)
             PDAData.timebin(end+1) = SavedData.timebin;
             PDAData.Corrections{end+1} = SavedData.Corrections;
             PDAData.Background{end+1} = SavedData.Background;
-            PDAData.BrightnessReference = SavedData.BrightnessReference;
+            if isfield(SavedData,'BrightnessReference')
+                PDAData.BrightnessReference = SavedData.BrightnessReference;
+            end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
