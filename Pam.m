@@ -441,6 +441,28 @@ end
     h.Cor.Individual_Axes{1}.XLabel.Color=Look.Fore;
     h.Cor.Individual_Axes{1}.YLabel.String='G({\it\tau{}})';
     h.Cor.Individual_Axes{1}.YLabel.Color=Look.Fore;
+    
+    h.Cor.Individual_Menu = uicontextmenu;    
+    %%% Menu for selecting all individual correlations
+    h.Cor.Individual_Select_All = uimenu(...
+        'Parent',h.Cor.Individual_Menu,...
+        'Label','Select All',...
+        'Tag','Select All',...
+        'Callback',{@Cor_Selection,2});
+    %%% Menu for unselecting all individual correlations
+    h.Cor.Individual_UnSelect_All = uimenu(...
+        'Parent',h.Cor.Individual_Menu,...
+        'Label','Unselect All',...
+        'Tag','Unselect All',...
+        'Callback',{@Cor_Selection,3});
+    %%% Menu for saving selected correlations
+    h.Cor.Individual_UnSelect_All = uimenu(...
+        'Parent',h.Cor.Individual_Menu,...
+        'Label','Save selected correlations',...
+        'Tag','Save_Selected',...
+        'Callback',{@Cor_Selection,4});
+
+    
     %% Additional detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Aditional detector functions tab
     h.Additional.Tab= uitab(...
@@ -3909,6 +3931,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.SyncPeriod)/UserValues.Settings.Pam.Cor_Divider;
     %%% Calculates the photon start times in clock ticks
     Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
+    Valid = find(PamMeta.Selected_MT_Patches)';
     %%% Uses truncated Filename
     switch FileInfo.FileType
         case {'FabsurfSPC','SPC'}
@@ -3921,14 +3944,22 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     drawnow;   
     
     %%% Removes individual Correlation Tabs
-    if numel(h.Cor.Individual_Tab)>1
-        delete(h.Cor.Individual_Tab(2:end))
+    for i=2:numel(h.Cor.Individual_Tab)
+        delete(h.Cor.Individual_Tab{i})
     end
     h.Cor.Individual_Tab = h.Cor.Individual_Tab(1);
     h.Cor.Individual_Axes = h.Cor.Individual_Axes(1);
     if ~isempty(h.Cor.Individual_Axes{1}.Children)
         delete(h.Cor.Individual_Axes{1}.Children);
     end
+    %%% Creates plots for all macrotime patches
+    for i=1:numel(Valid);
+       line('Parent',h.Cor.Individual_Axes{1},...
+           'X',[3e-7 1],...
+           'Y',[0 0],...
+           'Color',rand(3,1));
+    end
+    
     h.Cor.Individual_Tab{1}.Title = 'Nothing';
     
     Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
@@ -3968,7 +3999,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 k=1;
                 Counts1=0;
                 Counts2=0;
-                Valid=find(PamMeta.Selected_MT_Patches)';
                 %%% Seperate calculation for each block
                 for j=find(PamMeta.Selected_MT_Patches)'
                     Data1{k}=[];
@@ -4027,7 +4057,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                 Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
                 %%% Calculates average and standard error of mean (without tinv_table yet
-                if numel(Cor_Array)>1
+                if size(Cor_Array,2)>1
                     Cor_Average=mean(Cor_Array,2);
                     %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
                     %%% Averages files before saving to reduce errorbars
@@ -4036,8 +4066,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
                     
                 else
-                    Cor_Average=Cor_Array{1};
-                    Cor_SEM=Cor_Array{1};
+                    Cor_Average=Cor_Array;
+                    Cor_SEM=Cor_Array;
                 end
                 %% Saves data
                 %%% Removes Comb.: from Name of combined channels
@@ -4065,7 +4095,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                     
                     Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid); %#ok<NASGU>
+                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
                 end                
                 if any(h.Cor.Format.Value == [2 3])
@@ -4106,17 +4136,16 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     h.Cor.Individual_Tab{i} = copyobj(h.Cor.Individual_Tab{i-1}, h.Cor.Correlations_Tabs);
                     h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children;
                 end
-                %%% Deletes existing plots
-                if ~isempty(h.Cor.Individual_Axes{i}.Children)
-                    delete(h.Cor.Individual_Axes{i}.Children);
-                end
                 %%% Changes Tab Name
                 h.Cor.Individual_Tab{i}.Title = [PIE_Name1 '_x_' PIE_Name2];
                 for j = 1:size(Cor_Array,2)
-                   plot(h.Cor.Individual_Axes{i},Cor_Times,Cor_Array(:,j));
+                    h.Cor.Individual_Axes{i}.Children(j).XData = Cor_Times;
+                    h.Cor.Individual_Axes{i}.Children(j).YData = Cor_Array(:,j);
+                    h.Cor.Individual_Axes{i}.Children(j).ButtonDownFcn ={@Cor_Selection,1};
                 end
-                %%% Saves filename in Tab
-                h.Cor.Individual_Tab{i}.UserData = Current_FileName;
+                %%% Saves filename in axes
+                h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
+                h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;
                 
                 Progress((i)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')                
             case 2 %%% Pair correlation
@@ -4143,7 +4172,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Sorts data                 
-                Valid = find(PamMeta.Selected_MT_Patches);
                 Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
                 [DataBin,Index] = sort(mod(Data,1));
                 Data = Data(Index);
@@ -4162,7 +4190,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Data{j} = sort(Data{j});
                     MI{j} = sort(MI{j});                    
                     k = 1;
-                    for m = Valid'                        
+                    for m = Valid                        
                         Data1{j}{k} = Data{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))-Times(m);
                         MI1{j} = [MI1{j}; MI{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))];
                         k = k+1;                        
@@ -4188,7 +4216,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     %%% Sorts photons into spatial bins
-                    Valid = find(PamMeta.Selected_MT_Patches);
                     Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
                     [DataBin,Index] = sort(mod(Data,1));
                     Data = Data(Index);
@@ -4206,7 +4233,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         Data{j} = sort(Data{j});
                         MI{j} = sort(MI{j});
                         k = 1;
-                        for m = Valid'
+                        for m = Valid
                             Data2{j}{k} = Data{j}((Data{j}>=Times(m)) & (Data{j}<Times(m+1)))-Times(m);
                             MI2{j} = [MI1{j}; MI{j}((Data{j}==Times(m)) & (Data{j}<Times(m+1)))];
                             k = k+1;
@@ -4320,12 +4347,94 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 UserValues.File.PCFPath = FileInfo.Path;
         end
     end
+    guidata(h.Pam,h);
     Progress(1);
     Update_Display([],[],1);
 end
+
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
 LSUserValues(1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for (de)selecting individual correlation curves %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Cor_Selection (Obj,~,mode)
+h=guidata(findobj('Tag','Pam'));
+global UserValues
+
+switch mode
+    case 1 %%% (Un)select curves
+        if strcmp(Obj.LineStyle,'none')
+            Obj.LineStyle = '-';
+            Obj.Marker = 'none';
+        elseif strcmp(Obj.LineStyle,'-')
+            Obj.LineStyle = 'none';
+            Obj.Marker = '.';
+        end
+    case 2 %%% Select all curves
+        Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children;
+        for i=1:numel(Active_Axes.Children)
+            Active_Axes.Children(i).LineStyle = '-';
+            Active_Axes.Children(i).Marker = 'none';
+        end
+    case 3 %%% Unselect all curves
+        Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children;
+        for i=1:numel(Active_Axes.Children)
+            Active_Axes.Children(i).LineStyle = 'none';
+            Active_Axes.Children(i).Marker = '.';
+        end      
+    case 4 %%% Save selected correlations
+        
+        Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children;
+        Data = Active_Axes.UserData;
+        Current_FileName = Data{1};
+        Header = Data{2}; %#ok<NASGU>
+        Counts = Data{3};
+        Cor_Times = Data{5};
+        Use = [];
+        for i=1:numel(Active_Axes.Children)
+           if strcmp(Active_Axes.Children(i).LineStyle,'-')
+               Use(end+1)=i; %#ok<AGROW>
+           end
+        end
+        Valid = Data{4}(Use);
+        Cor_Array = Data{8}(:,Use);
+        %%%Averages Cor Array
+        if size(Cor_Array,2)>1
+            Cor_Average = mean(Cor_Array,2);
+            %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+            %%% Averages files before saving to reduce errorbars
+            Amplitude=sum(Cor_Array,1);
+            Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+            Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+            
+        elseif size(Cor_Array,2)==1
+            Cor_Average = Cor_Array;
+            Cor_SEM = Cor_Array;
+        elseif isempty(Cor_Array)
+            return;
+        end
+        
+        
+        if strcmp(Current_FileName(end-4:end),'.mcor')
+            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+        elseif strcmp(Current_FileName(end-3:end),'.cor')
+            %%% Creates new correlation file
+            FileID=fopen(Current_FileName,'w');
+            
+            %%% Writes Heater
+            fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
+            fprintf(FileID, ['Countrate channel 1 [kHz]: ' num2str(Counts(1), '%12.2f') '\n']);
+            fprintf(FileID, ['Countrate channel 2 [kHz]: ' num2str(Counts(2), '%12.2f') '\n']);
+            fprintf(FileID, ['Valid bins: ' num2str(Valid) '\n']);
+            %%% Indicates start of data
+            fprintf(FileID, ['Data starts here: ' '\n']);
+            %%% Writes data as columns: Time    Averaged    SEM     Individual bins
+            fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
+            fclose(FileID);
+        end
+
+end
 
 
 
