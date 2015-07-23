@@ -71,8 +71,8 @@ if strcmp(Caller.Tag, 'Pam')
         end
     end
 else %%% Creates empty struct, if it was called outside of PAM
-    h.Progress_Axes = [];
-    h.Progress_Text = [];
+    h.Progress.Axes = [];
+    h.Progress.Text = [];
 end
 
 
@@ -126,7 +126,7 @@ switch (Type)
             %%% Reads data for each tcspc card
             for j = card
                 %%% Update Progress
-                Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
+                Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
                 [MT, MI, PLF,~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
@@ -292,7 +292,7 @@ switch (Type)
                 card = 1;
             end
             
-            Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,'Loading:');
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,'Loading:');
             
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
@@ -303,7 +303,7 @@ switch (Type)
             %%% Reads data for each tcspc card
             for j = card
                 %%% Update Progress
-                Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
+                Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
                 if Type == 2
                     FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
@@ -364,7 +364,7 @@ switch (Type)
         
         %%% Reads all selected files
         for i=1:numel(FileName)
-            Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
             
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
@@ -374,9 +374,9 @@ switch (Type)
             end
             
             %%% Update Progress
-            Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, ClockRate,Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress_Axes,h.Progress_Text,i,numel(FileName),1);
+            [MT, MI, ClockRate,Resolution] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),1);
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/ClockRate;
@@ -447,7 +447,7 @@ switch (Type)
         Totaltime=0;
         %%% Reads all selected files
         for i=1:numel(FileName)
-            Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
             
             %%% Calculates Imagetime in clock ticks for concaternating
             %%% files
@@ -462,9 +462,9 @@ switch (Type)
             end
             
             %%% Update Progress
-            Progress((i-1)/numel(FileName),h.Progress_Axes, h.Progress_Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, ClockRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress_Axes,h.Progress_Text,i,numel(FileName),2);
+            [MT, MI, ClockRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2);
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/ClockRate;
@@ -574,7 +574,7 @@ switch (Type)
             FileInfo.NumberOfFiles = FileInfo.NumberOfFiles + Loaded.Info.NumberOfFiles;
         end    
 end
-Progress(1,h.Progress_Axes, h.Progress_Text);
+Progress(1,h.Progress.Axes, h.Progress.Text);
 
 if strcmp(Caller.Tag, 'Pam')
     %%% Applies detector shift immediately after loading data
