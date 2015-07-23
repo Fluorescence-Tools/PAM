@@ -3932,6 +3932,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     h.Cor.Individual_Tab{1}.Title = 'Nothing';
     
     Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
+    h.Progress.Axes.Color=UserValues.Look.Control;
     drawnow;
     %%% For every active combination
     for i=1:numel(Cor_A)      
@@ -4023,9 +4024,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
                 end               
                 %%% Actually calculates the crosscorrelation
-                profile on
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                profile viewer
                 Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
                 %%% Calculates average and standard error of mean (without tinv_table yet
                 if numel(Cor_Array)>1
@@ -4127,6 +4126,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 Times = (Times*FileInfo.SyncPeriod*FileInfo.ScanFreq);
                 Maxtime = max(diff(Times));
                 h.Progress.Text.String='Assigning photons to bins';
+                h.Progress.Axes.Color=[1 0 0];
                 %% Channel 1 calculations
                 Data = []; MI = [];
                 %%% Combines all photons to one vector for channel 1

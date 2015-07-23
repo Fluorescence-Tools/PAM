@@ -47,9 +47,23 @@ end
 
 
 for i=1:numel(Cor_Array)
+    Weights1_Sum = cumsum(Weights1{i});
+    Weights2_Sum = cumsum(Weights2{i});
     for j = 1:numel(Timeaxis)
-        Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
-        Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
+        Stop = find(Data1{i} <= (Maxtime-Timeaxis(j)),1,'last');
+        Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
+        if ~isempty(Stop)
+            Countrate1(j) = Weights1_Sum(Stop)/(Maxtime-Timeaxis(j));
+        else
+            Countrate1(j) = Weights1_Sum(end)/(Maxtime-Timeaxis(j));
+        end
+        if ~isempty(Start)
+            Countrate2(j) = (Weights2_Sum(end)-Weights2_Sum(Start))/(Maxtime-Timeaxis(j));
+        else
+            Countrate2(j) = Weights2_Sum(end)/(Maxtime-Timeaxis(j));
+        end       
+%         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
+%         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
     end 
     Cor_Array{i} = Cor_Array{i}./Norm./Divisor./Countrate1'./Countrate2'-1;
     Cor_Array{i} = Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));   
