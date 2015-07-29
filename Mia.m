@@ -809,6 +809,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min pixel countrate' 10 'averaged over all frames'],...
             'Position',[0.56 0.54, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','10');
         %%% Maximal average pixel countrate
         h.Mia_Correlation.Int_Max = uicontrol(...
@@ -821,6 +822,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max pixel countrate' 10 'averaged over all frames'],...
             'Position',[0.78 0.54, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','1000');
         %%% Text
         h.Mia_Correlation.Text{end+1} = uicontrol(...
@@ -846,6 +848,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies the smaller sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
             'Position',[0.56 0.46, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','10');
         %%% Larger subregion
         h.Mia_Correlation.Sub2 = uicontrol(...
@@ -858,6 +861,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies the larger sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
             'Position',[0.78 0.46, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','30');
         %%% Text
         h.Mia_Correlation.Text{end+1} = uicontrol(...
@@ -883,6 +887,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min intensity ratio' 10 'of subregions specified above'],...
             'Position',[0.56 0.38, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','0.6');
         %%% Maximal intensity ratio of subregions
         h.Mia_Correlation.Int_Fold_Max = uicontrol(...
@@ -895,6 +900,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max intensity ratio' 10 'of subregions specified above'],...
             'Position',[0.78 0.38, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','1.5');
         %%% Text
         h.Mia_Correlation.Text{end+1} = uicontrol(...
@@ -920,6 +926,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min variance ratio' 10 'of subregions specified above'],...
             'Position',[0.56 0.3, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','0.7');
         %%% Maximal variance ratio of subregions
         h.Mia_Correlation.Var_Fold_Max = uicontrol(...
@@ -932,6 +939,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max variance ratio' 10 'of subregions specified above'],...
             'Position',[0.78 0.3, 0.2 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String','1.2');   
         %%% Same AR for both channels
         h.Mia_Correlation.Same = uicontrol(...
@@ -944,6 +952,7 @@ if isempty(h.Mia)
             'Value',1,...
             'Position',[0.02 0.22, 0.64 0.06],...
             'Visible', 'off',...
+            'Callback',@Mia_Arbitrary_Region,...
             'String',{'Individual Channels', 'Channel1','Channel2','Both'});
         %%% Selects data saving procedure
         h.Mia_Correlation.Save = uicontrol(...
@@ -2989,7 +2998,155 @@ for i=1:2
     end
     
 end
-Update_Plots([],[],[1 4],1:size(MIAData.Data,1))
+if h.Mia_ROI_FramesUse.Value == 3
+    Mia_Arbitrary_Region([],[]);
+    Update_Plots([],[],4,1:size(MIAData.Data,1))
+else
+    Update_Plots([],[],[1 4],1:size(MIAData.Data,1))
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Calculates arbitrary regions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Mia_Arbitrary_Region(~,~)
+h = guidata(findobj('Tag','Mia'));
+global MIAData
+%%% Uses Intensity and Variance thesholding to remove bad pixels
+%%% ROI borders
+From=h.Plots.ROI(1).Position(1:2)+0.5;
+To=From+h.Plots.ROI(1).Position(3:4)-1;
+%%% Thresholding Parameters
+Int_Max=str2double(h.Mia_Image_Pixel.String)*str2double(h.Mia_Correlation.Int_Max.String)/1000;
+Int_Min=str2double(h.Mia_Image_Pixel.String)*str2double(h.Mia_Correlation.Int_Min.String)/1000;
+Int_Fold_Max=str2double(h.Mia_Correlation.Int_Fold_Max.String);
+Int_Fold_Min=str2double(h.Mia_Correlation.Int_Fold_Min.String);
+Var_Fold_Max=str2double(h.Mia_Correlation.Var_Fold_Max.String);
+Var_Fold_Min=str2double(h.Mia_Correlation.Var_Fold_Min.String);
+Var_Sub=str2double(h.Mia_Correlation.Sub2.String);
+Var_SubSub=str2double(h.Mia_Correlation.Sub1.String);
+
+if size(MIAData.Data,1)==0
+    return;
+end
+if size(MIAData.Data,1)==1 || h.Mia_Correlation.Same.Value==2
+    Channel = 1;
+elseif size(MIAData.Data,1)==2 && h.Mia_Correlation.Same.Value==3
+    Channel = 2;
+else
+    Channel = [1 2];
+end
+
+%%% Actually calculates arbitrary regions
+for i=Channel
+    %% Static region intensity thresholding for arbitrary region ICS
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Because the intenities per pixel are very low, the tresholding
+    %%% works on the sum of the stack
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %%% Thresholding operates on summed up, uncorrected data
+    Data=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3);
+    %%% Logical array to determin which pixels to use
+    Use=true(size(Data));
+    
+    %%% Removes pixel below an intensity threshold set in kHz
+    if Int_Min>0
+        Use(Data<Int_Min)=false;
+    end
+    %%% Removes pixel above an intensity threshold set in kHz
+    if Int_Max>Int_Min
+        Use(Data>Int_Max)=false;
+    end
+    
+    %% Sliding window thresholding for arbitrary region ICS
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% The variance and itensity in a small rectangular region is
+    %%% calculated and compared to the variance in a bigger region
+    %%% around it
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %%% Thresholding operates on uncorrected data
+    Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
+    %%% Exdents array to determine which pixels to use, because now
+    %%% every frame is calculated individually
+    Use=repmat(Use,[1 1 size(Data,3)]);
+    if Var_SubSub>1 && Var_Sub>Var_SubSub
+        Start=ceil(Var_Sub/2)-1;
+        Stop=floor(Var_Sub/2)-1;
+        for j=1:size(Data,3)
+            Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
+            Filter2=ones(Var_Sub)/(Var_Sub^2);
+            %%% Calculates population variance for both subregions                  (sample2population var)
+            Var1=(filter2(Filter1,Data(:,:,j).^2)-filter2(Filter1,Data(:,:,j)).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
+            Var2=(filter2(Filter2,Data(:,:,j).^2)-filter2(Filter2,Data(:,:,j)).^2)*((Var_Sub^2)/(Var_Sub^2-1));
+            %%% Calculates mean of both subregions
+            Mean1=filter2(Filter1,Data(:,:,j));
+            Mean2=filter2(Filter2,Data(:,:,j));
+            %%% Discards samples with too low\high variance
+            if Var_Fold_Max>1
+                Use(:,:,j)=Use(:,:,j) & (Var1<(Var2*Var_Fold_Max));
+            end
+            if Var_Fold_Min<1 && Var_Fold_Min>0
+                Use(:,:,j)=Use(:,:,j) & (Var1>(Var2*Var_Fold_Min));
+            end
+            %%% Discards samples with too low\high intensities
+            if Int_Fold_Max>1
+                Use(:,:,j)=Use(:,:,j) & (Mean1<(Mean2*Int_Fold_Max));
+            end
+            if Int_Fold_Min<1 && Int_Fold_Min>0
+                Use(:,:,j)=Use(:,:,j) & (Mean1>(Mean2*Int_Fold_Min));
+            end
+        end
+        %%% Discards border pixels, where variance and intensity were not calculated
+        Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
+        Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
+    end
+    
+    %%% Removes pixels, if invalid pixels were used for averaging
+    if h.Mia_Add.Value==5 || h.Mia_Subtract.Value==4
+        if h.Mia_Add.Value==5
+            Box1=[str2double(h.Mia_Add_Pixel.String), str2double(h.Mia_Add_Frames.String)];
+        else
+            Box1=[1 1];
+        end
+        if h.Mia_Subtract.Value==4
+            Box2=[str2double(h.Mia_Subtract_Pixel.String), str2double(h.Mia_Subtract_Frames.String)];
+        else
+            Box2=[1 1];
+        end
+        Box=max([Box1;Box2]);
+        Filter=ones(Box(1),Box(1),Box(2))/(Box(1)^2*Box(2));
+        Use=logical(floor(imfilter(single(Use),Filter,'replicate')));
+    end
+    
+    MIAData.AR{i}=Use;
+    clear Data;
+end
+
+switch h.Mia_Correlation.Same.Value
+    case 1 %%% Individual channels
+    case 2 %%% Channel 1
+        Mia_Arbitrary_Region([],[],1);
+        if size(MIAData.Data,1)>1
+            MIAData.AR{2} = MIAData.AR{1};
+        end
+        
+    case 3 %%% Channel 2
+        if size(MIAData.Data,1)>1
+            MIAData.AR{1} = MIAData.AR{2};
+        end
+        
+    case 4 %%% Both channels
+        if size(MIAData.Data,1)>1
+            MIAData.AR{1} = MIAData.AR{1} & MIAData.AR{2};
+            MIAData.AR{2} = MIAData.AR{1} & MIAData.AR{2};
+        end
+end
+Update_Plots([],[],1,1:size(MIAData.Data,1));
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3126,9 +3283,14 @@ for i=1:3
     h.Mia_Cor_Axes(i,1).Visible='off';
     h.Mia_Cor_Axes(i,2).Visible='off';
     h.Mia_Cor_Axes(i,3).Visible='off';
+    h.Mia_Cor_Axes(i,4).Visible='off';
     h.Plots.Cor(i,1).Visible='off';
     h.Plots.Cor(i,2).Visible='off';
-    h.Plots.Cor(i,3).Visible='off';   
+    h.Plots.Cor(i,3).Visible='off';
+    h.Plots.Cor(i,4).Visible='off';
+    h.Plots.Cor(i,5).Visible='off';
+    h.Plots.Cor(i,6).Visible='off';
+    h.Plots.Cor(i,7).Visible='off';
 end
 h.Mia_Cor_Frame_Slider.Min=0;
 h.Mia_Cor_Frame_Slider.Max=0;
@@ -3169,130 +3331,15 @@ switch (h.Mia_ROI_FramesUse.Value)
         end
         Frames=intersect(Frames,Active);
     case 3 %%% Does arbitrary region ICS
-        %%% Uses Intensity and Variance thesholding to remove bad pixels
-        %%% ROI borders
-        From=h.Plots.ROI(1).Position(1:2)+0.5;
-        To=From+h.Plots.ROI(1).Position(3:4)-1;
-        %%% Thresholding Parameters
-        Int_Max=str2double(h.Mia_Image_Pixel.String)*str2double(h.Mia_Correlation.Int_Max.String)/1000;
-        Int_Min=str2double(h.Mia_Image_Pixel.String)*str2double(h.Mia_Correlation.Int_Min.String)/1000;
-        Int_Fold_Max=str2double(h.Mia_Correlation.Int_Fold_Max.String);
-        Int_Fold_Min=str2double(h.Mia_Correlation.Int_Fold_Min.String);
-        Var_Fold_Max=str2double(h.Mia_Correlation.Var_Fold_Max.String);
-        Var_Fold_Min=str2double(h.Mia_Correlation.Var_Fold_Min.String);
-        Var_Sub=str2double(h.Mia_Correlation.Sub2.String);
-        Var_SubSub=str2double(h.Mia_Correlation.Sub1.String);
-        
-        Use=cell(max(Auto),1);
-        for i=Auto
-            %% Static region intensity thresholding for arbitrary region ICS
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%% Because the intenities per pixel are very low, the tresholding
-            %%% works on the sum of the stack
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-            %%% Thresholding operates on summed up, uncorrected data
-            Data=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames)),3);
-            %%% Logical array to determin which pixels to use
-            Use{i}=true(size(Data));
-            
-            %%% Removes pixel below an intensity threshold set in kHz
-            if Int_Min>0
-                Use{i}(Data<Int_Min)=false;
-            end
-            %%% Removes pixel above an intensity threshold set in kHz
-            if Int_Max>Int_Min
-                Use{i}(Data>Int_Max)=false;
-            end
-            
-            %% Sliding window thresholding for arbitrary region ICS
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%% The variance and itensity in a small rectangular region is
-            %%% calculated and compared to the variance in a bigger region
-            %%% around it
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-            %%% Thresholding operates on uncorrected data
-            Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames);
-            %%% Exdents array to determine which pixels to use, because now
-            %%% every frame is calculated individually
-            Use{i}=repmat(Use{i},[1 1 size(Data,3)]);
-            if Var_SubSub>1 && Var_Sub>Var_SubSub
-                Start=ceil(Var_Sub/2)-1;
-                Stop=floor(Var_Sub/2)-1;
-                for j=1:size(Data,3)
-                    Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
-                    Filter2=ones(Var_Sub)/(Var_Sub^2);
-                    %%% Calculates population variance for both subregions                  (sample2population var)
-                    Var1=(filter2(Filter1,Data(:,:,j).^2)-filter2(Filter1,Data(:,:,j)).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
-                    Var2=(filter2(Filter2,Data(:,:,j).^2)-filter2(Filter2,Data(:,:,j)).^2)*((Var_Sub^2)/(Var_Sub^2-1));
-                    %%% Calculates mean of both subregions
-                    Mean1=filter2(Filter1,Data(:,:,j));
-                    Mean2=filter2(Filter2,Data(:,:,j));
-                    %%% Discards samples with too low\high variance
-                    if Var_Fold_Max>1
-                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Var1<(Var2*Var_Fold_Max));
-                    end
-                    if Var_Fold_Min<1 && Var_Fold_Min>0
-                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Var1>(Var2*Var_Fold_Min));
-                    end
-                    %%% Discards samples with too low\high intensities
-                    if Int_Fold_Max>1
-                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Mean1<(Mean2*Int_Fold_Max));
-                    end
-                    if Int_Fold_Min<1 && Int_Fold_Min>0
-                        Use{i}(:,:,j)=Use{i}(:,:,j) & (Mean1>(Mean2*Int_Fold_Min));
-                    end
-                end
-                %%% Discards border pixels, where variance and intensity were not calculated
-                Use{i}(1:Start,:,:)=false; Use{i}(:,1:Start,:)=false;
-                Use{i}(end-Stop:end,:,:)=false; Use{i}(:,end-Stop:end,:)=false;
-            end
-            
-            %%% Removes pixels, if invalid pixels were used for averaging
-            if h.Mia_Add.Value==5 || h.Mia_Subtract.Value==4
-                if h.Mia_Add.Value==5
-                    Box1=[str2double(h.Mia_Add_Pixel.String), str2double(h.Mia_Add_Frames.String)];
-                else
-                    Box1=[1 1];
-                end
-                if h.Mia_Subtract.Value==4
-                    Box2=[str2double(h.Mia_Subtract_Pixel.String), str2double(h.Mia_Subtract_Frames.String)];
-                else
-                    Box2=[1 1];
-                end                               
-                Box=max([Box1;Box2]);
-                Filter=ones(Box(1),Box(1),Box(2))/(Box(1)^2*Box(2));
-                Use{i}=logical(floor(imfilter(single(Use{i}),Filter,'replicate')));
-            end
-            
-            MIAData.AR{i}(:,:,Frames)=Use{i};
-            Update_Plots([],[],1,i);
-            clear Data;
+        if Cross
+            Active=find(prod(MIAData.Use));
+        else
+            Active=find(MIAData.Use(Auto,:));
         end
-        
-        if numel(Use)==2 && ~isempty(Use{1}) && ~isempty(Use{2})
-            switch h.Mia_Correlation.Same.Value
-                case 1 %%% Individual channels
-                case 2 %%% Channel 1
-                    MIAData.AR{1}(:,:,Frames) = Use{1};
-                    MIAData.AR{2}(:,:,Frames) = Use{1};
-                    Use{2} = MIAData.AR{2}(:,:,Frames);
-                    Update_Plots([],[],1,[1 2]);
-                case 3 %%% Channel 2
-                    MIAData.AR{1}(:,:,Frames) = Use{2};
-                    MIAData.AR{2}(:,:,Frames) = Use{2};
-                    Use{1} = MIAData.AR{1}(:,:,Frames);
-                    Update_Plots([],[],1,[1 2]);
-                case 4 %%% Both channels
-                    MIAData.AR{1}(:,:,Frames) = logical(Use{1}.*Use{2});
-                    MIAData.AR{2}(:,:,Frames) = logical(Use{1}.*Use{2});
-                    Use{1} = MIAData.AR{1}(:,:,Frames);
-                    Use{2} = MIAData.AR{2}(:,:,Frames);
-                    Update_Plots([],[],1,[1 2]);
-            end
-            
-        end      
+        Frames=intersect(Frames,Active);
+        for i=Auto
+            Use{i} = MIAData.AR{1}(:,:,Frames);
+        end
 end
 
 
@@ -3934,7 +3981,7 @@ Update_Plots([],[],3,1:3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MIA_Various(Obj,~,mode)
 h = guidata(findobj('Tag','Mia'));
-
+global MIAData
 for i=mode
     switch i
         case 1 %%% Toggle logical in UserData of UI
@@ -3956,6 +4003,13 @@ for i=mode
                     for j=1:numel(h.Mia_Correlation.Text)
                         h.Mia_Correlation.Text{j}.Visible = 'off';
                     end
+                    if size(MIAData.Data,1)>0
+                        MIAData.AR{1} = true(size(MIAData.Data{1,2}));
+                    end
+                    if size(MIAData.Data,1)>1
+                        MIAData.AR{2} = true(size(MIAData.Data{2,2}));
+                    end
+                    Update_Plots([],[],1,1:size(MIAData.Data,1));
                 case 3 %%% Show arbitrary region controls
                     h.Mia_Correlation.Int_Fold_Max.Visible = 'on';
                     h.Mia_Correlation.Int_Fold_Min.Visible = 'on';
@@ -3969,6 +4023,7 @@ for i=mode
                     for j=1:numel(h.Mia_Correlation.Text)
                         h.Mia_Correlation.Text{j}.Visible = 'on';
                     end
+                    Mia_Arbitrary_Region([],[]);
             end
     end
 end
