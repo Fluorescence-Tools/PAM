@@ -3120,16 +3120,15 @@ end
 
 %%% Applies arbitrary region selection
 switch (h.Mia_Correlation_FramesUse.Value)
-    case 1
-    case 2
+    case 1 %%% Use All Frames
+    case 2 %%% Use selected Frames
         if Cross
             Active=find(prod(MIAData.Use));
         else
             Active=find(MIAData.Use(Auto,:));
         end
         Frames=intersect(Frames,Active);
-    case 3
-        %%% Does arbitrary region ICS
+    case 3 %%% Does arbitrary region ICS
         %%% Uses Intensity and Variance thesholding to remove bad pixels
         %%% ROI borders
         From=h.Plots.ROI(1).Position(1:2)+0.5;
@@ -3227,7 +3226,7 @@ switch (h.Mia_Correlation_FramesUse.Value)
                 Use{i}=logical(floor(imfilter(single(Use{i}),Filter,'replicate')));
             end
             
-            MIAData.AR{i}=Use{i};
+            MIAData.AR{i}(:,:,Frames)=Use{i};
             Update_Plots([],[],1,i);
             clear Data;
         end
@@ -3236,20 +3235,20 @@ switch (h.Mia_Correlation_FramesUse.Value)
             switch h.Mia_Correlation_Same.Value
                 case 1 %%% Individual channels
                 case 2 %%% Channel 1
-                    MIAData.AR{1} = Use{1};
-                    MIAData.AR{2} = Use{1};
-                    Use{2} = MIAData.AR{2};
+                    MIAData.AR{1}(:,:,Frames) = Use{1};
+                    MIAData.AR{2}(:,:,Frames) = Use{1};
+                    Use{2} = MIAData.AR{2}(:,:,Frames);
                     Update_Plots([],[],1,[1 2]);
                 case 3 %%% Channel 2
-                    MIAData.AR{1} = Use{2};
-                    MIAData.AR{2} = Use{2};
-                    Use{1} = MIAData.AR{1};
+                    MIAData.AR{1}(:,:,Frames) = Use{2};
+                    MIAData.AR{2}(:,:,Frames) = Use{2};
+                    Use{1} = MIAData.AR{1}(:,:,Frames);
                     Update_Plots([],[],1,[1 2]);
                 case 4 %%% Both channels
-                    MIAData.AR{1} = logical(Use{1}.*Use{2});
-                    MIAData.AR{2} = logical(Use{1}.*Use{2});
-                    Use{1} = MIAData.AR{1};
-                    Use{2} = MIAData.AR{2};
+                    MIAData.AR{1}(:,:,Frames) = logical(Use{1}.*Use{2});
+                    MIAData.AR{2}(:,:,Frames) = logical(Use{1}.*Use{2});
+                    Use{1} = MIAData.AR{1}(:,:,Frames);
+                    Use{2} = MIAData.AR{2}(:,:,Frames);
                     Update_Plots([],[],1,[1 2]);
             end
             
