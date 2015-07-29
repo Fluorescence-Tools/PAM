@@ -1081,6 +1081,8 @@ if isempty(h.Mia)
     h.Mia_Additional.Axes(1).YLabel.Color = Look.Fore;
     h.Mia_Additional.Axes(1).YLabel.UserData = 0;
     h.Mia_Additional.Axes(1).YLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
+    h.Mia_Additional.Axes(1).XLabel.UserData = 1;
+    h.Mia_Additional.Axes(1).XLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
     
     h.Mia_Additional.Plot_Popup(1,1) = uicontrol(...
         'Parent',h.Mia_Additional.Panel,...
@@ -1126,8 +1128,10 @@ if isempty(h.Mia)
     h.Mia_Additional.Axes(2).YLabel.String = 'Frequency';
     h.Mia_Additional.Axes(2).XLabel.Color = Look.Fore;
     h.Mia_Additional.Axes(2).YLabel.Color = Look.Fore;
-    h.Mia_Additional.Axes(2).YLabel.UserData = 0;
+    h.Mia_Additional.Axes(2).YLabel.UserData = 1;
     h.Mia_Additional.Axes(2).YLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
+    h.Mia_Additional.Axes(2).XLabel.UserData = 1;
+    h.Mia_Additional.Axes(2).XLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
     
     h.Mia_Additional.Plot_Popup(2,1) = uicontrol(...
         'Parent',h.Mia_Additional.Panel,...
@@ -2632,6 +2636,7 @@ if any(mode==4)
         %% Updates first plot
         h.Plots.Additional_Axes(1,1).XData = 1:size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3);
         h.Mia_Additional.Axes(1).XLabel.String = 'Frame';
+        h.Mia_Additional.Axes(1).YScale = 'Lin';
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(1,1).YData = mean(mean(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},2),1);
@@ -2650,10 +2655,16 @@ if any(mode==4)
                 h.Plots.Additional_Axes(1,1).YData = histc(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}(:), 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}(:)));
                 h.Mia_Additional.Axes(1).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(1).YLabel.String = 'Frequency';
+                if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
+                    h.Mia_Additional.Axes(1).YScale = 'Log';
+                else
+                    h.Mia_Additional.Axes(1).YScale = 'Lin';
+                end
         end
         %% Updates second plot
         h.Plots.Additional_Axes(2,1).XData = 1:size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},3);
-        h.Mia_Additional.Axes(1).XLabel.String = 'Frame';
+        h.Mia_Additional.Axes(2).XLabel.String = 'Frame';
+        h.Mia_Additional.Axes(2).YScale = 'Lin';
         switch h.Mia_Additional.Plot_Popup(2,1).Value
             case 1 %%% Counts/Countrate
                 h.Plots.Additional_Axes(2,1).YData = mean(mean(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},2),1);
@@ -2662,15 +2673,20 @@ if any(mode==4)
                     h.Mia_Additional.Axes(2).YLabel.String = 'Average Frames Countrate [kHz]';
                 else
                     h.Mia_Additional.Axes(2).YLabel.String = 'Average Frame Counts';
-                    h.Mia_Additional.Axes(2).YLabel.String = 'Spatial Variance';
                 end
             case 2 %%% Variance
                 h.Plots.Additional_Axes(2,1).YData = var(reshape(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},[],size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},3)));
+                h.Mia_Additional.Axes(2).YLabel.String = 'Spatial Variance';
             case 3 %%% PCH
                 h.Plots.Additional_Axes(2,1).XData = 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:));
                 h.Plots.Additional_Axes(2,1).YData = histc(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:), 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:)));
                 h.Mia_Additional.Axes(2).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(2).YLabel.String = 'Frequency';
+                if h.Mia_Additional.Axes(2).YLabel.UserData == 1;
+                    h.Mia_Additional.Axes(2).YScale = 'Log';
+                else
+                    h.Mia_Additional.Axes(2).YScale = 'Lin';
+                end
         end
         %% Updates image plot 
         switch h.Mia_Additional.Plot_Popup(1,3).Value
