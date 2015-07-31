@@ -282,8 +282,7 @@ if isempty(hfig)
         'ShadowColor', Look.Shadow,...
         'Units','normalized',...
         'Position',[0 0 1 1],...
-        'Tag','fFCS_SubTabPerpReconstructionPanel');
-    
+        'Tag','fFCS_SubTabPerpReconstructionPanel'); 
     %% Secondary tab selection gui
     h.Secondary_Tab = uitabgroup(...
         'Parent',h.BurstBrowser,...
@@ -2927,16 +2926,16 @@ PhotonStream = [];
 if ~isempty(findobj('Tag','Pam'))
     h_pam = guidata(findobj('Tag','Pam'));
     %%% Reset loaded file textbox
-    h_pam.Burst_LoadedFile_Text.String = '';
+    h_pam.Burst.LoadedFile_Text.String = '';
     %%% Set Analysis Buttons in Pam
     %%% set the text of the BurstSearch Button to green color to indicate that
     %%% a burst search has been done
-    h_pam.Burst_Button.ForegroundColor = UserValues.Look.Fore;
+    h_pam.Burst.Button.ForegroundColor = UserValues.Look.Fore;
     %%% Disable Lifetime and 2CDE Button
-    h_pam.BurstLifetime_Button.Enable = 'off';
-    h_pam.BurstLifetime_Button.ForegroundColor = UserValues.Look.Fore;
-    h_pam.NirFilter_Button.Enable = 'off';
-    h_pam.NirFilter_Button.ForegroundColor = UserValues.Look.Fore;
+    h_pam.Burst.BurstLifetime_Button.Enable = 'off';
+    h_pam.Burst.BurstLifetime_Button.ForegroundColor = UserValues.Look.Fore;
+    h_pam.Burst.NirFilter_Button.Enable = 'off';
+    h_pam.Burst.NirFilter_Button.ForegroundColor = UserValues.Look.Fore;
 end
 
 LSUserValues(0);
@@ -3327,8 +3326,8 @@ for i=1:numel(MergeData)
     MergedParameters.Background{i} = MergeData{i}.BurstData.Background;
     MergedParameters.FileNameSPC{i} = MergeData{i}.BurstData.FileNameSPC;
     %%% use update path information
-    MergedParameters.PathName{i} = fileparts(Files{1,i});
-    MergedParameters.FileName{i} = Files{1,i};
+    MergedParameters.PathName{i} = fileparts(Files{i,1});
+    MergedParameters.FileName{i} = Files{i,1};
     %MergedParameters.PathName{i} = MergeData{i}.BurstData.PathName;
     %MergedParameters.FileName{i} = MergeData{i}.BurstData.FileName;
     if isfield(MergeData{i}.BurstData,'Cut')
