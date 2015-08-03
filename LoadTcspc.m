@@ -498,7 +498,7 @@ switch (Type)
             
             %%% Creates linebreak entries
             if isempty(Linetimes)
-                FileInfo.LineTimes(:,i)=linspace(0,FileInfo.MeasurementTime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
+                FileInfo.LineTimes(:,i)=linspace(0,Imagetime/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
             elseif numel(Linetimes)==FileInfo.Lines+1
                 FileInfo.LineTimes(:,i)=Linetimes+Totaltime;
             elseif numel(Linetimes)<FileInfo.Lines+1
