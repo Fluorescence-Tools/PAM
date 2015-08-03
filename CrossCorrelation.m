@@ -26,8 +26,12 @@ end
 
 %%% Calculates a pseudologarithmic timeaxis:
 %%% [1:21 20:2:41 45:4:81 ....]
-
-Timeaxis_Exponent=floor(log2(Maxtime/10));
+if mode == 1
+    Timeaxis_Exponent=floor(log2(Maxtime/10));
+elseif mode == 2
+    MaxMaxtime = max(Maxtime);
+    Timeaxis_Exponent=floor(log2(MaxMaxtime/10));
+end
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
 Timeaxis(Timeaxis<1)=1;
@@ -47,44 +51,36 @@ end
 Divisor=ones(numel(Timeaxis),1);
 Divisor(22:end)=2.^(floor((10:(numel(Divisor)-12))/10));
 %%% Does additional normalizing
-Norm = Maxtime-Timeaxis+1;
-if Norm < 0
-    Norm = 0;
-end
+if mode == 1
+    Norm = Maxtime-Timeaxis+1;
+    if Norm < 0
+        Norm = 0;
+    end
 
-
-for i=1:numel(Cor_Array)
-    Weights1_Sum = cumsum(Weights1{i});
-    Weights2_Sum = cumsum(Weights2{i});
-    Countrate1 = zeros(1,numel(Timeaxis));
-    Countrate2 = zeros(1,numel(Timeaxis));
-    for j = 1:numel(Timeaxis)
-        Stop = find(Data1{i} <= (Maxtime-Timeaxis(j)),1,'last');
-        Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
-        if ~isempty(Stop)
-            Countrate1(j) = Weights1_Sum(Stop)/(Maxtime-Timeaxis(j));
-        else
-            Countrate1(j) = Weights1_Sum(end)/(Maxtime-Timeaxis(j));
-        end
-        if ~isempty(Start)
-            Countrate2(j) = (Weights2_Sum(end)-Weights2_Sum(Start))/(Maxtime-Timeaxis(j));
-        else
-            Countrate2(j) = Weights2_Sum(end)/(Maxtime-Timeaxis(j));
-        end       
-%         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
-%         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
-    end 
-    Cor_Array{i} = Cor_Array{i}./Norm./Divisor./Countrate1'./Countrate2'-1;
-    Cor_Array{i} = Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));   
-end
-
-% for i=1:numel(Cor_Array)
-%     Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
-%     %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
-%     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
-% end
-
-if mode == 1 %%% normal correlation
+    for i=1:numel(Cor_Array)
+        Weights1_Sum = cumsum(Weights1{i});
+        Weights2_Sum = cumsum(Weights2{i});
+        Countrate1 = zeros(1,numel(Timeaxis));
+        Countrate2 = zeros(1,numel(Timeaxis));
+        for j = 1:numel(Timeaxis)
+            Stop = find(Data1{i} <= (Maxtime-Timeaxis(j)),1,'last');
+            Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
+            if ~isempty(Stop)
+                Countrate1(j) = Weights1_Sum(Stop)/(Maxtime-Timeaxis(j));
+            else
+                Countrate1(j) = 0;
+            end
+            if ~isempty(Start)
+                Countrate2(j) = (Weights2_Sum(end)-Weights2_Sum(Start))/(Maxtime-Timeaxis(j));
+            else
+                Countrate2(j) = 0;
+            end       
+    %         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
+    %         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
+        end 
+        Cor_Array{i} = Cor_Array{i}./Norm./Divisor./Countrate1'./Countrate2'-1;
+        Cor_Array{i} = Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));   
+    end
     %%% Makes sure all bins have the same size
     Array_Length=cellfun(@numel,Cor_Array);
     if min(Array_Length)~=max(Array_Length)
@@ -95,7 +91,41 @@ if mode == 1 %%% normal correlation
        end
     end
     Cor_Array=cell2mat(Cor_Array');
-elseif mode == 2 %%% burstwise correlation -> perform bootstrapping
+    % for i=1:numel(Cor_Array)
+    %     Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
+    %     %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
+    %     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
+    % end
+    Timeaxis=Timeaxis(1:max(Array_Length));
+elseif mode == 2
+    Norm = cell(numel(Cor_Array),1);
+    Countrate1 = cell(numel(Cor_Array),1); 
+    Countrate2 = cell(numel(Cor_Array),1);
+    parfor i=1:numel(Cor_Array)
+        Norm{i} = Maxtime(i)-Timeaxis+1;
+        Norm{i}(Norm{i}<0) = 0;
+        Weights1_Sum = cumsum(Weights1{i});
+        Weights2_Sum = cumsum(Weights2{i});
+        Countrate1{i} = zeros(1,numel(Timeaxis));
+        Countrate2{i} = zeros(1,numel(Timeaxis));
+        for j = 1:numel(Timeaxis)
+            Stop = find(Data1{i} <= (Maxtime(i)-Timeaxis(j)),1,'last');
+            Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
+            if ~isempty(Stop)
+                Countrate1{i}(j) = Weights1_Sum(Stop);
+            else
+                Countrate1{i}(j) = 0;
+            end
+            if ~isempty(Start)
+                Countrate2{i}(j) = (Weights2_Sum(end)-Weights2_Sum(Start));
+            else
+                Countrate2{i}(j) = 0;
+            end       
+    %         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
+    %         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
+        end 
+    end
+    %%% Bootstrapping
     %%% 1) Select Nbursts times out of pool (may select double)
     bootstrap = 50;
     selected = randi(numel(Data1),numel(Data1),bootstrap);
@@ -117,10 +147,8 @@ elseif mode == 2 %%% burstwise correlation -> perform bootstrapping
     end
     Cor_Array = cell2mat(Cor_Res);
     Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
+    Timeaxis = Timeaxis(1:size(Cor_Array,1));
 end
-
-
-Timeaxis=Timeaxis(1:max(Array_Length));
 Timeaxis(22:end) = Timeaxis(22:end)-1;
 % %% Shift timeaxis to center of bins
 % Timeaxis = Timeaxis+[diff(Timeaxis); (Timeaxis(end)-Timeaxis(end-1))]/2;

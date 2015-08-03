@@ -86,10 +86,10 @@ else
     Cor_Total = sum(horzcat(Cor_Array{:}),2);
     
     Norm = sum(horzcat(Norm{:}),2);
-    Countrate1 = sum(vertcat(Countrate1{:}),1)./sum(Maxtime);
-    Countrate2 = sum(vertcat(Countrate2{:}),1)./sum(Maxtime);
+    Countrate1 = sum(vertcat(Countrate1{:}),1);
+    Countrate2 = sum(vertcat(Countrate2{:}),1);
 
-    Cor_Array = Cor_Total./Norm./Divisor./Countrate1'./Countrate2';
+    Cor_Array = Cor_Total.*Norm./Divisor./Countrate1'./Countrate2';
     % for i=1:numel(Cor_Array)
     %     Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-(Timeaxis)))/((sum(Weights1{i})/max(Data1{i}))*(sum(Weights2{i})/max(Data2{i})))-1;
     %     %Cor_Array{i}=(Cor_Array{i}./Divisor./(Maxtime-Timeaxis))/((numel(Data1{i})/max(Data1{i}))*(numel(Data2{i})/max(Data2{i})))-1;
