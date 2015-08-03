@@ -1,4 +1,4 @@
-function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2)
+function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2,mode)
 %%% Data1, Data2: Photon macrotimes
 %%% Weights1, Weights2: Photon weights
 %%% Blocktimes: 2xn vector of star/stop times
@@ -9,7 +9,7 @@ function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,We
 %%% ProgressStruct.Current: number of correlation bins previously completed
 
 %%% If no weights are specified, set to 1
-if nargin < 4
+if (nargin < 4) || isempty(Weights1)
     Weights1 = cell(numel(Data1),1);
     Weights2 = cell(numel(Data2),1);
     for i = 1:numel(Data1)
@@ -17,6 +17,13 @@ if nargin < 4
         Weights2{i} = ones(numel(Data2{i}),1);
     end
 end
+
+%%% If no mode (BurstCorrelation or not) was specified, default to normal
+%%% correlation
+if nargin < 6
+    mode = 1;
+end
+
 %%% Calculates a pseudologarithmic timeaxis:
 %%% [1:21 20:2:41 45:4:81 ....]
 
@@ -49,6 +56,8 @@ end
 for i=1:numel(Cor_Array)
     Weights1_Sum = cumsum(Weights1{i});
     Weights2_Sum = cumsum(Weights2{i});
+    Countrate1 = zeros(1,numel(Timeaxis));
+    Countrate2 = zeros(1,numel(Timeaxis));
     for j = 1:numel(Timeaxis)
         Stop = find(Data1{i} <= (Maxtime-Timeaxis(j)),1,'last');
         Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
@@ -75,17 +84,42 @@ end
 %     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
 % end
 
-
-%%% Makes sure all bins have the same size
-Array_Length=cellfun(@numel,Cor_Array);
-if min(Array_Length)~=max(Array_Length)
-   for i=1:numel(Cor_Array)
-      if Array_Length(i)<max(Array_Length)
-          Cor_Array{i}(max(Array_Length))=0;
-      end
-   end
+if mode == 1 %%% normal correlation
+    %%% Makes sure all bins have the same size
+    Array_Length=cellfun(@numel,Cor_Array);
+    if min(Array_Length)~=max(Array_Length)
+       for i=1:numel(Cor_Array)
+          if Array_Length(i)<max(Array_Length)
+              Cor_Array{i}(max(Array_Length))=0;
+          end
+       end
+    end
+    Cor_Array=cell2mat(Cor_Array');
+elseif mode == 2 %%% burstwise correlation -> perform bootstrapping
+    %%% 1) Select Nbursts times out of pool (may select double)
+    bootstrap = 50;
+    selected = randi(numel(Data1),numel(Data1),bootstrap);
+    
+    Cor_Res = cell(1,bootstrap);
+    for i = 1:bootstrap
+        sel = selected(:,i);
+        norm_temp = Norm(sel); norm_temp = sum(horzcat(norm_temp{:}),2);
+        Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1);%./sum(Maxtime(sel));
+        Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1);%./sum(Maxtime(sel));
+        Cor_Total_temp = Cor_Array(sel);Cor_Total_temp = sum(horzcat(Cor_Total_temp{:}),2);
+        Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+        %Cor_Res{i} = Cor_Total_temp./norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+    end
+    
+    for i = 1:numel(Cor_Res)
+        Cor_Res{i}(find(Cor_Res{i}(~isnan(Cor_Res{i}))==-1,1,'first'):end) = 0;
+        %Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
+    end
+    Cor_Array = cell2mat(Cor_Res);
+    Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
 end
-Cor_Array=cell2mat(Cor_Array');
+
+
 Timeaxis=Timeaxis(1:max(Array_Length));
 Timeaxis(22:end) = Timeaxis(22:end)-1;
 % %% Shift timeaxis to center of bins

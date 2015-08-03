@@ -1138,7 +1138,7 @@ if isempty(hfig)
         'Tag','CorrelateWindow_Text',...
         'String','Time Window in multiples of 10 ms',...
         'Callback',@UpdateOptions,...
-        'BackgroundColor',Look.Control,...
+        'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore,...
         'HorizontalAlignment','left',...
         'FontSize',12,...
@@ -5662,7 +5662,7 @@ for i=1:NumChans
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             %%% Do Correlation
-            [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime,Weights1,Weights2);
+            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
             Cor_Times = Cor_Times*BurstData.SyncPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
@@ -8014,7 +8014,7 @@ for i=1:NumChans
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             %%% Do Correlation
-            [Cor_Array,Cor_Times]=CrossCorrBurst(MT1,MT2,Maxtime);
+            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
             Cor_Times = Cor_Times*BurstData.SyncPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
