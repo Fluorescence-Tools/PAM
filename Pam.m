@@ -433,7 +433,7 @@ end
         'Parent',h.Cor.Correlations_Tabs,...
         'Tag','Cor_Ind_Tabs_1',...
         'BackgroundColor',Look.Back,...
-        'Title','Nothing');
+        'Title','No data');
     h.Cor.Individual_Axes{1} = axes(...
         'Parent',h.Cor.Individual_Tab{1},...
         'Tag','Cor_Individual_Axes',...
@@ -469,7 +469,7 @@ end
         'Label','Save selected correlations',...
         'Tag','Save_Selected',...
         'Callback',{@Cor_Selection,4});    
-        %% Burst tab
+    %% Burst tab
     h.Burst.Tab = uitab(...
         'Parent',h.Det_Tabs,...
         'Tag','Burst_Tab',...
@@ -4008,7 +4008,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
            'Color',rand(3,1));
     end
     
-    h.Cor.Individual_Tab{1}.Title = 'Nothing';
+    h.Cor.Individual_Tab{1}.Title = 'No data';
     
     Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
     h.Progress.Axes.Color=UserValues.Look.Control;
@@ -4184,6 +4184,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     h.Cor.Individual_Tab{i} = copyobj(h.Cor.Individual_Tab{i-1}, h.Cor.Correlations_Tabs);
                     h.Cor.Individual_Axes{i} = h.Cor.Individual_Tab{i}.Children;
                 end
+                %%% make current tab this one
+                h.Cor.Correlations_Tabs.SelectedTab = h.Cor.Individual_Tab{i};
                 %%% Changes Tab Name
                 h.Cor.Individual_Tab{i}.Title = [PIE_Name1 '_x_' PIE_Name2];
                 for j = 1:size(Cor_Array,2)
@@ -4194,7 +4196,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Saves filename in axes
                 h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
                 h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;
-                
                 Progress((i)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')                
             case 2 %%% Pair correlation
                 Bins=str2double(h.Cor.Pair_Bins.String);
@@ -4431,8 +4432,7 @@ switch mode
             Active_Axes.Children(i).LineStyle = 'none';
             Active_Axes.Children(i).Marker = '.';
         end      
-    case 4 %%% Save selected correlations
-        
+    case 4 %%% Save selected correlations       
         Active_Axes = h.Cor.Correlations_Tabs.SelectedTab.Children;
         Data = Active_Axes.UserData;
         Current_FileName = Data{1};
@@ -4481,7 +4481,6 @@ switch mode
             fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
             fclose(FileID);
         end
-
 end
 
 
