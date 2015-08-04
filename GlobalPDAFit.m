@@ -905,6 +905,7 @@ for i = 1:numel(FileName)
             PDAData.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
             if isfield(PDA,'BrightnessReference')
                 PDAData.BrightnessReference = PDA.BrightnessReference;
+                PDAData.BrightnessReference.PN = histcounts(PDAData.BrightnessReference.N,1:(max(PDAData.BrightnessReference.N)+1));
             end
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
@@ -925,6 +926,7 @@ for i = 1:numel(FileName)
             PDAData.Background{end+1} = SavedData.Background;
             if isfield(SavedData,'BrightnessReference')
                 PDAData.BrightnessReference = SavedData.BrightnessReference;
+                PDAData.BrightnessReference.PN = histcounts(PDAData.BrightnessReference.N,1:(max(PDAData.BrightnessReference.N)+1));
             end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
