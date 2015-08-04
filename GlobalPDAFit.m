@@ -1503,17 +1503,17 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     P_temp = PNF(:,:,j);
                     E_temp = NF(:,:,j)./N(:,:,j);
                     [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
-                    valid = (bin ~= 0);
+                    validd = (bin ~= 0);
                     P_temp = P_temp(:);
-                    bin = bin(valid);
-                    P_temp = P_temp(valid);
+                    bin = bin(validd);
+                    P_temp = P_temp(validd);
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                     %%% Store bin,valid and P_temp variables for brightness
                     %%% correction
                     PDAMeta.HistLib.bin{i}{j} = bin;
                     PDAMeta.HistLib.P_array{i}{j} = P_temp;
-                    PDAMeta.HistLib.valid{i}{j} = valid;
+                    PDAMeta.HistLib.valid{i}{j} = validd;
 
                     PN_trans = repmat(PN_dummy,1,maxN+1);
                     PN_trans = PN_trans(:);
@@ -1524,17 +1524,17 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 for j = 1:numel(E_grid)
                     bin = cell((NBG+1)*(NBR+1),1);
                     P_array = cell((NBG+1)*(NBR+1),1);
-                    valid = cell((NBG+1)*(NBG+1),1);
+                    validd = cell((NBG+1)*(NBG+1),1);
                     count = 1;
                     for g = 0:NBG
                         for r = 0:NBR
                             P_temp = PBG(g+1)*PBR(r+1)*PNF(1:end-g-r,:,j); %+1 since also zero is included
                             E_temp = (NF(1:end-g-r,:,j)+r)./(N(1:end-g-r,:,j)+g+r);
                             [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
-                            valid{count} = (bin{count} ~= 0);
+                            validd{count} = (bin{count} ~= 0);
                             P_temp = P_temp(:);
-                            bin{count} = bin{count}(valid{count});
-                            P_temp = P_temp(valid{count});
+                            bin{count} = bin{count}(validd{count});
+                            P_temp = P_temp(validd{count});
                             P_array{count} = P_temp;
                             count = count+1;
                         end
@@ -1544,7 +1544,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     %%% correction
                     PDAMeta.HistLib.bin{i}{j} = bin;
                     PDAMeta.HistLib.P_array{i}{j} = P_array;
-                    PDAMeta.HistLib.valid{i}{j} = valid;
+                    PDAMeta.HistLib.valid{i}{j} = validd;
                             
                     P{1,j} = zeros(Nobins,1);
                     count = 1;
@@ -1552,7 +1552,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                         for r = 0:NBR
                             PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
                             PN_trans = PN_trans(:);
-                            PN_trans = PN_trans(valid{count});
+                            PN_trans = PN_trans(validd{count});
                             P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
                             count = count+1;
                         end
