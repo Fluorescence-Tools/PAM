@@ -5514,6 +5514,7 @@ end
 
 %%% Set BurstBrowserPath Path to FilePath
 UserValues.File.BurstBrowserPath = FileInfo.Path;
+
 LSUserValues(1);
 
 Progress(1,h.Progress.Axes, h.Progress.Text, 'Done');
@@ -5526,6 +5527,9 @@ h.Burst.BurstLifetime_Button.Enable = 'on';
 h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
 h.Burst.NirFilter_Button.Enable = 'on';
 h.Burst.NirFilter_Button.ForegroundColor = [1 0 0];
+
+[~,h.Burst.LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
+[~,h.Burst.LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
 
 % Perform 2CDE filter calculation directly after burst search
 if h.Burst.NirFilter_Checkbox.Value
@@ -6168,7 +6172,8 @@ if any(isempty(BurstData.IRF)) || any(isempty(BurstData.ScatterPattern))
     return;
 end
 %% Prepare the data for lifetime fitting
-h.Progress.Text.String = 'Preparing Data for Lifetime Fit...';drawnow;
+h.Progress.Text.String = 'Preparing Data for Lifetime Fit...';
+set(h.Pam, 'pointer', 'arrow'); drawnow;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 if exist(fullfile(Path,[File '.bps']),'file') == 2
@@ -6338,7 +6343,7 @@ Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Store_IRF_Scat_inBur(obj,~,mode)
 global BurstData UserValues
-LSUserValues(0)
+LSUserValues(0);
 h = guidata(findobj('Tag','Pam'));
 if isempty(BurstData)
     disp('No Burst Data loaded...');
@@ -6738,7 +6743,7 @@ if isfield(PamMeta.Det_Calib,'Shift')
     pause(1)
     delete(m)
 end
-LSUserValues(1)
+LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Clears Shift from UserValues %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6751,7 +6756,7 @@ if isfield(PamMeta.Det_Calib,'Shift')
     pause(1)
     delete(m)
 end
-LSUserValues(1)
+LSUserValues(1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6873,7 +6878,7 @@ switch mode
                 % Path is unique per file in the database, so we have to store
                 % it globally in UserValues each time
                 UserValues.File.Path = PamMeta.Database{i,2};
-                LSUserValues(1)
+                LSUserValues(1);
                 LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
                     PamMeta.Database{i,1},...   %file
                     PamMeta.Database{i,3});     %type
@@ -6892,7 +6897,7 @@ switch mode
             % Path is unique per file in the database, so we have to store
             % it globally in UserValues each time
             UserValues.File.Path = PamMeta.Database{i,2};
-            LSUserValues(1)
+            LSUserValues(1);
             LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
                 PamMeta.Database{i,1},...   %file
                 PamMeta.Database{i,3});     %type
@@ -6901,9 +6906,10 @@ switch mode
             % checked on the 'Burst analysis' tab, this might also be performed
             % set filename color to green
             h.Database.List.String{i}=['<HTML><FONT color=00FF00>' h.Database.List.String{i} '</Font></html>'];
-            catch
+            catch exception
                 %set filename color to red
                 h.Database.List.String{i}=['<HTML><FONT color=FF0000>' h.Database.List.String{i} '</Font></html>'];
+                rethrow(exception);
             end
         end
         % here some button to push, to put the colors back to black
@@ -6913,7 +6919,7 @@ switch mode
         % Path is unique per file in the database, so we have to store
         % it globally in UserValues each time
         UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
-        LSUserValues(1)
+        LSUserValues(1);
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
             PamMeta.Database(h.Database.List.Value,1),...   %file
             PamMeta.Database{h.Database.List.Value(1),3});     %type
@@ -7042,7 +7048,7 @@ switch mode
                 % Path is unique per file in the database, so we have to store
                 % it globally in UserValues each time
                 UserValues.File.Path = PamMeta.Export{i,2};
-                LSUserValues(1)
+                LSUserValues(1);
                 LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
                     PamMeta.Export{i,1},...   %file
                     PamMeta.Export{i,3});     %type

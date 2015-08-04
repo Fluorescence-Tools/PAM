@@ -1,4 +1,7 @@
 function name = GenerateName(name, mode)
+if nargin < 2
+    mode = 1;
+end
 if mode == 1
     %% Generate unique file name
     % Generates windows-compatible file names and adds increment when overwriting

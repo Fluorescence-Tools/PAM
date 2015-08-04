@@ -792,7 +792,7 @@ Update_Plots(h.ChannelSelect_Popupmenu,[]);
 % if the lifetime checkbox is checked, lifetime fitting starts directly
 % after calling the TauFitBurst user interface
 g = guidata(findobj('Tag','Pam'));
-if g.BurstLifetime_Checkbox.Value
+if g.Burst.BurstLifetime_Checkbox.Value
     clear g
     % 'lifetime' checkbox is checked on the 'Burst analysis' tab,
     % so lifetimes are fitted directly after burst analysis.
@@ -1533,7 +1533,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 %%% Change the Color of the Button in Pam
 hPam = findobj('Tag','Pam');
 handlesPam = guidata(hPam);
-handlesPam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
+handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
