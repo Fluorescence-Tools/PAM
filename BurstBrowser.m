@@ -8447,7 +8447,7 @@ switch obj
                             end
                             text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
-                                'FontSize',20);
+                                'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
                             %'EdgeColor',[0 0 0]);
                         case 2
@@ -8463,7 +8463,7 @@ switch obj
                             end
                             text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
-                                'FontSize',20);
+                                'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
                             %'EdgeColor',[0 0 0]);
                     end
@@ -8508,7 +8508,7 @@ switch obj
                             end
                             text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
-                                'FontSize',20);
+                                'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
                             %'EdgeColor',[0 0 0]);
                         case 3
@@ -8524,7 +8524,7 @@ switch obj
                             end
                             text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
-                                'FontSize',20);
+                                'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
                             %'EdgeColor',[0 0 0]);
                         case 4
@@ -8540,7 +8540,7 @@ switch obj
                             end
                             text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
-                                'FontSize',20);
+                                'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
                             %'EdgeColor',[0 0 0]);
                     end
@@ -8571,6 +8571,7 @@ switch obj
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
         FigureName = 'E vs. TauGG';
+        axes_copy.Layer = 'top';
     case h.ExportEvsTauBB_Menu
         AspectRatio = 1;
         pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
