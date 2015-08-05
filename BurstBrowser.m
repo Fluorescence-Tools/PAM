@@ -2100,6 +2100,12 @@ if isempty(hfig)
         'Label','Logscale',...
         'Tag','Plot_Logscale_ResultPlot',...
         'Callback',@ChangeYScale);
+    
+    h.TauFit.ExportGraph_Menu = uimenu(...
+        h.TauFit.Microtime_Plot_Menu_ResultPlot,...
+        'Label','Export Plot',...
+        'Tag','TauFit_ExportGraph_Menu',...
+        'Callback',@ExportGraphs);
     %%% Main Microtime Plot
     h.TauFit.Microtime_Plot = axes(...
         'Parent',h.MainTabTauFitPanel,...
@@ -2112,14 +2118,14 @@ if isempty(hfig)
         'UIContextMenu',h.TauFit.Microtime_Plot_Menu_MIPlot,...
         'nextplot','add');
     
-    h.Microtime_Plot.XLim = [0 1];
-    h.Microtime_Plot.YLim = [0 1];
-    h.Microtime_Plot.XLabel.Color = Look.Fore;
-    h.Microtime_Plot.XLabel.String = 'time [ns]';
-    h.Microtime_Plot.YLabel.Color = Look.Fore;
-    h.Microtime_Plot.YLabel.String = 'intensity [counts]';
-    h.Microtime_Plot.XGrid = 'on';
-    h.Microtime_Plot.YGrid = 'on';
+    h.TauFit.Microtime_Plot.XLim = [0 1];
+    h.TauFit.Microtime_Plot.YLim = [0 1];
+    h.TauFit.Microtime_Plot.XLabel.Color = Look.Fore;
+    h.TauFit.Microtime_Plot.XLabel.String = 'time [ns]';
+    h.TauFit.Microtime_Plot.YLabel.Color = Look.Fore;
+    h.TauFit.Microtime_Plot.YLabel.String = 'intensity [counts]';
+    h.TauFit.Microtime_Plot.XGrid = 'on';
+    h.TauFit.Microtime_Plot.YGrid = 'on';
     
     %%% Residuals Plot
     h.TauFit.Residuals_Plot = axes(...
@@ -2127,16 +2133,16 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.05 0.9 0.9 0.08],...
         'Tag','Residuals_Plot',...
-        'XTick',[],...
+        'XTickLabel',[],...
         'Box','on',...
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'nextplot','add');
     
-    h.Residuals_Plot.YLabel.Color = Look.Fore;
-    h.Residuals_Plot.YLabel.String = 'res_w';
-    h.Residuals_Plot.XGrid = 'on';
-    h.Residuals_Plot.YGrid = 'on';
+    h.TauFit.Residuals_Plot.YLabel.Color = Look.Fore;
+    h.TauFit.Residuals_Plot.YLabel.String = 'res_w';
+    h.TauFit.Residuals_Plot.XGrid = 'on';
+    h.TauFit.Residuals_Plot.YGrid = 'on';
     
     %%% Result Plot (Replaces Microtime Plot after fit is done)
     h.TauFit.Result_Plot = axes(...
@@ -2155,16 +2161,19 @@ if isempty(hfig)
         'Parent',h.TauFit.Result_Plot,...
         'FontSize',12,...
         'FontWeight','bold',...
-        'BackgroundColor',[1 1 1]);
+        'Units','normalized',...
+        'Position',[0.8,0.95],...
+        'BackgroundColor','none',...
+        'Color',Look.AxesFore);
     
-    h.Result_Plot.XLim = [0 1];
-    h.Result_Plot.YLim = [0 1];
-    h.Result_Plot.XLabel.Color = Look.Fore;
-    h.Result_Plot.XLabel.String = 'time [ns]';
-    h.Result_Plot.YLabel.Color = Look.Fore;
-    h.Result_Plot.YLabel.String = 'intensity [counts]';
-    h.Result_Plot.XGrid = 'on';
-    h.Result_Plot.YGrid = 'on';
+    h.TauFit.Result_Plot.XLim = [0 1];
+    h.TauFit.Result_Plot.YLim = [0 1];
+    h.TauFit.Result_Plot.XLabel.Color = Look.Fore;
+    h.TauFit.Result_Plot.XLabel.String = 'time [ns]';
+    h.TauFit.Result_Plot.YLabel.Color = Look.Fore;
+    h.TauFit.Result_Plot.YLabel.String = 'intensity [counts]';
+    h.TauFit.Result_Plot.XGrid = 'on';
+    h.TauFit.Result_Plot.YGrid = 'on';
     linkaxes([h.TauFit.Result_Plot, h.TauFit.Residuals_Plot],'x');
     
     %%% dummy panel to hide plots
@@ -2832,7 +2841,7 @@ switch mode
         BurstMeta.Plots.TauFit.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2,'Parent',h.TauFit.Microtime_Plot);
         %%% Residuals Plot
         BurstMeta.Plots.TauFit.Residuals = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot);
-        BurstMeta.Plots.TauFit.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot);
+        BurstMeta.Plots.TauFit.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot,'Visible','off');
         %%% Result Plot
         BurstMeta.Plots.TauFit.DecayResult = plot([0 1],[0 0],'--k','Parent',h.TauFit.Result_Plot);
         BurstMeta.Plots.TauFit.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'Parent',h.TauFit.Result_Plot);
@@ -6208,13 +6217,15 @@ switch obj
         axis(h.TauFit.Result_Plot,'tight');
         % plot chi^2 on graph
         h.TauFit.Result_Plot_Text.Visible = 'on';
-        h.TauFit.Result_Plot_Text.String = sprintf(['chi^2 = ' num2str(chi2(best_fit))]);
-        h.TauFit.Result_Plot_Text.Position = [0.8*h.TauFit.Result_Plot.XLim(2) 0.9*h.TauFit.Result_Plot.YLim(2)];
+        h.TauFit.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
+        h.TauFit.Result_Plot_Text.Position = [0.8 0.95];
         
         BurstMeta.Plots.TauFit.Residuals.XData = (1:numel(Decay))*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals.YData = wres;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
+        
+        h.TauFit.Result_Plot.XLim(1) = 0;
     case h.TauFit.Start_AnisoFit_button
         %%% construct Anisotropy
         Aniso = (G*BurstMeta.TauFit.FitData.Decay_Par - BurstMeta.TauFit.FitData.Decay_Per)./Decay;
@@ -6239,13 +6250,15 @@ switch obj
         BurstMeta.Plots.TauFit.FitResult.YData = fitres;
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot_Text.Visible = 'on';
-        h.TauFit.Result_Plot_Text.String = sprintf('rho = %1.2f ns\nr0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
-        h.TauFit.Result_Plot_Text.Position = [0.8*h.TauFit.Result_Plot.XLim(2) 0.9*h.TauFit.Result_Plot.YLim(2)];
+        h.TauFit.Result_Plot_Text.String = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+        h.TauFit.Result_Plot_Text.Position = [0.8 0.9];
         
         BurstMeta.Plots.TauFit.Residuals.XData = x*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals.YData = res;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.XData = x*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(x));
+        
+        h.TauFit.Result_Plot.XLim(1) = 0;
 end
 function a = interlace( a, x, fix )
 a(~fix) = x;
@@ -8378,6 +8391,7 @@ switch obj
             panel_copy.Children(i).LineWidth = 3;
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
+            panel_copy.Children(i).Layer = 'top';
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'Axes_1D_Y'
@@ -8427,10 +8441,13 @@ switch obj
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
                 title(panel_copy.Children(i),'');
+                panel_copy.Children(i).Layer = 'top';
                 %%% move axes up and left
                 panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
-                panel_copy.Children(i).YLabel.Units = 'normalized';
-                panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                if any(i==[1,2])
+                    panel_copy.Children(i).YLabel.Units = 'normalized';
+                    panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                end
                 %%% Add rotational correlation time
                 if isfield(BurstData,'Parameters')
                     switch i
@@ -8564,6 +8581,7 @@ switch obj
         axes_copy.YColor = [0,0,0];
         axes_copy.XLabel.Color = [0,0,0];
         axes_copy.YLabel.Color = [0,0,0];
+        axes_copy.Layer = 'top';
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -8587,6 +8605,7 @@ switch obj
         axes_copy.YColor = [0,0,0];
         axes_copy.XLabel.Color = [0,0,0];
         axes_copy.YLabel.Color = [0,0,0];
+        axes_copy.Layer = 'top';
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -8594,6 +8613,29 @@ switch obj
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
         FigureName = 'E vs. TauBB';
+    case h.TauFit.ExportGraph_Menu
+        fig = figure('Position',[100,100,700,500],'color',[1 1 1]);
+        panel_copy = copyobj(h.MainTabTauFitPanel,fig);
+        panel_copy.Position = [0 0 1 1];
+        panel_copy.ShadowColor = [1 1 1];
+        %%% set Background Color to white
+        panel_copy.BackgroundColor = [1 1 1];
+        ax = panel_copy.Children;
+        delete(ax(1:4));ax = ax(5:end);
+        ax(1).Position = [0.125 0.15 0.825 0.7];
+        ax(2).Position = [0.125 0.85 0.825 .12];
+
+        for i = 1:numel(ax)
+            ax(i).Color = [1 1 1];
+            ax(i).XColor = [0 0 0];
+            ax(i).YColor = [0 0 0];
+            ax(i).LineWidth = 3;
+            ax(i).FontSize = 20;
+        end
+
+        ax(1).Children(3).FontSize = 20;
+        ax(1).Children(3).Position(2) = 0.9;
+        FigureName = 'Lifetime Fit';
 end
 %%% Combine the Original FileName and the parameter names
 if isfield(BurstData,'FileNameSPC')
@@ -8603,7 +8645,9 @@ if isfield(BurstData,'FileNameSPC')
         FileName = BurstData.FileNameSPC;
     end
 end
+
 FigureName = [FileName '_' FigureName];
+
 
 directly_save = 0;
 if directly_save
