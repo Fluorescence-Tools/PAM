@@ -7279,8 +7279,8 @@ switch e.Key
             
             %%% Calculates pixel times for each line and file
             Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-            for j=1:FileInfo.NumberOfFiles
-                for k=1:FileInfo.Lines
+            for j=1:(size(FileInfo.LineTimes,2))
+                for k=1:(size(FileInfo.LineTimes,1)-1)
                     Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
                     Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
                 end
@@ -7289,7 +7289,7 @@ switch e.Key
             %%% Histograms photons to pixels
             Stack=uint16(histc(Stack,Pixeltimes(:)));
             %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
             
             File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
             

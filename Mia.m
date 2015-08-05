@@ -906,16 +906,26 @@ if isempty(h.Mia)
             'ShadowColor', Look.Shadow,...
             'Position',[0 0 1 1]);
         %%% Button to start correlation
-        h.Mia_Correlation.Do = uicontrol(...
+        h.Mia_Correlation.Do_ICS = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
             'Style','push',...
             'Units','normalized',...
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.02 0.92, 0.96 0.06],...
+            'Position',[0.02 0.92, 0.47 0.06],...
             'Callback',@Do_2D_XCor,...
-            'String','Correlate');
+            'String','Do ICS');
+        h.Mia_Correlation.Do_TICS = uicontrol(...
+            'Parent', h.Mia_Calculations_Cor_Panel,...
+            'Style','push',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'BackgroundColor', Look.Control,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.51 0.92, 0.47 0.06],...
+            'Callback',@Do_1D_XCor,...
+            'String','Do TICS');
         %%% Select, what to correlate
         h.Mia_Correlation.Type = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
@@ -1138,8 +1148,6 @@ if isempty(h.Mia)
             'Visible', 'off',...
             'Callback',@Mia_Arbitrary_Region,...
             'String','1.2');   
-        
-        
         %%% Same AR for both channels
         h.Mia_Correlation.Same = uicontrol(...
             'Parent', h.Mia_Calculations_Cor_Panel,...
@@ -1149,7 +1157,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Value',1,...
-            'Position',[0.02 0.22, 0.64 0.06],...
+            'Position',[0.02 0.30, 0.64 0.06],...
             'Visible', 'off',...
             'Callback',@Mia_Arbitrary_Region,...
             'String',{'Individual Channels', 'Channel1','Channel2','Both'});
@@ -1161,7 +1169,7 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.02 0.14, 0.64 0.06],...
+            'Position',[0.02 0.02, 0.64 0.06],...
             'String',{'Do not save','Save as .miacor','Save as TIFF'});      
         if ismac
             h.Mia_Correlation.Save.ForegroundColor = [0 0 0];
@@ -2073,6 +2081,7 @@ MIAData.FileName=cell(0);
 MIAData.Use=ones(2,1);
 MIAData.AR = [];
 MIAData.MS = [];
+MIAData.PCH = [];
 guidata(h.Mia,h); 
 else
      figure(h.Mia); % Gives focus to Pam figure 
@@ -2128,6 +2137,7 @@ switch mode
         MIAData.Data = [];
         MIAData.Type = mode;
         MIAData.FileName = [];
+        MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
         for i=1:3
@@ -2324,7 +2334,7 @@ switch mode
             for j = UserValues.PIE.Combined{Sel} %%% Combined channel
                 Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
                     TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))]; %#ok<AGROW>
             end
         end
         
@@ -2388,7 +2398,7 @@ switch mode
             for j = UserValues.PIE.Combined{Sel} %%% Combined channel
                 Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
                     TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
+                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))]; %#ok<AGROW>
             end
         end
         
@@ -2478,7 +2488,7 @@ if any(mode==1)
                 h.Mia_Channel_Settings.Colormap(i).BackgroundColor = UserValues.Look.Control;
             case 5
                 Colormap = gray(64).*repmat(h.Mia_Channel_Settings.Colormap(i).UserData,[64,1]);
-                Colormap = [circshift(Colormap(end,:),[0 2]); Colormap];
+                Colormap = [circshift(Colormap(end,:),[0 2]); Colormap]; %#ok<AGROW>
                 h.Mia_Channel_Settings.Colormap(i).BackgroundColor = h.Mia_Channel_Settings.Colormap(i).UserData;
         end
         
@@ -2525,7 +2535,7 @@ if any(mode==1)
                             Image=double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame)-MIAData.Data{i,2}(:,:,Frame));
                         elseif Frame==0
                             Frames = str2num(h.Mia_ROI_Frames.String); %#ok<ST2NM>
-                            Image=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame)-MIAData.Data{i,2}(:,:,Frames)),3);
+                            Image=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames)-MIAData.Data{i,2}(:,:,Frames)),3);
                         end
                 end
                 Image=round(63*(Image-min(min(Image)))/(max(max(Image))-min(min(Image))))+2;
@@ -2859,6 +2869,33 @@ if any(mode==4)
         h.Plots.PCH(1,2).XData = [0 1];
         h.Plots.PCH(1,2).YData = [0 0];
     else
+        %% Updates Intensity and PCH plots on Image Tab
+        h.Plots.Int(1,1).XData = 1:size(MIAData.Data{1,1},3);
+        h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
+        if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
+            h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1);
+            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1);
+            h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
+        else
+            h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
+            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
+            h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
+        end
+        
+        
+        if isempty(MIAData.PCH)
+            MIAData.PCH{1} = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
+        end
+        h.Plots.PCH(1,1).XData = 0:(numel(MIAData.PCH{1})-1);
+        h.Plots.PCH(1,1).YData = MIAData.PCH{1};
+        Max = max(MIAData.Data{1,2}(:));
+        h.Plots.PCH(1,2).XData = 0:Max;
+        h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(:), 0:Max);
+        if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
+            h.Mia_Image.PCH_Axes.YScale = 'Lin';
+        else
+            h.Mia_Image.PCH_Axes.YScale = 'Log';
+        end
         %% Updates first plot
         h.Plots.Additional_Axes(1,1).XData = 1:size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3);
         h.Mia_Additional.Axes(1).XLabel.String = 'Frame';
@@ -2876,8 +2913,8 @@ if any(mode==4)
                 h.Plots.Additional_Axes(1,1).YData = var(reshape(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},[],size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
                 h.Mia_Additional.Axes(1).YLabel.String = 'Spatial Variance';
             case 3 %%% PCH
-                h.Plots.Additional_Axes(1,1).XData = 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}(:));
-                h.Plots.Additional_Axes(1,1).YData = histc(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}(:), 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}(:)));
+                h.Plots.Additional_Axes(1,1).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).XData;
+                h.Plots.Additional_Axes(1,1).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).YData;
                 h.Mia_Additional.Axes(1).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(1).YLabel.String = 'Frequency';
                 if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
@@ -2903,8 +2940,8 @@ if any(mode==4)
                 h.Plots.Additional_Axes(2,1).YData = var(reshape(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},[],size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value},3)));
                 h.Mia_Additional.Axes(2).YLabel.String = 'Spatial Variance';
             case 3 %%% PCH
-                h.Plots.Additional_Axes(2,1).XData = 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:));
-                h.Plots.Additional_Axes(2,1).YData = histc(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:), 0:max(MIAData.Data{1,h.Mia_Additional.Plot_Popup(2,2).Value}(:)));
+                h.Plots.Additional_Axes(2,1).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).XData;
+                h.Plots.Additional_Axes(2,1).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).YData;
                 h.Mia_Additional.Axes(2).XLabel.String = 'Counts';
                 h.Mia_Additional.Axes(2).YLabel.String = 'Frequency';
                 if h.Mia_Additional.Axes(2).YLabel.UserData == 1;
@@ -2925,28 +2962,6 @@ if any(mode==4)
         h.Plots.Additional_Image(1).CData = Data;
         h.Mia_Additional.Image(1).XLim = [0.5 size(Data,1)+0.5];
         h.Mia_Additional.Image(1).YLim = [0.5 size(Data,2)+0.5];
-        %% Updates Intensity and PCH plots on Image Tab
-
-        h.Plots.Int(1,1).XData = 1:size(MIAData.Data{1,1},3);
-        h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
-        if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
-            h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1);
-            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1);    
-            h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
-        else
-            h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
-            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
-            h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]'; 
-        end  
-        h.Plots.PCH(1,1).XData = 0:max(MIAData.Data{1,1}(:));
-        h.Plots.PCH(1,1).YData = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
-        h.Plots.PCH(1,2).XData = 0:max(MIAData.Data{1,2}(:));
-        h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(:), 0:max(MIAData.Data{1,2}(:)));  
-        if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
-            h.Mia_Image.PCH_Axes.YScale = 'Lin';
-        else
-            h.Mia_Image.PCH_Axes.YScale = 'Log';
-        end
         
     end
 
@@ -2971,6 +2986,29 @@ if any(mode==4)
         h.Plots.PCH(2,2).YData = [0 0];
         h.Plots.PCH(2,2).Visible = 'off';
     else
+        %% Updates Intensity and PCH plots on Image Tab
+        h.Plots.Int(2,1).XData = 1:size(MIAData.Data{2,1},3);
+        h.Plots.Int(2,2).XData = 1:size(MIAData.Data{2,2},3);
+        h.Plots.Int(2,1).Visible = 'on';
+        h.Plots.Int(2,2).Visible = 'on';
+        if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
+            h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1);
+            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1);
+        else
+            h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
+            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
+        end
+        
+        if numel(MIAData.PCH,1)<2
+            MIAData.PCH{2} = histc(MIAData.Data{2,1}(:), 0:max(MIAData.Data{2,1}(:)));
+        end
+        h.Plots.PCH(2,1).XData = 0:(numel(MIAData.PCH{2})-1);
+        h.Plots.PCH(2,1).YData = MIAData.PCH{2};
+        h.Plots.PCH(2,1).Visible = 'on';
+        Max = max(MIAData.Data{2,2}(:));
+        h.Plots.PCH(2,2).XData = 0:Max;
+        h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(:), 0:Max);
+        h.Plots.PCH(2,2).Visible = 'on';
         %% Updates first plot
         h.Plots.Additional_Axes(1,2).XData = 1:size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},3);
         h.Plots.Additional_Axes(1,2).Visible = 'on';
@@ -2983,9 +3021,8 @@ if any(mode==4)
             case 2 %%% Variance
                 h.Plots.Additional_Axes(1,2).YData = var(reshape(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},[],size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
             case 3 %%% PCH
-                h.Plots.Additional_Axes(1,2).XData = 0:max(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}(:));
-                h.Plots.Additional_Axes(1,2).YData = histc(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}(:), 0:max(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}(:)));
-                
+                h.Plots.Additional_Axes(1,2).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).XData;
+                h.Plots.Additional_Axes(1,2).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).YData;
         end
         %% Updates second plot
         h.Plots.Additional_Axes(2,2).XData = 1:size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value},3);
@@ -2999,8 +3036,8 @@ if any(mode==4)
             case 2 %%% Variance
                 h.Plots.Additional_Axes(2,2).YData = var(reshape(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value},[],size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value},3)));
             case 3 %%% PCH
-                h.Plots.Additional_Axes(2,2).XData = 0:max(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value}(:));
-                h.Plots.Additional_Axes(2,2).YData = histc(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value}(:), 0:max(MIAData.Data{2,h.Mia_Additional.Plot_Popup(2,2).Value}(:)));
+                h.Plots.Additional_Axes(2,2).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).XData;
+                h.Plots.Additional_Axes(2,2).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).YData;
         end
         %% Updates image plot
         switch h.Mia_Additional.Plot_Popup(2,3).Value
@@ -3026,25 +3063,7 @@ if any(mode==4)
         h.Plots.Additional_Image(2).CData = Data;
         h.Mia_Additional.Image(2).XLim = [0.5 size(Data,1)+0.5];
         h.Mia_Additional.Image(2).YLim = [0.5 size(Data,2)+0.5];
-        %% Updates Intensity and PCH plots on Image Tab
-        h.Plots.Int(2,1).XData = 1:size(MIAData.Data{2,1},3);
-        h.Plots.Int(2,2).XData = 1:size(MIAData.Data{2,2},3);
-        h.Plots.Int(2,1).Visible = 'on';
-        h.Plots.Int(2,2).Visible = 'on';
-        if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
-            h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1);
-            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1);
-        else
-            h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
-            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1)/str2double(h.Mia_Image.Pixel.String)*1000;
-        end
-        
-        h.Plots.PCH(2,1).XData = 0:max(MIAData.Data{2,1}(:));
-        h.Plots.PCH(2,1).YData = histc(MIAData.Data{2,1}(:), 0:max(MIAData.Data{2,1}(:)));
-        h.Plots.PCH(2,1).Visible = 'on';
-        h.Plots.PCH(2,2).XData = 0:max(MIAData.Data{2,2}(:));
-        h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(:), 0:max(MIAData.Data{2,2}(:)));
-        h.Plots.PCH(2,2).Visible = 'on';
+
     end
     
     
@@ -3377,12 +3396,13 @@ for i=Channel
         for j=1:size(Data,3)
             Filter1=ones(Var_SubSub)/(Var_SubSub)^2;
             Filter2=ones(Var_Sub)/(Var_Sub^2);
-            %%% Calculates population variance for both subregions                  (sample2population var)
-            Var1=(filter2(Filter1,Data(:,:,j).^2)-filter2(Filter1,Data(:,:,j)).^2)*(Var_SubSub^2/(Var_SubSub^2-1));
-            Var2=(filter2(Filter2,Data(:,:,j).^2)-filter2(Filter2,Data(:,:,j)).^2)*((Var_Sub^2)/(Var_Sub^2-1));
+            
             %%% Calculates mean of both subregions
             Mean1=filter2(Filter1,Data(:,:,j));
             Mean2=filter2(Filter2,Data(:,:,j));
+            %%% Calculates population variance for both subregions                  (sample2population var)
+            Var1=(filter2(Filter1,Data(:,:,j).^2)-Mean1.^2)*(Var_SubSub^2/(Var_SubSub^2-1));
+            Var2=(filter2(Filter2,Data(:,:,j).^2)-Mean2.^2)*((Var_Sub^2)/(Var_Sub^2-1));
             %%% Discards samples with too low\high variance
             if Var_Fold_Max>1
                 Use(:,:,j)=Use(:,:,j) & (Var1<(Var2*Var_Fold_Max));
@@ -3625,14 +3645,15 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Funtion to calculate correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_2D_XCor(~,~)
+
 h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
-h.Mia_Progress_Text.String = 'Correlating';
-h.Mia_Progress_Axes.Color=[1 0 0];  
-drawnow;
+% % h.Mia_Progress_Text.String = 'Correlating';
+% % h.Mia_Progress_Axes.Color=[1 0 0];  
+% drawnow;
 
 %%% Clears correlation data and plots
 MIAData.Cor=cell(3,2);
@@ -3707,31 +3728,34 @@ switch (h.Mia_ROI_FramesUse.Value)
         end
 end
 
-
-
 %%% Performs autocorrelation
 for i=Auto
+    Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
     MIAData.Cor{floor(i*1.5)}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
-
-    for j=1:numel(Frames)        
-        Image=double(MIAData.Data{i,2}(:,:,Frames(j)));        
-        if h.Mia_ROI_FramesUse.Value==3  %%% Arbitrary region ICS            
-            %%% Calculates normalization for zero regions            
-            Norm=fft2(Use{i}(:,:,j));
+    TotalInt = zeros(numel(Frames));
+    TotalPx = zeros(numel(Frames));
+    for j=1:numel(Frames)
+        Image=double(MIAData.Data{i,2}(:,:,Frames(j)));
+        Size = [2*size(Image,1)-1, 2*size(Image,2)-1];
+        if h.Mia_ROI_FramesUse.Value==3  %%% Arbitrary region ICS
+            %%% Calculates normalization for zero regions
+            Norm=fft2(Use{i}(:,:,j),Size(1),Size(2));
             Norm=fftshift(ifft2(Norm.*conj(Norm)));
             %%% Calculates fluctutation image
             ImageFluct=Image-mean(Image(Use{i}(:,:,j)));
             %%% Applies selected region and FFT
-            ImageFluct=fft2(ImageFluct.*Use{i}(:,:,j));
+            ImageFluct=fft2(ImageFluct.*Use{i}(:,:,j),Size(1),Size(2));
             %%% Actual correlation
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=fftshift(real(ifft2(ImageFluct.*conj(ImageFluct))))/(mean(Image(Use{i}(:,:,j)))^2);
+            ImageCor = fftshift(real(ifft2(ImageFluct.*conj(ImageFluct))));
             %%% Corrects for shape of selected region
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=MIAData.Cor{floor(i*1.5)}(:,:,j)./Norm;
+            ImageCor = ImageCor./Norm;
+            ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(1)/4):round(Size(1)*3/4));
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=ImageCor./(mean(Image(Use{i}(:,:,j)))^2);
             %%% Used to calculate total mean
             TotalInt(j)=sum(Image(Use{i}(:,:,j)));
             TotalPx(j)=numel(Image(Use{i}(:,:,j)));
         else %%% Standard ICS
-            %%% Actual correlation            
+            %%% Actual correlation
             Image_FFT=fft2(Image);
             %%% Used to calculate total mean
             TotalInt(j)=sum(sum((Image)));
@@ -3740,11 +3764,16 @@ for i=Auto
         end
         %%% Center point is average of x neighbors to remove noise peak
         center=[floor(size(MIAData.Cor{floor(i*1.5)},1)/2)+1,floor(size(MIAData.Cor{floor(i*1.5)},2)/2)+1];
-        MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;        
+        MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;
+        
+        if mod(j,100)==0
+            Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
+        end
+        
     end
     %%% Calculates mean intensity for saving
     MeanInt(i)=sum(TotalInt(j))/sum(TotalPx(j));
-    clear Image ImageFluct;
+    clear Image ImageFluct ImageCor;
 end
 %%% Performs crosscorrelation
 if Cross
@@ -3752,20 +3781,23 @@ if Cross
     for j=i:numel(Frames)
         Image{1}=double(MIAData.Data{1,2}(:,:,Frames(j)));
         Image{2}=double(MIAData.Data{2,2}(:,:,Frames(j)));
+        Size = [2*size(Image{1},1)-1, 2*size(Image{1},2)-1];
         if h.Mia_ROI_FramesUse.Value==3  %%% Arbitrary region ICS
             %%% Calculates normalization for zero regions
-            Norm=fft2(Use{1}(:,:,j).*Use{2}(:,:,j));
+            Norm=fft2(Use{1}(:,:,j).*Use{2}(:,:,j),Size(1),Size(2));
             Norm=fftshift(ifft2(Norm.*conj(Norm)));
             %%% Calculates fluctutation image
             ImageFluct{1}=Image{1}-mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)));
             ImageFluct{2}=Image{2}-mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j)));
             %%% Applies selected region and FFT
-            ImageFluct{1}=fft2(ImageFluct{1}.*(Use{1}(:,:,j) & Use{2}(:,:,j)));
-            ImageFluct{2}=fft2(ImageFluct{2}.*(Use{1}(:,:,j) & Use{2}(:,:,j)));
+            ImageFluct{1}=fft2(ImageFluct{1}.*(Use{1}(:,:,j) & Use{2}(:,:,j)),Size(1),Size(2));
+            ImageFluct{2}=fft2(ImageFluct{2}.*(Use{1}(:,:,j) & Use{2}(:,:,j)),Size(1),Size(2));
             %%% Actual correlation
-            MIAData.Cor{2}(:,:,j)=fftshift(real(ifft2(ImageFluct{1}.*conj(ImageFluct{2}))))/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
+            ImageCor = fftshift(real(ifft2(ImageFluct{1}.*conj(ImageFluct{2}))));
             %%% Corrects for shape of selected region
-            MIAData.Cor{2}(:,:,j)=MIAData.Cor{2}(:,:,j)./Norm;         
+            ImageCor = ImageCor./Norm;
+            ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(1)/4):round(Size(1)*3/4));
+            MIAData.Cor{2}(:,:,j)=ImageCor/(mean(Image{1}(Use{1}(:,:,j) & Use{2}(:,:,j)))*mean(Image{2}(Use{1}(:,:,j) & Use{2}(:,:,j))));
         else
             %%% Actual correlation
             MIAData.Cor{2}(:,:,j)=(fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2})*size(Image{1},1)*size(Image{1},2))) - 1;
@@ -3773,9 +3805,15 @@ if Cross
         %%% Center point is average of x neighbors to remove noise peak
         center=[floor(size(MIAData.Cor{2},1)/2)+1,floor(size(MIAData.Cor{2},2)/2)+1];
         MIAData.Cor{2}(center(1),center(2),j)=(MIAData.Cor{2}(center(1),center(2)-1,j)+MIAData.Cor{2}(center(1),center(2)+1,j))/2;
+        if mod(j,100)==0
+            Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
+        end
+        
     end
 end
-clear Image ImageFluct;
+clear Image ImageFluct ImageCor;
+
+Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
 %%% Corrects the amplitude changes due to temporal moving average addition/subtraction
 %%% The Formula assumes 2 or 3 species with different brightnesses and corrects the amplitude accordingly
 if h.Mia_Add.Value==5 && h.Mia_Subtract.Value==4 %%% Subtracts and Adds moving average
@@ -4109,7 +4147,6 @@ if h.Mia_Correlation.Save.Value > 1
 
 end
 
-
 for i=channel
     h.Mia_Cor_Axes(i,1).Visible='on';
     h.Mia_Cor_Axes(i,2).Visible='on';
@@ -4130,6 +4167,87 @@ h.Mia_Cor_Frames2Use.String=['1:' num2str(size(MIAData.Cor{i},3))];
 %%% Updates correlation plots
 
 Update_Plots([],[],2,channel);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_1D_XCor(~,~)
+global MIAData UserValues
+h = guidata(findobj('Tag','Mia'));
+
+% Do_2D_XCor;
+% return;
+%% Performs actual correlation
+MIAData.TICS=[];
+% MIAData.Data{1,2} = MIAData.Data{1,2}(:,:,1:200);
+%%% FFT based time correlation
+
+Zero_Padded = cat(3, (MIAData.Data{1,2}-repmat(mean(MIAData.Data{1,2},3),1,1,size(MIAData.Data{1,2},3))), 0*MIAData.Data{1,2});
+Norm = cat(3, ones(1,1,size(MIAData.Data{1,2},3)), zeros(1,1,size(MIAData.Data{1,2},3)));
+Norm = fftshift(real(ifft(fft(Norm,[],3).*conj(fft(Norm,[],3)),[],3)),3);
+
+% TICSresult = fftshift(real(ifft(fft(MIAData.Data{1,2},[],3).*conj(fft(MIAData.Data{1,2},[],3)),[],3)),3);
+TICSresult = fftshift(real(ifft(fft(Zero_Padded,[],3).*conj(fft(Zero_Padded,[],3)),[],3)),3);
+
+
+
+%%% Averages forward and backward correlation
+if mod(size(TICSresult,3),2)==0
+    Norm = Norm(:,:,(size(TICSresult,3)/2):-1:2)+ Norm(:,:,(size(TICSresult,3)/2)+2:end);
+    TICSresult = TICSresult(:,:,(size(TICSresult,3)/2):-1:2)+TICSresult(:,:,(size(TICSresult,3)/2)+2:end);   
+else
+    Norm = Norm(:,:,(floor(size(TICSresult,3)/2):-1:1))+Norm(:,:,(ceil(size(TICSresult,3)/2)+1:end));
+    TICSresult = TICSresult(:,:,(floor(size(TICSresult,3)/2):-1:1))+TICSresult(:,:,(ceil(size(TICSresult,3)/2)+1:end));    
+end
+%%% Removes very long lag times (1/20th of frames)
+TICSresult = TICSresult(:,:,1:ceil(size(MIAData.Data{1,2},3)/20));
+Norm = Norm./mean(Norm);
+Norm = Norm(:,:,1:ceil(size(MIAData.Data{1,2},3)/20));
+
+TICSresult = TICSresult./repmat(Norm, size(TICSresult,1),size(TICSresult,2),1);
+
+
+Maxframes = size(MIAData.Data{1,2},3);
+MIAData.TICS.Time{1}=(1:size(TICSresult,3))*str2double(h.Mia_Image.Frame.String);
+%%% Normalizes to frame lag dependent countrate
+Int = cumsum(MIAData.Data{1,2},3);
+% for i=1:size(TICSresult,3); 
+%     MIAData.TICS.Data{1}(:,:,i) = double(TICSresult(:,:,i))./(Int(:,:,(end-i))/(Maxframes-i))./((Int(:,:,end)-Int(:,:,i))/(Maxframes-i))/Maxframes-1;
+% end
+MIAData.TICS.Data{1} = TICSresult./repmat(Int(:,:,end).^2,1,1,size(TICSresult,3))*Maxframes;
+
+MIAData.TICS.Data{1}(isinf(MIAData.TICS.Data{1}))=NaN;
+% MIAData.TICS.Data{1}(isnan(MIAData.TICS.Data{1}))=0;
+
+%% Saves data
+    %%% Generates filename
+    FileName=MIAData.FileName{1}{1}(1:end-4);
+    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.mcor']);
+    %%% Checks, if file already exists
+    if  exist(Current_FileName,'file')
+        k=1;
+        %%% Adds 1 to filename
+        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+        %%% Increases counter, until no file is fount
+        while exist(Current_FileName,'file')
+            k=k+1;
+            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+        end
+    end
+    
+    Int=Int(:,:,end);    
+    Header = 'TICS correlation file'; %#ok<NASGU>
+    Counts = [nanmean(nanmean(Int))/Maxframes nanmean(nanmean(Int))/Maxframes]/str2double(h.Mia_Image.Pixel.String)*1000;
+    Valid = 1;
+    Cor_Times = MIAData.TICS.Time{1};
+    Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS.Data{1},2),1))');
+    Cor_Array = Cor_Average';
+    Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS.Data{1},0,2),0,1))');
+    Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS.Data{1}),[],size(MIAData.TICS.Data{1},3)),1));
+    
+    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
