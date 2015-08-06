@@ -98,33 +98,44 @@ if mode == 1
     % end
     Timeaxis=Timeaxis(1:max(Array_Length));
 elseif mode == 2
-    Norm = cell(numel(Cor_Array),1);
-    Countrate1 = cell(numel(Cor_Array),1); 
-    Countrate2 = cell(numel(Cor_Array),1);
     parfor i=1:numel(Cor_Array)
         Norm{i} = Maxtime(i)-Timeaxis+1;
         Norm{i}(Norm{i}<0) = 0;
-        Weights1_Sum = cumsum(Weights1{i});
-        Weights2_Sum = cumsum(Weights2{i});
-        Countrate1{i} = zeros(1,numel(Timeaxis));
-        Countrate2{i} = zeros(1,numel(Timeaxis));
+        %Norm{i}(Timeaxis>Maxtime(i)) = 0;
         for j = 1:numel(Timeaxis)
-            Stop = find(Data1{i} <= (Maxtime(i)-Timeaxis(j)),1,'last');
-            Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
-            if ~isempty(Stop)
-                Countrate1{i}(j) = Weights1_Sum(Stop);
-            else
-                Countrate1{i}(j) = 0;
-            end
-            if ~isempty(Start)
-                Countrate2{i}(j) = (Weights2_Sum(end)-Weights2_Sum(Start));
-            else
-                Countrate2{i}(j) = 0;
-            end       
-    %         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
-    %         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
-        end 
+            Countrate1{i}(j) = sum(Weights1{i}(Data1{i} <= (Maxtime(i)-Timeaxis(j))));
+            Countrate2{i}(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))));
+        end
+         %Countrate1{i} = sum(Weights1{i});
+         %Countrate2{i} = sum(Weights2{i});
     end
+%     Norm = cell(numel(Cor_Array),1);
+%     Countrate1 = cell(numel(Cor_Array),1); 
+%     Countrate2 = cell(numel(Cor_Array),1);
+%     parfor i=1:numel(Cor_Array)
+%         Norm{i} = Maxtime(i)-Timeaxis+1;
+%         Norm{i}(Norm{i}<0) = 0;
+%         Weights1_Sum = cumsum(Weights1{i});
+%         Weights2_Sum = cumsum(Weights2{i});
+%         Countrate1{i} = zeros(1,numel(Timeaxis));
+%         Countrate2{i} = zeros(1,numel(Timeaxis));
+%         for j = 1:numel(Timeaxis)
+%             Stop = find(Data1{i} <= (Maxtime(i)-Timeaxis(j)),1,'last');
+%             Start = find(Data2{i} >= (Timeaxis(j)),1,'first');
+%             if ~isempty(Stop)
+%                 Countrate1{i}(j) = Weights1_Sum(Stop);
+%             else
+%                 Countrate1{i}(j) = 0;
+%             end
+%             if ~isempty(Start)
+%                 Countrate2{i}(j) = (Weights2_Sum(end)-Weights2_Sum(Start));
+%             else
+%                 Countrate2{i}(j) = 0;
+%             end       
+%     %         Countrate1(j) = sum(Weights1{i}(Data1{i} <= (Maxtime-Timeaxis(j))))./(Maxtime-Timeaxis(j));
+%     %         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
+%         end 
+%     end
     %%% Bootstrapping
     %%% 1) Select Nbursts times out of pool (may select double)
     bootstrap = 50;
