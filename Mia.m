@@ -3648,12 +3648,13 @@ end
 %%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_2D_XCor(~,~)
-
 h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
-% % h.Mia_Progress_Text.String = 'Correlating';
-% % h.Mia_Progress_Axes.Color=[1 0 0];  
-% drawnow;
+
+%%% Stops, if no data was loaded
+if size(MIAData.Data,1)<1
+    return;
+end
 
 %%% Clears correlation data and plots
 MIAData.Cor=cell(3,2);
@@ -4175,77 +4176,176 @@ function Do_1D_XCor(~,~)
 global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
 
-% Do_2D_XCor;
-% return;
-%% Performs actual correlation
-MIAData.TICS=[];
-% MIAData.Data{1,2} = MIAData.Data{1,2}(:,:,1:200);
-%%% FFT based time correlation
-
-Zero_Padded = cat(3, (MIAData.Data{1,2}-repmat(mean(MIAData.Data{1,2},3),1,1,size(MIAData.Data{1,2},3))), 0*MIAData.Data{1,2});
-Norm = cat(3, ones(1,1,size(MIAData.Data{1,2},3)), zeros(1,1,size(MIAData.Data{1,2},3)));
-Norm = fftshift(real(ifft(fft(Norm,[],3).*conj(fft(Norm,[],3)),[],3)),3);
-
-% TICSresult = fftshift(real(ifft(fft(MIAData.Data{1,2},[],3).*conj(fft(MIAData.Data{1,2},[],3)),[],3)),3);
-TICSresult = fftshift(real(ifft(fft(Zero_Padded,[],3).*conj(fft(Zero_Padded,[],3)),[],3)),3);
-
-
-
-%%% Averages forward and backward correlation
-if mod(size(TICSresult,3),2)==0
-    Norm = Norm(:,:,(size(TICSresult,3)/2):-1:2)+ Norm(:,:,(size(TICSresult,3)/2)+2:end);
-    TICSresult = TICSresult(:,:,(size(TICSresult,3)/2):-1:2)+TICSresult(:,:,(size(TICSresult,3)/2)+2:end);   
-else
-    Norm = Norm(:,:,(floor(size(TICSresult,3)/2):-1:1))+Norm(:,:,(ceil(size(TICSresult,3)/2)+1:end));
-    TICSresult = TICSresult(:,:,(floor(size(TICSresult,3)/2):-1:1))+TICSresult(:,:,(ceil(size(TICSresult,3)/2)+1:end));    
+%%% Stops, if no data was loaded
+if size(MIAData.Data,1)<1
+    return;
 end
-%%% Removes very long lag times (1/20th of frames)
-TICSresult = TICSresult(:,:,1:ceil(size(MIAData.Data{1,2},3)/20));
-Norm = Norm./mean(Norm);
-Norm = Norm(:,:,1:ceil(size(MIAData.Data{1,2},3)/20));
 
-TICSresult = TICSresult./repmat(Norm, size(TICSresult,1),size(TICSresult,2),1);
+h.Mia_Progress_Text.String = 'Correlating';
+h.Mia_Progress_Axes.Color=[1 0 0];  
+drawnow;
+%%% Clears correlation data and plots
+MIAData.TICS = [];
 
+if size(MIAData.Data,1)<2
+    h.Mia_Correlation.Type.Value = 1;
+end
 
-Maxframes = size(MIAData.Data{1,2},3);
-MIAData.TICS.Time{1}=(1:size(TICSresult,3))*str2double(h.Mia_Image.Frame.String);
-%%% Normalizes to frame lag dependent countrate
-Int = cumsum(MIAData.Data{1,2},3);
-% for i=1:size(TICSresult,3); 
-%     MIAData.TICS.Data{1}(:,:,i) = double(TICSresult(:,:,i))./(Int(:,:,(end-i))/(Maxframes-i))./((Int(:,:,end)-Int(:,:,i))/(Maxframes-i))/Maxframes-1;
-% end
-MIAData.TICS.Data{1} = TICSresult./repmat(Int(:,:,end).^2,1,1,size(TICSresult,3))*Maxframes;
+%%% Determins, which correlations to perform
+if h.Mia_Correlation.Type.Value==3
+    Auto = 1:2; Cross = 1;
+    channel = 1:3;
+else
+    Auto = h.Mia_Correlation.Type.Value; Cross = 0;
+    channel = floor(Auto*1.5);
+end
 
-MIAData.TICS.Data{1}(isinf(MIAData.TICS.Data{1}))=NaN;
-% MIAData.TICS.Data{1}(isnan(MIAData.TICS.Data{1}))=0;
+%%% Determins, which frames to correlate
+Frames = sort(str2num(h.Mia_ROI_Frames.String)); %#ok<ST2NM> %%% Uses str2num, because the output is not scalar
+%%% Uses all Frames, if input was 0
+if all(Frames == 0)
+    Frames = 1:size(MIAData.Data{1,2},3);
+end
+%%% Remove all Frames<1 and >Movie size
+if any(Frames<0 | Frames>size(MIAData.Data{1,2},3));
+    Min = max(1,min(Frames)); Min = min(Min,size(MIAData.Data{1,2},3));   
+    Max = min(size(MIAData.Data{1,2},3),max(Frames)); Max = max(Max,1);
+    Frames = Min:Max;
+    h.Mia_ROI_Frames.String = [num2str(Min) ':' num2str(Max)];
+end
 
-%% Saves data
-    %%% Generates filename
-    FileName=MIAData.FileName{1}{1}(1:end-4);
-    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.mcor']);
-    %%% Checks, if file already exists
-    if  exist(Current_FileName,'file')
-        k=1;
-        %%% Adds 1 to filename
-        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-        %%% Increases counter, until no file is fount
-        while exist(Current_FileName,'file')
-            k=k+1;
-            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+%%% Applies arbitrary region selection
+switch (h.Mia_ROI_FramesUse.Value)
+    case 1 %%% Use All Frames
+        for i=Auto
+            Use{i} = ones(size(MIAData.Data{1,2},1), size(MIAData.Data{1,2},2), Frames(end));
         end
+    case 2 %%% Use selected Frames
+        if Cross
+            Active = find(prod(MIAData.Use));
+        else
+            Active = find(MIAData.Use(Auto,:));
+        end
+        Frames = intersect(Frames,Active);
+        for i=Auto
+            Use{i} = ones(size(MIAData.Data{1,2},1), size(MIAData.Data{1,2},2), Frames(end));
+        end        
+    case 3 %%% Does arbitrary region ICS
+        if Cross
+            Active = find(prod(MIAData.Use));
+        else
+            Active = find(MIAData.Use(Auto,:));
+        end
+        Frames = intersect(Frames,Active);
+        for i=Auto
+            Use{i} = MIAData.AR{i}(:,:,1:Frames(end)) & repmat(MIAData.MS{i},1,1,Frames(end));
+        end   
+end
+
+
+%% Performs auto correlation correlation
+for i=1:3 %%%    
+    if any(Auto==i) || (i==3 && Cross)
+        
+        %% FFT based time correlation        
+        %%% Exctracts data and sets unused frames to 0
+        Empty = setdiff(Frames(1):Frames(end),Frames)-Frames(1);
+        if i<3 %%% For autocorrelation both channels are equal
+            Norm = logical(Use{i}(:,:,Frames(1):Frames(end)));
+            Norm (:,:,Empty) = false;
+            TICS{1} = MIAData.Data{i,2}(:,:,(Frames(1):Frames(end)));
+            TICS{1}(~Norm) = NaN;
+            Int{1} = nanmean(TICS{1},3);
+            TICS{1} = TICS{1}-mean2(TICS{1}(Norm));
+            TICS{1}(~Norm) = 0;
+            Int{2} = Int{1};
+        else %%% For crosscorelation, use both channels
+            Norm = logical(Use{1}(:,:,Frames(1):Frames(end)) & Use{2}(:,:,Frames(1):Frames(end)));
+            Norm (:,:,Empty) = false;
+            TICS{1} = MIAData.Data{1,2}(:,:,(Frames(1):Frames(end)));
+            TICS{1}(~Norm) = NaN;
+            Int{1} = nanmean(TICS{1},3);
+            TICS{1} = TICS{1}-mean2(TICS{1}(Norm));
+            TICS{1}(~Norm) = 0;
+            TICS{2} = MIAData.Data{2,2}(:,:,(Frames(1):Frames(end)));
+            TICS{2}(~Norm) = NaN;
+            Int{2} = nanmean(TICS{2},3);
+            TICS{2} = TICS{2}-mean2(TICS{2}(Norm));
+            TICS{2}(~Norm) = 0;
+        end
+        
+        %%% Calculate normalization, acounting for arbitrary region and
+        %%% missing frames
+        Norm = fft(Norm,2*size(Norm,3)-1,3);
+        Norm = fftshift(real(ifft(Norm.*conj(Norm),[],3)),3);
+        %%% FFT based time correlation 
+        TICS{1} = fft(TICS{1},2*size(TICS{1},3)-1,3);
+        if i<3 %%% Saves time for autocorrelation
+            TICS{2}=TICS{1};
+        else
+            TICS{2} = fft(TICS{2},2*size(TICS{2},3)-1,3);
+        end
+        TICSresult = fftshift(real(ifft(TICS{1}.*conj(TICS{2}),[],3)),3);
+        clear TICS;
+        %%% Normalizes to different lag occurrence
+        TICSresult = TICSresult./Norm/2;%./numel(Frames)/2;%./(numel(Frames)./repmat(nanmean(Norm,3),1,1,size(Norm,3)));
+        clear Norm;
+        %%% Normalizes to pixel intensity
+        TICSresult = TICSresult./repmat(Int{1}.*Int{2},1,1,size(TICSresult,3));
+
+        %%% Averages forward and backward correlation
+        if mod(size(TICSresult,3),2) == 0
+            TICSresult = TICSresult(:,:,(size(TICSresult,3)/2):-1:2)+TICSresult(:,:,(size(TICSresult,3)/2)+2:end);
+        else
+            TICSresult = TICSresult(:,:,(floor(size(TICSresult,3)/2):-1:1))+TICSresult(:,:,(ceil(size(TICSresult,3)/2)+1:end));
+        end  
+        %%% Removes very long lag times (1/10th of frames)
+        MIAData.TICS{i} = TICSresult(:,:,1:ceil((Frames(end)-Frames(1))/10));
+        clear TICSresult;
+        %%% Remove too dark pixels
+        Valid = sqrt(Int{1}.*Int{2})> nanmean(nanmean(sqrt(Int{1}.*Int{2}),2),1)/10;
+        MIAData.TICS{i}(~repmat(Valid,1,1,size(MIAData.TICS{i},3))) = NaN;
+        
+        %% Saves data
+        %%% Generates filename
+        if i<3
+            FileName = MIAData.FileName{i}{1}(1:end-4);
+            Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF' num2str(i) '.mcor']);
+        else
+            FileName = MIAData.FileName{i}{1}(1:end-4);
+            Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_CCF.mcor']);
+        end
+        
+        %%% Checks, if file already exists
+        if  exist(Current_FileName,'file')
+            k=1;
+            %%% Adds 1 to filename
+            Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+            %%% Increases counter, until no file is fount
+            while exist(Current_FileName,'file')
+                k=k+1;
+                Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+            end
+        end
+        
+        Header = 'TICS correlation file'; %#ok<NASGU>
+        Counts = [nanmean(nanmean(Int{1},2),1) nanmean(nanmean(Int{2},2),1)]/str2double(h.Mia_Image.Pixel.String)*1000;
+        Valid = 1;
+        Cor_Times = (1:size(MIAData.TICS{i},3))*str2double(h.Mia_Image.Frame.String);
+        Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS{i},2),1))');
+        Cor_Array = Cor_Average';
+        Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS{i},0,2),0,1))');        
+        Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS{i}),[],size(MIAData.TICS{i},3)),1));        
+        save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+        
+        
     end
-    
-    Int=Int(:,:,end);    
-    Header = 'TICS correlation file'; %#ok<NASGU>
-    Counts = [nanmean(nanmean(Int))/Maxframes nanmean(nanmean(Int))/Maxframes]/str2double(h.Mia_Image.Pixel.String)*1000;
-    Valid = 1;
-    Cor_Times = MIAData.TICS.Time{1};
-    Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS.Data{1},2),1))');
-    Cor_Array = Cor_Average';
-    Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS.Data{1},0,2),0,1))');
-    Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS.Data{1}),[],size(MIAData.TICS.Data{1},3)),1));
-    
-    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+end
+Update_Plots([],[],[],channel);
+
+
+
+
 
 
 
