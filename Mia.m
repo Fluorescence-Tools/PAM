@@ -3750,8 +3750,8 @@ for i=Auto
             ImageCor = fftshift(real(ifft2(ImageFluct.*conj(ImageFluct))));
             %%% Corrects for shape of selected region
             ImageCor = ImageCor./Norm;
-            ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(1)/4):round(Size(1)*3/4));
-            MIAData.Cor{floor(i*1.5)}(:,:,j)=ImageCor./(mean(Image(Use{i}(:,:,j)))^2);
+            ImageCor = ImageCor(ceil(Size(1)/4):round(Size(1)*3/4),ceil(Size(2)/4):round(Size(2)*3/4));
+            MIAData.Cor{floor(i*1.5)}(:,:,j)=ImageCor./(mean(mean(Image(Use{i}(:,:,j)))))^2;
             %%% Used to calculate total mean
             TotalInt(j)=sum(Image(Use{i}(:,:,j)));
             TotalPx(j)=numel(Image(Use{i}(:,:,j)));
