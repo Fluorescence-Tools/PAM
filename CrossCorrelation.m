@@ -157,6 +157,7 @@ elseif mode == 2
     end
     
     for i = 1:numel(Cor_Res)
+        Cor_Res{i}(~isfinite(Cor_Res{i})) = -1;
         Cor_Res{i}(find(Cor_Res{i}(~isnan(Cor_Res{i}))==-1,1,'first'):end) = 0;
         %Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
     end
