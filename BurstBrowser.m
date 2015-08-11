@@ -1456,7 +1456,7 @@ if isempty(hfig)
         'Tag','SaveFileExportFigure_Checkbox',...
         'Value', UserValues.BurstBrowser.Settings.SaveFileExportFigure,...
         'Units','normalized',...
-        'Position',[0.6 0.1 0.35 0.07],...
+        'Position',[0.6 0.28 0.35 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
@@ -2928,8 +2928,8 @@ if isfield(BurstMeta,'fFCS')
 end
 if isfield(BurstMeta,'TauFit')
     BurstMeta = rmfield(BurstMeta,'TauFit');
-    BurstMeta.TauFit.FitType = h.TauFit.FitMethod_Popupmenu.String{h.TauFit.FitMethod_Popupmenu.Value};
 end
+BurstMeta.TauFit.FitType = h.TauFit.FitMethod_Popupmenu.String{h.TauFit.FitMethod_Popupmenu.Value};
 if isfield(BurstMeta,'Data')
     BurstMeta = rmfield(BurstMeta,'Data');
 end
@@ -8285,7 +8285,7 @@ UpdateCorrections([],[])
 %%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportGraphs(obj,~)
-global BurstData UserValues
+global BurstData UserValues BurstMeta
 h = guidata(obj);
 fontsize = 24;
 if ispc
@@ -8631,8 +8631,8 @@ switch obj
         end
         FigureName = 'E vs. TauBB';
     case h.TauFit.ExportGraph_Menu
-        fig = figure('Position',[100,100,700,500],'color',[1 1 1]);
-        panel_copy = copyobj(h.MainTabTauFitPanel,fig);
+        hfig = figure('Position',[100,100,700,500],'color',[1 1 1]);
+        panel_copy = copyobj(h.MainTabTauFitPanel,hfig);
         panel_copy.Position = [0 0 1 1];
         panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
@@ -8641,18 +8641,32 @@ switch obj
         delete(ax(1:4));ax = ax(5:end);
         ax(1).Position = [0.125 0.15 0.825 0.7];
         ax(2).Position = [0.125 0.85 0.825 .12];
-
+        
+        fontsize = 20;
+        if ispc
+            fontsize = fontsize/1.25;
+        end
+        
         for i = 1:numel(ax)
             ax(i).Color = [1 1 1];
             ax(i).XColor = [0 0 0];
             ax(i).YColor = [0 0 0];
-            ax(i).LineWidth = 3;
-            ax(i).FontSize = 20;
+            ax(i).XLabel.Color = [0 0 0];
+            ax(i).YLabel.Color = [0 0 0];
+            ax(i).LineWidth = 2;
+            ax(i).FontSize = fontsize;
         end
-
-        ax(1).Children(3).FontSize = 20;
+        
+        ax(1).Children(3).FontSize = fontsize;
         ax(1).Children(3).Position(2) = 0.9;
         FigureName = 'Lifetime Fit';
+        
+        %%% Save also a *.txt file containing the fit parameter
+        %%% Construct cell array of text containers
+        n_params = numel(h.TauFit.FitPar_Table.RowName);
+        TextData = cell(n_params,2);
+        TextData(:,1) = h.TauFit.FitPar_Table.RowName;
+        TextData(:,2) = h.TauFit.FitPar_Table.Data(:,1);
 end
 %%% Combine the Original FileName and the parameter names
 if isfield(BurstData,'FileNameSPC')
@@ -8698,6 +8712,19 @@ if directly_save
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
     end
     close(hfig);
+    
+    if obj == h.TauFit.ExportGraph_Menu
+        %%% Save TextFile with parameters
+        txtFN = fullfile(PathName,FileName); txtFN = [txtFN(1:end-3) 'txt'];
+        fID = fopen(txtFN,'w');
+        fprintf(fID,'%s\t%s\r\n','Fit Model:',BurstMeta.TauFit.FitType);
+        fprintf(fID,'%s\t%s\r\n','Parameter','Value');
+        formatSpec = '%s\t%2.4f\r\n';
+        for i = 1:size(TextData,1)
+            fprintf(fID,formatSpec,TextData{i,:});
+        end
+        fclose(fID);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
