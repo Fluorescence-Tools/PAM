@@ -1450,6 +1450,18 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
+     h.SaveFileExportFigure_Checkbox = uicontrol('Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Save file when exporting figure',...
+        'Tag','SaveFileExportFigure_Checkbox',...
+        'Value', UserValues.BurstBrowser.Settings.SaveFileExportFigure,...
+        'Units','normalized',...
+        'Position',[0.6 0.1 0.35 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
     %%% Data Processing Options Panel
     h.DataProcessingPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
@@ -3443,6 +3455,8 @@ switch obj
         UserValues.BurstBrowser.Settings.Corr_TimeWindowSize = str2double(obj.String);
     case h.fFCS_UseTimeWindow
         UserValues.BurstBrowser.Settings.fFCS_UseTimewindow = obj.Value;
+    case h.SaveFileExportFigure_Checkbox
+        UserValues.BurstBrowser.Settings.SaveFileExportFigure = obj.Value;
 end
 LSUserValues(1);
 
@@ -8309,7 +8323,7 @@ switch obj
         axes_copy.LineWidth = 3;
         %%% Change FaceColor of BarPlot
         axes_copy.Children(4).FaceColor = [0.5 0.5 0.5];
-        axes_copy.Children(4).LineWidth = 3;
+        axes_copy.Children(4).LineWidth = 1;
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
@@ -8408,6 +8422,10 @@ switch obj
         end
         FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
+         fontsize = 22;
+        if ispc
+            fontsize = fontsize/1.3;
+        end
         AspectRatio = 1;
         pos = [100,100, round(1.6*size_pixels),round(1.6*size_pixels*AspectRatio)];
         hfig = figure('Position',pos,'Color',[1 1 1]);
@@ -8424,7 +8442,6 @@ switch obj
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
         if any(BurstData.BAMethod == [1,2])
-            fontsize = 22;
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
@@ -8434,7 +8451,7 @@ switch obj
                 panel_copy.Children(i).XLabel.Color = [0,0,0];
                 panel_copy.Children(i).YLabel.Color = [0,0,0];
                 %%% increase LineWidth of Axes
-                panel_copy.Children(i).LineWidth = 3;
+                panel_copy.Children(i).LineWidth =2;
                 %%% Increase FontSize
                 panel_copy.Children(i).FontSize = fontsize;
                 %%% Make Bold
@@ -8489,7 +8506,7 @@ switch obj
         elseif any(BurstData.BAMethod == [3,4])
             hfig.Position(3) = hfig.Position(3)*1.55;
             %hfig.Position(4) = hfig.Position(3)*1.1;
-            fontsize = 22;
+         
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
@@ -8499,7 +8516,7 @@ switch obj
                 panel_copy.Children(i).XLabel.Color = [0,0,0];
                 panel_copy.Children(i).YLabel.Color = [0,0,0];
                 %%% increase LineWidth of Axes
-                panel_copy.Children(i).LineWidth = 3;
+                panel_copy.Children(i).LineWidth = 2;
                 %%% Increase FontSize
                 panel_copy.Children(i).FontSize = fontsize;
                 %%% Make Bold
@@ -8649,7 +8666,7 @@ end
 FigureName = [FileName '_' FigureName];
 
 
-directly_save = 0;
+directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 if directly_save
     %%% Get Path to save File
     FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};

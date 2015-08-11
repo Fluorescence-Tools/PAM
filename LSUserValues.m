@@ -1031,6 +1031,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Corr_TimeWindowSize was incomplete');    
     end 
     P.BurstBrowser.Settings.Corr_TimeWindowSize = S.BurstBrowser.Settings.Corr_TimeWindowSize;
+    %%% Check, if BurstBrowser.Settings.SaveFileExportFigure subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'SaveFileExportFigure')
+        S.BurstBrowser.Settings.SaveFileExportFigure=0;
+        disp('UserValues.BurstBrowser.Settings.SaveFileExportFigure was incomplete');    
+    end 
+    P.BurstBrowser.Settings.SaveFileExportFigure = S.BurstBrowser.Settings.SaveFileExportFigure;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
