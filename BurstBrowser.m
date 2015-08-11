@@ -5494,6 +5494,8 @@ switch obj
         h.TauFit.Microtime_Plot.Parent = h.MainTabTauFitPanel;
         h.TauFit.Result_Plot.Parent = h.TauFit.HidePanel;
         BurstMeta.Plots.TauFit.Residuals.YData = zeros(numel(BurstMeta.Plots.TauFit.Residuals.XData),1);
+        
+        Update_TauFitPlots(0,[]);
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
@@ -7181,7 +7183,7 @@ if obj == h.PlotStaticFRETButton
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
-    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
+    %BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     if any(BurstData.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
@@ -7205,11 +7207,15 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     x);
             elseif obj == h.DynamicFRETManual_Menu
                 %%% Query using edit box
-                y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
-                y = cellfun(@str2double,y);
-                if any(isnan(y))
+                %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
+                x = inputdlg({'tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,{'1','3'});
+                x = cellfun(@str2double,x);
+                if any(isnan(x))
                     return;
                 end
+                y = conversion_tau(BurstData.Corrections.DonorLifetime,...
+                    BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+                    x);
             end
             tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),10000);
             dynFRETline = dynamicFRETline(BurstData.Corrections.DonorLifetime,...
@@ -8692,7 +8698,7 @@ if directly_save
     dpi = 300;
     switch FilterIndex
         case 1
-            print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi));
+            print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi),'-painters');
         case 2
             % Make changing paper type possible
             set(hfig,'PaperType','<custom>');
@@ -8725,6 +8731,8 @@ if directly_save
         end
         fclose(fID);
     end
+    
+    LSUserValues(1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
