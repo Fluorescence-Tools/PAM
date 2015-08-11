@@ -1770,7 +1770,7 @@ if isempty(h.Mia)
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'String',{'G(1)','"Brightness"','Counts'},...
+        'String',{'G(1)','"Brightness"','Counts','"Half-Life"'},...
         'Callback',{@Update_Plots,5,[]},...
         'Position',[0.08 0.67, 0.1 0.03]);
     
@@ -1781,6 +1781,25 @@ if isempty(h.Mia)
         'NextPlot','Add',...
         'Position',[0.24 0.59 0.74 0.38]);
 
+    %%% UIContextMenus for TICS freehand selection
+    h.Mia_TICS.Menu = uicontextmenu;
+    h.Mia_TICS.Select_Manual_ROI = uimenu(...
+        'Parent',h.Mia_TICS.Menu,...
+        'Label','Select manual ROI',...
+        'Callback',{@Mia_Freehand,4});
+    h.Mia_TICS.Unselect_Manual_ROI = uimenu(...
+        'Parent',h.Mia_TICS.Menu,...
+        'Label','Unselect manual ROI',...
+        'Callback',{@Mia_Freehand,5});
+    h.Mia_TICS.Clear_Manual_ROI = uimenu(...
+        'Parent',h.Mia_TICS.Menu,...
+        'Label','Clear manual ROI',...
+        'Callback',{@Mia_Freehand,6}); 
+     h.Mia_TICS.Save_MS = uimenu(...
+        'Parent',h.Mia_TICS.Menu,...
+        'Label','Save selected region',...
+        'Callback',{@MIA_Various,4}); 
+    
     for i=1:3
         h.Plots.TICS(i,1) = errorbar(...
             [0.1 1],...
@@ -1801,17 +1820,39 @@ if isempty(h.Mia)
             'MarkerSize',8,...
             'Color',ceil([mod(i-1,3)/2 mod(3-i,3)/2 0]));
         
+        h.Text{end+1} = uicontrol(...
+        'Parent',h.Mia_TICS.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'FontWeight','bold',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.02+(i-1)*0.33 0.48 0.3 0.03]);
+    switch i
+        case 1
+            h.Text{end}.String = 'ACF1';
+        case 2
+            h.Text{end}.String = 'CCF';
+        case 3
+            h.Text{end}.String = 'ACF2';
+    end
+        
         %%% Axes to display correlation images
         h.Mia_TICS.Image(i,1) = axes(...
             'Parent',h.Mia_TICS.Panel,...
             'Units','normalized',...
             'Box','off',...
+            'Nextplot','Add',...
             'DataAspectRatio',[1 1 1],...
+            'PlotBoxAspectRatio', [1 1 1],...
+            'UIContextMenu',h.Mia_TICS.Menu,...
             'Position',[0.02+(i-1)*0.33 0.02 0.3 0.45]);
 
         h.Plots.TICSImage(i,1) = imagesc(...
             zeros(2),...
             'Parent',h.Mia_TICS.Image(i),...
+            'UIContextMenu',h.Mia_TICS.Menu,...
             'Visible','off');
         h.Mia_TICS.Image(i,1).XTick = [];
         h.Mia_TICS.Image(i,1).YTick = [];
@@ -2216,6 +2257,9 @@ MIAData.FileName=cell(0);
 MIAData.Use=ones(2,1);
 MIAData.AR = [];
 MIAData.MS = [];
+MIAData.TICS = [];
+MIAData.TICS_Int = [];
+MIAData.TICS_MS = [];
 MIAData.PCH = [];
 guidata(h.Mia,h); 
 else
@@ -2275,6 +2319,9 @@ switch mode
         MIAData.PCH = [];
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
+        MIAData.TICS_MS = [];
+        MIAData.TICS = [];
+        MIAData.TICS_Int = [];
         for i=1:3
             h.Plots.Cor(i,1).CData=zeros(1,1,3);
             h.Plots.Cor(i,2).ZData=zeros(1);
@@ -2299,7 +2346,6 @@ switch mode
         h.Mia_ICS.Frame_Slider.Max=0;
         h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
         h.Mia_ICS.Frame_Slider.Value=0;
-        
         %% Clears N&B data and plots
         MIAData.NB=[];
         h.Plots.NB(1).CData=zeros(1,1);
@@ -2420,6 +2466,9 @@ switch mode
         MIAData.Data{1,1} = single.empty(0,0,0);
         %% Clears correlation data and plots
         MIAData.Cor=cell(3,2);
+        MIAData.TICS_MS = [];
+        MIAData.TICS = [];
+        MIAData.TICS_Int = [];
         for i=1:3
             h.Plots.Cor(i,1).CData=zeros(1,1,3);
             h.Plots.Cor(i,2).ZData=zeros(1);
@@ -3213,14 +3262,22 @@ end
 if any(mode==5)
     for i=1:3
        if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})   
-         
-           h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(MIAData.TICS{i},2),1));
-           h.Plots.TICS(i,1).XData = (1:size(MIAData.TICS{i},3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
+           if isempty(MIAData.TICS_MS) || size(MIAData.TICS_MS,1)~=size(MIAData.TICS{i},1) || size(MIAData.TICS_MS,2)~=size(MIAData.TICS{i},2)
+                TICS = MIAData.TICS{i};
+                MIAData.TICS_MS = [];
+           else
+               TICS = MIAData.TICS{i};
+               TICS(repmat(~MIAData.TICS_MS,1,1,size(TICS,3))) = NaN;
+           end
            
-           EData = double(squeeze(nanstd(nanstd(MIAData.TICS{i},0,2),0,1))');
-           EData = EData./sqrt(sum(reshape(~isnan(MIAData.TICS{i}),[],size(MIAData.TICS{i},3)),1));
+           h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
+           h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
+           
+           EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
+           EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
            h.Plots.TICS(i,1).UData = EData;
            h.Plots.TICS(i,1).LData = EData;
+           
            Calc_TICS_Fit([],[],i);
            
            switch(h.Mia_TICS.SelectImage.Value)
@@ -3238,25 +3295,25 @@ if any(mode==5)
                            h.Plots.TICSImage(3).CData = MIAData.TICS{3}(:,:,1).*mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
                    end
                case 3 %%% Mean counts
-                   switch i
-                       case 1
-                           h.Plots.TICSImage(1).CData = mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                       case 2
-                           h.Plots.TICSImage(2).CData = (mean(MIAData.Data{1,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3)+... %#ok<ST2NM>
-                                                         mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3))/2; %#ok<ST2NM>
-                       case 3
-                           h.Plots.TICSImage(3).CData = mean(MIAData.Data{2,2}(:,:,str2num(h.Mia_Image.Settings.ROI_Frames.String)),3); %#ok<ST2NM>
-                   end
+                   h.Plots.TICSImage(i).CData = (MIAData.TICS_Int{i,1}+MIAData.TICS_Int{i,2})/2;
+               case 4 %%% Find G(0)/2
+                   h.Plots.TICSImage(i).CData = (size(MIAData.TICS{i},3)-sum(cumsum(MIAData.TICS{i}./repmat(MIAData.TICS{i}(:,:,1),1,1,size(MIAData.TICS{i},3))<0.5,3)~=0,3)).*...
+                                                str2double(h.Mia_Image.Settings.Image_Frame.String);                   
            end
-           h.Mia_TICS.Image(i,1).XLim = [0 size(MIAData.TICS{i},2)]+0.5;
-           h.Mia_TICS.Image(i,1).YLim = [0 size(MIAData.TICS{i},1)]+0.5;
+           h.Plots.TICSImage(i).AlphaData = (any(~isnan(TICS),3)+0.25)/1.25;
+
+               
+           h.Mia_TICS.Image(i,1).XLim = [0 size(TICS,2)]+0.5;
+           h.Mia_TICS.Image(i,1).YLim = [0 size(TICS,1)]+0.5;
            h.Plots.TICSImage(i).Visible = 'on';
            h.Mia_TICS.Image(i,2).Visible = 'on';
+           h.Mia_TICS.Image(i,1).Visible = 'on';
        else
            h.Plots.TICS(i,1).Visible = 'off';
            h.Plots.TICS(i,2).Visible = 'off';
            h.Plots.TICSImage(i).Visible = 'off';
            h.Mia_TICS.Image(i,2).Visible = 'off';
+           h.Mia_TICS.Image(i,1).Visible = 'off';
        end 
     end 
 end
@@ -3671,7 +3728,8 @@ if isempty(MIAData.Data)
 end
 
 switch mode
-    case 1 %%% Select Region
+    %%% General manual selection
+    case 1 %%% Select Region for general manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
         delete(ROI);        
@@ -3688,8 +3746,13 @@ switch mode
                 else
                     MIAData.MS{2} = Mask;
                 end
-        end    
-    case 2 %%% Unselect Region
+        end  
+        if h.Mia_Image.Calculations.Cor_AR_Same.Value == 4 && size(MIAData.Data,1)>1
+            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+        end
+        Update_Plots([],[],1,1:size(MIAData.Data,1));
+    case 2 %%% Unselect Region for general manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
         delete(ROI);
@@ -3699,18 +3762,50 @@ switch mode
                 MIAData.MS{1} = MIAData.MS{1} & ~Mask;
             case h.Mia_Image.Axes(2,2)
                 MIAData.MS{2} = MIAData.MS{2} & ~Mask;
-        end       
-    case 3 %%% Clear Region
+        end      
+        if h.Mia_Image.Calculations.Cor_AR_Same.Value == 4 && size(MIAData.Data,1)>1
+            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+        end
+        Update_Plots([],[],1,1:size(MIAData.Data,1));
+    case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
             MIAData.MS{i} = true(size(MIAData.Data{i,2},1),size(MIAData.Data{i,2},2));
-        end       
+        end 
+        if h.Mia_Image.Calculations.Cor_AR_Same.Value == 4 && size(MIAData.Data,1)>1
+            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+        end
+        Update_Plots([],[],1,1:size(MIAData.Data,1));
+        
+    %%% TICS manual selection 
+    case 4 %%% Select Region for TICS manual seletion
+        ROI = imfreehand;
+        Mask = createMask(ROI);
+        delete(ROI);        
+        if any(~MIAData.TICS_MS(:))
+            MIAData.TICS_MS = MIAData.TICS_MS | Mask;
+        else
+            MIAData.TICS_MS = Mask;
+        end
+        Update_Plots([],[],5,1:size(MIAData.Data,1));
+    case 5 %%% Unselect Region for TICS manual seletion
+        ROI = imfreehand;
+        Mask = createMask(ROI);
+        delete(ROI);
+        if ~isempty(MIAData.TICS_MS)
+            MIAData.TICS_MS = MIAData.TICS_MS & ~Mask;
+        else
+            MIAData.TICS_MS = ~Mask;
+        end
+        Update_Plots([],[],5,1:size(MIAData.Data,1));
+    case 6 %%% Clear Region for TICS manual seletion
+        MIAData.TICS_MS = [];
+        Update_Plots([],[],5,1:size(MIAData.Data,1));
+        
 end
 
-if h.Mia_Image.Calculations.Cor_AR_Same.Value == 4 && size(MIAData.Data,1)>1
-    MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
-    MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
-end
-Update_Plots([],[],1,1:size(MIAData.Data,1));
+
 
 
 
@@ -4361,7 +4456,7 @@ h.Mia_ICS.Frames2Use.String=['1:' num2str(size(MIAData.Cor{i},3))];
 Update_Plots([],[],2,channel);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Funtion to calculate temporal image correlations %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_1D_XCor(~,~)
 global MIAData UserValues
@@ -4377,6 +4472,7 @@ h.Mia_Progress_Axes.Color=[1 0 0];
 drawnow;
 %%% Clears correlation data and plots
 MIAData.TICS = [];
+MIAData.TICS_MS = [];
 
 %%% Adjust for number of selected files
 if size(MIAData.Data,1)<2
@@ -4499,6 +4595,8 @@ for i=1:3 %%%
         clear Norm;
         %%% Normalizes to pixel intensity
         MIAData.TICS{i} = TICSresult./repmat(Int{1}.*Int{2},1,1,size(TICSresult,3));
+        MIAData.TICS_Int{i,1} = Int{1};
+        MIAData.TICS_Int{i,2} = Int{2};
         clear TICSresult;
         %%% Remove too dark pixels
         Valid = sqrt(Int{1}.*Int{2})> nanmean(nanmean(sqrt(Int{1}.*Int{2}),2),1)/10;
@@ -4545,14 +4643,15 @@ if size(MIAData.TICS,2)>1
     if size(MIAData.TICS,2)==2
         MIAData.TICS{3} = MIAData.TICS{2};
         MIAData.TICS{2} = [];
+        MIAData.TICS_Int{3} = MIAData.TICS_Int{2};
+        MIAData.TICS_Int{2} = [];
     else
         MIAData.TICS = MIAData.TICS([1 3 2]);
+        MIAData.TICS_Int = MIAData.TICS_Int([1 3 2]);
     end
 end
 
 Update_Plots([],[],5,channel);
-
-
 
 
 
@@ -4697,7 +4796,7 @@ for i=mode
         P = cellfun(@str2double,h.Mia_TICS.Fit_Table.Data(1:2:end,i));
         X = h.Plots.TICS(i,1).XData;
         
-        OUT=(1/sqrt(8))*1/P(1).*(1./(1+4*(P(2)*1e-12).*X/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12).*X/(P(4)*1e-6)^2))+P(5);
+        OUT=real((1/sqrt(8))*1/P(1).*(1./(1+4*(P(2)*1e-12).*X/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12).*X/(P(4)*1e-6)^2))+P(5));
         
         h.Plots.TICS(i,2).XData = X;
         h.Plots.TICS(i,2).YData = OUT;
@@ -4838,9 +4937,13 @@ Update_Plots([],[],3,1:3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Collection of small callbacks and functions %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% 1:Toggle logical in UserData of UI
+%%% 2:Updates additional parameters plots
+%%% 3:Hide\Show Arbitrary region controls
+%%% 4:Save TICS manual selection
 function MIA_Various(Obj,~,mode)
 h = guidata(findobj('Tag','Mia'));
-global MIAData
+global MIAData UserValues
 for i=mode
     switch i
         case 1 %%% Toggle logical in UserData of UI
@@ -4890,6 +4993,51 @@ for i=mode
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
                     Mia_Arbitrary_Region([],[]);
             end
+        case 4 %%% Save TICS manual selection
+            %%% Generates filename
+            switch(gca)
+                case h.Mia_TICS.Image(1,1)
+                    FileName = MIAData.FileName{1}{1}(1:end-4);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.mcor']);
+                    TICS = MIAData.TICS{1};
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{1,1},2),1) nanmean(nanmean(MIAData.TICS_Int{1,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                case h.Mia_TICS.Image(2,1)
+                    FileName = MIAData.FileName{1}{1}(1:end-4);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_CCF.mcor']);
+                    TICS = MIAData.TICS{2};
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{2,1},2),1) nanmean(nanmean(MIAData.TICS_Int{2,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                case h.Mia_TICS.Image(3,1)
+                    FileName = MIAData.FileName{2}{1}(1:end-4);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.mcor']);
+                    TICS = MIAData.TICS{3};
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{3,1},2),1) nanmean(nanmean(MIAData.TICS_Int{3,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            end
+            
+            if ~isempty(MIAData.TICS_MS)
+                TICS(repmat(~MIAData.TICS_MS,1,1,size(TICS,3))) = NaN;
+            end
+            
+            
+            %%% Checks, if file already exists
+            if  exist(Current_FileName,'file')
+                k=1;
+                %%% Adds 1 to filename
+                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                %%% Increases counter, until no file is fount
+                while exist(Current_FileName,'file')
+                    k=k+1;
+                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                end
+            end
+            
+            Header = 'TICS correlation file'; %#ok<NASGU>
+            Valid = 1;
+            Cor_Times = (1:size(TICS,3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
+            Cor_Array = Cor_Average';
+            Cor_SEM = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
+            Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
+            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
     end
 end
 
