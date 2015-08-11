@@ -896,14 +896,14 @@ switch mode
         Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
         Data(end,4:3:end-1)=deal(num2cell(FCSMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
-        Data(1,5:3:end-1)=deal({false});
-        Data(2:3,5:3:end-1)=deal({[]});
-        Data(1,6:3:end-1)=deal({false});
-        Data(2:3,6:3:end-1)=deal({[]});
-        Data(1,1)=deal({true});
-        Data(2:3,1)=deal({[]});
-        Data(1,end)=deal({'0'});
-        Data(2:3,end)=deal({[]});
+        Data(1:end-2,5:3:end-1)=deal({false});
+        Data(end-1:end,5:3:end-1)=deal({[]});
+        Data(1:end-2,6:3:end-1)=deal({false});
+        Data(end-1:end,6:3:end-1)=deal({[]});
+        Data(1:end-2,1)=deal({true});
+        Data(end-1:end,1)=deal({[]});
+        Data(1:end-2,end)=deal({'0'});
+        Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=Data;
         h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];        
         %%% Enables cell callback again
