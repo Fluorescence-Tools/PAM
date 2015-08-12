@@ -1458,7 +1458,7 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.6 0.28 0.35 0.07],...
         'FontSize',12,...
-        'BackgroundColor', Look.Control,...
+        'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
@@ -1470,7 +1470,7 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.7 0.1 0.25 0.07],...
         'FontSize',12,...
-        'BackgroundColor', Look.Back,...
+        'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Callback',@ExportAllGraphs);
     
@@ -7063,7 +7063,7 @@ idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
 idxE = BurstMeta.posE;
 
 %% Plot E vs. tauGG in first plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[51 51], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.05 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -7077,7 +7077,7 @@ BurstMeta.Plots.EvsTauGG(2).YData = ybins;
 BurstMeta.Plots.EvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_EvsTauGG,'tight');
-ylim(h.axes_EvsTauGG,[-0.1 1]);
+ylim(h.axes_EvsTauGG,[-0.05 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
@@ -7113,6 +7113,7 @@ BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
 BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_rGGvsTauGG,'tight');
+ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
 %% Plot rRR vs. tauRR in third plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[51 51], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
@@ -7128,6 +7129,7 @@ BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
 BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
 BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_rRRvsTauRR,'tight');
+ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 %% 3cMFD
 if any(BurstData.BAMethod == [3,4])
     idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
@@ -7169,6 +7171,7 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.rBBvsTauBB(2).ZData = H/max(max(H));
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     axis(h.axes_rBBvsTauBB,'tight');
+    ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Fits/theoretical Curves in Lifetime Tab %%%%%%%%%%%%%%%%%%%
@@ -7314,6 +7317,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
                     title(['rhoGG = ' num2str(rho) ' ns']);
+                    BurstData.Parameters.rhoGG = rho;
                 case h.axes_rRRvsTauRR
                     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
@@ -7321,6 +7325,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
                     title(['rhoRR = ' num2str(rho) ' ns']);
+                    BurstData.Parameters.rhoRR = rho;
                 case h.axes_rBBvsTauBB
                     BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
@@ -7328,6 +7333,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
                     title(['rhoBB = ' num2str(rho) ' ns']);
+                    BurstData.Parameters.rhoBB = rho;
             end
         end
     elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
@@ -7694,7 +7700,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.1 1]);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.05 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -7710,7 +7716,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     FRETline = statFRETfun(tau);
     FRETline(find(FRETline < 0,1,'first')+10:end) = NaN;
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
-    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
+    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
     BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
@@ -7784,7 +7790,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -7798,7 +7804,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETfun(tau);
-        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
+        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
@@ -8432,9 +8438,11 @@ switch obj
                 case 'Axes_1D_Y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
+                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
+                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -8500,7 +8508,7 @@ switch obj
                                     end
                                 end
                             end
-                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -8516,7 +8524,7 @@ switch obj
                                     end
                                 end
                             end
-                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -8561,7 +8569,7 @@ switch obj
                                     end
                                 end
                             end
-                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -8577,7 +8585,7 @@ switch obj
                                     end
                                 end
                             end
-                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -8593,7 +8601,7 @@ switch obj
                                     end
                                 end
                             end
-                            text(0.7*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
