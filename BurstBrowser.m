@@ -1458,10 +1458,22 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.6 0.28 0.35 0.07],...
         'FontSize',12,...
-        'BackgroundColor', Look.Back,...
+        'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
+    
+    h.ExportAllGraphs_Button = uicontrol('Style','pushbutton',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Export all graphs...',...
+        'Tag','ExportAllGraphs_Button',...
+        'Units','normalized',...
+        'Position',[0.7 0.1 0.25 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@ExportAllGraphs);
+    
     %%% Data Processing Options Panel
     h.DataProcessingPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
@@ -8290,8 +8302,11 @@ UpdateCorrections([],[])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ExportGraphs(obj,~)
+function ExportGraphs(obj,~,ask_file)
 global BurstData UserValues BurstMeta
+if nargin < 3
+    ask_file = 1;
+end
 h = guidata(obj);
 fontsize = 24;
 if ispc
@@ -8688,11 +8703,18 @@ FigureName = [FileName '_' FigureName];
 
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 if directly_save
-    %%% Get Path to save File
-    FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-    [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
-    UserValues.BurstBrowser.PrintPath = PathName;
-    LSUserValues(1);
+    if ask_file
+        %%% Get Path to save File
+        FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
+        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+        UserValues.BurstBrowser.PrintPath = PathName;
+        LSUserValues(1);
+    else
+        FilterIndex = 1; %%% Save as png
+        FileName = [FigureName '.png'];
+        PathName = UserValues.BurstBrowser.PrintPath;
+    end
+    
     %%% print figure
     hfig.PaperPositionMode = 'auto';
     dpi = 300;
@@ -8734,7 +8756,14 @@ if directly_save
     
     LSUserValues(1);
 end
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Export All Graphs at once %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ExportAllGraphs(obj,~)
+h = guidata(obj);
+ExportGraphs(h.Export2D_Menu,[],0);
+ExportGraphs(h.ExportLifetime_Menu,[],0);
+ExportGraphs(h.ExportEvsTau_Menu,[],0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
