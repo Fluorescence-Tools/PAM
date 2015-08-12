@@ -1164,6 +1164,66 @@ if Mode==0 %%% Loads user values
         S.tcPDA.corrections.R0_br = 51;
     end
     P.tcPDA.corrections.R0_br = S.tcPDA.corrections.R0_br;
+    %% MIA
+    if ~isfield(S, 'MIA')
+        disp('WARNING: UserValues structure incomplete, field "MIA" missing');
+        S.MIA = [];
+    end
+    P.MIA = S.MIA;
+    
+    if ~isfield(S.MIA, 'ColorMap_Main') || numel(S.MIA.ColorMap_Main)~=2 || ~isnumeric(S.MIA.ColorMap_Main) || any(isnan(S.MIA.ColorMap_Main))
+        disp('WARNING: UserValues structure incomplete, field "MIA.ColorMap_Main" missing');
+        S.MIA.ColorMap_Main = [1 1];
+    end
+    P.MIA.ColorMap_Main = S.MIA.ColorMap_Main;
+
+    if ~isfield(S.MIA, 'CustomColor') || size(S.MIA.CustomColor,1)~=2 || size(S.MIA.CustomColor,2)~=3 || ~isnumeric(S.MIA.CustomColor) || any(isnan(S.MIA.CustomColor(:)))
+        disp('WARNING: UserValues structure incomplete, field "MIA.CustomColor" missing');
+        S.MIA.CustomColor = [0 1 0; 1 0 0];
+    end
+    P.MIA.CustomColor = S.MIA.CustomColor;
+    
+    if ~isfield(S.MIA, 'Correct_Type') || numel(S.MIA.Correct_Type)~=2 || ~isnumeric(S.MIA.Correct_Type) || any(isnan(S.MIA.Correct_Type))
+        disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Type" missing');
+        S.MIA.Correct_Type = [1 1];
+    end
+    P.MIA.Correct_Type = S.MIA.Correct_Type;
+    
+    if ~isfield(S.MIA, 'Correct_Sub_Values') || numel(S.MIA.Correct_Sub_Values)~=2 || ~isnumeric(S.MIA.Correct_Sub_Values) || any(isnan(S.MIA.Correct_Sub_Values))
+        disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Sub_Values" missing');
+        S.MIA.Correct_Sub_Values = [1 3];
+    end
+    P.MIA.Correct_Sub_Values = S.MIA.Correct_Sub_Values;
+    
+    if ~isfield(S.MIA, 'Correct_Add_Values') || numel(S.MIA.Correct_Add_Values)~=2 || ~isnumeric(S.MIA.Correct_Add_Values) || any(isnan(S.MIA.Correct_Add_Values))
+        disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Add_Values" missing');
+        S.MIA.Correct_Add_Values = [1 3];
+    end
+    P.MIA.Correct_Add_Values = S.MIA.Correct_Add_Values;
+    
+    if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=2 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int" missing');
+        S.MIA.AR_Int = [10 1000];
+    end
+    P.MIA.AR_Int = S.MIA.AR_Int;
+    
+    if ~isfield(S.MIA, 'AR_Region') || numel(S.MIA.AR_Region)~=2 || ~isnumeric(S.MIA.AR_Region) || any(isnan(S.MIA.AR_Region))
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Region" missing');
+        S.MIA.AR_Region = [10 30];
+    end
+    P.MIA.AR_Region = S.MIA.AR_Region;
+    
+    if ~isfield(S.MIA, 'AR_Int_Fold') || numel(S.MIA.AR_Int_Fold)~=2 || ~isnumeric(S.MIA.AR_Int_Fold) || any(isnan(S.MIA.AR_Int_Fold))
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int_Fold" missing');
+        S.MIA.AR_Int_Fold = [0.6 1.5];
+    end
+    P.MIA.AR_Int_Fold = S.MIA.AR_Int_Fold;
+    
+    if ~isfield(S.MIA, 'AR_Var_Fold') || numel(S.MIA.AR_Var_Fold)~=2 || ~isnumeric(S.MIA.AR_Var_Fold) || any(isnan(S.MIA.AR_Var_Fold))
+        disp('WARNING: UserValues structure incomplete, field "MIA.AR_Var_Fold" missing');
+        S.MIA.AR_Var_Fold = [0.7 1.2];
+    end
+    P.MIA.AR_Var_Fold = S.MIA.AR_Var_Fold;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
