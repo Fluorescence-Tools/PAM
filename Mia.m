@@ -1578,7 +1578,7 @@ if isempty(h.Mia)
         'ColumnName',{'ACF1','CCF','ACF2'},...
         'ColumnWidth',num2cell([40,40,40]),...
         'ColumnEditable',true,...
-        'RowName',{'N';'Fix';'D [?m?/s]';'Fix';'w_r [?m]';'Fix';'w_z [?m]';'Fix';'y0';'Fix';'P Size [nm]';'Fix';'P Time [?s]';'Fix';'L Time [ms]';'Fix'},...
+        'RowName',{'N';'Fix';'D [µm²/s]';'Fix';'w_r [µm]';'Fix';'w_z [µm]';'Fix';'y0';'Fix';'P Size [nm]';'Fix';'P Time [µs]';'Fix';'L Time [ms]';'Fix'},...
         'CellEditCallback',{@Update_Plots,2,1:3},...
         'Position',[0.01 0.46, 0.2 0.4]);
     Data=cell(16,3);
@@ -1591,7 +1591,7 @@ if isempty(h.Mia)
     Data(13,:)={'11.11'};
     Data(15,:)={'3.33'};
     Data([2 4 10],:)={false};
-    Data([8 12 14 16],:)={true};
+    Data([6 8 12 14 16],:)={true};
     h.Mia_ICS.Fit_Table.Data=Data;
     
     %%% Buttons to fit correlation
@@ -1746,7 +1746,7 @@ if isempty(h.Mia)
         'ColumnName',{'ACF1','CCF','ACF2'},...
         'ColumnWidth',num2cell([40,40,40]),...
         'ColumnEditable',true,...
-        'RowName',{'N';'Fix';'D [?m?/s]';'Fix';'w_r [?m]';'Fix';'w_z [?m]';'Fix';'y0';'Fix';},...
+        'RowName',{'N';'Fix';'D [µm²/s]';'Fix';'w_r [µm]';'Fix';'w_z [µm]';'Fix';'y0';'Fix';},...
         'CellEditCallback',{@Calc_TICS_Fit,1:3},...
         'Position',[0.01 0.71, 0.18 0.27]);
     Data=cell(1,3);
@@ -2140,7 +2140,7 @@ if isempty(h.Mia)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.02 0.76, 0.26 0.06],...
-        'String','Pixel time [?s]:');
+        'String','Pixel time [µs]:');
     %%% Editbox to set pixel time
     h.Mia_NB.Image.Pixel = uicontrol(...
         'Parent',h.Mia_NB.Image.Panel,...
@@ -2754,7 +2754,7 @@ if any(mode==1)
                 if Frame>0
                     h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
                 else
-                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+Alpha)/(1+Alpha);
+                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
                 end
                 
                
@@ -2975,17 +2975,17 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,1).String),str2double(h.Mia_NB.Image.Hist(2,1).String),str2double(h.Mia_NB.Image.Hist(3,1).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Intensity [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') 'µ' num2str(std(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
         case 3 %%% Number histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,2).String),str2double(h.Mia_NB.Image.Hist(2,2).String),str2double(h.Mia_NB.Image.Hist(3,2).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Num{i}(Use),h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Number';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(Use)),'%6.3f') '?' num2str(std(MIAData.NB.Num{i}(Use)),'%6.3f')];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(Use)),'%6.3f') 'µ' num2str(std(MIAData.NB.Num{i}(Use)),'%6.3f')];
         case 4 %%% Brightness histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,3).String),str2double(h.Mia_NB.Image.Hist(2,3).String),str2double(h.Mia_NB.Image.Hist(3,3).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Brightness [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') 'µ' num2str(std(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
     end
     h.Mia_NB.Hist1D_Text.Position(1)=0.99-h.Mia_NB.Hist1D_Text.Extent(3);
     %%% Set X-Limit; uses 1/2 of binsize to not cut first and last bar
@@ -4164,7 +4164,7 @@ if h.Mia_Image.Calculations.Cor_Save.Value > 1
         From = h.Plots.ROI(1).Position(1:2)+0.5;
         To = From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(i).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [µs], Line [ms] and Frametime [s]
         InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -4217,7 +4217,7 @@ if h.Mia_Image.Calculations.Cor_Save.Value > 1
         From=h.Plots.ROI(1).Position(1:2)+0.5;
         To=From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(3).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [µs], Line [ms] and Frametime [s]
         InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -4341,7 +4341,7 @@ if h.Mia_Image.Calculations.Cor_Save.Value > 1
             end
             fprintf(FID,'%s\n','Image Correlation info file');
             %%% Pixel\Line\Frame times
-            fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+            fprintf(FID,'%s\t%f\n', 'Pixel time [µs]:',Info.Times(1));
             fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
             fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
             %%% Pixel size
