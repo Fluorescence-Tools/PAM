@@ -397,6 +397,7 @@ if isempty(hfig)
         'Parent',h.SpeciesListMenu,...
         'Label','Export Species to PDA',...
         'Tag','ExportSpeciesToPDAMenuItem',...
+        'Separator','on',...
         'Callback',@Export_To_PDA);
     
     h.ExportMicrotimePattern = uimenu(...
@@ -3521,7 +3522,7 @@ ax.Color = [1 1 1];
 ax.FontSize = 20;
 ax.LineWidth = 2;
 xlabel('FRET Efficiency');
-ylabel('Probability density');
+ylabel('probability density');
 legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
 legend(legend_entries,'fontsize',14);
 
@@ -4181,56 +4182,10 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 datatoplot = BurstData.DataCut;
 
-[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
-
-if(get(h.Hist_log10, 'Value'))
-    H = log10(H);
-end
-
-%%% Update Image Plot and Contour Plot
-BurstMeta.Plots.Main_Plot(1).XData = xbins;
-BurstMeta.Plots.Main_Plot(1).YData = ybins;
-BurstMeta.Plots.Main_Plot(1).CData = H;
-if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
-elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
-end
-BurstMeta.Plots.Main_Plot(2).XData = xbins;
-BurstMeta.Plots.Main_Plot(2).YData = ybins;
-BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
-BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-
-axis(h.axes_general,'tight');
-%%% Update Labels
-xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
-ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
-xlabel(h.axes_1d_x,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
-%xlabel(h.axes_1d_y,h.ParameterListY.String{y}, 'rot', -90);
-
-
-[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
-
-%plot 1D hists
-%hx = histc(datatoplot(:,x),xbins_1d);
-%hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
-BurstMeta.Plots.Main_histX.XData = xbins;
-%BurstMeta.Plots.Main_histX.YData = hx;
-BurstMeta.Plots.Main_histX.YData = sum(H,1);
-h.axes_1d_x.YTickMode = 'auto';
-yticks= get(h.axes_1d_x,'YTick');
-set(h.axes_1d_x,'YTick',yticks(2:end));
-
-%hy = histc(datatoplot(:,y),ybins_1d);
-%hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
-BurstMeta.Plots.Main_histY.XData = ybins;
-%BurstMeta.Plots.Main_histY.YData = hy;
-BurstMeta.Plots.Main_histY.YData = sum(H,2);
-h.axes_1d_y.YTickMode = 'auto';
-yticks = get(h.axes_1d_y,'YTick');
-set(h.axes_1d_y,'YTick',yticks(2:end));
-
-%%% set axes limits
+%%% set limits
+xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)) max(datatoplot(isfinite(datatoplot(:,x)),x))];
+ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)) max(datatoplot(isfinite(datatoplot(:,y)),y))];
+%%% find cuts to parameters to be plotted and change limits if needed
 CutState = vertcat(BurstData.Cut{BurstData.SelectedSpecies}{:});
 if size(CutState,2) > 0
     CutParameters = CutState(:,1);
@@ -4267,17 +4222,63 @@ if size(CutState,2) > 0
     if sum(ylimits == [0,0]) == 2
         ylimits = [0 1];
     end
-    %%% set limits of axes
-    xlim(h.axes_general,xlimits);
-    ylim(h.axes_general,ylimits);
-    xlim(h.axes_1d_x,xlimits);
-    xlim(h.axes_1d_y,ylimits);
-else
-    %%% set limits of axes
-    axis(h.axes_general,'tight');
-    axis(h.axes_1d_x,'tight');
-    axis(h.axes_1d_y,'tight');
 end
+
+[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
+
+if(get(h.Hist_log10, 'Value'))
+    H = log10(H);
+end
+
+%%% Update Image Plot and Contour Plot
+BurstMeta.Plots.Main_Plot(1).XData = xbins;
+BurstMeta.Plots.Main_Plot(1).YData = ybins;
+BurstMeta.Plots.Main_Plot(1).CData = H;
+if ~UserValues.BurstBrowser.Display.KDE
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
+elseif UserValues.BurstBrowser.Display.KDE
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
+end
+BurstMeta.Plots.Main_Plot(2).XData = xbins;
+BurstMeta.Plots.Main_Plot(2).YData = ybins;
+BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
+BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+
+axis(h.axes_general,'tight');
+%%% Update Labels
+xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
+ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
+xlabel(h.axes_1d_x,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
+%xlabel(h.axes_1d_y,h.ParameterListY.String{y}, 'rot', -90);
+
+
+%[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
+
+%plot 1D hists
+%hx = histc(datatoplot(:,x),xbins_1d);
+%hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
+BurstMeta.Plots.Main_histX.XData = xbins;
+%BurstMeta.Plots.Main_histX.YData = hx;
+BurstMeta.Plots.Main_histX.YData = sum(H,1);
+h.axes_1d_x.YTickMode = 'auto';
+yticks= get(h.axes_1d_x,'YTick');
+set(h.axes_1d_x,'YTick',yticks(2:end));
+
+%hy = histc(datatoplot(:,y),ybins_1d);
+%hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
+BurstMeta.Plots.Main_histY.XData = ybins;
+%BurstMeta.Plots.Main_histY.YData = hy;
+BurstMeta.Plots.Main_histY.YData = sum(H,2);
+h.axes_1d_y.YTickMode = 'auto';
+yticks = get(h.axes_1d_y,'YTick');
+set(h.axes_1d_y,'YTick',yticks(2:end));
+
+%%% set limits of axes
+xlim(h.axes_general,xlimits);
+ylim(h.axes_general,ylimits);
+xlim(h.axes_1d_x,xlimits);
+xlim(h.axes_1d_y,ylimits);
+
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
     eval(['colormap(h.BurstBrowser,' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -9011,28 +9012,31 @@ if nargin < 5
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
 
-valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
-x = x(valid);
-y = y(valid);
+% valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
+% x = x(valid);
+% y = y(valid);
 if ~UserValues.BurstBrowser.Display.KDE %%% no smoothing
-    [H, xbins_hist, ybins_hist] = hist2d([x y], nbins(1), nbins(2), limx, limy);
-    H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-    H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
+    [H, xbins_hist, ybins_hist] = histcounts2(x,y, nbins,'XBinLimits', limx, 'YBinLimits', limy);
+    %H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+    %H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+    H = H';
 elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
     if sum(x) == 0 || sum(y) == 0 %%% KDE fails if this is the case
-        [H, xbins_hist, ybins_hist] = hist2d([x y], nbins(1), nbins(2), limx, limy);
+        [H, xbins_hist, ybins_hist] = histcounts2(x,y, nbins,'XBinLimits', limx, 'YBinLimits', limy);
+        H = H';
     else
         [~,H, xbins_hist, ybins_hist] = kde2d([x y],nbins(1),[limx(1) limy(1)],[limx(2), limy(2)]);
         xbins_hist = xbins_hist(1,:);
         ybins_hist = ybins_hist(:,1);
     end
-    H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-    H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
+    %H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+    %H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 end
+
 
 function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
 %HIST2D 2D histogram
