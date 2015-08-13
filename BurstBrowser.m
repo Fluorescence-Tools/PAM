@@ -9016,23 +9016,21 @@ end
 % x = x(valid);
 % y = y(valid);
 if ~UserValues.BurstBrowser.Display.KDE %%% no smoothing
-    [H, xbins_hist, ybins_hist] = histcounts2(x,y, nbins,'XBinLimits', limx, 'YBinLimits', limy);
-    %H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-    %H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
+    [H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
+    H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+    H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-    H = H';
 elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
     if sum(x) == 0 || sum(y) == 0 %%% KDE fails if this is the case
-        [H, xbins_hist, ybins_hist] = histcounts2(x,y, nbins,'XBinLimits', limx, 'YBinLimits', limy);
-        H = H';
+        [H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
     else
         [~,H, xbins_hist, ybins_hist] = kde2d([x y],nbins(1),[limx(1) limy(1)],[limx(2), limy(2)]);
         xbins_hist = xbins_hist(1,:);
         ybins_hist = ybins_hist(:,1);
     end
-    %H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
-    %H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
+    H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
+    H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 end
