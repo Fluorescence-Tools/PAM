@@ -46,13 +46,33 @@ if isempty(hfig)
         'Label','Save Analysis State (Ctrl+S)',...
         'Callback',@Save_Analysis_State_Callback,...
         'Tag','Save_Analysis_State');
-    
     %%% Merge *.bur files
     h.Merge_Files_Menu = uimenu(...
         'Parent',h.File_Menu,...
         'Label','Merge *.bur-files',...
         'Callback',@Merge_bur_files,...
         'Tag','Merge_Files_Menu',...
+        'Separator','on');
+    
+    %%% "More..." Menu for additional functions
+    h.More_Menu = uimenu(...
+        'Parent',h.BurstBrowser,...
+        'Label','More...',...
+        'Tag','More_Menu',...
+        'Enable','on');
+    %%% FRET Comparions plot from *.his files
+    h.FRET_comp_Menu = uimenu(...
+        'Parent',h.More_Menu,...
+        'Label','Compare FRET Histograms',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_Menu',...
+        'Separator','off');
+    %%% FRET Comparions plot from *.his files
+    h.Choose_PrintPath_Menu = uimenu(...
+        'Parent',h.More_Menu,...
+        'Label','Choose Export Path',...
+        'Callback',@Choose_PrintPath_Menu,...
+        'Tag','Choose_PrintPath_Menu',...
         'Separator','on');
     
     %define tabs
@@ -398,6 +418,12 @@ if isempty(hfig)
         'Tag','DoTimeWindowAnalysis',...
         'Callback',@Time_Window_Analysis);
     
+    h.Export_FRET_Hist_Menu = uimenu(...
+        'Parent',h.SpeciesListMenu,...
+        'Label','Export FRET Hist',...
+        'Tag','Export_FRET_Hist_Menu',...
+        'Callback',@Export_FRET_Hist);
+    
 %     h.ExportPDA_PN_Donoronly = uimenu(...
 %         'Parent',h.SpeciesListMenu,...
 %         'Label','Export Photon Count Distribution of Donor only Species for PDA',...
@@ -415,18 +441,19 @@ if isempty(hfig)
         'Position',[0 0 1 0.2],...
         'Style','listbox',...
         'Tag','SpeciesList',...
-        'UIContextMenu',h.SpeciesListMenu);
+        'UIContextMenu',h.SpeciesListMenu,...
+        'Callback',@SpeciesList_ButtonDownFcn);
     %'ButtonDownFcn',@List_ButtonDownFcn,...
     %'CallBack',@List_ButtonDownFcn,...
     % for right click selection to work, we need to access the underlying
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
-    drawnow;
-    jScrollPane = findjobj(h.SpeciesList);
-    jSpeciesList = jScrollPane.getViewport.getComponent(0);
-    jSpeciesList = handle(jSpeciesList, 'CallbackProperties');
-    set(jSpeciesList, 'MousePressedCallback',{@SpeciesList_ButtonDownFcn,h.SpeciesList});
-    
+%     drawnow;
+%     jScrollPane = findjobj(h.SpeciesList);
+%     jSpeciesList = jScrollPane.getViewport.getComponent(0);
+%     jSpeciesList = handle(jSpeciesList, 'CallbackProperties');
+%     set(jSpeciesList, 'MousePressedCallback',{@SpeciesList_ButtonDownFcn,h.SpeciesList});
+
     %define the cut table
     cname = {'min','max','active','delete'};
     cformat = {'numeric','numeric','logical','logical'};
@@ -459,7 +486,9 @@ if isempty(hfig)
         'Position',[0 0.55 0.5 0.45],...
         'Style','listbox',...
         'Tag','ParameterListX',...
-        'Enable','on');
+        'Enable','on',...
+        'Callback',{@ParameterList_ButtonDownFcn,'left'},...
+        'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
     h.ParameterListY = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -470,20 +499,22 @@ if isempty(hfig)
         'Position',[0.5 0.55 0.5 0.45],...
         'Style','listbox',...
         'Tag','ParameterListY',...
-        'Enable','on');
+        'Enable','on',...
+        'Callback',{@ParameterList_ButtonDownFcn,'left'},...
+        'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
     % for right click selection to work, we need to access the underlying
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
-    drawnow;
-    jScrollPaneX = findjobj(h.ParameterListX);
-    jScrollPaneY = findjobj(h.ParameterListY);
-    jParameterListX = jScrollPaneX.getViewport.getComponent(0);
-    jParameterListY = jScrollPaneY.getViewport.getComponent(0);
-    jParameterListX = handle(jParameterListX, 'CallbackProperties');
-    jParameterListY = handle(jParameterListY, 'CallbackProperties');
-    set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
-    set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
+%     drawnow;
+%     jScrollPaneX = findjobj(h.ParameterListX);
+%     jScrollPaneY = findjobj(h.ParameterListY);
+%     jParameterListX = jScrollPaneX.getViewport.getComponent(0);
+%     jParameterListY = jScrollPaneY.getViewport.getComponent(0);
+%     jParameterListX = handle(jParameterListX, 'CallbackProperties');
+%     jParameterListY = handle(jParameterListY, 'CallbackProperties');
+%     set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
+%     set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
     
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
@@ -3301,7 +3332,7 @@ UpdateLifetimePlots([],[]);
 DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Merge_bur_files(~,~)
 h = guidata(gcbo);
@@ -3438,6 +3469,61 @@ Progress(0.8,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
 save([BurstData.FileName(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Update the print path %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Choose_PrintPath_Menu(~,~)
+global UserValues
+
+PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
+
+if PathName == 0
+    return;
+end
+
+UserValues.BurstBrowser.PrintPath = PathName;
+LSUserValues(1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Compare exported FRET histograms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Compare_FRET_Hist(~,~)
+global UserValues
+
+N_bins = 51;
+
+%%% Load *.his files (assume they are in one folder)
+[FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+if ~iscell(FileNames)
+    return;
+end
+
+%%% Load FRET arrays
+for i = 1:numel(FileNames)
+    dummy = load(fullfile(PathName,FileNames{i}),'-mat');
+    E{i} = dummy.E;
+end
+
+xE = linspace(0,1,N_bins);
+for i = 1:numel(E)
+    H{i} = histcounts(E{i},xE);
+    H{i} = H{i}./sum(H{i});
+end
+
+color = lines(numel(H));
+figure('Color',[1 1 1],'Position',[100 100 600 400]);
+stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
+hold on
+for i = 2:numel(H)
+    stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+end
+ax = gca;
+ax.Color = [1 1 1];
+ax.FontSize = 20;
+ax.LineWidth = 2;
+xlabel('FRET Efficiency');
+ylabel('Probability density');
+legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+legend(legend_entries,'fontsize',14);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3476,26 +3562,12 @@ LSUserValues(1);
 %%%%%%% Callback for Parameter List: Left-click updates plot,    %%%%%%%%%%
 %%%%%%% Right-click adds parameter to CutList                    %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ParameterList_ButtonDownFcn(jListbox,jEventData,hListbox)
-% Determine the click type
-% (can similarly test for CTRL/ALT/SHIFT-click)
-if jEventData.isMetaDown  % right-click is like a Meta-button
-    clickType = 'Right-click';
-else
-    clickType = 'Left-click';
-end
-
-% Determine the current listbox index
-% Remember: Java index starts at 0, Matlab at 1
-mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
-clickedIndex = jListbox.locationToIndex(mousePos) + 1;
-%listValues = get(hListbox,'string');
-%clickedValue = listValues{clickedIndex};
-
+function ParameterList_ButtonDownFcn(hListbox,~,clickType)
+clickedIndex = hListbox.Value;
 h = guidata(hListbox);
 global BurstData
 
-if strcmpi(clickType,'Right-click')
+if strcmpi(clickType,'right')
     %%%add to cut list if right-clicked
     if ~isfield(BurstData,'Cut')
         %initialize Cut Cell Array
@@ -3544,31 +3616,93 @@ if strcmpi(clickType,'Right-click')
     UpdateCutTable(h);
     UpdateCuts();
     %UpdateCorrections;
-elseif strcmpi(clickType,'Left-click') %%% Update Plot
+elseif strcmpi(clickType,'left') %%% Update Plot
     %%% Update selected value
     hListbox.Value = clickedIndex;
 end
 UpdatePlot([],[]);
 UpdateLifetimePlots([],[]);
+% function ParameterList_ButtonDownFcn(jListbox,jEventData,hListbox)
+% % Determine the click type
+% % (can similarly test for CTRL/ALT/SHIFT-click)
+% if jEventData.isMetaDown  % right-click is like a Meta-button
+%     clickType = 'Right-click';
+% else
+%     clickType = 'Left-click';
+% end
+% 
+% % Determine the current listbox index
+% % Remember: Java index starts at 0, Matlab at 1
+% mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
+% clickedIndex = jListbox.locationToIndex(mousePos) + 1;
+% %listValues = get(hListbox,'string');
+% %clickedValue = listValues{clickedIndex};
+% 
+% h = guidata(hListbox);
+% global BurstData
+% 
+% if strcmpi(clickType,'Right-click')
+%     %%%add to cut list if right-clicked
+%     if ~isfield(BurstData,'Cut')
+%         %initialize Cut Cell Array
+%         BurstData.Cut{1} = {};
+%         %add species to list
+%         BurstData.SpeciesNames{1} = 'Global Cuts';
+%         %update species list
+%         set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
+%         BurstData.SelectedSpecies = 1;
+%     end
+%     species = get(h.SpeciesList,'Value');
+%     param = clickedIndex;
+%     
+%     %%% Check whether the CutParameter already exists or not
+%     ExistingCuts = vertcat(BurstData.Cut{species}{:});
+%     if ~isempty(ExistingCuts)
+%         if any(strcmp(BurstData.NameArray{param},ExistingCuts(:,1)))
+%             return;
+%         end
+%     end
+%     
+%     BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+%     
+%     %%% If Global Cuts, Update all other species
+%     if species == 1
+%         ChangedParameterName = BurstData.NameArray{param};
+%         if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+%             %%% cycle through the number of other species
+%             for j = 2:numel(BurstData.Cut)
+%                 %%% Check if the parameter already exists in the species j
+%                 ParamList = vertcat(BurstData.Cut{j}{:});
+%                 if ~isempty(ParamList)
+%                     ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+%                     CheckParam = strcmp(ParamList,ChangedParameterName);
+%                     if any(CheckParam)
+%                         %%% do nothing
+%                     else %%% Parameter is new to species
+%                         BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+%                     end
+%                 else %%% Parameter is new to GlobalCut
+%                     BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+%                 end
+%             end
+%         end
+%     end
+%     UpdateCutTable(h);
+%     UpdateCuts();
+%     %UpdateCorrections;
+% elseif strcmpi(clickType,'Left-click') %%% Update Plot
+%     %%% Update selected value
+%     hListbox.Value = clickedIndex;
+% end
+% UpdatePlot([],[]);
+% UpdateLifetimePlots([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Mouse-click Callback for Species List       %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Left-click: Change plot to selected Species %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
-% Determine the click type
-% (can similarly test for CTRL/ALT/SHIFT-click)
-if jEventData.isMetaDown  % right-click is like a Meta-button
-    clickType = 'Right-click';
-else
-    clickType = 'Left-click';
-end
-
-
-% Determine the current listbox index
-% Remember: Java index starts at 0, Matlab at 1
-mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
-clickedIndex = jListbox.locationToIndex(mousePos) + 1;
+function SpeciesList_ButtonDownFcn(hListbox,eventData)
+clickedIndex = hListbox.Value;
 
 listValues = get(hListbox,'string');
 if isempty(listValues)
@@ -3579,22 +3713,56 @@ clickedString = listValues{clickedIndex};
 
 h = guidata(hListbox);
 global BurstData
-if strcmpi(clickType,'Right-click')
-    %     if numel(get(hListbox,'String')) > 1 %remove selected field
-    %         val = clickedIndex;
-    %         BurstData.SpeciesNames(val) = [];
-    %         set(hListbox,'Value',val-1);
-    %         set(hListbox,'String',BurstData.SpeciesNames);
-    %     end
-else %leftclick
-    set(hListbox,'Value',clickedIndex);
-    BurstData.SelectedSpecies = clickedIndex;
-end
+
+
+set(hListbox,'Value',clickedIndex);
+BurstData.SelectedSpecies = clickedIndex;
+
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot(hListbox);
 Update_fFCS_GUI(hListbox,[]);
 UpdateLifetimePlots(hListbox,[]);
+% function SpeciesList_ButtonDownFcn(jListbox,jEventData,hListbox)
+% % Determine the click type
+% % (can similarly test for CTRL/ALT/SHIFT-click)
+% if jEventData.isMetaDown  % right-click is like a Meta-button
+%     clickType = 'Right-click';
+% else
+%     clickType = 'Left-click';
+% end
+% 
+% 
+% % Determine the current listbox index
+% % Remember: Java index starts at 0, Matlab at 1
+% mousePos = java.awt.Point(jEventData.getX, jEventData.getY);
+% clickedIndex = jListbox.locationToIndex(mousePos) + 1;
+% 
+% listValues = get(hListbox,'string');
+% if isempty(listValues)
+%     return;
+% end
+% 
+% clickedString = listValues{clickedIndex};
+% 
+% h = guidata(hListbox);
+% global BurstData
+% if strcmpi(clickType,'Right-click')
+%     %     if numel(get(hListbox,'String')) > 1 %remove selected field
+%     %         val = clickedIndex;
+%     %         BurstData.SpeciesNames(val) = [];
+%     %         set(hListbox,'Value',val-1);
+%     %         set(hListbox,'String',BurstData.SpeciesNames);
+%     %     end
+% else %leftclick
+%     set(hListbox,'Value',clickedIndex);
+%     BurstData.SelectedSpecies = clickedIndex;
+% end
+% UpdateCutTable(h);
+% UpdateCuts();
+% UpdatePlot(hListbox);
+% Update_fFCS_GUI(hListbox,[]);
+% UpdateLifetimePlots(hListbox,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7024,7 +7192,20 @@ legend(leg);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Export_FRET_Hist(~,~)
+global BurstData BurstTCSPCData UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
+SelectedSpecies = h.SpeciesList.Value;
+SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
+E = BurstData.DataCut(:,1);
+
+%%% Save E array in *.his file
+filename = [BurstData.DisplayName '_' SelectedSpeciesName '.his'];
+save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
