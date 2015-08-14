@@ -7609,7 +7609,7 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
     
     BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
-    title(h.axes_rGGvsTauGG,['rhoGG = ' num2str(BurstData.Parameters.rhoGG) ' ns']);
+    title(h.axes_rGGvsTauGG,['rhoGG = ' sprintf('%2.2f',BurstData.Parameters.rhoGG) ' ns']);
     %% RR
     fPerrin = @(rho,x) BurstData.Corrections.r0_red./(1+x./rho); %%% x = tau
     tauRR = datatoplot(:,idx_tauRR);
@@ -7621,7 +7621,7 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
     BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
-    title(h.axes_rRRvsTauRR,['rhoRR = ' num2str(BurstData.Parameters.rhoRR) ' ns']);
+    title(h.axes_rRRvsTauRR,['rhoRR = ' sprintf('%2.2f',BurstData.Parameters.rhoRR) ' ns']);
     if any(BurstData.BAMethod == [3,4])
         %% BB
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
@@ -7700,7 +7700,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
-                    title(['rhoGG = ' num2str(rho) ' ns']);
+                    title(['rhoGG = ' sprintf('%2.2f',rho) ' ns']);
                     BurstData.Parameters.rhoGG = rho;
                 case h.axes_rRRvsTauRR
                     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
@@ -7708,7 +7708,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
-                    title(['rhoRR = ' num2str(rho) ' ns']);
+                    title(['rhoRR = ' sprintf('%2.2f',rho) ' ns']);
                     BurstData.Parameters.rhoRR = rho;
                 case h.axes_rBBvsTauBB
                     BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
@@ -7716,7 +7716,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinBB(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
-                    title(['rhoBB = ' num2str(rho) ' ns']);
+                    title(['rhoBB = ' sprintf('%2.2f',rho) ' ns']);
                     BurstData.Parameters.rhoBB = rho;
             end
         end
@@ -7738,10 +7738,10 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinGG(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinGG(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoGG = ' num2str(rho)]);
+                    title(haxes,['rhoGG = ' sprintf('%2.2f',rho)]);
                 else
                     %%% add rho2 to title
-                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
                 BurstData.Parameters.rhoGG(vis+1) = rho;
@@ -7762,10 +7762,10 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinRR(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinRR(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoRR = ' num2str(rho)]);
+                    title(haxes,['rhoRR = ' sprintf('%2.2f',rho)]);
                 else
                     %%% add rho2 to title
-                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
                 BurstData.Parameters.rhoRR(vis+1) = rho;
@@ -7786,10 +7786,10 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinBB(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinBB(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoBB = ' num2str(rho)]);
+                    title(haxes,['rhoBB = ' sprintf('%2.2f',rho)]);
                 else
                     %%% add rho2 to title
-                    new_title = [haxes.Title.String ' and ' num2str(rho) ' ns'];
+                    new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
                 BurstData.Parameters.rhoBB(vis+1) = rho;
@@ -8880,6 +8880,7 @@ switch obj
         panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
+        panel_copy.HighlightColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -9179,6 +9180,7 @@ switch obj
         panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
+        panel_copy.HighlightColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
