@@ -3703,7 +3703,7 @@ if strcmpi(clickType,'right')
         end
     end
     
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataArray(:,param)),max(BurstData.DataArray(:,param)), true,false};
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(:,param)),max(BurstData.DataCut(:,param)), true,false};
     
     %%% If Global Cuts, Update all other species
     if species == 1
@@ -7397,7 +7397,7 @@ BurstMeta.Plots.EvsTauRR(2).XData = xbins;
 BurstMeta.Plots.EvsTauRR(2).YData = ybins;
 BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-ylim(h.axes_EvsTauRR,[0 1]);
+ylim(h.axes_EvsTauRR,[-0.05 1]);
 axis(h.axes_EvsTauRR,'tight');
 %% Plot rGG vs. tauGG in third plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
@@ -8974,12 +8974,14 @@ switch obj
                     switch i
                         case 1
                             %%%rRR vs TauRR
-                            if ~isempty(BurstData.Parameters.rhoRR)
-                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
-                                if numel(BurstData.Parameters.rhoRR) > 1
-                                    str = [str(1:4) '_1' str(5:end)];
-                                    for j=2:numel(BurstData.Parameters.rhoRR)
-                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                            if isfield(BurstData.Parameters,'rhoRR')
+                                if ~isempty(BurstData.Parameters.rhoRR)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
+                                    if numel(BurstData.Parameters.rhoRR) > 1
+                                        str = [str(1:4) '_1' str(5:end)];
+                                        for j=2:numel(BurstData.Parameters.rhoRR)
+                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                        end
                                     end
                                 end
                             end
@@ -8990,12 +8992,14 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 2
                             %%%rGG vs TauGG
-                            if ~isempty(BurstData.Parameters.rhoGG)
-                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
-                                if numel(BurstData.Parameters.rhoGG) > 1
-                                    str = [str(1:4) '_1' str(5:end)];
-                                    for j=2:numel(BurstData.Parameters.rhoGG)
-                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                            if isfield(BurstData.Parameters,'rhoGG')
+                                if ~isempty(BurstData.Parameters.rhoGG)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
+                                    if numel(BurstData.Parameters.rhoGG) > 1
+                                        str = [str(1:4) '_1' str(5:end)];
+                                        for j=2:numel(BurstData.Parameters.rhoGG)
+                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                        end
                                     end
                                 end
                             end
@@ -9035,12 +9039,14 @@ switch obj
                     switch i
                         case 1
                             %%%rBB vs TauBB
-                            if ~isempty(BurstData.Parameters.rhoBB)
-                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(1))];
-                                if numel(BurstData.Parameters.rhoBB) > 1
-                                    str = [str(1:4) '_1' str(5:end)];
-                                    for j=2:numel(BurstData.Parameters.rhoBB)
-                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
+                            if isfield(BurstData.Parameters,'rhoBB')
+                                if ~isempty(BurstData.Parameters.rhoBB)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(1))];
+                                    if numel(BurstData.Parameters.rhoBB) > 1
+                                        str = [str(1:4) '_1' str(5:end)];
+                                        for j=2:numel(BurstData.Parameters.rhoBB)
+                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
+                                        end
                                     end
                                 end
                             end
@@ -9051,12 +9057,14 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 3
                             %%%rRR vs TauRR
-                            if ~isempty(BurstData.Parameters.rhoRR)
-                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
-                                if numel(BurstData.Parameters.rhoRR) > 1
-                                    str = [str(1:4) '_1' str(5:end)];
-                                    for j=2:numel(BurstData.Parameters.rhoRR)
-                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                            if isfield(BurstData.Parameters,'rhoRR')
+                                if ~isempty(BurstData.Parameters.rhoRR)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
+                                    if numel(BurstData.Parameters.rhoRR) > 1
+                                        str = [str(1:4) '_1' str(5:end)];
+                                        for j=2:numel(BurstData.Parameters.rhoRR)
+                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                        end
                                     end
                                 end
                             end
@@ -9067,12 +9075,14 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 4
                             %%%rGG vs TauGG
-                            if ~isempty(BurstData.Parameters.rhoGG)
-                                str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
-                                if numel(BurstData.Parameters.rhoGG) > 1
-                                    str = [str(1:4) '_1' str(5:end)];
-                                    for j=2:numel(BurstData.Parameters.rhoGG)
-                                        str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                            if isfield(BurstData.Parameters,'rhoGG')
+                                if ~isempty(BurstData.Parameters.rhoGG)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
+                                    if numel(BurstData.Parameters.rhoGG) > 1
+                                        str = [str(1:4) '_1' str(5:end)];
+                                        for j=2:numel(BurstData.Parameters.rhoGG)
+                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                        end
                                     end
                                 end
                             end
@@ -9223,9 +9233,23 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
+                    switch BurstData.BAMethod
+                        case {1,2}
+                            switch h.lifetime_ind_popupmenu.Value
+                                case {3,4} % Ansiotropy plot, adjust y axis label
+                                    panel_copy.Children(i).YLabel.Position(1) =...
+                                        panel_copy.Children(i).YLabel.Position(1) + 0.1;
+                            end
+                        case {3,4}
+                            switch h.lifetime_ind_popupmenu.Value
+                                case {4,5,6} % Ansiotropy plot, adjust y axis label
+                                    panel_copy.Children(i).YLabel.Position(1) =...
+                                        panel_copy.Children(i).YLabel.Position(1) + 0.1;
+                            end
+                    end
             end
         end
-        FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
+        FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
 end
 %%% Combine the Original FileName and the parameter names
 if isfield(BurstData,'FileNameSPC')
@@ -9237,7 +9261,8 @@ if isfield(BurstData,'FileNameSPC')
 end
 
 FigureName = [FileName '_' FigureName];
-
+%%% remove spaces
+FigureName = strrep(FigureName,' ','_');
 
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 if directly_save
@@ -9298,10 +9323,17 @@ end
 %%%%%%% Export All Graphs at once %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportAllGraphs(obj,~)
+global BurstData
 h = guidata(obj);
+h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData.NameArray));
+h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData.NameArray));
+UpdatePlot([],[]);
 ExportGraphs(h.Export2D_Menu,[],0);
 ExportGraphs(h.ExportLifetime_Menu,[],0);
-ExportGraphs(h.ExportEvsTau_Menu,[],0);
+h.lifetime_ind_popupmenu.Value = 1;
+PlotLifetimeInd([],[]);
+ExportGraphs(h.lifetime_ind_export_button,[],0);
+%ExportGraphs(h.ExportEvsTau_Menu,[],0);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
