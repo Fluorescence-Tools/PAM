@@ -1271,7 +1271,7 @@ switch mode
             for c = PDAMeta.Comp{i}
                 set(PDAMeta.Plots.Fit_All{i,c+1},...
                     'Visible', 'on',...
-                    'YData', [PDAMeta.hFit_Ind{i,c} PDAMeta.hFit_Ind{i,c}(end)]);
+                    'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
             end
             set(PDAMeta.Chi2_All,...
                 'Visible','on',...
@@ -1296,7 +1296,7 @@ switch mode
                 for c = PDAMeta.Comp{i}
                     set(PDAMeta.Plots.Fit_Single{1,c+1},...
                         'Visible', 'on',...
-                        'YData',[PDAMeta.hFit_Ind{i,c} PDAMeta.hFit_Ind{i,c}(end)]);
+                        'YData',[PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
                 end
                 set(PDAMeta.Chi2_Single,...
                     'Visible','on',...
@@ -2400,9 +2400,9 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 % [File, Path] = uiputfile({'*.*', 'Folder name'},...
 %     'Specify directory name',...
 %     fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']));
-Path = uigetdir(fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']),...
+Path = uigetdir(fullfile(UserValues.File.BurstBrowserPath),...
     'Specify directory name');
-%Path = GenerateName(fullfile(Path, File),2);
+Path = GenerateName(fullfile(Path, [datestr(now,'yymmdd') ' GlobalPDAFit']),2);
 
 if Path == 0
     return
@@ -2458,8 +2458,7 @@ else
         if i == 1
             print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
         else
-            set(main_ax.Children(1),'LineStyle','-');
-            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{i-1}(1:end-4) '.tif']),1))
+            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{i-1}(1:end-4) '.tif']),1),'-painters')
         end
         close(fig)
     end
