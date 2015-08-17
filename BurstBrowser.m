@@ -7384,7 +7384,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [0 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.05 1]);
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -7397,8 +7397,8 @@ BurstMeta.Plots.EvsTauRR(2).XData = xbins;
 BurstMeta.Plots.EvsTauRR(2).YData = ybins;
 BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-ylim(h.axes_EvsTauRR,[-0.05 1]);
 axis(h.axes_EvsTauRR,'tight');
+ylim(h.axes_EvsTauRR,[-0.05 1]);
 %% Plot rGG vs. tauGG in third plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
@@ -9018,6 +9018,8 @@ switch obj
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
+                %%% Move axis to top of stack
+                panel_copy.Children(i).Layer = 'top';
                 %%% change X/YColor Color Color
                 panel_copy.Children(i).XColor = [0,0,0];
                 panel_copy.Children(i).YColor = [0,0,0];
@@ -9033,7 +9035,10 @@ switch obj
                 title(panel_copy.Children(i),'');
                 %%% move axes up and left
                 panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
-                panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                if any(i==[1,3,4])
+                    panel_copy.Children(i).YLabel.Units = 'normalized';
+                    panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                end
                 %%% Add rotational correlation time
                 if isfield(BurstData,'Parameters')
                     switch i
@@ -9392,9 +9397,9 @@ if nargin < 5
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
 
-% valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
-% x = x(valid);
-% y = y(valid);
+valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
+x = x(valid);
+y = y(valid);
 if ~UserValues.BurstBrowser.Display.KDE %%% no smoothing
     [H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];

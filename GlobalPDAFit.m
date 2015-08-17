@@ -1051,7 +1051,7 @@ switch mode
             PDAMeta.BSD{i} = BSD;
             PDAMeta.hProx{i} = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
             xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
-            xProx = xProx(1:end-1);
+            %xProx = xProx(1:end-1);
             hBSD = histcounts(BSD,1:(max(BSD)+1));
             xBSD = 1:max(BSD);
             
@@ -1077,7 +1077,7 @@ switch mode
             % data plot
             PDAMeta.Plots.Data_All{i} = stairs(h.AllTab.Main_Axes,...
                 xProx,...
-                PDAMeta.hProx{i},...
+                [PDAMeta.hProx{i} PDAMeta.hProx{i}(end)],...
                 'Color',normal,...
                 'LineWidth',1);
             % residuals plot
@@ -1103,7 +1103,7 @@ switch mode
                 zeros(numel(xProx),1),...
                 'Color',dark,...
                 'LineWidth',2,...
-                'Linestyle','--',...
+                'Linestyle','-',...
                 'Visible','off');
             % burst size distribution plot
             if isempty(PDAData.BrightnessReference)
@@ -1264,14 +1264,14 @@ switch mode
             %%% Update All Plot
             set(PDAMeta.Plots.Fit_All{i,1},...
                 'Visible', 'on',...
-                'YData', PDAMeta.hFit{i});
+                'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
-                'YData', PDAMeta.w_res{i});
+                'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
             for c = PDAMeta.Comp{i}
                 set(PDAMeta.Plots.Fit_All{i,c+1},...
                     'Visible', 'on',...
-                    'YData', PDAMeta.hFit_Ind{i,c});
+                    'YData', [PDAMeta.hFit_Ind{i,c} PDAMeta.hFit_Ind{i,c}(end)]);
             end
             set(PDAMeta.Chi2_All,...
                 'Visible','on',...
@@ -1289,14 +1289,14 @@ switch mode
             if i == h.SingleTab.Popup.Value
                 set(PDAMeta.Plots.Fit_Single{1,1},...
                     'Visible', 'on',...
-                    'YData', PDAMeta.hFit{i});
+                    'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
                 set(PDAMeta.Plots.Res_Single,...
                     'Visible', 'on',...
-                    'YData', PDAMeta.w_res{i});
+                    'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
                 for c = PDAMeta.Comp{i}
                     set(PDAMeta.Plots.Fit_Single{1,c+1},...
                         'Visible', 'on',...
-                        'YData',PDAMeta.hFit_Ind{i,c});
+                        'YData',[PDAMeta.hFit_Ind{i,c} PDAMeta.hFit_Ind{i,c}(end)]);
                 end
                 set(PDAMeta.Chi2_Single,...
                     'Visible','on',...
@@ -1332,27 +1332,27 @@ switch mode
         % PDAMeta.Comp{i} = index of the gaussian component that is used
         set(PDAMeta.Plots.Res_All{i},...
             'Visible', 'on',...
-            'YData', PDAMeta.w_res{i});
+            'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
         for c = PDAMeta.Comp{i}
             set(PDAMeta.Plots.Fit_All{i,c+1},...
                 'Visible', 'on',...
-                'YData', PDAMeta.hFit_Ind{i,c});
+                'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
         end
         set(PDAMeta.Plots.Fit_All{i,1},...
             'Visible', 'on',...
-            'YData', PDAMeta.hFit{i});
+            'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
         if i == h.SingleTab.Popup.Value
             set(PDAMeta.Plots.Res_Single,...
                 'Visible', 'on',...
-                'YData', PDAMeta.w_res{i});
+                'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
             for c = PDAMeta.Comp{i}
                 set(PDAMeta.Plots.Fit_Single{1,c+1},...
                     'Visible', 'on',...
-                    'YData', PDAMeta.hFit_Ind{i,c});
+                    'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
             end
             set(PDAMeta.Plots.Fit_Single{1,1},...
                 'Visible', 'on',...
-                'YData', PDAMeta.hFit{i});
+                'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
         end
 end
 
@@ -2397,12 +2397,14 @@ global PDAData UserValues
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
 % use uiputfile to generate a folder name in a specified location
-[File, Path] = uiputfile({'*.*', 'Folder name'},...
-    'Specify directory name',...
-    fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']));
-Path = GenerateName(fullfile(Path, File),2);
+% [File, Path] = uiputfile({'*.*', 'Folder name'},...
+%     'Specify directory name',...
+%     fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']));
+Path = uigetdir(fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']),...
+    'Specify directory name');
+%Path = GenerateName(fullfile(Path, File),2);
 
-if isempty(File)
+if Path == 0
     return
 else
     clear File
@@ -2420,8 +2422,8 @@ else
             main_ax = copyobj(h.SingleTab.Main_Axes,fig);
             res_ax = copyobj(h.SingleTab.Res_Axes,fig);
             gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
-        end
-        main_ax.Children(end).Position = [1.3,1.09];
+        end 
+        main_ax.Children(end).Position = [1.35,1.09];
         %main_ax.Children(end).String = main_ax.Children(1:end-1);
         %main_ax.Children(end).String = ''; 
         main_ax.Color = [1 1 1];
@@ -2439,7 +2441,8 @@ else
         main_ax.Position = [75 70 475 290];
         res_ax.Position = [75 360 475 50];
         main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
-        
+        main_ax.YTick(end) = [];
+
         gauss_ax.Color = [1 1 1];
         gauss_ax.XColor = [0 0 0];
         gauss_ax.YColor = [0 0 0];
@@ -2450,10 +2453,12 @@ else
         gauss_ax.GridAlpha = 0.1;
         res_ax.GridAlpha = 0.1;
         gauss_ax.FontSize = 15;
-        %set(fig,'PaperPositionMode','auto');
+        main_ax.Children(end).Units = 'pixel';
+        set(fig,'PaperPositionMode','auto');
         if i == 1
-            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, 'All.tif'),1))
+            print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
         else
+            set(main_ax.Children(1),'LineStyle','-');
             print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{i-1}(1:end-4) '.tif']),1))
         end
         close(fig)
