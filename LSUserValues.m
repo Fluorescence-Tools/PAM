@@ -1171,9 +1171,9 @@ if Mode==0 %%% Loads user values
     end
     P.MIA = S.MIA;
     
-    if ~isfield(S.MIA, 'ColorMap_Main') || numel(S.MIA.ColorMap_Main)~=2 || ~isnumeric(S.MIA.ColorMap_Main) || any(isnan(S.MIA.ColorMap_Main))
+    if ~isfield(S.MIA, 'ColorMap_Main') || size(S.MIA.ColorMap_Main,1)~=2 || ~isnumeric(S.MIA.ColorMap_Main) || any(isnan(S.MIA.ColorMap_Main))
         disp('WARNING: UserValues structure incomplete, field "MIA.ColorMap_Main" missing');
-        S.MIA.ColorMap_Main = [1 1];
+        S.MIA.ColorMap_Main = [1; 1];
     end
     P.MIA.ColorMap_Main = S.MIA.ColorMap_Main;
 

@@ -4508,11 +4508,6 @@ UserValues.Phasor.Reference(Det,:)=0;
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
-%%% Anders: Highjacking this to also save an IRF for Lifetime Fitting
-for i = 1:max(UserValues.Detector.Det)
-    UserValues.TauFit.IRF(i,1:numel(PamMeta.MI_Hist{i}))=PamMeta.MI_Hist{i};
-end
-
 LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
