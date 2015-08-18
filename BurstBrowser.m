@@ -4964,9 +4964,9 @@ if obj == h.DetermineCorrectionsButton
     BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
     BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-    %% plot raw data for S < 0.2 for direct excitation
+    %% plot raw data for S < 0.25 for direct excitation
     %%% check if plot exists
-    Smax = 0.2;
+    Smax = 0.25;
     x_axis = linspace(0,Smax,20);
     S_threshold = (data_for_corrections(:,indS)<Smax);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
