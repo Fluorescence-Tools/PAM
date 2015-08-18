@@ -3391,7 +3391,24 @@ if ~isempty(findobj('Tag','Pam'))
         end
     end
 end
-
+%%% Check if TauFit Boundaries where saved
+if ~isfield(BurstData,'TauFit')
+   BurstData.TauFit = [];
+   switch BurstData.BAMethod
+       case {1,2}
+            BurstData.TauFit.StartPar = {0,0};
+            BurstData.TauFit.ShiftPer = {0,0};
+            BurstData.TauFit.Length = {0,0};
+            BurstData.TauFit.IRFLength = {0,0};
+            BurstData.TauFit.IRFShift = {0,0};
+       case {3,4}
+           BurstData.TauFit.StartPar = {0,0,0};
+            BurstData.TauFit.ShiftPer = {0,0,0};
+            BurstData.TauFit.Length = {0,0,0};
+            BurstData.TauFit.IRFLength = {0,0,0};
+            BurstData.TauFit.IRFShift = {0,0,0};
+   end
+end
 if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
     %find positions of FRET Efficiency and Stoichiometry in NameArray
     posE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
@@ -5742,19 +5759,22 @@ switch obj
         %%% Values to consider:
         %%% The length of the shortest PIE channel
         BurstMeta.TauFit.MaxLength = min([numel(BurstMeta.TauFit.hMI_Par) numel(BurstMeta.TauFit.hMI_Per)]);
+        if BurstData.TauFit.Length{h.TauFit.ChannelSelect.Value} == 0 %%% no Value was stored, set to appropiate value
+            BurstData.TauFit.Length{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.MaxLength;
+        end
         %%% The Length Slider defaults to the length of the shortest PIE
         %%% channel and should not assume larger values
         h.TauFit.Length_Slider.Min = 1;
         h.TauFit.Length_Slider.Max = BurstMeta.TauFit.MaxLength;
-        h.TauFit.Length_Slider.Value = BurstMeta.TauFit.MaxLength;
-        BurstMeta.TauFit.Length = BurstMeta.TauFit.MaxLength;
+        h.TauFit.Length_Slider.Value = BurstData.TauFit.Length{h.TauFit.ChannelSelect.Value};
+        BurstMeta.TauFit.Length = BurstData.TauFit.Length{h.TauFit.ChannelSelect.Value};
         h.TauFit.Length_Edit.String = num2str(BurstMeta.TauFit.Length);
         %%% Start Parallel Slider can assume values from 0 (no shift) up to the
         %%% length of the shortest PIE channel minus the set length
         h.TauFit.StartPar_Slider.Min = 0;
         h.TauFit.StartPar_Slider.Max = BurstMeta.TauFit.MaxLength;
-        h.TauFit.StartPar_Slider.Value = 0;
-        BurstMeta.TauFit.StartPar = 0;
+        h.TauFit.StartPar_Slider.Value = BurstData.TauFit.StartPar{h.TauFit.ChannelSelect.Value};
+        BurstMeta.TauFit.StartPar = BurstData.TauFit.StartPar{h.TauFit.ChannelSelect.Value};
         h.TauFit.StartPar_Edit.String = num2str(BurstMeta.TauFit.StartPar);
         %%% Shift Perpendicular Slider can assume values from the difference in
         %%% start point between parallel and perpendicular up to the difference
@@ -5762,21 +5782,24 @@ switch obj
         %%% of the perpendicular channel
         h.TauFit.ShiftPer_Slider.Min = -floor(BurstMeta.TauFit.MaxLength/10);
         h.TauFit.ShiftPer_Slider.Max = floor(BurstMeta.TauFit.MaxLength/10);
-        h.TauFit.ShiftPer_Slider.Value = 0;
-        BurstMeta.TauFit.ShiftPer = 0;
+        h.TauFit.ShiftPer_Slider.Value = BurstData.TauFit.ShiftPer{h.TauFit.ChannelSelect.Value};
+        BurstMeta.TauFit.ShiftPer = BurstData.TauFit.ShiftPer{h.TauFit.ChannelSelect.Value};
         h.TauFit.ShiftPer_Edit.String = num2str(BurstMeta.TauFit.ShiftPer);
         
         %%% IRF Length has the same limits as the Length property
         h.TauFit.IRFLength_Slider.Min = 1;
         h.TauFit.IRFLength_Slider.Max = BurstMeta.TauFit.MaxLength;
-        h.TauFit.IRFLength_Slider.Value = BurstMeta.TauFit.MaxLength;
-        BurstMeta.TauFit.IRFLength = BurstMeta.TauFit.MaxLength;
+        if BurstData.TauFit.IRFLength{h.TauFit.ChannelSelect.Value} == 0
+            BurstData.TauFit.IRFLength{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.MaxLength;
+        end
+        h.TauFit.IRFLength_Slider.Value = BurstData.TauFit.IRFLength{h.TauFit.ChannelSelect.Value};
+        BurstMeta.TauFit.IRFLength = BurstData.TauFit.IRFLength{h.TauFit.ChannelSelect.Value};
         h.TauFit.IRFLength_Edit.String = num2str(BurstMeta.TauFit.IRFLength);
         %%% IRF Shift has the same limits as the perp shift property
         h.TauFit.IRFShift_Slider.Min = -floor(BurstMeta.TauFit.MaxLength/10);
         h.TauFit.IRFShift_Slider.Max = floor(BurstMeta.TauFit.MaxLength/10);
-        h.TauFit.IRFShift_Slider.Value = 0;
-        BurstMeta.TauFit.IRFShift = 0;
+        h.TauFit.IRFShift_Slider.Value = BurstData.TauFit.IRFShift{h.TauFit.ChannelSelect.Value};
+        BurstMeta.TauFit.IRFShift = BurstData.TauFit.IRFShift{h.TauFit.ChannelSelect.Value};
         h.TauFit.IRFShift_Edit.String = num2str(BurstMeta.TauFit.IRFShift);
         
         %%% Ignore Slider reaches from 1 to maximum length
@@ -6110,6 +6133,12 @@ if isprop(obj,'Style')
             h.TauFit.Ignore_Slider.Value = BurstMeta.TauFit.Ignore;
     end
 end
+%%% Update stored values in BurstData structure
+BurstData.TauFit.Length{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.Length;
+BurstData.TauFit.StartPar{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.StartPar;
+BurstData.TauFit.ShiftPer{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.ShiftPer;
+BurstData.TauFit.IRFLength{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.IRFLength;
+BurstData.TauFit.IRFShift{h.TauFit.ChannelSelect.Value} = BurstMeta.TauFit.IRFShift;
 %%% Update Plot
 %%% Make the Microtime Adjustment Plot Visible, hide Result
 h.TauFit.Microtime_Plot.Parent = h.MainTabTauFitPanel;
@@ -7854,6 +7883,9 @@ xdata = plots(strcmp(type,'image')).XData;
 ydata = plots(strcmp(type,'image')).YData;
 zdata = plots(strcmp(type,'image')).CData;
 
+if sum(zdata(:)) == 0
+    return;
+end
 histx = sum(zdata,1);
 histy = sum(zdata,2);
 
