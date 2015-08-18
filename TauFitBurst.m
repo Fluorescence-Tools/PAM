@@ -1,6 +1,7 @@
 function TauFitBurst(~,~)
 global UserValues TauFitBurstData
 h.TauFitBurst = findobj('Tag','TauFitBurst');
+
 if isempty(h.TauFitBurst) % Creates new figure, if none exists
     %% Figure Generation
     %%% Load user profile
@@ -20,7 +21,7 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'Toolbar','figure',...
         'UserData',[],...
         'BusyAction','cancel',...
-        'OuterPosition',[0.01 0.1 0.68 0.8],...
+        'OuterPosition',[0.01 0.05 0.68 0.85],...
         'CloseRequestFcn',@Close_TauFit,...
         'Visible','on');
     %%% Sets background of axes and other things
@@ -396,6 +397,15 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'ToolTipString','',...
         'Callback',@Start_Fit);
     
+    %%% popupmenu to select prefit-model
+    h.PrefitModel_Popupmenu = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','Popupmenu',...
+        'Tag','ChannelSelect_Popupmenu',...
+        'Units','normalized',...
+        'Position',[0.05 0.35 0.5 0.1],...
+        'String',{'Single Exponential','Biexponential'},...
+        'Callback',[]);
     %%% Button to pre-fit for determination of background contribution
     h.PreFit_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -1066,28 +1076,35 @@ Scatter = Scatter./sum(Scatter);
 
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
-%switch TauFitBurstData.FitType
-    %case 'Single Exponential'
+switch h.PrefitModel_Popupmenu.Value
+    case 1 %'Single Exponential'
         %%% Parameter:
         %%% gamma   - Constant Background
         %%% scatter - Scatter Background (IRF pattern)
         %%% taus    - Lifetimes
         x0 = [0.1,0.1,round(4/TauFitBurstData.TAC_Bin)];
-        shift_range = 0:0;
-        %%% fit for different IRF offsets and compare the results
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,Scatter,TauFitBurstData.MI_Bins,Decay,i},Decay,[0 0 0],[0.1 0.1 Inf]);
-            count = count +1;
-        end
-        ignore = 200;
-        chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = lsfit(x{best_fit},{Irf,Scatter,TauFitBurstData.MI_Bins,Decay,shift_range(best_fit)});
-        wres = (Decay-FitFun)./sqrt(Decay);
-%end
+        lb = [0,0,0];
+        ub = [0.1,0.1,Inf];
+    case 2 % Biexponential
+        x0 = [0.1,0.1,round(4/TauFitBurstData.TAC_Bin),round(4/TauFitBurstData.TAC_Bin),0.5];
+        lb = [0,0,0,0,0];
+        ub = [0.1,0.1,Inf,Inf,1];
+end
+
+%%% fit for different IRF offsets and compare the results
+shift_range = 0:0;
+count = 1;
+for i = shift_range
+    %%% Update Progressbar
+    %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+    [x{count}, res(count), residuals{count}] = lsqcurvefit(@lsfit,x0,{Irf,Scatter,TauFitBurstData.MI_Bins,Decay,i},Decay,lb,ub);
+    count = count +1;
+end
+ignore = 200;
+chi2 = cellfun(@(x) sum(x((1+ignore):end).^2./Decay((1+ignore):end))/(numel(Decay)-numel(x0)-ignore),residuals);
+[~,best_fit] = min(chi2);
+FitFun = lsfit(x{best_fit},{Irf,Scatter,TauFitBurstData.MI_Bins,Decay,shift_range(best_fit)});
+wres = (Decay-FitFun)./sqrt(Decay);
 
 %%% Reset Progressbar
 h.Progress_Text.String = 'Fit done';
@@ -1103,7 +1120,13 @@ h.Plots.Residuals.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals.YData = wres;
 h.Plots.Residuals_ZeroLine.XData = h.Plots.Decay_Par.XData;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(h.Plots.Decay_Par.XData));
-disp(['Tau = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(3))]);
+if numel(x{best_fit}) == 5
+    disp(['Tau1 = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(3))]);
+    disp(['Tau2 = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(4))]);
+    disp(['Amplitude 1 = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(5))]);
+else
+    disp(['Tau = ' num2str(TauFitBurstData.TAC_Bin*x{best_fit}(3))]);
+end
 TauFitBurstData.Tau = x{best_fit}(3);
 TauFitBurstData.Scatter_Contribution{chan} = x{best_fit}(2);
 TauFitBurstData.Background_Contribution{chan} = x{best_fit}(1);
@@ -1130,6 +1153,12 @@ drawnow;
 switch TauFitBurstData.BAMethod
 case {1,2} 
 %% 2 color MFD
+    %% Store Shift Values in BurstData structure
+    BurstData.TauFit.StartPar = TauFitBurstData.StartPar;
+    BurstData.TauFit.ShiftPer = TauFitBurstData.ShiftPer;
+    BurstData.TauFit.Length = TauFitBurstData.Length;
+    BurstData.TauFit.IRFLength = TauFitBurstData.IRFLength;
+    BurstData.TauFit.IRFShift = TauFitBurstData.IRFShift;
     %% Read out corrections
     G{1} = UserValues.TauFit.Ggreen;
     G{2} = UserValues.TauFit.Gred;
@@ -2108,8 +2137,17 @@ t = 1:n;
 tp = (1:p)';
 gamma = param(1);
 scatter = param(2);
-tau = param(3:length(param)); tau = tau(:)';
+if numel(param) == 3
+    tau = param(3);
+elseif numel(param) == 5
+    tau = param(3:end-1); tau = tau(:)';
+    a1 = param(end);
+end
+
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
+if size(x,2) > 1
+    x = a1*x(:,1) + (1-a1)*x(:,2);
+end
 %irs = irf(rem(rem(t-floor(c)-1, n)+n,n)+1);
 irs = circshift(irf,[0 c]);
 bg = circshift(bg,[0 c]);

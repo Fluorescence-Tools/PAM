@@ -44,7 +44,7 @@ switch conv_type
         end
         z = z(1:n,:);
     case 'circular'
-        z = convol(irf,x);
+        z = convol(irf,x(1:n));
 end
 z = z./repmat(sum(z,1),size(z,1),1);
 %%% combine the two exponentials

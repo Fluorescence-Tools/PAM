@@ -38,7 +38,7 @@ switch conv_type
     case 'linear'
         z = conv(irf, x); z = z(1:n)';
     case 'circular'
-        z = convol(irf,x);
+        z = convol(irf,x(1:n));
 end
 z = z./repmat(sum(z,1),size(z,1),1);
 z = (1-sc).*z + sc*Scatter;

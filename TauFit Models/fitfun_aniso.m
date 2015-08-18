@@ -41,7 +41,7 @@ switch conv_type
     case 'linear'
         z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
     case 'circular'
-        z_par = convol(IRF{1},x_par);
+        z_par = convol(IRF{1},x_par(1:n));
 end
 z_par = z_par./repmat(sum(z_par,1),size(z_par,1),1);
 z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
@@ -58,7 +58,7 @@ switch conv_type
     case 'linear'
         z_per = conv(IRF{2}, x_per);z_per = z_per(1:n)';
     case 'circular'
-        z_per = convol(IRF{2}, x_per);
+        z_per = convol(IRF{2}, x_per(1:n));
 end
 z_per = z_per./repmat(sum(z_per,1),size(z_per,1),1);
 z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
