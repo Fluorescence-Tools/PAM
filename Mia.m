@@ -2954,8 +2954,7 @@ if any(mode==1)
                 h.Mia_Image.Axes(i,2).Color = [0 1 0];
                 h.Mia_Image.Settings.Channel_Colormap(i).BackgroundColor = UserValues.Look.Control;
                 AlphaRatio = 3;
-        end
-        
+        end        
         %% Plots main image
         if size(MIAData.Data,1)>=1 && size(MIAData.Data,1)>=i
             Frame=round(h.Mia_Image.Settings.Channel_Frame_Slider(i).Value);
@@ -3093,7 +3092,7 @@ if any(mode==2)
             %%% Plots average correlation, if frame 0 was selected
             if Frame==0
                 Frames=str2num(h.Mia_ICS.Frames2Use.String); %#ok<ST2NM>
-                Frames=Frames((Frames>0) & (Frames < size(MIAData.Cor{i,1},3)));
+                Frames=Frames((Frames>0) & (Frames <= size(MIAData.Cor{i,1},3)));
                 Image=mean(MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frames),3);
             else
                 Image=MIAData.Cor{i,1}(X(1):X(2),Y(1):Y(2),Frame);  
@@ -4498,9 +4497,11 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
         %%% Averaged correlation
         DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1},3);
         %%% Error of correlation
-        DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1},0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1},3));
-        
-
+        if size(MIAData.Cor{floor(1.5*i),1},3)>1
+            DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1},0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1},3));
+        else
+            DataAll{i,2} = MIAData.Cor{floor(1.5*i),1};
+        end
     end
     %% Gets cross correlation data to save
     if Cross == 1
@@ -5053,6 +5054,11 @@ for i = 1:3
         MIAData.STICS_SEM{i} = single(zeros(size(MIAData.Data{Fist,2},1),size(MIAData.Data{Fist,2},2),MaxLag+1));
         STICS_Num = uint16(zeros(size(MIAData.Data{Fist,2},1),size(MIAData.Data{Fist,2},2),MaxLag+1));
         for j=i:numel(Frames)
+            if i<3
+                Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
+            else
+                Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
+            end
             Image{1} = double(MIAData.Data{Fist,2}(:,:,Frames(j)));
             if i<3
                 TotalInt(j)=sum(Image{1}(Use{i}(:,:,j)));
@@ -5103,7 +5109,11 @@ for i = 1:3
                 end                
             end            
             if mod(j,100)==0
-                Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
+                if i<3
+                    Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
+                else
+                    Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
+                end
             end
         end
         if i<3
@@ -5128,32 +5138,6 @@ if size(MIAData.STICS,2)>1
 end
 
 Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
-%%% Corrects the amplitude changes due to temporal moving average addition/subtraction
-%%% The Formula assumes 2 or 3 species with different brightnesses and corrects the amplitude accordingly
-if h.Mia_Image.Settings.Correction_Add.Value==5 && h.Mia_Image.Settings.Correction_Subtract.Value==4 %%% Subtracts and Adds moving average
-    Sub=str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String);
-    Add=str2double(h.Mia_Image.Settings.Correction_Add_Frames.String);
-    if Sub~=Add %%% If Add==Sub, nothing was done        
-        Correct=1/((1+1/Add-1/Sub)^2+(1/Add-1/Sub)^2*(min(Add,Sub)-1)+(1/max(Add,Sub))^2*abs(Add-Sub));
-    else %%% If Add==Sub, nothing was done
-        Correct=1;
-    end
-elseif h.Mia_Image.Settings.Correction_Add.Value==5
-    Add=str2double(h.Mia_Image.Settings.Correction_Add_Frames.String); 
-    Correct=1/((1+1/Add)^2+(1/Add)^2*(Add-1));
-elseif h.Mia_Image.Settings.Correction_Subtract.Value==4
-    Sub=str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String);
-    Correct=1/((1-1/Sub)^2+(1/Sub)^2*(Sub-1));
-else
-    Correct=1;
-end
-%%% Applies amplidute correction
-for i=1:size(MIAData.STICS)
-    if ~isempty(MIAData.STICS{i})
-        MIAData.STICS{i} = MIAData.STICS{i}*Correct;
-    end
-end
-
 
 %%% Saves correlation files
 if h.Mia_Image.Calculations.Cor_Save_STICS.Value > 1

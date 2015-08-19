@@ -1,5 +1,5 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-3 dimensional correlation fit for iMSD. 
+2 dimensional correlation fit for iMSD. 
 Uses only one sigma and fits automatically D and sigma and w_r
 
 The i in the formula comes from MIAFit and accounts for the 
@@ -9,20 +9,17 @@ OUT = P(4) + 1/sqrt(8).*1/P(1).*1./(1+(4*P(3)*(i-1)*10^5/P(2).^2)).*1./sqrt(1+(4
       .*exp(-((x*P(5)).^2 + (y*P(5)).^2)/((P(2).^2)+(4*P(3)*(i-1)*P(6))*10^3));
 
      |Offset|+|1/Gamma |*| 1/N|*|Tempral Decay XY                           |
-     .*|Temporal Decay Z                                |
      .*|Spatio-Temporal Decay                                                  |
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N                 = 1;     LB = 0;      UB = Inf;  
 Param(2): w_r[nm]           = 200;   LB = 0;      UB = Inf;
-Param(3): w_z[nm]           = 1000;   LB = 0;      UB = Inf;
-Param(4): D[µm²]            = 0.01;  LB = 0;      UB = Inf;
-Param(5): I0                = 0;     LB = -Inf;   UB = Inf;
-Param(6): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
-Param(7): Inter_Frame_Time[ms]    = 100;    LB = 0;      UB = Inf;
+Param(3): D[µm²]            = 0.01;  LB = 0;      UB = Inf;
+Param(4): I0                = 0;     LB = -Inf;   UB = Inf;
+Param(5): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
+Param(6): Inter_Frame_Time[ms]    = 100;    LB = 0;      UB = Inf;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B = 1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
 
-OUT = P(5) + 1/sqrt(4).*1/P(1).*1./(1+(4.*P(4).*P(7).*10^3.*(i-1))./(P(2)^2))
-      .*1./sqrt((1+(4.*P(4).*P(7).*10^3.*(i-1))./(P(3)^2)))
-      .*exp(-((x*P(6)).^2 + (y*P(6)).^2)/((P(2).^2)+(4*P(4)*(i-1)*P(7))*10^3));
+OUT = P(4) + 1/sqrt(4).*1/P(1).*1./(1+(4.*P(3).*P(6).*10^3.*(i-1))./(P(2)^2))
+      .*exp(-((x*P(5)).^2 + (y*P(5)).^2)/((P(2).^2)+(4*P(3)*(i-1)*P(6))*10^3));
