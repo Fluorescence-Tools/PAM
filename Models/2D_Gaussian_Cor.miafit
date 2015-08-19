@@ -1,19 +1,15 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 2 dimensional gaussian fit of image correlation data. 
 Model takes increased sigma due to correlation into account.
-Sigmas can be off axis.
+Only one sigma.
 
-    |Offset|+|Amplitude|*|First dimention on    off axis                         | + |Second dimention on       off axis   
+    |Offset|+|Amplitude|*| X       | + |Y^      |/Sigma^2
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A0                = 1;     LB = 0;      UB = Inf;   
 Param(2): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
-Param(3): X_Off[Px]         = 0;     LB = -Inf;   UB = Inf;
-Param(4): Y_Off[Px]         = 0;     LB = -Inf;   UB = Inf;
-Param(5): Sigma1[nm]        = 200;   LB = 0;      UB = Inf;
-Param(6): Sigma2[nm]        = 200;   LB = 0;      UB = Inf;
-Param(7): Angle[Rad]        = 0;     LB = 0;      UB = 6.3;
-Param(8): I0                = 0;     LB = -Inf;   UB = Inf;
+Param(3): Sigma[nm]        = 200;   LB = 0;      UB = Inf;
+Param(4): I0                = 0;     LB = -Inf;   UB = Inf;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B = 1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
-OUT = P(8) + P(1).*exp(-(((x*P(2)-P(3))*cos(P(7))+((y*P(2)-P(4))*sin(P(7))))/P(5)).^2 - (((x*P(2)-P(3))*sin(P(7))+((y*P(2)-P(4))*cos(P(7))))/P(6)).^2);
+OUT = P(4) + P(1).*exp(-((x*P(2)).^2 + (y*P(2)).^2)/(P(3).^2));

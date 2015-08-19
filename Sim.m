@@ -1949,7 +1949,7 @@ switch h.Sim_Save.Value
     case 2 %%% Saves as TIFF
         for i=1:4            
             if ~isempty(Sim_Photons{i})
-                Int = histc(double(Sim_Photons{i}), double(1:ScanTicks(1):Simtime));
+                Int = histc(double(Sim_Photons{i}),1:ScanTicks(1):double(Simtime));
                 Int=reshape(Int,Pixel(1),Pixel(2),Frames);
                 Int=uint16(Int);
                 
@@ -1988,6 +1988,7 @@ clear mex
 function Do_CameraSim(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
+Sel = h.Sim_File_List.Value(1);
 
 for i = 1:numel(SimData.Species)
     
@@ -2012,7 +2013,7 @@ for i = 1:numel(SimData.Species)
     end   
     
     NoP = SimData.Species(i).N;
-    D = sqrt(2*SimData.Species(i).D*10^6*SimData.General.Time(3));
+    D = sqrt(2*SimData.Species(i).D*10^6*SimData.General(Sel).Time(3));
     
     wr = zeros(4,1);
     dX = zeros(4,1); dY = zeros(4,1);
@@ -2087,7 +2088,7 @@ for i = 1:numel(SimData.Species)
             bleach = zeros(SimData.Species(i).Color,1); 
             while any(Bleach == 0)                
                 for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(j,:).*BlP(j,:))./sum(FRET(find(Bleach==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)));
+                    bleach(j) = exprnd(1./(sum(ExP(j,:).*BlP(j,:))./sum(FRET(find(Bleach==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)));
                 end
                 bleach(bleach==Inf) = Frames+1;
                 bleach(Bleach~=0) = Inf;
@@ -2229,7 +2230,7 @@ for i = 1:numel(SimData.Species)
                 
                 for j = 1:SimData.Species(i).Color
                     for n = 1:SimData.Species(i).Color
-                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)*Prob(j,n);
+                        Image = Int{j}*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)*Prob(j,n);
                         Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
@@ -2263,7 +2264,7 @@ for i = 1:numel(SimData.Species)
                 %%% Tests for bleaching
                 bleach = zeros(SimData.Species(i).Color,1);
                 for j=1:SimData.Species(i).Color
-                    bleach(j) = exprnd(1./(sum(ExP(:,j).*BlP(:,j))./sum(FRET(find(Bleach(:,k)==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)));
+                    bleach(j) = exprnd(1./(sum(ExP(:,j).*BlP(:,j))./sum(FRET(find(Bleach(:,k)==0),j))*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)));
                 end
               
                 %%% Particle is spread out over PSF into pixels 
@@ -2398,7 +2399,7 @@ for i = 1:numel(SimData.Species)
                 %%% Calculates actual photons
                 for j = 1:SimData.Species(i).Color
                     for n = 1:SimData.Species(i).Color
-                        Image = double(Int{j})*str2double(h.Sim_Freq.String)*1000*SimData.General.Time(3)*Prob(j,n);
+                        Image = double(Int{j})*str2double(h.Sim_Freq.String)*1000*SimData.General(Sel).Time(3)*Prob(j,n);
                         Image(Image>1e-4) = poissrnd(Image(Image>1e-4));
                         Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) = ...
                             Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
@@ -2414,7 +2415,7 @@ if h.Sim_UseNoise.Value
         
         for j=1:4
             if str2double(h.Sim_Noise{i}.String) > 0 && size(Total,1)>=i && size(Total,2)>=j
-               Noise = str2double(h.Sim_Noise{i}.String)*1000/SimData.General.Time(3);                
+               Noise = str2double(h.Sim_Noise{i}.String)*1000/SimData.General(Sel).Time(3);                
                Total{i,j} = Total{i,j} + uint16(poissrnd(Noise,size(Total{i,j})));
             end            
         end

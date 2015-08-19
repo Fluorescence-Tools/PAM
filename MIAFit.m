@@ -269,6 +269,19 @@ h.Omit_Center = uicontrol(...
     'String','Omit center',...
     'Callback',@Update_Plots,...
     'Position',[0.002 0.37 0.1 0.1]);
+%%% Checkbox to omit center point
+h.Hide_Legend = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Tag','Normalize',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Style','checkbox',...
+    'Value',UserValues.MIAFit.Hide_Legend,...
+    'String','Hide Legend',...
+    'Callback',@Update_Plots,...
+    'Position',[0.002 0.23 0.1 0.1]);
 %%% Optimization settings
 uicontrol(...
     'Parent',h.Setting_Panel,...
@@ -775,7 +788,7 @@ global UserValues MIAFitData MIAFitMeta
 h = guidata(findobj('Tag','MIAFit'));
 
 %%% Choose files to load
-[FileName,PathName,Type] = uigetfile({'*.miacor', 'MIA 2D correlation file'; '*.tif', 'TIFFs generated with MIA';'*.tif','General TIFFs'}, 'Choose an image data file', UserValues.File.MIAFitPath, 'MultiSelect', 'on');
+[FileName,PathName,Type] = uigetfile({'*.miacor', 'MIA 2D correlation file'; '*.tif', 'TIFFs generated with MIA';'*.tif','General TIFFs';'*.stcor', 'MIA 3D correlation file';}, 'Choose an image data file', UserValues.File.MIAFitPath, 'MultiSelect', 'on');
 %%% Tranforms to cell array, if only one file was selected
 if ~iscell(FileName)
     FileName = {FileName};
@@ -785,12 +798,16 @@ end
 if all(FileName{1}==0)  
     return;
 end
+%%% Only allows one STICS file at a time
+if Type==4
+    FileName = FileName(1);
+end
 
 %%% Saves pathname to uservalues
 UserValues.File.MIAFitPath=PathName;
 LSUserValues(1);
 %%% Deletes loaded data
-if mode==1
+if mode==1 || Type == 4
     MIAFitData=[];
     MIAFitData.Data=cell(0);
     MIAFitData.FileName=cell(0);
@@ -806,7 +823,7 @@ if mode==1
 end
 for i=1:numel(FileName)
     switch Type
-        case 1 %% MIA correlation file based on .mat file            
+        case 1 %% MIA correlation file based on .mat file
             MIAFitData.FileName{end+1} = FileName{i};
             load([PathName FileName{i}],'-mat','Data');
             MIAFitData.Data{end+1,1} = Data{1}; %#ok<USENS>
@@ -825,44 +842,93 @@ for i=1:numel(FileName)
                 Info = str2num(FileInfo(2).ImageDescription); %#ok<ST2NM>
                 MIAFitData.Data{end,2} = double(imread(fullfile(PathName,FileName{i}),'TIFF','Index',2));
                 MIAFitData.Data{end,2} = MIAFitData.Data{end,2}/Info(1)+Info(2);
-            end       
+            end  
+        case 4 %% MIA stics correlation file based on .mat file   
+            load([PathName FileName{i}],'-mat','Data');
+            load([PathName FileName{i}],'-mat','Info');
+            for j=1:size(Data{1},3)
+                MIAFitData.Data{end+1,1} = Data{1}(:,:,j);
+                MIAFitData.Data{end,2} = Data{2}(:,:,j);
+                MIAFitData.FileName{end+1} = FileName{i};
+                MIAFitData.Counts{end+1} = Info.Counts/Info.Times(1)*1000;
+            end
     end
-    %% Creates new plots
-    Center = ceil((size(MIAFitData.Data{end,1})+1)/2);
-    %%% On Axis X plot
-    MIAFitMeta.Plots{end+1,1} = errorbar(...
-        0,...
-        MIAFitData.Data{end,1}(Center(1), Center(2)),...
-        MIAFitData.Data{end,2}(Center(1), Center(2)),...
-        'Parent',h.X_Axes);
-    %%% On Axis X fit
-    MIAFitMeta.Plots{end,2} = line(...
-        'Parent',h.X_Axes,...
-        'XData',0,...
-        'YData',zeros(1));
-    %%% On Axis X residuals
-    MIAFitMeta.Plots{end,3} = line(...
-        'Parent',h.XRes_Axes,...
-        'XData',0,...
-        'YData',zeros(1));
-    %%% On Axis Y plot
-    MIAFitMeta.Plots{end,4} = errorbar(...
-        0,...
-        MIAFitData.Data{end,1}(Center(1),Center(2)),...
-        MIAFitData.Data{end,2}(Center(1),Center(2)),...
-        'Parent',h.Y_Axes);
-    %%% On Axis Y fit
-    MIAFitMeta.Plots{end,5} = line(...
-        'Parent',h.Y_Axes,...
-        'XData',0,...
-        'YData',zeros(1));
-    %%% On Axis Y residuals
-    MIAFitMeta.Plots{end,6} = line(...
-        'Parent',h.YRes_Axes,...
-        'XData',0,...
-        'YData',zeros(1));
-    
-    MIAFitMeta.Params(:,end+1)=cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+    switch Type
+        case {1 2 3} %%% Single plots per file (ICS and RICS)
+            %% Creates new plots
+            Center = ceil((size(MIAFitData.Data{end,1})+1)/2);
+            %%% On Axis X plot
+            MIAFitMeta.Plots{end+1,1} = errorbar(...
+                0,...
+                MIAFitData.Data{end,1}(Center(1), Center(2)),...
+                MIAFitData.Data{end,2}(Center(1), Center(2)),...
+                'Parent',h.X_Axes);
+            %%% On Axis X fit
+            MIAFitMeta.Plots{end,2} = line(...
+                'Parent',h.X_Axes,...
+                'XData',0,...
+                'YData',zeros(1));
+            %%% On Axis X residuals
+            MIAFitMeta.Plots{end,3} = line(...
+                'Parent',h.XRes_Axes,...
+                'XData',0,...
+                'YData',zeros(1));
+            %%% On Axis Y plot
+            MIAFitMeta.Plots{end,4} = errorbar(...
+                0,...
+                MIAFitData.Data{end,1}(Center(1),Center(2)),...
+                MIAFitData.Data{end,2}(Center(1),Center(2)),...
+                'Parent',h.Y_Axes);
+            %%% On Axis Y fit
+            MIAFitMeta.Plots{end,5} = line(...
+                'Parent',h.Y_Axes,...
+                'XData',0,...
+                'YData',zeros(1));
+            %%% On Axis Y residuals
+            MIAFitMeta.Plots{end,6} = line(...
+                'Parent',h.YRes_Axes,...
+                'XData',0,...
+                'YData',zeros(1));
+            MIAFitMeta.Params(:,end+1)=cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+        case 4 %%% Multiple plots per file (STICS/iMSD)
+            for j=1:size(Data{1},3)
+                %% Creates new plots
+                Center = ceil((size(MIAFitData.Data{end,1})+1)/2);
+                %%% On Axis X plot
+                MIAFitMeta.Plots{end+1,1} = errorbar(...
+                    0,...
+                    MIAFitData.Data{end,1}(Center(1), Center(2)),...
+                    MIAFitData.Data{end,2}(Center(1), Center(2)),...
+                    'Parent',h.X_Axes);
+                %%% On Axis X fit
+                MIAFitMeta.Plots{end,2} = line(...
+                    'Parent',h.X_Axes,...
+                    'XData',0,...
+                    'YData',zeros(1));
+                %%% On Axis X residuals
+                MIAFitMeta.Plots{end,3} = line(...
+                    'Parent',h.XRes_Axes,...
+                    'XData',0,...
+                    'YData',zeros(1));
+                %%% On Axis Y plot
+                MIAFitMeta.Plots{end,4} = errorbar(...
+                    0,...
+                    MIAFitData.Data{end,1}(Center(1),Center(2)),...
+                    MIAFitData.Data{end,2}(Center(1),Center(2)),...
+                    'Parent',h.Y_Axes);
+                %%% On Axis Y fit
+                MIAFitMeta.Plots{end,5} = line(...
+                    'Parent',h.Y_Axes,...
+                    'XData',0,...
+                    'YData',zeros(1));
+                %%% On Axis Y residuals
+                MIAFitMeta.Plots{end,6} = line(...
+                    'Parent',h.YRes_Axes,...
+                    'XData',0,...
+                    'YData',zeros(1));
+                MIAFitMeta.Params(:,end+1)=cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+            end
+    end
 end
 %%% Updates table and plot data and style to new size
 Update_Style([],[],1);
@@ -903,6 +969,7 @@ if ~isempty(FileName)
     %%% Reads in the selected fit function file
     fid = fopen(FileName);
     Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
+    fclose(fid);
     Text=Text{1};
     
     %%% Finds line, at which parameter definition starts
@@ -923,7 +990,7 @@ if ~isempty(FileName)
     MIAFitMeta.Model.Function=cell2mat(MIAFitMeta.Model.Function);
     %%% Convert to function handle
     FunctionStart = strfind(MIAFitMeta.Model.Function,'=');
-    eval(['MIAFitMeta.Model.Function = @(P,x,y) ' MIAFitMeta.Model.Function((FunctionStart(1)+1):end)]);
+    eval(['MIAFitMeta.Model.Function = @(P,x,y,i) ' MIAFitMeta.Model.Function((FunctionStart(1)+1):end)]);
     %%% Extracts parameter names, initial values and bounds
     MIAFitMeta.Model.Params=cell(NParams,1);
     MIAFitMeta.Model.Value=zeros(NParams,1);
@@ -956,6 +1023,7 @@ end
 %%% 1: Export to figure
 %%% 2: Export to Workspace
 %%% 3: Change number of export plots
+%%% 3: Copy parameters to clipboard
 function Plot_Menu_Callback(Obj,~,mode)
 h = guidata(findobj('Tag','MIAFit'));
 global MIAFitData MIAFitMeta
@@ -1006,7 +1074,7 @@ switch mode
                         end
                     case 3 %% Normalizes to G(0) of the fit
                         P = MIAFitMeta.Params(:,File); x = 0; y = 0;
-                        B = feval(MIAFitMeta.Model.Function,P,x,y);
+                        B = feval(MIAFitMeta.Model.Function,P,x,y,i);
                         if isnan(B) || B==0 || isinf(B)
                             B = 1;
                         end
@@ -1153,7 +1221,7 @@ switch mode
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                             case 8 %%% Fit image
                                 P=MIAFitMeta.Params(:,File);
-                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1162,7 +1230,7 @@ switch mode
                                 Data = real(OUT)/B;
                             case 9 %%% Residuals image
                                 P=MIAFitMeta.Params(:,File);
-                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
@@ -1217,7 +1285,7 @@ switch mode
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                             case 11 %%% Fit surf
                                 P=MIAFitMeta.Params(:,File);
-                                OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1226,7 +1294,7 @@ switch mode
                                 Data = real(OUT)/B;
                             case 12 %%% Residuals surf
                                 P=MIAFitMeta.Params(:,File); %#ok<NASGU>
-                                eval(MIAFitMeta.Model.Function);
+                                OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
                                 if h.Omit_Center.Value
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
@@ -1274,7 +1342,7 @@ switch mode
                         Error = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         
                         P=MIAFitMeta.Params(:,File);
-                        OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+                        OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                         if h.Omit_Center.Value
                             OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
                                 (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)+1) + ...
@@ -1387,6 +1455,7 @@ UserValues.MIAFit.Fit_Y = str2double(h.Fit_Y.String);
 UserValues.MIAFit.Plot_Errorbars = Plot_Errorbars;
 UserValues.MIAFit.NormalizationMethod = Normalization_Method;
 UserValues.MIAFit.Omit = h.Omit_Center.Value;
+UserValues.MIAFit.Hide_Legend = h.Hide_Legend.Value;
 LSUserValues(1);
 
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
@@ -1422,7 +1491,7 @@ for i=1:size(MIAFitMeta.Plots,1)
                 end
             case 3 %% Normalizes to G(0) of the fit
                 P = MIAFitMeta.Params(:,i); x = 0; y = 0;
-                B = feval(MIAFitMeta.Model.Function,P,x,y);
+                B = feval(MIAFitMeta.Model.Function,P,x,y,i);
                 if isnan(B) || B==0 || isinf(B)
                     B = 1;
                 end
@@ -1448,8 +1517,7 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,1}.XData = x(1,:);    
         MIAFitMeta.Plots{i,1}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;   
         MIAFitMeta.Plots{i,4}.XData = y(:,1);
-        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;
-       
+        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;       
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
             MIAFitMeta.Plots{i,1}.LData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;   
@@ -1464,7 +1532,7 @@ for i=1:size(MIAFitMeta.Plots,1)
         end
         %% Calculates fit y data and updates fit plot
         P=MIAFitMeta.Params(:,i);
-        OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+        OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
         OUT=real(OUT);
         if h.Omit_Center.Value
            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) =...
@@ -1608,7 +1676,7 @@ for i=1:numel(Active)
     LegendUse(2*i-1)=MIAFitMeta.Plots{Active(i),1};
     LegendUse(2*i)=MIAFitMeta.Plots{Active(i),2};
 end
-if ~isempty(LegendString)
+if ~isempty(LegendString) && h.Hide_Legend.Value == 0
     %% Active legend    
     h.MIAFit_Legend(1)=legend(h.X_Axes,LegendUse,LegendString,'Interpreter','none');
     h.MIAFit_Legend(2)=legend(h.Y_Axes,LegendUse,LegendString,'Interpreter','none');
@@ -2130,19 +2198,19 @@ x = Data{1};
 y = Data{2};
 Weights = Data{3};
 Omit = Data{4};
-file = Data{5};
+i = Data{5};
 
 %%% Determines, which parameters are fixed
-Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
+Fixed = cell2mat(h.Fit_Table.Data(i,5:3:end-1));
 P = zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
 P(~Fixed) = Fit_Params;
 %%% Assigns parameters from table to fixed parameters
-P(Fixed) = MIAFitMeta.Params(Fixed,file);
+P(Fixed) = MIAFitMeta.Params(Fixed,i);
 %%% Applies function on parameters
-OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
 if h.Omit_Center.Value
-    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) = Omit;  %#ok<NODEF>
+    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) = Omit;
 end
 %%% Applies weights
 Out=OUT./Weights;
@@ -2193,7 +2261,7 @@ for i=find(Active)'
   x = X(1:Points(k)); y = Y(1:Points(k));
   X(1:Points(k))=[]; Y(1:Points(k)) = []; 
   %%% Calculates function for current file
-  OUT = feval(MIAFitMeta.Model.Function,P,x,y);
+  OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
   if h.Omit_Center.Value
       OUT(x==0 & y==0) = Omit(k);
   end
