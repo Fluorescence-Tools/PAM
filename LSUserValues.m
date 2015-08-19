@@ -499,6 +499,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.Method was incomplete');    
     end
     P.BurstSearch.Method = S.BurstSearch.Method;
+    %%% Checks, if BurstSearch.SmoothingMethod subfield exists
+    if ~isfield (S.BurstSearch,'SmoothingMethod')
+        S.BurstSearch.SmoothingMethod=1;
+        disp('UserValues.BurstSearch.SmoothingMethod was incomplete');    
+    end
+    P.BurstSearch.SmoothingMethod = S.BurstSearch.SmoothingMethod;
     %%% Checks, if BurstSearch.PIEChannelSelection exists
     %%% (This field contains the PIEChannel Selection (as a String) for every
     %%% Burst Search Method)
@@ -514,6 +520,10 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.BurstSearch,'SearchParameters')
         S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
         disp('UserValues.BurstSearch.SearchParameters was incomplete');    
+    end
+    if size(S.BurstSearch.SearchParameters,1) < 2
+        S.BurstSearch.SearchParameters(2,1:5)={[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');   
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
     %%% Checks, if BurstSearch.SaveTotalPhotonStream exists

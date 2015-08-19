@@ -749,6 +749,31 @@ end
         'TooltipString',sprintf(''));    
 
     %%%Popup Menu for Selection of Burst Search
+    h.Burst.BurstSearchSmoothing_Text = uicontrol(...
+        'Style','text',...
+        'Parent',h.Burst.SubPanel_BurstSearch,...
+        'Tag','BurstSearchSmoothing_Text',...
+        'Units','normalized',...
+        'HorizontalAlignment','left',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','Select Burst Search Method:',...
+        'Position',[0.05 0.85 0.9 0.08],...
+        'TooltipString',sprintf(''));   
+    h.Burst.BurstSearchSmoothing_Popupmenu = uicontrol(...
+        'Style','popupmenu',...
+        'Parent',h.Burst.SubPanel_BurstSearch,...
+        'Tag','BurstSearchSelection_Popupmenu',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String',{'Sliding Time Window','Interphoton Time with Lee Filter'},...
+        'Callback',@Update_BurstGUI,...
+        'Position',[0.05 0.75 0.9 0.08],...
+        'TooltipString',sprintf(''));   
+    
     h.Burst.BurstSearchSelection_Text = uicontrol(...
         'Style','text',...
         'Parent',h.Burst.SubPanel_BurstSearch,...
@@ -759,7 +784,7 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String','Select Burst Search Method:',...
-        'Position',[0.05 0.9 0.9 0.08],...
+        'Position',[0.05 0.65 0.9 0.08],...
         'TooltipString',sprintf('APBS: All Photon Burst Search\nDCBS: Double Channel Burst Search\nTCBS: Triple Channel Burst Search'));   
     h.Burst.BurstSearchSelection_Popupmenu = uicontrol(...
         'Style','popupmenu',...
@@ -771,11 +796,13 @@ end
         'ForegroundColor', Look.Fore,...
         'String',{'APBS 2C-MFD','DCBS 2C-MFD','APBS 3C-MFD','TCBS 3C-MFD','APBS 2C-noMFD'},...
         'Callback',@Update_BurstGUI,...
-        'Position',[0.05 0.8 0.9 0.08],...
+        'Position',[0.05 0.55 0.9 0.08],...
         'TooltipString',sprintf(''));   
     if ismac
         h.Burst.BurstSearchSelection_Popupmenu.ForegroundColor = [0 0 0];
         h.Burst.BurstSearchSelection_Popupmenu.BackgroundColor = [1 1 1];
+        h.Burst.BurstSearchSmoothing_Popupmenu.ForegroundColor = [0 0 0];
+        h.Burst.BurstSearchSmoothing_Popupmenu.BackgroundColor = [1 1 1];
     end
     %%% Edit Box for Parameter1 (Number of Photons Threshold)
     h.Burst.BurstParameter1_Edit = uicontrol(...
@@ -788,7 +815,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','100',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.75 0.7 0.2 0.08],...
+        'Position',[0.75 0.45 0.2 0.08],...
         'TooltipString',sprintf(''));
     %%% Text Box for Parameter1 (Number of Photons Threshold)
     h.Burst.BurstParameter1_Text = uicontrol(...
@@ -802,7 +829,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Minimum Photons per Burst:',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.05 0.7 0.65 0.08],...
+        'Position',[0.05 0.45 0.65 0.08],...
         'TooltipString',sprintf(''));    
     %%% Edit Box for Parameter2 (Time Window)
     h.Burst.BurstParameter2_Edit = uicontrol(...
@@ -815,7 +842,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','500',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.75 0.6 0.2 0.08],...
+        'Position',[0.75 0.35 0.2 0.08],...
         'TooltipString',sprintf(''));   
     %%% Text Box for Parameter2 (Number of Photons Threshold)
     h.Burst.BurstParameter2_Text = uicontrol(...
@@ -829,7 +856,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Time Window [us]:',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.05 0.6 0.65 0.08],...
+        'Position',[0.05 0.35 0.65 0.08],...
         'TooltipString',sprintf(''));    
     %%% Edit Box for Parameter3 (Photons per Time Window Threshold 1)
     h.Burst.BurstParameter3_Edit = uicontrol(...
@@ -842,7 +869,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','5',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.75 0.5 0.2 0.08],...
+        'Position',[0.75 0.25 0.2 0.08],...
         'TooltipString',sprintf(''));    
     %%% Text Box for Parameter3 (Photons per Time Window Threshold 1)
     h.Burst.BurstParameter3_Text = uicontrol(...
@@ -856,7 +883,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Photons per Time Window:',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.05 0.5 0.65 0.08],...
+        'Position',[0.05 0.25 0.65 0.08],...
         'TooltipString',sprintf(''));    
     %%% Edit Box for Parameter4 (Photons per Time Window Threshold 2)
     h.Burst.BurstParameter4_Edit = uicontrol(...
@@ -869,7 +896,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','5',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.75 0.4 0.2 0.08],...
+        'Position',[0.75 0.15 0.2 0.08],...
         'TooltipString',sprintf(''));   
     %%% Text Box for Parameter4 (Photons per Time Window Threshold 2)
     h.Burst.BurstParameter4_Text = uicontrol(...
@@ -883,7 +910,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Photons per Time Window:',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.05 0.4 0.65 0.08],...
+        'Position',[0.05 0.15 0.65 0.08],...
         'TooltipString',sprintf(''));    
     %%% Edit Box for Parameter5 (Photons per Time Window Threshold 3)
     h.Burst.BurstParameter5_Edit = uicontrol(...
@@ -896,7 +923,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','5',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.75 0.3 0.20 0.08],...
+        'Position',[0.75 0.05 0.20 0.08],...
         'TooltipString',sprintf(''));
     %%% Text Box for Parameter5 (Photons per Time Window Threshold 3)
     h.Burst.BurstParameter5_Text = uicontrol(...
@@ -910,7 +937,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String','Photons per Time Window:',...
         'Callback',@BurstSearchParameterUpdate,...
-        'Position',[0.05 0.3 0.65 0.08],...
+        'Position',[0.05 0.05 0.65 0.08],...
         'TooltipString',sprintf(''));
 
     %%% Disable all further processing buttons of BurstSearch
@@ -4650,70 +4677,118 @@ end
 function Update_BurstGUI(obj,~)
 global UserValues
 h=guidata(findobj('Tag','Pam'));
-if obj == h.Burst.BurstSearchSelection_Popupmenu %executed on change in Popupmenu
-    %update the UserValues
-    UserValues.BurstSearch.Method = obj.Value;
-    BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
+if isempty(obj) || obj == h.Burst.BurstSearchSelection_Popupmenu
+    if obj == h.Burst.BurstSearchSelection_Popupmenu %executed on change in Popupmenu
+        %update the UserValues
+        UserValues.BurstSearch.Method = obj.Value;
+        BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
+        LSUserValues(1);
+    else %executed on startup, set GUI according to stored BurstSearch Method in UserValues settings
+        BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
+        h.Burst.BurstSearchSelection_Popupmenu.Value = UserValues.BurstSearch.Method;
+        h.Burst.BurstSearchSmoothing_Popupmenu.Value = UserValues.BurstSearch.SmoothingMethod;
+    end
+    TableContent = h.Burst.BurstPIE_Table_Content.(BAMethod);
+    h.Burst.BurstPIE_Table.RowName = TableContent.RowName;
+    h.Burst.BurstPIE_Table.ColumnName = TableContent.ColumnName;
+    h.Burst.BurstPIE_Table.ColumnEditable=true(numel(h.Burst.BurstPIE_Table.ColumnName),1)';
+
+    BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}; 
+    BurstPIE_Table_Format = cell(1,size(BurstPIE_Table_Data,2));
+    BurstPIE_Table_Format(:) = {UserValues.PIE.Name};
+
+    BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}; 
+    h.Burst.BurstPIE_Table.Data = BurstPIE_Table_Data;
+    h.Burst.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
+elseif obj == h.Burst.BurstSearchSmoothing_Popupmenu
+    UserValues.BurstSearch.SmoothingMethod = obj.Value;
     LSUserValues(1);
-else %executed on startup, set GUI according to stored BurstSearch Method in UserValues settings
     BAMethod = h.Burst.BurstSearchMethods{UserValues.BurstSearch.Method};
-    h.Burst.BurstSearchSelection_Popupmenu.Value = UserValues.BurstSearch.Method;
 end
-TableContent = h.Burst.BurstPIE_Table_Content.(BAMethod);
-h.Burst.BurstPIE_Table.RowName = TableContent.RowName;
-h.Burst.BurstPIE_Table.ColumnName = TableContent.ColumnName;
-h.Burst.BurstPIE_Table.ColumnEditable=true(numel(h.Burst.BurstPIE_Table.ColumnName),1)';
-
-BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}; 
-BurstPIE_Table_Format = cell(1,size(BurstPIE_Table_Data,2));
-BurstPIE_Table_Format(:) = {UserValues.PIE.Name};
-
-BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}; 
-h.Burst.BurstPIE_Table.Data = BurstPIE_Table_Data;
-h.Burst.BurstPIE_Table.ColumnFormat = BurstPIE_Table_Format;
-
-switch BAMethod %%% define which Burst Search Parameters are to be displayed
-    case 'APBS_twocolorMFD'
-        h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.Burst.BurstParameter4_Text.Visible = 'off';
-        h.Burst.BurstParameter4_Edit.Visible = 'off';
-        h.Burst.BurstParameter5_Text.Visible = 'off';
-        h.Burst.BurstParameter5_Edit.Visible = 'off';
-    case 'DCBS_twocolorMFD'
-        h.Burst.BurstParameter3_Text.String = 'Photons per Time Window GX:';
-        h.Burst.BurstParameter4_Text.Visible = 'on';
-        h.Burst.BurstParameter4_Text.String = 'Photons per Time Window RR:';
-        h.Burst.BurstParameter4_Edit.Visible = 'on';
-        h.Burst.BurstParameter5_Text.Visible = 'off';
-        h.Burst.BurstParameter5_Edit.Visible = 'off';
-    case 'APBS_threecolorMFD'
-        h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.Burst.BurstParameter4_Text.Visible = 'off';
-        h.Burst.BurstParameter4_Edit.Visible = 'off';
-        h.Burst.BurstParameter5_Text.Visible = 'off';
-        h.Burst.BurstParameter5_Edit.Visible = 'off';
-    case 'TCBS_threecolorMFD'
-        h.Burst.BurstParameter3_Text.String = 'Photons per Time Window BX:';
-        h.Burst.BurstParameter4_Text.Visible = 'on';
-        h.Burst.BurstParameter4_Text.String = 'Photons per Time Window GX.';
-        h.Burst.BurstParameter4_Edit.Visible = 'on';
-        h.Burst.BurstParameter5_Text.Visible = 'on';
-        h.Burst.BurstParameter5_Text.String = 'Photons per Time Window RR:';
-        h.Burst.BurstParameter5_Edit.Visible = 'on';
-    case 'APBS_twocolornoMFD'
-        h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
-        h.Burst.BurstParameter4_Text.Visible = 'off';
-        h.Burst.BurstParameter4_Edit.Visible = 'off';
-        h.Burst.BurstParameter5_Text.Visible = 'off';
-        h.Burst.BurstParameter5_Edit.Visible = 'off';
-end
-
 %set parameter for the edit boxes
-h.Burst.BurstParameter1_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(1));
-h.Burst.BurstParameter2_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2));
-h.Burst.BurstParameter3_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(3));
-h.Burst.BurstParameter4_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(4));
-h.Burst.BurstParameter5_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(5));
+h.Burst.BurstParameter1_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(1));
+h.Burst.BurstParameter2_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(2));
+h.Burst.BurstParameter3_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(3));
+h.Burst.BurstParameter4_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(4));
+h.Burst.BurstParameter5_Edit.String = num2str(UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method}(5));
+BurstSearchParameterUpdate([],[]);
+%%% Update Text based on BAMethod AND Smoothing Method
+switch UserValues.BurstSearch.SmoothingMethod
+    case 1 %Sliding Time Window
+        h.Burst.BurstParameter2_Text.String = 'Time Window [us]:';
+        switch BAMethod %%% define which Burst Search Parameters are to be displayed
+            case 'APBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window GX:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Photons per Time Window RR:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'APBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'TCBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window BX:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Photons per Time Window GX.';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'on';
+                h.Burst.BurstParameter5_Text.String = 'Photons per Time Window RR:';
+                h.Burst.BurstParameter5_Edit.Visible = 'on';
+            case 'APBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Photons per Time Window:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+        end
+    case 2
+        h.Burst.BurstParameter2_Text.String = 'Smoothing Window (2*N+1):';
+        switch BAMethod %%% define which Burst Search Parameters are to be displayed
+            case 'APBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'DCBS_twocolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time GX [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Interphoton Time RR [us]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'APBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+            case 'TCBS_threecolorMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time BX [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'on';
+                h.Burst.BurstParameter4_Text.String = 'Interphoton Time GX [us]:';
+                h.Burst.BurstParameter4_Edit.Visible = 'on';
+                h.Burst.BurstParameter5_Text.Visible = 'on';
+                h.Burst.BurstParameter5_Text.String = 'Interphoton Time RR [us]:';
+                h.Burst.BurstParameter5_Edit.Visible = 'on';
+            case 'APBS_twocolornoMFD'
+                h.Burst.BurstParameter3_Text.String = 'Interphoton Time [us]:';
+                h.Burst.BurstParameter4_Text.Visible = 'off';
+                h.Burst.BurstParameter4_Edit.Visible = 'off';
+                h.Burst.BurstParameter5_Text.Visible = 'off';
+                h.Burst.BurstParameter5_Edit.Visible = 'off';
+        end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for updating BurstSearch Parameters in UserValues %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4723,7 +4798,7 @@ h=guidata(findobj('Tag','Pam'));
 if obj == h.Burst.BurstPIE_Table %change in PIE channel selection
     UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method} = obj.Data;
 else %change in edit boxes
-    UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method} = [str2double(h.Burst.BurstParameter1_Edit.String),...
+    UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method,UserValues.BurstSearch.SmoothingMethod} = [str2double(h.Burst.BurstParameter1_Edit.String),...
         str2double(h.Burst.BurstParameter2_Edit.String), str2double(h.Burst.BurstParameter3_Edit.String), str2double(h.Burst.BurstParameter4_Edit.String),...
         str2double(h.Burst.BurstParameter5_Edit.String)];
 end
@@ -5791,13 +5866,50 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L)
 global FileInfo
-%All-Photon Burst Search
-valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.SyncPeriod;
+h = guidata(findobj('Tag','Pam'));
+BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+if BurstIdentification == 1
+    %All-Photon Burst Search based on Nir Paper (2006)
+    valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.SyncPeriod;
 
-% and find start and stop of bursts
-start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
-stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
+    % and find start and stop of bursts
+    start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
+    stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
+elseif BurstIdentification == 2
+    % Seidel-Type burstsearch based on interphoton time and Lee Filter
+    m = T;
+    T = M;
+    if M>1 
+        % Smooth the interphoton time trace
+        dT =[Photons(1);diff(Photons)];
+        dT_m = zeros(size(dT,1),size(dT,2));
+        dT_s = zeros(size(dT,1),size(dT,2));
+        % Apply Lee Filter with window 2m+1
+        sig_0 = mean(dT); %%% constant filter parameter set to mean of interphoton time
+        dT_cumsum = cumsum(dT);
+        dT_cumsum = [0; dT_cumsum];
+        for i = m+1:numel(dT)-m
+            dT_m(i) = (2*m+1)^(-1)*(dT_cumsum(i+m+1)-dT_cumsum(i-m));
+        end
+        dT_sq_cumsum = cumsum((dT-dT_m).^2);
+        dT_sq_cumsum = [0;dT_sq_cumsum];
+        for i = 2*m:numel(dT)-2*m
+            dT_s(i) = (2*m+1)^(-1)*(dT_sq_cumsum(i+m+1)-dT_sq_cumsum(i-m));
+        end
 
+        %filtered data
+        dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);  
+
+        % threshold
+        valid = dT_f < T*1e-6/FileInfo.SyncPeriod;
+    elseif M == 1
+        % threshold
+        valid = [Photons(1); diff(Photons)] < T*1e-6/FileInfo.SyncPeriod;
+    end
+    % and find start and stop of bursts
+    start = find(valid(1:end-1)-valid(2:end)==-1);
+    stop = find(valid(1:end-1)-valid(2:end)==1);
+end
 clear valid;
 
 if numel(start) < numel(stop)
@@ -5839,7 +5951,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     drawnow;
 
     %bintime for display, based on the time window used for the burst analysis
-    Bin_Time = UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2)*1E-6/FileInfo.SyncPeriod;
+    %Bin_Time = UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2)*1E-6/FileInfo.SyncPeriod;
+    Bin_Time = 0.5E-3/FileInfo.SyncPeriod;
     %perform burst analysis on first 60 seconds
     %achieve loading of less photons by using chunksize of preview and first
     %chunk
@@ -5951,8 +6064,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             [ch2] = hist([Photons{3}], xout);
     end
     %convert photon number to bin number
-    starttime = max(floor(AllPhotons(start)/Bin_Time),1);
-    stoptime = min(ceil(AllPhotons(stop)/Bin_Time),xout(end));
+    starttime = max(floor(AllPhotons(start)/Bin_Time)+1,1); %+1 since matlab indexing
+    stoptime = min(ceil(AllPhotons(stop)/Bin_Time)+1,xout(end));
     
     %Update PamMeta
     PamMeta.Burst.Preview.x = xout*FileInfo.SyncPeriod;
