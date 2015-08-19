@@ -5053,12 +5053,12 @@ for i = 1:3
         MIAData.STICS{i} = single(zeros(size(MIAData.Data{Fist,2},1),size(MIAData.Data{Fist,2},2),MaxLag+1));
         MIAData.STICS_SEM{i} = single(zeros(size(MIAData.Data{Fist,2},1),size(MIAData.Data{Fist,2},2),MaxLag+1));
         STICS_Num = uint16(zeros(size(MIAData.Data{Fist,2},1),size(MIAData.Data{Fist,2},2),MaxLag+1));
+        if i<3
+            Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
+        else
+            Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
+        end
         for j=i:numel(Frames)
-            if i<3
-                Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
-            else
-                Progress(0,h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
-            end
             Image{1} = double(MIAData.Data{Fist,2}(:,:,Frames(j)));
             if i<3
                 TotalInt(j)=sum(Image{1}(Use{i}(:,:,j)));

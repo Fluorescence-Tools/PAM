@@ -996,6 +996,7 @@ if ~isempty(FileName)
     MIAFitMeta.Model.Value=zeros(NParams,1);
     MIAFitMeta.Model.LowerBoundaries = zeros(NParams,1);
     MIAFitMeta.Model.UpperBoundaries = zeros(NParams,1);
+    MIAFitMeta.Model.State = zeros(NParams,1);
     %%% Reads parameters and values from file
     for i=1:NParams
         %%% Reads parameter name
@@ -1009,6 +1010,11 @@ if ~isempty(FileName)
         MIAFitMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
         MIAFitMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
         MIAFitMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
+        if numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'g'))
+            MIAFitMeta.Model.State(i) = 2;
+        elseif numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'f'))
+            MIAFitMeta.Model.State(i) = 1;
+        end
     end    
     MIAFitMeta.Params=repmat(MIAFitMeta.Model.Value,[1,size(MIAFitData.Data,1)]);
     
@@ -1780,8 +1786,10 @@ switch mode
         Data(end,4:3:end-1)=deal(num2cell(MIAFitMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
         Data(:,1)=deal({true});
-        Data(:,5:3:end-1)=deal({false});
-        Data(:,6:3:end-1)=deal({false});
+%         Data(:,5:3:end-1)=deal({false});
+%         Data(:,6:3:end-1)=deal({false});
+        Data(:,5:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==1)',size(Data,1),1);
+        Data(:,6:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==2)',size(Data,1),1);
         Data(:,1)=deal({true});
         Data(:,end)=deal({'0'});
         h.Fit_Table.Data=Data;

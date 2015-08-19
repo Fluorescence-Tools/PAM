@@ -824,6 +824,7 @@ if ~isempty(FileName)
     FCSMeta.Model.Value=zeros(NParams,1);
     FCSMeta.Model.LowerBoundaries = zeros(NParams,1);
     FCSMeta.Model.UpperBoundaries = zeros(NParams,1);
+    FCSMeta.Model.State = zeros(NParams,1);
     %%% Reads parameters and values from file
     for i=1:NParams
         Param_Pos=strfind(Text{i+Param_Start},' ');
@@ -834,6 +835,11 @@ if ~isempty(FileName)
         FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
         FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
         FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
+        if numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'g'))
+            FCSMeta.Model.State(i) = 2;
+        elseif numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'f'))
+            FCSMeta.Model.State(i) = 1;
+        end
     end    
     FCSMeta.Params=repmat(FCSMeta.Model.Value,[1,size(FCSMeta.Data,1)]);
     
@@ -903,14 +909,12 @@ switch mode
         end
         Data(1:end-3,4:3:end-1)=deal(num2cell(FCSMeta.Params)');
         Data(end-2,4:3:end-1)=deal(num2cell(FCSMeta.Model.Value)');
-        %Data(end-1,4:3:end-1)=deal({-inf});
-        %Data(end,4:3:end-1)=deal({inf});
         Data(end-1,4:3:end-1)=deal(num2cell(FCSMeta.Model.LowerBoundaries)');
         Data(end,4:3:end-1)=deal(num2cell(FCSMeta.Model.UpperBoundaries)');
         Data=cellfun(@num2str,Data,'UniformOutput',false);
-        Data(1:end-2,5:3:end-1)=deal({false});
+        Data(1:end-2,5:3:end-1) = repmat(num2cell(FCSMeta.Model.State==1)',size(Data,1)-2,1);        
         Data(end-1:end,5:3:end-1)=deal({[]});
-        Data(1:end-2,6:3:end-1)=deal({false});
+        Data(1:end-2,6:3:end-1) = repmat(num2cell(FCSMeta.Model.State==2)',size(Data,1)-2,1);
         Data(end-1:end,6:3:end-1)=deal({[]});
         Data(1:end-2,1)=deal({true});
         Data(end-1:end,1)=deal({[]});

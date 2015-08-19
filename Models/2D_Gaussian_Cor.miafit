@@ -6,7 +6,7 @@ Only one sigma.
     |Offset|+|Amplitude|*| X       | + |Y^      |/Sigma^2
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A0                = 1;     LB = 0;      UB = Inf;   
-Param(2): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
+Param(2): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;f
 Param(3): Sigma[nm]        = 200;   LB = 0;      UB = Inf;
 Param(4): I0                = 0;     LB = -Inf;   UB = Inf;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%

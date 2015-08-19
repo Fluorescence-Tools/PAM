@@ -6,7 +6,7 @@ Sigmas can be off axis.
     |Offset|+|Amplitude|*|First dimention on    off axis                         | + |Second dimention on       off axis   
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A0                = 1;     LB = 0;      UB = Inf;   
-Param(2): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
+Param(2): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;f
 Param(3): X_Off[Px]         = 0;     LB = -Inf;   UB = Inf;
 Param(4): Y_Off[Px]         = 0;     LB = -Inf;   UB = Inf;
 Param(5): Sigma1[nm]        = 200;   LB = 0;      UB = Inf;

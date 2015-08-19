@@ -12,13 +12,13 @@ OUT = P(4) + 1/sqrt(8).*1/P(1).*1./(1+(4*P(3)*(i-1)*10^5/P(2).^2)).*1./sqrt(1+(4
      .*|Temporal Decay Z                                |
      .*|Spatio-Temporal Decay                                                  |
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
-Param(1): N                 = 1;     LB = 0;      UB = Inf;  
-Param(2): w_r[nm]           = 200;   LB = 0;      UB = Inf;
-Param(3): w_z[nm]           = 1000;   LB = 0;      UB = Inf;
-Param(4): D[µm²]            = 0.01;  LB = 0;      UB = Inf;
+Param(1): N                 = 1;     LB = 0;      UB = Inf;g
+Param(2): w_r[nm]           = 200;   LB = 0;      UB = Inf;g
+Param(3): w_z[nm]           = 1000;   LB = 0;      UB = Inf;g
+Param(4): D[µm²]            = 0.01;  LB = 0;      UB = Inf;g
 Param(5): I0                = 0;     LB = -Inf;   UB = Inf;
-Param(6): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;
-Param(7): Inter_Frame_Time[ms]    = 100;    LB = 0;      UB = Inf;
+Param(6): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;f
+Param(7): Inter_Frame_Time[ms]    = 100;    LB = 0;      UB = Inf;f
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B = 1/P(1); 
 %%%-----------------------------FIT FUNCTION----------------------------%%%  
