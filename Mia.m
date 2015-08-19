@@ -5061,9 +5061,7 @@ for i = 1:3
             ImageFluct{1} = Image{1}-mean(Image{1}(Use{Fist}(:,:,j) & Use{Second}(:,:,j)));
             Size = [2*size(Image{1},1)-1, 2*size(Image{1},2)-1];
             ImageFluct{1} = fft2(ImageFluct{1}.*(Use{Fist}(:,:,j) & Use{Second}(:,:,j)),Size(1),Size(2));
-            
-
-            
+                      
             for k = 0:MaxLag
                 if any(Frames == Frames(j)+k)
                     Lag = find(Frames == Frames(j)+k,1,'first');
@@ -5085,9 +5083,10 @@ for i = 1:3
                     ImageCor = ImageCor/(mean(Image{1}(Use{Fist}(:,:,j) & Use{Second}(:,:,Lag)))*mean(Image{2}(Use{Fist}(:,:,j) & Use{Second}(:,:,Lag))));
                     
                     %%% Searches for pixels with entries 
-                    NonZero =STICS_Num(:,:,k+1)>0;
+                    NonZero = ~isnan(ImageCor);
                     %%% Old mean
-                    Old_Mean = MIAData.STICS{i}(:,:,k+1)./double(STICS_Num(:,:,k+1));                   
+                    Old_Mean = MIAData.STICS{i}(:,:,k+1)./double(STICS_Num(:,:,k+1));   
+                    Old_Mean(isnan(Old_Mean)) = 0;
                     %%% Adds to counter
                     STICS_Num(:,:,k+1) = STICS_Num(:,:,k+1) + uint16(~isnan(ImageCor));
                     ImageCor(isnan(ImageCor)) = 0;       
@@ -5102,8 +5101,7 @@ for i = 1:3
                     S(NonZero) = S(NonZero) + (ImageCor(NonZero)-Old_Mean(NonZero)).*(ImageCor(NonZero)-New_Mean(NonZero));
                     MIAData.STICS_SEM{i}(:,:,k+1) = S;
                 end                
-            end
-            
+            end            
             if mod(j,100)==0
                 Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
             end
@@ -5113,7 +5111,7 @@ for i = 1:3
             MeanInt(i)=sum(TotalInt)/sum(TotalPx);
         end
         MIAData.STICS{i} = MIAData.STICS{i}./single(STICS_Num);
-        MIAData.STICS_SEM{i}(:,:,k+1) = sqrt(MIAData.STICS_SEM{i}(:,:,k+1)./single(STICS_Num(:,:,k+1)-1))./single(STICS_Num(:,:,k+1));
+        MIAData.STICS_SEM{i} = sqrt(MIAData.STICS_SEM{i}./single(STICS_Num-1)./single(STICS_Num));
     end
 end
 clear Image ImageFluct ImageCor;

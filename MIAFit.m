@@ -1441,9 +1441,9 @@ function Update_Plots(~,~)
 h = guidata(findobj('Tag','MIAFit'));
 global MIAFitMeta MIAFitData UserValues
 
-x = str2double(h.Fit_X.String);
-y = str2double(h.Fit_Y.String);
-[x,y] = meshgrid(1:x,1:y);
+X = str2double(h.Fit_X.String);
+Y = str2double(h.Fit_Y.String);
+[x,y] = meshgrid(1:X,1:Y);
 x = x - ceil(max(max(x))/2);
 y = y - ceil(max(max(y))/2);
 Plot_Errorbars = h.Fit_Errorbars.Value;
@@ -1515,9 +1515,13 @@ for i=1:size(MIAFitMeta.Plots,1)
         end      
         %% Updates on axis data plot y values 
         MIAFitMeta.Plots{i,1}.XData = x(1,:);    
-        MIAFitMeta.Plots{i,1}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;   
+        MIAFitMeta.Plots{i,1}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;         
         MIAFitMeta.Plots{i,4}.XData = y(:,1);
-        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;       
+        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;  
+        if h.Omit_Center.Value
+            MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;  
+            MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;  
+        end
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
             MIAFitMeta.Plots{i,1}.LData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;   
@@ -1547,12 +1551,29 @@ for i=1:size(MIAFitMeta.Plots,1)
         if h.Fit_Weights.Value
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)./MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;   
             ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'/B;
-            Chisqr = sum(sum(((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT)...
-                ./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2)); 
+            if h.Omit_Center.Value
+                ResidualsX((floor((X+1)/2))) = 0;
+                ResidualsY((floor((Y+1)/2))) = 0;
+                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+                Chisqr((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
+                Chisqr = sum(sum((Chisqr./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
+            else
+                Chisqr = sum(sum(((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT)...
+                    ./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
+            end
         else
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)*B;
             ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)*B;
-            Chisqr = sum(sum((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))-OUT).^2)); 
+            
+            if h.Omit_Center.Value
+                ResidualsX((floor((X+1)/2))) = 0;
+                ResidualsY((floor((Y+1)/2))) = 0;
+                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+                Chisqr((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
+                Chisqr = sum(sum(Chisqr));
+            else
+                Chisqr = sum(sum((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))-OUT).^2));
+            end
         end
         ResidualsX(ResidualsX==inf | isnan(ResidualsX)) = 0;
         ResidualsY(ResidualsY==inf | isnan(ResidualsY)) = 0;
@@ -1562,7 +1583,11 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,6}.YData=ResidualsY;      
         %% Calculates Chi^2 and updates table
         h.Fit_Table.CellEditCallback = [];
-        Chisqr = Chisqr/(numel(x)-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+        if h.Omit_Center.Value
+            Chisqr = Chisqr/(numel(x)-2-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+        else
+            Chisqr = Chisqr/(numel(x)-1-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+        end
         h.Fit_Table.Data{i,end}=num2str(Chisqr);
         h.Fit_Table.CellEditCallback={@Update_Table,3};
         %% Makes plot visible, if it is active
@@ -1611,10 +1636,11 @@ for i=1:size(MIAFitMeta.Plots,1)
                     removeprop(h.Plots.Link,'DataAspectRatio');
                     removeprop(h.Plots.Link,'ZLim');
                     Data = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+                    if h.Omit_Center.Value
+                        Data((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
+                    end
                     if h.Fit_Weights.Value
                        Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))));                    
-                    else
-                       Data = Data;
                     end
                     Data(Data==inf | isnan(Data)) = 0;
                     h.Plots.Fit.XData = x(1,:);
@@ -1643,6 +1669,9 @@ for i=1:size(MIAFitMeta.Plots,1)
                     h.Plots.Fit.ZData = Data;
                     %%% Calculates color for fit plot faces
                     Data = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+                    if h.Omit_Center.Value
+                        Data((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
+                    end
                     if h.Fit_Weights.Value
                        Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))))^2;                    
                     else
