@@ -493,7 +493,7 @@ end
         'ForegroundColor', Look.Fore,...
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
-        'Position',[0 0.55 .375 .45]);
+        'Position',[0 0.55 .3 .45]);
     h.Burst.SubPanel_BurstSearch = uibuttongroup(...
         'Parent',h.Burst.MainPanel,...
         'Tag','Burst_SubPanel_BurstSearch',...
@@ -502,28 +502,58 @@ end
         'ForegroundColor', Look.Fore,...
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
-        'Position',[0.375 0.55 .375 .45]);
+        'Position',[0.3 0.55 .45 .45]);
     %%% Axes for preview of Burst Selection
-    h.Burst.Axes = axes(...
+    h.Burst.Axes_Intensity = axes(...
        'Parent',h.Burst.MainPanel,...
-       'Tag','Burst_Axes',...
-       'Position',[0.07 0.06 0.92 0.4],...
+       'Tag','Burst_Axes_Intensity',...
+       'Position',[0.07 0.26 0.92 0.2],...
        'Units','normalized',...
        'NextPlot','add',...
        'XColor',Look.Fore,...
        'YColor',Look.Fore,...
        'Box','on');
-    h.Burst.Axes.XLabel.String='Time [ms]';
-    h.Burst.Axes.XLabel.Color=Look.Fore;
-    h.Burst.Axes.YLabel.String='Counts per Timebin';
-    h.Burst.Axes.YLabel.Color=Look.Fore;
-    h.Burst.Axes.XLim = [0 1];
-    h.Burst.Axes.YLim = [0 1];
-
+    h.Burst.Axes_Intensity.XLabel.String='Time [s]';
+    h.Burst.Axes_Intensity.XLabel.Color=Look.Fore;
+    h.Burst.Axes_Intensity.YLabel.String='Countrate [kHz]';
+    h.Burst.Axes_Intensity.YLabel.Color=Look.Fore;
+    h.Burst.Axes_Intensity.XLim = [0 1];
+    h.Burst.Axes_Intensity.YLim = [0 1];
+    h.Burst.Axes_Intensity.XAxisLocation = 'top';
+    h.Burst.Axes_Intensity.YTick(1) = [];
+        
     h.Plots.BurstPreview.Channel1 = plot([0 1],[0 0],'g');
     h.Plots.BurstPreview.Channel2 = plot([0 1],[0 0],'r');
     h.Plots.BurstPreview.Channel3 = plot([0 1],[0 0],'b');
-
+    h.Plots.BurstPreview.Intensity_Threshold_ch1 = plot([0 1],[0 0],'--g','Visible','off');
+    h.Plots.BurstPreview.Intensity_Threshold_ch2 = plot([0 1],[0 0],'--r','Visible','off');
+    h.Plots.BurstPreview.Intensity_Threshold_ch3 = plot([0 1],[0 0],'--b','Visible','off');
+    
+    h.Burst.Axes_Interphot = axes(...
+       'Parent',h.Burst.MainPanel,...
+       'Tag','Burst_Axes_Interphot',...
+       'Position',[0.07 0.06 0.92 0.2],...
+       'Units','normalized',...
+       'NextPlot','add',...
+       'XColor',Look.Fore,...
+       'YColor',Look.Fore,...
+       'YScale','log',...
+       'Box','on');
+    h.Burst.Axes_Interphot.XLabel.String='Time [s]';
+    h.Burst.Axes_Interphot.XLabel.Color=Look.Fore;
+    h.Burst.Axes_Interphot.YLabel.String='Interphoton time [us]';
+    h.Burst.Axes_Interphot.YLabel.Color=Look.Fore;
+    h.Burst.Axes_Interphot.XLim = [0 1];
+    h.Burst.Axes_Interphot.YLim = [0 1];
+    
+    h.Plots.BurstPreview.Channel1_Interphot = plot([0 1],[0 0],'g');
+    h.Plots.BurstPreview.Channel2_Interphot = plot([0 1],[0 0],'r');
+    h.Plots.BurstPreview.Channel3_Interphot = plot([0 1],[0 0],'b');
+    h.Plots.BurstPreview.Interhpoton_Threshold_ch1 = plot([0 1],[0 0],'--g','Visible','off');
+    h.Plots.BurstPreview.Interhpoton_Threshold_ch2 = plot([0 1],[0 0],'--r','Visible','off');
+    h.Plots.BurstPreview.Interhpoton_Threshold_ch3 = plot([0 1],[0 0],'--b','Visible','off');
+    
+    linkaxes([h.Burst.Axes_Interphot,h.Burst.Axes_Intensity],'x');
     %%% Button to show a preview of the burst search
     h.Burst.BurstSearchPreview_Button = uicontrol(...
         'Parent',h.Burst.MainPanel,...
@@ -4798,7 +4828,7 @@ h=guidata(findobj('Tag','Pam'));
 if obj == h.Burst.BurstPIE_Table %change in PIE channel selection
     UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method} = obj.Data;
 else %change in edit boxes
-    UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method,UserValues.BurstSearch.SmoothingMethod} = [str2double(h.Burst.BurstParameter1_Edit.String),...
+    UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.SmoothingMethod,UserValues.BurstSearch.Method} = [str2double(h.Burst.BurstParameter1_Edit.String),...
         str2double(h.Burst.BurstParameter2_Edit.String), str2double(h.Burst.BurstParameter3_Edit.String), str2double(h.Burst.BurstParameter4_Edit.String),...
         str2double(h.Burst.BurstParameter5_Edit.String)];
 end
@@ -4851,6 +4881,7 @@ h.Burst.Button.ForegroundColor = UserValues.Look.Fore;
 %%% 3       RR
 
 BAMethod = UserValues.BurstSearch.Method;
+SmoothingMethod = UserValues.BurstSearch.SmoothingMethod;
 %achieve loading of less photons by using chunksize of preview and first
 %chunk
 ChunkSize = 30; %30 minutes, hard-coded for now
@@ -4904,15 +4935,15 @@ for i = 1:Number_of_Chunks
         clear MI index
         
         if BAMethod == 1
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 2
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(4)];
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
         end
     elseif any(BAMethod == [3,4])
@@ -4960,16 +4991,16 @@ for i = 1:Number_of_Chunks
         clear MI index
         
         if BAMethod == 3 %ACBS 3 Color
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 4 %TCBS
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(4),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(5)];
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
         end
         
@@ -4999,9 +5030,9 @@ for i = 1:Number_of_Chunks
         clear MI index
         
         %do search
-        T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-        M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-        L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+        T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+        M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+        L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
         [start, stop, Number_of_Photons] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
     end
     %%% Process Data for this Chunk
@@ -5875,6 +5906,7 @@ if BurstIdentification == 1
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
     stop = find(valid(1:end-1)-valid(2:end)==1)+floor(M/2);
+    
 elseif BurstIdentification == 2
     % Seidel-Type burstsearch based on interphoton time and Lee Filter
     m = T;
@@ -5902,6 +5934,7 @@ elseif BurstIdentification == 2
 
         % threshold
         valid = dT_f < T*1e-6/FileInfo.SyncPeriod;
+        
     elseif M == 1
         % threshold
         valid = [Photons(1); diff(Photons)] < T*1e-6/FileInfo.SyncPeriod;
@@ -5937,7 +5970,6 @@ if nargin > 3
     stop(Number_of_Photons<L)=[];
     Number_of_Photons(Number_of_Photons<L)=[];
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5949,16 +5981,20 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     %%% Set Progress Bar
     h.Progress.Text.String = 'Calculating Burst Search Preview...';
     drawnow;
-
+    
+    PamMeta.Burst.Preview.InterphotonTime_Smoothed = [];
+    
     %bintime for display, based on the time window used for the burst analysis
     %Bin_Time = UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2)*1E-6/FileInfo.SyncPeriod;
-    Bin_Time = 0.5E-3/FileInfo.SyncPeriod;
+    bin_time_ms = 1;
+    Bin_Time = bin_time_ms*1E-3/FileInfo.SyncPeriod;
     %perform burst analysis on first 60 seconds
     %achieve loading of less photons by using chunksize of preview and first
     %chunk
     ChunkSize = 1; %1 minute
     T_preview = 60*ChunkSize/FileInfo.SyncPeriod;
     BAMethod = UserValues.BurstSearch.Method;
+    SmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
     
     if any(BAMethod == [1 2]) %ACBS 2 Color
         %prepare photons
@@ -5980,15 +6016,15 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         clear index chan_temp
         
         if BAMethod == 1
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 2
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(4)];
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4)];
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'DCBS',T,M,L);
         end
     elseif any(BAMethod == [3,4])
@@ -6017,16 +6053,16 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         clear index chan_temp
         
         if BAMethod == 3 %ACBS 3 Color
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
         elseif BAMethod == 4 %TCBS
-            T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = [UserValues.BurstSearch.SearchParameters{BAMethod}(3),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(4),...
-                UserValues.BurstSearch.SearchParameters{BAMethod}(5)];
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+            T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+            M = [UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(4),...
+                UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(5)];
+            L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
             [start, stop, ~] = Perform_BurstSearch(AllPhotons,Channel,'TCBS',T,M,L);
         end
         
@@ -6043,13 +6079,13 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         %get colors of photons
         
         %do search
-        T = UserValues.BurstSearch.SearchParameters{BAMethod}(2);
-            M = UserValues.BurstSearch.SearchParameters{BAMethod}(3);
-            L = UserValues.BurstSearch.SearchParameters{BAMethod}(1);
+        T = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(2);
+        M = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(3);
+        L = UserValues.BurstSearch.SearchParameters{SmoothingMethod,BAMethod}(1);
         [start, stop, ~] = Perform_BurstSearch(AllPhotons,[],'APBS',T,M,L);
     end
     
-    %prepare trace for display
+    %% prepare trace for display
     xout = 0:Bin_Time:T_preview;
     switch BAMethod %make histograms for lower display with binning T_classic
         case {1,2}    % 2 color, MFD
@@ -6069,15 +6105,15 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     
     %Update PamMeta
     PamMeta.Burst.Preview.x = xout*FileInfo.SyncPeriod;
-    PamMeta.Burst.Preview.ch1 = ch1;
-    PamMeta.Burst.Preview.ch2 = ch2;
+    PamMeta.Burst.Preview.ch1 = ch1./bin_time_ms;
+    PamMeta.Burst.Preview.ch2 = ch2./bin_time_ms;
     PamMeta.Burst.Preview.stop = stop;
     PamMeta.Burst.Preview.start = start;
     PamMeta.Burst.Preview.starttime = starttime;
     PamMeta.Burst.Preview.stoptime = stoptime;
     PamMeta.Burst.Preview.AllPhotons = AllPhotons;
     if any(BAMethod == [3 4])
-        PamMeta.Burst.Preview.ch3 = ch3;
+        PamMeta.Burst.Preview.ch3 = ch3./bin_time_ms;
     end
     %%% set the second to be displayed (here first)+
     PamMeta.Burst.Preview.Second = 0;
@@ -6089,6 +6125,9 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         end
         for i = 1:numel(h.Plots.BurstPreview.SearchResult.Channel2)
             delete(h.Plots.BurstPreview.SearchResult.Channel2(i));
+        end
+        for i = 1:numel(h.Plots.BurstPreview.SearchResult.Interphot)
+            delete(h.Plots.BurstPreview.SearchResult.Interphot(i));
         end
         if isfield(h.Plots.BurstPreview.SearchResult,'Channel3')
             for i = 1:numel(h.Plots.BurstPreview.SearchResult.Channel3)
@@ -6102,7 +6141,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     h.Plots.BurstPreview.Channel1.YData = PamMeta.Burst.Preview.ch1;
     h.Plots.BurstPreview.Channel2.XData = PamMeta.Burst.Preview.x;
     h.Plots.BurstPreview.Channel2.YData = PamMeta.Burst.Preview.ch2;
-    h.Plots.BurstPreview.Channel1.Color = [0 1 0];
+    h.Plots.BurstPreview.Channel1.Color = [0 0.8 0];
     h.Plots.BurstPreview.Channel2.Color = [1 0 0];
     %%% hide third channel
     h.Plots.BurstPreview.Channel3.Visible = 'off';
@@ -6112,19 +6151,107 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         h.Plots.BurstPreview.Channel3.Color = [0 0 1];
         h.Plots.BurstPreview.Channel3.Visible = 'on';
     end
-    h.Burst.Axes.XLim = [0 1];
-    h.Burst.Axes.YLimMode = 'auto';
+    h.Burst.Axes_Intensity.XLim = [0 1];
+    h.Burst.Axes_Intensity.YLimMode = 'auto';
     %find first and last burst in second
     first = find(AllPhotons(start),1,'first');
     last = find(AllPhotons(stop),1,'last');
     for i=first:last
-        h.Plots.BurstPreview.SearchResult.Channel1(i) = plot(h.Burst.Axes, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch1(starttime(i):stoptime(i)),'og');
-        h.Plots.BurstPreview.SearchResult.Channel2(i) = plot(h.Burst.Axes, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch2(starttime(i):stoptime(i)),'or');
+        h.Plots.BurstPreview.SearchResult.Channel1(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch1(starttime(i):stoptime(i)),'og');
+        h.Plots.BurstPreview.SearchResult.Channel2(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch2(starttime(i):stoptime(i)),'or');
         if any(BAMethod == [3 4])
-            h.Plots.BurstPreview.SearchResult.Channel3(i) = plot(h.Burst.Axes, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch3(starttime(i):stoptime(i)),'ob');
+            h.Plots.BurstPreview.SearchResult.Channel3(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch3(starttime(i):stoptime(i)),'ob');
         end
     end
-    guidata(findobj('Tag','Pam'),h);
+    if SmoothingMethod == 1 %Sliding Time Window, plot threshold as well
+        switch BAMethod
+            case {1,3,5} %2or3color or noMFD, APBS
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Color = [0 0 0];
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M/T*ones(1,numel(PamMeta.Burst.Preview.x));
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'off';
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'off';
+            case 2 %2color DCBS
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Color = [0 0.8 0];
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M(1)/T*ones(1,numel(PamMeta.Burst.Preview.x));
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.Color = [0.8 0 0];
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = 1000*M(2)/T*ones(1,numel(PamMeta.Burst.Preview.x));
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'off';
+            case 4 %TCBS
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.Color = [0 0.8 0];
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch1.YData = 1000*M(1)/T*ones(1,numel(PamMeta.Burst.Preview.x));
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.Color = [0.8 0 0];
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch2.YData = 1000*M(2)/T*ones(1,numel(PamMeta.Burst.Preview.x));
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.Visible = 'on';
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.Color = [0 0 0.8];
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.XData = PamMeta.Burst.Preview.x;
+                h.Plots.BurstPreview.Intensity_Threshold_ch3.YData = 1000*M(3)/T*ones(1,numel(PamMeta.Burst.Preview.x));
+        end
+    end
+    %% Plot Interphoton time trace (just from all photons here...)
+    %%% Smooth with Lee Filter
+    if SmoothingMethod == 2
+        m = T;
+    else
+        m = 30;
+    end
+    % Smooth the interphoton time trace
+    dT =[AllPhotons(1);diff(AllPhotons)];
+    dT_m = zeros(size(dT,1),size(dT,2));
+    dT_s = zeros(size(dT,1),size(dT,2));
+    % Apply Lee Filter with window 2m+1
+    sig_0 = mean(dT); %%% constant filter parameter set to mean of interphoton time
+    dT_cumsum = cumsum(dT);
+    dT_cumsum = [0; dT_cumsum];
+    for i = m+1:numel(dT)-m
+        dT_m(i) = (2*m+1)^(-1)*(dT_cumsum(i+m+1)-dT_cumsum(i-m));
+    end
+    dT_sq_cumsum = cumsum((dT-dT_m).^2);
+    dT_sq_cumsum = [0;dT_sq_cumsum];
+    for i = 2*m:numel(dT)-2*m
+        dT_s(i) = (2*m+1)^(-1)*(dT_sq_cumsum(i+m+1)-dT_sq_cumsum(i-m));
+    end
+
+    %filtered data
+    dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);  
+   
+    h.Plots.BurstPreview.Channel1_Interphot.Visible = 'on';
+    h.Plots.BurstPreview.Channel1_Interphot.Color = [0.6 0.6 0.6];
+    h.Plots.BurstPreview.Channel1_Interphot.XData = AllPhotons.*FileInfo.SyncPeriod;
+    h.Plots.BurstPreview.Channel1_Interphot.YData = dT.*FileInfo.SyncPeriod*1E6;
+    h.Plots.BurstPreview.Channel2_Interphot.Visible = 'on';
+    h.Plots.BurstPreview.Channel2_Interphot.Color = [0 0 0];
+    h.Plots.BurstPreview.Channel2_Interphot.XData = AllPhotons.*FileInfo.SyncPeriod;
+    h.Plots.BurstPreview.Channel2_Interphot.YData = dT_f.*FileInfo.SyncPeriod*1E6;
+    
+    %%% Set Threshold if Interphoton Time is selected
+    if SmoothingMethod == 2
+        % just plot the mean of individual thresholds
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'on';
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Color = [0 0 1];
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.LineStyle = '--';
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.SyncPeriod;
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = mean(M)*ones(1,numel(AllPhotons));
+    else
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'off';
+    end
+    %%% Color selected regions in Interphoton time plot
+    for i=1:numel(start)
+        h.Plots.BurstPreview.SearchResult.Interphot = plot(h.Burst.Axes_Interphot, AllPhotons(start(i):stop(i)).*FileInfo.SyncPeriod,dT_f(start(i):stop(i)).*FileInfo.SyncPeriod*1E6,'r');
+    end
+    
+    h.Burst.Axes_Interphot.YLimMode = 'auto';
+    axis(h.Burst.Axes_Interphot,'tight');
+    h.Burst.Axes_Interphot.XLim = [0 1];
 else %%% < or > was pressed
     switch obj %%% determine if < or > was clicked
         case h.Burst.BurstSearchPreview_Forward_Button
@@ -6139,7 +6266,8 @@ else %%% < or > was pressed
             end
     end
     %%% Update the x-axis limits of Burst_Axes
-    h.Burst.Axes.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
+    h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
+    h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 end
 %%% Update Display
 Update_Display([],[],1);
