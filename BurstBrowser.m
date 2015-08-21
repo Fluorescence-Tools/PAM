@@ -1,6 +1,6 @@
 function BurstBrowser(~,~)
 
-hfig=findobj('Name','BurstBrowser');
+hfig=findobj('Tag','BurstBrowser');
 global UserValues %BurstMeta BurstData BurstTCSPCData
 addpath([pwd filesep 'TauFit Models']);
 LSUserValues(0);
@@ -8619,7 +8619,7 @@ switch obj
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
         if isempty(PhotonStream)
             Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-            if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+            if exist([BurstData.FileName(1:end-3) 'aps'],'file') == 2
                 %%% load if it exists
                 load([BurstData.FileName(1:end-3) 'aps'],'-mat');
             else
