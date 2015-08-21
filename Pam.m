@@ -520,7 +520,6 @@ end
     h.Burst.Axes_Intensity.XLim = [0 1];
     h.Burst.Axes_Intensity.YLim = [0 1];
     h.Burst.Axes_Intensity.XAxisLocation = 'top';
-    h.Burst.Axes_Intensity.YTick(1) = [];
         
     h.Plots.BurstPreview.Channel1 = plot([0 1],[0 0],'g');
     h.Plots.BurstPreview.Channel2 = plot([0 1],[0 0],'r');
@@ -6135,7 +6134,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             end
         end
     end
-    
+
     %%% Plot the data
     h.Plots.BurstPreview.Channel1.XData = PamMeta.Burst.Preview.x;
     h.Plots.BurstPreview.Channel1.YData = PamMeta.Burst.Preview.ch1;
@@ -6156,12 +6155,30 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     %find first and last burst in second
     first = find(AllPhotons(start),1,'first');
     last = find(AllPhotons(stop),1,'last');
+%     for i=first:last
+%         h.Plots.BurstPreview.SearchResult.Channel1(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch1(starttime(i):stoptime(i)),'og');
+%         h.Plots.BurstPreview.SearchResult.Channel2(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch2(starttime(i):stoptime(i)),'or');
+%         if any(BAMethod == [3 4])
+%             h.Plots.BurstPreview.SearchResult.Channel3(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch3(starttime(i):stoptime(i)),'ob');
+%         end
+%     end
     for i=first:last
-        h.Plots.BurstPreview.SearchResult.Channel1(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch1(starttime(i):stoptime(i)),'og');
-        h.Plots.BurstPreview.SearchResult.Channel2(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch2(starttime(i):stoptime(i)),'or');
+        x{i} = PamMeta.Burst.Preview.x(starttime(i):stoptime(i));
+        y1{i} = ch1(starttime(i):stoptime(i));
+        y2{i} = ch2(starttime(i):stoptime(i));
         if any(BAMethod == [3 4])
-            h.Plots.BurstPreview.SearchResult.Channel3(i) = plot(h.Burst.Axes_Intensity, PamMeta.Burst.Preview.x(starttime(i):stoptime(i)),ch3(starttime(i):stoptime(i)),'ob');
+            y3{i} = ch2(starttime(i):stoptime(i));
         end
+    end
+    %%% plot selected regions
+    x = horzcat(x{:});
+    y1 = horzcat(y1{:});
+    y2 = horzcat(y2{:});
+    h.Plots.BurstPreview.SearchResult.Channel1 = plot(h.Burst.Axes_Intensity, x,y1,'og');
+    h.Plots.BurstPreview.SearchResult.Channel2 = plot(h.Burst.Axes_Intensity, x,y2,'or');
+    if any(BAMethod == [3,4])
+        y3 = horzcat(y3{:});
+        h.Plots.BurstPreview.SearchResult.Channel3 = plot(h.Burst.Axes_Intensity, x,y3,'ob');
     end
     if SmoothingMethod == 1 %Sliding Time Window, plot threshold as well
         switch BAMethod
@@ -6249,9 +6266,12 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = (T/mean(M))*ones(1,numel(AllPhotons));
     end
     %%% Color selected regions in Interphoton time plot
+    clear x
     for i=1:numel(start)
-        h.Plots.BurstPreview.SearchResult.Interphot = plot(h.Burst.Axes_Interphot, AllPhotons(start(i):stop(i)).*FileInfo.SyncPeriod,dT_f(start(i):stop(i)).*FileInfo.SyncPeriod*1E6,'r');
+        x{i} = AllPhotons(start(i):stop(i)).*FileInfo.SyncPeriod;
+        y{i} = dT_f(start(i):stop(i)).*FileInfo.SyncPeriod*1E6;
     end
+    h.Plots.BurstPreview.SearchResult.Interphot = plot(h.Burst.Axes_Interphot, vertcat(x{:}),vertcat(y{:}),'.r');
     
     h.Burst.Axes_Interphot.YLimMode = 'auto';
     axis(h.Burst.Axes_Interphot,'tight');
@@ -6273,6 +6293,7 @@ else %%% < or > was pressed
     h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
     h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 end
+guidata(h.Pam,h);
 %%% Update Display
 Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

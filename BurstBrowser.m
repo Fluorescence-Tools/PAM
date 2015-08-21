@@ -26,7 +26,10 @@ if isempty(hfig)
     %'KeyPressFcn',@Bowser_KeyPressFcn,...
     whitebg(h.BurstBrowser,Look.Axes);
     set(h.BurstBrowser,'Color',Look.Back);
-   
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.BurstBrowser,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:3 6:7 13:17]))
     %%% define menu items
     h.File_Menu = uimenu(...
         'Parent',h.BurstBrowser,...
