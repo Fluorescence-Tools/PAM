@@ -229,8 +229,7 @@ if isempty(h.Mia)
     h.Mia_Image.PCH_Axes.YLabel.UserData = 1;
     h.Mia_Image.PCH_Axes.YLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
     h.Mia_Image.PCH_Axes.XLabel.UserData = 1;
-    h.Mia_Image.PCH_Axes.XLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
-    
+    h.Mia_Image.PCH_Axes.XLabel.ButtonDownFcn = {@MIA_Various,[1 2]};    
         %% Settings Tab container
     h.Mia_Image.Settings.Panel = uibuttongroup(...
         'Parent',h.Mia_Image.Tab,...
@@ -624,6 +623,7 @@ if isempty(h.Mia)
             'FontSize',12,...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
+            'Callback',{@Update_Plots, [5 6],1:3},...
             'Position',[0.45 0.92, 0.2 0.06],...
             'String','1');
         %%% Text
@@ -689,6 +689,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.45 0.68, 0.2 0.06],...
+            'Callback',{@Update_Plots, 6,1:3},...
             'String','40');
         
         %%% Text
@@ -1314,7 +1315,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.51 0.62, 0.47 0.06],...
-            'String',{'Do not save','Save as iMSD(.mcor)','Save as STICS (.miacor)'});      
+            'String',{'Do not save','Save as iMSD(.mcor)','Save as STICS (.miacor)','Both'});      
         if ismac
             h.Mia_Image.Calculations.Cor_Save_SICS.ForegroundColor = [0 0 0];
             h.Mia_Image.Calculations.Cor_Save_SICS.BackgroundColor = [1 1 1];
@@ -1904,7 +1905,7 @@ if isempty(h.Mia)
         'RowName',{'N';'Fix';'D [µm²/s]';'Fix';'w_r [µm]';'Fix';'w_z [µm]';'Fix';'y0';'Fix';},...
         'CellEditCallback',{@Calc_TICS_Fit,1:3},...
         'Position',[0.01 0.71, 0.18 0.27]);
-    Data=cell(1,3);
+    Data=cell(10,3);
     Data(1,:)={'1'};
     Data(3,:)={'0.01'};
     Data(5,:)={'0.2'};
@@ -1937,7 +1938,7 @@ if isempty(h.Mia)
         'Callback',{@Update_Plots,5,[]},...
         'Position',[0.08 0.67, 0.1 0.03]);
     
-    %%% Axes to display correlation images
+    %%% Axes to display correlation
     h.Mia_TICS.Axes = axes(...
         'Parent',h.Mia_TICS.Panel,...
         'Units','normalized',...
@@ -2047,20 +2048,138 @@ if isempty(h.Mia)
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Position',[0 0 1 1]);
-    for i=1:3
-        h.Mia_STICS.Lag_Slider = uicontrol(...
+        %%% Text
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.95, 0.045 0.03],...
+        'String','Size');
+    %%% Editbox for correlation size
+    h.Mia_STICS.Size = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Update_Plots,6,1:3},...
+        'Position',[0.06 0.95, 0.03 0.03],...
+        'String','31'); 
+    h.Mia_STICS.Do_Gaussian = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','push',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Do_Gaussian},...
+        'String','Calc iMSD',...
+        'Position',[0.1 0.95, 0.08 0.03]);
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.91, 0.045 0.03],...
+        'String','Lag:');
+    %%% Editbox for frame
+    h.Mia_STICS.Lag = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Mia_Frame,5,1:3},...
+        'Position',[0.06 0.91, 0.03 0.03],...
+        'String','0');
+    h.Mia_STICS.Lag_Slider = uicontrol(...
         'Parent',h.Mia_STICS.Panel,...
         'Style','slider',...
         'Units','normalized',...
         'FontSize',12,...
         'Min',0,...
-        'Max',20,...
-        'SliderStep',[1/21 1/21],...
+        'Max',1,...
+        'SliderStep',[1 1],...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Callback',{@Update_Plots,6,[]},...
-        'Position',[0.01 0.91, 0.08 0.03]);
- 
+        'Callback',{@Mia_Frame,6,1:3},...
+        'Position',[0.1 0.91, 0.08 0.03]);
+    %%% STICS Fit table
+    h.Mia_STICS.Fit_Table = uitable(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Units','normalized',...
+        'FontSize',8,...
+        'BackgroundColor', [Look.Table1;Look.Table2],...
+        'ForegroundColor', Look.TableFore,...
+        'ColumnName',{'ACF1','CCF','ACF2'},...
+        'ColumnWidth',num2cell([40,40,40]),...
+        'ColumnEditable',true,...
+        'RowName',{'w_r [µm]';'Fix';'D [µm²/s]';'Fix';'Alpha';'Fix';},...
+        'CellEditCallback',{@Update_Plots,6,1:3},...
+        'Position',[0.01 0.73, 0.18 0.17]);
+    Data = cell(6,3);
+    Data(1,:)={'0.2'};
+    Data(3,:)={'0.01'};
+    Data(5,:)={'1'};
+    Data([2 4],:)={false};
+    Data(6,:)={true};
+    h.Mia_STICS.Fit_Table.Data=Data;
+    
+    h.Mia_STICS.Do_iMSD = uicontrol(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Style','push',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',{@Do_iMSD},...
+        'String','Fit iMSD',...
+        'Position',[0.01 0.69, 0.08 0.03]);
+    
+    %%% Axes to display correlation
+    h.Mia_STICS.Axes = axes(...
+        'Parent',h.Mia_STICS.Panel,...
+        'Units','normalized',...
+        'NextPlot','Add',...
+        'Position',[0.24 0.59 0.74 0.38]);
+    for i=1:3
+        h.Plots.STICS(i,1) = errorbar(...
+            [0.1 1],...
+            [0 0],...
+            [0 0],...
+            [0 0],...
+            'Parent',h.Mia_STICS.Axes,...
+            'LineStyle','none',...
+            'Marker','.',...
+            'MarkerSize',8,...
+            'Visible','off',...
+            'Color',ceil([mod(i-1,3)/2 mod(3-i,3)/2 0]));
+        h.Plots.STICS(i,2) = line(...
+            'Parent',h.Mia_STICS.Axes,...
+            'XData',[0.1 1],...
+            'YData',[0 0],...
+            'LineStyle','-',...
+            'Marker','none',...
+            'MarkerSize',8,...
+            'Visible','off',...
+            'Color',ceil([mod(i-1,3)/2 mod(3-i,3)/2 0]));        
+        h.Mia_STICS.Axes.XColor = Look.Fore;
+        h.Mia_STICS.Axes.YColor = Look.Fore;
+        h.Mia_STICS.Axes.XLabel.String = 'Time Lag {\it\tau{}} [s]';
+        h.Mia_STICS.Axes.XLabel.Color = Look.Fore;
+        h.Mia_STICS.Axes.YLabel.String = 'iMSD [µm²/s]';
+        h.Mia_STICS.Axes.YLabel.Color = Look.Fore;
+        
+        
         h.Text{end+1} = uicontrol(...
             'Parent',h.Mia_STICS.Panel,...
             'Style','text',...
@@ -2070,6 +2189,14 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Back,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.02+(i-1)*0.33 0.48 0.3 0.03]);
+        switch i
+            case 1
+                h.Text{end}.String = 'ACF1';
+            case 2
+                h.Text{end}.String = 'CCF';
+            case 3
+                h.Text{end}.String = 'ACF2';
+        end
         %%% Axes to display correlation images
         h.Mia_STICS.Image(i,1) = axes(...
             'Parent',h.Mia_STICS.Panel,...
@@ -2083,6 +2210,7 @@ if isempty(h.Mia)
         
         h.Plots.STICSImage(i,1) = imagesc(...
             zeros(2),...
+            'Visible','off',...
             'Parent',h.Mia_STICS.Image(i));
         h.Mia_STICS.Image(i,1).XTick = [];
         h.Mia_STICS.Image(i,1).YTick = [];
@@ -2090,6 +2218,7 @@ if isempty(h.Mia)
         colormap(jet);
         h.Mia_STICS.Image(i,2) = colorbar(...
             'Peer',h.Mia_STICS.Image(i,1),...
+            'Visible','off',...
             'YColor',Look.Fore);
     end
 
@@ -2483,6 +2612,10 @@ MIAData.TICS = [];
 MIAData.TICS_Int = [];
 MIAData.TICS_MS = [];
 MIAData.PCH = [];
+MIAData.STICS = [];
+MIAData.STICS_SEM = [];
+MIAData.iMSD = [];
+
 guidata(h.Mia,h); 
 else
      figure(h.Mia); % Gives focus to Pam figure 
@@ -2544,6 +2677,8 @@ switch mode
         MIAData.TICS_MS = [];
         MIAData.TICS = [];
         MIAData.TICS_Int = [];
+        MIAData.STICS = [];
+        MIAData.STICS_SEM = [];
         for i=1:3
             h.Plots.Cor(i,1).CData=zeros(1,1,3);
             h.Plots.Cor(i,2).ZData=zeros(1);
@@ -2561,13 +2696,22 @@ switch mode
             h.Plots.Cor(i,7).Visible='off';
             h.Plots.TICS(i,1).Visible = 'off';
             h.Plots.TICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
             h.Plots.TICSImage(i).Visible = 'off';
-            h.Mia_TICS.Image(i,2).Visible = 'off';
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_TICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
         end
         h.Mia_ICS.Frame_Slider.Min=0;
         h.Mia_ICS.Frame_Slider.Max=0;
         h.Mia_ICS.Frame_Slider.SliderStep=[1 1];
         h.Mia_ICS.Frame_Slider.Value=0;
+        h.Mia_STICS.Lag_Slider.Min=0;
+        h.Mia_STICS.Lag_Slider.Max=1;
+        h.Mia_STICS.Lag_Slider.SliderStep=[1 1];
+        h.Mia_STICS.Lag_Slider.Value=0;
         %% Clears N&B data and plots
         MIAData.NB=[];
         h.Plots.NB(1).CData=zeros(1,1);
@@ -3639,8 +3783,50 @@ if any(mode==6)
         %%% 1&3: ACF 1&2
         %%% 2:   CCF
         if size(MIAData.STICS,2)>=i && ~isempty(MIAData.STICS{i})
-            h.Plots.STICSImage(i,1).CData = MIAData.STICS{i}(:,:,round(h.Mia_STICS.Lag_Slider.Value+1));
-
+            %% 2D STICS Images
+            Size = round(str2double(h.Mia_STICS.Size.String));
+            if isempty(Size) || Size<1
+                Size = 31;
+                h.Mia_STICS.Size.String = '31';
+            elseif Size > size(MIAData.STICS{i},1) || Size > size(MIAData.STICS{i},2)
+                Size = min([size(MIAData.STICS{i},2), size(MIAData.STICS{i},2)]);
+                h.Mia_STICS.Size.String = num2str(Size);
+            end
+            X(1)=ceil(floor(size(MIAData.STICS{i},1)/2)-Size/2)+1;
+            X(2)=ceil(floor(size(MIAData.STICS{i},1)/2)+Size/2);
+            Y(1)=ceil(floor(size(MIAData.STICS{i},2)/2)-Size/2)+1;
+            Y(2)=ceil(floor(size(MIAData.STICS{i},2)/2)+Size/2);
+            
+            h.Plots.STICSImage(i,1).CData = MIAData.STICS{i}(X(1):X(2),Y(1):Y(2),round(h.Mia_STICS.Lag_Slider.Value+1));
+            h.Plots.STICSImage(i,1).Visible = 'on';
+            h.Mia_STICS.Image(i,2).Visible = 'on';           
+            %% Fitted iMSD plot
+            Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            Time = (0:(numel(MIAData.iMSD{i,1})-1))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            %%% Data
+            h.Plots.STICS(i,1).YData = (MIAData.iMSD{i,1}.*Size/1000).^2;
+            h.Plots.STICS(i,1).XData = Time;
+            h.Plots.STICS(i,1).UData = (MIAData.iMSD{i,2}(:,1).^2-MIAData.iMSD{i,1}.^2).*Size.^2/10^6;
+            h.Plots.STICS(i,1).LData = (MIAData.iMSD{i,1}.^2-MIAData.iMSD{i,2}(:,2).^2).*Size.^2/10^6;
+            h.Plots.STICS(i,1).Visible = 'on';
+            h.Plots.STICS(i,1).Visible = 'on';
+            %%% Fit 
+            Time = linspace(0,Time(end),1000);
+            P = cellfun(@str2double,h.Mia_STICS.Fit_Table.Data(1:2:end,i));
+            h.Plots.STICS(i,2).YData = P(1)^2+4*P(2).*(Time.^P(3));
+            h.Plots.STICS(i,2).XData = Time;
+            h.Plots.STICS(i,2).Visible = 'on';
+            h.Plots.STICS(i,2).Visible = 'on';
+            
+            h.Mia_STICS.Axes.XLim = [0 Time(end)];
+          
+        else
+            h.Plots.STICSImage(i,1).Visible = 'off';
+            h.Mia_STICS.Image(i,2).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,1).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
+            h.Plots.STICS(i,2).Visible = 'off';
         end
     end
 end
@@ -3661,9 +3847,7 @@ h.Mia_Progress_Axes.Color=UserValues.Look.Control;
 %%% Moves through frames %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Frame(~,e,mode,channel)
-global MIAData Test
-
-tic;
+global MIAData
 
 Fig = gcf;
 %%% This speeds display up
@@ -3672,7 +3856,6 @@ if strcmp(Fig.Tag,'Mia')
 else
     h = guidata(findobj('Tag','Mia'));
 end
-% profile on
 if size(MIAData.Data,1)>0
     %%% Determins slider in case of listener callback
     if nargin<4
@@ -3717,18 +3900,13 @@ if size(MIAData.Data,1)>0
                 Update_Plots([],[],1,channel);
             end
         case 3 %%% Cor frames editbox changed
-            Frame=str2double(h.Mia_ICS.Frame.String);
-            i=find(~cellfun(@isempty,MIAData.Cor),1,'first');
+            Frame = round(str2double(h.Mia_ICS.Frame.String));
+            i = find(~cellfun(@isempty,MIAData.Cor),1,'first');
             %%% Forces frame into bounds
             if Frame>size(MIAData.Cor{i},3)
                 Frame=size(MIAData.Cor{i},3);
                 h.Mia_ICS.Frame.String=num2str(size(MIAData.Cor{i},3));
-            end
-            if mod(Frame,1)~=0
-                Frame=round(Frame);
-                h.Mia_ICS.Frame.String=num2str(Frame);
-            end
-            if Frame<0;
+            elseif Frame<0 || isempty(Frame)
                 Frame=0;
                 h.Mia_ICS.Frame.String='0';
             end
@@ -3739,12 +3917,33 @@ if size(MIAData.Data,1)>0
                 Frame=round(Frame);
                 h.Mia_ICS.Frame_Slider.Value=Frame;
             end
-            if Frame<0;
-                Frame=0;
-                h.Mia_ICS.Frame.String='0';
-            end
             h.Mia_ICS.Frame.String=num2str(Frame);
             Update_Plots([],[],2,1:3);
+        case 5 %%% STICS lag editbox changed
+            Lag = round(str2double(h.Mia_STICS.Lag.String));
+            i = find(~cellfun(@isempty,MIAData.STICS),1,'first');
+            if isempty(i) %%%Stop, if no file is loaded
+               return; 
+            end
+            %%% Forces frame into bounds
+            if Lag > size(MIAData.STICS{i},3)
+                Lag = size(MIAData.STICS{i},3);
+                h.Mia_STICS.Lag.String = num2str(Lag);
+            elseif Lag <0 || isempty(Lag)
+                Lag = 0;
+                h.Mia_STICS.Lag.String = '0';
+            end
+            %%% Updates Slider
+            h.Mia_STICS.Lag_Slider.Value = Lag;
+            Update_Plots([],[],6,1:3);
+        case 6 %%% STICS lag slider changed
+           Lag = h.Mia_STICS.Lag_Slider.Value;
+           if mod(Lag,1)~=0
+               Lag = round(Lag);
+               h.Mia_STICS.Lag_Slider.Value = Lag;
+           end
+           h.Mia_STICS.Lag.String = num2str(Lag);
+           Update_Plots([],[],6,1:3);
     end
     %%% Sets the frame use value
     if str2double(h.Mia_Image.Settings.Channel_Frame(1).String)>0
@@ -3754,8 +3953,6 @@ if size(MIAData.Data,1)>0
         h.Mia_Image.Settings.Channel_FrameUse(2).Value=MIAData.Use(2,str2double(h.Mia_Image.Settings.Channel_Frame(2).String));
     end
 end
-
-Test(end+1) = toc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4127,7 +4324,6 @@ switch mode
         Update_Plots([],[],5,1:size(MIAData.Data,1));
         
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4246,6 +4442,8 @@ if ~isempty(MIAData.Data)
     Mia_Correct;
     
 end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate image correlations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4773,7 +4971,6 @@ h.Mia_ICS.Frames2Use.String=['1:' num2str(size(MIAData.Cor{i},3))];
 %%% Updates correlation plots
 
 Update_Plots([],[],2,channel);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate temporal image correlations %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4971,7 +5168,6 @@ if size(MIAData.TICS,2)>1
 end
 
 Update_Plots([],[],5,channel);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to calculate STICS/iMSD correlations %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5043,6 +5239,8 @@ end
 
 
 MaxLag = str2double(h.Mia_Image.Calculations.Cor_STICS_Frames.String);
+h.Mia_STICS.Lag_Slider.Max = MaxLag;
+h.Mia_STICS.Lag_Slider.SliderStep = [1/MaxLag 1/MaxLag];
 %%% Performs stapio temporal correlation
 for i = 1:3
     if any(Auto==i) || (i==3 && Cross)
@@ -5122,6 +5320,13 @@ for i = 1:3
         end
         MIAData.STICS{i} = MIAData.STICS{i}./single(STICS_Num);
         MIAData.STICS_SEM{i} = sqrt(MIAData.STICS_SEM{i}./single(STICS_Num-1)./single(STICS_Num));
+        
+        %%% Removes noise peak at G(0, 0, 0)
+        MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2),1) =...
+            (MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2)-1,1)+...
+             MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2)+1,1))/2;         
+        
+        
     end
 end
 clear Image ImageFluct ImageCor;
@@ -5130,21 +5335,74 @@ clear Image ImageFluct ImageCor;
 %%% Cross is 2nd entry
 if size(MIAData.STICS,2)>1
     if size(MIAData.STICS,2)==2
-        MIAData.STICS{3} = MIAData.TICS{2};
+        MIAData.STICS{3} = MIAData.STICS{2};
         MIAData.STICS{2} = [];
     else
         MIAData.STICS = MIAData.STICS([1 3 2]);
     end
 end
 
-Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
+%%% Creates empty iMSD entry
+for i=1:3
+    if size(MIAData.STICS,2)>=i && ~isempty(MIAData.STICS{i})
+        MIAData.iMSD{i,1} = zeros(size(MIAData.STICS{i},3),1);
+        MIAData.iMSD{i,2} = zeros(size(MIAData.STICS{i},3),2);
+    end
+end
 
-%%% Saves correlation files
-if h.Mia_Image.Calculations.Cor_Save_STICS.Value > 1
+Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
+%% Saves correlations
+%%% .mcor filetype (iMSD)
+if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [2 4])
+    %% Creates new filename
+    %%% Removes file extension
+    switch MIAData.Type
+        case 1
+            FileName = MIAData.FileName{1}{1}(1:end-4);
+    end
+    %%% Generates filename
+    Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_iMSD1.mcor']);
+    Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_cciMSD.mcor']);
+    Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_iMSD2.mcor']);
+    %%% Checks, if file already exists and create new filename
+    if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+        k=1;
+        %%% Adds 1 to filename
+        Current_FileName1=[Current_FileName1(1:end-5) '_' num2str(k) '.mcor'];
+        Current_FileName2=[Current_FileName2(1:end-5) '_' num2str(k) '.mcor'];
+        Current_FileName3=[Current_FileName3(1:end-5) '_' num2str(k) '.mcor'];
+        %%% Increases counter, until no file is found
+        while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+            k=k+1;
+            Current_FileName1=[Current_FileName1(1:end-(6+numel(num2str(k-1)))) num2str(k) '.mcor'];
+            Current_FileName2=[Current_FileName2(1:end-(6+numel(num2str(k-1)))) num2str(k) '.mcor'];
+            Current_FileName3=[Current_FileName3(1:end-(6+numel(num2str(k-1)))) num2str(k) '.mcor'];
+        end
+    end
+    for i=1:3
+        if size(MIAData.iMSD,1) >= i && ~isempty(MIAData.iMSD{i,1})
+            %%% Fit STICS data with gaussin
+            if all(MIAData.iMSD{i,1}==0)
+                Do_Gaussian
+            end
+            Header = 'iMSD correlation file'; %#ok<NASGU>
+            Counts = [1 1];
+            Valid = 1;
+            Cor_Times = (0:(size(MIAData.iMSD{i,1},1)-1))'*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            Cor_Times(1) = 10^-10;
+            Cor_Average = MIAData.iMSD{i,1}.^2;
+            Cor_Array = MIAData.iMSD{i,1}.^2;
+            Cor_SEM = (abs((MIAData.iMSD{i,1}.^2-MIAData.iMSD{i,2}(:,1).^2))+abs((MIAData.iMSD{i,1}.^2-MIAData.iMSD{i,2}(:,2).^2)))/2;
+            save(eval(['Current_FileName' num2str(i)]),'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+        end
+    end
+end
+%%% .stcor filetype
+if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
     DataAll = cell(3,2);
     InfoAll = struct;
     %% Gets auto correlations data to save
-    for i = Auto        
+    for i = Auto
         %%% File name information
         InfoAll(i).File = MIAData.FileName{i};
         InfoAll(i).Path = UserValues.File.MIAPath;
@@ -5188,7 +5446,7 @@ if h.Mia_Image.Calculations.Cor_Save_STICS.Value > 1
                 InfoAll(i).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
         end
         %%% Mean intensity
-        InfoAll(i).Counts = MeanInt(i);     
+        InfoAll(i).Counts = MeanInt(i);
         DataAll{i,1} = double(MIAData.STICS{floor(1.5*i)});
         DataAll{i,2} = double(MIAData.STICS_SEM{floor(1.5*i)});
     end
@@ -5242,59 +5500,52 @@ if h.Mia_Image.Calculations.Cor_Save_STICS.Value > 1
         DataAll{3,1} = double(MIAData.STICS{2});
         DataAll{3,2} = double(MIAData.STICS_SEM{2});
     end
-    %% Saves correlations
-    switch h.Mia_Image.Calculations.Cor_Save_STICS.Value
-        case 3 %%% .stcor filetype
-            %% Creates new filename
-            %%% Removes file extension
-            switch MIAData.Type
-                case 1
-                    FileName = MIAData.FileName{1}{1}(1:end-4);
-            end
-            %%% Generates filename
-            Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.stcor']);
-            Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.stcor']);
-            Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.stcor']);
-            %%% Checks, if file already exists and create new filename
-            if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName1=[Current_FileName1(1:end-6) '_' num2str(k) '.stcor'];
-                Current_FileName2=[Current_FileName2(1:end-6) '_' num2str(k) '.stcor'];
-                Current_FileName3=[Current_FileName3(1:end-6) '_' num2str(k) '.stcor'];
-                %%% Increases counter, until no file is found
-                while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
-                    k=k+1;
-                    Current_FileName1=[Current_FileName1(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
-                    Current_FileName2=[Current_FileName2(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
-                    Current_FileName3=[Current_FileName3(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
-                end
-            end
-            %%% Saves Auto correlations
-            for i=Auto
-                Info = InfoAll(i); %#ok<NASGU>
-                Data = DataAll(i,:); %#ok<NASGU>
-                if i==1
-                    save(Current_FileName1,'Info','Data');
-                else
-                    save(Current_FileName2,'Info','Data');
-                end
-            end
-            %%% Saves Cross correlations
-            if Cross
-                Info = InfoAll(3); %#ok<NASGU>
-                Data = DataAll(3,:); %#ok<NASGU>
-                save(Current_FileName3,'Info','Data');
-            end
-            
-            
-        otherwise
+    %% Creates new filename
+    %%% Removes file extension
+    switch MIAData.Type
+        case 1
+            FileName = MIAData.FileName{1}{1}(1:end-4);
     end
-
+    %%% Generates filename
+    Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.stcor']);
+    Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.stcor']);
+    Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.stcor']);
+    %%% Checks, if file already exists and create new filename
+    if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+        k=1;
+        %%% Adds 1 to filename
+        Current_FileName1=[Current_FileName1(1:end-6) '_' num2str(k) '.stcor'];
+        Current_FileName2=[Current_FileName2(1:end-6) '_' num2str(k) '.stcor'];
+        Current_FileName3=[Current_FileName3(1:end-6) '_' num2str(k) '.stcor'];
+        %%% Increases counter, until no file is found
+        while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+            k=k+1;
+            Current_FileName1=[Current_FileName1(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
+            Current_FileName2=[Current_FileName2(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
+            Current_FileName3=[Current_FileName3(1:end-(6+numel(num2str(k-1)))) num2str(k) '.stcor'];
+        end
+    end
+    %%% Saves Auto correlations
+    for i=Auto
+        Info = InfoAll(i); %#ok<NASGU>
+        Data = DataAll(i,:); %#ok<NASGU>
+        if i==1
+            save(Current_FileName1,'Info','Data');
+        else
+            save(Current_FileName2,'Info','Data');
+        end
+    end
+    %%% Saves Cross correlations
+    if Cross
+        Info = InfoAll(3); %#ok<NASGU>
+        Data = DataAll(3,:); %#ok<NASGU>
+        save(Current_FileName3,'Info','Data');
+    end
 end
 
-
 Update_Plots([],[],6,[]);
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5344,7 +5595,7 @@ Update_Plots([],[],2,mode);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% RICS fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [OUT]=Fit_RICS(Fit_Params,Data)
+function [OUT] = Fit_RICS(Fit_Params,Data)
 
 Shift=floor(Data{3}/2)+1;
 [X,Y]=meshgrid(1:Data{3},1:Data{3});
@@ -5363,7 +5614,7 @@ OUT=OUT./SEM;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates fit function without fitting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%       
-function [OUT]=Calc_RICS_Fit(mode)
+function [OUT] = Calc_RICS_Fit(mode)
 global MIAData
 h = guidata(findobj('Tag','Mia'));
 P=cellfun(@str2double,h.Mia_ICS.Fit_Table.Data(1:2:end,mode));
@@ -5379,6 +5630,8 @@ OUT= P(5) + 2.^(-3./2)./P(1).... %%% Amplitude
     .*exp(-(P(6)*10^-9)^2*((X-Shift).^2+(Y-Shift).^2)./((P(3)*10^-6)^2+4*P(2)*10^-12*(abs(X-Shift)*P(7)*10^-6+abs(Y-Shift)*P(8)*10^-3))); %%% Scanning
 OUT((Shift-1)*(Size+1)+1)=(OUT((Shift-1)*(Size-1))+OUT(Shift*(Size+1)))/2;
 MIAData.Cor{mode,2} = reshape(OUT,[Size,Size]);
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Peforms tics fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5417,7 +5670,7 @@ Update_Plots([],[],5,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% TICS fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [OUT] =Fit_TICS(Fit_Params,Data)
+function [OUT] = Fit_TICS(Fit_Params,Data)
 P = Data{1};
 P(Data{2}) = Fit_Params;
 X = Data{3};
@@ -5436,7 +5689,7 @@ global MIAData
 for i=mode
     if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})
         P = cellfun(@str2double,h.Mia_TICS.Fit_Table.Data(1:2:end,i));
-        X = h.Plots.TICS(i,1).XData;
+        X = logspace(h.Plots.TICS(i,1).XData(1),h.Plots.TICS(i,1).XData(end),1000);
         
         OUT=real((1/sqrt(8))*1/P(1).*(1./(1+4*(P(2)*1e-12).*X/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12).*X/(P(4)*1e-6)^2))+P(5));
         
@@ -5452,6 +5705,117 @@ for i=mode
 end
 drawnow
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Peforms Gaussian fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_Gaussian(~,~)
+h = guidata(findobj('Tag','Mia'));
+global MIAData
+h.Mia_Progress_Text.String = 'Fitting Gaussian';
+h.Mia_Progress_Axes.Color=[1 0 0];  
+drawnow;
+
+for i=1:3
+
+    if size(MIAData.STICS,2)>=i && ~isempty(MIAData.STICS{i})
+        MIAData.iMSD{i,1} = zeros(size(MIAData.STICS{i},3),1);
+        MIAData.iMSD{i,2} = zeros(size(MIAData.STICS{i},3),2);
+        for j=1:size(MIAData.STICS{i},3)
+            Fit_Params = [1,5,0];
+            
+            Size = round(str2double(h.Mia_STICS.Size.String));
+            if isempty(Size) || Size<1
+                Size = 31;
+                h.Mia_STICS.Size.String = '31';
+            elseif Size > size(MIAData.STICS{i},1) || Size > size(MIAData.STICS{i},2)
+                Size = min([size(MIAData.STICS{i},2), size(MIAData.STICS{i},2)]);
+                h.Mia_STICS.Size.String = num2str(Size);
+            end
+            X(1)=ceil(floor(size(MIAData.STICS{i},1)/2)-Size/2)+1;
+            X(2)=ceil(floor(size(MIAData.STICS{i},1)/2)+Size/2);
+            Y(1)=ceil(floor(size(MIAData.STICS{i},2)/2)-Size/2)+1;
+            Y(2)=ceil(floor(size(MIAData.STICS{i},2)/2)+Size/2);
+            YData = MIAData.STICS{i}(X(1):X(2),Y(1):Y(2),j);
+            %%% Removes noise point at G(0,0,0)
+            if j==1
+               YData(floor(Size/2)+1,floor(Size/2)+1) = 0;
+            end
+            EData = MIAData.STICS_SEM{i}(X(1):X(2),Y(1):Y(2),j);
+        
+        opts=optimset('Display','off');
+        %%% Performas fit        
+        [Fitted_Params,~,weighted_residuals,~,~,~,jacobian] = lsqcurvefit(@Fit_Gaussian,Fit_Params,{Size,double(EData),j},double(YData(:)./EData(:)),[],[],opts);
+
+        MIAData.iMSD{i,1}(j,1) = Fitted_Params(2);
+        Confidence = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+        MIAData.iMSD{i,2}(j,:) = Confidence(2,:);
+        end
+    end
+end
+Update_Plots([],[],6,[]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Gaussian Fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+function [OUT] = Fit_Gaussian(Fit_Params,Data)
+Shift = floor(Data{1}/2)+1;
+[X,Y]=meshgrid(1:Data{1},1:Data{1});
+X=X(:); Y=Y(:);
+SEM = Data{2};
+
+A = Fit_Params(1);
+Omega = Fit_Params(2);
+I0 = Fit_Params(3);
+
+OUT = I0+A.*exp(-((X-Shift).^2+(Y-Shift).^2)./(Omega^2));
+OUT((Shift-1)*(Data{1}+1)+1) = (OUT((Shift-1)*(Data{1}-1))+OUT(Shift*(Data{1}+1)))/2;
+OUT = OUT./SEM(:);
+%%% Removes noise point at G(0,0,0)
+if Data{3}==1
+   OUT(sub2ind(size(Data{2}),Shift,Shift)) = 0;
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Peforms iMSD fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Do_iMSD(~,~)
+h = guidata(findobj('Tag','Mia'));
+global MIAData
+h.Mia_Progress_Text.String = 'Fitting iMSD';
+h.Mia_Progress_Axes.Color=[1 0 0];  
+drawnow;
+
+for i=1:3
+    if size(MIAData.iMSD,1)>=i && ~isempty(MIAData.iMSD{i,1}) && any(MIAData.iMSD{i,1}~=0)
+        %%% Extracts parameters and data
+        NotFixed = ~cell2mat(h.Mia_STICS.Fit_Table.Data(2:2:end,i));
+        Params = cellfun(@str2double,h.Mia_STICS.Fit_Table.Data(1:2:end,i));
+        Fit_Params = Params(NotFixed);
+        
+        XData = h.Plots.STICS(i,1).XData;
+        YData = h.Plots.STICS(i,1).YData;
+        EData = (h.Plots.STICS(i,1).UData + h.Plots.STICS(i,1).LData)/2; 
+        
+        opts=optimset('Display','off');
+        %%% Performas fit
+        [Fitted_Params,~,~,~,~,~,~] = lsqcurvefit(@Fit_iMSD,Fit_Params,{Params,NotFixed,XData,EData},double(YData./EData),[],[],opts);
+        %%% Updates parameters and table
+        Params(NotFixed) = Fitted_Params;
+        h.Mia_STICS.Fit_Table.Data(1:2:end,i) = deal(cellfun(@num2str,num2cell(Params),'UniformOutput',false));
+    end
+end
+Update_Plots([],[],6,[]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Gaussian Fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+function [OUT] = Fit_iMSD(Fit_Params,Data)
+P = Data{1};
+P(Data{2}) = Fit_Params;
+X = Data{3};
+SEM = Data{4};
+
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=P(1)^2+4*P(2)*(X.^P(3));
+OUT=OUT./SEM;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5565,7 +5929,6 @@ h.Mia_NB.Image.Hist(3,3).String='50';
 
 %%% Updates N&B plots
 Update_Plots([],[],3,channel);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes 2D histogram background color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
