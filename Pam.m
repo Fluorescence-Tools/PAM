@@ -6242,7 +6242,11 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.SyncPeriod;
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = mean(M)*ones(1,numel(AllPhotons));
     else
-        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'off';
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'on';
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Color = [0 0 1];
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.LineStyle = '--';
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.SyncPeriod;
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = (T/mean(M))*ones(1,numel(AllPhotons));
     end
     %%% Color selected regions in Interphoton time plot
     for i=1:numel(start)
