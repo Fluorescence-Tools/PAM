@@ -3609,7 +3609,12 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 function Choose_PrintPath_Menu(~,~)
 global UserValues
 
-PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
+try
+    PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
+catch
+    path = pwd;
+    PathName = uigetdir(path, 'Choose a folder to place files into');
+end
 
 if PathName == 0
     return;
@@ -3623,41 +3628,101 @@ LSUserValues(1);
 function Compare_FRET_Hist(~,~)
 global UserValues
 
-N_bins = 51;
-
 %%% Load *.his files (assume they are in one folder)
-[FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+try
+    [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+catch
+    Choose_PrintPath_Menu([],[]);
+    [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+end
 if ~iscell(FileNames)
     return;
 end
 
-%%% Load FRET arrays
-for i = 1:numel(FileNames)
-    dummy = load(fullfile(PathName,FileNames{i}),'-mat');
-    E{i} = dummy.E;
-end
+%%% Check how many FRET efficiencies are saved (1 = 2ColorMFD, 3 =
+%%% 3ColorMFD)
+dummy = load(fullfile(PathName,FileNames{1}),'-mat');
+switch numel(fieldnames(dummy))
+    case 1 % 2ColorMFD
+        N_bins = 51;
+        %%% Load FRET arrays
+        for i = 1:numel(FileNames)
+            dummy = load(fullfile(PathName,FileNames{i}),'-mat');
+            E{i} = dummy.E;
+        end
 
-xE = linspace(0,1,N_bins);
-for i = 1:numel(E)
-    H{i} = histcounts(E{i},xE);
-    H{i} = H{i}./sum(H{i});
-end
+        xE = linspace(0,1,N_bins);
+        for i = 1:numel(E)
+            H{i} = histcounts(E{i},xE);
+            H{i} = H{i}./sum(H{i});
+        end
 
-color = lines(numel(H));
-figure('Color',[1 1 1],'Position',[100 100 600 400]);
-stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
-hold on
-for i = 2:numel(H)
-    stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+        color = lines(numel(H));
+        figure('Color',[1 1 1],'Position',[100 100 600 400]);
+        stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
+        hold on
+        for i = 2:numel(H)
+            stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+        end
+        ax = gca;
+        ax.Color = [1 1 1];
+        ax.FontSize = 20;
+        ax.LineWidth = 2;
+        ax.Layer = 'top';
+        ax.XLim = [0,1];
+        xlabel('FRET efficiency');
+        ylabel('probability density');
+        legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+        legend(legend_entries,'fontsize',14);
+    case 3
+        %%% Load FRET arrays
+        for i = 1:numel(FileNames)
+            dummy = load(fullfile(PathName,FileNames{i}),'-mat');
+            EGR{i} = dummy.EGR;
+            EBG{i} = dummy.EBG;
+            EBR{i} = dummy.EBR;
+        end
+        
+        xE = linspace(-0.1,1,56);
+        xEBR = linspace(-0.2,1,61);
+        for i = 1:numel(EGR)
+            HGR{i} = histcounts(EGR{i},xE);
+            HGR{i} = HGR{i}./sum(HGR{i});
+            HBG{i} = histcounts(EBG{i},xE);
+            HBG{i} = HBG{i}./sum(HBG{i});
+            HBR{i} = histcounts(EBR{i},xEBR);
+            HBR{i} = HBR{i}./sum(HBR{i});
+        end
+
+        color = lines(numel(HGR));
+        H_all = {HGR,HBG,HBR};
+        xlb = {'FRET efficiency GR','FRET efficiency BG','FRET efficiency BR'};
+        for j = 1:3
+            if j == 3
+                xE = xEBR;
+            end
+            H = H_all{j};
+            figure('Color',[1 1 1],'Position',[100+600*(j-1) 100 600 400],'name',xlb{j});
+            stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
+            hold on
+            for i = 2:numel(H)
+                stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+            end
+            ax = gca;
+            ax.Color = [1 1 1];
+            ax.FontSize = 20;
+            ax.LineWidth = 2;
+            ax.Layer = 'top';
+            ax.XLim = [-0.1 1];
+            if j == 3
+                ax.XLim = [-0.2 1];
+            end
+            xlabel(xlb{j});
+            ylabel('probability density');
+            legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+            legend(legend_entries,'fontsize',14);
+        end
 end
-ax = gca;
-ax.Color = [1 1 1];
-ax.FontSize = 20;
-ax.LineWidth = 2;
-xlabel('FRET Efficiency');
-ylabel('probability density');
-legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
-legend(legend_entries,'fontsize',14);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7350,12 +7415,21 @@ global BurstData BurstTCSPCData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
-
-E = BurstData.DataCut(:,1);
-
-%%% Save E array in *.his file
 filename = [BurstData.DisplayName '_' SelectedSpeciesName '.his'];
-save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
+switch BurstData.BAMethod
+    case {1,2}
+        E = BurstData.DataCut(:,1);
+        %%% Save E array in *.his file
+        save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
+    case {3,4}
+        EGR = BurstData.DataCut(:,1);
+        EBG = BurstData.DataCut(:,2);
+        EBR = BurstData.DataCut(:,3);
+        %%% Save E array in *.his file
+        save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+end
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
