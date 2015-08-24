@@ -30,18 +30,18 @@ else
 end
 plot_after_fit(handles);
 %update table
-n_gauss = str2double(get(handles.popupmenu_ngauss,'String'));
-UpdateFitTable(handles,n_gauss);
+n_gauss = str2double(handles.popupmenu_ngauss.String{handles.popupmenu_ngauss.Value});
+UpdateFitTable(handles,n_gauss, optimvalues.x);
 
 
         
-function UpdateFitTable(handles,n_gauss)
-global tcPDAstruct
+function UpdateFitTable(handles,n_gauss,fitpar)
+fitpar = reshape(fitpar,10,numel(fitpar)/10);
 %Read the old data from table
 data = get(handles.fit_table,'Data');
 %Update fitparameter values only
 for i = 1:n_gauss
-    data(((i-1)*11+1):(11*i-1),1) = mat2cell(tcPDAstruct.fitdata.param{i},ones(10,1),1);
+    data(((i-1)*11+1):(11*i-1),1) = num2cell(fitpar(:,i));%mat2cell(tcPDAstruct.fitdata.param{i},ones(10,1),1);
 end
 
 set(handles.fit_table,'Data',data);
