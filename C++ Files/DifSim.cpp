@@ -24,7 +24,8 @@ void Simulate_Diffusion(
         double *LT,
         double *Rates, double *Cross,        
         double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64 *NPhotons,
-        unsigned long Time)        
+        unsigned long Time,
+        double Map_Type, double *Map)        
 {
     /// Counting variable definition
 	__int64 i = 0;
@@ -122,6 +123,14 @@ void Simulate_Diffusion(
                     Ex = ExP[4*j+k]*exp(-2*((Pos[0]-Box[0]/2+ShiftX[j]-x)*(Pos[0]-Box[0]/2+ShiftX[j]-x) /// X
                     + (Pos[1]-Box[1]/2+ShiftY[j]-y)*(Pos[1]-Box[1]/2+ShiftY[j]-y))/(Wr[j]*Wr[j]) ///Y
                     -2*(Pos[2]-Box[2]/2+ShiftZ[j])*(Pos[2]-Box[2]/2+ShiftZ[j])/(Wz[j]*Wz[j])); ///Z
+                    
+                    /// Calculates quenching efficiency
+                    if (Map_Type == 2) 
+					{	
+						int Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
+						Ex = Ex * Map[Index]; 
+					} 
+                    
                     if (Ex > 1E-4) /// Only roll if Excitation is larger than 0.01% = 1E-4
                     {
                         /// Create binomial distribution for excitation probability
@@ -227,8 +236,8 @@ void Simulate_Diffusion(
 ///////////////////////////////////////////////////////////////////////////
 void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=20)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","20 inputs required."); }
+    if(nrhs!=22)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","22 inputs required."); }
     if (nlhs!=4)
     { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","4 outputs required."); }
     
@@ -259,7 +268,9 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
     double *Cross = mxGetPr(prhs[18]);
     
     unsigned long Time = mxGetScalar(prhs[19]);
-        
+    
+    double Map_Type = mxGetScalar(prhs[20]); 
+    double *Map = mxGetPr(prhs[21]);    
     
 
     double *Macrotimes;
@@ -280,7 +291,8 @@ void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prh
         LT, // Lifetime
         Rates, Cross, // Parameter containing FRET/Crosstalk rates
         Macrotimes, Microtimes, Channel, NPhotons,// Output parameters
-        Time); // Additional random seed value
+        Time, // Additional random seed value
+        Map_Type, Map); // Map for quenching/barriers etc.
         
     const mwSize NP[]={NPhotons[0],1};
     const mwSize SizePos[]={3,1};

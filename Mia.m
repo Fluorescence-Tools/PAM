@@ -3514,13 +3514,19 @@ if any(mode==4)
         %% Updates Intensity and PCH plots on Image Tab
         h.Plots.Int(1,1).XData = 1:size(MIAData.Data{1,1},3);
         h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
+        
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1);
-            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1);
+            
+            Data = MIAData.Data{1,2};
+            Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1);
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
         else
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-            h.Plots.Int(1,2).YData = mean(mean(MIAData.Data{1,2},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            Data = MIAData.Data{1,2};
+            Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
         end
         
@@ -3532,7 +3538,7 @@ if any(mode==4)
         h.Plots.PCH(1,1).YData = MIAData.PCH{1};
         Max = max(MIAData.Data{1,2}(:));
         h.Plots.PCH(1,2).XData = 0:Max;
-        h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(:), 0:Max);
+        h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3))), 0:Max);
         if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
             h.Mia_Image.PCH_Axes.YScale = 'Lin';
         else
@@ -3635,10 +3641,15 @@ if any(mode==4)
         h.Plots.Int(2,2).Visible = 'on';
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1);
-            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1);
+            Data = MIAData.Data{2,2};
+            Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3)))) = NaN;
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
-            h.Plots.Int(2,2).YData = mean(mean(MIAData.Data{2,2},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            Data = MIAData.Data{2,2};
+            Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3)))) = NaN;
+            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            
         end
         
         if numel(MIAData.PCH,1)<2
@@ -3649,7 +3660,7 @@ if any(mode==4)
         h.Plots.PCH(2,1).Visible = 'on';
         Max = max(MIAData.Data{2,2}(:));
         h.Plots.PCH(2,2).XData = 0:Max;
-        h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(:), 0:Max);
+        h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3))), 0:Max);
         h.Plots.PCH(2,2).Visible = 'on';
         %% Updates first plot
         h.Plots.Additional_Axes(1,2).XData = 1:size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},3);
@@ -4235,7 +4246,7 @@ switch h.Mia_Image.Settings.ROI_AR_Same.Value
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
 end
-Update_Plots([],[],1,1:size(MIAData.Data,1));
+Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates arbitrary regions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4271,7 +4282,7 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],1,1:size(MIAData.Data,1));
+        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
     case 2 %%% Unselect Region for general manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
@@ -4287,7 +4298,7 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],1,1:size(MIAData.Data,1));
+        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
     case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
             MIAData.MS{i} = true(size(MIAData.Data{i,2},1),size(MIAData.Data{i,2},2));
@@ -4296,7 +4307,7 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],1,1:size(MIAData.Data,1));
+        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
         
     %%% TICS manual selection 
     case 4 %%% Select Region for TICS manual seletion

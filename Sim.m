@@ -571,6 +571,19 @@ h.Sim_FRET = uicontrol(...
     'Callback',@Sim_Settings,...
     'Position',[0.34 0.78 0.2 0.1]);
 
+%%% Barrier type selection
+h.Sim_Barrier = uicontrol(...
+    'Parent',h.Sim_Species_Panel,...
+    'Units','normalized',...
+    'Style','popup',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',{'Free Diffusion','Free Diffusion with quenching'},...
+    'Callback',@Sim_Settings,...
+    'Position',[0.55 0.78 0.25 0.1]);
+
 %%% Text
 h.Text_Brightness = uicontrol(...
     'Parent',h.Sim_Species_Panel,...
@@ -1078,6 +1091,7 @@ SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
 SimData.Species(1).Color = 1;
 SimData.Species(1).FRET = 1;
+SimData.Species(1).Barrier = 1;
 SimData.Species(1).Brightness = [1000,1000,1000,1000];
 SimData.Species(1).D = 1;
 SimData.Species(1).N = 10;
@@ -1405,7 +1419,7 @@ switch Obj
             h.Sim_dZ{i}.Visible = 'off';
             h.Text_Color{i}.Visible = 'off';
         end        
-    case h.Sim_FRET %%% Defines type of FRET to be simulated   
+    case h.Sim_FRET %%% Defines type of FRET to be simulated
         Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).FRET = h.Sim_FRET.Value;
         switch h.Sim_FRET.Value
@@ -1419,6 +1433,9 @@ switch Obj
                 h.Sim_FRET_General_Panel.Visible = 'on';
                 h.Sim_FRET_Static_Panel.Visible = 'off';                
         end
+    case h.Sim_Barrier %%% Defines type of barrieres to be simulated
+        Sel=h.Sim_List.Value(1);
+        SimData.Species(Sel).Barrier = h.Sim_Barrier.Value;
         
     case h.Sim_Name %%% Changed species name
         Sel=h.Sim_List.Value(1);
@@ -1659,6 +1676,7 @@ switch mode
         h.Sim_Name.String = SimData.Species(Sel).Name;
         h.Sim_Color.Value = SimData.Species(Sel).Color;
         h.Sim_FRET.Value = SimData.Species(Sel).FRET;
+        h.Sim_Barrier.Value = SimData.Species(Sel).Barrier;
         h.Sim_D.String = num2str(SimData.Species(Sel).D);
         h.Sim_N.String = num2str(SimData.Species(Sel).N);
         h.Sim_UseLT.Value = SimData.Species(Sel).UseLT;
@@ -1756,6 +1774,7 @@ Scan_Type = h.Sim_Scan.Value;
 BS(1) = str2double(h.Sim_BS{1}.String);
 BS(2) = str2double(h.Sim_BS{2}.String);
 BS(3) = str2double(h.Sim_BS{3}.String);
+BS = floor(BS);
 
 %%% Simulation frequency
 Freq = str2double(h.Sim_Freq.String)*1000;
@@ -1815,10 +1834,41 @@ for i = 1:numel(SimData.Species);
     else
         LT = [0 0 0 0];
     end
-    for j=SimData.Species(i).Color+1:4
+    for j = SimData.Species(i).Color+1:4
        ExP(j,:) = 0; 
        FRET(j,:) = 0;
     end
+    
+    %%% Determins barrier type and map (for quenching, barriers, ect.)
+    Map_Type = h.Sim_Barrier.Value;
+    switch Map_Type
+        case 1
+            Map = 0;
+        case 2
+            if isfield(SimData,'Map')
+                Map = double(SimData.Map);
+                if size(Map,1)<BS(1) || size(Map,2)<BS(2) || size(Map,3)<BS(3)
+                    Map_Type = 1;
+                    Map = 0;
+                else
+                    if size(Map,1)>BS(1)
+                        Map = Map(1:BS(1),:,:);
+                    end
+                    if size(Map,2)>BS(2)
+                        Map = Map(:,1:BS(1),:);
+                    end
+                    if size(Map,3)<BS(3) && BS(3)>0
+                        Map = Map(:,:,1:BS(3));
+                    end
+                    Map(isnan(Map)) = 1;
+                end
+                
+            else
+                Map_Type = 1;
+                Map = 0;
+            end
+    end
+
     
     
     %%% Species specific parameters for used colors
@@ -1865,7 +1915,8 @@ for i = 1:numel(SimData.Species);
                 ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
                 LT,... %%% Lifetime of the different colors
                 FRET, Cross,... %%% Relative FRET and Crosstalk rates
-                uint32(Time(end)*1000+k+j)); %%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                Map_Type, Map);  %%% Type of barriers/quenching and barrier map
              
             %%% Channel is a 8 bit number that defines the exact photon type
             %%% bits 0,1 for exitation laser
@@ -1878,7 +1929,7 @@ for i = 1:numel(SimData.Species);
             Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
             Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
             Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-            if SimData.Species(i).UseLT 
+            if SimData.Species(i).UseLT  %#ok<PFBNS,PFGV>
                 MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
                 MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
                 MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
