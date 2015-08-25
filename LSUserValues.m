@@ -90,6 +90,11 @@ if Mode==0 %%% Loads user values
         disp('UserValues.PIE.ScatterPattern was incomplete');
     end
     P.PIE.ScatterPattern = S.PIE.ScatterPattern;
+    if ~isfield(S.PIE,'Background')
+        S.PIE.Background = zeros(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.Background was incomplete');
+    end
+    P.PIE.Background = S.PIE.Background;
     %% Detector: Definition of Tcspc cards/routing channels to use %%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
