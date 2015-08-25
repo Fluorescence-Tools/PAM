@@ -1061,9 +1061,9 @@ TauFitBurstData.FitData.Decay_Per{chan} = h.Plots.Decay_Per.YData;
 TauFitBurstData.FitData.IRF_Par{chan} = h.Plots.IRF_Par.YData;
 TauFitBurstData.FitData.IRF_Per{chan} = h.Plots.IRF_Per.YData;
 %%% Read out the shifted scatter pattern
-Scatter_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
 TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-Scatter_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
+Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
 TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
 %%% initialize inputs for fit
 Decay = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Decay_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.Decay_Per{chan};
@@ -1372,9 +1372,9 @@ case {3,4}
     %% Prepare the data
     for chan = 1:3
         %%% Read out the shifted scatter pattern
-        Scatter_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+        Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
         TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-        Scatter_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
+        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}])';
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';

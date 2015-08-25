@@ -6586,12 +6586,12 @@ switch BurstData.BAMethod
         hScatter_RRpar = BurstData.ScatterPattern{idx_RRpar}(BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar]));
         hScatter_RRperp = BurstData.ScatterPattern{idx_RRperp}(BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp]));
         
-        TauFitBurstData.hIRF_Par{1} = hScatter_BBpar;
-        TauFitBurstData.hIRF_Par{2} = hScatter_GGpar;
-        TauFitBurstData.hIRF_Par{3} = hScatter_RRpar;
-        TauFitBurstData.hIRF_Per{1} = hScatter_BBperp;
-        TauFitBurstData.hIRF_Per{2} = hScatter_GGperp;
-        TauFitBurstData.hIRF_Per{3} = hScatter_RRperp;
+        TauFitBurstData.hScatter_Par{1} = hScatter_BBpar;
+        TauFitBurstData.hScatter_Par{2} = hScatter_GGpar;
+        TauFitBurstData.hScatter_Par{3} = hScatter_RRpar;
+        TauFitBurstData.hScatter_Per{1} = hScatter_BBperp;
+        TauFitBurstData.hScatter_Per{2} = hScatter_GGperp;
+        TauFitBurstData.hScatter_Per{3} = hScatter_RRperp;
         
         %%% Generate XData
         TauFitBurstData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar])) - BurstData.PIE.From(1);
