@@ -5788,8 +5788,8 @@ switch obj
                 TACChannelWidth = BurstData.FileInfo.Resolution/1000;
             end
             new_bin_width = floor(UserValues.BurstBrowser.Settings.Downsample_fFCS_Time/(1000*TACChannelWidth));
-            MI_total_par = ceil(double(MI_total_par)/new_bin_width);
-            MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
+            BurstMeta.fFCS.Photons.MI_total_par = ceil(double(MI_total_par)/new_bin_width);
+            BurstMeta.fFCS.Photons.MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
             for i = 1:2
                 MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
                 MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
@@ -6175,70 +6175,6 @@ filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
 filters_perp{2} = BurstMeta.fFCS.filters_perp(2,:)';
 
-
-% if ~UserValues.BurstBrowser.Settings.fFCS_UseTimewindow
-%     %%% Split Data in 10 time bins for errorbar calculation
-%     Times = ceil(linspace(0,max([MT_par;MT_perp]),11));
-%     count = 0;
-%     for i=1:NumChans
-%         for j=1:NumChans
-%             if CorrMat(i,j)
-%                 %%% Calculates the maximum inter-photon time in clock ticks
-%                 Maxtime=max(diff(Times));
-%                 Data1 = cell(10,1);
-%                 Data2 = cell(10,1);
-%                 Weights1 = cell(10,1);
-%                 Weights2 = cell(10,1);
-%                 for k = 1:10
-%                     Data1{k} = MT_par( MT_par > Times(k) &...
-%                         MT_par <= Times(k+1)) - Times(k);
-%                     Weights1{k} = filters_par{i}(MI_par( MT_par > Times(k) &...
-%                         MT_par <= Times(k+1)) );
-%                     Data2{k} = MT_perp( MT_perp > Times(k) &...
-%                         MT_perp <= Times(k+1)) - Times(k);
-%                     Weights2{k} = filters_perp{j}(MI_perp(MT_perp > Times(k) &...
-%                         MT_perp <= Times(k+1)) );
-%                 end
-%                 %%% Do Correlation
-%                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
-%                 Cor_Times=Cor_Times*BurstData.SyncPeriod;
-%                 %%% Calculates average and standard error of mean (without tinv_table yet
-%                 if numel(Cor_Array)>1
-%                     Cor_Average=mean(Cor_Array,2);
-%                     %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-%                     %%% Averages files before saving to reduce errorbars
-%                     Amplitude=sum(Cor_Array,1);
-%                     Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-%                     Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-%
-%                 else
-%                     Cor_Average=Cor_Array{1};
-%                     Cor_SEM=Cor_Array{1};
-%                 end
-%                 %%% Save the correlation file
-%                 %%% Generates filename
-%                 Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
-%                 %%% Checks, if file already exists
-%                 if  exist(Current_FileName,'file')
-%                     k=1;
-%                     %%% Adds 1 to filename
-%                     Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-%                     %%% Increases counter, until no file is found
-%                     while exist(Current_FileName,'file')
-%                         k=k+1;
-%                         Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-%                     end
-%                 end
-%
-%                 Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-%                 Counts = [numel(MT_par) numel(MT_perp)]/(BurstData.SyncPeriod*max([MT_par;MT_perp]))/1000;
-%                 Valid = 1:10;
-%                 save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-%                 count = count +1;waitbar(count/4);
-%             end
-%         end
-%     end
-% else
 count = 0;
 for i=1:NumChans
     for j=1:NumChans
