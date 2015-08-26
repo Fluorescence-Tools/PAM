@@ -1046,12 +1046,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Downsample_fFCS_Time was incomplete');    
     end 
     P.BurstBrowser.Settings.Downsample_fFCS_Time = S.BurstBrowser.Settings.Downsample_fFCS_Time;
-    %%% Check, if BurstBrowser.Settings.fFCS_UseTimewindow subfield exists
-    if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseTimewindow')
-        S.BurstBrowser.Settings.fFCS_UseTimewindow=0;
-        disp('UserValues.BurstBrowser.Settings.fFCS_UseTimewindow was incomplete');    
+    %%% Check, if BurstBrowser.Settings.fFCS_Mode subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'fFCS_Mode')
+        S.BurstBrowser.Settings.fFCS_Mode=1;
+        disp('UserValues.BurstBrowser.Settings.fFCS_Mode was incomplete');    
     end 
-    P.BurstBrowser.Settings.fFCS_UseTimewindow = S.BurstBrowser.Settings.fFCS_UseTimewindow;
+    P.BurstBrowser.Settings.fFCS_Mode = S.BurstBrowser.Settings.fFCS_Mode;
+    %%% Check, if BurstBrowser.Settings.fFCS_UseFRET subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseFRET')
+        S.BurstBrowser.Settings.fFCS_UseFRET=1;
+        disp('UserValues.BurstBrowser.Settings.fFCS_UseFRET was incomplete');    
+    end 
+    P.BurstBrowser.Settings.fFCS_UseFRET = S.BurstBrowser.Settings.fFCS_UseFRET;
     %%% Check, if BurstBrowser.Settings.Corr_TimeWindowSize subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'Corr_TimeWindowSize')
         S.BurstBrowser.Settings.Corr_TimeWindowSize=5;
