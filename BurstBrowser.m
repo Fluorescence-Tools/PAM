@@ -2196,12 +2196,12 @@ if isempty(hfig)
     h.fFCS_selectmode_popupmenu = uicontrol('Style','popupmenu',...
         'Parent',h.fFCS_settings_panel,...
         'Tag','fFCS_selectmode_text',...
-        'String',{'burstwise','burstwise with time window','continuous photon stream with donor only'},...
+        'String',{'burstwise','burstwise with time window','continuous photon stream','continuous photon stream with donor only'},...
         'Units','normalized',...
         'Value',UserValues.BurstBrowser.Settings.fFCS_Mode,...
         'Position',[0.45 0.675 0.25 0.25],...
         'FontSize',12,...
-        'BackgroundColor', Look.Back,...
+        'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
@@ -5447,26 +5447,6 @@ h = guidata(obj);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-if isempty(BurstTCSPCData)
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in TauFitBurstData
-        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel    
-end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 
 switch obj
@@ -5602,7 +5582,7 @@ switch obj
             BurstMeta.fFCS.Photons.MT_total = MT_total;
             BurstMeta.fFCS.Photons.MI_total = MI_total;
             BurstMeta.fFCS.Photons.CH_total = CH_total;
-        elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 3
+        elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4])
             %%% Load total stream and also include a donor only species
             %%% later (automatically)
             if isempty(PhotonStream)
@@ -5620,6 +5600,26 @@ switch obj
             %BurstMeta.fFCS.Photons.MI_total = MI_total;
             %BurstMeta.fFCS.Photons.CH_total = CH_total;
         elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 1 
+            if isempty(BurstTCSPCData)
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+                if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+                    %%% load if it exists
+                    load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+                else
+                    %%% else ask for the file
+                    [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+                    if FileName == 0
+                        return;
+                    end
+                    load('-mat',fullfile(PathName,FileName));
+                    %%% Store the correct Path in TauFitBurstData
+                    BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+                end
+                BurstTCSPCData.Macrotime = Macrotime;
+                BurstTCSPCData.Microtime = Microtime;
+                BurstTCSPCData.Channel = Channel;
+                clear Macrotime Microtime Channel    
+            end
             % Burstwise only
             %%% find selected bursts
             MI_total = BurstTCSPCData.Microtime(valid_total);
@@ -5696,7 +5696,7 @@ switch obj
             end
         end
         
-        if UserValues.BurstBrowser.Settings.fFCS_Mode == 3 %%% add donor only species
+        if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% add donor only species
             valid_donly = BurstData.DataArray(:,2) > 0.95; %%% Stoichiometry threshold
             MI_donly = BurstTCSPCData.Microtime(valid_donly);MI_donly = vertcat(MI_donly{:});
             CH_donly = BurstTCSPCData.Channel(valid_donly);CH_donly = vertcat(CH_donly{:});
@@ -5773,7 +5773,7 @@ switch obj
                 [BurstMeta.fFCS.Photons.MT_total_perp{k},idx] = sort(BurstMeta.fFCS.Photons.MT_total_perp{k});
                 BurstMeta.fFCS.Photons.MI_total_perp{k} = BurstMeta.fFCS.Photons.MI_total_perp{k}(idx);
             end
-        elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 3 % use sorted photon stream
+        elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) % use sorted photon stream
             BurstMeta.fFCS.Photons.MT_total_par = MT_total_par;
             BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
             BurstMeta.fFCS.Photons.MT_total_perp = MT_total_perp;
@@ -5860,7 +5860,7 @@ switch obj
             BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
         end
         %%% Add Donly pattern if checked
-        if UserValues.BurstBrowser.Settings.fFCS_Mode == 3
+        if UserValues.BurstBrowser.Settings.fFCS_Mode == 4
             BurstMeta.Plots.fFCS.Microtime_DOnly_par.Visible = 'on';
             BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'on';
             
@@ -5892,6 +5892,26 @@ switch obj
         h.Calc_fFCS_Filter_button.Enable = 'on';
         
     case h.TauFit.Plot_Microtimes_button %%% TauFit
+        if isempty(BurstTCSPCData)
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+            if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+                %%% load if it exists
+                load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+            else
+                %%% else ask for the file
+                [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+                if FileName == 0
+                    return;
+                end
+                load('-mat',fullfile(PathName,FileName));
+                %%% Store the correct Path in TauFitBurstData
+                BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+            end
+            BurstTCSPCData.Macrotime = Macrotime;
+            BurstTCSPCData.Microtime = Microtime;
+            BurstTCSPCData.Channel = Channel;
+            clear Macrotime Microtime Channel    
+        end
         %%% Read out the bursts contained in the different species selections
         species = h.TauFit.SpeciesSelect.Value;
         valid = UpdateCuts(species);
@@ -6040,7 +6060,7 @@ if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_
     end
 end
 
-if UserValues.BurstBrowser.Settings.fFCS_Mode == 3 %%% include DOnly pattern
+if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% include DOnly pattern
     if isfield(BurstMeta.fFCS,'hDOnly_par')
         Decay_par = [Decay_par, BurstMeta.fFCS.hDOnly_par(1:size(Decay_par,1))];
     end
@@ -6055,7 +6075,7 @@ if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_
         Decay_perp = [Decay_perp, BurstMeta.fFCS.hScat_perp(1:size(Decay_perp,1))'];
     end
 end
-if UserValues.BurstBrowser.Settings.fFCS_Mode == 3 %%% include DOnly pattern
+if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% include DOnly pattern
     if isfield(BurstMeta.fFCS,'hDOnly_perp')
         Decay_perp = [Decay_perp, BurstMeta.fFCS.hDOnly_perp(1:size(Decay_perp,1))];
     end
@@ -6243,7 +6263,7 @@ for i=1:NumChans
                 Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
-            elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 3 %%% Full correlation
+            elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) %%% Full correlation
                 Weights1_dummy = filters_par{i}(MIpar);
                 Weights2_dummy = filters_perp{j}(MIperp);
                 Maxtime = max([MT1(end),MT2(end)]);
