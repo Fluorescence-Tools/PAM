@@ -5588,8 +5588,8 @@ switch obj
 
         switch BurstData.BAMethod
             case {1,2} %%% 2ColorMFD
-                ParChans = [1]; %% GG1 and GR1
-                PerpChans = [2]; %% GG2 and GR2
+                ParChans = [1,3]; %% GG1 and GR1
+                PerpChans = [2,4]; %% GG2 and GR2
             case {3,4} %%% 3ColorMFD
                 ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
                 PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
