@@ -5788,12 +5788,14 @@ switch obj
                 TACChannelWidth = BurstData.FileInfo.Resolution/1000;
             end
             new_bin_width = floor(UserValues.BurstBrowser.Settings.Downsample_fFCS_Time/(1000*TACChannelWidth));
-            BurstMeta.fFCS.Photons.MI_total_par = ceil(double(MI_total_par)/new_bin_width);
-            BurstMeta.fFCS.Photons.MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
+            MI_total_par = ceil(double(MI_total_par)/new_bin_width);
+            MI_total_perp = ceil(double(MI_total_perp)/new_bin_width);
             for i = 1:2
                 MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
                 MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
             end
+            BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
+            BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
         end
         
         %%% Calculate the histograms
