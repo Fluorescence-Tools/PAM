@@ -5409,7 +5409,7 @@ end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 
 %%% Total stream + donor only
-total_stream_incl_donor_only = 1;
+total_stream_incl_donor_only = 0;
 switch obj
     case h.Plot_Microtimes_button %%% fFCS
         %%% Read out the bursts contained in the different species selections
@@ -5574,10 +5574,11 @@ switch obj
         end
         
         Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
-        
-        MI_total = vertcat(MI_total{:});
-        CH_total = vertcat(CH_total{:});
-        MT_total = vertcat(MT_total{:});
+        if ~total_stream_incl_donor_only
+            MI_total = vertcat(MI_total{:});
+            CH_total = vertcat(CH_total{:});
+            MT_total = vertcat(MT_total{:});
+        end
         %MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
         MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
         CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
@@ -5587,8 +5588,8 @@ switch obj
 
         switch BurstData.BAMethod
             case {1,2} %%% 2ColorMFD
-                ParChans = [1 3]; %% GG1 and GR1
-                PerpChans = [2 4]; %% GG2 and GR2
+                ParChans = [1]; %% GG1 and GR1
+                PerpChans = [2]; %% GG2 and GR2
             case {3,4} %%% 3ColorMFD
                 ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
                 PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
@@ -5790,8 +5791,8 @@ switch obj
         end
         %%% Add Donly pattern if checked
         if total_stream_incl_donor_only
-            BurstMeta.Plots.fFCS.DOnly_par.Visible = 'on';
-            BurstMeta.Plots.fFCS.DOnly_perp.Visible = 'on';
+            BurstMeta.Plots.fFCS.Microtime_DOnly_par.Visible = 'on';
+            BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'on';
             
             hDOnly_par = histc(MI_donly_par,BurstMeta.fFCS.TAC_par);
             hDOnly_perp = histc(MI_donly_perp,BurstMeta.fFCS.TAC_perp);
@@ -5810,13 +5811,13 @@ switch obj
             BurstMeta.fFCS.hDOnly_par = hDOnly_par(1:numel(BurstMeta.fFCS.TAC_par));
             BurstMeta.fFCS.hDOnly_perp = hDOnly_perp(1:numel(BurstMeta.fFCS.TAC_perp));
             %%% Update Plots
-            BurstMeta.Plots.fFCS.DOnly_par.XData = BurstMeta.fFCS.TAC_par;
-            BurstMeta.Plots.fFCS.DOnly_par.YData = BurstMeta.fFCS.hDOnly_par;
-            BurstMeta.Plots.fFCS.DOnly_perp.XData = BurstMeta.fFCS.TAC_perp;
-            BurstMeta.Plots.fFCS.DOnly_perp.YData = BurstMeta.fFCS.hDOnly_perp;
+            BurstMeta.Plots.fFCS.Microtime_DOnly_par.XData = BurstMeta.fFCS.TAC_par;
+            BurstMeta.Plots.fFCS.Microtime_DOnly_par.YData = BurstMeta.fFCS.hDOnly_par;
+            BurstMeta.Plots.fFCS.Microtime_DOnly_perp.XData = BurstMeta.fFCS.TAC_perp;
+            BurstMeta.Plots.fFCS.Microtime_DOnly_perp.YData = BurstMeta.fFCS.hDOnly_perp;
         else 
-            BurstMeta.Plots.fFCS.DOnly_par.Visible = 'off';
-            BurstMeta.Plots.fFCS.DOnly_perp.Visible = 'off';
+            BurstMeta.Plots.fFCS.Microtime_DOnly_par.Visible = 'off';
+            BurstMeta.Plots.fFCS.Microtime_DOnly_perp.Visible = 'off';
         end
         h.Calc_fFCS_Filter_button.Enable = 'on';
         
@@ -5968,15 +5969,15 @@ if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_
         Decay_par = [Decay_par, BurstMeta.fFCS.hScat_par(1:size(Decay_par,1))'];
     end
 end
-total_stream_incl_donor_only = 1;
+total_stream_incl_donor_only = 0;
 if total_stream_incl_donor_only %%% include DOnly pattern
     if isfield(BurstMeta.fFCS,'hDOnly_par')
-        Decay_par = [Decay_par, BurstMeta.fFCS.hDOnly_par(1:size(Decay_par,1))'];
+        Decay_par = [Decay_par, BurstMeta.fFCS.hDOnly_par(1:size(Decay_par,1))];
     end
 end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
 Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
-Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with 1
+Decay_total_par(Decay_total_par == 0) = eps; %%% fill zeros with eps
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
 if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
@@ -5986,12 +5987,12 @@ if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_
 end
 if total_stream_incl_donor_only %%% include DOnly pattern
     if isfield(BurstMeta.fFCS,'hDOnly_perp')
-        Decay_perp = [Decay_perp, BurstMeta.fFCS.hDOnly_perp(1:size(Decay_par,1))'];
+        Decay_perp = [Decay_perp, BurstMeta.fFCS.hDOnly_perp(1:size(Decay_perp,1))];
     end
 end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
 Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
-Decay_total_perp(Decay_total_perp == 0) = 1; %%% fill zeros with 1
+Decay_total_perp(Decay_total_perp == 0) = eps; %%% fill zeros with 1
 %%% calculate the diagonal over the Decay_total
 diag_Decay_total_par = zeros(numel(Decay_total_par));
 for i = 1:numel(Decay_total_par)
@@ -6018,6 +6019,13 @@ if size(BurstMeta.fFCS.filters_par,1) > 2
     BurstMeta.Plots.fFCS.FilterPar_IRF.XData = BurstMeta.fFCS.TAC_par;
     BurstMeta.Plots.fFCS.FilterPar_IRF.YData = BurstMeta.fFCS.filters_par(3,:);
 end
+if size(BurstMeta.fFCS.filters_par,1) > 3
+    BurstMeta.Plots.fFCS.FilterPar_DOnly.Visible = 'on';
+    BurstMeta.Plots.fFCS.FilterPar_DOnly.XData = BurstMeta.fFCS.TAC_par;
+    BurstMeta.Plots.fFCS.FilterPar_DOnly.YData = BurstMeta.fFCS.filters_par(4,:);
+else
+    BurstMeta.Plots.fFCS.FilterPar_DOnly.Visible = 'off';
+end
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Par.YData = BurstMeta.fFCS.hist_MItotal_par;
 BurstMeta.Plots.fFCS.Reconstruction_Par.XData = BurstMeta.fFCS.TAC_par;
@@ -6032,6 +6040,13 @@ BurstMeta.Plots.fFCS.FilterPerp_Species2.YData = BurstMeta.fFCS.filters_perp(2,:
 if size(BurstMeta.fFCS.filters_perp,1) > 2
     BurstMeta.Plots.fFCS.FilterPerp_IRF.XData = BurstMeta.fFCS.TAC_perp;
     BurstMeta.Plots.fFCS.FilterPerp_IRF.YData = BurstMeta.fFCS.filters_perp(3,:);
+end
+if size(BurstMeta.fFCS.filters_perp,1) > 3
+    BurstMeta.Plots.fFCS.FilterPerp_DOnly.Visible = 'on';
+    BurstMeta.Plots.fFCS.FilterPerp_DOnly.XData = BurstMeta.fFCS.TAC_perp;
+    BurstMeta.Plots.fFCS.FilterPerp_DOnly.YData = BurstMeta.fFCS.filters_perp(4,:);
+else
+    BurstMeta.Plots.fFCS.FilterPerp_DOnly.Visible = 'off';
 end
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Reconstruction_Decay_Perp.YData = BurstMeta.fFCS.hist_MItotal_perp;
@@ -6061,10 +6076,10 @@ Name = BurstMeta.fFCS.Names;
 CorrMat = true(2);
 NumChans = size(CorrMat,1);
 %%% Read out photons and filters from BurstMeta
-MT_par = BurstMeta.fFCS.Photons.MT_total_par;
-MT_perp = BurstMeta.fFCS.Photons.MT_total_perp;
-MI_par = BurstMeta.fFCS.Photons.MI_total_par;
-MI_perp = BurstMeta.fFCS.Photons.MI_total_perp;
+%MT_par = BurstMeta.fFCS.Photons.MT_total_par;
+%MT_perp = BurstMeta.fFCS.Photons.MT_total_perp;
+%MI_par = BurstMeta.fFCS.Photons.MI_total_par;
+%MI_perp = BurstMeta.fFCS.Photons.MI_total_perp;
 filters_par{1} = BurstMeta.fFCS.filters_par(1,:)';
 filters_par{2} = BurstMeta.fFCS.filters_par(2,:)';
 filters_perp{1} = BurstMeta.fFCS.filters_perp(1,:)';
@@ -6142,21 +6157,45 @@ for i=1:NumChans
             MT2 = BurstMeta.fFCS.Photons.MT_total_perp;
             MIpar = BurstMeta.fFCS.Photons.MI_total_par;
             MIperp = BurstMeta.fFCS.Photons.MI_total_perp;
-            inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
-            MT1(inval) = []; MT2(inval) = [];
-            MIpar(inval) = [];
-            MIperp(inval) = [];
-            %%% prepare weights
-            Weights1 = cell(numel(MT1),1);
-            Weights2 = cell(numel(MT1),1);
-            for k = 1:numel(MT1)
-                Weights1{k} = filters_par{i}(MIpar{k});
-                Weights2{k} = filters_perp{j}(MIperp{k});
+            if iscell(MT1)
+                inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
+                MT1(inval) = []; MT2(inval) = [];
+                MIpar(inval) = [];
+                MIperp(inval) = [];
+                %%% prepare weights
+                Weights1 = cell(numel(MT1),1);
+                Weights2 = cell(numel(MT1),1);
+                for k = 1:numel(MT1)
+                    Weights1{k} = filters_par{i}(MIpar{k});
+                    Weights2{k} = filters_perp{j}(MIperp{k});
+                end
+                %%% Calculates the maximum inter-photon time in clock ticks
+                Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
+                %%% Do Correlation
+                [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
+            else %%% Full correlation
+                Weights1_dummy = filters_par{i}(MIpar);
+                Weights2_dummy = filters_perp{j}(MIperp);
+                Maxtime = max([MT1(end),MT2(end)]);
+                %%% Split in 10 timebins
+                Times = ceil(linspace(0,Maxtime,11));
+                Data1 = cell(10,1);
+                Data2 = cell(10,1);
+                Weights1 = cell(10,1);
+                Weights2 = cell(10,1);
+                for k = 1:10
+                    Data1{k} = MT1(MT1 >= Times(k) &...
+                        MT1 <Times(k+1)) - Times(k);
+                    Weights1{k} = Weights1_dummy(MT1 >= Times(k) &...
+                        MT1 <Times(k+1));
+                    Data2{k} = MT2(MT2 >= Times(k) &...
+                        MT2 <Times(k+1)) - Times(k);
+                    Weights2{k} = Weights2_dummy(MT2 >= Times(k) &...
+                        MT2 <Times(k+1));
+                end
+                %%% Do Correlation
+                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
             end
-            %%% Calculates the maximum inter-photon time in clock ticks
-            Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
-            %%% Do Correlation
-            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,Weights1,Weights2,2);
             Cor_Times = Cor_Times*BurstData.SyncPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
