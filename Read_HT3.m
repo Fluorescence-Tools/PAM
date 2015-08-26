@@ -247,7 +247,7 @@ switch mode
     case 2 %%% FabSurf HydraHarp File
         %%% First Byte contains SyncRate
         %%% Rest containst Photon Information
-        Resolution = 2;
+        Resolution = 16;
         T3WRAPAROUND=1024;
         
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
