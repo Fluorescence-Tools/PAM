@@ -3417,7 +3417,7 @@ end
 %%% Changes PIE channel settings and saves them in the profile %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_PIE_Channels(obj,~)
-global UserValues
+global UserValues FileInfo
 h = guidata(findobj('Tag','Pam'));
 
 Sel=h.PIE.List.Value(1);
@@ -3437,10 +3437,12 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         UserValues.PIE.Router(Sel)=str2double(h.PIE.Routing.String);
     %%% Updates PIE mictrotime minimum
     elseif obj == h.PIE.From
-        UserValues.PIE.From(Sel)=str2double(h.PIE.From.String);
+        UserValues.PIE.From(Sel)=max([str2double(h.PIE.From.String),0]);
+        obj.String = num2str(UserValues.PIE.From(Sel));
     %%% Updates PIE microtime maximum
     elseif obj == h.PIE.To
-        UserValues.PIE.To(Sel)=str2double(h.PIE.To.String);
+        UserValues.PIE.To(Sel)=min([str2double(h.PIE.To.String),FileInfo.MI_Bins]);
+        obj.String = num2str(UserValues.PIE.To(Sel));
     end 
     LSUserValues(1);
     %%% Updates pam meta data; input 3 should be empty; input 4 is the
