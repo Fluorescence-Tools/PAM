@@ -5460,6 +5460,27 @@ switch obj
         valid_species1 = UpdateCuts(species1);
         valid_species2 = UpdateCuts(species2);
         
+        if isempty(BurstTCSPCData)
+            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+            if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
+                %%% load if it exists
+                load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+            else
+                %%% else ask for the file
+                [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+                if FileName == 0
+                    return;
+                end
+                load('-mat',fullfile(PathName,FileName));
+                %%% Store the correct Path in TauFitBurstData
+                BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+            end
+            BurstTCSPCData.Macrotime = Macrotime;
+            BurstTCSPCData.Microtime = Microtime;
+            BurstTCSPCData.Channel = Channel;
+            clear Macrotime Microtime Channel
+        end
+            
         if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
             if isempty(PhotonStream)
                 Progress(1,h.Progress_Axes,h.Progress_Text);
@@ -5602,26 +5623,6 @@ switch obj
             %BurstMeta.fFCS.Photons.MI_total = MI_total;
             %BurstMeta.fFCS.Photons.CH_total = CH_total;
         elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 1 
-            if isempty(BurstTCSPCData)
-                Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-                if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-                    %%% load if it exists
-                    load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-                else
-                    %%% else ask for the file
-                    [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-                    if FileName == 0
-                        return;
-                    end
-                    load('-mat',fullfile(PathName,FileName));
-                    %%% Store the correct Path in TauFitBurstData
-                    BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-                end
-                BurstTCSPCData.Macrotime = Macrotime;
-                BurstTCSPCData.Microtime = Microtime;
-                BurstTCSPCData.Channel = Channel;
-                clear Macrotime Microtime Channel    
-            end
             % Burstwise only
             %%% find selected bursts
             MI_total = BurstTCSPCData.Microtime(valid_total);
