@@ -44,13 +44,14 @@ void Simulate_Diffusion(
     mt.seed((unsigned long)time(NULL) + Time); // engine seeding
     //normal distribtion for diffusion
 	normal_distribution<double> normal(0.0, D); //mu = 0.0, sigma = 1.0
-    
+    /// Generates uniform distributed random number between 0 and 1
+    uniform_real_distribution<double> equal_dist(0.0,1.0);
     double Ex;
 //     double Em;
 //     double Bl;
     
     /// Sets all colors to active
-    bool Active [4] = {true, true, true, true};   
+    bool Active [4] = {true, true, true, true};
 
     /// Starting point of focus
     double x0 = -Pixel[0]*Step[0]/2;
@@ -59,24 +60,114 @@ void Simulate_Diffusion(
     double x = 0;
     double y = 0;
     
+    /// Variables for current Particle Position
+    double New_Pos [3] = {0, 0, 0};
+    int New_Index = 0;
+    int Old_Index = 0;
+    
+    /// Toggle for valid particle position
+    bool Invalid_Pos = true;
+    
     for (i=0; i<SimTime; i++) 
     {
-        /// Particle movement /////////////////////////////////////////////
-        Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
-        Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
-        if (Box[2] > 0) { Pos[2] = Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
-        else { Box[2] = 0; } // Puts particle inside plane
-                
-        /// Particle exits border /////////////////////////////////////////
-        if ((Pos[0] < 0.0) || (Pos[0] > Box[0]) || (Pos[1] < 0.0) || (Pos[1] > Box[1]) || (Pos[2] < 0.0) || (Pos[2] > Box[2]))
+        while (Invalid_Pos)
         {
-            // Unbleach on box border crossing
-            for (p = 0; p<4; p++) { Active[p] = true; }
-            // Put particle back on the other side
-            Pos[0] = fmod((Pos[0] + Box[0]), Box[0]);
-            Pos[1] = fmod((Pos[1] + Box[1]), Box[1]);
-            if (Box[2] > 0) { Pos[2] = fmod((Pos[2] + Box[2]), Box[2]) ; } 
+            /// Particle movement /////////////////////////////////////////////
+            New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
+            New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+            if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+            else { Box[2] = 0; } // Puts particle inside plane
+            
+            /// Particle exits border /////////////////////////////////////////
+            while ((New_Pos[0] < 0.0) || (New_Pos[0] > Box[0]) || (New_Pos[1] < 0.0) || (New_Pos[1] > Box[1]) || (New_Pos[2] < 0.0) || (New_Pos[2] > Box[2]))
+            {
+                // Unbleach on box border crossing
+                for (p = 0; p<4; p++) { Active[p] = true; }
+                // Put particle back on the other side
+                New_Pos[0] = fmod((New_Pos[0] + Box[0]), Box[0]);
+                New_Pos[1] = fmod((New_Pos[1] + Box[1]), Box[1]);
+                if (Box[2] > 0) { New_Pos[2] = fmod((New_Pos[2] + Box[2]), Box[2]) ; }
+            }
+            switch ((int)Map_Type)
+            {
+                case 1: /// Free Diffusion
+                    Pos[0] = New_Pos[0];
+                    Pos[1] = New_Pos[1];
+                    Pos[2] = New_Pos[2];
+                    Invalid_Pos = false;
+                    break;
+                case 2: /// Free Diffusion with quenching
+                    Pos[0] = New_Pos[0];
+                    Pos[1] = New_Pos[1];
+                    Pos[2] = New_Pos[2]; 
+                    Invalid_Pos = false;
+                    break;
+                case 3: /// Diffusion with restricted zones
+                    New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
+                    if (Map[New_Index] != 0) 
+                    {
+                        Pos[0] = New_Pos[0];
+                        Pos[1] = New_Pos[1];
+                        Pos[2] = New_Pos[2];
+                        Invalid_Pos = false;
+                        break;
+                    }                    
+                case 4: /// Transition Barriers with equal directional transition probabilities (Only in 2D)
+                    New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
+                    Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
+                    
+                    /// Only calculates transition probability, if it is <100%
+                    if ((Map[New_Index] - Map[Old_Index])==0) { prob = 0; }
+                    else { prob = equal_dist(mt); }
+                    /// Checks, if particle crosses barrier
+                    if  (prob >= abs(Map[New_Index] - Map[Old_Index])) /// Map difference as reflection probability
+                    { 
+                        Pos[0] = New_Pos[0];
+                        Pos[1] = New_Pos[1];
+                        Pos[2] = New_Pos[2];
+                        Invalid_Pos = false; 
+                    } 
+                    break;
+                case 5: /// Transition Barriers with unequal directional transition probabilities (Only in 2D)
+                    New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
+                    Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
+                    
+                    /// Only calculates transition probability, if it is <100%
+                    if ((Map[New_Index] - Map[Old_Index])==0) { prob = 0; }
+                    else { prob = equal_dist(mt); }
+                    
+                    /// Checks, if particle crosses barrier
+                    if ((Map[New_Index] - Map[Old_Index])<0) /// Downward direction => Decimal difference as reflection probability
+                    { 
+                        if  (prob >= abs((fmod(Map[New_Index],1) - fmod(Map[Old_Index],1)))) 
+                        {
+                            Pos[0] = New_Pos[0];
+                            Pos[1] = New_Pos[1];
+                            Pos[2] = New_Pos[2];
+                            Invalid_Pos = false;
+                        } 
+                    }
+                    else /// Upward direction => Difference/1000 as reflection probability
+                    { 
+                        if  (prob >=  ((floor(Map[New_Index]) - floor(Map[Old_Index])) / 10000)) 
+                        { 
+                            Pos[0] = New_Pos[0];
+                            Pos[1] = New_Pos[1];
+                            Pos[2] = New_Pos[2];
+                            Invalid_Pos = false;
+                        } 
+                    }  
+                    break;
+                default: /// Free Diffusion
+                    Pos[0] = New_Pos[0];
+                    Pos[1] = New_Pos[1];
+                    Pos[2] = New_Pos[2]; 
+                    Invalid_Pos = false; 
+                    break;
+            }
         }
+        
+        
         
         /// Focus movement ////////////////////////////////////////////////
         switch ((int)ScanType)
@@ -162,8 +253,7 @@ void Simulate_Diffusion(
                                 if ((FRET[3]-1) > 1E-4) /// FRET is feasíble
                                 {
                                     for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; }  /// Calculates cummulative FRET Probabilites
-                                    /// Generates uniform distributed random number between 0 and 1
-                                    uniform_real_distribution<double> equal_dist(0.0,1.0);
+
                                     prob = equal_dist(mt);
                                     for (p=m; p<4; p++) /// Determines em. dye according to rates
                                     { if (prob<=FRET[p]) { break; } }
@@ -191,7 +281,6 @@ void Simulate_Diffusion(
                                 if ((CROSS[3]-1) > 1E-5) /// Crosstalk is realistic
                                 {
                                     for (p=0; p<4; p++) { CROSS[p] = CROSS[p]/CROSS[3]; }  /// Calculates cummulative detection probabilites
-                                    uniform_real_distribution<double> equal_dist(0.0,1.0);
                                     prob = equal_dist(mt);
                                     for (n=0; n<4; n++) /// Determines detection color
                                     { if (prob<=CROSS[n]) { break; } }

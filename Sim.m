@@ -580,7 +580,7 @@ h.Sim_Barrier = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Free Diffusion','Free Diffusion with quenching'},...
+    'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers'},...
     'Callback',@Sim_Settings,...
     'Position',[0.55 0.78 0.25 0.1]);
 
@@ -1843,13 +1843,13 @@ for i = 1:numel(SimData.Species);
     Map_Type = h.Sim_Barrier.Value;
     switch Map_Type
         case 1
-            Map = 0;
-        case 2
+            Map = 1;
+        case {2,3,4,5}
             if isfield(SimData,'Map')
                 Map = double(SimData.Map);
                 if size(Map,1)<BS(1) || size(Map,2)<BS(2) || size(Map,3)<BS(3)
                     Map_Type = 1;
-                    Map = 0;
+                    Map = 1;
                 else
                     if size(Map,1)>BS(1)
                         Map = Map(1:BS(1),:,:);
@@ -1865,7 +1865,7 @@ for i = 1:numel(SimData.Species);
                 
             else
                 Map_Type = 1;
-                Map = 0;
+                Map = 1;
             end
     end
 
@@ -1900,7 +1900,14 @@ for i = 1:numel(SimData.Species);
     
     parfor j = 1:NoP
         %%% Generates starting position
-        Pos=BS.*rand(1,3);
+        Pos = (BS-1).*rand(1,3);
+        
+        if Map_Type==3
+            while Map(floor(Pos(1)),floor(Pos(2))) == 0
+                Pos = (BS-1).*rand(1,3);
+            end
+        end
+        
         Frametime = Simtime/Frames;
         
         for k=1:Frames 
