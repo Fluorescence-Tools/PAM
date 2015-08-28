@@ -3355,7 +3355,7 @@ switch e.Key
             UserValues.PIE.Duty_Cycle(end+1)=0;
             UserValues.PIE.IRF{end+1} = [];
             UserValues.PIE.ScatterPattern{end+1} = [];
-            UserValues.PIE.Backgroun(end+1) = 0;
+            UserValues.PIE.Background(end+1) = 0;
             UserValues.PIE.Name{end+1}='Comb.: ';
             for i=Sel;
                 UserValues.PIE.Name{end}=[UserValues.PIE.Name{end} UserValues.PIE.Name{i} '+'];
