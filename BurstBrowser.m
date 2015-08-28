@@ -5017,7 +5017,22 @@ if BurstData.SelectedSpecies == 1
                     %%% Check wheter do delete or change the parameter
                     if index(2) ~= 4 %%% Parameter added or changed
                         %%% Override the parameter with GlobalCut
-                        BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(index(1));
+                        %%% But only if it affects the boundaries of the
+                        %%% species!
+                        switch index(2)
+                            case 1 %%% lower boundary changed
+                                %%% If new global lower boundary is above
+                                %%% species lower boundary, update
+                                if BurstData.Cut{1}{index(1)}{index(2)+1} > BurstData.Cut{j}{CheckParam}{index(2)+1}
+                                    BurstData.Cut{j}{CheckParam}(index(2)+1) = BurstData.Cut{1}{index(1)}(index(2)+1);
+                                end
+                            case 2 %%% upper boundary changed
+                                %%% If new global upper boundary is below
+                                %%% species upper boundary, update
+                                if BurstData.Cut{1}{index(1)}{index(2)+1} < BurstData.Cut{j}{CheckParam}{index(2)+1}
+                                    BurstData.Cut{j}{CheckParam}(index(2)+1) = BurstData.Cut{1}{index(1)}(index(2)+1);
+                                end
+                        end
                     elseif index(2) == 4 %%% Parameter was deleted
                         BurstData.Cut{j}(CheckParam) = [];
                     end
