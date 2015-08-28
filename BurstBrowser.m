@@ -5514,12 +5514,18 @@ switch obj
                 bw = ceil(10E-3./BurstData.SyncPeriod);
                 bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
                 if ~isfield(PhotonStream,'MT_bin')
+                    %%% finds the PHOTON index of the first photon in each
+                    %%% time bin
                     [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
                     Progress(0.2,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                     [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
                     Progress(0.4,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                     used_tw = zeros(numel(bins_time),1);
                     used_tw(PhotonStream.unique) = PhotonStream.first_idx;
+                    %%% fill zeros with previous value
+                    if used_tw(1) == 0
+                        used_tw(1) = 1;
+                    end
                     while sum(used_tw == 0) > 0
                         used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
                     end
@@ -6089,7 +6095,7 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% include DOnly pattern
 end
 Decay_par = Decay_par./repmat(sum(Decay_par,1),size(Decay_par,1),1);
 Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
-Decay_total_par(Decay_total_par == 0) = eps; %%% fill zeros with eps
+Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with eps
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
 if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
@@ -6104,7 +6110,7 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% include DOnly pattern
 end
 Decay_perp = Decay_perp./repmat(sum(Decay_perp,1),size(Decay_perp,1),1);
 Decay_total_perp = BurstMeta.fFCS.hist_MItotal_perp;
-Decay_total_perp(Decay_total_perp == 0) = eps; %%% fill zeros with 1
+Decay_total_perp(Decay_total_perp == 0) = 1; %%% fill zeros with 1
 %%% calculate the diagonal over the Decay_total
 diag_Decay_total_par = zeros(numel(Decay_total_par));
 for i = 1:numel(Decay_total_par)
