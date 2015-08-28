@@ -3201,7 +3201,7 @@ switch e.Key
         Update_Cor_Table(obj);
         %%% Add channel to Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
-        h.Export.PIE.Data{end+1} = h.Export.PIE.Data{end};  
+        h.Export.PIE.Data(end+1) = h.Export.PIE.Data(end);  
     case {'delete';'subtract'} %%% Delete button or "del"-Key or "-"-Key 
         %% Deletes selected channels 
         %%% in UserValues 
