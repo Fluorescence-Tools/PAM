@@ -68,13 +68,24 @@ void Simulate_Diffusion(
     /// Toggle for valid particle position
     bool Invalid_Pos = true;
     
+    
     for (i=0; i<SimTime; i++) 
     {
+        Invalid_Pos = true;
         while (Invalid_Pos)
         {
             /// Particle movement /////////////////////////////////////////////
-            New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
-            New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+            if (Map_Type != 8) /// Standard movement
+            {
+                New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
+                New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+            }
+            else /// Position dependent diffusion
+            {
+                Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
+                New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*normal(mt); // Go one step in x direction
+                New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*normal(mt); // Go one step in y direction
+            }
             if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
             else { Box[2] = 0; } // Puts particle inside plane
             
@@ -90,19 +101,13 @@ void Simulate_Diffusion(
             }
             switch ((int)Map_Type)
             {
-                case 1: /// Free Diffusion
+                case 1: case 2: case 8: /// Free Diffusion
                     Pos[0] = New_Pos[0];
                     Pos[1] = New_Pos[1];
                     Pos[2] = New_Pos[2];
                     Invalid_Pos = false;
                     break;
-                case 2: /// Free Diffusion with quenching
-                    Pos[0] = New_Pos[0];
-                    Pos[1] = New_Pos[1];
-                    Pos[2] = New_Pos[2]; 
-                    Invalid_Pos = false;
-                    break;
-                case 3: /// Diffusion with restricted zones
+                case 3: case 6: /// Diffusion with restricted zones
                     New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
                     if (Map[New_Index] != 0) 
                     {
@@ -112,7 +117,7 @@ void Simulate_Diffusion(
                         Invalid_Pos = false;
                         break;
                     }                    
-                case 4: /// Transition Barriers with equal directional transition probabilities (Only in 2D)
+                case 4: case 7: /// Transition Barriers with equal directional transition probabilities (Only in 2D)
                     New_Index = (int)(floor(New_Pos[0]) + Box[0]*floor(New_Pos[1]));
                     Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
                     

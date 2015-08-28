@@ -580,7 +580,7 @@ h.Sim_Barrier = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers'},...
+    'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers','Dynamic Restricted Zones','Dynamic Diffusion Barriers','Different Diffusion Parameters'},...
     'Callback',@Sim_Settings,...
     'Position',[0.55 0.78 0.25 0.1]);
 
@@ -914,7 +914,7 @@ h.Sim_UseNoise = uicontrol(...
            'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
    end
 
-%% F?rster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Förster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Advanced Sim Settings Panel
 h.Sim_FRET_General_Panel = uibuttongroup(...
@@ -1835,40 +1835,57 @@ for i = 1:numel(SimData.Species);
         LT = [0 0 0 0];
     end
     for j = SimData.Species(i).Color+1:4
-       ExP(j,:) = 0; 
-       FRET(j,:) = 0;
+        ExP(j,:) = 0;
+        FRET(j,:) = 0;
     end
     
     %%% Determins barrier type and map (for quenching, barriers, ect.)
     Map_Type = h.Sim_Barrier.Value;
     switch Map_Type
-        case 1
-            Map = 1;
-        case {2,3,4,5}
-            if isfield(SimData,'Map')
-                Map = double(SimData.Map);
-                if size(Map,1)<BS(1) || size(Map,2)<BS(2) || size(Map,3)<BS(3)
+        case 1 %%% Free Diffusion
+        case {2,3,4,5,8} %%% Static Maps
+            if isfield(SimData,'Map') && iscell(SimData.Map)
+                SimData.Map{1} = double(SimData.Map{1});
+                if size(SimData.Map{1},1)<BS(1) || size(SimData.Map{1},2)<BS(2)
                     Map_Type = 1;
-                    Map = 1;
+                    break;
                 else
-                    if size(Map,1)>BS(1)
-                        Map = Map(1:BS(1),:,:);
+                    if size(SimData.Map{1},1)>BS(1)
+                        SimData.Map{1} = SimData.Map{1}(1:BS(1),:);
                     end
-                    if size(Map,2)>BS(2)
-                        Map = Map(:,1:BS(1),:);
+                    if size(SimData.Map{1},2)>BS(2)
+                        SimData.Map{1} = SimData.Map{1}(:,1:BS(1));
                     end
-                    if size(Map,3)<BS(3) && BS(3)>0
-                        Map = Map(:,:,1:BS(3));
+                    SimData.Map{1}(isnan(SimData.Map{1})) = 1;
+                end
+            else
+                Map_Type = 1;
+            end
+        case {6,7} %%% Diffusing Maps
+            if isfield(SimData,'Map') && iscell(SimData.Map) && numel(SimData.Map) >= Frames
+                for j=1:Frames
+                    SimData.Map{j} = double(SimData.Map{j});
+                    if size(SimData.Map{j},1)<BS(1) || size(SimData.Map{j},2)<BS(2)
+                        Map_Type = 1;
+                        break;
+                    else
+                        if size(SimData.Map{j},1)>BS(1)
+                            SimData.Map{j} = SimData.Map{j}(1:BS(1),:);
+                        end
+                        if size(SimData.Map{j},2)>BS(2)
+                            SimData.Map{j} = SimData.Map{j}(:,1:BS(1));
+                        end
+                        SimData.Map{j}(isnan(SimData.Map{j})) = 1;
                     end
-                    Map(isnan(Map)) = 1;
                 end
                 
             else
                 Map_Type = 1;
-                Map = 1;
             end
+        otherwise
+            Map_Type = 1;
     end
-
+    
     
     
     %%% Species specific parameters for used colors
@@ -1898,21 +1915,46 @@ for i = 1:numel(SimData.Species);
         'ExecutionMode','fixedDelay');
     start(Update)
     
-    parfor j = 1:NoP
+    for j = 1:NoP
         %%% Generates starting position
-        Pos = (BS-1).*rand(1,3);
+        Pos = (BS-1).*rand(1,3);    
         
+        %%% Pts particles in allowed areas for restricted area simulations
         if Map_Type==3
-            while Map(floor(Pos(1)),floor(Pos(2))) == 0
+            while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
                 Pos = (BS-1).*rand(1,3);
             end
-        end
-        
+        elseif Map_Type == 6
+            while SimData.Map{1}(floor(Pos(1))+1,floor(Pos(2))+1,1) == 0
+                Pos = (BS-1).*rand(1,3);
+            end            
+        end        
         Frametime = Simtime/Frames;
         
         for k=1:Frames 
             Time = clock;
             
+            %%% Uses new map for dynamic barrier simulations
+            if any(Map_Type == [6,7])
+                Sel = k;
+            else
+                Sel = 1;
+            end
+            
+            
+            %%% Puts partilces back into their areas, if areas moved
+            if k>1 && any(Map_Type == [6,7])
+                if SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2))+1) ~= SimData.Map{k}(floor(Pos(1)+1),floor(Pos(2)+1))
+                    [X,Y] = find(SimData.Map{k} == SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2)+1)));
+                    [~,Index] = sort((X-Pos(1)).^2 + (Y-Pos(2)).^2);
+                    Pos(1) = X(Index(1));
+                    Pos(2) = Y(Index(1));
+                end                
+            end
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             [Photons,  MI, Channel, Pos] = DifSim(...
                 Frametime, BS,... General Parameters
                 Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
@@ -1923,7 +1965,7 @@ for i = 1:numel(SimData.Species);
                 LT,... %%% Lifetime of the different colors
                 FRET, Cross,... %%% Relative FRET and Crosstalk rates
                 uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
-                Map_Type, Map);  %%% Type of barriers/quenching and barrier map
+                Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
              
             %%% Channel is a 8 bit number that defines the exact photon type
             %%% bits 0,1 for exitation laser
@@ -1936,7 +1978,7 @@ for i = 1:numel(SimData.Species);
             Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
             Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
             Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-            if SimData.Species(i).UseLT  %#ok<PFBNS,PFGV>
+            if SimData.Species(i).UseLT
                 MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
                 MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
                 MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
