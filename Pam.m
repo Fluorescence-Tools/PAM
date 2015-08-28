@@ -3215,7 +3215,7 @@ switch e.Key
         UserValues.PIE.Duty_Cycle(Sel)=[];
         UserValues.PIE.IRF(Sel) = [];
         UserValues.PIE.ScatterPattern(Sel) = [];
-        UserValues.PIE.Backgroun(Sel) = [];
+        UserValues.PIE.Background(Sel) = [];
         %%% Reset Correlation Table Data Matrix
         UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
         %%% in Pam meta data
