@@ -4985,15 +4985,28 @@ ChangedParameterName = BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1};
 NewData = eventdata.NewData;
 switch index(2)
     case {1} %min boundary was changed
-        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{3} < eventdata.NewData
+        %%% if upper boundary is lower than new min boundary -> reject
+        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{3} < NewData
             NewData = eventdata.PreviousData;
+        end
+        %%% if new lower boundary is lower than global lower boundary -->
+        %%% reset to global lower boundary
+        if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
+            NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
         end
     case {2} %max boundary was changed
-        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{2} > eventdata.NewData
+        %%% if lower boundary is higher than new upper boundary --> reject
+        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{2} > NewData
             NewData = eventdata.PreviousData;
         end
+        %%% if new upper boundary is higher than global upper boundary -->
+            %%% reset to global upper boundary
+            if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
+                NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+            end
     case {3} %active/inactive change
-        NewData = eventdata.NewData;
+        % unchanged
+        %NewData = NewData;
 end
 
 if index(2) ~= 4
