@@ -4992,8 +4992,10 @@ switch index(2)
         if BurstData.SelectedSpecies ~= 1
             %%% if new lower boundary is lower than global lower boundary -->
             %%% reset to global lower boundary
-            if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
-                NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+            if ~isempty(BurstData.Cut{1})
+                if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
+                    NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                end
             end
         end
     case {2} %max boundary was changed
@@ -5004,8 +5006,10 @@ switch index(2)
         if BurstData.SelectedSpecies ~= 1
             %%% if new upper boundary is higher than global upper boundary -->
             %%% reset to global upper boundary
-            if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
-                NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+            if ~isempty(BurstData.Cut{1})
+                if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
+                    NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                end
             end
         end
     case {3} %active/inactive change
