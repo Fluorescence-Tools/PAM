@@ -3191,7 +3191,8 @@ BurstData.FileName = fullfile(PathName,FileName);
 %%% Determine if an APBS or DCBS file was loaded
 %%% This is important because for APBS, the donor only lifetime can be
 %%% determined from the measurement!
-if ~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
+%%% Check for DCBS/TCBS
+if ~any(BurstData.BAMethod == [2,4])%~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
     %%% Enable the donor only lifetime checkbox
     h.DonorLifetimeFromDataCheckbox.Enable = 'on';
     %%% Crosstalk/direct excitation can be determined!
@@ -4478,6 +4479,14 @@ if size(CutState,2) > 0
     else
         %%% set to min max
         ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];
+    end
+    if isempty(xlimits)
+        %selection is empty
+        xlimits = [0,1];    
+    end
+    if isempty(ylimits)
+        %selection is empty
+        ylimits = [0,1];    
     end
     if sum(xlimits == [0,0]) == 2
         xlimits = [0 1];
