@@ -4989,21 +4989,25 @@ switch index(2)
         if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{3} < NewData
             NewData = eventdata.PreviousData;
         end
-        %%% if new lower boundary is lower than global lower boundary -->
-        %%% reset to global lower boundary
-        if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
-            NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+        if BurstData.SelectedSpecies ~= 1
+            %%% if new lower boundary is lower than global lower boundary -->
+            %%% reset to global lower boundary
+            if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
+                NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+            end
         end
     case {2} %max boundary was changed
         %%% if lower boundary is higher than new upper boundary --> reject
         if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{2} > NewData
             NewData = eventdata.PreviousData;
         end
-        %%% if new upper boundary is higher than global upper boundary -->
+        if BurstData.SelectedSpecies ~= 1
+            %%% if new upper boundary is higher than global upper boundary -->
             %%% reset to global upper boundary
             if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
                 NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
             end
+        end
     case {3} %active/inactive change
         % unchanged
         %NewData = NewData;
@@ -9664,6 +9668,14 @@ for i = 1:numel(fields)
       end
   end
 end
+
+%%% Reset color of correction fits
+BurstMeta.Plots.Fits.histE_donly(1).Color = [1,0,0];
+BurstMeta.Plots.Fits.histS_aonly(1).Color = [1,0,0];
+BurstMeta.Plots.Fits.histEBG_blueonly(1).Color = [1,0,0];
+BurstMeta.Plots.Fits.histEBR_blueonly(1).Color = [1,0,0];
+BurstMeta.Plots.Fits.histSBG_greenonly(1).Color = [1,0,0];
+BurstMeta.Plots.Fits.histSBR_redonly(1).Color = [1,0,0];
 
 LSUserValues(1);
 PlotLifetimeInd([],[]);
