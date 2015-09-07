@@ -5002,8 +5002,15 @@ switch index(2)
             %%% if new lower boundary is lower than global lower boundary -->
             %%% reset to global lower boundary
             if ~isempty(BurstData.Cut{1})
-                if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
-                    NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                %%% check whether the parameter exists in global cuts
+                %%% already
+                for l = 1:numel(BurstData.Cut{1})
+                    exist(l) = strcmp(BurstData.Cut{1}{l}{1},BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1});
+                end
+                if any(exist == 1)
+                    if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
+                        NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                    end
                 end
             end
         end
@@ -5016,8 +5023,15 @@ switch index(2)
             %%% if new upper boundary is higher than global upper boundary -->
             %%% reset to global upper boundary
             if ~isempty(BurstData.Cut{1})
-                if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
-                    NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                %%% check whether the parameter exists in global cuts
+                %%% already
+                for l = 1:numel(BurstData.Cut{1})
+                    exist(l) = strcmp(BurstData.Cut{1}{l}{1},BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1});
+                end
+                if any(exist == 1)
+                    if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
+                        NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                    end
                 end
             end
         end
