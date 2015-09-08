@@ -5603,7 +5603,7 @@ switch obj
                     if sum(inval) > 0
                         use(i) = 0;
                     end
-                    Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
+                    %Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 end
                 
                 %%% Construct reduced Macrotime and Channel vector
@@ -5625,7 +5625,7 @@ switch obj
                         %CH{k} = PhotonStream.Channel(val);
                         k = k+1;
                     end
-                    Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
+                    %Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
                 end
             else
                 use = ones(numel(start),1);
