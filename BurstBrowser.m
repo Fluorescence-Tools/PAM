@@ -4366,6 +4366,8 @@ if obj == h.NumberOfBinsXEdit
     else
         h.NumberOfBinsXEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsX);
     end
+    UpdateLifetimePlots(obj,[]);
+    LSUserValues(1);
 end
 if obj == h.NumberOfBinsYEdit
     nbinsY = str2double(h.NumberOfBinsYEdit.String);
@@ -4378,6 +4380,8 @@ if obj == h.NumberOfBinsYEdit
     else
         h.NumberOfBinsYEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsY);
     end
+    UpdateLifetimePlots(obj,[]);
+    LSUserValues(1);
 end
 if obj == h.NumberOfContourLevels_edit
     nClevels = str2double(h.NumberOfContourLevels_edit.String);
@@ -4391,6 +4395,7 @@ if obj == h.NumberOfContourLevels_edit
         h.NumberOfContourLevels_edit.String = num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels);
     end
     UpdateLifetimePlots([],[]);
+    LSUserValues(1);
 end
 if obj == h.ContourOffset_edit
     ContourOffset = str2double(h.ContourOffset_edit.String);
@@ -4404,6 +4409,7 @@ if obj == h.ContourOffset_edit
         h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
     end
     UpdateLifetimePlots([],[]);
+    LSUserValues(1);
 end
 if obj == h.ColorMapPopupmenu
     if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
@@ -4411,15 +4417,17 @@ if obj == h.ColorMapPopupmenu
     else %%% custom colormap
         UserValues.BurstBrowser.Display.ColorMap = jetvar;
     end
+    LSUserValues(1);
 end
 if obj == h.SmoothKDE
     UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;
     UpdateLifetimePlots(obj,[]);
+    LSUserValues(1);
 end
 if obj == h.ColorMapInvert
     UserValues.BurstBrowser.Display.ColorMapInvert = h.ColorMapInvert.Value;
+    LSUserValues(1);
 end
-LSUserValues(1);
 
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
@@ -4560,6 +4568,7 @@ end
 if UserValues.BurstBrowser.Display.ColorMapInvert
     colormap(flipud(colormap));
 end
+
 % Update no. bursts
 set(h.text_nobursts, 'String', {[num2str(sum(BurstData.Selected)) ' bursts']; [num2str(round(sum(BurstData.Selected/numel(BurstData.Selected)*1000))/10) '% of total']})
 
@@ -4599,9 +4608,8 @@ else
     h.axes_1d_x_text.Visible = 'off';
     h.axes_1d_y_text.Visible = 'off';
 end
+%UpdateLifetimePlots([],[]);
 
-UpdateLifetimePlots([],[]);
-drawnow;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
