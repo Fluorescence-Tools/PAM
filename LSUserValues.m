@@ -225,7 +225,8 @@ if Mode==0 %%% Loads user values
             '*.ht3','HydraHarp400 TTTR file (*.ht3)';...
             '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)';...
             '*.sim','Pam Simulation file';...
-            '*.ppf','Pam Photon File (Created by Pam)'};
+            '*.ppf','Pam Photon File (Created by Pam)';
+            '*.ptu','HydraHarp 400 TTTR file (*.ptu)'};
 
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
