@@ -3192,14 +3192,15 @@ BurstData.FileName = fullfile(PathName,FileName);
 %%% This is important because for APBS, the donor only lifetime can be
 %%% determined from the measurement!
 %%% Check for DCBS/TCBS
-if ~any(BurstData.BAMethod == [2,4])%~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
-    %%% Enable the donor only lifetime checkbox
-    h.DonorLifetimeFromDataCheckbox.Enable = 'on';
-    %%% Crosstalk/direct excitation can be determined!
-    %%% set flag:
-    BurstMeta.APBS = 1;
+if isfield(BurstData,'BAMethod')
+    if ~any(BurstData.BAMethod == [2,4])%~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
+        %%% Enable the donor only lifetime checkbox
+        h.DonorLifetimeFromDataCheckbox.Enable = 'on';
+        %%% Crosstalk/direct excitation can be determined!
+        %%% set flag:
+        BurstMeta.APBS = 1;
+    end
 end
-
 %%% Convert old File Format to new
 if FilterIndex == 2 % KBA file was loaded
     switch Data.BAMethod
@@ -3241,12 +3242,12 @@ if FilterIndex == 2 % KBA file was loaded
             if isfield(Data,'TACrange')
                 BurstData.TACRange = Data.TACrange;
             else
-                BurstData.TACrange = 1E9./Data.SyncRate;
+                BurstData.TACRange = 1E9./Data.SyncRate;
             end
             BurstData.SyncPeriod = 1./Data.SyncRate;
             
             BurstData.FileInfo.MI_Bins = 4096;
-            BurstData.FileInfo.TACRange = BurstData.TACrange;
+            BurstData.FileInfo.TACRange = BurstData.TACRange;
             if isfield(Data,'PIEChannels')
                 BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
                     Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
@@ -3278,10 +3279,10 @@ if FilterIndex == 2 % KBA file was loaded
             NameArray{strcmp(NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
             NameArray{strcmp(NameArray,'TB - TR (PIE)')} = '|TBX-TRR| Filter';
             NameArray{strcmp(NameArray,'TB - TG (PIE)')} = '|TBX-TGX| Filter';
-            NameArray{strcmp(NameArray,'FRET Efficiency* (G -> R)')} = 'FRET Efficiency GR';
-            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> R)')} = 'FRET Efficiency BR';
-            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> G)')} = 'FRET Efficiency BG';
-            NameArray{strcmp(NameArray,'FRET Efficiency* (B -> G+R)')} = 'FRET Efficiency B->G+R';
+            NameArray{strcmp(NameArray,'Efficiency* (G -> R)')} = 'FRET Efficiency GR';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> R)')} = 'FRET Efficiency BR';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> G)')} = 'FRET Efficiency BG';
+            NameArray{strcmp(NameArray,'Efficiency* (B -> G+R)')} = 'FRET Efficiency B->G+R';
             NameArray{strcmp(NameArray,'Stochiometry (GR)')} = 'Stoichiometry GR';
             NameArray{strcmp(NameArray,'Stochiometry (BG)')} = 'Stoichiometry BG';
             NameArray{strcmp(NameArray,'Stochiometry (BR)')} = 'Stoichiometry BR';
