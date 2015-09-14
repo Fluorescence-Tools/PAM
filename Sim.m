@@ -1843,6 +1843,9 @@ for i = 1:numel(SimData.Species);
     Map_Type = h.Sim_Barrier.Value;
     switch Map_Type
         case 1 %%% Free Diffusion
+            if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                SimData.Map = 1;
+            end
         case {2,3,4,5,8} %%% Static Maps
             if isfield(SimData,'Map') && iscell(SimData.Map)
                 SimData.Map{1} = double(SimData.Map{1});
@@ -1860,6 +1863,9 @@ for i = 1:numel(SimData.Species);
                 end
             else
                 Map_Type = 1;
+                if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                    SimData.Map = 1;
+                end
             end
         case {6,7} %%% Diffusing Maps
             if isfield(SimData,'Map') && iscell(SimData.Map) && numel(SimData.Map) >= Frames
@@ -1878,12 +1884,17 @@ for i = 1:numel(SimData.Species);
                         SimData.Map{j}(isnan(SimData.Map{j})) = 1;
                     end
                 end
-                
             else
                 Map_Type = 1;
+                if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                    SimData.Map = 1;
+                end
             end
         otherwise
             Map_Type = 1;
+            if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                SimData.Map = 1;
+            end
     end
     
     
@@ -1915,7 +1926,7 @@ for i = 1:numel(SimData.Species);
         'ExecutionMode','fixedDelay');
     start(Update)
     
-    for j = 1:NoP
+    parfor j = 1:NoP
         %%% Generates starting position
         Pos = (BS-1).*rand(1,3);    
         
