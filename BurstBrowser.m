@@ -4920,6 +4920,7 @@ h = guidata(obj);
 switch eventdata.Key
     case 'space'
         ManualCut([],[])
+        return;
 end
 
 switch eventdata.Modifier{1}
