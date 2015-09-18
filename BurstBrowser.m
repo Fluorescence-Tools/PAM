@@ -9312,14 +9312,14 @@ switch obj
                                 if ~isempty(BurstData.Parameters.rhoRR)
                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
                                     if numel(BurstData.Parameters.rhoRR) > 1
-                                        str = [str(1:4) '_1' str(5:end)];
+                                        str = {[str(1:4) '_1' str(5:end)]};
                                         for j=2:numel(BurstData.Parameters.rhoRR)
-                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
                                         end
                                     end
                                 end
                             end
-                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -9330,14 +9330,14 @@ switch obj
                                 if ~isempty(BurstData.Parameters.rhoGG)
                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
                                     if numel(BurstData.Parameters.rhoGG) > 1
-                                        str = [str(1:4) '_1' str(5:end)];
+                                        str = {[str(1:4) '_1' str(5:end)]};
                                         for j=2:numel(BurstData.Parameters.rhoGG)
-                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
                                         end
                                     end
                                 end
                             end
-                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -9382,14 +9382,14 @@ switch obj
                                 if ~isempty(BurstData.Parameters.rhoBB)
                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(1))];
                                     if numel(BurstData.Parameters.rhoBB) > 1
-                                        str = [str(1:4) '_1' str(5:end)];
+                                        str = {[str(1:4) '_1' str(5:end)]};
                                         for j=2:numel(BurstData.Parameters.rhoBB)
-                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
                                         end
                                     end
                                 end
                             end
-                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -9400,14 +9400,14 @@ switch obj
                                 if ~isempty(BurstData.Parameters.rhoRR)
                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
                                     if numel(BurstData.Parameters.rhoRR) > 1
-                                        str = [str(1:4) '_1' str(5:end)];
+                                        str = {[str(1:4) '_1' str(5:end)]};
                                         for j=2:numel(BurstData.Parameters.rhoRR)
-                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
                                         end
                                     end
                                 end
                             end
-                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -9418,14 +9418,14 @@ switch obj
                                 if ~isempty(BurstData.Parameters.rhoGG)
                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
                                     if numel(BurstData.Parameters.rhoGG) > 1
-                                        str = [str(1:4) '_1' str(5:end)];
+                                        str = {[str(1:4) '_1' str(5:end)]};
                                         for j=2:numel(BurstData.Parameters.rhoGG)
-                                            str = [str '\n\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
                                         end
                                     end
                                 end
                             end
-                            text(0.05*panel_copy.Children(i).XLim(2),0.9*panel_copy.Children(i).YLim(2),str,...
+                            text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
                                 'Parent',panel_copy.Children(i),...
                                 'FontSize',fontsize);
                             %'BackgroundColor',[1 1 1],...
@@ -9609,6 +9609,9 @@ if directly_save
         %%% Get Path to save File
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
         [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+        if FileName == 0
+            return;
+        end
         UserValues.BurstBrowser.PrintPath = PathName;
         LSUserValues(1);
     else
