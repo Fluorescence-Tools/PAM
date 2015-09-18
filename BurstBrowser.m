@@ -3887,7 +3887,7 @@ elseif strcmpi(clickType,'left') %%% Update Plot
     hListbox.Value = clickedIndex;
 end
 UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
+%UpdateLifetimePlots([],[]);
 % function ParameterList_ButtonDownFcn(jListbox,jEventData,hListbox)
 % % Determine the click type
 % % (can similarly test for CTRL/ALT/SHIFT-click)
@@ -7784,10 +7784,10 @@ if any(BurstData.BAMethod == [3,4])
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     axis(h.axes_E_BtoGRvsTauBB,'tight');
     ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
-    if strcmp(BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible,'on')
-        %%% replot the static FRET line
-        UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
-    end
+%     if strcmp(BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible,'on')
+%         %%% replot the static FRET line
+%         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
+%     end
     %% Plot rBB vs tauBB
     [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
