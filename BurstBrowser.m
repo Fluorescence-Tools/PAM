@@ -6498,7 +6498,9 @@ BurstMeta.TauFit.FitType = obj.String{obj.Value};
 %%% Update FitTable
 h = guidata(obj);
 h.TauFit.FitPar_Table.RowName = h.TauFit.Parameters{obj.Value};
-h.TauFit.FitPar_Table.Data = h.TauFit.StartPar{obj.Value};
+Par =  h.TauFit.StartPar{obj.Value};
+Par{end,1} = str2double(h.TauFit.IRFShift_Edit.String);
+h.TauFit.FitPar_Table.Data = Par;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Fit the Data with selected Model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
