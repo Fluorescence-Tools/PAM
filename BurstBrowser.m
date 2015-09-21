@@ -2503,10 +2503,15 @@ if isempty(hfig)
         'String','Fit time-resolved Anisotropy',...
         'FontSize',12,...
         'Callback',@Start_TauFit);
-    
+    h.TauFit.Fit_Aniso_Menu = uicontextmenu;
+    h.TauFit.Fit_Aniso_2exp = uimenu('Parent',h.TauFit.Fit_Aniso_Menu,...
+        'Label','2 exponentials',...
+        'Checked','off',...
+        'Callback',@Start_TauFit);
+    h.TauFit.Start_AnisoFit_button.UIContextMenu = h.TauFit.Fit_Aniso_Menu;
     %%% Popup Menu for Fit Method Selection
     h.TauFit.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-        'Distribution','Distribution plus Donor only','Fit Anisotropy'};
+        'Distribution','Distribution plus Donor only','Fit Anisotropy','Fit Anisotropy (2 exp)'};
     h.TauFit.FitMethod_Popupmenu = uicontrol(...
         'Parent',h.TauFit.Selection_Panel,...
         'Style','Popupmenu',...
@@ -2823,6 +2828,7 @@ if isempty(hfig)
     h.TauFit.Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
     h.TauFit.Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
     h.TauFit.Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+    h.TauFit.Parameters{7} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
     h.TauFit.FitPar_Table.RowName = h.TauFit.Parameters{1};
     %%% Initial Data - Store the StartValues as well as LB and UB
     h.TauFit.StartPar = cell(numel(h.TauFit.FitMethods),1);
@@ -2832,6 +2838,7 @@ if isempty(hfig)
     h.TauFit.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
     h.TauFit.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
     h.TauFit.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
     h.TauFit.FitPar_Table.Data = h.TauFit.StartPar{1};
     
     %%% Popupmenu to change convolution type
@@ -6832,6 +6839,63 @@ switch obj
                 FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*BurstMeta.TauFit.TACChannelWidth;
                 h.TauFit.FitPar_Table.Data(:,1) = FitResult;
+            case 'Fit Anisotropy (2 exp)'
+                %%% Parameter
+                %%% Lifetime
+                %%% Rotational Correlation Time 1
+                %%% Rotational Correlation Time 2
+                %%% r0 - Initial Anisotropy
+                %%% r_infinity - Residual Anisotropy
+                %%% Background par
+                %%% Background per
+                
+                %%% Define separate IRF Patterns
+                IRFPattern = cell(2,1);
+                IRFPattern{1} = BurstMeta.TauFit.hIRF_Par(1:BurstMeta.TauFit.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{2} = IRFPer(1:BurstMeta.TauFit.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                
+                %%% Define separate Scatter Patterns
+                ScatterPattern = cell(2,1);
+                ScatterPattern{1} = BurstMeta.TauFit.hScat_Par(1:BurstMeta.TauFit.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = ScatterPer(1:BurstMeta.TauFit.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                
+                %%% Convert Lifetimes
+                x0(1:3) = round(x0(1:3)/BurstMeta.TauFit.TACChannelWidth);
+                lb(1:3) = round(lb(1:3)/BurstMeta.TauFit.TACChannelWidth);
+                ub(1:3) = round(ub(1:3)/BurstMeta.TauFit.TACChannelWidth);
+                
+                %%% Prepare data as vector
+                Decay =  [BurstMeta.TauFit.FitData.Decay_Par(ignore:end); BurstMeta.TauFit.FitData.Decay_Per(ignore:end)];
+                Decay_stacked = [BurstMeta.TauFit.FitData.Decay_Par(ignore:end) BurstMeta.TauFit.FitData.Decay_Per(ignore:end)];
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    %Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum((x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0))),residuals);
+                [~,best_fit] = min(chi2);
+                %%% remove ignore range from decay
+                Decay = [BurstMeta.TauFit.FitData.Decay_Par; BurstMeta.TauFit.FitData.Decay_Per];
+                Decay_stacked = [BurstMeta.TauFit.FitData.Decay_Par BurstMeta.TauFit.FitData.Decay_Per];
+                FitFun = fitfun_aniso_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*BurstMeta.TauFit.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*BurstMeta.TauFit.TACChannelWidth;
+                FitResult{3} = FitResult{3}.*BurstMeta.TauFit.TACChannelWidth;
+                h.TauFit.FitPar_Table.Data(:,1) = FitResult;
         end
         
         %%% Update IRFShift in Slider and Edit Box
@@ -6862,15 +6926,26 @@ switch obj
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
         
         h.TauFit.Result_Plot.XLim(1) = 0;
-    case h.TauFit.Start_AnisoFit_button
+    case {h.TauFit.Start_AnisoFit_button,h.TauFit.Fit_Aniso_2exp}
+        if obj == h.TauFit.Fit_Aniso_2exp
+            number_of_exponentials = 2;
+        else
+            number_of_exponentials = 1;
+        end
         %%% construct Anisotropy
         Aniso = (G*BurstMeta.TauFit.FitData.Decay_Par - BurstMeta.TauFit.FitData.Decay_Per)./Decay;
         Aniso(isnan(Aniso)) = 0;
         Aniso_fit = Aniso(ignore:end); x = 1:numel(Aniso_fit);
         %%% Fit function
-        tres_aniso = @(x,xdata) (x(2)-x(3))*exp(-xdata./x(1)) + x(3);
-        param0 = [1/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins, 0.4,0];
-        param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
+        if number_of_exponentials == 1
+            tres_aniso = @(x,xdata) (x(2)-x(3))*exp(-xdata./x(1)) + x(3);
+            param0 = [1/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins, 0.4,0];
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
+        elseif number_of_exponentials == 2
+            tres_aniso = @(x,xdata) ((x(2)-x(4)).*exp(-xdata./x(1)) + x(4)).*exp(-xdata./x(3));
+            param0 = [1/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins, 0.4,3/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins,0.1];
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
+        end
         
         fitres = tres_aniso(param,x);
         res = Aniso_fit-fitres;
@@ -6886,7 +6961,12 @@ switch obj
         BurstMeta.Plots.TauFit.FitResult.YData = fitres;
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot_Text.Visible = 'on';
-        h.TauFit.Result_Plot_Text.String = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+        if number_of_exponentials == 1
+            str = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+        elseif number_of_exponentials == 2
+            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.2f\nr_1 = %3.2f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+        end
+        h.TauFit.Result_Plot_Text.String = str;
         h.TauFit.Result_Plot_Text.Position = [0.8 0.9];
         
         BurstMeta.Plots.TauFit.Residuals.XData = x*TACtoTime;

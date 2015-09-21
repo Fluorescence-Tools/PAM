@@ -458,7 +458,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     end
     %%% Popup Menu for Fit Method Selection
     h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-        'Distribution','Distribution plus Donor only','Fit Anisotropy'};
+        'Distribution','Distribution plus Donor only','Fit Anisotropy','Fit Anisotropy (2 exp)'};
     h.FitMethod_Popupmenu = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
         'Style','Popupmenu',...
@@ -514,6 +514,23 @@ if isempty(h.TauFit) % Creates new figure, if none exists
         'Position',[0.55 0.4 0.4 0.2],...
         'String','Determine G-Factor',...
         'Callback',@DetermineGFactor);
+    %%% Button to fit Time resolved anisotropy
+    h.Fit_Aniso_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','Fit_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.4 0.05 0.55 0.15],...
+        'String','Fit time-resolved anisotropy',...
+        'Callback',@Start_Fit);
+    h.Fit_Aniso_Menu = uicontextmenu;
+    h.Fit_Aniso_2exp = uimenu('Parent',h.Fit_Aniso_Menu,...
+        'Label','2 exponentials',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
     %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for progressbar
     h.Progress_Panel = uibuttongroup(...
@@ -591,6 +608,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
     h.Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
     h.Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+    h.Parameters{7} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
     h.FitPar_Table.RowName = h.Parameters{1};
     %%% Initial Data - Store the StartValues as well as LB and UB
     h.StartPar = cell(numel(h.FitMethods),1);
@@ -600,6 +618,7 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
     h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
     h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
     h.FitPar_Table.Data = h.StartPar{1};
     
     %%% Edit Boxes for Correction Factors
@@ -1122,284 +1141,392 @@ ignore = TauFitData.Ignore;
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
 MI_Bins = FileInfo.MI_Bins;
-%%% Read out parameters
-x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
-lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
-ub = cell2mat(h.FitPar_Table.Data(1:end-1,3))';
-fixed = cell2mat(h.FitPar_Table.Data(1:end-1,4));
-switch TauFitData.FitType
-    case 'Single Exponential'
-        %%% Parameter:
-        %%% taus    - Lifetimes
-        %%% scatter - Scatter Background (IRF pattern)
-        %%% Convert Lifetimes
-        x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
-        lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
-        ub(1) = round(ub(1)/TauFitData.TACChannelWidth);  
-        %%% fit for different IRF offsets and compare the results
-        count = 1;
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
-            x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
-        end
-        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-        wres = (Decay-FitFun)./sqrt(Decay);
-        
-        %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-        h.FitPar_Table.Data(:,1) = FitResult;        
-    case 'Biexponential'
-        %%% Parameter:
-        %%% taus    - Lifetimes
-        %%% A       - Amplitude of first lifetime
-        %%% scatter - Scatter Background (IRF pattern)
-        %%% Convert Lifetimes
-        x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-        lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-        ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);  
-        %%% fit for different IRF offsets and compare the results
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
-                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
-        end
-        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-        wres = (Decay-FitFun)./sqrt(Decay);
-        
-        %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        %%% Convert Lifetimes to Nanoseconds
-        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-        FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-        %%% Convert Fraction from Area Fraction to Amplitude Fraction
-        %%% (i.e. correct for brightness)
-        amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
-        amp1 = amp1./(amp1+amp2);
-        FitResult{3} = amp1;
-        h.FitPar_Table.Data(:,1) = FitResult;
-    case 'Three Exponentials'
-        %%% Parameter:
-        %%% taus    - Lifetimes
-        %%% A1      - Amplitude of first lifetime
-        %%% A2      - Amplitude of first lifetime
-        %%% scatter - Scatter Background (IRF pattern)
-        %%% Convert Lifetimes
-        x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
-        lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
-        ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);  
-        %%% fit for different IRF offsets and compare the results
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
-                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
-        end
-        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-        wres = (Decay-FitFun)./sqrt(Decay);
-        
-        %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        %%% Convert Lifetimes to Nanoseconds
-        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-        FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-        FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
-        %%% Convert Fraction from Area Fraction to Amplitude Fraction
-        %%% (i.e. correct for brightness)
-        amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
-        amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
-        FitResult{4} = amp1;
-        FitResult{5} = amp2;
-        h.FitPar_Table.Data(:,1) = FitResult;
-    case 'Distribution'
-        %%% Parameter:
-        %%% Center R
-        %%% sigmaR
-        %%% Background
-        %%% R0
-        %%% Donor only lifetime
-        %%% Convert Lifetimes
-        x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
-        lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
-        ub(6) = round(ub(6)/TauFitData.TACChannelWidth);  
-        %%% fit for different IRF offsets and compare the results
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
-                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
-        end
-        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-        wres = (Decay-FitFun)./sqrt(Decay);
-        
-        %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        %%% Convert Lifetimes to Nanoseconds
-        FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
-        h.FitPar_Table.Data(:,1) = FitResult;
-    case 'Distribution plus Donor only'
-        %%% Parameter:
-        %%% Center R
-        %%% sigmaR
-        %%% Fraction D only
-        %%% Background
-        %%% R0
-        %%% Donor only lifetime
-        
-        %%% Convert Lifetimes
-        x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
-        lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
-        ub(7) = round(ub(7)/TauFitData.TACChannelWidth);  
-        %%% fit for different IRF offsets and compare the results
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
-                x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
-        end
-        sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-        wres = (Decay-FitFun)./sqrt(Decay);
-        
-        %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        %%% Convert Lifetimes to Nanoseconds
-        FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
-        h.FitPar_Table.Data(:,1) = FitResult;
-    case 'Fit Anisotropy'
-        %%% Parameter
-        %%% Lifetime
-        %%% Rotational Correlation Time
-        %%% r0 - Initial Anisotropy
-        %%% r_infinity - Residual Anisotropy
-        %%% Background par
-        %%% Background per
+switch obj
+    case h.Fit_Button
+        %%% Read out parameters
+        x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
+        lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
+        ub = cell2mat(h.FitPar_Table.Data(1:end-1,3))';
+        fixed = cell2mat(h.FitPar_Table.Data(1:end-1,4));
+        switch TauFitData.FitType
+            case 'Single Exponential'
+                %%% Parameter:
+                %%% taus    - Lifetimes
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% Convert Lifetimes
+                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
+                lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
+                ub(1) = round(ub(1)/TauFitData.TACChannelWidth);  
+                %%% fit for different IRF offsets and compare the results
+                count = 1;
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
+                    x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun)./sqrt(Decay);
 
-        %%% Define separate IRF Patterns
-        IRFPattern = cell(2,1);
-        IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
-        IRFPattern{2} = IRFPer(1:TauFitData.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
-        
-        %%% Define separate Scatter Patterns
-        ScatterPattern = cell(2,1);
-        ScatterPattern{1} = TauFitData.hScat_Par(1:TauFitData.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-        ScatterPattern{2} = ScatterPer(1:TauFitData.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-        
-        %%% Convert Lifetimes
-        x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-        lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-        ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);  
-        
-        %%% Prepare data as vector
-        Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
-        Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
-        %%% fit for different IRF offsets and compare the results
-        x = cell(numel(shift_range,1));
-        residuals = cell(numel(shift_range,1));
-        count = 1;
-        for i = shift_range
-            %%% Update Progressbar
-            Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-            xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-            [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
-                x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
-            x{count} = interlace(x0,x{count},fixed);
-            count = count +1;
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;        
+            case 'Biexponential'
+                %%% Parameter:
+                %%% taus    - Lifetimes
+                %%% A       - Amplitude of first lifetime
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% Convert Lifetimes
+                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
+                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
+                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);  
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun)./sqrt(Decay);
+
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                %%% Convert Fraction from Area Fraction to Amplitude Fraction
+                %%% (i.e. correct for brightness)
+                amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
+                amp1 = amp1./(amp1+amp2);
+                FitResult{3} = amp1;
+                h.FitPar_Table.Data(:,1) = FitResult;
+            case 'Three Exponentials'
+                %%% Parameter:
+                %%% taus    - Lifetimes
+                %%% A1      - Amplitude of first lifetime
+                %%% A2      - Amplitude of first lifetime
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% Convert Lifetimes
+                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
+                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
+                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);  
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun)./sqrt(Decay);
+
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
+                %%% Convert Fraction from Area Fraction to Amplitude Fraction
+                %%% (i.e. correct for brightness)
+                amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
+                amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
+                FitResult{4} = amp1;
+                FitResult{5} = amp2;
+                h.FitPar_Table.Data(:,1) = FitResult;
+            case 'Distribution'
+                %%% Parameter:
+                %%% Center R
+                %%% sigmaR
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime
+                %%% Convert Lifetimes
+                x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
+                lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
+                ub(6) = round(ub(6)/TauFitData.TACChannelWidth);  
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun)./sqrt(Decay);
+
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+            case 'Distribution plus Donor only'
+                %%% Parameter:
+                %%% Center R
+                %%% sigmaR
+                %%% Fraction D only
+                %%% Background
+                %%% R0
+                %%% Donor only lifetime
+
+                %%% Convert Lifetimes
+                x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
+                lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
+                ub(7) = round(ub(7)/TauFitData.TACChannelWidth);  
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun)./sqrt(Decay);
+
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+            case 'Fit Anisotropy'
+                %%% Parameter
+                %%% Lifetime
+                %%% Rotational Correlation Time
+                %%% r0 - Initial Anisotropy
+                %%% r_infinity - Residual Anisotropy
+                %%% Background par
+                %%% Background per
+
+                %%% Define separate IRF Patterns
+                IRFPattern = cell(2,1);
+                IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{2} = IRFPer(1:TauFitData.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+
+                %%% Define separate Scatter Patterns
+                ScatterPattern = cell(2,1);
+                ScatterPattern{1} = TauFitData.hScat_Par(1:TauFitData.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = ScatterPer(1:TauFitData.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+
+                %%% Convert Lifetimes
+                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
+                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
+                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);  
+
+                %%% Prepare data as vector
+                Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                %%% remove ignore range from decay
+                Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
+                Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
+                FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+
+                 %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;    
+            case 'Fit Anisotropy (2 exp)'
+                %%% Parameter
+                %%% Lifetime
+                %%% Rotational Correlation Time 1
+                %%% Rotational Correlation Time 2
+                %%% r0 - Initial Anisotropy
+                %%% r_infinity - Residual Anisotropy
+                %%% Background par
+                %%% Background per
+
+                %%% Define separate IRF Patterns
+                IRFPattern = cell(2,1);
+                IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length)';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{2} = IRFPer(1:TauFitData.Length)';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+
+                %%% Define separate Scatter Patterns
+                ScatterPattern = cell(2,1);
+                ScatterPattern{1} = TauFitData.hScat_Par(1:TauFitData.Length)';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = ScatterPer(1:TauFitData.Length)';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+
+                %%% Convert Lifetimes
+                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
+                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
+                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);  
+
+                %%% Prepare data as vector
+                Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% fit for different IRF offsets and compare the results
+                x = cell(numel(shift_range,1));
+                residuals = cell(numel(shift_range,1));
+                count = 1;
+                for i = shift_range
+                    %%% Update Progressbar
+                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata),...
+                        x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+                    x{count} = interlace(x0,x{count},fixed);
+                    count = count +1;
+                end
+                sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
+                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
+                [~,best_fit] = min(chi2);
+                %%% remove ignore range from decay
+                Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
+                Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
+                FitFun = fitfun_aniso_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+
+                 %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;  
         end
-        sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
-        chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
-        [~,best_fit] = min(chi2);
-        %%% remove ignore range from decay
-        Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
-        Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-        FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-        wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+
+        %%% Update IRFShift in Slider and Edit Box
+        h.IRFShift_Slider.Value = shift_range(best_fit);
+        h.IRFShift_Edit.String = num2str(shift_range(best_fit));
+
+        %%% Reset Progressbar
+        Progress(1,h.Progress_Axes,h.Progress_Text,'Fit done');
+        %h.Progress_Text.String = 'Fit done';
+        %%% Update Plot
+        h.Microtime_Plot.Parent = h.HidePanel;
+        h.Result_Plot.Parent = h.TauFit_Panel;
+
+        % plot chi^2 on graph
+        h.Result_Plot_Text.Visible = 'on';
+        h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
+        %h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
+        h.Result_Plot_Text.Position = [0.8 0.95];
+
+        TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+        h.Plots.DecayResult.XData = (1:numel(Decay))*TACtoTime;
+        h.Plots.DecayResult.YData = Decay;
+        h.Plots.FitResult.XData = (1:numel(Decay))*TACtoTime;
+        h.Plots.FitResult.YData = FitFun;
+        axis(h.Result_Plot,'tight');
+
+        h.Plots.Residuals.XData = (1:numel(Decay))*TACtoTime;
+        h.Plots.Residuals.YData = wres;
+        h.Plots.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
+        h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
+
+        h.Result_Plot.XLim(1) = 0;
+    case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp}
+        if obj == h.Fit_Aniso_2exp
+            number_of_exponentials = 2;
+        else
+            number_of_exponentials = 1;
+        end
+        %%% construct Anisotropy
+        Aniso = (G*TauFitData.FitData.Decay_Par - TauFitData.FitData.Decay_Per)./Decay;
+        Aniso(isnan(Aniso)) = 0;
+        Aniso_fit = Aniso(ignore:end); x = 1:numel(Aniso_fit);
+        %%% Fit function
+        if number_of_exponentials == 1
+            tres_aniso = @(x,xdata) (x(2)-x(3))*exp(-xdata./x(1)) + x(3);
+            param0 = [1/(FileInfo.TACRange*1e9)*FileInfo.MI_Bins, 0.4,0];
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
+        elseif number_of_exponentials == 2
+            tres_aniso = @(x,xdata) ((x(2)-x(4)).*exp(-xdata./x(1)) + x(4)).*exp(-xdata./x(3));
+            param0 = [1/(FileInfo.TACRange*1e9)*FileInfo.MI_Bins, 0.4,3/(FileInfo.TACRange*1e9)*FileInfo.MI_Bins,0.1];
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
+        end
         
-         %%% Update FitResult
-        FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
-        %%% Convert Lifetimes to Nanoseconds
-        FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
-        FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
-        h.FitPar_Table.Data(:,1) = FitResult;      
+        fitres = tres_aniso(param,x);
+        res = Aniso_fit-fitres;
+        
+        TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+        %%% Update Plot
+        h.Microtime_Plot.Parent = h.HidePanel;
+        h.Result_Plot.Parent = h.TauFit_Panel;
+        
+        h.Plots.DecayResult.XData = x*TACtoTime;
+        h.Plots.DecayResult.YData = Aniso_fit;
+        h.Plots.FitResult.XData = x*TACtoTime;
+        h.Plots.FitResult.YData = fitres;
+        axis(h.Result_Plot,'tight');
+        h.Result_Plot_Text.Visible = 'on';
+        if number_of_exponentials == 1
+            str = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+        elseif number_of_exponentials == 2
+            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.2f\nr_1 = %3.2f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+        end
+        h.Result_Plot_Text.String = str;
+        h.Result_Plot_Text.Position = [0.8 0.9];
+        
+        h.Plots.Residuals.XData = x*TACtoTime;
+        h.Plots.Residuals.YData = res;
+        h.Plots.Residuals_ZeroLine.XData = x*TACtoTime;
+        h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(x));
+        
+        h.Result_Plot.XLim(1) = 0;
 end
-
-%%% Update IRFShift in Slider and Edit Box
-h.IRFShift_Slider.Value = shift_range(best_fit);
-h.IRFShift_Edit.String = num2str(shift_range(best_fit));
-
-%%% Reset Progressbar
-Progress(1,h.Progress_Axes,h.Progress_Text,'Fit done');
-%h.Progress_Text.String = 'Fit done';
-%%% Update Plot
-h.Microtime_Plot.Parent = h.HidePanel;
-h.Result_Plot.Parent = h.TauFit_Panel;
-
-% plot chi^2 on graph
-h.Result_Plot_Text.Visible = 'on';
-h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
-%h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
-h.Result_Plot_Text.Position = [0.8 0.95];
-
-TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
-h.Plots.DecayResult.XData = (1:numel(Decay))*TACtoTime;
-h.Plots.DecayResult.YData = Decay;
-h.Plots.FitResult.XData = (1:numel(Decay))*TACtoTime;
-h.Plots.FitResult.YData = FitFun;
-axis(h.Result_Plot,'tight');
-
-h.Plots.Residuals.XData = (1:numel(Decay))*TACtoTime;
-h.Plots.Residuals.YData = wres;
-h.Plots.Residuals_ZeroLine.XData = (1:numel(Decay))*TACtoTime;
-h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
-
-h.Result_Plot.XLim(1) = 0;
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1429,21 +1556,21 @@ FitFun = Fit_Exp(x,MI);
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 
-TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
-h.Plots.DecayResult.XData = MI*TACtoTime;
+%TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
+h.Plots.DecayResult.XData = MI;%*TACtoTime;
 h.Plots.DecayResult.YData = Anisotropy;
-h.Plots.FitResult.XData = MI*TACtoTime;
+h.Plots.FitResult.XData = MI;%*TACtoTime;
 h.Plots.FitResult.YData = FitFun;
 axis(h.Result_Plot,'tight');
-h.Plots.Residuals.XData = MI*TACtoTime;
+h.Plots.Residuals.XData = MI;%*TACtoTime;
 h.Plots.Residuals.YData = res;
-h.Plots.Residuals_ZeroLine.XData = MI*TACtoTime;
+h.Plots.Residuals_ZeroLine.XData = MI;%*TACtoTime;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
 
 %%% calculate G
 G = (1-x(3))./(1+2*x(3));
 h.Result_Plot_Text.Visible = 'on';
-h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)*TauFitData.TACChannelWidth) ' ns \nr_0 = ' num2str(x(1))...
+h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)) ' ns \nr_0 = ' num2str(x(1))...
     '\nr_i_n_f = ' num2str(x(3))]);
 h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
 h.G_factor_edit.String = num2str(G);
