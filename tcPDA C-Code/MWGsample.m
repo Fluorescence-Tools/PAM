@@ -45,11 +45,14 @@ global Stop
 Stop = 0;
 %%% randomize the seed for the random number generator
 rng('shuffle')
+
 %%% read out number of parameters
 nparam = numel(initial_parameters);
+%%% convert fixed array to indices of free parameters
+free_param = find(~fixed);
 
 %%% initialize output variables
-samples = zeros(nsamples,size(initial_parameters,2));
+samples = zeros(nsamples,size(initial_parameters,1));
 samples(1,:) = initial_parameters;
 prob = zeros(nsamples,1);
 param = initial_parameters;
@@ -69,20 +72,21 @@ if Display ~= 0
 end
 
 %%% Parameter order will be randomized in every step of the Gibbs sampler
-order = [1:nparam];
+order = free_param;%order = [1:nparam];
+n_free_param = numel(free_param);
 %%% Start while loop
 %%% Loop stops if the number of samples was drawn or STOP was pressed
 while count < (nsamples) && (Stop == 0)
     %%% increase count variable
     count = count + 1;
     %%% randomize the order
-    order = order(randperm(nparam));
+    order = order(randperm(n_free_param));
     %%% copy the samples vector to the new chain position
     samples(count,:) = samples(count-1,:);
-    for k = 1:nparam %%% loop through parameters, sample them one by one
+    for k = order' %%% loop through parameters, sample them one by one
         %%% draw new value for one parameter
         param = samples(count,:); %%% this contains already all the changes made to the other parameters
-        param(order(k)) = normrnd(samples(count,order(k)),sigma_prop(order(k))); %%% here, a new value is drawn
+        param(k) = normrnd(samples(count,k),sigma_prop(k)); %%% here, a new value is drawn
         %%% Apply boundaries but recycle random numbers (reflecting boundary)
         param(param < lb) = 2*lb(param < lb) - param(param < lb);
         param(param > ub) = 2*ub(param > ub) - param(param > ub);
@@ -117,9 +121,9 @@ while count < (nsamples) && (Stop == 0)
             if post_accepted == 1
                 Prior_old = Prior_new;
                 Posterior_old = Posterior_new;
-                acc(order(k)) = acc(order(k)) +1;
+                acc(k) = acc(k) +1;
                 %%% update samples vector
-                samples(count,order(k)) = param(order(k));
+                samples(count,k) = param(k);
                 prob(count) = Posterior_new;
             end
         end
@@ -130,7 +134,7 @@ while count < (nsamples) && (Stop == 0)
         samples(count,:) = samples(count-1,:);
     end
     %%% Now update the Display
-    acceptance = mean(acc)/count;
+    acceptance = acc./count;
     if Display ~= 0
         UpdatePlot(samples,prob,acceptance,count,plot_params,param_names);
     end
@@ -168,7 +172,7 @@ if isempty(h) %%% create new figure, depending on the model
     end
     handles.button = uicontrol('Style','pushbutton','Parent',handles.Figure,'Units','normalized',...
         'Position',[0 0 0.1 0.1],'Callback',@StopCallback,'String','Stop');
-    handles.text = uicontrol('Style','text','String','0','Units','normalized','Position',[0.9 0 0.1 0.05]);
+    handles.text = uicontrol('Style','text','String','0','Units','normalized','Position',[0.9 0 0.1 1]);
     drawnow;
     %%% save handles structure to guidata
     guidata(gcf,handles);
