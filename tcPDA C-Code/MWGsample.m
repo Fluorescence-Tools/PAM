@@ -1,4 +1,4 @@
-function [samples,prob,acc] =  MWGsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names)
+function [samples,prob,acceptance] =  MWGsample(nsamples,probfun,priorfun,sigma_prop,lb,ub,initial_parameters,fixed,plot_params,param_names)
 %%% Performs Metropolis-Within-Gibbs-Sampling of posterior distribution
 %%% (also called block-wise Metropolis and similar things)
 %%% Input parameters:
