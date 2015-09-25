@@ -1141,15 +1141,12 @@ switch mode
                         H.Axes{i,j}.YLabel.String = 'G({\it\xi{}},0)';
                         H.Res{i,j}.XLim = [x(1) x(end)];
                         
-                        
-                        
-                        
-                        
                         if h.Fit_Weights.Value
                             H.Res{i,j}.YLabel.String = 'W. Res.';
                         else
                             H.Res{i,j}.YLabel.String = 'Res.';
                         end
+                        H.Res{i,j}.Position([1 3]) = H.Axes{i,j}.Position([1 3]);                        
                     case {4 5} %%% On-Axes Y Plots
                         %%% Shrinks Axes
                         H.Axes{i,j}.Position(4) = 0.7*Size;
@@ -1183,6 +1180,7 @@ switch mode
                         else
                             H.Res{i,j}.YLabel.String = 'Res.';
                         end
+                        H.Res{i,j}.Position([1 3]) = H.Axes{i,j}.Position([1 3]);
                     case 6 %%% On Axes Plots for X and Y for one File 
                         %%% Shrinks Axes
                         H.Axes{i,j}.Position(4) = 0.7*Size;
@@ -1833,7 +1831,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices)
+            if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
                 return;
             end
             NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};

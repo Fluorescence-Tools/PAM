@@ -2410,7 +2410,11 @@ if ~isempty(PIE)
             %%% Takes PIE channel macrotimes
             PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.SyncPeriod;
             %%% Calculate intensity trace for PIE channel (currently with 100 ms bins)
-            PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
+            if ~isempty(PIE_MT)
+                PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
+            else
+                PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
+            end
             
             %% Calculates image
             if h.MT.Use_Image.Value
