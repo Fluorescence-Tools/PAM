@@ -6176,7 +6176,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         y1{i} = ch1(starttime(i):stoptime(i));
         y2{i} = ch2(starttime(i):stoptime(i));
         if any(BAMethod == [3 4])
-            y3{i} = ch2(starttime(i):stoptime(i));
+            y3{i} = ch3(starttime(i):stoptime(i));
         end
     end
     %%% plot selected regions
