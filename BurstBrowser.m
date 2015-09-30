@@ -3210,6 +3210,18 @@ if isfield(BurstData,'BAMethod')
 end
 %%% Convert old File Format to new
 if FilterIndex == 2 % KBA file was loaded
+    if ~exist('Data','var') % no variable named Data exists (very old)
+        %%% find out the BurstSearch Type from filename
+        if ~isempty(strfind(FileName,'ACBS_2C'))
+            Data.BAMethod = 1;
+        elseif ~isempty(strfind(FileName,'DCBS_2C'))
+            Data.BAMethod = 2;
+        elseif ~isempty(strfind(FileName,'ACBS_3C'))
+            Data.BAMethod = 3;
+        elseif ~isempty(strfind(FileName,'TCBS_3C'))
+            Data.BAMethod = 4;
+        end
+    end
     switch Data.BAMethod
         case {1,2} %%% 2 Color MFD
             %%% Convert NameArray
@@ -3322,16 +3334,19 @@ if FilterIndex == 2 % KBA file was loaded
             BurstData.NameArray = NameArray;
             BurstData.DataArray = DataArray;
             BurstData.BAMethod = Data.BAMethod;
-            BurstData.FileType = Data.Filetype;
-            if isfield(Data,'TACrange')
-                BurstData.TACRange = Data.TACrange;
-                BurstData.FileInfo.TACRange = Data.TACrange;
-            else
-                BurstData.TACRange =  1E9./Data.SyncRate;
-                BurstData.FileInfo.TACRange =  1E9./Data.SyncRate;
+            if isfield(Data,'Filetype')
+                BurstData.FileType = Data.Filetype;
             end
-            BurstData.SyncPeriod = 1./Data.SyncRate;
-            
+            if isfield(Data,'SyncRate')
+                if isfield(Data,'TACrange')
+                    BurstData.TACRange = Data.TACrange;
+                    BurstData.FileInfo.TACRange = Data.TACrange;
+                else
+                    BurstData.TACRange =  1E9./Data.SyncRate;
+                    BurstData.FileInfo.TACRange =  1E9./Data.SyncRate;
+                end
+                BurstData.SyncPeriod = 1./Data.SyncRate;
+            end
             BurstData.FileInfo.MI_Bins = 4096;
             
             if isfield(Data,'PIEChannels')
@@ -3359,13 +3374,14 @@ if FilterIndex == 2 % KBA file was loaded
                 end
                 BurstData.ScatterPattern = BurstData.IRF;
             end
-            
-            BurstTCSPCData.Macrotime = Data.Macrotime;
-            BurstTCSPCData.Microtime = Data.Microtime;
-            BurstTCSPCData.Channel = Data.Channel;
-            BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
-            BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
-            BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
+            if isfield(Data,'Macrotime')
+                BurstTCSPCData.Macrotime = Data.Macrotime;
+                BurstTCSPCData.Microtime = Data.Microtime;
+                BurstTCSPCData.Channel = Data.Channel;
+                BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
+                BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
+                BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
+            end
     end
 end
 
@@ -7748,8 +7764,10 @@ if strcmp(BurstData.FileName(end-2:end),'bur') %bur file, normal save
     save(BurstData.FileName,'BurstData');
 elseif strcmp(BurstData.FileName(end-2:end),'kba') % kba file, convert to bur
     save([BurstData.FileName(1:end-4) '_kba.bur'],'BurstData');
-    %%% also save BurstTCSPCData
-    save([BurstData.FileName(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
+    if ~isempty(BurstTCSPCData)
+        %%% also save BurstTCSPCData
+        save([BurstData.FileName(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
+    end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
