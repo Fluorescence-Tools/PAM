@@ -544,8 +544,10 @@ switch (Type)
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
             for j = 1:4               
                if any(UserValues.Detector.Rout(UserValues.Detector.Det == j) == 1)
-                   TcspcData.MT{j,1} = [TcspcData.MT{j,1} double(Sim_Photons{j,1})]; %#ok<USENS>
+                   TcspcData.MT{j,1} = [TcspcData.MT{j,1} double(Sim_Photons{j,1})];
+                   Sim_Photons{j,1} = []; %%% Removes photons to reduce data duplication 
                    TcspcData.MI{j,1} = [TcspcData.MI{j,1} Sim_Photons{j,2}];
+                   Sim_Photons{j,2} = []; %%% Removes photons to reduce data duplication 
                end
             end            
             for j = 1:Header.Frames

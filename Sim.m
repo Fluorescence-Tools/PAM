@@ -1844,7 +1844,7 @@ for i = 1:numel(SimData.Species);
     switch Map_Type
         case 1 %%% Free Diffusion
             if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
-                SimData.Map = 1;
+                SimData.Map = {1};
             end
         case {2,3,4,5,8} %%% Static Maps
             if isfield(SimData,'Map') && iscell(SimData.Map)
@@ -1864,7 +1864,7 @@ for i = 1:numel(SimData.Species);
             else
                 Map_Type = 1;
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
-                    SimData.Map = 1;
+                    SimData.Map = {1};
                 end
             end
         case {6,7} %%% Diffusing Maps
@@ -1887,13 +1887,13 @@ for i = 1:numel(SimData.Species);
             else
                 Map_Type = 1;
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
-                    SimData.Map = 1;
+                    SimData.Map = {1};
                 end
             end
         otherwise
             Map_Type = 1;
             if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
-                SimData.Map = 1;
+                SimData.Map = {1};
             end
     end
     
