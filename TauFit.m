@@ -775,6 +775,8 @@ if isempty(h.TauFit) % Creates new figure, if none exists
             end
         end
     end
+else
+    figure(h.TauFit);
 end
 %% Initialize Parameters
 TauFitData.Length = 1;
@@ -782,6 +784,7 @@ TauFitData.StartPar = 0;
 TauFitData.ShiftPer = 0;
 TauFitData.IRFLength = 1;
 TauFitData.IRFShift = 0;
+TauFitData.IRFrelShift = 0;
 TauFitData.Ignore = 1;
 TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
 TauFitData.FitMethods = h.FitMethods;
@@ -929,6 +932,13 @@ if isempty(obj) || obj == h.LoadData_Button
     h.IRFShift_Slider.Value = 0;
     TauFitData.IRFShift = 0;
     h.IRFShift_Edit.String = num2str(TauFitData.IRFShift);
+    
+    %%% IRF rel. Shift has the same limits as the perp shift property
+    h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength/10);
+    h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength/10);
+    h.IRFrelShift_Slider.Value = 0;
+    TauFitData.IRFrelShift = 0;
+    h.IRFrelShift_Edit.String = num2str(TauFitData.IRFrelShift);
     
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Value = 1;
