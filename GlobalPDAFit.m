@@ -80,6 +80,11 @@ if isempty(h.GlobalPDAFit)
         'Label','Export Figure(s)',...
         'Callback',@Export_Figure,...
         'Tag','Export');
+    h.Menu.ExportData = uimenu(...
+        'Parent',h.Menu.File,...
+        'Label','Create Structure with Figure and Table Data',...
+        'Callback',@Export_FigureData,...
+        'Tag','ExportData');   
     h.Menu.Params = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Reload Parameters',...
@@ -1469,6 +1474,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Epsilon Grid...');
                 Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
                 
+                % generate NobinsE+1 values for eps
                 E_grid = linspace(0,1,NobinsE+1);
                 R_grid = linspace(0,5*PDAMeta.R0(i),100000)';
                 epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
@@ -1476,8 +1482,10 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
                 Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
+                % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
                 PNF = binopdf(NF, N, eps);
             end
+            % histogram NF+NG into maxN+1 bins
             PN = histcounts((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i})),1:(maxN+1));
             % assign current file to global cell
             PDAMeta.E_grid{i} = E_grid;
@@ -1497,9 +1505,10 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             PDAMeta.HistLib = [];
             P = cell(1,numel(E_grid));
             PN_dummy = PN';
-            %case 1, no bacNFground in either channel
+            %case 1, no background in either channel
             if NBG == 0 && NBR == 0
                 for j = 1:numel(E_grid)
+                    %for a particular value of E
                     P_temp = PNF(:,:,j);
                     E_temp = NF(:,:,j)./N(:,:,j);
                     [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
@@ -1509,8 +1518,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     P_temp = P_temp(validd);
                     Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
                     Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
-                    %%% Store bin,valid and P_temp variables for brightness
-                    %%% correction
+                    %%% Store bin,valid and P_temp variables for brightness correction
                     PDAMeta.HistLib.bin{i}{j} = bin;
                     PDAMeta.HistLib.P_array{i}{j} = P_temp;
                     PDAMeta.HistLib.valid{i}{j} = validd;
@@ -2464,6 +2472,49 @@ else
     end
 end
 
+% Function to export the figure and table data to a structure (for external use)
+function Export_FigureData(~,~)
+global PDAMeta PDAData
+datasize = size(PDAMeta.Plots.Gauss_All,1);
+
+tmp = struct;
+tmp.file = PDAData.FileName;
+tmp.path = PDAData.PathName;
+h = guidata(findobj('Tag','GlobalPDAFit'));
+tmp.fittable = h.FitTab.Table.Data;
+tmp.parameterstable = h.ParametersTab.Table.Data;
+
+gausx = size(PDAMeta.Plots.Gauss_All{1,1}.XData,2);
+tmp.gauss = [];
+tmp.gaussheader = cell(1,datasize*7);
+for i = 1:datasize
+    %x
+    tmp.gauss(1:gausx,7*i-6) = PDAMeta.Plots.Gauss_All{i,1}.XData;
+    for j = 1:6
+        %gauss
+        tmp.gauss(1:gausx,7*i-6+j) = PDAMeta.Plots.Gauss_All{i,j}.YData;
+    end
+    tmp.gaussheader(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
+end
+
+datax = size(PDAMeta.Plots.Data_All{1,1}.XData,2);
+tmp.epr = [];
+tmp.eprheader = cell(1,datasize*9);
+for i = 1:datasize
+    %x axis
+    tmp.epr(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
+    % data
+    tmp.epr(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
+    % res
+    tmp.epr(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
+    for j = 1:6
+        %fit
+        tmp.epr(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
+    end
+    tmp.eprheader(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
+end
+assignin('base','DataTableStruct',tmp);
+
 % Update the Fit Tab
 function Update_FitTable(~,e,mode)
 h = guidata(findobj('Tag','GlobalPDAFit'));
@@ -2986,16 +3037,18 @@ switch mode
         %% Load database
         [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.BurstBrowserPath,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
-        PDAData.FileName = s.file;
-        PDAData.PathName = s.path;
-        Load_PDA([],[],3);
-        %h.PDADatabase.List.String = s.str;
-        clear s;
-        if size(h.PDADatabase.List.String, 1) > 0
-            % files are left
-            h.PDADatabase.Save.Enable = 'on';
-        else
-            SampleData
+        if FileName ~= 0
+            PDAData.FileName = s.file;
+            PDAData.PathName = s.path;
+            Load_PDA([],[],3);
+            %h.PDADatabase.List.String = s.str;
+            clear s;
+            if size(h.PDADatabase.List.String, 1) > 0
+                % files are left
+                h.PDADatabase.Save.Enable = 'on';
+            else
+                SampleData
+            end
         end
     case 3 
         %% Save complete database
