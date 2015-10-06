@@ -77,14 +77,9 @@ if isempty(h.GlobalPDAFit)
         'Tag','Save');
     h.Menu.Export = uimenu(...
         'Parent',h.Menu.File,...
-        'Label','Export Figure(s)',...
+        'Label','Export Figure(s), Figure and Table Data',...
         'Callback',@Export_Figure,...
-        'Tag','Export');
-    h.Menu.ExportData = uimenu(...
-        'Parent',h.Menu.File,...
-        'Label','Create Structure with Figure and Table Data',...
-        'Callback',@Export_FigureData,...
-        'Tag','ExportData');   
+        'Tag','Export'); 
     h.Menu.Params = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Reload Parameters',...
@@ -340,7 +335,8 @@ if isempty(h.GlobalPDAFit)
         'Units','normalized',...
         'Color',Look.Control,...
         'Position',[0 0 1 1]);
-    h.SingleTab.Progress.Axes.XTick=[]; h.SingleTab.Progress.Axes.YTick=[];
+    h.SingleTab.Progress.Axes.XTick=[]; 
+    h.SingleTab.Progress.Axes.YTick=[];
     h.SingleTab.Progress.Text=text(...
         'Parent',h.SingleTab.Progress.Axes,...
         'Tag','Progress_Text_Single',...
@@ -763,9 +759,9 @@ if isempty(h.GlobalPDAFit)
         'Units','normalized',...
         'Value',0,...
         'FontSize',12,...
-        'String','w_res limits?',...
-        'Tooltipstring', 'do not take the first and last Epr bin into account when calculating the chi^2 and thus when fitting. Only works for Histogram Library!!!',...
-        'Callback',[],...
+        'String','ignore outer bins?',...
+        'Tooltipstring', 'ignore outer Epr bins during fitting. Does not work for MLE fitting!!!',...
+        'Callback',{@Update_Plots,3,1},...
         'Position',[0.65 0.5 0.2 0.2],...
         'Tag','OuterBins_Fix');
     
@@ -986,7 +982,7 @@ function Update_Plots(~,~,mode,reset)
 % function creates and/or updates the plots after:
 % mode = 1: after fitting
 % mode = 2: changing the popup value on single tab + called in UpdatePlot
-% mode = 3: loading or adding data, n.o. bins, min/max
+% mode = 3: loading or adding data, n.o. bins, min/max, fix w_r...
 % mode = 4: after updateparam table
 % mode = 5: LiveUpdate plots during fitting
 
@@ -1054,9 +1050,13 @@ switch mode
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             BSD = PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid);
             PDAMeta.BSD{i} = BSD;
-            PDAMeta.hProx{i} = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
+            PDAMeta.hProx{i} = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)); 
+            % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
+            % histcounts bins as 0 <= N < 0.02
             xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
-            %xProx = xProx(1:end-1);
+            % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
+            % the last element is to allow proper display of the 50th bin
+            
             hBSD = histcounts(BSD,1:(max(BSD)+1));
             xBSD = 1:max(BSD);
             
@@ -1079,12 +1079,29 @@ switch mode
                     xProx = xProx - diffx*(i-1)/2;
                 end
             end
+
             % data plot
             PDAMeta.Plots.Data_All{i} = stairs(h.AllTab.Main_Axes,...
                 xProx,...
                 [PDAMeta.hProx{i} PDAMeta.hProx{i}(end)],...
                 'Color',normal,...
                 'LineWidth',1);
+            
+            if h.SettingsTab.OuterBins_Fix.Value
+                % do not display or take into account during fitting, the
+                % outer bins of the histogram.
+                lims = [xProx(2) xProx(end-1)];
+                mini = PDAMeta.hProx{i}(2);
+                maxi = PDAMeta.hProx{i}(end-1);
+            else
+                lims = [xProx(1) xProx(end)];
+                mini = PDAMeta.hProx{i}(1);
+                maxi = PDAMeta.hProx{i}(end);
+            end
+            PDAMeta.Plots.Data_All{i}.YData(1) = mini;
+            PDAMeta.Plots.Data_All{i}.YData(end) = maxi;
+            set(h.AllTab.Main_Axes, 'XLim', lims)
+            set(h.AllTab.Res_Axes, 'XLim', lims)
             % residuals plot
             PDAMeta.Plots.Res_All{i} = stairs(h.AllTab.Res_Axes,...
                 xProx,...
@@ -1185,28 +1202,56 @@ switch mode
             ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
         Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
         hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
+        % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
+        % histcounts bins as 0 <= N < 0.02
         xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
-        xProx = xProx(1:end-1);
+        % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
+        % the last element is to allow proper display of the 50th bin
+        
         % data plot
         PDAMeta.Plots.Data_Single = bar(h.SingleTab.Main_Axes,...
             xProx,...
-            hProx,...
+            [hProx hProx(end)],...
             'FaceColor',[0.4 0.4 0.4],...
             'EdgeColor','none',...
             'BarWidth',1);
+        
+        % make 'stairs' appear similar to 'bar'
+        xProx = xProx-mean(diff(xProx))/2;
+        
+        if h.SettingsTab.OuterBins_Fix.Value
+            % do not display or take into account during fitting, the
+            % outer bins of the histogram.
+            lims = [xProx(2) xProx(end-1)];
+            mini = hProx(2);
+            maxi = hProx(end-1);
+        else
+            lims = [xProx(1) xProx(end)];
+            mini = hProx(1);
+            maxi = hProx(end);
+        end
+        PDAMeta.Plots.Data_Single.YData(1) = mini;
+        PDAMeta.Plots.Data_Single.YData(end) = maxi;
+        set(h.SingleTab.Main_Axes, 'XLim', lims)
+        set(h.SingleTab.Res_Axes, 'XLim', lims)
+        
         % residuals
         PDAMeta.Plots.Res_Single = copyobj(PDAMeta.Plots.Res_All{i}, h.SingleTab.Res_Axes);
         set(PDAMeta.Plots.Res_Single,...
             'LineWidth',2,...
             'Color','k') %only define those properties that are different to the all tab
+        PDAMeta.Plots.Res_Single.XData = xProx;
+        
         % fit
         for j = 2:6
             PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
             PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];%only define those properties that are different to the all tab
+            PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
         end
         % summed fit
         PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
         PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
+        PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
         % bsd
         PDAMeta.Plots.BSD_Single = copyobj(PDAMeta.Plots.BSD_All{i}, h.SingleTab.BSD_Axes);
         PDAMeta.Plots.BSD_Single.Color = 'k';%only define those properties that are different to the all tab
@@ -1266,17 +1311,34 @@ switch mode
                     normpdf(PDAMeta.Plots.Gauss_All{i,1}.XData,fitpar(3*c-1),fitpar(3*c));
             end
             
+            if h.SettingsTab.OuterBins_Fix.Value
+                % do not display or take into account during fitting, the
+                % outer bins of the histogram.
+                ydatafit = [PDAMeta.hFit{i}(2) PDAMeta.hFit{i}(2:end-1) PDAMeta.hFit{i}(end-1) PDAMeta.hFit{i}(end-1)];
+                ydatares = [PDAMeta.w_res{i}(2) PDAMeta.w_res{i}(2:end-1) PDAMeta.w_res{i}(end-1) PDAMeta.w_res{i}(end-1)];
+            else
+                ydatafit = [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)];
+                ydatares = [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)];
+            end
+
             %%% Update All Plot
             set(PDAMeta.Plots.Fit_All{i,1},...
                 'Visible', 'on',...
-                'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
+                'YData', ydatafit);
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
-                'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
+                'YData', ydatares);
             for c = PDAMeta.Comp{i}
+                if h.SettingsTab.OuterBins_Fix.Value
+                    % do not display or take into account during fitting, the
+                    % outer bins of the histogram.
+                    ydatafitind = [PDAMeta.hFit_Ind{i,c}(2); PDAMeta.hFit_Ind{i,c}(2:end-1); PDAMeta.hFit_Ind{i,c}(end-1); PDAMeta.hFit_Ind{i,c}(end-1)];
+                else
+                    ydatafitind = [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)];
+                end
                 set(PDAMeta.Plots.Fit_All{i,c+1},...
                     'Visible', 'on',...
-                    'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
+                    'YData', ydatafitind);
             end
             set(PDAMeta.Chi2_All,...
                 'Visible','on',...
@@ -1294,14 +1356,21 @@ switch mode
             if i == h.SingleTab.Popup.Value
                 set(PDAMeta.Plots.Fit_Single{1,1},...
                     'Visible', 'on',...
-                    'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
+                    'YData', ydatafit);
                 set(PDAMeta.Plots.Res_Single,...
                     'Visible', 'on',...
-                    'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
+                    'YData', ydatares);
                 for c = PDAMeta.Comp{i}
+                    if h.SettingsTab.OuterBins_Fix.Value
+                        % do not display or take into account during fitting, the
+                        % outer bins of the histogram.
+                        ydatafitind = [PDAMeta.hFit_Ind{i,c}(2); PDAMeta.hFit_Ind{i,c}(2:end-1); PDAMeta.hFit_Ind{i,c}(end-1); PDAMeta.hFit_Ind{i,c}(end-1)];
+                    else
+                        ydatafitind = [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)];
+                    end
                     set(PDAMeta.Plots.Fit_Single{1,c+1},...
                         'Visible', 'on',...
-                        'YData',[PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
+                        'YData', ydatafitind);
                 end
                 set(PDAMeta.Chi2_Single,...
                     'Visible','on',...
@@ -1338,26 +1407,49 @@ switch mode
         set(PDAMeta.Plots.Res_All{i},...
             'Visible', 'on',...
             'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
+        if h.SettingsTab.OuterBins_Fix.Value
+            % do not display or take into account during fitting, the
+            % outer bins of the histogram.
+            ydatafit = [PDAMeta.hFit{i}(2) PDAMeta.hFit{i}(2:end-1) PDAMeta.hFit{i}(end-1) PDAMeta.hFit{i}(end-1)];
+            ydatares = [PDAMeta.w_res{i}(2) PDAMeta.w_res{i}(2:end-1) PDAMeta.w_res{i}(end-1) PDAMeta.w_res{i}(end-1)];
+        else
+            ydatafit = [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)];
+            ydatares = [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)];
+        end
         for c = PDAMeta.Comp{i}
+            if h.SettingsTab.OuterBins_Fix.Value
+                % do not display or take into account during fitting, the
+                % outer bins of the histogram.
+                ydatafitind = [PDAMeta.hFit_Ind{i,c}(2); PDAMeta.hFit_Ind{i,c}(2:end-1); PDAMeta.hFit_Ind{i,c}(end-1); PDAMeta.hFit_Ind{i,c}(end-1)];
+            else
+                ydatafitind = [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)];
+            end
             set(PDAMeta.Plots.Fit_All{i,c+1},...
                 'Visible', 'on',...
-                'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
+                'YData', ydatafitind);
         end
         set(PDAMeta.Plots.Fit_All{i,1},...
             'Visible', 'on',...
-            'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
+            'YData', ydatafit);
         if i == h.SingleTab.Popup.Value
             set(PDAMeta.Plots.Res_Single,...
                 'Visible', 'on',...
-                'YData', [PDAMeta.w_res{i} PDAMeta.w_res{i}(end)]);
+                'YData', ydatares);
             for c = PDAMeta.Comp{i}
+                if h.SettingsTab.OuterBins_Fix.Value
+                    % do not display or take into account during fitting, the
+                    % outer bins of the histogram.
+                    ydatafitind = [PDAMeta.hFit_Ind{i,c}(2); PDAMeta.hFit_Ind{i,c}(2:end-1); PDAMeta.hFit_Ind{i,c}(end-1); PDAMeta.hFit_Ind{i,c}(end-1)];
+                else
+                    ydatafitind = [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)];
+                end
                 set(PDAMeta.Plots.Fit_Single{1,c+1},...
                     'Visible', 'on',...
-                    'YData', [PDAMeta.hFit_Ind{i,c}; PDAMeta.hFit_Ind{i,c}(end)]);
+                    'YData', ydatafitind);
             end
             set(PDAMeta.Plots.Fit_Single{1,1},...
                 'Visible', 'on',...
-                'YData', [PDAMeta.hFit{i} PDAMeta.hFit{i}(end)]);
+                'YData', ydatafit);
         end
 end
 
@@ -1658,7 +1750,7 @@ if sum(PDAMeta.Global) == 0
             %% Check if View_Curve was pressed
             %%% Only Update Plot and break
             Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
@@ -1669,7 +1761,7 @@ if sum(PDAMeta.Global) == 0
         else
             %% Do Fit
             Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case 'Histogram Library'
                     fitfun = @(x) PDAHistogramFit_Single(x);
@@ -1783,7 +1875,7 @@ else
     if obj == h.Menu.ViewFit
          %%% Only Update Plot and break
         Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-        Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+        Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
             case {'MLE','MonteCarlo'}
                 %%% For Updating the Result Plot, use MC sampling
@@ -1973,9 +2065,6 @@ FitParams = PDAMeta.FitParams;
 Global = PDAMeta.Global;
 Fixed = PDAMeta.Fixed;
 
-% define degrees of freedom here since we will loose fitpar
-DOF = numel(fitpar);
-
 P=zeros(numel(Global),1);
 
 %%% Assigns global parameters
@@ -2017,10 +2106,10 @@ for i=find(PDAMeta.Active)'
     PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
     PDAMeta.hFit{i} = hFit;
     if ~h.SettingsTab.OuterBins_Fix.Value
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-DOF-1);
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~Fixed(i,:))-1);
     else
         % disregard last bins
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-2-DOF-1);
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~Fixed(i,:))-3);
         PDAMeta.w_res{i}(1) = 0;
         PDAMeta.w_res{i}(end) = 0;
     end
@@ -2194,8 +2283,6 @@ end
 FitParams = PDAMeta.FitParams;
 Global = PDAMeta.Global;
 Fixed = PDAMeta.Fixed;
-% define degrees of freedom here since we will loose fitpar
-DOF = numel(fitpar);
 
 P=zeros(numel(Global),1);
 
@@ -2333,7 +2420,15 @@ hFit = sum(H_meas)*hFit./sum(hFit);
 error = sqrt(H_meas);
 error(error == 0) = 1;
 w_res = (H_meas-hFit)./error;
-chi2 = sum((w_res.^2))/(Nobins-numel(fitpar)-1);
+
+if ~h.SettingsTab.OuterBins_Fix.Value
+    chi2 = sum((w_res.^2))/(Nobins-numel(fitpar)-1);
+else
+    % disregard outer bins
+    chi2 = sum((w_res(2:end-1).^2))/(Nobins-numel(fitpar)-3);
+    w_res(1) = 0;
+    w_res(end) = 0;
+end
 hFit_Ind = cell(5,1);
 for j = PDAMeta.Comp{file}
     hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
@@ -2370,8 +2465,6 @@ end
 FitParams = PDAMeta.FitParams;
 Global = PDAMeta.Global;
 Fixed = PDAMeta.Fixed;
-% define degrees of freedom here since we will loose fitpar
-DOF = numel(fitpar);
 
 P=zeros(numel(Global),1);
 
@@ -2401,7 +2494,7 @@ set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf(
 
 % Function to export the figures
 function Export_Figure(~,~)
-global PDAData UserValues
+global PDAData UserValues PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
 % use uiputfile to generate a folder name in a specified location
@@ -2470,11 +2563,8 @@ else
         end
         close(fig)
     end
-end
 
 % Function to export the figure and table data to a structure (for external use)
-function Export_FigureData(~,~)
-global PDAMeta PDAData
 datasize = size(PDAMeta.Plots.Gauss_All,1);
 
 tmp = struct;
@@ -2514,6 +2604,8 @@ for i = 1:datasize
     tmp.eprheader(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
 end
 assignin('base','DataTableStruct',tmp);
+save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
+end
 
 % Update the Fit Tab
 function Update_FitTable(~,e,mode)
@@ -2949,12 +3041,12 @@ msgbox({...
     'remove everything from global that is not needed in global';...
     'add a legend in the plots';...
     'sigma cannot be zero or a very small number';...
-    'the chi^2 definition is not ok';...
     'possibility to plot the actual E instead of Epr';...
     'dynamic PDA fit';...
     'brightness corrected PDA';...
-    'when you press determine gamma, take the actual DA molecules instead of a rough S selection';...
     'put the optimplotfval into the gauss plot, so fitting can be evaluated per iteration, rather than per function sampling';...
+    'fix the ignore outer limits for MLE fitting';...
+    '';...
     '';...
     ''} ,'To do list','modal');
 
@@ -3094,7 +3186,7 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
     end
 end
 
-% functio for loading of brightness reference, i.e. donor only sample
+% function for loading of brightness reference, i.e. donor only sample
 function Load_Brightness_Reference(obj,~,mode)
 global PDAData UserValues PDAMeta
 
@@ -3147,6 +3239,7 @@ ct = PDAMeta.crosstalk(file);
 gamma = PDAMeta.gamma(file);
 E = 1/(1+(R/PDAMeta.R0(file)).^6);
 Qr = (1-de)*(1-E) + (gamma/(1+ct))*(de+E*(1-de));
+
 %%% Re-calculate the P array based on changed PN (brightness correction)
 function P = recalculate_P(PN_scaled,file)
 global PDAMeta
