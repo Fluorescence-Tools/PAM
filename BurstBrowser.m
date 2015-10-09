@@ -3762,6 +3762,27 @@ switch numel(fieldnames(dummy))
         ylabel('probability density');
         legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
         legend(legend_entries,'fontsize',14);
+        
+        %%% waterfall or image/contour plot
+        %%% constuct time series histogram
+        for i = 1:numel(H);
+            H{i} = [H{i} H{i}(end)];
+        end
+        H = vertcat(H{:});
+        figure('Color',[1 1 1],'Position',[100 100 600 450]);
+        contourf(xE(1:end),0.5:size(H,1)-0.5,H);
+        colormap(jet);
+        ax = gca;
+        ax.Color = [1 1 1];
+        ax.FontSize = 20;
+        ax.LineWidth = 2;
+        ax.Layer = 'top';
+        ax.XLim = [0,1];
+        ax.Units = 'normalized';
+        ax.Position(3) = 0.6;
+        xlabel('FRET efficiency');
+        ylabel('File Number');
+        text(1.02,ax.YLim(2),legend_entries);
     case 3
         %%% Load FRET arrays
         for i = 1:numel(FileNames)
