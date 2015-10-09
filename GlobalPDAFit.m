@@ -957,9 +957,9 @@ end
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
 
-Update_Plots([],[],3);
 Update_FitTable([],[],1);
 Update_ParamTable([],[],1);
+Update_Plots([],[],3);
 
 % Save data and fit table back into each individual file 
 function Save_PDA(~,~)
@@ -974,6 +974,7 @@ for i = 1:numel(PDAData.FileName)
     SavedData.Background = PDAData.Background{i};
     % for each dataset, all info from the table is saved (including active, global, fixed)
     SavedData.FitTable = h.FitTab.Table.Data(i,:);
+    SavedData.FitTable{1} = true; %put file to active to avoid problems when reloading data
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
@@ -998,9 +999,9 @@ if reset == 1
 end
 
 % check if plot is active
-Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
+Active = find(cell2mat(h.FitTab.Table.Data(1:end-3,1)))';
 
-if all(~Active) %% Clears 2D plot, if all are inactive
+if isempty(Active) %% Clears 2D plot, if all are inactive
     %     h.Plots.Main.ZData = zeros(2);
     %     h.Plots.Main.CData = zeros(2,2,3);
     %     h.Plots.Fit.ZData = zeros(2);
@@ -1182,89 +1183,94 @@ switch mode
         % after load data
         % after popup change
         % during fitting, when the tab is changed to single
-        i = h.SingleTab.Popup.Value;
-        % predefine cells
-        PDAMeta.Plots.Fit_Single = cell(1,6);
-        PDAMeta.Plots.Gauss_Single = cell(1,6);
-        % clear axes
-        cla(h.SingleTab.Main_Axes)
-        cla(h.SingleTab.Res_Axes)
-        cla(h.SingleTab.BSD_Axes)
-        cla(h.SingleTab.Gauss_Axes)
-        PDAMeta.Chi2_Single = copyobj(PDAMeta.Chi2_All, h.SingleTab.Main_Axes);
-        PDAMeta.Chi2_Single.Position = [0.9,0.95];
-        try
-            % if fit is performed, this will work
-            PDAMeta.Chi2_Single.String = ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))];
+        if ~isempty(Active)
+            % check if plot is active
+            i = Active(h.SingleTab.Popup.Value);
+            % predefine cells
+            PDAMeta.Plots.Fit_Single = cell(1,6);
+            PDAMeta.Plots.Gauss_Single = cell(1,6);
+            % clear axes
+            cla(h.SingleTab.Main_Axes)
+            cla(h.SingleTab.Res_Axes)
+            cla(h.SingleTab.BSD_Axes)
+            cla(h.SingleTab.Gauss_Axes)
+            PDAMeta.Chi2_Single = copyobj(PDAMeta.Chi2_All, h.SingleTab.Main_Axes);
+            PDAMeta.Chi2_Single.Position = [0.9,0.95];
+            try
+                % if fit is performed, this will work
+                PDAMeta.Chi2_Single.String = ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))];
+            end
+            %%% Re-Calculate proximity ratio histogram
+            valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
+                ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
+            Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
+            hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
+            % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
+            % histcounts bins as 0 <= N < 0.02
+            xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
+            % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
+            % the last element is to allow proper display of the 50th bin
+            
+            % data plot
+            PDAMeta.Plots.Data_Single = bar(h.SingleTab.Main_Axes,...
+                xProx,...
+                [hProx hProx(end)],...
+                'FaceColor',[0.4 0.4 0.4],...
+                'EdgeColor','none',...
+                'BarWidth',1);
+            
+            % make 'stairs' appear similar to 'bar'
+            xProx = xProx-mean(diff(xProx))/2;
+            
+            if h.SettingsTab.OuterBins_Fix.Value
+                % do not display or take into account during fitting, the
+                % outer bins of the histogram.
+                lims = [xProx(2) xProx(end-1)];
+                mini = hProx(2);
+                maxi = hProx(end-1);
+            else
+                lims = [xProx(1) xProx(end)];
+                mini = hProx(1);
+                maxi = hProx(end);
+            end
+            PDAMeta.Plots.Data_Single.YData(1) = mini;
+            PDAMeta.Plots.Data_Single.YData(end) = maxi;
+            set(h.SingleTab.Main_Axes, 'XLim', lims)
+            set(h.SingleTab.Res_Axes, 'XLim', lims)
+            
+            % residuals
+            PDAMeta.Plots.Res_Single = copyobj(PDAMeta.Plots.Res_All{i}, h.SingleTab.Res_Axes);
+            set(PDAMeta.Plots.Res_Single,...
+                'LineWidth',2,...
+                'Color','k') %only define those properties that are different to the all tab
+            PDAMeta.Plots.Res_Single.XData = xProx;
+            
+            % fit
+            for j = 2:6
+                PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
+                PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];%only define those properties that are different to the all tab
+                PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
+            end
+            % summed fit
+            PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
+            PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
+            PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
+            % bsd
+            PDAMeta.Plots.BSD_Single = copyobj(PDAMeta.Plots.BSD_All{i}, h.SingleTab.BSD_Axes);
+            PDAMeta.Plots.BSD_Single.Color = 'k';%only define those properties that are different to the all tab
+            % gaussians
+            for j = 1:6
+                PDAMeta.Plots.Gauss_Single{1,j} = copyobj(PDAMeta.Plots.Gauss_All{i,j}, h.SingleTab.Gauss_Axes);
+                PDAMeta.Plots.Gauss_Single{1,j}.Color = [0.4 0.4 0.4]; %only define those properties that are different to the all tab
+            end
+            PDAMeta.Plots.Gauss_Single{1,1}.Color = 'k';
         end
-        %%% Re-Calculate proximity ratio histogram
-        valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
-            ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
-        Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
-        hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
-        % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
-        % histcounts bins as 0 <= N < 0.02
-        xProx = linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1)+1/str2double(h.SettingsTab.NumberOfBins_Edit.String)/2;
-        % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
-        % the last element is to allow proper display of the 50th bin
-        
-        % data plot
-        PDAMeta.Plots.Data_Single = bar(h.SingleTab.Main_Axes,...
-            xProx,...
-            [hProx hProx(end)],...
-            'FaceColor',[0.4 0.4 0.4],...
-            'EdgeColor','none',...
-            'BarWidth',1);
-        
-        % make 'stairs' appear similar to 'bar'
-        xProx = xProx-mean(diff(xProx))/2;
-        
-        if h.SettingsTab.OuterBins_Fix.Value
-            % do not display or take into account during fitting, the
-            % outer bins of the histogram.
-            lims = [xProx(2) xProx(end-1)];
-            mini = hProx(2);
-            maxi = hProx(end-1);
-        else
-            lims = [xProx(1) xProx(end)];
-            mini = hProx(1);
-            maxi = hProx(end);
-        end
-        PDAMeta.Plots.Data_Single.YData(1) = mini;
-        PDAMeta.Plots.Data_Single.YData(end) = maxi;
-        set(h.SingleTab.Main_Axes, 'XLim', lims)
-        set(h.SingleTab.Res_Axes, 'XLim', lims)
-        
-        % residuals
-        PDAMeta.Plots.Res_Single = copyobj(PDAMeta.Plots.Res_All{i}, h.SingleTab.Res_Axes);
-        set(PDAMeta.Plots.Res_Single,...
-            'LineWidth',2,...
-            'Color','k') %only define those properties that are different to the all tab
-        PDAMeta.Plots.Res_Single.XData = xProx;
-        
-        % fit
-        for j = 2:6
-            PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
-            PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];%only define those properties that are different to the all tab
-            PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
-        end
-        % summed fit
-        PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
-        PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
-        PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
-        % bsd
-        PDAMeta.Plots.BSD_Single = copyobj(PDAMeta.Plots.BSD_All{i}, h.SingleTab.BSD_Axes);
-        PDAMeta.Plots.BSD_Single.Color = 'k';%only define those properties that are different to the all tab
-        % gaussians
-        for j = 1:6
-            PDAMeta.Plots.Gauss_Single{1,j} = copyobj(PDAMeta.Plots.Gauss_All{i,j}, h.SingleTab.Gauss_Axes);
-            PDAMeta.Plots.Gauss_Single{1,j}.Color = [0.4 0.4 0.4]; %only define those properties that are different to the all tab
-        end
-        PDAMeta.Plots.Gauss_Single{1,1}.Color = 'k';
     case 4
-        %% change active checkbox
+        %% change active checkbox 
+        PDAMeta.PreparationDone = 0; %recalculate histogram
         for i = 1:numel(PDAData.FileName)
             if cell2mat(h.FitTab.Table.Data(i,1))
+                %active
                 tex = 'on';
             else
                 tex = 'off';
@@ -1284,18 +1290,18 @@ switch mode
                 
             end
             % Update the 'Single' tab plots
-            if i == h.SingleTab.Popup.Value
-                PDAMeta.Plots.Data_Single.Visible = tex;
+            if isempty(Active)
+                PDAMeta.Plots.Data_Single.Visible = 'off';
                 if sum(PDAMeta.Plots.Res_Single.YData) ~= 0
                     % data has been fitted before
-                    PDAMeta.Plots.Res_Single.Visible = tex;
+                    PDAMeta.Plots.Res_Single.Visible = 'off';
                 end
-                PDAMeta.Plots.BSD_Single.Visible = tex;
+                PDAMeta.Plots.BSD_Single.Visible = 'off';
                 for j = 1:6
                     if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
                         % data has been fitted before and component exists
-                        PDAMeta.Plots.Fit_Single{1,j}.Visible = tex;
-                        PDAMeta.Plots.Gauss_Single{1,j}.Visible = tex;
+                        PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
+                        PDAMeta.Plots.Gauss_Single{1,j}.Visible = 'off';
                     end
                 end
             end
@@ -1303,7 +1309,7 @@ switch mode
     case 1
         %% Update plots post fitting
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
-        for i = find(PDAMeta.Active)'
+        for i = Active
             fitpar = FitTable(i,2:3:end-1);
             %%% Calculate Gaussian Distance Distributions
             for c = PDAMeta.Comp{i}
@@ -1353,7 +1359,7 @@ switch mode
             end
             
             %%% Update Single Plot
-            if i == h.SingleTab.Popup.Value
+            if i == Active(h.SingleTab.Popup.Value)
                 set(PDAMeta.Plots.Fit_Single{1,1},...
                     'Visible', 'on',...
                     'YData', ydatafit);
@@ -1394,7 +1400,7 @@ switch mode
         FitTable = FitTable(1:end-3,2:3:end-1);
         % get all active files and components
         Mini = []; Maxi = [];
-        for i = find(PDAMeta.Active)'
+        for i = Active
             for c = PDAMeta.Comp{i}
                 Mini = [Mini FitTable(i,3*c-1)-3*FitTable(i,3*c)];
                 Maxi = [Maxi FitTable(i,3*c-1)+3*FitTable(i,3*c)];
@@ -1431,7 +1437,7 @@ switch mode
         set(PDAMeta.Plots.Fit_All{i,1},...
             'Visible', 'on',...
             'YData', ydatafit);
-        if i == h.SingleTab.Popup.Value
+        if i == Active(h.SingleTab.Popup.Value)
             set(PDAMeta.Plots.Res_Single,...
                 'Visible', 'on',...
                 'YData', ydatares);
@@ -1458,8 +1464,7 @@ function Start_PDA_Fit(obj,~)
 global PDAData PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 %%% disable Fit Menu and Fit parameters table
-%h.Menu.Fit.Enable = 'off';
-%h.FitTab.Table.Enable='off';
+h.FitTab.Table.Enable='off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
 
@@ -1503,6 +1508,8 @@ end
 Nobins = str2double(h.SettingsTab.NumberOfBins_Edit.String);
 NobinsE = str2double(h.SettingsTab.NumberOfBinsE_Edit.String);
 
+% Store active globally at this point. Do not access it globally from
+% anywhere else to avoid confusion!
 PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 
 %%% Read fit settings and store in UserValues
@@ -1575,6 +1582,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
                 % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
+                pause(0.2)
                 PNF = binopdf(NF, N, eps);
             end
             % histogram NF+NG into maxN+1 bins
@@ -1964,7 +1972,7 @@ Progress(1, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Done');
 Progress(1, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Done');
 Update_Plots([],[],1)
 %%% re-enable Fit Menu
-h.Menu.Fit.Enable = 'on';
+h.FitTab.Table.Enable='on';
 PDAMeta.FitInProgress = 0;
 
 % File menu - stop fitting
@@ -1972,7 +1980,7 @@ function Stop_PDA_Fit(~,~)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 PDAMeta.FitInProgress = 0;
-h.FitTab.Table.Enable = 'on';
+h.FitTab.Table.Enable='on';
 
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar)
@@ -2071,7 +2079,9 @@ P=zeros(numel(Global),1);
 P(Global)=fitpar(1:sum(Global));
 fitpar(1:sum(Global))=[];
     
-for i=find(PDAMeta.Active)'
+for j=1:sum(PDAMeta.Active)
+    Active = find(PDAMeta.Active)';
+    i = Active(j);
     PDAMeta.file = i;
     %%% Sets non-fixed parameters
     P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
@@ -2113,7 +2123,7 @@ for i=find(PDAMeta.Active)'
         PDAMeta.w_res{i}(1) = 0;
         PDAMeta.w_res{i}(end) = 0;
     end
-    if i == h.SingleTab.Popup.Value
+    if j == h.SingleTab.Popup.Value
         set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
     end
     for c = PDAMeta.Comp{i};
@@ -2492,41 +2502,71 @@ Progress(1/mean_chi2, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting His
 Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
 
-% Function to export the figures
+% Function to export the figures, figure data, and table data
 function Export_Figure(~,~)
 global PDAData UserValues PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
-% use uiputfile to generate a folder name in a specified location
-% [File, Path] = uiputfile({'*.*', 'Folder name'},...
-%     'Specify directory name',...
-%     fullfile(UserValues.File.BurstBrowserPath, [datestr(now,'yymmdd') ' GlobalPDAFit']));
 Path = uigetdir(fullfile(UserValues.File.BurstBrowserPath),...
     'Specify directory name');
-Path = GenerateName(fullfile(Path, [datestr(now,'yymmdd') ' GlobalPDAFit']),2);
 
 if Path == 0
     return
 else
-    clear File
-    for i = 1:(numel(PDAData.FileName)+1)
+    Path = GenerateName(fullfile(Path, [datestr(now,'yymmdd') ' GlobalPDAFit']),2);
+    % All tab
+    fig = figure('Position',[100 ,100 ,900, 425],...
+        'Color',[1 1 1],...
+        'Resize','off');
+    main_ax = copyobj(h.AllTab.Main_Axes,fig);
+    res_ax = copyobj(h.AllTab.Res_Axes,fig);
+    gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
+    main_ax.Children(end).Position = [1.35,1.09];
+    main_ax.Color = [1 1 1];
+    res_ax.Color = [1 1 1];
+    main_ax.XColor = [0 0 0];
+    main_ax.YColor = [0 0 0];
+    res_ax.XColor = [0 0 0];
+    res_ax.YColor = [0 0 0];
+    main_ax.XLabel.Color = [0 0 0];
+    main_ax.YLabel.Color = [0 0 0];
+    res_ax.XLabel.Color = [0 0 0];
+    res_ax.YLabel.Color = [0 0 0];
+    main_ax.Units = 'pixel';
+    res_ax.Units = 'pixel';
+    main_ax.Position = [75 70 475 290];
+    res_ax.Position = [75 360 475 50];
+    main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
+    main_ax.YTick(end) = [];
+    gauss_ax.Color = [1 1 1];
+    gauss_ax.XColor = [0 0 0];
+    gauss_ax.YColor = [0 0 0];
+    gauss_ax.XLabel.Color = [0 0 0];
+    gauss_ax.YLabel.Color = [0 0 0];
+    gauss_ax.Units = 'pixel';
+    gauss_ax.Position = [650 70 225 290];
+    gauss_ax.GridAlpha = 0.1;
+    res_ax.GridAlpha = 0.1;
+    gauss_ax.FontSize = 15;
+    main_ax.Children(end).Units = 'pixel';
+    
+    set(fig,'PaperPositionMode','auto');
+    print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
+    close(fig)
+    
+    % Active files
+    Active = find(cell2mat(h.FitTab.Table.Data(1:end-3,1)))';
+    
+    for i = 1:numel(Active)
         fig = figure('Position',[100 ,100 ,900, 425],...
             'Color',[1 1 1],...
             'Resize','off');
-        if i == 1 %generate figure for All Tab
-            main_ax = copyobj(h.AllTab.Main_Axes,fig);
-            res_ax = copyobj(h.AllTab.Res_Axes,fig);
-            gauss_ax = copyobj(h.AllTab.Gauss_Axes,fig);
-        else %generate figure per Single Tab plot
-            h.SingleTab.Popup.Value = i-1;
-            Update_Plots([],[],2)
-            main_ax = copyobj(h.SingleTab.Main_Axes,fig);
-            res_ax = copyobj(h.SingleTab.Res_Axes,fig);
-            gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
-        end 
+        h.SingleTab.Popup.Value = i;
+        Update_Plots([],[],2)
+        main_ax = copyobj(h.SingleTab.Main_Axes,fig);
+        res_ax = copyobj(h.SingleTab.Res_Axes,fig);
+        gauss_ax = copyobj(h.SingleTab.Gauss_Axes,fig);
         main_ax.Children(end).Position = [1.35,1.09];
-        %main_ax.Children(end).String = main_ax.Children(1:end-1);
-        %main_ax.Children(end).String = ''; 
         main_ax.Color = [1 1 1];
         res_ax.Color = [1 1 1];
         main_ax.XColor = [0 0 0];
@@ -2543,7 +2583,6 @@ else
         res_ax.Position = [75 360 475 50];
         main_ax.YTickLabel = main_ax.YTickLabel(1:end-1);
         main_ax.YTick(end) = [];
-
         gauss_ax.Color = [1 1 1];
         gauss_ax.XColor = [0 0 0];
         gauss_ax.YColor = [0 0 0];
@@ -2556,55 +2595,51 @@ else
         gauss_ax.FontSize = 15;
         main_ax.Children(end).Units = 'pixel';
         set(fig,'PaperPositionMode','auto');
-        if i == 1
-            print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
-        else
-            print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{i-1}(1:end-4) '.tif']),1),'-painters')
-        end
+        print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.tif']),1),'-painters')
         close(fig)
     end
-
-% Function to export the figure and table data to a structure (for external use)
-datasize = size(PDAMeta.Plots.Gauss_All,1);
-
-tmp = struct;
-tmp.file = PDAData.FileName;
-tmp.path = PDAData.PathName;
-h = guidata(findobj('Tag','GlobalPDAFit'));
-tmp.fittable = h.FitTab.Table.Data;
-tmp.parameterstable = h.ParametersTab.Table.Data;
-
-gausx = size(PDAMeta.Plots.Gauss_All{1,1}.XData,2);
-tmp.gauss = [];
-tmp.gaussheader = cell(1,datasize*7);
-for i = 1:datasize
-    %x
-    tmp.gauss(1:gausx,7*i-6) = PDAMeta.Plots.Gauss_All{i,1}.XData;
-    for j = 1:6
-        %gauss
-        tmp.gauss(1:gausx,7*i-6+j) = PDAMeta.Plots.Gauss_All{i,j}.YData;
+    
+    % Function to export all figure and table data to a structure (for external use)
+    datasize = size(PDAMeta.Plots.Gauss_All,1);
+    tmp = struct;
+    tmp.file = PDAData.FileName;
+    tmp.path = PDAData.PathName;
+    tmp.active = Active;
+    h = guidata(findobj('Tag','GlobalPDAFit'));
+    tmp.fittable = h.FitTab.Table.Data;
+    tmp.parameterstable = h.ParametersTab.Table.Data;
+    
+    gausx = size(PDAMeta.Plots.Gauss_All{1,1}.XData,2);
+    tmp.gauss = [];
+    tmp.gaussheader = cell(1,datasize*7);
+    for i = 1:datasize
+        %x
+        tmp.gauss(1:gausx,7*i-6) = PDAMeta.Plots.Gauss_All{i,1}.XData;
+        for j = 1:6
+            %gauss
+            tmp.gauss(1:gausx,7*i-6+j) = PDAMeta.Plots.Gauss_All{i,j}.YData;
+        end
+        tmp.gaussheader(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
     end
-    tmp.gaussheader(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
-end
-
-datax = size(PDAMeta.Plots.Data_All{1,1}.XData,2);
-tmp.epr = [];
-tmp.eprheader = cell(1,datasize*9);
-for i = 1:datasize
-    %x axis
-    tmp.epr(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
-    % data
-    tmp.epr(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
-    % res
-    tmp.epr(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
-    for j = 1:6
-        %fit
-        tmp.epr(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
+    
+    datax = size(PDAMeta.Plots.Data_All{1,1}.XData,2);
+    tmp.epr = [];
+    tmp.eprheader = cell(1,datasize*9);
+    for i = 1:datasize
+        %x axis
+        tmp.epr(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
+        % data
+        tmp.epr(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
+        % res
+        tmp.epr(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
+        for j = 1:6
+            %fit
+            tmp.epr(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
+        end
+        tmp.eprheader(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
     end
-    tmp.eprheader(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
-end
-assignin('base','DataTableStruct',tmp);
-save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
+    assignin('base','DataTableStruct',tmp);
+    save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
 end
 
 % Update the Fit Tab
@@ -2731,6 +2766,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         % when user touches the all row, value is applied to all cells
         h.FitTab.Table.CellEditCallback=[];
+        pause(0.5) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
             if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-2) && e.Indices(2)~=1)
                 h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
@@ -2784,8 +2820,11 @@ switch mode
             end
         elseif e.Indices(2)==1
             %% Active was changed
-            PDAMeta.Active(e.Indices(1)) = NewData;
+            h.FitTab.Table.Enable='off';
+            pause(0.2)
             Update_Plots([],[],4)
+            Update_Plots([],[],2) % to display the correct one on the single tab
+            h.FitTab.Table.Enable='on';
         end
         %%% Mirror the table in PDAData.FitTable
         %PDAData.FitTable = h.FitTab.Table.Data(1:end-3,:);
@@ -3121,9 +3160,9 @@ switch mode
             h.PDADatabase.Save.Enable = 'off';
             SampleData
         else
-            Update_Plots([],[],3);
             Update_FitTable([],[],1);
             Update_ParamTable([],[],1);
+            Update_Plots([],[],3);
         end
     case 2 
         %% Load database
