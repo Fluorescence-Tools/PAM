@@ -2851,6 +2851,7 @@ if any(mode==8)
                             %%% Plot IRF in PIE Channel range
                             h.Plots.MI_Ind_IRF{i,j}.Visible = 'on';
                             h.Plots.MI_Ind_IRF{i,j}.XData = 1:numel(UserValues.PIE.IRF{k});
+                            h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
                              if isequal(h.Plots.MI_Ind_IRF{i,j}.YData,[0 0])
                                  % no IRF has been plotted yet on microtime plot (i,j)
                                  h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
