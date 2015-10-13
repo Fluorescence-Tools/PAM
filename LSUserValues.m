@@ -580,6 +580,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.TauFit.IRFLength was incomplete');    
     end
     P.BurstSearch.TauFit.IRFLength = S.BurstSearch.TauFit.IRFLength;
+    %%% Checks, if BurstSearch.TauFit.IRFrelShift subfield exists
+    if ~isfield (S.BurstSearch.TauFit,'IRFrelShift')
+        S.BurstSearch.TauFit.IRFrelShift={0,0,0};
+        disp('UserValues.BurstSearch.TauFit.IRFrelShift was incomplete');    
+    end
+    P.BurstSearch.TauFit.IRFrelShift = S.BurstSearch.TauFit.IRFrelShift;
+    
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
