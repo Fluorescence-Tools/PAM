@@ -3818,7 +3818,7 @@ switch numel(fieldnames(dummy))
         end
         H = vertcat(H{:});
         figure('Color',[1 1 1],'Position',[100 100 600 450]);
-        contourf(xE(1:end),1:1:size(H,1)1,H);
+        contourf(xE(1:end),1:1:size(H,1),H);
         colormap(jet);
         ax = gca;
         ax.Color = [1 1 1];
