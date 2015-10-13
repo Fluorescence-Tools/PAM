@@ -3818,7 +3818,7 @@ switch numel(fieldnames(dummy))
         end
         H = vertcat(H{:});
         figure('Color',[1 1 1],'Position',[100 100 600 450]);
-        contourf(xE(1:end),0.5:size(H,1)-0.5,H);
+        contourf(xE(1:end),1:1:size(H,1)1,H);
         colormap(jet);
         ax = gca;
         ax.Color = [1 1 1];
@@ -3878,6 +3878,39 @@ switch numel(fieldnames(dummy))
             ylabel('probability density');
             legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
             legend(legend_entries,'fontsize',14);
+        end
+        
+        %%% waterfall or image/contour plot
+        %%% constuct time series histogram
+        for i = 1:numel(EGR);
+            HGR{i} = [HGR{i} HGR{i}(end)];
+            HBG{i} = [HBG{i} HBG{i}(end)];
+            HBR{i} = [HBR{i} HBR{i}(end)];
+        end
+        HGR = vertcat(HGR{:});
+        HBG = vertcat(HBG{:});
+        HBR = vertcat(HBR{:});
+        H_all = {HGR,HBG,HBR};
+        xE = linspace(-0.1,1,56);
+        for j = 1:3
+            if j == 3
+                xE = xEBR;
+            end
+            H = H_all{j};
+            figure('Color',[1 1 1],'Position',[100+600*(j-1) 500 600 400]);
+            contourf(xE(1:end),1:1:size(H,1),H);
+            colormap(jet);
+            ax = gca;
+            ax.Color = [1 1 1];
+            ax.FontSize = 20;
+            ax.LineWidth = 2;
+            ax.Layer = 'top';
+            ax.XLim = [0,1];
+            ax.Units = 'normalized';
+            ax.Position(3) = 0.6;
+            xlabel(xlb{j});
+            ylabel('File Number');
+            text(1.02,ax.YLim(2),legend_entries);
         end
 end
 
