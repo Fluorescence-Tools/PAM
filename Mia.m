@@ -2881,11 +2881,16 @@ switch mode
         h.Plots.NB(5).CData=zeros(1,1);                 
         %% Extracts data from Pam for channel 1
         %%% Automatically updates image properties
+        UserValues.File.MIAPath = FileInfo.Path;
+        LSUserValues(1);
+        MIAData.Type = mode;
+        MIAData.FileName{1} = FileInfo.FileName;
         h.Mia_Image.Settings.Image_Frame.String = num2str(FileInfo.ImageTime);
         h.Mia_Image.Settings.Image_Line.String = num2str(FileInfo.ImageTime./FileInfo.Lines*1000);
         h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines*1000)};
         h.Mia_Image.Settings.Image_Pixel.String = num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000);
         h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000)};
+        
         if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
             h.Mia_Image.Settings.Image_Size.String = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
             h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000)};
@@ -2910,8 +2915,10 @@ switch mode
         end
         
         %%% Calculates pixel times for each line and file
-        Pixeltimes=zeros(FileInfo(1).Lines^2,FileInfo(1).NumberOfFiles);
-        for j=1:FileInfo.NumberOfFiles
+        %%Pixeltimes=zeros(FileInfo(1).Lines^2,FileInfo(1).NumberOfFiles);
+        NoF = floor(FileInfo(1).MeasurementTime/FileInfo(1).ImageTime);
+        Pixeltimes=zeros(FileInfo(1).Lines^2,NoF);
+        for j=1:NoF
             for k=1:FileInfo.Lines
                 Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
                 Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
@@ -2925,7 +2932,7 @@ switch mode
             Stack = zeros(size(Stack,1),1);
         end
         %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-        MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+        MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
         clear Stack;        
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -2966,6 +2973,7 @@ switch mode
             return;
         end
         %% Extracts data from Pam for channel 2
+        MIAData.FileName{2} = FileInfo.FileName;
         Sel = h.Mia_Image.Settings.Channel_PIE(2).Value;
         %%% Gets the photons
         if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
@@ -2982,8 +2990,8 @@ switch mode
         end
         
         %%% Calculates pixel times for each line and file
-        Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-        for j=1:FileInfo.NumberOfFiles
+        Pixeltimes=zeros(FileInfo.Lines^2,NoF);
+        for j=1:NoF
             for k=1:FileInfo.Lines
                 Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
                 Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
@@ -2998,7 +3006,7 @@ switch mode
         end
         
         %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-        MIAData.Data{2,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
+        MIAData.Data{2,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
         clear Stack; 
         %% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
@@ -4770,7 +4778,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %% Creates new filename
             %%% Removes file extension
             switch MIAData.Type
-                case 1
+                case {1,2}
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
             %%% Generates filename
@@ -4812,7 +4820,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %% Creates new filename
             %%% Removes file extension
             switch MIAData.Type
-                case 1
+                case {1,2}
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
             %%% Generates filename
@@ -5193,7 +5201,6 @@ if size(MIAData.Data,1)<1
     return;
 end
 
-%%% Clears correlation data and plots
 if size(MIAData.Data,1)<2
     h.Mia_Image.Calculations.Cor_Type.Value=1;
 end
@@ -5252,7 +5259,9 @@ end
 MaxLag = str2double(h.Mia_Image.Calculations.Cor_STICS_Frames.String);
 h.Mia_STICS.Lag_Slider.Max = MaxLag;
 h.Mia_STICS.Lag_Slider.SliderStep = [1/MaxLag 1/MaxLag];
-%%% Performs stapio temporal correlation
+
+
+%% Performs stapio temporal correlation
 for i = 1:3
     if any(Auto==i) || (i==3 && Cross)
         TotalInt = zeros(numel(Frames));
@@ -5335,10 +5344,9 @@ for i = 1:3
         %%% Removes noise peak at G(0, 0, 0)
         MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2),1) =...
             (MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2)-1,1)+...
-             MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2)+1,1))/2;         
-        
-        
-    end
+             MIAData.STICS{i}(ceil((size(MIAData.STICS{i},1)+1)/2),ceil((size(MIAData.STICS{i},2)+1)/2)+1,1))/2;
+        MIAData.STICS{i}(isnan(MIAData.STICS{i})) = 0;
+    end  
 end
 clear Image ImageFluct ImageCor;
 
@@ -5368,7 +5376,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [2 4])
     %% Creates new filename
     %%% Removes file extension
     switch MIAData.Type
-        case 1
+        case {1,2}
             FileName = MIAData.FileName{1}{1}(1:end-4);
     end
     %%% Generates filename
@@ -5514,7 +5522,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
     %% Creates new filename
     %%% Removes file extension
     switch MIAData.Type
-        case 1
+        case {1,2}
             FileName = MIAData.FileName{1}{1}(1:end-4);
     end
     %%% Generates filename

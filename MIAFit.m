@@ -1327,7 +1327,7 @@ switch mode
                             'CData',Data2);
                         H.Axes{i,j}.XLim = [x(1) x(end)];
                         H.Axes{i,j}.YLim = [y(1) x(end)]; 
-                        H.Axes{i,j}.View = [45 25];
+                        H.Axes{i,j}.View = [135 35]; %[45 25];
                         ZScale = max(max(Data)) - min(min(Data));
                         H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001]; 
                         H.Axes{i,j}.XLabel.String = '{\it\xi{}}';    
@@ -1612,13 +1612,14 @@ for i=1:size(MIAFitMeta.Plots,1)
             Data = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))./B;
             Data = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
             Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+            Data(isnan(Data))=1;
             Data = Color(Data(:),:);
             Data = reshape(Data,[size(x,1),size(x,2),3]);
             h.Plots.Main.CData = Data;
             %%% Rescales plot
-            Range = [min(min(h.Plots.Main.ZData)), max(max(h.Plots.Main.ZData))];
-            h.Full_Main_Axes.XLim = [min(min(x)) max(max(x))];
-            h.Full_Main_Axes.YLim = [min(min(y)) max(max(y))];
+            Range = [min(min(h.Plots.Main.ZData)), max(max(h.Plots.Main.ZData))+1e-30];
+            h.Full_Main_Axes.XLim = [min(min(x)) max(max(x))+1e-30];
+            h.Full_Main_Axes.YLim = [min(min(y)) max(max(y))+1e-30];
             h.Full_Main_Axes.ZLim = [Range(1)-0.1*diff(Range), Range(2)+0.1*diff(Range)];
             h.Full_Main_Axes.DataAspectRatio = [1 1 1.5*diff(Range)/max(size(x))];            
             %% Plots fit 2D plot surface

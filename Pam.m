@@ -2032,10 +2032,12 @@ end
     %%% Changes the size of the ROW names
     drawnow
     Export_PIE = findjobj(h.Export.PIE);
-    Names = Export_PIE.getComponent(4);
-    Names.setPreferredSize(java.awt.Dimension(175,100));
-    Names = Names.getComponent(0);
-    Names.setSize(175,100);
+    if ~isempty(Export_PIE)
+        Names = Export_PIE.getComponent(4);
+        Names.setPreferredSize(java.awt.Dimension(175,100));
+        Names = Names.getComponent(0);
+        Names.setSize(175,100);
+    end
     
     h.Export.Text = {};
     h.Export.Text{end+1} = uicontrol(...

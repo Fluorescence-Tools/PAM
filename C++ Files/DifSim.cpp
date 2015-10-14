@@ -122,7 +122,7 @@ void Simulate_Diffusion(
                     Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
                     
                     /// Only calculates transition probability, if it is <100%
-                    if ((Map[New_Index] - Map[Old_Index])==0) { prob = 0; }
+                    if ((Map[New_Index] - Map[Old_Index])==0) { prob = 1; }
                     else { prob = equal_dist(mt); }
                     /// Checks, if particle crosses barrier
                     if  (prob >= abs(Map[New_Index] - Map[Old_Index])) /// Map difference as reflection probability

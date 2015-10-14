@@ -1851,7 +1851,6 @@ for i = 1:numel(SimData.Species);
                 SimData.Map{1} = double(SimData.Map{1});
                 if size(SimData.Map{1},1)<BS(1) || size(SimData.Map{1},2)<BS(2)
                     Map_Type = 1;
-                    break;
                 else
                     if size(SimData.Map{1},1)>BS(1)
                         SimData.Map{1} = SimData.Map{1}(1:BS(1),:);
