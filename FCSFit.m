@@ -1497,8 +1497,10 @@ switch mode
         [~,ModelName,~] = fileparts(FCSMeta.Model.Name);
         Params = vertcat({ModelName;'Chi2'},FCSMeta.Model.Params);
         if h.Conf_Interval.Value
-            for i = 1:numel(FCSData.FileName)
-                FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+            if isfield(FCSMeta,'Confidence_Intervals')
+                for i = 1:numel(FCSData.FileName)
+                    FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                end
             end
         end
         FitResult = horzcat(Params,horzcat(FitResult{:}));
