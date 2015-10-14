@@ -1498,7 +1498,7 @@ switch mode
         Params = vertcat({ModelName;'Chi2'},FCSMeta.Model.Params);
         if h.Conf_Interval.Value
             for i = 1:numel(FCSData.FileName)
-                FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}; 0,0; 0,0])));
+                FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
             end
         end
         FitResult = horzcat(Params,horzcat(FitResult{:}));
@@ -1573,7 +1573,10 @@ if sum(Global)==0
             [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
             %%% calculate confidence intervals
             if h.Conf_Interval.Value
-                FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+                ConfInt = zeros(size(FCSMeta.Params,1),2);
+                ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+                FCSMeta.Confidence_Intervals{i} = ConfInt;
+                %FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
             end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
@@ -1618,7 +1621,16 @@ else
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
     %%% calculate confidence intervals
     if h.Conf_Interval.Value
-        FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+        ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+        GlobConfInt = ConfInt(1:sum(Global),:);
+        ConfInt(1:sum(Global),:) = [];
+        for i = find(Active)'
+            FCSMeta.Confidence_Intervals{i} = zeros(size(FCSMeta.Params,1),2);
+            FCSMeta.Confidence_Intervals{i}(Global,:) = GlobConfInt;
+            FCSMeta.Confidence_Intervals{i}(~Fixed(i,:) & ~Global,:) = ConfInt(1:sum(~Fixed(i,:) & ~Global),:);
+            ConfInt(1:sum(~Fixed(i,:)& ~Global),:)=[]; 
+        end
+        %FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
     end
     %%% Updates parameters
     FCSMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(FCSMeta.Params,2)]) ;
