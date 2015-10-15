@@ -1210,15 +1210,16 @@ h = guidata(findobj('Tag','TauFitBurst'));
 
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
+%% Store Shift Values in BurstData structure
+BurstData.TauFit.StartPar = TauFitBurstData.StartPar;
+BurstData.TauFit.ShiftPer = TauFitBurstData.ShiftPer;
+BurstData.TauFit.Length = TauFitBurstData.Length;
+BurstData.TauFit.IRFLength = TauFitBurstData.IRFLength;
+BurstData.TauFit.IRFShift = TauFitBurstData.IRFShift;
+BurstData.TauFit.IRFrelShift = TauFitBurstData.IRFrelShift;
 switch TauFitBurstData.BAMethod
 case {1,2} 
 %% 2 color MFD
-    %% Store Shift Values in BurstData structure
-    BurstData.TauFit.StartPar = TauFitBurstData.StartPar;
-    BurstData.TauFit.ShiftPer = TauFitBurstData.ShiftPer;
-    BurstData.TauFit.Length = TauFitBurstData.Length;
-    BurstData.TauFit.IRFLength = TauFitBurstData.IRFLength;
-    BurstData.TauFit.IRFShift = TauFitBurstData.IRFShift;
     %% Read out corrections
     G{1} = UserValues.TauFit.Ggreen;
     G{2} = UserValues.TauFit.Gred;
