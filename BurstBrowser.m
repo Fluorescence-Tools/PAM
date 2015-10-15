@@ -7988,7 +7988,7 @@ if any(BurstData.BAMethod == [3,4])
     idxE1A = strcmp('FRET Efficiency B->G+R',BurstData.NameArray);
     %% Plot E1A vs. tauBB
     valid = (datatoplot(:,idx_tauBB) > 0.01);
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [0 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [-0.05 1]);
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
