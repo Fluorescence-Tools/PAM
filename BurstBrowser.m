@@ -3421,6 +3421,23 @@ if FilterIndex == 2 % KBA file was loaded
     end
 end
 
+%%% Add corrected proximity ratios (== signal fractions) for three-colorMFD
+if any(BurstData.BAMethod == [3,4])
+    NameArray_dummy = cell(1,size(BurstData.NameArray,2)+4);
+    DataArray_dummy = zeros(size(BurstData.DataArray,1),size(BurstData.DataArray,2)+4);
+    %%% Insert corrected proximity ratios into namearray
+    NameArray_dummy(1:11) = BurstData.NameArray(1:11);
+    NameArray_dummy(12:15) = {'Proximity Ratio GR (raw)','Proximity Ratio BG (raw)','Proximity Ratio BR (raw)','Proximity Ratio B->G+R (raw)'};
+    NameArray_dummy(16:end) = BurstData.NameArray(12:end);
+    %%% duplicate proximity ratios into data array
+    DataArray_dummy(:,1:11) = BurstData.DataArray(:,1:11);
+    DataArray_dummy(:,12:15) = BurstData.DataArray(:,8:11);
+    DataArray_dummy(:,16:end) = BurstData.DataArray(:,12:end);
+    %%% replace arrays
+    BurstData.NameArray = NameArray_dummy;
+    BurstData.DataArray = DataArray_dummy;
+end
+
 try
     %%% Fix missing "FRET" in Efficiency naming (NameArray)
     if any(BurstData.BAMethod == [1,2])
@@ -5568,6 +5585,9 @@ if N_gauss == 1
         A = max(y_data);%set amplitude as max value
         m = sum(y_data.*x_data)./sum(y_data);%mean as center value
         s = sqrt(sum(y_data.*(x_data-m).^2)./sum(y_data));%std as sigma
+        if s == 0
+            s = 1;
+        end
         b=0;%assume zero background
         param = [A,m,s,b];
     end
@@ -7597,6 +7617,10 @@ if any(BurstData.BAMethod == [3,4])
     indEBR = strcmp(BurstData.NameArray,'FRET Efficiency BR');
     indSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
     indSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
+    indPrGR = strcmp(BurstData.NameArray,'Proximity Ratio GR');
+    indPrBG = strcmp(BurstData.NameArray,'Proximity Ratio BG');
+    indPrBR = strcmp(BurstData.NameArray,'Proximity Ratio BR');
+    indPrBtoGR = strcmp(BurstData.NameArray,'Proximity Ratio B->G+R');
     indNBB = strcmp(BurstData.NameArray,'Number of Photons (BB)');
     indNBG = strcmp(BurstData.NameArray,'Number of Photons (BG)');
     indNBR= strcmp(BurstData.NameArray,'Number of Photons (BR)');
@@ -7640,13 +7664,21 @@ if any(BurstData.BAMethod == [3,4])
         SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + gamma_gr.*NGG + NGR);
         SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR);
     end
+    %%% Recalculate proximity ratios
+    PrGR = EGR; % no change for GR
+    PrBG = gamma_gr.*NBG./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
+    PrBR = NBR./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
+    PrBtoGR = gamma_br.*NBB./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
     %%% Update Values in the DataArray
     BurstData.DataArray(:,indE1A) = E1A;
     BurstData.DataArray(:,indEBG) = EBG;
     BurstData.DataArray(:,indEBR) = EBR;
     BurstData.DataArray(:,indSBG) = SBG;
     BurstData.DataArray(:,indSBR) = SBR;
-    
+    BurstData.DataArray(:,indPrGR) = PrGR;
+    BurstData.DataArray(:,indPrBG) = PrBG;
+    BurstData.DataArray(:,indPrBR) = PrBR;
+    BurstData.DataArray(:,indPrBtoGR) = PrBtoGR;
     %% Anisotropy Correction of blue channel
     %%% Read out indices of parameters
     ind_rBB = strcmp(BurstData.NameArray,'Anisotropy BB');
@@ -8479,6 +8511,9 @@ if obj.Value == 1 %%% Checkbox was clicked on
     end
     x_axis = 0:0.05:10;
     htauRR = histc(BurstData.DataArray(valid,idx_tauRR),x_axis);
+    if size(htauRR,2) > size(htauRR,1)
+        htauRR = htauRR';
+    end
     [AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR,1);
     %%% Update GUI
     h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
