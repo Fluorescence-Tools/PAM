@@ -2347,9 +2347,9 @@ if isempty(hfig)
     h.TauFit.Microtime_Plot.XLim = [0 1];
     h.TauFit.Microtime_Plot.YLim = [0 1];
     h.TauFit.Microtime_Plot.XLabel.Color = Look.Fore;
-    h.TauFit.Microtime_Plot.XLabel.String = 'time [ns]';
+    h.TauFit.Microtime_Plot.XLabel.String = 'Time [ns]';
     h.TauFit.Microtime_Plot.YLabel.Color = Look.Fore;
-    h.TauFit.Microtime_Plot.YLabel.String = 'intensity [counts]';
+    h.TauFit.Microtime_Plot.YLabel.String = 'Intensity [Counts]';
     h.TauFit.Microtime_Plot.XGrid = 'on';
     h.TauFit.Microtime_Plot.YGrid = 'on';
     
@@ -3423,19 +3423,21 @@ end
 
 %%% Add corrected proximity ratios (== signal fractions) for three-colorMFD
 if any(BurstData.BAMethod == [3,4])
-    NameArray_dummy = cell(1,size(BurstData.NameArray,2)+4);
-    DataArray_dummy = zeros(size(BurstData.DataArray,1),size(BurstData.DataArray,2)+4);
-    %%% Insert corrected proximity ratios into namearray
-    NameArray_dummy(1:11) = BurstData.NameArray(1:11);
-    NameArray_dummy(12:15) = {'Proximity Ratio GR (raw)','Proximity Ratio BG (raw)','Proximity Ratio BR (raw)','Proximity Ratio B->G+R (raw)'};
-    NameArray_dummy(16:end) = BurstData.NameArray(12:end);
-    %%% duplicate proximity ratios into data array
-    DataArray_dummy(:,1:11) = BurstData.DataArray(:,1:11);
-    DataArray_dummy(:,12:15) = BurstData.DataArray(:,8:11);
-    DataArray_dummy(:,16:end) = BurstData.DataArray(:,12:end);
-    %%% replace arrays
-    BurstData.NameArray = NameArray_dummy;
-    BurstData.DataArray = DataArray_dummy;
+    if ~any(strcmp(BurstData.NameArray,'Proximity Ratio GR (raw)'))
+        NameArray_dummy = cell(1,size(BurstData.NameArray,2)+4);
+        DataArray_dummy = zeros(size(BurstData.DataArray,1),size(BurstData.DataArray,2)+4);
+        %%% Insert corrected proximity ratios into namearray
+        NameArray_dummy(1:11) = BurstData.NameArray(1:11);
+        NameArray_dummy(12:15) = {'Proximity Ratio GR (raw)','Proximity Ratio BG (raw)','Proximity Ratio BR (raw)','Proximity Ratio B->G+R (raw)'};
+        NameArray_dummy(16:end) = BurstData.NameArray(12:end);
+        %%% duplicate proximity ratios into data array
+        DataArray_dummy(:,1:11) = BurstData.DataArray(:,1:11);
+        DataArray_dummy(:,12:15) = BurstData.DataArray(:,8:11);
+        DataArray_dummy(:,16:end) = BurstData.DataArray(:,12:end);
+        %%% replace arrays
+        BurstData.NameArray = NameArray_dummy;
+        BurstData.DataArray = DataArray_dummy;
+    end
 end
 
 try
@@ -7070,6 +7072,7 @@ switch obj
         BurstMeta.Plots.TauFit.FitResult.XData = (1:numel(Decay))*TACtoTime;
         BurstMeta.Plots.TauFit.FitResult.YData = FitFun;
         axis(h.TauFit.Result_Plot,'tight');
+        h.TauFit.Result_Plot.YLabel.String = 'Intensity [Counts]';
         % plot chi^2 on graph
         h.TauFit.Result_Plot_Text.Visible = 'on';
         h.TauFit.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
@@ -7130,6 +7133,7 @@ switch obj
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(x));
         
         h.TauFit.Result_Plot.XLim(1) = 0;
+        h.TauFit.Result_Plot.YLabel.String = 'Anisotropy';
 end
 function a = interlace( a, x, fix )
 a(~fix) = x;
