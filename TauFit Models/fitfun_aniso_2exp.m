@@ -17,9 +17,8 @@ for i = 1:2
     irf = irf-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
-    s = [];
-    s = circshift(ScatterPattern{i},[c, 0]);
-    Scatter{i} = s( (ShiftParams(1)+1):ShiftParams(3) );
+    %s = circshift(ScatterPattern{i},[c, 0]);
+    Scatter{i} = ScatterPattern{i}( (ShiftParams(1)+1):ShiftParams(3) );
 end
 n = length(IRF{1});
 %t = 1:n;

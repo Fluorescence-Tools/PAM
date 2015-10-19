@@ -25,8 +25,8 @@ irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = Scatter( (ShiftParams(1)+1):ShiftParams(3) );
+%Scatter = circshift(ScatterPattern,[c, 0]);
+Scatter = ScatterPattern( (ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
 %t = 1:n;

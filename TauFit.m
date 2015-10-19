@@ -648,13 +648,13 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.FitPar_Table.RowName = h.Parameters{1};
     %%% Initial Data - Store the StartValues as well as LB and UB
     h.StartPar = cell(numel(h.FitMethods),1);
-    h.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
-    h.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{1} = {2,0,Inf,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,true;0,0,1,true;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,true;0,0,1,true;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,0,0.4,false;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,0,0.4,false;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,0,true};
     h.FitPar_Table.Data = h.StartPar{1};
     
     %%% Edit Boxes for Correction Factors
@@ -886,6 +886,8 @@ if isempty(obj) || obj == h.LoadData_Button
     h.Plots.Decay_Per.XData = TauFitData.XData_Per*TACtoTime;
     h.Plots.IRF_Par.XData = TauFitData.XData_Par*TACtoTime;
     h.Plots.IRF_Per.XData = TauFitData.XData_Per*TACtoTime;
+    h.Plots.Scatter_Par.XData = TauFitData.XData_Par*TACtoTime;
+    h.Plots.Scatter_Per.XData = TauFitData.XData_Per*TACtoTime;
     h.Plots.Decay_Par.YData = TauFitData.hMI_Par;
     h.Plots.Decay_Per.YData = TauFitData.hMI_Per;
     h.Plots.IRF_Par.YData = TauFitData.hIRF_Par;
@@ -1056,13 +1058,14 @@ h.Plots.IRF_Par.YData = hIRF_Par_Shifted((TauFitData.StartPar+1):TauFitData.IRFL
 h.Plots.IRF_Per.XData = ((TauFitData.StartPar:(TauFitData.IRFLength-1)) - TauFitData.StartPar)*TACtoTime;
 hIRF_Per_Shifted = circshift(TauFitData.hIRF_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer+TauFitData.IRFrelShift])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitData.StartPar+1):TauFitData.IRFLength);
-%%% Scatter Pattern
+%%% Scatter Pattern (only shift perp, don't apply IRF shift)
 h.Plots.Scatter_Par.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
-hScatter_Par_Shifted = circshift(TauFitData.hScat_Par,[0,TauFitData.IRFShift])';
-h.Plots.Scatter_Par.YData = hScatter_Par_Shifted((TauFitData.StartPar+1):TauFitData.Length);
+h.Plots.Scatter_Par.YData = TauFitData.hScat_Par((TauFitData.StartPar+1):TauFitData.Length)';
+
 h.Plots.Scatter_Per.XData = ((TauFitData.StartPar:(TauFitData.Length-1)) - TauFitData.StartPar)*TACtoTime;
-hScatter_Per_Shifted = circshift(TauFitData.hScat_Per,[0,TauFitData.IRFShift+TauFitData.ShiftPer+TauFitData.IRFrelShift])';
+hScatter_Per_Shifted = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer+TauFitData.IRFrelShift])';
 h.Plots.Scatter_Per.YData = hScatter_Per_Shifted((TauFitData.StartPar+1):TauFitData.Length);
+
 
 axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 %%% Update Ignore Plot
@@ -1141,7 +1144,7 @@ Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 %%% Read out the shifted scatter pattern
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
-ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer+TauFitData.IRFrelShift]);
+ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer]);
 ScatterPattern = TauFitData.hScat_Par(1:TauFitData.Length) +...
     2*ScatterPer(1:TauFitData.Length);
 ScatterPattern = ScatterPattern'./sum(ScatterPattern);

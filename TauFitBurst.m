@@ -70,6 +70,8 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
     
     %%% Create Graphs
     hold on;
+    h.Plots.Scatter_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5]);
+    h.Plots.Scatter_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3]);
     h.Plots.Decay_Sum = plot([0 1],[0 0],'--k');
     h.Plots.Decay_Par = plot([0 1],[0 0],'--g');
     h.Plots.Decay_Per = plot([0 1],[0 0],'--r');
@@ -454,6 +456,20 @@ if isempty(h.TauFitBurst) % Creates new figure, if none exists
         'String','Pre-Fit',...
         'ToolTipString','Pre-Fit to determine Background Contributions',...
         'Callback',@Pre_Fit); 
+    
+    %%% checkbox for background estimate inclusion
+    h.BackgroundInclusion_checkbox = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','checkbox',...
+        'Tag','PreFit_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.2 0.5 0.8 0.2],...
+        'String','Use background estimation',...
+        'ToolTipString','Includes a static scatter contribution into the fit. The contribution is estimated from background countrate and burst duration.',...
+        'Value',1,...
+        'Callback',[]); 
     %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for progressbar
     h.Progress_Panel = uibuttongroup(...
@@ -886,10 +902,16 @@ if obj == h.ChannelSelect_Popupmenu
     h.Plots.Decay_Per.XData = TauFitBurstData.XData_Per{chan};
     h.Plots.IRF_Par.XData = TauFitBurstData.XData_Par{chan};
     h.Plots.IRF_Per.XData = TauFitBurstData.XData_Per{chan};
+    h.Plots.Scatter_Par.XData = TauFitBurstData.XData_Par{chan};
+    h.Plots.Scatter_Per.XData = TauFitBurstData.XData_Per{chan};
     h.Plots.Decay_Par.YData = TauFitBurstData.hMI_Par{chan};
     h.Plots.Decay_Per.YData = TauFitBurstData.hMI_Per{chan};
     h.Plots.IRF_Par.YData = TauFitBurstData.hIRF_Par{chan};
     h.Plots.IRF_Per.YData = TauFitBurstData.hIRF_Per{chan};
+    TauFitBurstData.hScatter_Par{chan} = TauFitBurstData.hScatter_Par{chan}./max(TauFitBurstData.hScatter_Par{chan})*max(TauFitBurstData.hMI_Par{chan});
+    TauFitBurstData.hScatter_Per{chan} = TauFitBurstData.hScatter_Per{chan}./max(TauFitBurstData.hScatter_Per{chan})*max(TauFitBurstData.hMI_Per{chan});
+    h.Plots.Scatter_Par.YData = TauFitBurstData.hScatter_Par{chan};
+    h.Plots.Scatter_Per.YData = TauFitBurstData.hScatter_Per{chan};
     h.Microtime_Plot.XLim = [min([TauFitBurstData.XData_Par{chan} TauFitBurstData.XData_Per{chan}]) max([TauFitBurstData.XData_Par{chan} TauFitBurstData.XData_Per{chan}])];
     h.Microtime_Plot.YLimMode = 'auto';
     
@@ -1049,6 +1071,14 @@ h.Plots.IRF_Per.XData = (TauFitBurstData.StartPar{chan}:(TauFitBurstData.IRFLeng
 hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
 h.Plots.IRF_Per.YData = hIRF_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
 
+%%% Scatter Pattern (only shift perp and rel., don't apply IRF shift)
+h.Plots.Scatter_Par.XData = (TauFitBurstData.StartPar{chan}:(TauFitBurstData.Length{chan}-1)) - TauFitBurstData.StartPar{chan};
+h.Plots.Scatter_Par.YData = TauFitBurstData.hScatter_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+
+h.Plots.Scatter_Per.XData = (TauFitBurstData.StartPar{chan}:(TauFitBurstData.Length{chan}-1)) - TauFitBurstData.StartPar{chan};
+hScatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
+h.Plots.Scatter_Per.YData = hScatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan});
+
 axis('tight');
 
 function ChangeYScale(obj,~)
@@ -1120,11 +1150,14 @@ TauFitBurstData.FitData.Decay_Par{chan} = h.Plots.Decay_Par.YData;
 TauFitBurstData.FitData.Decay_Per{chan} = h.Plots.Decay_Per.YData;
 TauFitBurstData.FitData.IRF_Par{chan} = h.Plots.IRF_Par.YData;
 TauFitBurstData.FitData.IRF_Per{chan} = h.Plots.IRF_Per.YData;
-%%% Read out the shifted scatter pattern
-Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
-TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
+%%% Read out the (shifted) scatter pattern
+%Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+%TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+TauFitBurstData.FitData.Scatter_Par{chan} = TauFitBurstData.hScatter_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan});
+%Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
+Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
 TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+
 %%% initialize inputs for fit
 Decay = G{chan}*(1-3*l2)*TauFitBurstData.FitData.Decay_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.Decay_Per{chan};
 Irf = TauFitBurstData.FitData.IRF_Par{chan}+2*TauFitBurstData.FitData.IRF_Per{chan};
@@ -1144,11 +1177,11 @@ switch h.PrefitModel_Popupmenu.Value
         %%% taus    - Lifetimes
         x0 = [0.1,0.1,round(4/TauFitBurstData.TAC_Bin)];
         lb = [0,0,0];
-        ub = [0.1,0.1,Inf];
+        ub = [1E-3,1E-3,Inf];
     case 2 % Biexponential
         x0 = [0.1,0.1,round(4/TauFitBurstData.TAC_Bin),round(4/TauFitBurstData.TAC_Bin),0.5];
         lb = [0,0,0,0,0];
-        ub = [0.1,0.1,Inf,Inf,1];
+        ub = [1E-3,1E-3,Inf,Inf,1];
 end
 
 %%% fit for different IRF offsets and compare the results
@@ -1240,14 +1273,16 @@ case {1,2}
     %% Prepare the data
     for chan = 1:2
         %%% Read out the shifted scatter pattern
-        Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
-        TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} +TauFitBurstData.IRFrelShift{chan}])';
+        %Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+        %TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+        TauFitBurstData.FitData.Scatter_Par{chan} = TauFitBurstData.hScatter_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan});
+        %Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} +TauFitBurstData.IRFrelShift{chan}])';
+        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
         TauFitBurstData.FitData.IRF_Par{chan} = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
-        hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan} +TauFitBurstData.IRFrelShift{chan}])';
+        hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
         TauFitBurstData.FitData.IRF_Per{chan} = hIRF_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         
         Irf = G{chan}*(1-3*l2)*TauFitBurstData.FitData.IRF_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.IRF_Per{chan};
@@ -1379,7 +1414,7 @@ case {1,2}
             bg = DUR.*background{chan};
             signal = sum(Mic{chan},1)';
             
-            use_bg = 1;
+            use_bg = h.BackgroundInclusion_checkbox.Value;
             if use_bg == 1
                 fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
             else
@@ -1433,14 +1468,19 @@ case {3,4}
     %% Prepare the data
     for chan = 1:3
         %%% Read out the shifted scatter pattern
-        Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
-        TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} + TauFitBurstData.IRFrelShift{chan}])';
+%         Scatter_Par_Shifted = circshift(TauFitBurstData.hScatter_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
+%         TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+%         Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} + TauFitBurstData.IRFrelShift{chan}])';
+%         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
+        
+        TauFitBurstData.FitData.Scatter_Par{chan} = TauFitBurstData.hScatter_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan});
+        %Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} +TauFitBurstData.IRFrelShift{chan}])';
+        Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
         
         hIRF_Par_Shifted = circshift(TauFitBurstData.hIRF_Par{chan},[0,TauFitBurstData.IRFShift{chan}])';
         TauFitBurstData.FitData.IRF_Par{chan} = hIRF_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
-        hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan} + TauFitBurstData.IRFrelShift{chan}])';
+        hIRF_Per_Shifted = circshift(TauFitBurstData.hIRF_Per{chan},[0,TauFitBurstData.IRFShift{chan}+TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
         TauFitBurstData.FitData.IRF_Per{chan} = hIRF_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.IRFLength{chan});
         
         Irf = G{chan}*(1-3*l2)*TauFitBurstData.FitData.IRF_Par{chan}+(2-3*l1)*TauFitBurstData.FitData.IRF_Per{chan};
@@ -1590,7 +1630,13 @@ case {3,4}
             %%% Calculate Background fraction
             bg = DUR.*background{chan};
             signal = sum(Mic{chan},1)';
-            fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+            
+            use_bg = h.BackgroundInclusion_checkbox.Value;
+            if use_bg == 1
+                fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
+            else
+                fraction_bg = zeros(size(bg,1),size(bg,2));
+            end
             
             scat = SCATTER{chan};
             model = MODEL{chan};

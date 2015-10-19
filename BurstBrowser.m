@@ -12,7 +12,7 @@ if isempty(hfig)
         'Name','BurstBrowser',...
         'NumberTitle','off',...
         'MenuBar','none',...
-        'defaultUicontrolFontName',Look.Font,...
+        'defaultUicontrolFontName',Look.Font,...A
         'defaultAxesFontName',Look.Font,...
         'defaultTextFontName',Look.Font,...
         'OuterPosition',[0.01 0.05 0.98 0.95],...
@@ -2868,13 +2868,13 @@ if isempty(hfig)
     h.TauFit.FitPar_Table.RowName = h.TauFit.Parameters{1};
     %%% Initial Data - Store the StartValues as well as LB and UB
     h.TauFit.StartPar = cell(numel(h.TauFit.FitMethods),1);
-    h.TauFit.StartPar{1} = {2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.TauFit.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.TauFit.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,0,true};
-    h.TauFit.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.TauFit.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,false;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
-    h.TauFit.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
-    h.TauFit.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,-0.4,0.4,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{1} = {2,0,Inf,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{2} = {2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{3} = {2,0,Inf,false;2,0,Inf,false;2,0,Inf,false;0,0,1,false;0,0,1,false;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{4} = {50,0,Inf,false;5,0,Inf,false;0,0,1,true;0,0,1,true;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.TauFit.StartPar{5} = {50,0,Inf,false;5,0,Inf,false;0,0,1,false;0,0,1,true;0,0,1,true;50,0,Inf,true;4,0,Inf,true;0,0,0,true};
+    h.TauFit.StartPar{6} = {2,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,0,0.4,false;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,0,true};
+    h.TauFit.StartPar{7} = {2,0,Inf,false;1,0,Inf,false;1,0,Inf,false;0.4,0,0.4,false;0,0,0.4,false;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,1,true;0,0,0,true};
     h.TauFit.FitPar_Table.Data = h.TauFit.StartPar{1};
     
     %%% Popupmenu to change convolution type
@@ -6617,12 +6617,13 @@ BurstMeta.Plots.TauFit.IRF_Par.YData = hIRF_Par_Shifted((BurstMeta.TauFit.StartP
 BurstMeta.Plots.TauFit.IRF_Per.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.IRFLength-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
 hIRF_Per_Shifted = circshift(BurstMeta.TauFit.hIRF_Per,[0,BurstMeta.TauFit.IRFShift+BurstMeta.TauFit.ShiftPer+BurstMeta.TauFit.IRFrelShift])';
 BurstMeta.Plots.TauFit.IRF_Per.YData = hIRF_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.IRFLength);
-%%% Scatter Pattern
+%%% Scatter Pattern (only shift perp, no irfshift here)
 BurstMeta.Plots.TauFit.Scatter_Par.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
-hScatter_Par_Shifted = circshift(BurstMeta.TauFit.hScat_Par,[0,BurstMeta.TauFit.IRFShift])';
-BurstMeta.Plots.TauFit.Scatter_Par.YData = hScatter_Par_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
+%hScatter_Par_Shifted = circshift(BurstMeta.TauFit.hScat_Par,[0,BurstMeta.TauFit.IRFShift])';
+BurstMeta.Plots.TauFit.Scatter_Par.YData = BurstMeta.TauFit.hScat_Par((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
 BurstMeta.Plots.TauFit.Scatter_Per.XData = ((BurstMeta.TauFit.StartPar:(BurstMeta.TauFit.Length-1)) - BurstMeta.TauFit.StartPar)*TACtoTime;
-hScatter_Per_Shifted = circshift(BurstMeta.TauFit.hScat_Per,[0,BurstMeta.TauFit.IRFShift+BurstMeta.TauFit.ShiftPer+BurstMeta.TauFit.IRFrelShift])';
+%hScatter_Per_Shifted = circshift(BurstMeta.TauFit.hScat_Per,[0,BurstMeta.TauFit.IRFShift+BurstMeta.TauFit.ShiftPer+BurstMeta.TauFit.IRFrelShift])';
+hScatter_Per_Shifted = circshift(BurstMeta.TauFit.hScat_Per,[0,BurstMeta.TauFit.ShiftPer+BurstMeta.TauFit.IRFrelShift])';
 BurstMeta.Plots.TauFit.Scatter_Per.YData = hScatter_Per_Shifted((BurstMeta.TauFit.StartPar+1):BurstMeta.TauFit.Length);
 
 axes(h.TauFit.Microtime_Plot);xlim([BurstMeta.Plots.TauFit.Decay_Par.XData(1),BurstMeta.Plots.TauFit.Decay_Par.XData(end)]);
@@ -7133,7 +7134,7 @@ switch obj
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(x));
         
         h.TauFit.Result_Plot.XLim(1) = 0;
-        h.TauFit.Result_Plot.YLabel.String = 'Anisotropy';
+        h.TauFit.Result_Plot.YLabel.String = 'anisotropy';
 end
 function a = interlace( a, x, fix )
 a(~fix) = x;
