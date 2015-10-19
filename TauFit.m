@@ -1148,7 +1148,7 @@ ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer+TauFitData.IR
 ScatterPattern = TauFitData.hScat_Par(1:TauFitData.Length) +...
     2*ScatterPer(1:TauFitData.Length);
 ScatterPattern = ScatterPattern'./sum(ScatterPattern);
-
+%%% (Scatter Pattern is not shifted any more during fitting)
 IRFPer = circshift(TauFitData.hIRF_Per,[0,TauFitData.ShiftPer+TauFitData.IRFrelShift]);
 IRFPattern = TauFitData.hIRF_Par(1:TauFitData.Length) +...
     2*IRFPer(1:TauFitData.Length);

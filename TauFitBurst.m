@@ -1472,7 +1472,7 @@ case {3,4}
 %         TauFitBurstData.FitData.Scatter_Par{chan} = Scatter_Par_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
 %         Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} + TauFitBurstData.IRFrelShift{chan}])';
 %         TauFitBurstData.FitData.Scatter_Per{chan} = Scatter_Per_Shifted((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan})';
-        
+
         TauFitBurstData.FitData.Scatter_Par{chan} = TauFitBurstData.hScatter_Par{chan}((TauFitBurstData.StartPar{chan}+1):TauFitBurstData.Length{chan});
         %Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.IRFShift{chan} + TauFitBurstData.ShiftPer{chan} +TauFitBurstData.IRFrelShift{chan}])';
         Scatter_Per_Shifted = circshift(TauFitBurstData.hScatter_Per{chan},[0,TauFitBurstData.ShiftPer{chan}+TauFitBurstData.IRFrelShift{chan}])';
