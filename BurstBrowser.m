@@ -9386,6 +9386,7 @@ if ispc
     fontsize = fontsize/1.2;
 end
 
+TextData = [];
 size_pixels = 500;
 switch obj
     case h.Export1DX_Menu
@@ -9861,7 +9862,10 @@ end
 FigureName = [FileName '_' FigureName];
 %%% remove spaces
 FigureName = strrep(FigureName,' ','_');
+hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName,TextData};
 
+function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName,TextData)
+global UserValues BurstMeta
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 if directly_save
     if ask_file
@@ -9869,6 +9873,7 @@ if directly_save
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
         [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
         if FileName == 0
+            delete(hfig);
             return;
         end
         UserValues.BurstBrowser.PrintPath = PathName;

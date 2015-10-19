@@ -1144,7 +1144,7 @@ Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 %%% Read out the shifted scatter pattern
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
-ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer]);
+ScatterPer = circshift(TauFitData.hScat_Per,[0,TauFitData.ShiftPer+TauFitData.IRFrelShift]);
 ScatterPattern = TauFitData.hScat_Par(1:TauFitData.Length) +...
     2*ScatterPer(1:TauFitData.Length);
 ScatterPattern = ScatterPattern'./sum(ScatterPattern);
