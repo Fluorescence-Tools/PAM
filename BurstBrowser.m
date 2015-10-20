@@ -7121,9 +7121,11 @@ switch obj
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
-            str = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+            %str = sprintf('\rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+            str = {['\rho = ' sprintf('%.2f',param(1)*TACtoTime) ' ns'],['r_0 = ' sprintf('%.2f',param(2))],['r_{inf} = ',sprintf('%.2f',param(3))]};
         elseif number_of_exponentials == 2
-            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.2f\nr_1 = %3.2f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+            %str = sprintf('\rho_1 = %1.2f ns\n\rho_2 = %1.2f ns\nr_0 = %2.2f\nr_1 = %3.2f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+            str = {['\rho_1 = ' sprintf('%.2f',param(1)*TACtoTime) ' ns'],['\rho_2 = ' sprintf('%.2f',param(3)*TACtoTime) ' ns'],['r_0 = ' sprintf('%.2f',param(2))],['r_1 = ',sprintf('%.2f',param(4))]};
         end
         h.TauFit.Result_Plot_Text.String = str;
         h.TauFit.Result_Plot_Text.Position = [0.8 0.9];
@@ -9750,6 +9752,7 @@ switch obj
         panel_copy.ShadowColor = [1 1 1];
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
+        panel_copy.HighlightColor = [1 1 1];
         ax = panel_copy.Children;
         delete(ax(1:4));ax = ax(5:end);
         ax(1).Position = [0.125 0.15 0.825 0.7];
@@ -9772,8 +9775,33 @@ switch obj
         
         ax(1).Children(3).FontSize = fontsize;
         ax(1).Children(3).Position(2) = 0.9;
-        FigureName = 'Lifetime Fit';
-        
+        if strcmp(ax(1).YLabel.String,'anisotropy')
+            FigureName = 'Anisotropy Fit';
+            %%% move text slightly left and downwards
+            ax(1).Children(3).Position = [0.78 0.85 0];
+        else
+            FigureName = 'Lifetime Fit';
+            %%% move text slightly left
+            ax(1).Children(3).Position(1) = ax(1).Children(3).Position(1)-0.02;
+            %%% append lifetimes for single and biexponential
+            switch h.TauFit.FitMethod_Popupmenu.String{h.TauFit.FitMethod_Popupmenu.Value}
+                case 'Single Exponential'
+                    Tau = h.TauFit.FitPar_Table.Data{1,1};
+                    str = {ax(1).Children(3).String};
+                    str(end+1) = {['\tau = ' sprintf('%.2f',Tau) ' ns']};
+                    ax(1).Children(3).String = str;
+                case 'Biexponential'
+                    Tau = h.TauFit.FitPar_Table.Data(1:2,1);
+                    str = {ax(1).Children(3).String};
+                    for i = 1:2
+                        str(end+1) = {['\tau_' num2str(i) ' = ' sprintf('%.2f',Tau{i}) ' ns']};
+                    end
+                    ax(1).Children(3).String = str;
+                    %%% move slightly downward
+                    ax(1).Children(3).Position(2) = ax(1).Children(3).Position(2)-0.05;
+            end
+        end
+        FigureName = [FigureName h.TauFit.ChannelSelect.String{h.TauFit.ChannelSelect.Value}];
         %%% Save also a *.txt file containing the fit parameter
         %%% Construct cell array of text containers
         n_params = numel(h.TauFit.FitPar_Table.RowName);
@@ -9850,6 +9878,14 @@ switch obj
         end
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
 end
+
+%%% Set all units to pixels for easy editing without resizing
+hfig.Units = 'pixels';
+for i = 1:numel(hfig.Children)
+    if isprop(hfig.Children(i),'Units');
+        hfig.Children(i).Units = 'pixels';
+    end
+end
 %%% Combine the Original FileName and the parameter names
 if isfield(BurstData,'FileNameSPC')
     if strcmp(BurstData.FileNameSPC,'_m1')
@@ -9924,6 +9960,9 @@ if directly_save
     end
     
     LSUserValues(1);
+else 
+    delete(hfig);
+    return;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export All Graphs at once %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
