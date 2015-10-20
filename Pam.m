@@ -41,6 +41,10 @@ end
         'Visible','on');  
     %h.Pam.Visible='off';
     
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.Pam,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:3 6 13:17]))
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
