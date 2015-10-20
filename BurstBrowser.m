@@ -9801,7 +9801,7 @@ switch obj
                     ax(1).Children(3).Position(2) = ax(1).Children(3).Position(2)-0.05;
             end
         end
-        FigureName = [FigureName h.TauFit.ChannelSelect.String{h.TauFit.ChannelSelect.Value}];
+        FigureName = [FigureName ' ' h.TauFit.ChannelSelect.String{h.TauFit.ChannelSelect.Value}];
         %%% Save also a *.txt file containing the fit parameter
         %%% Construct cell array of text containers
         n_params = numel(h.TauFit.FitPar_Table.RowName);
