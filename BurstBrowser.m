@@ -3110,9 +3110,9 @@ switch mode
         %%% Microtime Plot
         BurstMeta.Plots.TauFit.Scatter_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'Parent',h.TauFit.Microtime_Plot);
         BurstMeta.Plots.TauFit.Scatter_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'Parent',h.TauFit.Microtime_Plot);
-        BurstMeta.Plots.TauFit.Decay_Sum = plot([0 1],[0 0],'--k','Parent',h.TauFit.Microtime_Plot);
-        BurstMeta.Plots.TauFit.Decay_Par = plot([0 1],[0 0],'--g','Parent',h.TauFit.Microtime_Plot);
-        BurstMeta.Plots.TauFit.Decay_Per = plot([0 1],[0 0],'--r','Parent',h.TauFit.Microtime_Plot);
+        BurstMeta.Plots.TauFit.Decay_Sum = plot([0 1],[0 0],'-k','Parent',h.TauFit.Microtime_Plot);
+        BurstMeta.Plots.TauFit.Decay_Par = plot([0 1],[0 0],'-g','Parent',h.TauFit.Microtime_Plot);
+        BurstMeta.Plots.TauFit.Decay_Per = plot([0 1],[0 0],'-r','Parent',h.TauFit.Microtime_Plot);
         BurstMeta.Plots.TauFit.IRF_Par = plot([0 1],[0 0],'.g','Parent',h.TauFit.Microtime_Plot);
         BurstMeta.Plots.TauFit.IRF_Per = plot([0 1],[0 0],'.r','Parent',h.TauFit.Microtime_Plot);
         BurstMeta.Plots.TauFit.FitPreview = plot([0 1],[0 0],'k','Parent',h.TauFit.Microtime_Plot);
@@ -3121,7 +3121,7 @@ switch mode
         BurstMeta.Plots.TauFit.Residuals = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot);
         BurstMeta.Plots.TauFit.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Parent',h.TauFit.Residuals_Plot,'Visible','off');
         %%% Result Plot
-        BurstMeta.Plots.TauFit.DecayResult = plot([0 1],[0 0],'--k','Parent',h.TauFit.Result_Plot);
+        BurstMeta.Plots.TauFit.DecayResult = plot([0 1],[0 0],'-k','Parent',h.TauFit.Result_Plot);
         BurstMeta.Plots.TauFit.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'Parent',h.TauFit.Result_Plot);
         %%% Initialize TauFit Variables
         BurstMeta.TauFit.FitType = 'Single Exponential';
@@ -6670,7 +6670,7 @@ h.TauFit.FitPar_Table.Data = Par;
 %%%  Fit the Data with selected Model %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Start_TauFit(obj,~)
-global BurstMeta BurstData
+global BurstMeta BurstData UserValues
 h = guidata(obj);
 h.TauFit.Result_Plot_Text.Visible = 'off';
 %% Prepare FitData
@@ -6685,8 +6685,8 @@ switch h.TauFit.ChannelSelect.String{h.TauFit.ChannelSelect.Value}
     case 'BB'
         G = BurstData.Corrections.GfactorBlue;
 end
-l1 = 0;
-l2 = 0;
+l1 = UserValues.BurstBrowser.Corrections.l1;
+l2 = UserValues.BurstBrowser.Corrections.l2;
 Conv_Type = h.TauFit.ConvolutionType_Menu.String{h.TauFit.ConvolutionType_Menu.Value};
 
 %BurstMeta.TauFit.FitData.IRF_Par = h.Plots.IRF_Par.YData;

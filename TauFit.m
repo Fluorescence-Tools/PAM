@@ -130,9 +130,9 @@ if isempty(h.TauFit) % Creates new figure, if none exists
     h.Result_Plot.XLim = [0 1];
     h.Result_Plot.YLim = [0 1];
     h.Result_Plot.XLabel.Color = Look.Fore;
-    h.Result_Plot.XLabel.String = 'time [ns]';
+    h.Result_Plot.XLabel.String = 'Time [ns]';
     h.Result_Plot.YLabel.Color = Look.Fore;
-    h.Result_Plot.YLabel.String = 'intensity [counts]';
+    h.Result_Plot.YLabel.String = 'Intensity [counts]';
     h.Result_Plot.XGrid = 'on';
     h.Result_Plot.YGrid = 'on';
     linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
@@ -1535,6 +1535,7 @@ switch obj
         h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(Decay));
 
         h.Result_Plot.XLim(1) = 0;
+        h.Result_Plot.YLabel.String = 'Intensity [counts]';
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp}
         if obj == h.Fit_Aniso_2exp
             number_of_exponentials = 2;
@@ -1584,6 +1585,7 @@ switch obj
         h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(x));
         
         h.Result_Plot.XLim(1) = 0;
+        h.Result_Plot.YLabel.String = 'Anisotropy';
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
