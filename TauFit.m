@@ -1557,7 +1557,8 @@ switch obj
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         end
         
-        fitres = tres_aniso(param,x);
+        x_fitres = ignore:numel(Aniso);
+        fitres = tres_aniso(param,x);fitres = fitres(1:(numel(Aniso)-ignore+1));
         res = Aniso_fit-fitres;
         
         TACtoTime = 1/FileInfo.MI_Bins*FileInfo.TACRange*1e9;
@@ -1565,9 +1566,9 @@ switch obj
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
         
-        h.Plots.DecayResult.XData = x*TACtoTime;
-        h.Plots.DecayResult.YData = Aniso_fit;
-        h.Plots.FitResult.XData = x*TACtoTime;
+        h.Plots.DecayResult.XData = (1:numel(Aniso))*TACtoTime;
+        h.Plots.DecayResult.YData = Aniso;
+        h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
         h.Result_Plot_Text.Visible = 'on';
@@ -1579,7 +1580,7 @@ switch obj
         h.Result_Plot_Text.String = str;
         h.Result_Plot_Text.Position = [0.8 0.9];
         
-        h.Plots.Residuals.XData = x*TACtoTime;
+        h.Plots.Residuals.XData = x_fitres*TACtoTime;
         h.Plots.Residuals.YData = res;
         h.Plots.Residuals_ZeroLine.XData = x*TACtoTime;
         h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(x));
