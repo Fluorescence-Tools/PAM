@@ -7105,8 +7105,8 @@ switch obj
             param0 = [1/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins, 0.4,3/(BurstData.FileInfo.TACRange*1e9)*BurstData.FileInfo.MI_Bins,0.1];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         end
-        
-        fitres = tres_aniso(param,x);
+        x_fitres = ignore:numel(Aniso);
+        fitres = tres_aniso(param,x); fitres = fitres(1:(numel(Aniso)-ignore+1));
         res = Aniso_fit-fitres;
         
         TACtoTime = 1/BurstData.FileInfo.MI_Bins*BurstData.FileInfo.TACRange*1e9;
@@ -7114,9 +7114,9 @@ switch obj
         h.TauFit.Microtime_Plot.Parent = h.TauFit.HidePanel;
         h.TauFit.Result_Plot.Parent = h.MainTabTauFitPanel;
         
-        BurstMeta.Plots.TauFit.DecayResult.XData = x*TACtoTime;
-        BurstMeta.Plots.TauFit.DecayResult.YData = Aniso_fit;
-        BurstMeta.Plots.TauFit.FitResult.XData = x*TACtoTime;
+        BurstMeta.Plots.TauFit.DecayResult.XData = (1:numel(Aniso))*TACtoTime;
+        BurstMeta.Plots.TauFit.DecayResult.YData = Aniso;
+        BurstMeta.Plots.TauFit.FitResult.XData = x_fitres*TACtoTime;
         BurstMeta.Plots.TauFit.FitResult.YData = fitres;
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot_Text.Visible = 'on';
@@ -7130,7 +7130,7 @@ switch obj
         h.TauFit.Result_Plot_Text.String = str;
         h.TauFit.Result_Plot_Text.Position = [0.8 0.9];
         
-        BurstMeta.Plots.TauFit.Residuals.XData = x*TACtoTime;
+        BurstMeta.Plots.TauFit.Residuals.XData = x_fitres*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals.YData = res;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.XData = x*TACtoTime;
         BurstMeta.Plots.TauFit.Residuals_ZeroLine.YData = zeros(1,numel(x));
