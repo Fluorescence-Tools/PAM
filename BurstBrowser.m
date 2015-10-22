@@ -7074,6 +7074,7 @@ switch obj
         BurstMeta.Plots.TauFit.FitResult.YData = FitFun;
         axis(h.TauFit.Result_Plot,'tight');
         h.TauFit.Result_Plot.YLabel.String = 'Intensity [Counts]';
+        h.TauFit.Residuals_Plot.YLabel.String = 'res_w';
         % plot chi^2 on graph
         h.TauFit.Result_Plot_Text.Visible = 'on';
         h.TauFit.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
@@ -7137,6 +7138,7 @@ switch obj
         
         h.TauFit.Result_Plot.XLim(1) = 0;
         h.TauFit.Result_Plot.YLabel.String = 'anisotropy';
+        h.TauFit.Residuals_Plot.YLabel.String = 'res';
 end
 function a = interlace( a, x, fix )
 a(~fix) = x;
@@ -9773,6 +9775,12 @@ switch obj
             ax(i).FontSize = fontsize;
         end
         
+        for i = 1:2
+            line = findobj('Type','Line','Parent',ax(i));
+            for j = 1:numel(line)
+                line(j).LineWidth = 1.5;
+            end
+        end
         ax(1).Children(3).FontSize = fontsize;
         ax(1).Children(3).Position(2) = 0.9;
         if strcmp(ax(1).YLabel.String,'anisotropy')
@@ -9944,9 +9952,10 @@ if directly_save
         case 3
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
     end
-    close(hfig);
     
-    if obj == h.TauFit.ExportGraph_Menu
+    hfig.CloseRequestFcn = @(x,y) delete(x);
+    delete(hfig);
+    if ~isempty(TextData)
         %%% Save TextFile with parameters
         txtFN = fullfile(PathName,FileName); txtFN = [txtFN(1:end-3) 'txt'];
         fID = fopen(txtFN,'w');
