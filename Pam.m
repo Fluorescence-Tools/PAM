@@ -2851,7 +2851,7 @@ if any(mode==8)
                     if ~isempty(UserValues.PIE.IRF{k})
                         % combined channels will either not be in
                         % UserValues.PIE.IRF, or will be empty
-                        FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
+                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) FileInfo.MI_Bins]);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot IRF in PIE Channel range
@@ -2894,7 +2894,7 @@ if any(mode==8)
                     if ~isempty(UserValues.PIE.ScatterPattern{k})
                         % combined channels will either not be in
                         % UserValues.PIE.ScatterPattern, or will be empty
-                        FromTo = UserValues.PIE.From(k):UserValues.PIE.To(k);
+                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) FileInfo.MI_Bins]);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot scatter in PIE Channel range
