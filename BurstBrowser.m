@@ -3356,17 +3356,23 @@ if FilterIndex == 2 % KBA file was loaded
                 DataArray(:,end+1) = zeros(size(DataArray,1),1);
                 DataArray(:,end+1) = zeros(size(DataArray,1),1);
             end
+            
+            %%% Calculate Anisotropies
             NameArray{end+1} = 'Anisotropy BB';
             NameArray{end+1} = 'Anisotropy GG';
             NameArray{end+1} = 'Anisotropy RR';
-            %%% Caculate Anisotropies
-            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')))./...
-                (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')));
-            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
-                (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
-            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
-                (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
-            
+            if sum(strcmp(NameArray,'Number of Photons (BB par)'))
+                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')))./...
+                    (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')));
+                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
+                    (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
+                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
+                    (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
+            else
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+                DataArray(:,end+1) = zeros(size(DataArray,1),1);
+            end
             BurstData.NameArray = NameArray;
             BurstData.DataArray = DataArray;
             BurstData.BAMethod = Data.BAMethod;
