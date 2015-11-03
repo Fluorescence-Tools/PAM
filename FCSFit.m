@@ -58,6 +58,13 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Tag','LoadFit',...
         'Label','Load Fit Function',...
         'Callback',{@Load_Fit,1});
+    %%% Menu to merge loaded Cor files
+    h.MergeCor = uimenu(h.File,...
+        'Tag','MergeCor',...
+        'Label','Merge Loaded Cor Files',...
+        'Separator','on',...
+        'Callback',@Merge_Cor);
+    
     %%% File menu to stop fitting
     h.AbortFit = uimenu(...
         'Parent',h.FCSFit,...
@@ -758,7 +765,55 @@ end
 %%% Updates table and plot data and style to new size
 Update_Style([],[],1);
 Update_Table([],[],1);
-    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to save merged .cor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Merge_Cor(~,~)
+global UserValues FCSData FCSMeta
+h = guidata(findobj('Tag','FCSFit'));
+
+%%% Merge only the active files
+active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
+%%% check for length difference
+for i = active'
+    len(i) = numel(FCSData.Data{active(i)}.Cor_Times);
+end
+minlen = min(len);
+minlen_ix = find(len == min(len));
+
+Valid = [];
+Cor_Array = [];
+Cor_Times = FCSData.Data{active(minlen_ix(1))}.Cor_Times; % Take Cor_Times from first file, should be same for all.
+Header = cell(0);
+Counts = [0,0];
+for i = active'
+    Valid = [Valid, FCSData.Data{i}.Valid];
+    Cor_Array = [Cor_Array, FCSData.Data{i}.Cor_Array(1:minlen,:)];
+    Header{end+1} = FCSData.Data{i}.Header;
+    Counts = Counts + FCSData.Data{i}.Counts;
+end
+
+Counts = Counts./numel(active);
+
+%%% Recalculate Average and SEM
+Cor_Average=mean(Cor_Array,2);
+%%% Averages files before saving to reduce errorbars
+Amplitude=sum(Cor_Array,1);
+Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+%%% Pick FileName
+[FileName,PathName] = uiputfile({'*.mcor'},'Choose a filename for the merged file',fullfile(UserValues.File.FCSPath,FCSData.FileName{active(1)}));
+if FileName == 0
+    m = msgbox('No valid filepath specified... Canceling');
+    pause(1);
+    delete(m);
+    return;
+end
+Current_FileName = fullfile(PathName,FileName);
+%%% Save
+save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

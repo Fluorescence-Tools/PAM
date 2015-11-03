@@ -3755,6 +3755,7 @@ if FileName == 0
     m = msgbox('No valid filepath specified... Canceling');
     pause(1);
     delete(m);
+    return;
 end
 BurstData.PathName = PathName;
 BurstData.FileName = fullfile(PathName,FileName);
