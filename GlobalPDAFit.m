@@ -2444,8 +2444,8 @@ for j = PDAMeta.Comp{file}
     hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
 end
 
-PDAMeta.w_res{file} = w_res;
-PDAMeta.hFit{file} = hFit;
+PDAMeta.w_res{file} = w_res';
+PDAMeta.hFit{file} = hFit';
 PDAMeta.chi2(file) = chi2;
 for c = PDAMeta.Comp{file};
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
