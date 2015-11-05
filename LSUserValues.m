@@ -8,8 +8,10 @@ if Mode==0 %%% Loads user values
     Profiledir = [pwd filesep 'profiles'];
     %%% Finds all matlab files in profiles directory
     Profiles = what(Profiledir);
+    try
     %%% Only uses .mat files
     Profiles=Profiles.mat;
+    end
     %%% Removes Profile.mat from list (Profile.mat saves the currently used profile
     for i=1:numel(Profiles)
         if strcmp(Profiles{i},'Profile.mat')
@@ -23,8 +25,10 @@ if Mode==0 %%% Loads user values
     if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
         PIE=[];
         Profile='StartingProfile.mat';
+        mkdir('profiles');
         save([Profiledir filesep 'Profile.mat'],'Profile');
         save([Profiledir filesep 'StartingProfile.mat'],'PIE');
+        Profiles = {'StartingProfile.mat'};
         %%% Saves first Profile to Profiles.mat, if none was saved
     elseif ~isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
         Profile=Profiles{1};
