@@ -1746,7 +1746,7 @@ if isempty(h.Mia)
     Data(11,:)={'40'};
     Data(13,:)={'11.11'};
     Data(15,:)={'3.33'};
-    Data([2 4 10],:)={false};
+    Data([2 4 6 10],:)={false};
     Data([6 8 12 14 16],:)={true};
     h.Mia_ICS.Fit_Table.Data=Data;
     
@@ -3748,7 +3748,7 @@ if any(mode==5)
            %%% plots the curve
            h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
            h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
-           EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
+           EData = double(squeeze(nanstd(nanstd(TICS,2,0),1,0))');
            EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
            h.Plots.TICS(i,1).UData = EData;
            h.Plots.TICS(i,1).LData = EData;
