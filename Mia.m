@@ -3748,7 +3748,7 @@ if any(mode==5)
            %%% plots the curve
            h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
            h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
-           EData = double(squeeze(nanstd(nanstd(TICS,2,0),1,0))');
+           EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
            EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
            h.Plots.TICS(i,1).UData = EData;
            h.Plots.TICS(i,1).LData = EData;
