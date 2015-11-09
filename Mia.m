@@ -5708,7 +5708,7 @@ global MIAData
 for i=mode
     if size(MIAData.TICS,2)>=i && ~isempty(MIAData.TICS{i})
         P = cellfun(@str2double,h.Mia_TICS.Fit_Table.Data(1:2:end,i));
-        X = logspace(h.Plots.TICS(i,1).XData(1),h.Plots.TICS(i,1).XData(end),1000);
+        X = logspace(log10(h.Plots.TICS(i,1).XData(1)),log10(h.Plots.TICS(i,1).XData(end)),1000);
         
         OUT=real((1/sqrt(8))*1/P(1).*(1./(1+4*(P(2)*1e-12).*X/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12).*X/(P(4)*1e-6)^2))+P(5));
         
