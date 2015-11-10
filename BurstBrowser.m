@@ -3600,6 +3600,9 @@ if ~isfield(BurstData,'Cut')
     BurstData.Cut{1} = {};
     %add species to list
     BurstData.SpeciesNames{1} = 'Global Cuts';
+    % also add two species for convenience
+    BurstData.SpeciesNames{2} = 'Species 1';
+    BurstData.SpeciesNames{3} = 'Species 2';
     %update species list
     set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
     BurstData.SelectedSpecies = 1;
