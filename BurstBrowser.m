@@ -4504,7 +4504,7 @@ if isempty(BurstData)
     return;
 end
 h = guidata(findobj('Tag','BurstBrowser'));
-LSUserValues(0);
+%LSUserValues(0);
 % if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
 %     %%% Change focus to GeneralTab
 %     h.Main_Tab.SelectedTab = h.Main_Tab_General;
