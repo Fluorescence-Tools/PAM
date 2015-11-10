@@ -1627,7 +1627,7 @@ if sum(Global)==0
             Lb=lb(~Fixed(i,:));
             Ub=ub(~Fixed(i,:));                      
             %%% Performs fit
-            [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i},YData./EData,Lb,Ub,opts);
+            [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{XData,EData,i,Fixed(i,:)},YData./EData,Lb,Ub,opts);
             %%% calculate confidence intervals
             if h.Conf_Interval.Value
                 ConfInt = zeros(size(FCSMeta.Params,1),2);
@@ -1675,7 +1675,7 @@ else
     end
     %%% Puts current Data into global variable to be able to stop fitting
     %%% Performs fit
-    [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points},YData./EData,Lb,Ub,opts);
+    [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points,Fixed,Global,Active},YData./EData,Lb,Ub,opts);
     %%% calculate confidence intervals
     if h.Conf_Interval.Value
         ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
@@ -1736,20 +1736,21 @@ function [Out] = Fit_Single(Fit_Params,Data)
 global FCSMeta
 
 %%% Aborts Fit
-drawnow;
+%drawnow;
 if ~FCSMeta.FitInProgress
     Out = zeros(size(Data{2}));
     return;
 end
-
-h = guidata(findobj('Tag','FCSFit'));
+%%% This was slow as f**k, never do this in a fitting routine!
+%h = guidata(findobj('Tag','FCSFit'));
 
 x=Data{1};
 Weights=Data{2};
 file=Data{3};
-
+Fixed = Data{4};
 %%% Determines, which parameters are fixed
-Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
+%Fixed = cell2mat(h.Fit_Table.Data(file,5:3:end-1));
+
 P=zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
 P(~Fixed)=Fit_Params;
@@ -1769,10 +1770,10 @@ function [Out] = Fit_Global(Fit_Params,Data)
 %%% Data{2}:    Weights of all files
 %%% Data{3}:    Length indentifier for X and Weights data of each file
 global FCSMeta
-h = guidata(findobj('Tag','FCSFit'));
+%h = guidata(findobj('Tag','FCSFit'));
 
 %%% Aborts Fit
-drawnow;
+%drawnow;
 if ~FCSMeta.FitInProgress
     Out = zeros(size(Data{2}));
     return;
@@ -1781,11 +1782,13 @@ end
 X=Data{1};
 Weights=Data{2};
 Points=Data{3};
-
+Fixed = Data{4};
+Global = Data{5};
+Active = Data{6};
 %%% Determines, which parameters are fixed, global and which files to use
-Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));
-Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end));
-Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
+%Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));
+%Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end));
+%Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 P=zeros(numel(Global),1);
 
 %%% Assigns global parameters
