@@ -2137,10 +2137,10 @@ if sum(Global)==0
         %%% Sets initial values and bounds for non fixed parameters
         Fit_Params=MIAFitMeta.Params(~Fixed(i,:),i);
         Lb=lb(~Fixed(i,:));
-        Ub=ub(~Fixed(i,:));
+        Ub=ub(~Fixed(i,:));        
         %%% Performs fit
         tic;
-        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i},ZData./EData,Lb,Ub,opts);
+        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i,h},ZData./EData,Lb,Ub,opts);
         toc;
         %%% Updates parameters
         MIAFitMeta.Params(~Fixed(i,:),i)=Fitted_Params;
@@ -2175,7 +2175,7 @@ else
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
     %%% Performs fit
-    [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Global,Fit_Params,{X,Y,EData,Omit,Points},ZData./EData,Lb,Ub,opts);
+    [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Global,Fit_Params,{X,Y,EData,Omit,Points,h},ZData./EData,Lb,Ub,opts);
     %%% Updates parameters
     MIAFitMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(MIAFitMeta.Params,2)]) ;
     Fitted_Params(1:sum(Global))=[];
@@ -2221,8 +2221,6 @@ function [Out] = Fit_Single(Fit_Params,Data)
 %%% Data{3}:    Weights of current file
 %%% Data{4}:    Indentifier of current file
 global MIAFitMeta
-h = guidata(findobj('Tag','MIAFit'));
-
 %%% Aborts Fit
 drawnow;
 if ~MIAFitMeta.FitInProgress
@@ -2235,9 +2233,9 @@ y = Data{2};
 Weights = Data{3};
 Omit = Data{4};
 i = Data{5};
-
-%%% Determines, which parameters are fixed
+h = Data{6};
 Fixed = cell2mat(h.Fit_Table.Data(i,5:3:end-1));
+
 P = zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
 P(~Fixed) = Fit_Params;
@@ -2259,9 +2257,7 @@ function [Out] = Fit_Global(Fit_Params,Data)
 %%% Data{2}:    y values of current file
 %%% Data{3}:    Weights of current file
 %%% Data{4}:    Length indentifier for X and Weights data of each file
-
 global MIAFitMeta
-h = guidata(findobj('Tag','MIAFit'));
 
 %%% Aborts Fit
 if ~MIAFitMeta.FitInProgress
@@ -2274,7 +2270,7 @@ Y=Data{2};
 Weights=Data{3};
 Omit = Data{4};
 Points=Data{5};
-
+h = Data{6};
 
 %%% Determines, which parameters are fixed, global and which files to use
 Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));

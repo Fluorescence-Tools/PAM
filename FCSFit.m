@@ -1149,13 +1149,9 @@ switch mode
         end
         %%% Updates new plots to style
         for i=1:numel(FCSData.FileName)
-%            Data{i,1}=num2str(FCSMeta.Color(mod(i,6)+1,:));
-%            FCSMeta.Plots{i,1}.Color=FCSMeta.Color(mod(i,6)+1,:);
-%            FCSMeta.Plots{i,2}.Color=FCSMeta.Color(mod(i,6)+1,:);
-%            FCSMeta.Plots{i,3}.Color=FCSMeta.Color(mod(i,6)+1,:);
-           FCSMeta.Plots{i,1}.Color=num2str(Data{i,1});
-           FCSMeta.Plots{i,2}.Color=num2str(Data{i,1});
-           FCSMeta.Plots{i,3}.Color=num2str(Data{i,1});
+           FCSMeta.Plots{i,1}.Color=str2num(Data{i,1}); %#ok<*ST2NM>
+           FCSMeta.Plots{i,2}.Color=str2num(Data{i,1});
+           FCSMeta.Plots{i,3}.Color=str2num(Data{i,1});
            FCSMeta.Plots{i,1}.LineStyle=Data{i,2};
            FCSMeta.Plots{i,1}.LineWidth=str2double(Data{i,3});
            FCSMeta.Plots{i,1}.Marker=Data{i,4};
@@ -1191,13 +1187,20 @@ switch mode
         end
         switch e.Indices(2)
             case 1 %%% Changes file color
-                NewColor = uisetcolor;              
+                NewColor = uisetcolor;
+                if NewColor == 0
+                    return;
+                end
                 for i=File
                     h.Style_Table.Data{i,1} = num2str(NewColor);
                     FCSMeta.Plots{i,1}.Color=NewColor;
                     FCSMeta.Plots{i,2}.Color=NewColor;
                     FCSMeta.Plots{i,3}.Color=NewColor;
                 end
+                if numel(File)>1
+                    h.Style_Table.Data{end,1} = num2str(NewColor);
+                end
+                
             case 2 %%% Changes data line style
                 for i=File
                     FCSMeta.Plots{i,1}.LineStyle=NewData;
