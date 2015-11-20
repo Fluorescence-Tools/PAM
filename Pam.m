@@ -3385,6 +3385,7 @@ switch e.Key
         end        
     case 'PIE_Select' %%% Enable manual selection
         [x,~] = ginput(2);
+        x= sort(x);
         %%% Read out which Axis was clicked to get the Detector/Routing
         Clicked_Axis = gca;
         Axes_Handles = cell(size(UserValues.Detector.Plots,1),size(UserValues.Detector.Plots,2));
@@ -7010,9 +7011,10 @@ global UserValues TcspcData PamMeta FileInfo
 h=guidata(findobj('Tag','Pam'));
 h.Progress.Text.String = 'Calculating detector calibration';
 h.Progress.Axes.Color=[1 0 0];
-maxtick = str2double(h.MI.Calib_Single_Max.String);
+
 drawnow;
 if nargin<3 % calculate the shift
+    maxtick = str2double(h.MI.Calib_Single_Max.String);
     Det=UserValues.Detector.Det(h.MI.Calib_Det.Value);
     Rout=UserValues.Detector.Rout(h.MI.Calib_Det.Value);
     Dif=[maxtick; uint16(diff(TcspcData.MT{Det,Rout}))];
@@ -7068,6 +7070,7 @@ else % apply the shift
     Rout=UserValues.Detector.Rout;
     for i = index
         if numel(UserValues.Detector.Shift)>=i &&  any(UserValues.Detector.Shift{i}) && ~isempty(TcspcData.MI{Det(i),Rout(i)})
+            maxtick = numel(UserValues.Detector.Shift{i});
             %%% Calculates inter-photon time; first photon gets 0 shift
             Dif=[maxtick; uint16(diff(TcspcData.MT{Det(i),Rout(i)}))];
             Dif(Dif>maxtick)=maxtick;
