@@ -3231,6 +3231,9 @@ UserValues.File.BurstBrowserPath=PathName;
 LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
 BurstData.FileName = fullfile(PathName,FileName);
+%%% Reset FCS buttons (no *.aps loaded anymore!)
+h.CorrelateWindow_Button.Enable = 'off';
+h.CorrelateWindow_Edit.Enable = 'off';
 %%% Determine if an APBS or DCBS file was loaded
 %%% This is important because for APBS, the donor only lifetime can be
 %%% determined from the measurement!
