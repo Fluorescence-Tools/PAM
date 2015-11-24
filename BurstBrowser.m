@@ -7156,7 +7156,7 @@ a(~fix) = x;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateCorrections(obj,~)
+function UpdateCorrections(obj,e)
 global UserValues BurstData
 h = guidata(findobj('Tag','BurstBrowser'));
 if isempty(obj) %%% Just change the data to what is stored in UserValues
@@ -7388,6 +7388,14 @@ else %%% Update UserValues with new values
                 UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{14};
                 BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
+                %%% first update the gamma values!
+                %%% gamma_br = gamma_bg*gamma_gr
+                switch e.Indices(1)
+                    case 2 %%% gamma BG was changed, update gamma BR
+                        obj.Data{3} = obj.Data{2}*obj.Data{1};
+                    case 3 %%% gamma BR was changed, update gamma BG
+                        obj.Data{2} = obj.Data{3}/obj.Data{1};
+                end
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
                 BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Gamma_BG = obj.Data{2};
