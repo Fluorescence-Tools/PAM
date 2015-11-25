@@ -3601,6 +3601,8 @@ set(h.ParameterListY, 'Value', posS);
 if ~isfield(BurstData,'Cut')
     %initialize Cut Cell Array
     BurstData.Cut{1} = {};
+    BurstData.Cut{2} = {};
+    BurstData.Cut{3} = {};
     %add species to list
     BurstData.SpeciesNames{1} = 'Global Cuts';
     % also add two species for convenience
