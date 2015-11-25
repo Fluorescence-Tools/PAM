@@ -5375,7 +5375,7 @@ if obj == h.FitGammaButton
     %%% Fit linearly
     %a) fitGamma = fit(E_raw,1./S_raw,'poly1');
     %b) fitGamma = fitlm(E_raw,1./S_raw,'linear','RobustOpts','on');
-    fitGamma = fit(E_raw,S_raw,@(g,b,x) (1+(g-1).*x)./(1+g*b+(g-1).*x),'StartPoint',[1 1]);
+    fitGamma = fit(E_raw,S_raw,@(g,b,x) (1+(g-1).*x)./(1+g*b+(g-1).*x),'StartPoint',[1 1],'Robust','LAR');
     BurstMeta.Plots.Fits.gamma.Visible = 'on';
     BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
     BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
