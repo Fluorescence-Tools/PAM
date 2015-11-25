@@ -5346,12 +5346,14 @@ end
 if obj == h.FitGammaButton
     %% plot gamma plot for two populations (or lifetime versus E)
     %%% get E-S values between 0.3 and 0.8;
-    S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,indS) < 0.8) );
+    %S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,indS) < 0.8) );
+    % instead, use the user selected species
+    S_threshold = UpdateCuts();
     %%% Calculate "raw" E and S with gamma = 1, but still apply direct
     %%% excitation,crosstalk, and background corrections!
-    NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-    NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-    NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+    NGR = BurstData.DataArray(S_threshold,indNGR) - Background_GR.*BurstData.DataArray(S_threshold,indDur);
+    NGG = BurstData.DataArray(S_threshold,indNGG) - Background_GG.*BurstData.DataArray(S_threshold,indDur);
+    NRR = BurstData.DataArray(S_threshold,indNRR) - Background_RR.*BurstData.DataArray(S_threshold,indDur);
     NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
@@ -5477,7 +5479,7 @@ if any(BurstData.BAMethod == [3,4])
         NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
         NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
         
-        x_axis = linspace(-0.05,0.2,50);
+        x_axis = linspace(-0.05,0.1,50);
         SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
         histSBR_redonly = histc(SBR_raw,x_axis);
         BurstMeta.Plots.histSBR_redonly.XData = x_axis;
@@ -5491,6 +5493,10 @@ if any(BurstData.BAMethod == [3,4])
         BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
     end
     if obj == h.FitGammaButton
+        m = msgbox('Not implemented for three-color gamma factors.');
+        pause(1);
+        delete(m);
+        return;
         %% Gamma factor determination based on double-labeled species
         %%% BG labeled
         S_threshold = ( (data_for_corrections(:,indS) > 0.9) &...
@@ -8743,7 +8749,7 @@ T_threshold = str2double(h.T_Threshold_Edit.String);
 if isnan(T_threshold)
     T_threshold = 0.1;
 end
-cutT = 1;
+cutT = 0;
 if cutT == 0
     data_for_corrections = BurstData.DataArray;
 elseif cutT == 1
@@ -8758,12 +8764,15 @@ Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Bac
 Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
 
 %%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
-if any(BurstData.BAMethod == [3,4])
-    %%% also cut SBG! (otherwise there is contamination by blue only)
-    indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-    S_threshold = S_threshold & (data_for_corrections(:,indSBG) < 0.8);
-end
+% S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
+% if any(BurstData.BAMethod == [3,4])
+%     %%% also cut SBG! (otherwise there is contamination by blue only)
+%     indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
+%     S_threshold = S_threshold & (data_for_corrections(:,indSBG) < 0.8);
+% end
+
+%%%instead, use selected species
+S_threshold = UpdateCuts();
 %%% Calculate "raw" E and S with gamma = 1, but still apply direct
 %%% excitation,crosstalk, and background corrections!
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
@@ -8823,7 +8832,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         if isnan(T_threshold)
             T_threshold = 0.1;
         end
-        cutT = 1;
+        cutT = 0;
         %%% define T-threshold
         if cutT == 0
             data_for_corrections = BurstData.DataArray;
@@ -8843,9 +8852,12 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
         
         %%% get E-S values between 0.1 and 0.9;
-        S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
-            (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
-            (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
+%         S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
+%             (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
+%             (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
+        
+        %%%instead, use selected species
+        S_threshold = UpdateCuts();
         %%% also use Lifetime Threshold
         S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.05);
         %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
