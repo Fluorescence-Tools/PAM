@@ -5372,16 +5372,18 @@ if obj == h.FitGammaButton
     BurstMeta.Data.E_raw = E_raw;
     BurstMeta.Data.S_raw = S_raw;
     %%% Fit linearly
-    fitGamma = fit(E_raw,1./S_raw,'poly1');
+    %fitGamma = fit(E_raw,1./S_raw,'poly1');
+    fitGamma = fitlm(E_raw,1./S_raw,'linear','RobustOpts','on');
     BurstMeta.Plots.Fits.gamma.Visible = 'on';
     BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
     BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
-    BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
+    BurstMeta.Plots.Fits.gamma.YData = fitGamma.feval(linspace(0,1,1000));
     axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
     ylim(h.Corrections.TwoCMFD.axes_gamma,[1,10]);
     xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
     %%% Determine Gamma and Beta
-    coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
+    %coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
+    m = fitGamma.Coefficients{2,1}; b = fitGamma.Coefficients{1,1};
     UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
     BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
     UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
