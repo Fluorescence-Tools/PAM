@@ -1723,8 +1723,8 @@ if isempty(hfig)
         'nextplot','add',...
         'View',[0 90]);
     xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
-    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     
     h.Corrections.TwoCMFD.axes_gamma_lifetime =  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -5355,7 +5355,8 @@ if obj == h.FitGammaButton
     NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
+    %[H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
+    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [0 1]);
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
     BurstMeta.Plots.gamma_fit(1).CData= H;
@@ -5366,27 +5367,30 @@ if obj == h.FitGammaButton
     BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Update/Reset Axis Labels
     xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
-    ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+    ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
     %%% store for later use
     BurstMeta.Data.E_raw = E_raw;
     BurstMeta.Data.S_raw = S_raw;
     %%% Fit linearly
-    %fitGamma = fit(E_raw,1./S_raw,'poly1');
-    fitGamma = fitlm(E_raw,1./S_raw,'linear','RobustOpts','on');
+    %a) fitGamma = fit(E_raw,1./S_raw,'poly1');
+    %b) fitGamma = fitlm(E_raw,1./S_raw,'linear','RobustOpts','on');
+    fitGamma = fit(E_raw,S_raw,@(g,b,x) (1+(g-1).*x)./(1+g*b+(g-1).*x),'StartPoint',[1 1]);
     BurstMeta.Plots.Fits.gamma.Visible = 'on';
     BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
     BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
-    BurstMeta.Plots.Fits.gamma.YData = fitGamma.feval(linspace(0,1,1000));
+    BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
     axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
-    ylim(h.Corrections.TwoCMFD.axes_gamma,[1,10]);
+    ylim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
     xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
     %%% Determine Gamma and Beta
-    %coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
-    m = fitGamma.Coefficients{2,1}; b = fitGamma.Coefficients{1,1};
-    UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+    coeff = coeffvalues(fitGamma); g = coeff(1); b = coeff(2);
+    %b) m = fitGamma.Coefficients{2,1}; b = fitGamma.Coefficients{1,1};
+    %UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+    UserValues.BurstBrowser.Corrections.Gamma_GR = g;
     BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-    UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+    %UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+    UserValues.BurstBrowser.Corrections.Beta_GR = b;
     BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
 end
 if any(BurstData.BAMethod == [3,4])
