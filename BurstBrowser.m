@@ -8758,7 +8758,7 @@ Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Bac
 Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
 
 %%% get E-S values between 0.3 and 0.8;
-S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.9) );
+S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
 if any(BurstData.BAMethod == [3,4])
     %%% also cut SBG! (otherwise there is contamination by blue only)
     indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
@@ -8781,8 +8781,10 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
     valid = (tauGG < BurstData.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
-    dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
-    gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+    %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
+    %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+    gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
+    gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
     [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.05 1]);
@@ -8845,7 +8847,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
             (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
             (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
         %%% also use Lifetime Threshold
-        S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.1);
+        S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.05);
         %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
         %%% excitation,crosstalk, and background corrections!
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
@@ -8870,6 +8872,8 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetimeBlue;
         tauBB = data_for_corrections(S_threshold,indTauBB);
         valid = (tauBB < BurstData.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
+        valid = find(valid);
+        valid = valid(~isnan(statFRETfun( tauBB(valid))));
         %%% minimize deviation from static FRET line as a function of gamma_br!
         dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - statFRETfun( tauBB(valid) ) ).^2 );
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
