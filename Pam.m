@@ -2851,7 +2851,7 @@ if any(mode==8)
                     if ~isempty(UserValues.PIE.IRF{k})
                         % combined channels will either not be in
                         % UserValues.PIE.IRF, or will be empty
-                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) FileInfo.MI_Bins]);
+                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) numel(UserValues.PIE.IRF{k})]);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot IRF in PIE Channel range
