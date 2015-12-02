@@ -78,6 +78,40 @@ end
         'Label','Add Tcspc Files to Export Database',...
         'Callback',{@Export_Database,1});
     
+    h.Menu.LoadIrf = uimenu(...
+        'Parent', h.Menu.File,...
+        'Separator','on',...
+        'Tag','LoadIrf_Menu',...
+        'Label','Load IRF',...
+        'Callback',@SaveLoadIrfScat);
+    h.Menu.LoadScatter = uimenu(...
+        'Parent', h.Menu.File,...
+        'Tag','LoadScatter_Menu',...
+        'Label','Load Scatter/Background',...
+        'Callback',@SaveLoadIrfScat);
+    
+    h.Menu.SaveIrf = uimenu(...
+        'Parent', h.Menu.File,...
+        'Separator','on',...
+        'Tag','SaveIrf_Menu',...
+        'Label','Save Data as IRF (for all PIE Channels)',...
+        'Callback',@SaveLoadIrfScat);
+    h.Menu.SaveIrfFile = uimenu(...
+        'Parent', h.Menu.File,...
+        'Tag','SaveIrfFile_Menu',...
+        'Label','Save IRF to File',...
+        'Callback',@SaveLoadIrfScat);
+    h.Menu.SaveScatter = uimenu(...
+        'Parent', h.Menu.File,...
+        'Tag','SaveScatter_Menu',...
+        'Label','Save Data as Scatter/Background',...
+        'Callback',@SaveLoadIrfScat);
+    h.Menu.SaveScatterFile = uimenu(...
+        'Parent', h.Menu.File,...
+        'Tag','SaveScatterFile_Menu',...
+        'Label','Save Scatter/Background to File',...
+        'Callback',@SaveLoadIrfScat);
+    
     h.Menu.AdvancedAnalysis = uimenu(...
         'Parent',h.Pam,...
         'Tag','AdvancedAnalysis',...
@@ -129,19 +163,7 @@ end
         'Tag','OpenPCF',...
         'Label','PCF Analysis',...
         'Callback',@PCFAnalysis);
-    h.Menu.SaveIRF = uimenu(...
-        'Parent', h.Menu.AdvancedAnalysis,...
-        'Separator','on',...
-        'Tag','SaveIRF_Menu',...
-        'Label','Save Measurement as IRF for all PIE Channels',...
-        'Callback',@SaveIRF);
-    h.Menu.SaveScatter = uimenu(...
-        'Parent', h.Menu.AdvancedAnalysis,...
-        'Tag','SaveScatter_Menu',...
-        'Label','Save Measurement as Scatter/Background',...
-        'Callback',@SaveScatter);
-    
-    
+   
     h.Menu.Extras = uimenu(...
         'Parent',h.Pam,...
         'Tag','Extras',...
@@ -1691,7 +1713,7 @@ end
         'Parent',h.PIE.List_Menu,...
         'Label','Save IRF for selected PIE Channel',...
         'Tag','PIE_IRF',...
-        'Callback',@SaveIRF);
+        'Callback',@SaveLoadIrfScat);
     %%% Export main
     h.PIE.Export = uimenu(...
         'Parent',h.PIE.List_Menu,...
@@ -2844,24 +2866,29 @@ if any(mode==8)
     if strcmp(h.MI.IRF.Checked,'on')
         for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
             for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                % remove everything which was plotted
+                for k = 1:numel(UserValues.PIE.IRF)
+                    if ~isempty(UserValues.PIE.IRF{k})
+                        % combined channels will either not be in UserValues.PIE.IRF, or will be empty
+                        h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
+                    end
+                end  
                 % find which detector is selected for the current individual microtime plot
                 detector = h.MI.Individual{i, 2*j+2}.Value;
                 % loop through PIE channels
                 for k = 1:numel(UserValues.PIE.IRF)
                     if ~isempty(UserValues.PIE.IRF{k})
-                        % combined channels will either not be in
-                        % UserValues.PIE.IRF, or will be empty
+                        % combined channels will either not be in UserValues.PIE.IRF, or will be empty
                         FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) numel(UserValues.PIE.IRF{k})]);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot IRF in PIE Channel range
                             h.Plots.MI_Ind_IRF{i,j}.Visible = 'on';
                             h.Plots.MI_Ind_IRF{i,j}.XData = 1:numel(UserValues.PIE.IRF{k});
-                            h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
-                             if isequal(h.Plots.MI_Ind_IRF{i,j}.YData,[0 0])
-                                 % no IRF has been plotted yet on microtime plot (i,j)
-                                 h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
-                             end
+                            if isequal(h.Plots.MI_Ind_IRF{i,j}.YData,[0 0])
+                                % no IRF has been plotted yet on microtime plot (i,j)
+                                h.Plots.MI_Ind_IRF{i,j}.YData = zeros(numel(UserValues.PIE.IRF{k}),1);
+                            end
                             if max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}) == 0
                                 % there is no data, so just show the IRF
                                 norm = 1;
@@ -2887,6 +2914,13 @@ if any(mode==8)
     if strcmp(h.MI.ScatterPattern.Checked,'on')
          for i = 1:size(UserValues.Detector.Plots,1) %loop through microtime tabs
             for j = 1:size(UserValues.Detector.Plots,2) %loop through plots per microtime tab
+                % remove everything which was plotted
+                for k = 1:numel(UserValues.PIE.ScatterPattern)
+                    if ~isempty(UserValues.PIE.ScatterPattern{k})
+                        % combined channels will either not be in UserValues.PIE.ScatterPattern, or will be empty
+                        h.Plots.MI_Ind_Scat{i,j}.YData = zeros(numel(UserValues.PIE.ScatterPattern{k}),1);
+                    end
+                end  
                 % find which detector is selected for the current individual microtime plot
                 detector = h.MI.Individual{i, 2*j+2}.Value;
                 % loop through PIE channels
@@ -6352,28 +6386,45 @@ end
 guidata(h.Pam,h);
 %%% Update Display
 Update_Display([],[],1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Saves the current measurement as IRF pattern %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function grouping operations concerning the IRF or Scatter pattern %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SaveIRF(obj,~)
-global UserValues FileInfo TcspcData
-if strcmp(FileInfo.FileName{1},'Nothing loaded')
-    errordlg('Load a measurement first!','No measurement loaded...');
-    return;
-end
+function SaveLoadIrfScat(obj,~)
+global UserValues PamMeta TcspcData FileInfo
 h = guidata(findobj('Tag','Pam'));
-h.Progress.Text.String = 'Saving IRF';
-h.Progress.Axes.Color=[1 0 0];
-pause(0.5)
+
 switch obj
-    case h.Menu.SaveIRF
+    case h.Menu.SaveIrf
+        % Saves the current measurement as IRF pattern 
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving IRF';
+        h.Progress.Axes.Color=[1 0 0];
+        pause(0.5)
         %%% Update the IRF for ALL PIE channel
         for i=1:numel(UserValues.PIE.Name)
             if isempty(UserValues.PIE.Combined{i})
                 UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
             end
         end
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+        LSUserValues(1);
+        Update_Display([],[],8)
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
     case h.PIE.IRF
+        % Saves the current PIE channel as IRF pattern 
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving IRF';
+        h.Progress.Axes.Color=[1 0 0];
+        pause(0.5)
         %%% Find selected channels
         Sel=h.PIE.List.Value;
         if isempty(UserValues.PIE.Combined{Sel})
@@ -6383,112 +6434,186 @@ switch obj
             uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
             return
         end
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+        LSUserValues(1);
+        Update_Display([],[],8)
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.Menu.SaveScatter
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
+        h.Progress.Text.String = 'Saving Scatter/Background';
+        h.Progress.Axes.Color=[1 0 0];
+        pause(0.5)
+        for i=1:numel(UserValues.PIE.Name)
+            if isempty(UserValues.PIE.Combined{i})
+                UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+            end
+        end
+        
+        %%% New Way: Store Background Counts in PIE subfield of UserValues
+        %%% structure (PIE.Background) in kHz
+        for i=1:numel(UserValues.PIE.Name)
+            if isempty(UserValues.PIE.Combined{i})
+                UserValues.PIE.Background(i) = PamMeta.Info{i}(4);
+            end
+        end
+        
+        %%% Old way to store background counts relied on correctly setting burst
+        %%% search method before
+        old = 0;
+        if old == 1
+            uiwait(msgbox('If scatter is used as background for burst analysis, the correct burst method and channels have to be selected','Important','modal'));
+            % PamMeta.Info contains the total photons, channel photons.... information
+            % per PIE Channel
+            % Store the channel count rates in the UserValues.BurstSearch structure.
+            BAMethod = UserValues.BurstSearch.Method;
+            switch BAMethod
+                case {1,2}
+                    UserValues.BurstBrowser.Corrections.Background_GGpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GGperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GRpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GRperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_RRpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_RRperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
+                case {3,4}
+                    UserValues.BurstBrowser.Corrections.Background_BBpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_BBperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_BGpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_BGperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_BRpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_BRperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GGpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GGperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GRpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_GRperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_RRpar = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}))}(4);
+                    UserValues.BurstBrowser.Corrections.Background_RRperp = ...
+                        PamMeta.Info{...
+                        (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}))}(4);
+            end
+        end
+        h.MI.ScatterPattern.Checked = 'on';
+        UserValues.Settings.Pam.PlotScat = 'on';
+        LSUserValues(1);
+        Update_Display([],[],8)
+        h.SaveScatter_Button.ForegroundColor = [0 1 0];
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.Menu.SaveIrfFile
+        % Save IRF to .irf file
+        [File, Path] = uiputfile({'*.irf', 'IRF file'}, 'Save IRF', UserValues.File.Path);
+        if all(File==0)
+            return
+        end
+        s = struct;
+        s.data = UserValues.PIE.IRF;
+        s.name = UserValues.PIE.Name;
+        save(fullfile(Path,File),'s');
+    case h.Menu.SaveScatterFile
+        % Save Scatter Pattern and Backgrond counts to .scat file
+                [File, Path] = uiputfile({'*.scat', 'Scatter file'}, 'Save Scatter Pattern', UserValues.File.Path);
+        if all(File==0)
+            return
+        end
+        s = struct;
+        s.data = UserValues.PIE.ScatterPattern;
+        s.data2 = UserValues.PIE.Background;
+        s.name = UserValues.PIE.Name;
+        save(fullfile(Path,File),'s');
+    case h.Menu.LoadIrf
+        % Load IRF from .irf file
+        [FileName, Path] = uigetfile({'*.irf', 'IRF file'}, 'Choose IRF file',UserValues.File.Path,'MultiSelect', 'off');
+        if all(FileName==0)
+            return
+        end
+        load('-mat',fullfile(Path,FileName));
+        mess = 'IRF of PIE channel(s) ';
+        err = 0;
+        for i = 1:numel(s.data)
+            if strcmp(UserValues.PIE.Name{i}, s.name{i})
+                UserValues.PIE.IRF{i} = s.data{i};
+            else 
+                err = 1;
+                mess = [mess num2str(i) ', '];
+            end
+        end
+        if err
+            msgbox([mess(1:end-2) ' not loaded because its name differed between current profile and loaded file.'])
+        end
+        clear s;
+        h.MI.IRF.Checked = 'on';
+        UserValues.Settings.Pam.PlotIRF = 'on';
+        LSUserValues(1);
+        Update_Display([],[],8)
+    case h.Menu.LoadScatter
+        % Load Scatter Pattern and Background counts from .scat file
+        [FileName, Path] = uigetfile({'*.scat', 'Scatter file'}, 'Choose Scatter Pattern',UserValues.File.Path,'MultiSelect', 'off');
+        if all(FileName==0)
+            return
+        end
+        load('-mat',fullfile(Path,FileName));
+        mess = 'Scatter Pattern of PIE channel(s) ';
+        err = 0;
+        for i = 1:numel(s.data)
+            if strcmp(UserValues.PIE.Name{i}, s.name{i})
+                UserValues.PIE.ScatterPattern{i} = s.data{i};
+                UserValues.PIE.Background(i) = s.data2(i);
+            else 
+                err = 1;
+                mess = [mess num2str(i) ', '];
+            end
+        end
+        if err
+            msgbox([mess(1:end-2) ' not loaded because its name differed between current profile and loaded file.'])
+        end
+        clear s;
+        % test whether all is ok
+        h.MI.ScatterPattern.Checked = 'on';
+        UserValues.Settings.Pam.PlotScat = 'on';
+        LSUserValues(1);
+        Update_Display([],[],8)
+        h.SaveScatter_Button.ForegroundColor = [0 1 0];
 end
-h.MI.IRF.Checked = 'on';
-UserValues.Settings.Pam.PlotIRF = 'on';
-LSUserValues(1);
-Update_Display([],[],8)
-h.Progress.Text.String = FileInfo.FileName{1};
-h.Progress.Axes.Color = UserValues.Look.Control;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SaveScatter(~,~)
-global UserValues PamMeta TcspcData FileInfo
-h=guidata(findobj('Tag','Pam'));
-h.Progress.Text.String = 'Saving Scatter/Background';
-h.Progress.Axes.Color=[1 0 0];
-pause(0.5)
-for i=1:numel(UserValues.PIE.Name)
-    if isempty(UserValues.PIE.Combined{i})
-        UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
-    end
-end
-
-%%% New Way: Store Background Counts in PIE subfield of UserValues
-%%% structure (PIE.Background) in kHz
-for i=1:numel(UserValues.PIE.Name)
-    if isempty(UserValues.PIE.Combined{i})
-        UserValues.PIE.Background(i) = PamMeta.Info{i}(4);
-    end
-end
-
-%%% Old way to store background counts relied on correctly setting burst
-%%% search method before
-old = 0; 
-if old == 1
-    uiwait(msgbox('If scatter is used as background for burst analysis, the correct burst method and channels have to be selected','Important','modal'));
-    % PamMeta.Info contains the total photons, channel photons.... information
-    % per PIE Channel
-    % Store the channel count rates in the UserValues.BurstSearch structure.
-    BAMethod = UserValues.BurstSearch.Method;
-    switch BAMethod
-        case {1,2}
-            UserValues.BurstBrowser.Corrections.Background_GGpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GGperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GRpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GRperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_RRpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_RRperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
-        case {3,4}
-            UserValues.BurstBrowser.Corrections.Background_BBpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_BBperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_BGpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_BGperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_BRpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_BRperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GGpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GGperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{4,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GRpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_GRperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{5,2}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_RRpar = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}))}(4);
-            UserValues.BurstBrowser.Corrections.Background_RRperp = ...
-                PamMeta.Info{...
-                (strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}))}(4);
-    end
-end
-h.MI.ScatterPattern.Checked = 'on';
-UserValues.Settings.Pam.PlotScat = 'on';
-LSUserValues(1);
-Update_Display([],[],8)
-h.SaveScatter_Button.ForegroundColor = [0 1 0];
-h.Progress.Text.String = FileInfo.FileName{1};
-h.Progress.Axes.Color = UserValues.Look.Control;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Open TauFitBurst Window for Burstwise Lifetime Fitting %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7371,7 +7496,7 @@ switch mode
         h.Export.Save.Enable = 'on';
     case 4 %% Save complete database
         [File, Path] = uiputfile({'*.edb', 'Database file'}, 'Save export database', UserValues.File.Path);
-        if all(FileName==0)
+        if all(File==0)
             return
         end
         s = struct;
