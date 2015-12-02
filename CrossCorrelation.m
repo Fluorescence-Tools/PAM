@@ -9,6 +9,8 @@ function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,We
 %%% ProgressStruct.Current: number of correlation bins previously completed
 
 %%% If no weights are specified, set to 1
+
+
 if (nargin < 4) || isempty(Weights1)
     Weights1 = cell(numel(Data1),1);
     Weights2 = cell(numel(Data2),1);
@@ -37,11 +39,13 @@ Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
 Timeaxis(Timeaxis<1)=1;
 Timeaxis=cumsum([1;Timeaxis]);
 
+
 Cor_Array=repmat({[]},numel(Data1),1);
 parfor i=1:numel(Data1)
     if ~isempty(Data1{i}) && ~isempty(Data2{i})
         %%% Does the crosscorrelation        
-        Cor_Array{i}=Do_CCF(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
+        %Cor_Array{i}=Do_CCF(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
+        Cor_Array{i}=Do_CCF_new(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
         %%% Truncates to leangth of Timeaxis
         Cor_Array{i}=Cor_Array{i}(1:numel(Timeaxis))';  
     end
