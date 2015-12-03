@@ -35,6 +35,8 @@ A = param(3);
 sc = param(4);
 bg = param(5);
 tau = param(1:2);
+tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
+
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
 switch conv_type
     case 'linear'

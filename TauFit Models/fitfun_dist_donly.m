@@ -27,6 +27,7 @@ sc = param(4);
 bg = param(5);
 R0 = param(6);
 tauD0 = param(7);
+tauD0(tauD0==0) = 1; %%% set minimum lifetime to TACbin width
 
 %%% Determine distribution of lifetimes
 xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);

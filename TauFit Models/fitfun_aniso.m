@@ -24,6 +24,7 @@ n = length(IRF{1});
 %t = 1:n;
 %tp = (1:p)';
 tau = param(1);
+tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
 rho = param(2);
 r0 = param(3);
 r_inf = param(4);
