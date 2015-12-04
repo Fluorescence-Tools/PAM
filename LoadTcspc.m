@@ -651,9 +651,11 @@ if strcmp(Caller.Tag, 'Pam')
     %%% Applies detector shift immediately after loading data
     Shift_Detector([],[],'load')
     %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
-    Update_Data([],[],0,0);
-    Update_Display([],[],0);
-    
+    %%% this needs not be done if database is used for batch processing
+    if ~any(gcbo==[h.Database.Correlate h.Database.Burst])
+        Update_Data([],[],0,0);
+        Update_Display([],[],0);
+    end
     %%% Resets GUI Elements of BurstSearch
     h.BurstLifetime_Button.Enable = 'off';
     h.BurstLifetime_Button.ForegroundColor = [1 1 1];

@@ -1422,7 +1422,7 @@ end
     h.Trace.Axes.XLabel.Color=Look.Fore;
     h.Trace.Axes.YLabel.String='Countrate [kHz]';
     h.Trace.Axes.YLabel.Color=Look.Fore;
-    h.Plots.Trace=handle(plot([0 1],[0 0],'b')); 
+    h.Plots.Trace{1}=handle(plot([0 1],[0 0],'b')); 
     %%%         
     %% Plot and functions for image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Image tab
@@ -2425,6 +2425,7 @@ end
 
 %%% Creates macrotime bins for traces (currently fixed 10ms)
 PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
+
 %%% Creates a intensity trace and image for each non-combined PIE channel
 if ~isempty(PIE)
     for i=PIE
@@ -2443,7 +2444,6 @@ if ~isempty(PIE)
             else
                 PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
             end
-            
             %% Calculates image
             if h.MT.Use_Image.Value
                 %%% Goes back from total microtime to file microtime
@@ -2742,10 +2742,15 @@ end
 
 %% Trace plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates intensity trace plot with current channel
-if any(mode==2)
-    h.Plots.Trace.YData=PamMeta.Trace{Sel};
-    h.Plots.Trace.XData=PamMeta.TimeBins;
-    h.Plots.Trace.Color=UserValues.PIE.Color(Sel,:);
+if any(mode==2)    
+    %%% reset plots
+    cellfun(@delete,h.Plots.Trace);
+    h.Plots.Trace = {};
+    for t = h.PIE.List.Value
+         %%% create plot
+         h.Plots.Trace{end+1} = plot(PamMeta.TimeBins,PamMeta.Trace{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
+    end
+    guidata(h.Pam,h);
 end
 
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
