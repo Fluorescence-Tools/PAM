@@ -221,7 +221,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
-        'String',{'None';'Fit N 3D';'Fit G(0)';'Fit N 2D'; 'Time'},...
+        'String',{'None';'Fit N 3D';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset'},...
         'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
@@ -1300,7 +1300,7 @@ for i=1:size(FCSMeta.Plots,1)
             case 1
                 %% No normalization
                 B=1;
-            case 2
+            case {2,6}
                 %% Normalizes to number of particles 3D (defined in model)
                 P=FCSMeta.Params(:,i);
                 eval(FCSMeta.Model.Brightness);
@@ -1332,7 +1332,11 @@ for i=1:size(FCSMeta.Plots,1)
                 B=FCSMeta.Data{i,2}(T);
         end      
         %% Updates data plot y values
-        FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B;       
+        if Normalization_Method ~= 6
+            FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B;  
+        else % substract offset
+            FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
+        end
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
             FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
@@ -1348,7 +1352,11 @@ for i=1:size(FCSMeta.Plots,1)
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
-        FCSMeta.Plots{i,2}.YData=OUT/B;      
+        if Normalization_Method ~= 6
+            FCSMeta.Plots{i,2}.YData=OUT/B;
+        else % substract offset
+            FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
+        end
         %% Calculates weighted residuals and plots them
         %%% recalculate fitfun at data
         x=FCSMeta.Data{i,1};
