@@ -13,10 +13,10 @@ function [z] = fitfun_1exp(param, xdata)
 %	p is the time between to laser excitations (in number of TCSPC channels).
 ShiftParams = xdata{1};
 IRFPattern = xdata{2}; %for convolution
-ScatterPattern = xdata{3}; %for accounting for scatter in the actual decay
+Scatter = xdata{3}; %for accounting for scatter in the actual decay
 p = xdata{4};
 y = xdata{5};
-c = xdata{6};
+c = xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
@@ -25,8 +25,8 @@ irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-%Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = ScatterPattern( (ShiftParams(1)+1):ShiftParams(3) );
+%A shift in the scatter is not needed in the model
+%Scatter = Scatter((ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
 %t = 1:n;

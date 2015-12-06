@@ -1,7 +1,7 @@
 function [z] = fitfun_aniso_2exp(param,xdata)
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
+Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
 c = xdata{6};
@@ -9,7 +9,7 @@ ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
 IRF = cell(1,2);
-Scatter = cell(1,2); 
+%Scatter = cell(1,2); 
 for i = 1:2
     irf = [];
     irf = circshift(IRFPattern{i},[c, 0]);
@@ -17,8 +17,9 @@ for i = 1:2
     irf = irf-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
-    %s = circshift(ScatterPattern{i},[c, 0]);
-    Scatter{i} = ScatterPattern{i}( (ShiftParams(1)+1):ShiftParams(3) );
+    %A shift in the scatter is not needed in the model
+    %Scatter{i} = circshift(ScatterPattern{i},[ShiftParams(5), 0]);
+    %Scatter{i} = ScatterPattern{i}( (ShiftParams(1)+1):ShiftParams(3) );
 end
 n = length(IRF{1});
 %t = 1:n;

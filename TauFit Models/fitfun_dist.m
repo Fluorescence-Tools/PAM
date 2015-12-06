@@ -1,7 +1,7 @@
 function [z] = fitfun_dist(param,xdata)
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
-ScatterPattern = xdata{3};
+Scatter = xdata{3};
 p = xdata{4};
 y = xdata{5};
 c = xdata{6};
@@ -13,8 +13,9 @@ irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
-%Scatter = circshift(ScatterPattern,[c, 0]);
-Scatter = ScatterPattern( (ShiftParams(1)+1):ShiftParams(3) );
+%A shift in the scatter is not needed in the model
+%Scatter = circshift(ScatterPattern,[ShiftParams(5), 0]);
+%Scatter = Scatter((ShiftParams(1)+1):ShiftParams(3) );
 
 n = length(irf);
 %t = 1:n;
