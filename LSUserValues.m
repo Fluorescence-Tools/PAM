@@ -2,15 +2,15 @@ function  [Profiles,Current] = LSUserValues(Mode)
 global UserValues
 
 
-if Mode==0 %%% Loads user values    
+if Mode==0 %%% Loads user values
     %% Identifying current profile
     %%% Current profiles directory
     Profiledir = [pwd filesep 'profiles'];
     %%% Finds all matlab files in profiles directory
     Profiles = what(Profiledir);
     try
-    %%% Only uses .mat files
-    Profiles=Profiles.mat;
+        %%% Only uses .mat files
+        Profiles=Profiles.mat;
     end
     %%% Removes Profile.mat from list (Profile.mat saves the currently used profile
     for i=1:numel(Profiles)
@@ -181,7 +181,7 @@ if Mode==0 %%% Loads user values
     P.File.FCSPath = S.File.FCSPath;
     if ~isfield(S.File, 'MIAPath') || isempty(S.File.MIAPath)  || ~ischar(S.File.MIAPath) || ~exist(S.File.MIAPath,'dir')
         S.File.MIAPath=pwd;
-    end 
+    end
     P.File.MIAPath = S.File.MIAPath;
     if ~isfield(S.File, 'MIAFitPath') || isempty(S.File.MIAFitPath)  || ~ischar(S.File.MIAFitPath) || ~exist(S.File.MIAFitPath,'dir')
         S.File.MIAFitPath=pwd;
@@ -189,7 +189,7 @@ if Mode==0 %%% Loads user values
     P.File.MIAFitPath = S.File.MIAFitPath;
     if ~isfield(S.File, 'BurstBrowserPath') || isempty(S.File.BurstBrowserPath)  || ~ischar(S.File.BurstBrowserPath) || ~exist(S.File.BurstBrowserPath,'dir')
         S.File.BurstBrowserPath=pwd;
-    end 
+    end
     P.File.BurstBrowserPath = S.File.BurstBrowserPath;
     if ~isfield(S.File,'PCFPath') || isempty(S.File.PCFPath)  || ~ischar(S.File.PCFPath) || ~exist(S.File.PCFPath,'dir')
         S.File.PCFPath=pwd;
@@ -205,7 +205,7 @@ if Mode==0 %%% Loads user values
     P.File.PhasorTIFFPath = S.File.PhasorTIFFPath;
     
     
-    if ~isfield(S.File,'FCS_Standard') 
+    if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
     end
     P.File.FCS_Standard = S.File.FCS_Standard;
@@ -213,7 +213,7 @@ if Mode==0 %%% Loads user values
         S.File.MIAFit_Standard=[];
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
-
+    
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
@@ -224,14 +224,14 @@ if Mode==0 %%% Loads user values
     %%% The order of filetypes has to correspond to the order in
     %%% LoadTcspc!
     CurrentFileTypes = {'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
-            '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
-            '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
-            '*.ht3','HydraHarp400 TTTR file (*.ht3)';...
-            '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)';...
-            '*.sim','Pam Simulation file';...
-            '*.ppf','Pam Photon File (Created by Pam)';
-            '*.ptu','HydraHarp 400 TTTR file (*.ptu)'};
-
+        '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
+        '*.spc','Single card B&H SPC files recorded with B&H-Software (*.spc)';...
+        '*.ht3','HydraHarp400 TTTR file (*.ht3)';...
+        '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)';...
+        '*.sim','Pam Simulation file';...
+        '*.ppf','Pam Photon File (Created by Pam)';
+        '*.ptu','HydraHarp 400 TTTR file (*.ptu)'};
+    
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
         S.File.SPC_FileTypes = CurrentFileTypes;
@@ -309,32 +309,32 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.Settings.Pam, 'Cor_Divider')
         S.Settings.Pam.Cor_Divider=1;
         disp('UserValues.Settings.Pam.Cor_Divider was incomplete');
-    end   
+    end
     P.Settings.Pam.Cor_Divider = S.Settings.Pam.Cor_Divider;
     %%% Checks if Pam.Cor_Selection subfield exists
     if ~isfield (S.Settings.Pam, 'Cor_Selection')
         S.Settings.Pam.Cor_Selection=false(numel(S.PIE.Name)+1);
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
-    P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;   
+    P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;
     %%% Checks if Pam.PlotIRF subfield exists
     if ~isfield (S.Settings.Pam, 'PlotIRF')
         S.Settings.Pam.PlotIRF='off';
         disp('UserValues.Settings.Pam.PlotIRF was incomplete');
     end
-    P.Settings.Pam.PlotIRF = S.Settings.Pam.PlotIRF;   
+    P.Settings.Pam.PlotIRF = S.Settings.Pam.PlotIRF;
     %%% Checks if Pam.PlotScat subfield exists
     if ~isfield (S.Settings.Pam, 'PlotScat')
         S.Settings.Pam.PlotScat='off';
         disp('UserValues.Settings.Pam.PlotScat was incomplete');
     end
-    P.Settings.Pam.PlotScat = S.Settings.Pam.PlotScat;  
+    P.Settings.Pam.PlotScat = S.Settings.Pam.PlotScat;
     %%% Checksm if Pam.PlotLog subfield exists
     if ~isfield (S.Settings.Pam, 'PlotLog')
         S.Settings.Pam.PlotLog='off';
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
-    P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;   
+    P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
     %% FCSFit
     %%% Checks, if FCSFit subfield exists
     if ~isfield (S, 'FCSFit')
@@ -401,7 +401,7 @@ if Mode==0 %%% Loads user values
         S.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
         S.FCSFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
         disp('UserValues.FCSFit.PlotStyles was incomplete');
-    end    
+    end
     P.FCSFit.PlotStyles = S.FCSFit.PlotStyles;
     if ~isfield (S.FCSFit,'PlotStyleAll')
         S.FCSFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
@@ -474,13 +474,13 @@ if Mode==0 %%% Loads user values
         S.MIAFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
         S.MIAFit.PlotStyles(:,1) = {'0 0 1'; '1 0 0'; '0 0.5 0'; '1 0 1'; '0 1 1'; '1 1 0'; '0.5 0.5 0.5';'1 0.5 0',;'0.5 1 0';'0.5 0 0'};
         disp('UserValues.MIAFit.PlotStyles was incomplete');
-    end    
+    end
     P.MIAFit.PlotStyles = S.MIAFit.PlotStyles;
     if ~isfield (S.MIAFit,'PlotStyleAll')
         S.MIAFit.PlotStyleAll = {'1 1 1','none','1','.','8','-','1','none','8',false}; % Consider 10 plots, which should be enough
         disp('UserValues.MIAFit.PlotStyleAll was incomplete');
     end
-    P.MIAFit.PlotStyleAll = S.MIAFit.PlotStyleAll;    
+    P.MIAFit.PlotStyleAll = S.MIAFit.PlotStyleAll;
     %% Phasor
     %%% Checks, if Phasor subfield exists
     if ~isfield (S,'Phasor')
@@ -500,19 +500,19 @@ if Mode==0 %%% Loads user values
     %%% Checks, if BurstSearch subfield exists
     if ~isfield (S,'BurstSearch')
         S.BurstSearch=[];
-        disp('UserValues.BurstSearch was incomplete');    
+        disp('UserValues.BurstSearch was incomplete');
     end
     P.BurstSearch = [];
     %%% Checks, if BurstSearch.Method subfield exists
     if ~isfield (S.BurstSearch,'Method')
         S.BurstSearch.Method=1;
-        disp('UserValues.BurstSearch.Method was incomplete');    
+        disp('UserValues.BurstSearch.Method was incomplete');
     end
     P.BurstSearch.Method = S.BurstSearch.Method;
     %%% Checks, if BurstSearch.SmoothingMethod subfield exists
     if ~isfield (S.BurstSearch,'SmoothingMethod')
         S.BurstSearch.SmoothingMethod=1;
-        disp('UserValues.BurstSearch.SmoothingMethod was incomplete');    
+        disp('UserValues.BurstSearch.SmoothingMethod was incomplete');
     end
     P.BurstSearch.SmoothingMethod = S.BurstSearch.SmoothingMethod;
     %%% Checks, if BurstSearch.PIEChannelSelection exists
@@ -521,7 +521,7 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.BurstSearch,'PIEChannelSelection')
         dummy = S.PIE.Name{1};
         S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy}};
-        disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');    
+        disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');
     end
     P.BurstSearch.PIEChannelSelection = S.BurstSearch.PIEChannelSelection;
     %%% Checks, if BurstSearch.SearchParameters exists
@@ -529,75 +529,100 @@ if Mode==0 %%% Loads user values
     %%% Method)
     if ~isfield (S.BurstSearch,'SearchParameters')
         S.BurstSearch.SearchParameters={[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5],[100,500,5,5,5]};
-        disp('UserValues.BurstSearch.SearchParameters was incomplete');    
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     if size(S.BurstSearch.SearchParameters,1) < 2
         S.BurstSearch.SearchParameters(2,1:5)={[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160],[100,30,160,160,160]};
-        disp('UserValues.BurstSearch.SearchParameters was incomplete');   
+        disp('UserValues.BurstSearch.SearchParameters was incomplete');
     end
     P.BurstSearch.SearchParameters = S.BurstSearch.SearchParameters;
     %%% Checks, if BurstSearch.SaveTotalPhotonStream exists
     if ~isfield (S.BurstSearch,'SaveTotalPhotonStream')
         S.BurstSearch.SaveTotalPhotonStream=0;
-        disp('UserValues.BurstSearch.SaveTotalPhotonStream was incomplete');    
+        disp('UserValues.BurstSearch.SaveTotalPhotonStream was incomplete');
     end
     P.BurstSearch.SaveTotalPhotonStream = S.BurstSearch.SaveTotalPhotonStream;
-    %%% Checks, if BurstSearch.TauFit subfield exists
-    if ~isfield (S.BurstSearch,'TauFit')
-        S.BurstSearch.TauFit=[];
-        disp('UserValues.BurstSearch.TauFit was incomplete');    
-    end
-    P.BurstSearch.TauFit = S.BurstSearch.TauFit;
-    %%% Checks, if BurstSearch.TauFit.Length subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'Length')
-        S.BurstSearch.TauFit.Length=cell(1,3);
-        disp('UserValues.BurstSearch.TauFit.Length was incomplete');    
-    end
-    P.BurstSearch.TauFit.Length = S.BurstSearch.TauFit.Length;
-    %%% Checks, if BurstSearch.TauFit.StartPar subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'StartPar')
-        S.BurstSearch.TauFit.StartPar={0,0,0};
-        disp('UserValues.BurstSearch.TauFit.StartPar was incomplete');    
-    end
-    P.BurstSearch.TauFit.StartPar = S.BurstSearch.TauFit.StartPar;
-    %%% Checks, if BurstSearch.TauFit.ShiftPer subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'ShiftPer')
-        S.BurstSearch.TauFit.ShiftPer={0,0,0};
-        disp('UserValues.BurstSearch.TauFit.ShiftPer was incomplete');    
-    end
-    P.BurstSearch.TauFit.ShiftPer = S.BurstSearch.TauFit.ShiftPer;
-    %%% Checks, if BurstSearch.TauFit.ShiftPer subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'ShiftPer')
-        S.BurstSearch.TauFit.ShiftPer={0,0,0};
-        disp('UserValues.BurstSearch.TauFit.ShiftPer was incomplete');    
-    end
-    P.BurstSearch.TauFit.ShiftPer = S.BurstSearch.TauFit.ShiftPer;
-    %%% Checks, if BurstSearch.TauFit.IRFShift subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'IRFShift')
-        S.BurstSearch.TauFit.IRFShift={0,0,0};
-        disp('UserValues.BurstSearch.TauFit.IRFShift was incomplete');    
-    end
-    P.BurstSearch.TauFit.IRFShift = S.BurstSearch.TauFit.IRFShift;
-    %%% Checks, if BurstSearch.TauFit.IRFLength subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'IRFLength')
-        S.BurstSearch.TauFit.IRFLength={200,200,200};
-        disp('UserValues.BurstSearch.TauFit.IRFLength was incomplete');    
-    end
-    P.BurstSearch.TauFit.IRFLength = S.BurstSearch.TauFit.IRFLength;
-    %%% Checks, if BurstSearch.TauFit.IRFrelShift subfield exists
-    if ~isfield (S.BurstSearch.TauFit,'IRFrelShift')
-        S.BurstSearch.TauFit.IRFrelShift={0,0,0};
-        disp('UserValues.BurstSearch.TauFit.IRFrelShift was incomplete');    
-    end
-    P.BurstSearch.TauFit.IRFrelShift = S.BurstSearch.TauFit.IRFrelShift;
+    
     
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
         S.TauFit=[];
-        disp('UserValues.TauFit was incomplete');    
+        disp('UserValues.TauFit was incomplete');
     end
     P.TauFit = [];
+    
+    %%% Checks, if TauFit.StartPar exists
+    %%% (This field contains the Start Parallel editbox/slider value)
+    if ~isfield (S.TauFit,'StartPar')
+        S.TauFit.StartPar={0,0,0};
+        disp('UserValues.TauFit.StartPar was incomplete');
+    end
+    P.TauFit.StartPar = S.TauFit.StartPar;
+    
+    %%% Checks, if TauFit.Length exists
+    %%% (This field contains the Length editbox/slider value)
+    if ~isfield (S.TauFit,'Length')
+        S.TauFit.Length={0,0,0};
+        disp('UserValues.TauFit.Length was incomplete');
+    end
+    P.TauFit.Length = S.TauFit.Length;
+    
+    %%% Checks, if TauFit.ShiftPer exists
+    %%% (This field contains the Shift perpendicular editbox/slider value)
+    if ~isfield (S.TauFit,'ShiftPer')
+        S.TauFit.ShiftPer={1,1,1};
+        disp('UserValues.TauFit.ShiftPer was incomplete');
+    end
+    P.TauFit.ShiftPer = S.TauFit.ShiftPer;
+    
+    %%% Checks, if TauFit.IRFLength exists
+    %%% (This field contains the IRF Length editbox/slider value)
+    if ~isfield (S.TauFit,'IRFLength')
+        S.TauFit.IRFLength={1,1,1};
+        disp('UserValues.TauFit.IRFLength was incomplete');
+    end
+    P.TauFit.IRFLength = S.TauFit.IRFLength;
+    %%% Checks, if TauFit.IRFShift exists
+    %%% (This field contains the IRF Shift editbox/slider value)
+    if ~isfield (S.TauFit,'IRFShift')
+        S.TauFit.IRFShift={0,0,0};
+        disp('UserValues.TauFit.IRFShift was incomplete');
+    end
+    P.TauFit.IRFShift = S.TauFit.IRFShift;
+    
+    %%% Checks, if TauFit.IRFrelShift exists
+    %%% (This field contains the relative shift of the perpendicular IRF editbox/slider value)
+    if ~isfield (S.TauFit,'IRFrelShift')
+        S.TauFit.IRFrelShift={0,0,0};
+        disp('UserValues.TauFit.IRFrelShift was incomplete');
+    end
+    P.TauFit.IRFrelShift = S.TauFit.IRFrelShift;
+    
+    %%% Checks, if TauFit.ScatShift exists
+    %%% (This field contains the Scatter pattern shift editbox/slider value)
+    if ~isfield (S.TauFit,'ScatShift')
+        S.TauFit.ScatShift={0,0,0};
+        disp('UserValues.TauFit.ScatShift was incomplete');
+    end
+    P.TauFit.ScatShift = S.TauFit.ScatShift;
+    
+    %%% Checks, if TauFit.ScatrelShift exists
+    %%% (This field contains the relative shift of the perpendicular scatter editbox/slider value)
+    if ~isfield (S.TauFit,'ScatrelShift')
+        S.TauFit.ScatrelShift={0,0,0};
+        disp('UserValues.TauFit.ScatrelShift was incomplete');
+    end
+    P.TauFit.ScatrelShift = S.TauFit.ScatrelShift;
+    
+    %%% Checks, if TauFit.Ignore exists
+    %%% (This field contains the editbox/slider value for ignoring the first part of the TAC from fitting quality estimation)
+    if ~isfield (S.TauFit,'Ignore')
+        S.TauFit.Ignore={1,1,1};
+        disp('UserValues.TauFit.Ignore was incomplete');
+    end
+    P.TauFit.Ignore = S.TauFit.Ignore;
+    
     %%% Checks, if TauFit.PIEChannelSelection exists
     %%% (This field contains the PIE Channel Selection as String/Name for
     %%% Parallel and Perpendicular Channel)
@@ -607,228 +632,250 @@ if Mode==0 %%% Loads user values
             disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
     end
     P.TauFit.PIEChannelSelection = S.TauFit.PIEChannelSelection;
-    %%% Checks, if TauFit.blue exists
-    %%% (Gfactor for the blue channels)
-    if ~isfield (S.TauFit,'Gblue')
-        S.TauFit.Gblue=1;
-        disp('UserValues.TauFit.Gblue was incomplete');    
+    
+    %%% Checks, if TauFit.G exists
+    %%% (Gfactors)
+    if ~isfield (S.TauFit,'G')
+        S.TauFit.G={1,1,1};
+        disp('UserValues.TauFit.G was incomplete');
     end
-    P.TauFit.Gblue = S.TauFit.Gblue;
-    %%% Checks, if TauFit.Ggreen exists
-    %%% (Gfactor for the green channels)
-    if ~isfield (S.TauFit,'Ggreen')
-        S.TauFit.Ggreen=1;
-            disp('UserValues.TauFit.Ggreen was incomplete');    
-    end
-    P.TauFit.Ggreen = S.TauFit.Ggreen;
-    %%% Checks, if TauFit.Gred exists
-    %%% (Gfactor for the red channels)
-    if ~isfield (S.TauFit,'Gred')
-        S.TauFit.Gred=1;
-        disp('UserValues.TauFit.Gred was incomplete');    
-    end
-    P.TauFit.Gred = S.TauFit.Gred;
+    P.TauFit.G = S.TauFit.G;
+    
     %%% Checks, if TauFit.l1 exists
     %%% (First of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
     if ~isfield (S.TauFit,'l1')
         S.TauFit.l1=0;
-        disp('UserValues.TauFit.l1 was incomplete');    
+        disp('UserValues.TauFit.l1 was incomplete');
     end
     P.TauFit.l1 = S.TauFit.l1;
     %%% Checks, if TauFit.l2 exists
     %%% (Second of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
     if ~isfield (S.TauFit,'l2')
         S.TauFit.l2=0;
-        disp('UserValues.TauFit.l2 was incomplete');    
+        disp('UserValues.TauFit.l2 was incomplete');
     end
     P.TauFit.l2 = S.TauFit.l2;
     %%% Checks, if TauFit.ConvolutionType exists
     %%% (Options: lijnear and circular == periodic convolution)
     if ~isfield (S.TauFit,'ConvolutionType')
         S.TauFit.ConvolutionType='linear';
-        disp('UserValues.TauFit.ConvolutionType was incomplete');    
+        disp('UserValues.TauFit.ConvolutionType was incomplete');
     end
     P.TauFit.ConvolutionType = S.TauFit.ConvolutionType;
+    
+    %%% Checks, if TauFit.FitParams exists
+    % 1  tau1
+    % 2  tau2
+    % 3  tau3
+    % 4  F1
+    % 5  F2
+    % 6  ScatPar
+    % 7  ScatPer
+    % 8  BackPar
+    % 9  BackPer
+    % 10 IRF
+    % 11 R0
+    % 12 tauD0
+    % 13 l1
+    % 14 l2
+    % 15 Rho1
+    % 16 Rho2
+    % 17 r0
+    % 18 rinf
+    % 19 R
+    % 20 sigR
+    % 21 FD0
+    % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
+    if ~isfield (S.TauFit,'FitParams')
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
+        S.TauFit.FitParams = {params,params,params};
+        S.TauFit.FitFix = {fix,fix,fix};
+        disp('UserValues.TauFit.FitParams/FitFix was incomplete');
+    end
+    P.TauFit.FitParams = S.TauFit.FitParams;
+    P.TauFit.FitFix = S.TauFit.FitFix;
+    
     %% BurstBrowser
     %%% Checks, if BurstBrowser subfield exists
     if ~isfield (S,'BurstBrowser')
         S.BurstBrowser=[];
-        disp('UserValues.BurstBrowser was incomplete');    
+        disp('UserValues.BurstBrowser was incomplete');
     end
     P.BurstBrowser = S.BurstBrowser;
     %%% Checks, if BurstBrowser.Corrections subfield exists
     %%% Here the correction factors are stored
     if ~isfield (S.BurstBrowser,'Corrections')
         S.BurstBrowser.Corrections=[];
-        disp('UserValues.BurstBrowser.Corrections was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections was incomplete');
     end
     P.BurstBrowser.Corrections = S.BurstBrowser.Corrections;
     %%% Checks, if BurstBrowser.Corrections.CrossTalk_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_GR')
         S.BurstBrowser.Corrections.CrossTalk_GR=0;
-        disp('UserValues.BurstBrowser.Corrections.CrossTalk_GR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_GR was incomplete');
     end
     P.BurstBrowser.Corrections.CrossTalk_GR = S.BurstBrowser.Corrections.CrossTalk_GR;
     %%% Checks, if BurstBrowser.Corrections.CrossTalk_BG subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_BG')
         S.BurstBrowser.Corrections.CrossTalk_BG=0;
-        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BG was incomplete');
     end
     P.BurstBrowser.Corrections.CrossTalk_BG = S.BurstBrowser.Corrections.CrossTalk_BG;
     %%% Checks, if BurstBrowser.Corrections.CrossTalk_BR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'CrossTalk_BR')
         S.BurstBrowser.Corrections.CrossTalk_BR=0;
-        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.CrossTalk_BR was incomplete');
     end
     P.BurstBrowser.Corrections.CrossTalk_BR = S.BurstBrowser.Corrections.CrossTalk_BR;
     %%% Checks, if BurstBrowser.Corrections.DirectExcitation_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_GR')
         S.BurstBrowser.Corrections.DirectExcitation_GR=0;
-        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_GR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_GR was incomplete');
     end
     P.BurstBrowser.Corrections.DirectExcitation_GR = S.BurstBrowser.Corrections.DirectExcitation_GR;
     %%% Checks, if BurstBrowser.Corrections.DirectExcitation_BG subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_BG')
         S.BurstBrowser.Corrections.DirectExcitation_BG=0;
-        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BG was incomplete');
     end
     P.BurstBrowser.Corrections.DirectExcitation_BG = S.BurstBrowser.Corrections.DirectExcitation_BG;
     %%% Checks, if BurstBrowser.Corrections.DirectExcitation_BR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'DirectExcitation_BR')
         S.BurstBrowser.Corrections.DirectExcitation_BR=0;
-        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DirectExcitation_BR was incomplete');
     end
     P.BurstBrowser.Corrections.DirectExcitation_BR = S.BurstBrowser.Corrections.DirectExcitation_BR;
     %%% Checks, if BurstBrowser.Corrections.Gamma_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Gamma_GR')
         S.BurstBrowser.Corrections.Gamma_GR=1;
-        disp('UserValues.BurstBrowser.Corrections.Gamma_GR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Gamma_GR was incomplete');
     end
     P.BurstBrowser.Corrections.Gamma_GR = S.BurstBrowser.Corrections.Gamma_GR;
     %%% Checks, if BurstBrowser.Corrections.Gamma_BG subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Gamma_BG')
         S.BurstBrowser.Corrections.Gamma_BG=1;
-        disp('UserValues.BurstBrowser.Corrections.Gamma_BG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Gamma_BG was incomplete');
     end
     P.BurstBrowser.Corrections.Gamma_BG = S.BurstBrowser.Corrections.Gamma_BG;
     %%% Checks, if BurstBrowser.Corrections.Gamma_BR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Gamma_BR')
         S.BurstBrowser.Corrections.Gamma_BR=1;
-        disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Gamma_BR was incomplete');
     end
     P.BurstBrowser.Corrections.Gamma_BR = S.BurstBrowser.Corrections.Gamma_BR;
     %%% Checks, if BurstBrowser.Corrections.UseBeta subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'UseBeta')
         S.BurstBrowser.Corrections.UseBeta=0;
-        disp('UserValues.BurstBrowser.Corrections.UseBeta was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.UseBeta was incomplete');
     end
     P.BurstBrowser.Corrections.UseBeta = S.BurstBrowser.Corrections.UseBeta;
     %%% Checks, if BurstBrowser.Corrections.Beta_GR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Beta_GR')
         S.BurstBrowser.Corrections.Beta_GR=1;
-        disp('UserValues.BurstBrowser.Corrections.Beta_GR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Beta_GR was incomplete');
     end
     P.BurstBrowser.Corrections.Beta_GR = S.BurstBrowser.Corrections.Beta_GR;
     %%% Checks, if BurstBrowser.Corrections.Beta_BG subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Beta_BG')
         S.BurstBrowser.Corrections.Beta_BG=1;
-        disp('UserValues.BurstBrowser.Corrections.Beta_BG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Beta_BG was incomplete');
     end
     P.BurstBrowser.Corrections.Beta_BG = S.BurstBrowser.Corrections.Beta_BG;
     %%% Checks, if BurstBrowser.Corrections.Beta_BR subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Beta_BR')
         S.BurstBrowser.Corrections.Beta_BR=1;
-        disp('UserValues.BurstBrowser.Corrections.Beta_BR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Beta_BR was incomplete');
     end
     P.BurstBrowser.Corrections.Beta_BR = S.BurstBrowser.Corrections.Beta_BR;
     %%% Checks, if BurstBrowser.Corrections.Background_BBpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BBpar')
         S.BurstBrowser.Corrections.Background_BBpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BBpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BBpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BBpar = S.BurstBrowser.Corrections.Background_BBpar;
     %%% Checks, if BurstBrowser.Corrections.Background_BBperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BBperp')
         S.BurstBrowser.Corrections.Background_BBperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BBperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BBperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BBperp = S.BurstBrowser.Corrections.Background_BBperp;
     %%% Checks, if BurstBrowser.Corrections.Background_BGpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BGpar')
         S.BurstBrowser.Corrections.Background_BGpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BGpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BGpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BGpar = S.BurstBrowser.Corrections.Background_BGpar;
     %%% Checks, if BurstBrowser.Corrections.Background_BGperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BGperp')
         S.BurstBrowser.Corrections.Background_BGperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BGperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BGperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BGperp = S.BurstBrowser.Corrections.Background_BGperp;
     %%% Checks, if BurstBrowser.Corrections.Background_BRpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BRpar')
         S.BurstBrowser.Corrections.Background_BRpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BRpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BRpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BRpar = S.BurstBrowser.Corrections.Background_BRpar;
     %%% Checks, if BurstBrowser.Corrections.Background_BRperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_BRperp')
         S.BurstBrowser.Corrections.Background_BRperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_BRperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_BRperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_BRperp = S.BurstBrowser.Corrections.Background_BRperp;
     %%% Checks, if BurstBrowser.Corrections.Background_GGpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_GGpar')
         S.BurstBrowser.Corrections.Background_GGpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GGpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_GGpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_GGpar = S.BurstBrowser.Corrections.Background_GGpar;
     %%% Checks, if BurstBrowser.Corrections.Background_GGperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_GGperp')
         S.BurstBrowser.Corrections.Background_GGperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GGperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_GGperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_GGperp = S.BurstBrowser.Corrections.Background_GGperp;
     %%% Checks, if BurstBrowser.Corrections.Background_GRpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_GRpar')
         S.BurstBrowser.Corrections.Background_GRpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GRpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_GRpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_GRpar = S.BurstBrowser.Corrections.Background_GRpar;
     %%% Checks, if BurstBrowser.Corrections.Background_GRperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_GRperp')
         S.BurstBrowser.Corrections.Background_GRperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_GRperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_GRperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_GRperp = S.BurstBrowser.Corrections.Background_GRperp;
     %%% Checks, if BurstBrowser.Corrections.Background_RRpar subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_RRpar')
         S.BurstBrowser.Corrections.Background_RRpar=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_RRpar was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_RRpar was incomplete');
     end
     P.BurstBrowser.Corrections.Background_RRpar = S.BurstBrowser.Corrections.Background_RRpar;
     %%% Checks, if BurstBrowser.Corrections.Background_RRperp subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'Background_RRperp')
         S.BurstBrowser.Corrections.Background_RRperp=0;
-        disp('UserValues.BurstBrowser.Corrections.Background_RRperp was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.Background_RRperp was incomplete');
     end
     P.BurstBrowser.Corrections.Background_RRperp = S.BurstBrowser.Corrections.Background_RRperp;
     %%% Checks, if BurstBrowser.Corrections.GfactorBlue subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'GfactorBlue')
         S.BurstBrowser.Corrections.GfactorBlue=1;
-        disp('UserValues.BurstBrowser.Corrections.GfactorBlue was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.GfactorBlue was incomplete');
     end
     P.BurstBrowser.Corrections.GfactorBlue = S.BurstBrowser.Corrections.GfactorBlue;
     %%% Checks, if BurstBrowser.Corrections.GfactorGreen subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'GfactorGreen')
         S.BurstBrowser.Corrections.GfactorGreen=1;
-        disp('UserValues.BurstBrowser.Corrections.GfactorGreen was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.GfactorGreen was incomplete');
     end
     P.BurstBrowser.Corrections.GfactorGreen = S.BurstBrowser.Corrections.GfactorGreen;
     %%% Checks, if BurstBrowser.Corrections.GfactorRed subfield exists
     if ~isfield (S.BurstBrowser.Corrections,'GfactorRed')
         S.BurstBrowser.Corrections.GfactorRed=1;
-        disp('UserValues.BurstBrowser.Corrections.GfactorRed was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.GfactorRed was incomplete');
     end
     P.BurstBrowser.Corrections.GfactorRed = S.BurstBrowser.Corrections.GfactorRed;
     %%% Checks, if BurstBrowser.Corrections.l1 subfield exists
@@ -836,7 +883,7 @@ if Mode==0 %%% Loads user values
     %%% mixing caused by the high N.A. objective lense
     if ~isfield (S.BurstBrowser.Corrections,'l1')
         S.BurstBrowser.Corrections.l1=0;
-        disp('UserValues.BurstBrowser.Corrections.l1 was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.l1 was incomplete');
     end
     P.BurstBrowser.Corrections.l1 = S.BurstBrowser.Corrections.l1;
     %%% Checks, if BurstBrowser.Corrections.l2 subfield exists
@@ -844,243 +891,243 @@ if Mode==0 %%% Loads user values
     %%% mixing caused by the high N.A. objective lense
     if ~isfield (S.BurstBrowser.Corrections,'l2')
         S.BurstBrowser.Corrections.l2=0;
-        disp('UserValues.BurstBrowser.Corrections.l2 was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.l2 was incomplete');
     end
     P.BurstBrowser.Corrections.l2 = S.BurstBrowser.Corrections.l2;
     %%% Checks, if BurstBrowser.Corrections.DonorLifetime subfield exists
     %%% This value stores the set Donor Lifetime
     if ~isfield (S.BurstBrowser.Corrections,'DonorLifetime')
         S.BurstBrowser.Corrections.DonorLifetime=3.8;
-        disp('UserValues.BurstBrowser.Corrections.DonorLifetime was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetime was incomplete');
     end
     P.BurstBrowser.Corrections.DonorLifetime = S.BurstBrowser.Corrections.DonorLifetime;
     %%% Checks, if BurstBrowser.Corrections.DonorLifetimeBlue subfield exists
     %%% This value stores the set Donor Lifetime
     if ~isfield (S.BurstBrowser.Corrections,'DonorLifetimeBlue')
         S.BurstBrowser.Corrections.DonorLifetimeBlue=3.8;
-        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');
     end
     P.BurstBrowser.Corrections.DonorLifetimeBlue = S.BurstBrowser.Corrections.DonorLifetimeBlue;
     %%% Checks, if BurstBrowser.Corrections.AcceptorLifetime subfield exists
     %%% This value stores the set Acceptor Lifetime
     if ~isfield (S.BurstBrowser.Corrections,'AcceptorLifetime')
         S.BurstBrowser.Corrections.AcceptorLifetime=3.5;
-        disp('UserValues.BurstBrowser.Corrections.AcceptorLifetime was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.AcceptorLifetime was incomplete');
     end
     P.BurstBrowser.Corrections.AcceptorLifetime = S.BurstBrowser.Corrections.AcceptorLifetime;
     %%% Checks, if BurstBrowser.Corrections.FoersterRadius subfield exists
     %%% This value stores the set Foerster Radius
     if ~isfield (S.BurstBrowser.Corrections,'FoersterRadius')
         S.BurstBrowser.Corrections.FoersterRadius=59;
-        disp('UserValues.BurstBrowser.Corrections.FoersterRadius was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadius was incomplete');
     end
     P.BurstBrowser.Corrections.FoersterRadius = S.BurstBrowser.Corrections.FoersterRadius;
     %%% Checks, if BurstBrowser.Corrections.LinkerLength subfield exists
-    %%% This value stores the set Linker Length 
+    %%% This value stores the set Linker Length
     if ~isfield (S.BurstBrowser.Corrections,'LinkerLength')
         S.BurstBrowser.Corrections.LinkerLength=5;
-        disp('UserValues.BurstBrowser.Corrections.LinkerLength was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.LinkerLength was incomplete');
     end
     P.BurstBrowser.Corrections.LinkerLength = S.BurstBrowser.Corrections.LinkerLength;
-     %%% Checks, if BurstBrowser.Corrections.DonorLifetimeBlue subfield exists
+    %%% Checks, if BurstBrowser.Corrections.DonorLifetimeBlue subfield exists
     %%% This value stores the set Donor Lifetime of the Blue dye
     if ~isfield (S.BurstBrowser.Corrections,'DonorLifetimeBlue')
         S.BurstBrowser.Corrections.DonorLifetimeBlue=4.1;
-        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.DonorLifetimeBlue was incomplete');
     end
     P.BurstBrowser.Corrections.DonorLifetimeBlue = S.BurstBrowser.Corrections.DonorLifetimeBlue;
     %%% Checks, if BurstBrowser.Corrections.FoersterRadiusBG subfield exists
     %%% This value stores the set Foerster Radius BG
     if ~isfield (S.BurstBrowser.Corrections,'FoersterRadiusBG')
         S.BurstBrowser.Corrections.FoersterRadiusBG=59;
-        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBG was incomplete');
     end
     P.BurstBrowser.Corrections.FoersterRadiusBG = S.BurstBrowser.Corrections.FoersterRadiusBG;
     %%% Checks, if BurstBrowser.Corrections.LinkerLengthBG subfield exists
     %%% This value stores the set Linker Length BG
     if ~isfield (S.BurstBrowser.Corrections,'LinkerLengthBG')
         S.BurstBrowser.Corrections.LinkerLengthBG=5;
-        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBG was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBG was incomplete');
     end
     P.BurstBrowser.Corrections.LinkerLengthBG = S.BurstBrowser.Corrections.LinkerLengthBG;
     %%% Checks, if BurstBrowser.Corrections.FoersterRadiusBR subfield exists
     %%% This value stores the set Foerster Radius BR
     if ~isfield (S.BurstBrowser.Corrections,'FoersterRadiusBR')
         S.BurstBrowser.Corrections.FoersterRadiusBR=59;
-        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.FoersterRadiusBR was incomplete');
     end
     P.BurstBrowser.Corrections.FoersterRadiusBR = S.BurstBrowser.Corrections.FoersterRadiusBR;
     %%% Checks, if BurstBrowser.Corrections.LinkerLength subfield exists
     %%% This value stores the set Linker Length BR
     if ~isfield (S.BurstBrowser.Corrections,'LinkerLengthBR')
         S.BurstBrowser.Corrections.LinkerLengthBR=5;
-        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBR was incomplete');    
+        disp('UserValues.BurstBrowser.Corrections.LinkerLengthBR was incomplete');
     end
     P.BurstBrowser.Corrections.LinkerLengthBR = S.BurstBrowser.Corrections.LinkerLengthBR;
     %%% Checks, if BurstBrowser.Display subfield exists
     %%% Here the display options are stored
     if ~isfield (S.BurstBrowser,'Display')
         S.BurstBrowser.Display=[];
-        disp('UserValues.BurstBrowser.Display was incomplete');    
+        disp('UserValues.BurstBrowser.Display was incomplete');
     end
-        %%% Check, if BurstBrowser.Corrections.r0_green subfield exists
+    %%% Check, if BurstBrowser.Corrections.r0_green subfield exists
     if ~isfield(S.BurstBrowser.Corrections, 'r0_green')
         S.BurstBrowser.Corrections.r0_green=0.4;
-        disp('UserValues.BurstBrowser.Corrections.r0_green was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Corrections.r0_green was incomplete');
+    end
     P.BurstBrowser.Corrections.r0_green = S.BurstBrowser.Corrections.r0_green;
     %%% Check, if BurstBrowser.Corrections.r0_red subfield exists
     if ~isfield(S.BurstBrowser.Corrections, 'r0_red')
         S.BurstBrowser.Corrections.r0_red=0.4;
-        disp('UserValues.BurstBrowser.Corrections.r0_red was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Corrections.r0_red was incomplete');
+    end
     P.BurstBrowser.Corrections.r0_red = S.BurstBrowser.Corrections.r0_red;
     %%% Check, if BurstBrowser.Corrections.r0_green subfield exists
     if ~isfield(S.BurstBrowser.Corrections, 'r0_blue')
         S.BurstBrowser.Corrections.r0_blue=0.4;
-        disp('UserValues.BurstBrowser.Corrections.r0_blue was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Corrections.r0_blue was incomplete');
+    end
     P.BurstBrowser.Corrections.r0_blue = S.BurstBrowser.Corrections.r0_blue;
     %%% Checks, if BurstBrowser.Display subfield exists
     if ~isfield (S.BurstBrowser,'Display')
         S.BurstBrowser.Display=[];
-        disp('UserValues.BurstBrowser.Display was incomplete');    
+        disp('UserValues.BurstBrowser.Display was incomplete');
     end
     P.BurstBrowser.Display = [];
     %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
     if ~isfield (S.BurstBrowser.Display,'NumberOfBinsX')
         S.BurstBrowser.Display.NumberOfBinsX=50;
-        disp('UserValues.BurstBrowser.Display.NumberOfBinsX was incomplete');    
+        disp('UserValues.BurstBrowser.Display.NumberOfBinsX was incomplete');
     end
     P.BurstBrowser.Display.NumberOfBinsX = S.BurstBrowser.Display.NumberOfBinsX;
     %%% Checks, if BurstBrowser.Display.NumberOfBinsX subfield exists
     if ~isfield (S.BurstBrowser.Display,'NumberOfBinsY')
         S.BurstBrowser.Display.NumberOfBinsY=50;
-        disp('UserValues.BurstBrowser.Display.NumberOfBinsY was incomplete');    
+        disp('UserValues.BurstBrowser.Display.NumberOfBinsY was incomplete');
     end
     P.BurstBrowser.Display.NumberOfBinsY = S.BurstBrowser.Display.NumberOfBinsY;
     %%% Checks, if BurstBrowser.Display.PlotType subfield exists
     if ~isfield (S.BurstBrowser.Display,'PlotType')
         S.BurstBrowser.Display.PlotType='Image';
-        disp('UserValues.BurstBrowser.Display.PlotType was incomplete');    
+        disp('UserValues.BurstBrowser.Display.PlotType was incomplete');
     end
     P.BurstBrowser.Display.PlotType = S.BurstBrowser.Display.PlotType;
     %%% Checks, if BurstBrowser.Display.ColorMap subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorMap')
         S.BurstBrowser.Display.ColorMap='hot';
-        disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ColorMap was incomplete');
     end
     P.BurstBrowser.Display.ColorMap = S.BurstBrowser.Display.ColorMap;
     %%% Checks, if BurstBrowser.Display.NumberOfContourLevels subfield exists
     if ~isfield (S.BurstBrowser.Display,'NumberOfContourLevels')
         S.BurstBrowser.Display.NumberOfContourLevels=10;
-        disp('UserValues.BurstBrowser.Display.NumberOfContourLevels was incomplete');    
+        disp('UserValues.BurstBrowser.Display.NumberOfContourLevels was incomplete');
     end
     P.BurstBrowser.Display.NumberOfContourLevels = S.BurstBrowser.Display.NumberOfContourLevels;
     %%% Checks, if BurstBrowser.Display.ContourOffset subfield exists
     if ~isfield (S.BurstBrowser.Display,'ContourOffset')
         S.BurstBrowser.Display.ContourOffset=5;
-        disp('UserValues.BurstBrowser.Display.ContourOffset was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ContourOffset was incomplete');
     end
     P.BurstBrowser.Display.ContourOffset = S.BurstBrowser.Display.ContourOffset;
     %%% Checks, if BurstBrowser.Display.PlotContourLines subfield exists
     if ~isfield (S.BurstBrowser.Display,'PlotContourLines')
         S.BurstBrowser.Display.PlotContourLines=1;
-        disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');    
+        disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');
     end
     P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
     %%% Checks, if BurstBrowser.Display.KDE subfield exists
     if ~isfield (S.BurstBrowser.Display,'KDE')
         S.BurstBrowser.Display.KDE=0;
-        disp('UserValues.BurstBrowser.Display.KDE was incomplete');    
+        disp('UserValues.BurstBrowser.Display.KDE was incomplete');
     end
     P.BurstBrowser.Display.KDE = S.BurstBrowser.Display.KDE;
     %%% Checks, if BurstBrowser.Display.ColorMapInvert subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorMapInvert')
         S.BurstBrowser.Display.ColorMapInvert=0;
-        disp('UserValues.BurstBrowser.Display.ColorMapInvert was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ColorMapInvert was incomplete');
     end
     P.BurstBrowser.Display.ColorMapInvert = S.BurstBrowser.Display.ColorMapInvert;
     %%% Checks, if BurstBrowser.Display.ColorLine1 subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorLine1')
         S.BurstBrowser.Display.ColorLine1=[0 0 1];
-        disp('UserValues.BurstBrowser.Display.ColorLine1 was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ColorLine1 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine1 = S.BurstBrowser.Display.ColorLine1;
     %%% Checks, if BurstBrowser.Display.ColorLine2 subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorLine2')
         S.BurstBrowser.Display.ColorLine2=[1 0 0];
-        disp('UserValues.BurstBrowser.Display.ColorLine2 was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ColorLine2 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine2 = S.BurstBrowser.Display.ColorLine2;
     %%% Checks, if BurstBrowser.Display.ColorLine3 subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorLine3')
         S.BurstBrowser.Display.ColorLine3=[0 1 0];
-        disp('UserValues.BurstBrowser.Display.ColorLine3 was incomplete');    
+        disp('UserValues.BurstBrowser.Display.ColorLine3 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine3 = S.BurstBrowser.Display.ColorLine3;
     
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
-        disp('UserValues.BurstBrowser.Settings was incomplete');    
+        disp('UserValues.BurstBrowser.Settings was incomplete');
     end
     
     P.BurstBrowser.Settings = [];
     %%% Check, if BurstBrowser.Settings.PrintPath subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PrintPath')
         S.BurstBrowser.Settings.PrintPath=pwd;
-        disp('UserValues.BurstBrowser.Settings.PrintPath was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.PrintPath was incomplete');
+    end
     P.BurstBrowser.Settings.PrintPath = S.BurstBrowser.Settings.PrintPath;
     %%% Check, if BurstBrowser.Settings.SaveOnClose subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'SaveOnClose')
         S.BurstBrowser.Settings.SaveOnClose=0;
-        disp('UserValues.BurstBrowser.Settings.SaveOnClose was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.SaveOnClose was incomplete');
+    end
     P.BurstBrowser.Settings.SaveOnClose = S.BurstBrowser.Settings.SaveOnClose;
     %%% Check, if BurstBrowser.Settings.fFCS_UseIRF subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseIRF')
         S.BurstBrowser.Settings.fFCS_UseIRF=1;
-        disp('UserValues.BurstBrowser.Settings.fFCS_UseIRF was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.fFCS_UseIRF was incomplete');
+    end
     P.BurstBrowser.Settings.fFCS_UseIRF = S.BurstBrowser.Settings.fFCS_UseIRF;
     %%% Check, if BurstBrowser.Settings.Downsample_fFCS subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'Downsample_fFCS')
         S.BurstBrowser.Settings.Downsample_fFCS=0;
-        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS was incomplete');
+    end
     P.BurstBrowser.Settings.Downsample_fFCS = S.BurstBrowser.Settings.Downsample_fFCS;
     %%% Check, if BurstBrowser.Settings.Downsample_fFCS_Time subfield exists
     %%% Stores the desired MI Bin time in ps
     if ~isfield(S.BurstBrowser.Settings, 'Downsample_fFCS_Time')
         S.BurstBrowser.Settings.Downsample_fFCS_Time=100;
-        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS_Time was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.Downsample_fFCS_Time was incomplete');
+    end
     P.BurstBrowser.Settings.Downsample_fFCS_Time = S.BurstBrowser.Settings.Downsample_fFCS_Time;
     %%% Check, if BurstBrowser.Settings.fFCS_Mode subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'fFCS_Mode')
         S.BurstBrowser.Settings.fFCS_Mode=1;
-        disp('UserValues.BurstBrowser.Settings.fFCS_Mode was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.fFCS_Mode was incomplete');
+    end
     P.BurstBrowser.Settings.fFCS_Mode = S.BurstBrowser.Settings.fFCS_Mode;
     %%% Check, if BurstBrowser.Settings.fFCS_UseFRET subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseFRET')
         S.BurstBrowser.Settings.fFCS_UseFRET=1;
-        disp('UserValues.BurstBrowser.Settings.fFCS_UseFRET was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.fFCS_UseFRET was incomplete');
+    end
     P.BurstBrowser.Settings.fFCS_UseFRET = S.BurstBrowser.Settings.fFCS_UseFRET;
     %%% Check, if BurstBrowser.Settings.Corr_TimeWindowSize subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'Corr_TimeWindowSize')
         S.BurstBrowser.Settings.Corr_TimeWindowSize=5;
-        disp('UserValues.BurstBrowser.Settings.Corr_TimeWindowSize was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.Corr_TimeWindowSize was incomplete');
+    end
     P.BurstBrowser.Settings.Corr_TimeWindowSize = S.BurstBrowser.Settings.Corr_TimeWindowSize;
     %%% Check, if BurstBrowser.Settings.SaveFileExportFigure subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'SaveFileExportFigure')
         S.BurstBrowser.Settings.SaveFileExportFigure=0;
-        disp('UserValues.BurstBrowser.Settings.SaveFileExportFigure was incomplete');    
-    end 
+        disp('UserValues.BurstBrowser.Settings.SaveFileExportFigure was incomplete');
+    end
     P.BurstBrowser.Settings.SaveFileExportFigure = S.BurstBrowser.Settings.SaveFileExportFigure;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
@@ -1094,7 +1141,7 @@ if Mode==0 %%% Loads user values
         S.tcPDA.PathName = pwd;
     end
     P.tcPDA.PathName = S.tcPDA.PathName;
-
+    
     if ~isfield(S.tcPDA, 'FileName')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.FileName" missing');
         S.tcPDA.FileName = '';
@@ -1106,104 +1153,104 @@ if Mode==0 %%% Loads user values
         S.tcPDA.corrections = [];
     end
     P.tcPDA.corrections = S.tcPDA.corrections;
-
+    
     if ~isfield(S.tcPDA.corrections, 'ct_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_gr" missing');
         S.tcPDA.corrections.ct_gr = 0;
     end
     P.tcPDA.corrections.ct_gr = S.tcPDA.corrections.ct_gr;
-
+    
     if ~isfield(S.tcPDA.corrections, 'ct_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_bg" missing');
         S.tcPDA.corrections.ct_bg = 0;
     end
     P.tcPDA.corrections.ct_bg = S.tcPDA.corrections.ct_bg;
-
+    
     if ~isfield(S.tcPDA.corrections, 'ct_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_br" missing');
         S.tcPDA.corrections.ct_br = 0;
     end
     P.tcPDA.corrections.ct_br = S.tcPDA.corrections.ct_br;
-
+    
     if ~isfield(S.tcPDA.corrections, 'de_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_gr" missing');
         S.tcPDA.corrections.de_gr = 0;
     end
     P.tcPDA.corrections.de_gr = S.tcPDA.corrections.de_gr;
-
+    
     if ~isfield(S.tcPDA.corrections, 'de_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_bg" missing');
         S.tcPDA.corrections.de_bg = 0;
     end
     P.tcPDA.corrections.de_bg = S.tcPDA.corrections.de_bg;
-
+    
     if ~isfield(S.tcPDA.corrections, 'de_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_br" missing');
         S.tcPDA.corrections.de_br = 0;
     end
     P.tcPDA.corrections.de_br = S.tcPDA.corrections.de_br;
-
+    
     if ~isfield(S.tcPDA.corrections, 'gamma_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_gr" missing');
         S.tcPDA.corrections.gamma_gr = 1;
     end
     P.tcPDA.corrections.gamma_gr = S.tcPDA.corrections.gamma_gr;
-
+    
     if ~isfield(S.tcPDA.corrections, 'gamma_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_br" missing');
         S.tcPDA.corrections.gamma_br = 1;
     end
     P.tcPDA.corrections.gamma_br = S.tcPDA.corrections.gamma_br;
-
-
+    
+    
     if ~isfield(S.tcPDA.corrections, 'BG_bb')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bb" missing');
         S.tcPDA.corrections.BG_bb = 0;
     end
     P.tcPDA.corrections.BG_bb = S.tcPDA.corrections.BG_bb;
-
+    
     if ~isfield(S.tcPDA.corrections, 'BG_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bg" missing');
         S.tcPDA.corrections.BG_bg = 0;
     end
     P.tcPDA.corrections.BG_bg = S.tcPDA.corrections.BG_bg;
-
+    
     if ~isfield(S.tcPDA.corrections, 'BG_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_br" missing');
         S.tcPDA.corrections.BG_br = 0;
     end
     P.tcPDA.corrections.BG_br = S.tcPDA.corrections.BG_br;
-
+    
     if ~isfield(S.tcPDA.corrections, 'BG_gg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gg" missing');
         S.tcPDA.corrections.BG_gg = 0;
     end
     P.tcPDA.corrections.BG_gg = S.tcPDA.corrections.BG_gg;
-
+    
     if ~isfield(S.tcPDA.corrections, 'BG_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gr" missing');
         S.tcPDA.corrections.BG_gr = 0;
     end
     P.tcPDA.corrections.BG_gr = S.tcPDA.corrections.BG_gr;
-
+    
     if ~isfield(S.tcPDA.corrections, 'sampling')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.sampling" missing');
         S.tcPDA.corrections.sampling = 1;
     end
     P.tcPDA.corrections.sampling = S.tcPDA.corrections.sampling;
-
+    
     if ~isfield(S.tcPDA.corrections, 'R0_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_gr" missing');
         S.tcPDA.corrections.R0_gr = 68;
     end
     P.tcPDA.corrections.R0_gr = S.tcPDA.corrections.R0_gr;
-
+    
     if ~isfield(S.tcPDA.corrections, 'R0_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_bg" missing');
         S.tcPDA.corrections.R0_bg = 63;
     end
     P.tcPDA.corrections.R0_bg = S.tcPDA.corrections.R0_bg;
-
+    
     if ~isfield(S.tcPDA.corrections, 'R0_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_br" missing');
         S.tcPDA.corrections.R0_br = 51;
@@ -1221,7 +1268,7 @@ if Mode==0 %%% Loads user values
         S.MIA.ColorMap_Main = [1; 1];
     end
     P.MIA.ColorMap_Main = S.MIA.ColorMap_Main;
-
+    
     if ~isfield(S.MIA, 'CustomColor') || size(S.MIA.CustomColor,1)~=2 || size(S.MIA.CustomColor,2)~=3 || ~isnumeric(S.MIA.CustomColor) || any(isnan(S.MIA.CustomColor(:)))
         disp('WARNING: UserValues structure incomplete, field "MIA.CustomColor" missing');
         S.MIA.CustomColor = [0 1 0; 1 0 0];
@@ -1276,7 +1323,7 @@ else
     Current=[];
 end
 
-%%% Saves user values    
+%%% Saves user values
 Profiledir = [pwd filesep 'profiles'];
 if ~isempty(Current) %% Saves loaded profile
     Profile=Current;
