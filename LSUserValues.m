@@ -579,7 +579,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.IRFLength exists
     %%% (This field contains the IRF Length editbox/slider value)
     if ~isfield (S.TauFit,'IRFLength')
-        S.TauFit.IRFLength={1,1,1};
+        S.TauFit.IRFLength={100,100,100};
         disp('UserValues.TauFit.IRFLength was incomplete');
     end
     P.TauFit.IRFLength = S.TauFit.IRFLength;
