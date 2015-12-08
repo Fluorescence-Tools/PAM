@@ -409,13 +409,28 @@ if isempty(hfig)
         'Tag','ExportMicrotimePatternMenuItem',...
         'Callback',@Export_Microtime_Pattern);
     
-    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem = uimenu(...
-        'Parent',h.SpeciesListMenu,...
+    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem = uimenu('Parent',h.SpeciesListMenu,...
         'Label','Export Species to 2C-PDA',...
         'Tag','ExportSpeciesToPDA_2C_for3CMFD_MenuItem',...
-        'Callback',@Export_To_PDA,...
         'Visible','off');
-    
+     h.ExportSpeciesToPDA_2C_for3CMFD_GR = uimenu(...
+        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
+        'Label','GR',...
+        'Tag','ExportSpeciesToPDA_2C_for3CMFD_GR',...
+        'Callback',@Export_To_PDA,...
+        'Visible','on');
+    h.ExportSpeciesToPDA_2C_for3CMFD_BG = uimenu(...
+        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
+        'Label','BG',...
+        'Tag','ExportSpeciesToPDA_2C_for3CMFD_BG',...
+        'Callback',@Export_To_PDA,...
+        'Visible','on');
+    h.ExportSpeciesToPDA_2C_for3CMFD_BR = uimenu(...
+        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
+        'Label','BR',...
+        'Tag','ExportSpeciesToPDA_2C_for3CMFD_BR',...
+        'Callback',@Export_To_PDA,...
+        'Visible','on');
     h.DoTimeWindowAnalysis = uimenu(...
         'Parent',h.SpeciesListMenu,...
         'Label','Time Window Analysis',...
@@ -3595,7 +3610,7 @@ switch BurstData.BAMethod
                 
                 newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
                 save(newfilename, 'tcPDAstruct', 'timebin')
-            case h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem
+            case {h.ExportSpeciesToPDA_2C_for3CMFD_GR,h.ExportSpeciesToPDA_2C_for3CMFD_BG,h.ExportSpeciesToPDA_2C_for3CMFD_BR}
                 PDA.NGP = zeros(total,1);
                 PDA.NGS = zeros(total,1);
                 PDA.NFP = zeros(total,1);
@@ -3607,12 +3622,33 @@ switch BurstData.BAMethod
                 PDA.NF = zeros(total,1);
                 PDA.NR = zeros(total,1);
                 
-                PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
-                PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);
-                PDA.NFP = cellfun(@(x) sum((x==9)),PDAdata);
-                PDA.NFS = cellfun(@(x) sum((x==10)),PDAdata);
-                PDA.NRP = cellfun(@(x) sum((x==11)),PDAdata);
-                PDA.NRS = cellfun(@(x) sum((x==12)),PDAdata);
+                %chan gives the photon counts in format
+                %[Donor_par/perp,FRET_par/perp,Acc_par/perp]
+                switch obj
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_GR
+                        chan = [7,8,9,10,11,12];
+                        newfilename = [newfilename(1:end-4) '_GR.pda'];
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_BG
+                        chan = [1, 2, 3, 4, 7, 8];
+                        newfilename = [newfilename(1:end-4) '_BG.pda'];
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_BR
+                        chan = [1, 2, 5, 6, 11, 12];
+                        newfilename = [newfilename(1:end-4) '_BR.pda'];
+                end
+                
+                PDA.NGP = cellfun(@(x) sum((x==chan(1))),PDAdata);
+                PDA.NGS = cellfun(@(x) sum((x==chan(2))),PDAdata);
+                PDA.NFP = cellfun(@(x) sum((x==chan(3))),PDAdata);
+                PDA.NFS = cellfun(@(x) sum((x==chan(4))),PDAdata);
+                PDA.NRP = cellfun(@(x) sum((x==chan(5))),PDAdata);
+                PDA.NRS = cellfun(@(x) sum((x==chan(6))),PDAdata);
+                
+                %PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
+                %PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);
+                %PDA.NFP = cellfun(@(x) sum((x==9)),PDAdata);
+                %PDA.NFS = cellfun(@(x) sum((x==10)),PDAdata);
+                %PDA.NRP = cellfun(@(x) sum((x==11)),PDAdata);
+                %PDA.NRS = cellfun(@(x) sum((x==12)),PDAdata);
                 
                 PDA.NG = PDA.NGP + PDA.NGS;
                 PDA.NF = PDA.NFP + PDA.NFS;
@@ -3620,7 +3656,29 @@ switch BurstData.BAMethod
                 
                 PDA.Corrections = BurstData.Corrections;
                 PDA.Background = BurstData.Background;
-                
+                %%% change corrections with values for selected species
+                switch obj
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_GR
+                        %%% keep as is
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_BG
+                        PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BG;
+                        PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BG;
+                        PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBG;
+                        PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
+                        PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
+                        PDA.Background.Background_GRpar = PDA.Background.Background_BGpar;
+                        PDA.Background.Background_GRperp = PDA.Background.Background_BGperp;
+                        PDA.Background.Background_RRpar = PDA.Background.Background_GGpar;
+                        PDA.Background.Background_RRperp = PDA.Background.Background_GGperp;
+                    case h.ExportSpeciesToPDA_2C_for3CMFD_BR
+                        PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BR;
+                        PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BR;
+                        PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBR;
+                        PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
+                        PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
+                        PDA.Background.Background_GRpar = PDA.Background.Background_BRpar;
+                        PDA.Background.Background_GRperp = PDA.Background.Background_BRperp;
+                end
                 if save_brightness_reference
                     posSGR = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
                     posSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
