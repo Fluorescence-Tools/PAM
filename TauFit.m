@@ -1745,6 +1745,7 @@ switch obj
                 %%% Parameter:
                 %%% Center R
                 %%% sigmaR
+                %%% Scatter
                 %%% Background
                 %%% R0
                 %%% Donor only lifetime
@@ -1774,7 +1775,7 @@ switch obj
                 %%% Update FitResult
                 FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
                 %%% Convert Lifetimes to Nanoseconds
-                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
+                FitResult{6} = FitResult{6}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 UserValues.TauFit.FitFix{chan}(19) = fix(1);
@@ -1796,6 +1797,7 @@ switch obj
                 %%% Center R
                 %%% sigmaR
                 %%% Fraction D only
+                %%% Scatter
                 %%% Background
                 %%% R0
                 %%% Donor only lifetime
