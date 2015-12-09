@@ -151,6 +151,19 @@ if isempty(h.Mia)
             'HitTest','off');      
     end
     
+    %%% Text
+    h.Mia_Image.DoPCH = handle(uicontrol(...
+        'Parent',h.Mia_Image.Panel,...
+        'Style','checkbox',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','center',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Value', UserValues.MIA.DoPCH,...
+        'Position',[0.05 0.97 0.21 0.02],...
+        'String','Calculate PCH' ));
+    
     h.Mia_Image.Intensity_Axes = axes(...
         'Parent',h.Mia_Image.Panel,...
         'Units','normalized',...
@@ -3538,20 +3551,29 @@ if any(mode==4)
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
         end
         
-        
-        if isempty(MIAData.PCH)
-            MIAData.PCH{1} = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
-        end
-        h.Plots.PCH(1,1).XData = 0:(numel(MIAData.PCH{1})-1);
-        h.Plots.PCH(1,1).YData = MIAData.PCH{1};
-        Max = max(MIAData.Data{1,2}(:));
-        h.Plots.PCH(1,2).XData = 0:Max;
-        h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3))), 0:Max);
-        if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
-            h.Mia_Image.PCH_Axes.YScale = 'Lin';
+        if h.Mia_Image.DoPCH.Value
+            
+            if isempty(MIAData.PCH)
+                MIAData.PCH{1} = histc(MIAData.Data{1,1}(:), 0:max(MIAData.Data{1,1}(:)));
+            end
+            h.Plots.PCH(1,1).XData = 0:(numel(MIAData.PCH{1})-1);
+            h.Plots.PCH(1,1).YData = MIAData.PCH{1};
+            Max = max(MIAData.Data{1,2}(:));
+            h.Plots.PCH(1,2).XData = 0:Max;
+            h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3))), 0:Max);
+            if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
+                h.Mia_Image.PCH_Axes.YScale = 'Lin';
+            else
+                h.Mia_Image.PCH_Axes.YScale = 'Log';
+            end
         else
-            h.Mia_Image.PCH_Axes.YScale = 'Log';
+           h.Plots.PCH(1,1).XData = [0 1];
+           h.Plots.PCH(1,1).YData = [0 0];
+           h.Plots.PCH(1,2).XData = [0 1];
+           h.Plots.PCH(1,2).YData = [0 0];
         end
+        
+        
         %% Updates first plot
         h.Plots.Additional_Axes(1,1).XData = 1:size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3);
         h.Mia_Additional.Axes(1).XLabel.String = 'Frame';

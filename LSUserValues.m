@@ -1316,6 +1316,14 @@ if Mode==0 %%% Loads user values
         S.MIA.AR_Var_Fold = [0.7 1.2];
     end
     P.MIA.AR_Var_Fold = S.MIA.AR_Var_Fold;
+    
+    if ~isfield(S.MIA, 'DoPCH')
+        disp('WARNING: UserValues structure incomplete, field "MIA.DoPCH" missing');
+        S.MIA.DoPCH = 0;
+    end
+    P.MIA.DoPCH = S.MIA.DoPCH;
+    
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');

@@ -3961,6 +3961,7 @@ h.MI.Calib_Det.Value=1;
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping correlation table updated  %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4010,7 +4011,6 @@ if obj == h.Cor.Table
     UserValues.Settings.Pam.Cor_Selection = h.Cor.Table.Data;
 end
 LSUserValues(1);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for correlating data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4364,7 +4364,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Sorts data                 
-                Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                Data = floor(Data*FileInfo.SyncPeriod*FileInfo.ScanFreq);
                 [DataBin,Index] = sort(mod(Data,1));
                 Data = Data(Index);
                 MI = MI(Index);
@@ -4408,7 +4408,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     %%% Sorts photons into spatial bins
-                    Data = Data*FileInfo.SyncPeriod*FileInfo.ScanFreq;
+                    Data = floor(Data*FileInfo.SyncPeriod*FileInfo.ScanFreq);
                     [DataBin,Index] = sort(mod(Data,1));
                     Data = Data(Index);
                     MI = MI(Index);
@@ -4547,7 +4547,6 @@ end
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
 LSUserValues(1);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for (de)selecting individual correlation curves %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4627,6 +4626,7 @@ switch mode
         end
 end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to keep shift equal  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4638,11 +4638,9 @@ elseif obj==h.MI.Phasor_Slider
     h.MI.Phasor_Shift.String=num2str(h.MI.Phasor_Slider.Value);
 end
 Update_Display([],[],6);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to assign histogram as Phasor reference %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function Phasor_UseRef(~,~)
 global UserValues PamMeta
 h=guidata(findobj('Tag','Pam'));
@@ -4653,7 +4651,6 @@ UserValues.Phasor.Reference(Det,:)=0;
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
 LSUserValues(1);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4787,6 +4784,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     h.Progress.Axes.Color=UserValues.Look.Control;
 end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4905,7 +4903,6 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
         end
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for updating BurstSearch Parameters in UserValues %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4920,7 +4917,6 @@ else %change in edit boxes
         str2double(h.Burst.BurstParameter5_Edit.String)];
 end
 LSUserValues(1);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5729,7 +5725,6 @@ end
 if h.Burst.BurstLifetime_Checkbox.Value
     BurstLifetime
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5803,7 +5798,6 @@ Progress(1,h.Progress.Axes, h.Progress.Text,tex);
 toc
 Update_Display([],[],1);
 h.Burst.NirFilter_Button.ForegroundColor = [0 0.8 0];
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads a performed BurstSearch for further/re-analysis  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5868,7 +5862,6 @@ elseif any(BurstData.BAMethod == [3,4])
 end
 [~,h.Burst.LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
 [~,h.Burst.LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5981,7 +5974,6 @@ switch type
         stop(Number_of_Photons<L)=[];
         Number_of_Photons(Number_of_Photons<L)=[];
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Subroutine a for All-Photon BurstSearch  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6060,7 +6052,6 @@ if nargin > 3
     stop(Number_of_Photons<L)=[];
     Number_of_Photons(Number_of_Photons<L)=[];
 end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates or shifts the preview  window in BurstAnalysis %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
