@@ -3772,10 +3772,10 @@ if any(mode==4)
             h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3))), 0:Max);
             h.Plots.PCH(2,2).Visible = 'on';
         else
-           h.Plots.PCH(1,1).XData = [0 1];
-           h.Plots.PCH(1,1).YData = [0 0];
-           h.Plots.PCH(1,2).XData = [0 1];
-           h.Plots.PCH(1,2).YData = [0 0];
+           h.Plots.PCH(2,1).XData = [0 1];
+           h.Plots.PCH(2,1).YData = [0 0];
+           h.Plots.PCH(2,2).XData = [0 1];
+           h.Plots.PCH(2,2).YData = [0 0];
         end
         
         %% Updates first plot
@@ -4590,9 +4590,9 @@ switch hObject.String
     case h.Mia_Image.Settings.Orientation_Rotate.String
         switch h.Mia_Image.Settings.Orientation_Rotate_Dir.Value
             case 1 % clockwise
-                d = -1;
-            case 2 % counterclockwise
                 d = 1;
+            case 2 % counterclockwise
+                d = -1;
         end
         MIAData.Data(2,:) = cellfun(@(x)rot90(x,d),MIAData.Data(2,:),'UniformOutput',false);
 end
