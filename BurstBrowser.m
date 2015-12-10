@@ -6509,7 +6509,7 @@ h.Progress_Text.String = BurstData.DisplayName;
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_FRET_Hist(~,~)
-global BurstData BurstTCSPCData UserValues
+global BurstData UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 SelectedSpecies = h.SpeciesList.Value;
 SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};

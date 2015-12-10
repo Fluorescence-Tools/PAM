@@ -992,7 +992,19 @@ h.AutoFit_Menu = uicontrol(...
     'Position',[0.05 0.7 0.7 0.07],...
     'String','Automatic fit',...
     'FontSize',12,...
-    'Tag','AutoFit_Menu');
+    'Tag','AutoFit_Menu',...
+    'Callback',@Update_Plots);
+h.NormalizeScatter_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.5 0.7 0.07],...
+    'String','Scatter offset = 0',...
+    'FontSize',12,...
+    'Tag','NormalizeScatter_Menu',...
+    'Callback',@Update_Plots);
 %% Set the FontSize to 12
 fields = fieldnames(h); %%% loop through h structure
 for i = 1:numel(fields)
@@ -1138,6 +1150,12 @@ Update_Plots(obj)
 function Update_Plots(obj,~)
 global UserValues TauFitData
 h = guidata(findobj('Tag','TauFit'));
+
+if strcmp(TauFitData.Who, 'BurstWise')
+    % if burstwise fitting is done, user is not allowed to normalize the
+    % constant offset of the scatter pattern
+    h.NormalizeScatter_Menu.Value = 0;
+end
 
 % How did we get here?
 if ~strcmp(TauFitData.Who, 'TauFit')
@@ -1448,12 +1466,27 @@ h.Plots.IRF_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{c
 %%% Apply the shift to the parallel Scat channel
 h.Plots.Scat_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
 tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
+if h.NormalizeScatter_Menu.Value
+    % since the scatter pattern should not contain background, we subtract the constant offset
+    maxscat = max(tmp);
+    %subtract the constant offset and renormalize the amplitude to what it was
+    tmp = (tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end)));
+    tmp = tmp/max(tmp)*maxscat;
+    %tmp(tmp < 0) = 0;
+end
 h.Plots.Scat_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the perpendicular Scat channel
 h.Plots.Scat_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
 tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
-h.Plots.Scat_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
-
+tmp = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
+if h.NormalizeScatter_Menu.Value
+    % since the scatter pattern should not contain background, we subtract the constant offset
+    maxscat = max(tmp);
+    tmp = tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end));
+    tmp = tmp/max(tmp)*maxscat;
+    %tmp(tmp < 0) = 0;
+end
+h.Plots.Scat_Per.YData = tmp;
 axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
 %%% Update Ignore Plot
 if TauFitData.Ignore{chan} > 1
