@@ -555,7 +555,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.StartPar exists
     %%% (This field contains the Start Parallel editbox/slider value)
     if ~isfield (S.TauFit,'StartPar')
-        S.TauFit.StartPar={0,0,0};
+        S.TauFit.StartPar={0,0,0,0};
         disp('UserValues.TauFit.StartPar was incomplete');
     end
     P.TauFit.StartPar = S.TauFit.StartPar;
@@ -563,7 +563,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.Length exists
     %%% (This field contains the Length editbox/slider value)
     if ~isfield (S.TauFit,'Length')
-        S.TauFit.Length={0,0,0};
+        S.TauFit.Length={0,0,0,0};
         disp('UserValues.TauFit.Length was incomplete');
     end
     P.TauFit.Length = S.TauFit.Length;
@@ -571,7 +571,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.ShiftPer exists
     %%% (This field contains the Shift perpendicular editbox/slider value)
     if ~isfield (S.TauFit,'ShiftPer')
-        S.TauFit.ShiftPer={1,1,1};
+        S.TauFit.ShiftPer={1,1,1,1};
         disp('UserValues.TauFit.ShiftPer was incomplete');
     end
     P.TauFit.ShiftPer = S.TauFit.ShiftPer;
@@ -579,14 +579,14 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.IRFLength exists
     %%% (This field contains the IRF Length editbox/slider value)
     if ~isfield (S.TauFit,'IRFLength')
-        S.TauFit.IRFLength={100,100,100};
+        S.TauFit.IRFLength={100,100,100,100};
         disp('UserValues.TauFit.IRFLength was incomplete');
     end
     P.TauFit.IRFLength = S.TauFit.IRFLength;
     %%% Checks, if TauFit.IRFShift exists
     %%% (This field contains the IRF Shift editbox/slider value)
     if ~isfield (S.TauFit,'IRFShift')
-        S.TauFit.IRFShift={0,0,0};
+        S.TauFit.IRFShift={0,0,0,0};
         disp('UserValues.TauFit.IRFShift was incomplete');
     end
     P.TauFit.IRFShift = S.TauFit.IRFShift;
@@ -594,7 +594,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.IRFrelShift exists
     %%% (This field contains the relative shift of the perpendicular IRF editbox/slider value)
     if ~isfield (S.TauFit,'IRFrelShift')
-        S.TauFit.IRFrelShift={0,0,0};
+        S.TauFit.IRFrelShift={0,0,0,0};
         disp('UserValues.TauFit.IRFrelShift was incomplete');
     end
     P.TauFit.IRFrelShift = S.TauFit.IRFrelShift;
@@ -602,7 +602,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.ScatShift exists
     %%% (This field contains the Scatter pattern shift editbox/slider value)
     if ~isfield (S.TauFit,'ScatShift')
-        S.TauFit.ScatShift={0,0,0};
+        S.TauFit.ScatShift={0,0,0,0};
         disp('UserValues.TauFit.ScatShift was incomplete');
     end
     P.TauFit.ScatShift = S.TauFit.ScatShift;
@@ -610,7 +610,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.ScatrelShift exists
     %%% (This field contains the relative shift of the perpendicular scatter editbox/slider value)
     if ~isfield (S.TauFit,'ScatrelShift')
-        S.TauFit.ScatrelShift={0,0,0};
+        S.TauFit.ScatrelShift={0,0,0,0};
         disp('UserValues.TauFit.ScatrelShift was incomplete');
     end
     P.TauFit.ScatrelShift = S.TauFit.ScatrelShift;
@@ -618,7 +618,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.Ignore exists
     %%% (This field contains the editbox/slider value for ignoring the first part of the TAC from fitting quality estimation)
     if ~isfield (S.TauFit,'Ignore')
-        S.TauFit.Ignore={1,1,1};
+        S.TauFit.Ignore={1,1,1,1};
         disp('UserValues.TauFit.Ignore was incomplete');
     end
     P.TauFit.Ignore = S.TauFit.Ignore;
@@ -636,7 +636,7 @@ if Mode==0 %%% Loads user values
     %%% Checks, if TauFit.G exists
     %%% (Gfactors)
     if ~isfield (S.TauFit,'G')
-        S.TauFit.G={1,1,1};
+        S.TauFit.G={1,1,1,1};
         disp('UserValues.TauFit.G was incomplete');
     end
     P.TauFit.G = S.TauFit.G;

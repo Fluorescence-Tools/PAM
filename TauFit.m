@@ -1105,8 +1105,10 @@ if isempty(obj) || obj == h.LoadData_Button
             chan = 3;
         end
     else
-        msgbox('problem with the order of the PIE channels. see manual')
-        return
+        % Set channel to 4 if no MFD color channel is selected
+        chan = 4;
+        %msgbox('problem with the order of the PIE channels. see manual')
+        %return
     end
     TauFitData.chan = chan;
     %%% Read out Photons and Histogram
@@ -1598,6 +1600,8 @@ IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFit
 IRFPattern = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan}) + 2*IRFPer(1:TauFitData.Length{chan});
 IRFPattern = IRFPattern'./sum(IRFPattern);
 
+%%% additional processing of the IRF to remove constant background
+IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
 %%% anders, please update the above statements to what they really is
@@ -2850,9 +2854,21 @@ switch TauFitData.BAMethod
         for chan = 1:2
             % Anders, I just read the data from the plots to avoid confusion.
             h.ChannelSelect_Popupmenu.Value = chan;
-            Update_Plots(obj)
-            Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
-            Irf = Irf-min(Irf(Irf~=0));
+            %Update_Plots(obj)
+            %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
+            %%% Changed this back so a better correction of the IRF can be
+            %%% performed, for which the total IRF pattern is needed!
+            %%% Apply the shift to the parallel IRF channel
+            hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+            %%% Apply the shift to the perpendicular IRF channel
+            hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+            IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+            IRFPattern = IRFPattern'./sum(IRFPattern);
+            %%% additional processing of the IRF to remove constant background
+            IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
+            Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+            
+            %Irf = Irf-min(Irf(Irf~=0));
             Irf = Irf./sum(Irf);
             IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
             Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
@@ -3014,10 +3030,22 @@ switch TauFitData.BAMethod
         %% Prepare the data
         for chan = 1:3
             % call Update_plots to get the correctly shifted Scatter and IRF directly from the plot
-            h.ChannelSelect_Popupmenu.Value = chan;
-            Update_Plots(obj)
-            Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
-            Irf = Irf-min(Irf(Irf~=0));
+            %h.ChannelSelect_Popupmenu.Value = chan;
+            %Update_Plots(obj)
+            %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
+            %%% Changed this back so a better correction of the IRF can be
+            %%% performed, for which the total IRF pattern is needed!
+            %%% Apply the shift to the parallel IRF channel
+            hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+            %%% Apply the shift to the perpendicular IRF channel
+            hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+            IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+            IRFPattern = IRFPattern'./sum(IRFPattern);
+            %%% additional processing of the IRF to remove constant background
+            IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
+            Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+            
+            %Irf = Irf-min(Irf(Irf~=0));
             Irf = Irf./sum(Irf);
             IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
             Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
@@ -3375,7 +3403,9 @@ global UserValues TauFitData
 %%% assignment of channels is valid
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     chan = h.ChannelSelect_Popupmenu.Value;
-    UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
+else
+    chan = TauFitData.chan;
 end
+UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
