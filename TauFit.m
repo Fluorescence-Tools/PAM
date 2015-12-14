@@ -1601,7 +1601,7 @@ IRFPattern = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan}) + 2*IRFPer(1:T
 IRFPattern = IRFPattern'./sum(IRFPattern);
 
 %%% additional processing of the IRF to remove constant background
-IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
+IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
 %%% anders, please update the above statements to what they really is
@@ -2865,7 +2865,7 @@ switch TauFitData.BAMethod
             IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
             IRFPattern = IRFPattern'./sum(IRFPattern);
             %%% additional processing of the IRF to remove constant background
-            IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
+            IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
             Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
             
             %Irf = Irf-min(Irf(Irf~=0));
@@ -3042,7 +3042,7 @@ switch TauFitData.BAMethod
             IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
             IRFPattern = IRFPattern'./sum(IRFPattern);
             %%% additional processing of the IRF to remove constant background
-            IRFPattern = IRFPattern - sum(IRFPattern(end-100:end)); IRFPattern(IRFPattern<0) = 0;
+            IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
             Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
             
             %Irf = Irf-min(Irf(Irf~=0));
