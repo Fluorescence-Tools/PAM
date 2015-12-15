@@ -41,6 +41,12 @@ if isempty(hfig)
         'Label','Load Burst Data (Crtl+N)',...
         'Callback',@Load_Burst_Data_Callback,...
         'Tag','Load_Burst_Data');
+    h.Database.Add = uimenu(...
+        'Parent', h.File_Menu,...
+        'Tag','Database_Add',...
+        'Label','Add Burst File to Database',...
+        'enable', 'off',...
+        'Callback',{@Database,1});
     
     %%% Save Analysis State
     h.Save_Bursts = uimenu(...
@@ -374,6 +380,20 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0 0 1 1],...
         'Tag','SecondaryTabOptionsPanel');
+    h.Secondary_Tab_Database= uitab(h.Secondary_Tab,...
+        'title','Database',...
+        'Tag','Secondary_Tab_Database');
+    
+    h.DatabaseBB.Panel = uibuttongroup(...
+        'Parent',h.Secondary_Tab_Database,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HighlightColor', Look.Control,...
+        'ShadowColor', Look.Shadow,...
+        'Units','normalized',...
+        'Position',[0 0 1 1],...
+        'Tag','SecondaryTabDatabasePanel');
+    
     
     %%% Species List Right-click Menu
     h.SpeciesListMenu = uicontextmenu;
@@ -1544,6 +1564,100 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'Callback',@ExportAllGraphs);
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Database tab   
+    %%% Database list
+    h.DatabaseBB.List = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_List',...
+        'Style','listbox',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'Max',2,...
+        'String',[],...
+        'BackgroundColor', Look.List,...
+        'ForegroundColor', Look.ListFore,...
+        'KeyPressFcn',{@Database,0},...
+        'Tooltipstring', ['<html>'...
+                          'List of files in database <br>',...
+                          '<i>"return"</i>: Loads selected files <b>!!!Only works with same Path and Type!!!</b><br>',...
+                          '<I>"delete"</i>: Removes selected files from list </b>'],...
+        'Position',[0.01 0.01 0.7 0.98]);   
+    h.DatabaseBB.Text = {};
+    h.DatabaseBB.Text{end+1} = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','left',...
+        'String','Manage database',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.75 0.90 0.24 0.07]);
+    h.DatabaseBB.Load = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_Load_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Load database',...
+        'Callback',{@Database,3},...
+        'Position',[0.75 0.84 0.24 0.07],...
+        'Tooltipstring', 'Load database from file');
+    %%% Button to add files to the database
+    h.DatabaseBB.Save = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_Save_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Save Database',...
+        'Callback',{@Database,4},...
+        'Position',[0.75 0.76 0.24 0.07],...
+        'enable', 'off',...
+        'Tooltipstring', 'Save database to a file');
+    h.DatabaseBB.Text{end+1} = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'HorizontalAlignment','left',...
+        'String','Batch analysis',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.75 0.66 0.24 0.07]);
+    %%% Button to add files to the database
+    h.DatabaseBB.Correlate = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_Correlate_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Correlate',...
+        'Callback',{@Database,5},...
+        'Position',[0.75 0.60 0.24 0.07],...
+        'enable', 'off',...
+        'UserData',0,...
+        'Tooltipstring', 'Make sure "Correlate" tab settings are correct!');  
+    %%% Button to add files to the database
+    h.DatabaseBB.Burst = uicontrol(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_Burst_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Burst analysis',...
+        'Callback',{@Database,6},...
+        'Position',[0.75 0.52 0.24 0.07],...
+        'enable', 'off',...
+        'UserData',0,...
+        'Tooltipstring', 'Make sure "Burst analysis" tab settings are correct');  
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Data Processing Options Panel
     h.DataProcessingPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
@@ -2982,6 +3096,8 @@ UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([]);
 UpdateLifetimePlots([],[]);
+ChangePlotType(h.PlotTypePopumenu) %to make the display correct at initial
+ChangePlotType(h.PlotContourLines) %to make the display correct at initial
 DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
 
@@ -3885,15 +4001,15 @@ nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
 %% Update Plot
-%%% Disable/Enable respective plots
-switch UserValues.BurstBrowser.Display.PlotType
-    case 'Image'
-        BurstMeta.Plots.Main_Plot(1).Visible = 'on';
-        BurstMeta.Plots.Main_Plot(2).Visible = 'off';
-    case 'Contour'
-        BurstMeta.Plots.Main_Plot(1).Visible = 'off';
-        BurstMeta.Plots.Main_Plot(2).Visible = 'on';
-end
+% %%% Disable/Enable respective plots
+% switch UserValues.BurstBrowser.Display.PlotType
+%     case 'Image'
+%         BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+%         BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+%     case 'Contour'
+%         BurstMeta.Plots.Main_Plot(1).Visible = 'off';
+%         BurstMeta.Plots.Main_Plot(2).Visible = 'on';
+% end
 BurstMeta.Plots.Main_histX.Visible = 'on';
 BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
@@ -4074,6 +4190,10 @@ switch obj
                     if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
                         BurstMeta.Plots.(fields{i})(1).Visible = 'on';
                         BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+                        %BurstMeta.Plots.gamma_lifetime(1).Visible = 'on';
+                        %BurstMeta.Plots.gamma_lifetime(2).Visible = 'off';
+                        %BurstMeta.Plots.gamma_fit(1).Visible = 'on';
+                        %BurstMeta.Plots.gamma_fit(2).Visible = 'off';
                     end
                 end
             end
@@ -4086,6 +4206,10 @@ switch obj
                     if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
                         BurstMeta.Plots.(fields{i})(1).Visible = 'off';
                         BurstMeta.Plots.(fields{i})(2).Visible = 'on';
+                        BurstMeta.Plots.gamma_lifetime(1).Visible = 'off';
+                        BurstMeta.Plots.gamma_lifetime(2).Visible = 'on';
+                        BurstMeta.Plots.gamma_fit(1).Visible = 'off';
+                        BurstMeta.Plots.gamma_fit(2).Visible = 'on';
                     end
                 end
             end
@@ -4560,7 +4684,7 @@ UpdatePlot([],[]);
 UpdateLifetimePlots(hObject,[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Determines the Correction Factors automatically  %%%%%%%%%%%%%%%%%%
+%%%%%%% Determine Corrections (alpha, beta, gamma from intensity) %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineCorrections(obj,~)
 global BurstData BurstMeta UserValues
@@ -4889,6 +5013,430 @@ LSUserValues(1);
 UpdateCorrections([],[]);
 %%% Apply Corrections
 ApplyCorrections(gcbo,[]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Manual gamma determination by selecting the mid-points %%%%%%%%%%%%
+%%%%%%% of two populations                                     %%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DetermineGammaManually(~,~)
+global UserValues BurstMeta BurstData
+h = guidata(findobj('Tag','BurstBrowser'));
+%%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
+[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
+BurstMeta.Plots.gamma_fit(1).XData = xbins;
+BurstMeta.Plots.gamma_fit(1).YData = ybins;
+BurstMeta.Plots.gamma_fit(1).CData = H;
+BurstMeta.Plots.gamma_fit(1).AlphaData = (H>0);
+BurstMeta.Plots.gamma_fit(2).XData = xbins;
+BurstMeta.Plots.gamma_fit(2).YData = ybins;
+BurstMeta.Plots.gamma_fit(2).ZData = H/max(max(H));
+BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
+
+%%% Update Axis Labels
+xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
+ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
+title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+%%% Hide Fit
+BurstMeta.Plots.Fits.gamma.Visible = 'off';
+[e, s] = ginput(2);
+BurstMeta.Plots.Fits.gamma_manual.XData = e;
+BurstMeta.Plots.Fits.gamma_manual.YData = s;
+BurstMeta.Plots.Fits.gamma_manual.Visible = 'on';
+s = 1./s;
+m = (s(2)-s(1))./(e(2)-e(1));
+b = s(2) - m.*e(2);
+
+UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
+BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+
+
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculates the Gamma Factor using the lifetime information %%%%%%%%
+%%%%%%% by minimizing the deviation from the static FRET line      %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function DetermineGammaLifetime(obj,~)
+global BurstData UserValues BurstMeta
+h = guidata(obj);
+LSUserValues(0);
+%%% Change focus to CorrectionsTab
+%h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+%% 2cMFD
+%%% Prepare photon counts
+indS = BurstMeta.posS;
+indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
+indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
+indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
+indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
+indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
+T_threshold = str2double(h.T_Threshold_Edit.String);
+if isnan(T_threshold)
+    T_threshold = 0.1;
+end
+cutT = 0;
+if cutT == 0
+    data_for_corrections = BurstData.DataArray;
+elseif cutT == 1
+    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
+    valid = (BurstData.DataArray(:,T) < T_threshold);
+    data_for_corrections = BurstData.DataArray(valid,:);
+end
+
+%%% Read out corrections
+Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+
+%%% use selected species
+S_threshold = UpdateCuts();
+%%% Calculate "raw" E and S with gamma = 1, but still apply direct
+%%% excitation,crosstalk, and background corrections!
+NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
+
+if obj == h.DetermineGammaLifetimeTwoColorButton
+    %%% Calculate static FRET line in presence of linker fluctuations
+    tau = linspace(0,5,100);
+    [~, statFRETfun] = conversion_tau(BurstData.Corrections.DonorLifetime,...
+        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+        tau);
+    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetime;
+    %%% minimize deviation from static FRET line as a function of gamma
+    tauGG = data_for_corrections(S_threshold,indTauGG);
+    valid = (tauGG < BurstData.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
+    %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
+    %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+        gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
+        gamma_fit = coeffvalues(gamma_fit);
+    E =  NGR./(gamma_fit.*NGG+NGR);
+    %%% plot E versus tau with static FRET line
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.05 1]);
+    BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
+    BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
+    BurstMeta.Plots.gamma_lifetime(1).CData= H;
+    BurstMeta.Plots.gamma_lifetime(1).AlphaData= (H>0);
+    BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
+    BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
+    BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
+    BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    %%% add static FRET line
+    tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
+    FRETline = statFRETfun(tau);
+    FRETline(find(FRETline < 0,1,'first')+10:end) = NaN;
+    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
+    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
+    %%% Update UserValues
+    UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
+    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+end
+%% 3cMFD - Fit E1A vs. TauBlue
+if obj == h.DetermineGammaLifetimeThreeColorButton
+    if any(BurstData.BAMethod == [3,4])
+        %%% Prepare photon counts
+        indNBB = (strcmp(BurstData.NameArray,'Number of Photons (BB)'));
+        indNBG = (strcmp(BurstData.NameArray,'Number of Photons (BG)'));
+        indNBR = (strcmp(BurstData.NameArray,'Number of Photons (BR)'));
+        indTauBB = (strcmp(BurstData.NameArray,'Lifetime BB [ns]'));
+        indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
+        indSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
+        
+        T_threshold = str2double(h.T_Threshold_Edit.String);
+        if isnan(T_threshold)
+            T_threshold = 0.1;
+        end
+        cutT = 0;
+        %%% define T-threshold
+        if cutT == 0
+            data_for_corrections = BurstData.DataArray;
+        elseif cutT == 1
+            T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
+            T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
+            T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
+            valid = (BurstData.DataArray(:,T1) < T_threshold) &...
+                (BurstData.DataArray(:,T2) < T_threshold) &...
+                (BurstData.DataArray(:,T3) < T_threshold);
+            data_for_corrections = BurstData.DataArray(valid,:);
+        end
+        
+        %%% Read out corrections
+        Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
+        Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
+        Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
+        
+        %%% get E-S values between 0.1 and 0.9;
+        %         S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
+        %             (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
+        %             (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
+        
+        %%%instead, use selected species
+        S_threshold = UpdateCuts();
+        %%% also use Lifetime Threshold
+        S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.05);
+        %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
+        %%% excitation,crosstalk, and background corrections!
+        NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
+        NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
+        NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
+        NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
+        NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
+        NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
+        NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
+        gamma_gr = BurstData.Corrections.Gamma_GR;
+        EGR = NGR./(gamma_gr.*NGG+NGR);
+        NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB -...
+            BurstData.Corrections.CrossTalk_GR.*(NBG-BurstData.Corrections.CrossTalk_BG.*NBB) -...
+            BurstData.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
+        NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
+        %%% Calculate static FRET line in presence of linker fluctuations
+        tau = linspace(0,5,100);
+        [~, statFRETfun] = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
+            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
+            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
+            tau);
+        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetimeBlue;
+        tauBB = data_for_corrections(S_threshold,indTauBB);
+        valid = (tauBB < BurstData.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
+        valid = find(valid);
+        valid = valid(~isnan(statFRETfun( tauBB(valid))));
+        %%% minimize deviation from static FRET line as a function of gamma_br!
+        dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - statFRETfun( tauBB(valid) ) ).^2 );
+        gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
+        E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
+        %%% plot E versus tau with static FRET line
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
+        BurstMeta.Plots.gamma_threecolor_lifetime(1).AlphaData= (H>0);
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).XData= xbins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).YData= ybins;
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
+        BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        %%% add static FRET line
+        tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETfun(tau);
+        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
+        %%% Update UserValues
+        UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
+        UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
+        BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+        BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+    end
+end
+%%% Save UserValues
+LSUserValues(1);
+%%% Update Correction Table Data
+UpdateCorrections([],[]);
+%%% Apply Corrections
+ApplyCorrections(obj,[]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Applies Corrections to data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ApplyCorrections(obj,~)
+global BurstData UserValues BurstMeta
+h = guidata(obj);
+if obj == h.UseBetaCheckbox
+    UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
+    LSUserValues(1);
+end
+%% 2colorMFD
+%% FRET and Stoichiometry Corrections
+%%% Read out indices of parameters
+indS = BurstMeta.posS;
+indE = BurstMeta.posE;
+indDur = strcmp(BurstData.NameArray,'Duration [ms]');
+indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
+indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
+indNRR = strcmp(BurstData.NameArray,'Number of Photons (RR)');
+
+%%% Read out photons counts and duration
+NGG = BurstData.DataArray(:,indNGG);
+NGR = BurstData.DataArray(:,indNGR);
+NRR = BurstData.DataArray(:,indNRR);
+Dur = BurstData.DataArray(:,indDur);
+
+%%% Read out corrections
+gamma_gr = BurstData.Corrections.Gamma_GR;
+beta_gr = BurstData.Corrections.Beta_GR;
+ct_gr = BurstData.Corrections.CrossTalk_GR;
+de_gr = BurstData.Corrections.DirectExcitation_GR;
+BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+
+%%% Apply Background corrections
+NGG = NGG - Dur.*BG_GG;
+NGR = NGR - Dur.*BG_GR;
+NRR = NRR - Dur.*BG_RR;
+
+%%% Apply CrossTalk and DirectExcitation Corrections
+NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
+
+%%% Recalculate FRET Efficiency and Stoichiometry
+E = NGR./(NGR + gamma_gr.*NGG);
+if UserValues.BurstBrowser.Corrections.UseBeta == 1
+    S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR./beta_gr);
+elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
+    S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
+end
+%%% Update Values in the DataArray
+BurstData.DataArray(:,indE) = E;
+BurstData.DataArray(:,indS) = S;
+%% Anisotropy Corrections
+%%% Read out indices of parameters
+ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
+ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
+indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
+indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
+indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
+indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
+
+%%% Read out photons counts and duration
+NGGpar = BurstData.DataArray(:,indNGGpar);
+NGGperp = BurstData.DataArray(:,indNGGperp);
+NRRpar = BurstData.DataArray(:,indNRRpar);
+NRRperp = BurstData.DataArray(:,indNRRperp);
+
+%%% Read out corrections
+Ggreen = BurstData.Corrections.GfactorGreen;
+Gred = BurstData.Corrections.GfactorRed;
+l1 = UserValues.BurstBrowser.Corrections.l1;
+l2 = UserValues.BurstBrowser.Corrections.l2;
+BG_GGpar = BurstData.Background.Background_GGpar;
+BG_GGperp = BurstData.Background.Background_GGperp;
+BG_RRpar = BurstData.Background.Background_RRpar;
+BG_RRperp = BurstData.Background.Background_RRperp;
+
+%%% Apply Background corrections
+NGGpar = NGGpar - Dur.*BG_GGpar;
+NGGperp = NGGperp - Dur.*BG_GGperp;
+NRRpar = NRRpar - Dur.*BG_RRpar;
+NRRperp = NRRperp - Dur.*BG_RRperp;
+
+%%% Recalculate Anisotropies
+rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
+rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
+
+%%% Update Values in the DataArray
+BurstData.DataArray(:,ind_rGG) = rGG;
+BurstData.DataArray(:,ind_rRR) = rRR;
+
+%% 3colorMFD
+if any(BurstData.BAMethod == [3,4])
+    %% FRET Efficiencies and Stoichiometries
+    %%% Read out indices of parameters
+    indE1A = strcmp(BurstData.NameArray,'FRET Efficiency B->G+R');
+    indEBG = strcmp(BurstData.NameArray,'FRET Efficiency BG');
+    indEBR = strcmp(BurstData.NameArray,'FRET Efficiency BR');
+    indSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
+    indSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
+    indPrGR = strcmp(BurstData.NameArray,'Proximity Ratio GR');
+    indPrBG = strcmp(BurstData.NameArray,'Proximity Ratio BG');
+    indPrBR = strcmp(BurstData.NameArray,'Proximity Ratio BR');
+    indPrBtoGR = strcmp(BurstData.NameArray,'Proximity Ratio B->G+R');
+    indNBB = strcmp(BurstData.NameArray,'Number of Photons (BB)');
+    indNBG = strcmp(BurstData.NameArray,'Number of Photons (BG)');
+    indNBR= strcmp(BurstData.NameArray,'Number of Photons (BR)');
+    
+    %%% Read out photons counts and duration
+    NBB= BurstData.DataArray(:,indNBB);
+    NBG = BurstData.DataArray(:,indNBG);
+    NBR = BurstData.DataArray(:,indNBR);
+    
+    %%% Read out corrections
+    gamma_bg = BurstData.Corrections.Gamma_BG;
+    beta_bg = BurstData.Corrections.Beta_BG;
+    gamma_br = BurstData.Corrections.Gamma_BR;
+    beta_br = BurstData.Corrections.Beta_BR;
+    ct_bg = BurstData.Corrections.CrossTalk_BG;
+    de_bg = BurstData.Corrections.DirectExcitation_BG;
+    ct_br = BurstData.Corrections.CrossTalk_BR;
+    de_br = BurstData.Corrections.DirectExcitation_BR;
+    BG_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
+    BG_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
+    BG_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
+    
+    %%% Apply Background corrections
+    NBB = NBB - Dur.*BG_BB;
+    NBG = NBG - Dur.*BG_BG;
+    NBR = NBR - Dur.*BG_BR;
+    
+    %%% change name of variable E to EGR
+    EGR = E;
+    %%% Apply CrossTalk and DirectExcitation Corrections
+    NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
+    NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
+    %%% Recalculate FRET Efficiency and Stoichiometry
+    E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR);
+    EBG = (gamma_gr.*NBG)./(gamma_br.*NBB.*(1-EGR)+ gamma_gr.*NBG);
+    EBR = (NBR - EGR.*(gamma_gr.*NBG+NBR))./(gamma_br.*NBB + NBR - EGR.*(gamma_br.*NBB + gamma_gr.*NBG + NBR));
+    if UserValues.BurstBrowser.Corrections.UseBeta == 1
+        SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + (gamma_gr.*NGG + NGR)./beta_bg);
+        SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR./beta_br);
+    elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
+        SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + gamma_gr.*NGG + NGR);
+        SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR);
+    end
+    %%% Recalculate proximity ratios
+    PrGR = EGR; % no change for GR
+    PrBG = gamma_gr.*NBG./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
+    PrBR = NBR./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
+    PrBtoGR = gamma_br.*NBB./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
+    %%% Update Values in the DataArray
+    BurstData.DataArray(:,indE1A) = E1A;
+    BurstData.DataArray(:,indEBG) = EBG;
+    BurstData.DataArray(:,indEBR) = EBR;
+    BurstData.DataArray(:,indSBG) = SBG;
+    BurstData.DataArray(:,indSBR) = SBR;
+    BurstData.DataArray(:,indPrGR) = PrGR;
+    BurstData.DataArray(:,indPrBG) = PrBG;
+    BurstData.DataArray(:,indPrBR) = PrBR;
+    BurstData.DataArray(:,indPrBtoGR) = PrBtoGR;
+    %% Anisotropy Correction of blue channel
+    %%% Read out indices of parameters
+    ind_rBB = strcmp(BurstData.NameArray,'Anisotropy BB');
+    indNBBpar = strcmp(BurstData.NameArray,'Number of Photons (BB par)');
+    indNBBperp = strcmp(BurstData.NameArray,'Number of Photons (BB perp)');
+    
+    %%% Read out photons counts and duration
+    NBBpar = BurstData.DataArray(:,indNBBpar);
+    NBBperp = BurstData.DataArray(:,indNBBperp);
+    
+    %%% Read out corrections
+    Gblue = BurstData.Corrections.GfactorBlue;
+    BG_BBpar = BurstData.Background.Background_BBpar;
+    BG_BBperp = BurstData.Background.Background_BBperp;
+    
+    %%% Apply Background corrections
+    NBBpar = NBBpar - Dur.*BG_BBpar;
+    NBBperp = NBBperp - Dur.*BG_BBperp;
+    
+    %%% Recalculate Anisotropies
+    rBB = (Gblue.*NBBpar - NBBperp)./( (1-3*l2).*Gblue.*NBBpar + (2-3*l1).*NBBperp);
+    
+    %%% Update Value in the DataArray
+    BurstData.DataArray(:,ind_rBB) = rBB;
+end
+
+h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
+%%% Update Display
+UpdateCuts;
+UpdatePlot([],[]);
+UpdateLifetimePlots([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6140,245 +6688,6 @@ else %%% Update UserValues with new values
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Applies Corrections to data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ApplyCorrections(obj,~)
-global BurstData UserValues BurstMeta
-h = guidata(obj);
-if obj == h.UseBetaCheckbox
-    UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
-    LSUserValues(1);
-end
-%% 2colorMFD
-%% FRET and Stoichiometry Corrections
-%%% Read out indices of parameters
-indS = BurstMeta.posS;
-indE = BurstMeta.posE;
-indDur = strcmp(BurstData.NameArray,'Duration [ms]');
-indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
-indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
-indNRR = strcmp(BurstData.NameArray,'Number of Photons (RR)');
-
-%%% Read out photons counts and duration
-NGG = BurstData.DataArray(:,indNGG);
-NGR = BurstData.DataArray(:,indNGR);
-NRR = BurstData.DataArray(:,indNRR);
-Dur = BurstData.DataArray(:,indDur);
-
-%%% Read out corrections
-gamma_gr = BurstData.Corrections.Gamma_GR;
-beta_gr = BurstData.Corrections.Beta_GR;
-ct_gr = BurstData.Corrections.CrossTalk_GR;
-de_gr = BurstData.Corrections.DirectExcitation_GR;
-BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-
-%%% Apply Background corrections
-NGG = NGG - Dur.*BG_GG;
-NGR = NGR - Dur.*BG_GR;
-NRR = NRR - Dur.*BG_RR;
-
-%%% Apply CrossTalk and DirectExcitation Corrections
-NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
-
-%%% Recalculate FRET Efficiency and Stoichiometry
-E = NGR./(NGR + gamma_gr.*NGG);
-if UserValues.BurstBrowser.Corrections.UseBeta == 1
-    S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR./beta_gr);
-elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
-    S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
-end
-%%% Update Values in the DataArray
-BurstData.DataArray(:,indE) = E;
-BurstData.DataArray(:,indS) = S;
-%% Anisotropy Corrections
-%%% Read out indices of parameters
-ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
-ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
-indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
-indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
-indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
-indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
-
-%%% Read out photons counts and duration
-NGGpar = BurstData.DataArray(:,indNGGpar);
-NGGperp = BurstData.DataArray(:,indNGGperp);
-NRRpar = BurstData.DataArray(:,indNRRpar);
-NRRperp = BurstData.DataArray(:,indNRRperp);
-
-%%% Read out corrections
-Ggreen = BurstData.Corrections.GfactorGreen;
-Gred = BurstData.Corrections.GfactorRed;
-l1 = UserValues.BurstBrowser.Corrections.l1;
-l2 = UserValues.BurstBrowser.Corrections.l2;
-BG_GGpar = BurstData.Background.Background_GGpar;
-BG_GGperp = BurstData.Background.Background_GGperp;
-BG_RRpar = BurstData.Background.Background_RRpar;
-BG_RRperp = BurstData.Background.Background_RRperp;
-
-%%% Apply Background corrections
-NGGpar = NGGpar - Dur.*BG_GGpar;
-NGGperp = NGGperp - Dur.*BG_GGperp;
-NRRpar = NRRpar - Dur.*BG_RRpar;
-NRRperp = NRRperp - Dur.*BG_RRperp;
-
-%%% Recalculate Anisotropies
-rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
-rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
-
-%%% Update Values in the DataArray
-BurstData.DataArray(:,ind_rGG) = rGG;
-BurstData.DataArray(:,ind_rRR) = rRR;
-
-%% 3colorMFD
-if any(BurstData.BAMethod == [3,4])
-    %% FRET Efficiencies and Stoichiometries
-    %%% Read out indices of parameters
-    indE1A = strcmp(BurstData.NameArray,'FRET Efficiency B->G+R');
-    indEBG = strcmp(BurstData.NameArray,'FRET Efficiency BG');
-    indEBR = strcmp(BurstData.NameArray,'FRET Efficiency BR');
-    indSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
-    indSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
-    indPrGR = strcmp(BurstData.NameArray,'Proximity Ratio GR');
-    indPrBG = strcmp(BurstData.NameArray,'Proximity Ratio BG');
-    indPrBR = strcmp(BurstData.NameArray,'Proximity Ratio BR');
-    indPrBtoGR = strcmp(BurstData.NameArray,'Proximity Ratio B->G+R');
-    indNBB = strcmp(BurstData.NameArray,'Number of Photons (BB)');
-    indNBG = strcmp(BurstData.NameArray,'Number of Photons (BG)');
-    indNBR= strcmp(BurstData.NameArray,'Number of Photons (BR)');
-    
-    %%% Read out photons counts and duration
-    NBB= BurstData.DataArray(:,indNBB);
-    NBG = BurstData.DataArray(:,indNBG);
-    NBR = BurstData.DataArray(:,indNBR);
-    
-    %%% Read out corrections
-    gamma_bg = BurstData.Corrections.Gamma_BG;
-    beta_bg = BurstData.Corrections.Beta_BG;
-    gamma_br = BurstData.Corrections.Gamma_BR;
-    beta_br = BurstData.Corrections.Beta_BR;
-    ct_bg = BurstData.Corrections.CrossTalk_BG;
-    de_bg = BurstData.Corrections.DirectExcitation_BG;
-    ct_br = BurstData.Corrections.CrossTalk_BR;
-    de_br = BurstData.Corrections.DirectExcitation_BR;
-    BG_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-    BG_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
-    BG_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
-    
-    %%% Apply Background corrections
-    NBB = NBB - Dur.*BG_BB;
-    NBG = NBG - Dur.*BG_BG;
-    NBR = NBR - Dur.*BG_BR;
-    
-    %%% change name of variable E to EGR
-    EGR = E;
-    %%% Apply CrossTalk and DirectExcitation Corrections
-    NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
-    NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
-    %%% Recalculate FRET Efficiency and Stoichiometry
-    E1A = (gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR);
-    EBG = (gamma_gr.*NBG)./(gamma_br.*NBB.*(1-EGR)+ gamma_gr.*NBG);
-    EBR = (NBR - EGR.*(gamma_gr.*NBG+NBR))./(gamma_br.*NBB + NBR - EGR.*(gamma_br.*NBB + gamma_gr.*NBG + NBR));
-    if UserValues.BurstBrowser.Corrections.UseBeta == 1
-        SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + (gamma_gr.*NGG + NGR)./beta_bg);
-        SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR./beta_br);
-    elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
-        SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + gamma_gr.*NGG + NGR);
-        SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR);
-    end
-    %%% Recalculate proximity ratios
-    PrGR = EGR; % no change for GR
-    PrBG = gamma_gr.*NBG./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
-    PrBR = NBR./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
-    PrBtoGR = gamma_br.*NBB./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
-    %%% Update Values in the DataArray
-    BurstData.DataArray(:,indE1A) = E1A;
-    BurstData.DataArray(:,indEBG) = EBG;
-    BurstData.DataArray(:,indEBR) = EBR;
-    BurstData.DataArray(:,indSBG) = SBG;
-    BurstData.DataArray(:,indSBR) = SBR;
-    BurstData.DataArray(:,indPrGR) = PrGR;
-    BurstData.DataArray(:,indPrBG) = PrBG;
-    BurstData.DataArray(:,indPrBR) = PrBR;
-    BurstData.DataArray(:,indPrBtoGR) = PrBtoGR;
-    %% Anisotropy Correction of blue channel
-    %%% Read out indices of parameters
-    ind_rBB = strcmp(BurstData.NameArray,'Anisotropy BB');
-    indNBBpar = strcmp(BurstData.NameArray,'Number of Photons (BB par)');
-    indNBBperp = strcmp(BurstData.NameArray,'Number of Photons (BB perp)');
-    
-    %%% Read out photons counts and duration
-    NBBpar = BurstData.DataArray(:,indNBBpar);
-    NBBperp = BurstData.DataArray(:,indNBBperp);
-    
-    %%% Read out corrections
-    Gblue = BurstData.Corrections.GfactorBlue;
-    BG_BBpar = BurstData.Background.Background_BBpar;
-    BG_BBperp = BurstData.Background.Background_BBperp;
-    
-    %%% Apply Background corrections
-    NBBpar = NBBpar - Dur.*BG_BBpar;
-    NBBperp = NBBperp - Dur.*BG_BBperp;
-    
-    %%% Recalculate Anisotropies
-    rBB = (Gblue.*NBBpar - NBBperp)./( (1-3*l2).*Gblue.*NBBpar + (2-3*l1).*NBBperp);
-    
-    %%% Update Value in the DataArray
-    BurstData.DataArray(:,ind_rBB) = rBB;
-end
-
-h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
-%%% Update Display
-UpdateCuts;
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Manual gamma determination by selecting the mid-points %%%%%%%%%%%%
-%%%%%%% of two populations                                     %%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DetermineGammaManually(~,~)
-global UserValues BurstMeta BurstData
-h = guidata(findobj('Tag','BurstBrowser'));
-%%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
-[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
-BurstMeta.Plots.gamma_fit(1).XData = xbins;
-BurstMeta.Plots.gamma_fit(1).YData = ybins;
-BurstMeta.Plots.gamma_fit(1).CData = H;
-BurstMeta.Plots.gamma_fit(1).AlphaData = (H>0);
-BurstMeta.Plots.gamma_fit(2).XData = xbins;
-BurstMeta.Plots.gamma_fit(2).YData = ybins;
-BurstMeta.Plots.gamma_fit(2).ZData = H/max(max(H));
-BurstMeta.Plots.gamma_fit(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
-
-%%% Update Axis Labels
-xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
-ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
-title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
-%%% Hide Fit
-BurstMeta.Plots.Fits.gamma.Visible = 'off';
-[e, s] = ginput(2);
-BurstMeta.Plots.Fits.gamma_manual.XData = e;
-BurstMeta.Plots.Fits.gamma_manual.YData = s;
-BurstMeta.Plots.Fits.gamma_manual.Visible = 'on';
-s = 1./s;
-m = (s(2)-s(1))./(e(2)-e(1));
-b = s(2) - m.*e(2);
-
-UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
-BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-
-
-%%% Save UserValues
-LSUserValues(1);
-%%% Update Correction Table Data
-UpdateCorrections([],[]);
-%%% Apply Corrections
-ApplyCorrections;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Does Time Window Analysis of selected species %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Time_Window_Analysis(~,~)
@@ -6547,7 +6856,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Updates lifetime-related plots in Lifetime Tab %%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Plots in Left Lifetime Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimePlots(~,~)
 global BurstData BurstMeta UserValues
@@ -6620,7 +6929,7 @@ BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
 BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_rGGvsTauGG,'tight');
 ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
-%% Plot rRR vs. tauRR in third plot
+%% Plot rRR vs. tauRR in fourth plot
 [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
 BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
 BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
@@ -6682,7 +6991,86 @@ end
 PlotLifetimeInd([],[])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Updates Fits/theoretical Curves in Lifetime Tab %%%%%%%%%%%%%%%%%%%
+%%%%%%% Copies Selected Lifetime Plot to Individual Tab %%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function PlotLifetimeInd(~,~)
+global BurstMeta UserValues BurstData
+h = guidata(findobj('Tag','BurstBrowser'));
+if isempty(BurstData)
+    return;
+end
+switch BurstData.BAMethod
+    case {1,2}
+        switch h.lifetime_ind_popupmenu.Value
+            case 1 %E vs tauGG
+                origin = h.axes_EvsTauGG;
+            case 2 %E vs tauRR
+                origin = h.axes_EvsTauRR;
+            case 3 %rGG vs tauGG
+                origin = h.axes_rGGvsTauGG;
+            case 4 %rRR vs tauRR
+                origin = h.axes_rRRvsTauRR;
+        end
+    case {3,4}
+        switch h.lifetime_ind_popupmenu.Value
+            case 1 %E vs tauGG
+                origin = h.axes_EvsTauGG;
+            case 2 %E vs tauRR
+                origin = h.axes_EvsTauRR;
+            case 3 %E1A vs tauVV
+                origin = h.axes_E_BtoGRvsTauBB;
+            case 4 %rGG vs tauGG
+                origin = h.axes_rGGvsTauGG;
+            case 5 %rRR vs tauRR
+                origin = h.axes_rRRvsTauRR;
+            case 6 %rBB vs tauBB
+                origin = h.axes_rBBvsTauBB;
+        end
+end
+
+cla(h.axes_lifetime_ind_2d);
+plots =origin.Children;
+for i = numel(plots):-1:1
+    copyobj(plots(i),h.axes_lifetime_ind_2d);
+    type{i} = plots(i).Type;
+end
+
+h.axes_lifetime_ind_2d.XLim = origin.XLim;
+h.axes_lifetime_ind_2d.YLim = origin.YLim;
+h.axes_lifetime_ind_2d.XLabel.String = origin.XLabel.String;
+h.axes_lifetime_ind_2d.XLabel.Color = UserValues.Look.Fore;
+h.axes_lifetime_ind_2d.YLabel.String = origin.YLabel.String;
+h.axes_lifetime_ind_2d.YLabel.Color = UserValues.Look.Fore;
+%%% find the image plot
+xdata = plots(strcmp(type,'image')).XData;
+ydata = plots(strcmp(type,'image')).YData;
+zdata = plots(strcmp(type,'image')).CData;
+
+if sum(zdata(:)) == 0
+    return;
+end
+histx = sum(zdata,1);
+histy = sum(zdata,2);
+
+BurstMeta.Plots.LifetimeInd_histX.XData = xdata;
+BurstMeta.Plots.LifetimeInd_histX.YData = histx;
+BurstMeta.Plots.LifetimeInd_histY.XData = ydata;
+BurstMeta.Plots.LifetimeInd_histY.YData = histy;
+
+h.axes_lifetime_ind_1d_x.XLim = origin.XLim;
+h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
+h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
+h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
+
+h.axes_lifetime_ind_1d_x.YTickMode = 'auto';
+yticks= get(h.axes_lifetime_ind_1d_x,'YTick');
+set(h.axes_lifetime_ind_1d_x,'YTick',yticks(2:end));
+h.axes_lifetime_ind_1d_y.YTickMode = 'auto';
+yticks= get(h.axes_lifetime_ind_1d_y,'YTick');
+set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Updates Lifetime Plot (+fit) in the left Corrections Tab %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimeFits(obj,~)
 global BurstData UserValues BurstMeta
@@ -7005,85 +7393,6 @@ end
 PlotLifetimeInd([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Copies Selected Lifetime Plot to Individual Tab %%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function PlotLifetimeInd(~,~)
-global BurstMeta UserValues BurstData
-h = guidata(findobj('Tag','BurstBrowser'));
-if isempty(BurstData)
-    return;
-end
-switch BurstData.BAMethod
-    case {1,2}
-        switch h.lifetime_ind_popupmenu.Value
-            case 1 %E vs tauGG
-                origin = h.axes_EvsTauGG;
-            case 2 %E vs tauRR
-                origin = h.axes_EvsTauRR;
-            case 3 %rGG vs tauGG
-                origin = h.axes_rGGvsTauGG;
-            case 4 %rRR vs tauRR
-                origin = h.axes_rRRvsTauRR;
-        end
-    case {3,4}
-        switch h.lifetime_ind_popupmenu.Value
-            case 1 %E vs tauGG
-                origin = h.axes_EvsTauGG;
-            case 2 %E vs tauRR
-                origin = h.axes_EvsTauRR;
-            case 3 %E1A vs tauVV
-                origin = h.axes_E_BtoGRvsTauBB;
-            case 4 %rGG vs tauGG
-                origin = h.axes_rGGvsTauGG;
-            case 5 %rRR vs tauRR
-                origin = h.axes_rRRvsTauRR;
-            case 6 %rBB vs tauBB
-                origin = h.axes_rBBvsTauBB;
-        end
-end
-
-cla(h.axes_lifetime_ind_2d);
-plots =origin.Children;
-for i = numel(plots):-1:1
-    copyobj(plots(i),h.axes_lifetime_ind_2d);
-    type{i} = plots(i).Type;
-end
-
-h.axes_lifetime_ind_2d.XLim = origin.XLim;
-h.axes_lifetime_ind_2d.YLim = origin.YLim;
-h.axes_lifetime_ind_2d.XLabel.String = origin.XLabel.String;
-h.axes_lifetime_ind_2d.XLabel.Color = UserValues.Look.Fore;
-h.axes_lifetime_ind_2d.YLabel.String = origin.YLabel.String;
-h.axes_lifetime_ind_2d.YLabel.Color = UserValues.Look.Fore;
-%%% find the image plot
-xdata = plots(strcmp(type,'image')).XData;
-ydata = plots(strcmp(type,'image')).YData;
-zdata = plots(strcmp(type,'image')).CData;
-
-if sum(zdata(:)) == 0
-    return;
-end
-histx = sum(zdata,1);
-histy = sum(zdata,2);
-
-BurstMeta.Plots.LifetimeInd_histX.XData = xdata;
-BurstMeta.Plots.LifetimeInd_histX.YData = histx;
-BurstMeta.Plots.LifetimeInd_histY.XData = ydata;
-BurstMeta.Plots.LifetimeInd_histY.YData = histy;
-
-h.axes_lifetime_ind_1d_x.XLim = origin.XLim;
-h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
-h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
-h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
-
-h.axes_lifetime_ind_1d_x.YTickMode = 'auto';
-yticks= get(h.axes_lifetime_ind_1d_x,'YTick');
-set(h.axes_lifetime_ind_1d_x,'YTick',yticks(2:end));
-h.axes_lifetime_ind_1d_y.YTickMode = 'auto';
-yticks= get(h.axes_lifetime_ind_1d_y,'YTick');
-set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Executes on Tab-Change in Main Window and updates Plots %%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MainTabSelectionChange(obj,e)
@@ -7313,198 +7622,6 @@ if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Calculates the Gamma Factor using the lifetime information %%%%%%%%
-%%%%%%% by minimizing the deviation from the static FRET line      %%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DetermineGammaLifetime(obj,~)
-global BurstData UserValues BurstMeta
-h = guidata(obj);
-LSUserValues(0);
-%%% Change focus to CorrectionsTab
-%h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
-%% 2cMFD
-%%% Prepare photon counts
-indS = BurstMeta.posS;
-indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
-indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
-indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
-indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
-indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
-T_threshold = str2double(h.T_Threshold_Edit.String);
-if isnan(T_threshold)
-    T_threshold = 0.1;
-end
-cutT = 0;
-if cutT == 0
-    data_for_corrections = BurstData.DataArray;
-elseif cutT == 1
-    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-    valid = (BurstData.DataArray(:,T) < T_threshold);
-    data_for_corrections = BurstData.DataArray(valid,:);
-end
-
-%%% Read out corrections
-Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-
-%%% get E-S values between 0.3 and 0.8;
-% S_threshold = ( (data_for_corrections(:,indS) > 0.3) & (data_for_corrections(:,indS) < 0.8) );
-% if any(BurstData.BAMethod == [3,4])
-%     %%% also cut SBG! (otherwise there is contamination by blue only)
-%     indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-%     S_threshold = S_threshold & (data_for_corrections(:,indSBG) < 0.8);
-% end
-
-%%%instead, use selected species
-S_threshold = UpdateCuts();
-%%% Calculate "raw" E and S with gamma = 1, but still apply direct
-%%% excitation,crosstalk, and background corrections!
-NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
-
-if obj == h.DetermineGammaLifetimeTwoColorButton
-    %%% Calculate static FRET line in presence of linker fluctuations
-    tau = linspace(0,5,100);
-    [~, statFRETfun] = conversion_tau(BurstData.Corrections.DonorLifetime,...
-        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
-        tau);
-    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetime;
-    %%% minimize deviation from static FRET line as a function of gamma
-    tauGG = data_for_corrections(S_threshold,indTauGG);
-    valid = (tauGG < BurstData.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
-    %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
-    %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-    gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
-    gamma_fit = coeffvalues(gamma_fit);
-    E =  NGR./(gamma_fit.*NGG+NGR);
-    %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.05 1]);
-    BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
-    BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
-    BurstMeta.Plots.gamma_lifetime(1).CData= H;
-    BurstMeta.Plots.gamma_lifetime(1).AlphaData= (H>0);
-    BurstMeta.Plots.gamma_lifetime(2).XData= xbins;
-    BurstMeta.Plots.gamma_lifetime(2).YData= ybins;
-    BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
-    BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    %%% add static FRET line
-    tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
-    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
-    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
-    FRETline = statFRETfun(tau);
-    FRETline(find(FRETline < 0,1,'first')+10:end) = NaN;
-    BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
-    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
-    %%% Update UserValues
-    UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-end
-%% 3cMFD - Fit E1A vs. TauBlue
-if obj == h.DetermineGammaLifetimeThreeColorButton
-    if any(BurstData.BAMethod == [3,4])
-        %%% Prepare photon counts
-        indNBB = (strcmp(BurstData.NameArray,'Number of Photons (BB)'));
-        indNBG = (strcmp(BurstData.NameArray,'Number of Photons (BG)'));
-        indNBR = (strcmp(BurstData.NameArray,'Number of Photons (BR)'));
-        indTauBB = (strcmp(BurstData.NameArray,'Lifetime BB [ns]'));
-        indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-        indSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
-        
-        T_threshold = str2double(h.T_Threshold_Edit.String);
-        if isnan(T_threshold)
-            T_threshold = 0.1;
-        end
-        cutT = 0;
-        %%% define T-threshold
-        if cutT == 0
-            data_for_corrections = BurstData.DataArray;
-        elseif cutT == 1
-            T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-            T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
-            T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
-            valid = (BurstData.DataArray(:,T1) < T_threshold) &...
-                (BurstData.DataArray(:,T2) < T_threshold) &...
-                (BurstData.DataArray(:,T3) < T_threshold);
-            data_for_corrections = BurstData.DataArray(valid,:);
-        end
-        
-        %%% Read out corrections
-        Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-        Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
-        Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
-        
-        %%% get E-S values between 0.1 and 0.9;
-        %         S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
-        %             (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
-        %             (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
-        
-        %%%instead, use selected species
-        S_threshold = UpdateCuts();
-        %%% also use Lifetime Threshold
-        S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.05);
-        %%% Calculate "raw" E1A and with gamma_br = 1, but still apply direct
-        %%% excitation,crosstalk, and background corrections!
-        NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
-        NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
-        NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
-        NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-        NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
-        NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-        NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
-        gamma_gr = BurstData.Corrections.Gamma_GR;
-        EGR = NGR./(gamma_gr.*NGG+NGR);
-        NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB -...
-            BurstData.Corrections.CrossTalk_GR.*(NBG-BurstData.Corrections.CrossTalk_BG.*NBB) -...
-            BurstData.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
-        NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
-        %%% Calculate static FRET line in presence of linker fluctuations
-        tau = linspace(0,5,100);
-        [~, statFRETfun] = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
-            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
-            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
-            tau);
-        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetimeBlue;
-        tauBB = data_for_corrections(S_threshold,indTauBB);
-        valid = (tauBB < BurstData.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
-        valid = find(valid);
-        valid = valid(~isnan(statFRETfun( tauBB(valid))));
-        %%% minimize deviation from static FRET line as a function of gamma_br!
-        dev = @(gamma) sum( ( ( (gamma_gr.*NBG(valid)+NBR(valid))./(gamma.*NBB(valid) + gamma_gr.*NBG(valid) + NBR(valid)) ) - statFRETfun( tauBB(valid) ) ).^2 );
-        gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-        E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
-        %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
-        BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
-        BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
-        BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
-        BurstMeta.Plots.gamma_threecolor_lifetime(1).AlphaData= (H>0);
-        BurstMeta.Plots.gamma_threecolor_lifetime(2).XData= xbins;
-        BurstMeta.Plots.gamma_threecolor_lifetime(2).YData= ybins;
-        BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
-        BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-        %%% add static FRET line
-        tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
-        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
-        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
-        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETfun(tau);
-        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
-        %%% Update UserValues
-        UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
-        UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
-        BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
-        BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
-    end
-end
-%%% Save UserValues
-LSUserValues(1);
-%%% Update Correction Table Data
-UpdateCorrections([],[]);
-%%% Apply Corrections
-ApplyCorrections(obj,[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Normal Correlation of Burst Photon Streams %%%%%%%%%%%%%%%%%%%%%%%%
@@ -8891,3 +9008,169 @@ out = jet(m);
 n = find(out(:, 3) == 1, 1) - 1;
 out(1:n, 1:2) = repmat((n:-1:1)'/n, [1 2]);
 out(1:n, 3) = 1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Database(~,e,mode)
+global UserValues PamMeta
+h = guidata(findobj('Tag','Pam'));
+
+if mode == 0 %%% Checks, which key was pressed
+    switch e.Key
+        case 'delete'
+            mode = 2;
+        case 'return'
+            mode =7;
+    end
+end
+
+switch mode
+    case 1 %% Add files to database
+        %%% following code is for remembering the last used FileType
+        LSUserValues(0);
+        %%% Loads all possible file types
+        Filetypes = UserValues.File.SPC_FileTypes;
+        %%% Finds last used file type
+        Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
+        if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1
+            Lastfile = 1;
+        end
+        %%% Puts last used file type to front
+        Fileorder = 1:size(Filetypes,1);
+        Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
+        Filetypes = Filetypes(Fileorder,:);
+        %%% Choose file to be loaded
+        [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
+        %%% Determines actually selected file type
+        if Type~=0
+            Type = Fileorder(Type);
+        end
+        
+        %%% Only execues if any file was selected
+        if ~iscell(FileName) && all(FileName==0)
+            return
+        end
+        %%% Save the selected file type
+        UserValues.File.OpenTCSPC_FilterIndex = Type;
+        %%% Transforms FileName into cell, if it is not already
+        %%%(e.g. when only one file was selected)
+        if ~iscell(FileName)
+            FileName = {FileName};
+        end
+        %%% Saves Path
+        UserValues.File.Path = Path;
+        LSUserValues(1);
+        %%% Sorts FileName by alphabetical order
+        FileName=sort(FileName);
+        %% Add files to database
+        if ~isfield(PamMeta, 'Database') 
+            %create database
+            PamMeta.Database = cell(0,3);
+        end
+        % add new files to database
+        for i = 1:numel(FileName)
+            PamMeta.Database{end+1,1} = FileName{i};
+            PamMeta.Database{end,2} = Path;
+            PamMeta.Database{end,3} = Type;
+            h.Database.List.String{end+1} = [FileName{i} ' (path:' Path ')'];
+        end
+        h.Database.Correlate.Enable = 'on';
+        h.Database.Burst.Enable = 'on';
+        h.Database.Save.Enable = 'on'; 
+        h.Database.Delete.Enable = 'on';  
+    case 2 %% Delete files from database
+        %remove rows from list
+        h.Database.List.String(h.Database.List.Value) = [];
+        %remove rows from database
+        PamMeta.Database(h.Database.List.Value, :) = [];
+        h.Database.List.Value = 1;
+        if size(PamMeta.Database, 1) < 1
+            % no files are left
+            h.Database.Correlate.Enable = 'off';
+            h.Database.Burst.Enable = 'off';
+            h.Database.Save.Enable = 'off';
+            h.Database.Delete.Enable = 'off';
+        end
+    case 3 %% Load database
+        [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',UserValues.File.Path,'MultiSelect', 'off');
+        load('-mat',fullfile(Path,FileName));
+        PamMeta.Database = s.database;
+        h.Database.List.String = s.str;
+        clear s;
+        if size(PamMeta.Database, 1) > 0
+            % no files are left
+            h.Database.Correlate.Enable = 'on';
+            h.Database.Burst.Enable = 'on';
+            h.Database.Save.Enable = 'on';
+            h.Database.Delete.Enable = 'on';
+        end
+    case 4 %% Save complete database
+        [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', UserValues.File.Path);
+        s = struct;
+        s.database = PamMeta.Database;
+        s.str = h.Database.List.String;
+        save(fullfile(Path,File),'s');
+    case 5 %% Correlate active ones in database
+        if h.Database.Correlate.UserData == 0
+            h.Database.Correlate.UserData = 1;
+            h.Database.Correlate.String = 'Stop';
+        elseif h.Database.Correlate.UserData == 1
+            h.Database.Correlate.UserData = 0;
+        end
+        for i = h.Database.List.Value
+            pause(0.01)
+            if h.Database.Correlate.UserData == 0
+               h.Database.Correlate.String = 'Correlate';
+               return 
+            end
+            try
+                % Path is unique per file in the database, so we have to store
+                % it globally in UserValues each time
+                UserValues.File.Path = PamMeta.Database{i,2};
+                LSUserValues(1);
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                    PamMeta.Database{i,1},...   %file
+                    PamMeta.Database{i,3});     %type
+                Correlate ([],[],1)
+                % set filename color to green
+                h.Database.List.String{i} = ['<HTML><FONT color=00FF00>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
+            catch
+                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
+            end
+        end
+        h.Database.Correlate.UserData = 0;
+        h.Database.Correlate.String = 'Correlate';
+    case 6 %% Burst analyse active ones in database
+        for i = h.Database.List.Value
+            try
+            % Path is unique per file in the database, so we have to store
+            % it globally in UserValues each time
+            UserValues.File.Path = PamMeta.Database{i,2};
+            LSUserValues(1);
+            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                PamMeta.Database{i,1},...   %file
+                PamMeta.Database{i,3});     %type
+            Do_BurstAnalysis
+            % depending on whether the '2CDE' and 'lifetime' checkboxes are
+            % checked on the 'Burst analysis' tab, this might also be performed
+            % set filename color to green
+            h.Database.List.String{i}=['<HTML><FONT color=00FF00>' h.Database.List.String{i} '</Font></html>'];
+            catch exception
+                %set filename color to red
+                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' h.Database.List.String{i} '</Font></html>'];
+                rethrow(exception);
+            end
+        end
+        % here some button to push, to put the colors back to black
+    case 7 %% Loads selected files into Pam
+        %%% Caution! Only works if Path and filetype are the same for all files!        
+        h.Progress.Text.String='Loading new file';
+        % Path is unique per file in the database, so we have to store
+        % it globally in UserValues each time
+        UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
+        LSUserValues(1);
+        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+            PamMeta.Database(h.Database.List.Value,1),...   %file
+            PamMeta.Database{h.Database.List.Value(1),3});     %type
+end
