@@ -2033,14 +2033,14 @@ switch obj
                 
                 %%% Define separate IRF Patterns
                 IRFPattern = cell(2,1);
-                IRFPattern{1} = TauFitData.hIRF_Par(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
-                ScatterPattern{1} = TauFitData.hScat_Par(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-                ScatterPattern{2} = ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                 
                 %%% Convert Lifetimes
                 x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
                 lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
@@ -2854,7 +2854,7 @@ switch TauFitData.BAMethod
         for chan = 1:2
             % Anders, I just read the data from the plots to avoid confusion.
             h.ChannelSelect_Popupmenu.Value = chan;
-            %Update_Plots(obj)
+            Update_Plots(obj)
             %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
             %%% Changed this back so a better correction of the IRF can be
             %%% performed, for which the total IRF pattern is needed!
@@ -2871,6 +2871,7 @@ switch TauFitData.BAMethod
             %Irf = Irf-min(Irf(Irf~=0));
             Irf = Irf./sum(Irf);
             IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+            %%% Scatter is still read from plots
             Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
             SCATTER{chan} = Scatter./sum(Scatter);
             Length{chan} = numel(Scatter)-1;
@@ -3030,8 +3031,8 @@ switch TauFitData.BAMethod
         %% Prepare the data
         for chan = 1:3
             % call Update_plots to get the correctly shifted Scatter and IRF directly from the plot
-            %h.ChannelSelect_Popupmenu.Value = chan;
-            %Update_Plots(obj)
+            h.ChannelSelect_Popupmenu.Value = chan;
+            Update_Plots(obj)
             %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
             %%% Changed this back so a better correction of the IRF can be
             %%% performed, for which the total IRF pattern is needed!
@@ -3048,6 +3049,7 @@ switch TauFitData.BAMethod
             %Irf = Irf-min(Irf(Irf~=0));
             Irf = Irf./sum(Irf);
             IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+            %%% Scatter is still read from the plots
             Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
             SCATTER{chan} = Scatter./sum(Scatter);
             Length{chan} = numel(Scatter)-1;
