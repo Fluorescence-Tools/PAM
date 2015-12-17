@@ -2724,6 +2724,22 @@ UserValues.File.BurstBrowserPath=PathName;
 LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
 BurstData.FileName = fullfile(PathName,FileName);
+
+
+% burst analysis before December 16, 2015
+if ~isfield(BurstData, 'ClockPeriod')
+    BurstData.ClockPeriod = BurstData.SyncPeriod;
+    BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
+    if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
+        %if SPC-630 is used, set the SyncPeriod to what it really is
+        BurstData.SyncPeriod = 1/8E7*3;
+        BurstData.FileInfo.SyncPeriod = 1/8E7*3;
+        if rand < 0.05
+            msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+        end
+    end
+end
+
 %%% Reset FCS buttons (no *.aps loaded anymore!)
 h.CorrelateWindow_Button.Enable = 'off';
 h.CorrelateWindow_Edit.Enable = 'off';
@@ -2793,10 +2809,10 @@ if FilterIndex == 2 % KBA file was loaded
             if isfield(Data,'TACrange')
                 BurstData.TACRange = Data.TACrange;
             else
-                BurstData.TACRange = 1E9./Data.SyncRate;
+                BurstData.TACRange = 1E9./Data.SyncRate; %kba file from old Pam
             end
             BurstData.SyncPeriod = 1./Data.SyncRate;
-            
+            BurstData.ClockPeriod = BurstData.SyncPeriod;
             BurstData.FileInfo.MI_Bins = 4096;
             BurstData.FileInfo.TACRange = BurstData.TACRange;
             if isfield(Data,'PIEChannels')
@@ -2884,6 +2900,7 @@ if FilterIndex == 2 % KBA file was loaded
                     BurstData.FileInfo.TACRange =  1E9./Data.SyncRate;
                 end
                 BurstData.SyncPeriod = 1./Data.SyncRate;
+                BurstData.ClockPeriod = BurstData.SyncPeriod;  %kba file from old pam
             end
             BurstData.FileInfo.MI_Bins = 4096;
             
@@ -3143,6 +3160,19 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Merging files...');
 MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
     MergeData{i} = load(Files{i,1},'-mat');
+    % burst analysis before December 16, 2015
+    if ~isfield(MergeData{i}, 'ClockPeriod')
+        MergeData{i}.ClockPeriod = MergeData{i}.SyncPeriod;
+        MergeData{i}.FileInfo.ClockPeriod = MergeData{i}.FileInfo.SyncPeriod;
+        if ~strcmp(MergeData{i}.FileInfo.Card, 'SPC-140/150/830/130')
+            %if SPC-630 is used, set the SyncPeriod to what it really is
+            MergeData{i}.SyncPeriod = 1/8E7*3;
+            MergeData{i}.FileInfo.SyncPeriod = 1/8E7*3;
+            if rand < 0.05
+                msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+            end
+        end
+    end
 end
 
 Progress(0.2,h.Progress_Axes,h.Progress_Text,'Merging files...');
@@ -3158,6 +3188,7 @@ for i=1:numel(MergeData)
     MergedParameters.BAMethod{i} = MergeData{i}.BurstData.BAMethod;
     MergedParameters.Filetype{i} = MergeData{i}.BurstData.Filetype;
     MergedParameters.SyncPeriod{i} = MergeData{i}.BurstData.SyncPeriod;
+    MergedParameters.ClockPeriod{i} = MergeData{i}.BurstData.ClockPeriod;
     MergedParameters.FileInfo{i} = MergeData{i}.BurstData.FileInfo;
     MergedParameters.PIE{i} = MergeData{i}.BurstData.PIE;
     MergedParameters.IRF{i} = MergeData{i}.BurstData.IRF;
@@ -3635,7 +3666,7 @@ MT = BurstTCSPCData.Macrotime(BurstData.Selected);
 CH = BurstTCSPCData.Channel(BurstData.Selected);
 %%% Hard-Code 1ms here
 timebin = 1E-3;
-duration = timebin/BurstData.SyncPeriod;
+duration = timebin/BurstData.ClockPeriod;
 
 PDAdata = Bursts_to_Timebins(MT,CH,duration);
 
@@ -5576,7 +5607,7 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
     use_time = 1; %%% use time or photon window
     if use_time
         %%% histogram the Macrotimes in bins of 10 ms
-        bw = ceil(10E-3./BurstData.SyncPeriod);
+        bw = ceil(10E-3./BurstData.ClockPeriod);
         bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
         if ~isfield(PhotonStream,'MT_bin')
             %%% finds the PHOTON index of the first photon in each
@@ -5872,7 +5903,7 @@ end
 %%% New binwidth in picoseconds
 if UserValues.BurstBrowser.Settings.Downsample_fFCS
     if ~isfield(BurstData.FileInfo,'Resolution')
-        TACChannelWidth = BurstData.FileInfo.SyncPeriod*1E9/BurstData.FileInfo.MI_Bins;
+        TACChannelWidth = BurstData.FileInfo.ClockPeriod*1E9/BurstData.FileInfo.MI_Bins;
     elseif isfield(BurstData.FileInfo,'Resolution') %%% HydraHarp Data
         TACChannelWidth = BurstData.FileInfo.Resolution/1000;
     end
@@ -6257,7 +6288,7 @@ for i=1:NumChans
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
             end
-            Cor_Times = Cor_Times*BurstData.SyncPeriod;
+            Cor_Times = Cor_Times*BurstData.ClockPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
             if numel(Cor_Array)>1
@@ -6284,7 +6315,7 @@ for i=1:NumChans
             end
             
             Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+            %Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
@@ -6729,7 +6760,7 @@ timebin = {10E-3,5E-3,3E-3,2E-3,1E-3,0.5E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
-    duration = timebin{t}/BurstData.SyncPeriod;
+    duration = timebin{t}/BurstData.ClockPeriod;
     %%% Get the maximum number of bins possible in data set
     max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
     %convert absolute macrotimes to relative macrotimes
@@ -7707,7 +7738,7 @@ switch obj
         %                     end
         %                     %%% Do Correlation
         %                     [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-        %                     Cor_Times = Cor_Times*BurstData.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
+        %                     Cor_Times = Cor_Times*BurstData.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
         %                     %%% Calculates average and standard error of mean (without tinv_table yet
         %                     if numel(Cor_Array)>1
         %                         Cor_Average=mean(Cor_Array,2);
@@ -7737,7 +7768,7 @@ switch obj
         %                     end
         %
         %                     Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-        %                     Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+        %                     Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
         %                     Valid = 1:10;
         %                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
         %                     count = count+1;waitbar(count/NCor);
@@ -7756,7 +7787,7 @@ switch obj
         use_time = 1; %%% use time or photon window
         if use_time
             %%% histogram the Macrotimes in bins of 10 ms
-            bw = ceil(10E-3./BurstData.SyncPeriod);
+            bw = ceil(10E-3./BurstData.ClockPeriod);
             bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
             if ~isfield(PhotonStream,'MT_bin')
                 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
@@ -7874,7 +7905,7 @@ for i=1:NumChans
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             %%% Do Correlation
             [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-            Cor_Times = Cor_Times*BurstData.SyncPeriod;
+            Cor_Times = Cor_Times*BurstData.ClockPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
             if size(Cor_Array,2)>1
@@ -7901,7 +7932,7 @@ for i=1:NumChans
             end
             
             Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [numel(MT1) numel(MT2)]/(BurstData.SyncPeriod*max([MT1;MT2]))/1000;
+            %Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');

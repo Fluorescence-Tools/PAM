@@ -2331,7 +2331,8 @@ FileInfo.MI_Bins=4096;
 FileInfo.NumberOfFiles=1;
 FileInfo.Type=1;
 FileInfo.MeasurementTime=1;
-FileInfo.SyncPeriod=1;
+FileInfo.SyncPeriod=1; %The laser sync period
+FileInfo.ClockPeriod=1; %The macrotime clock period (not the same as sync period for SPC-630 cards or for non-sync MT clock)
 FileInfo.Lines=1;
 FileInfo.Pixels=1;
 FileInfo.FileName={'Nothing loaded'};
@@ -2433,7 +2434,7 @@ if ~isempty(PIE)
         if all(~isempty([Det,Rout])) && all([Det Rout] <= size(TcspcData.MI)) && ~isempty(TcspcData.MT{Det,Rout})
             %% Calculates trace
             %%% Takes PIE channel macrotimes
-            PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.SyncPeriod;
+            PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
             %%% Calculate intensity trace for PIE channel (currently with 100 ms bins)
             if ~isempty(PIE_MT)
                 PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
@@ -2451,7 +2452,7 @@ if ~isempty(PIE)
                 end
                 Pixeltimes(end)=[];
                 %%% Calculate image vector
-                PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.SyncPeriod);  
+                PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);  
                 %%% Reshapes pixel vector to image
                 PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
                 
@@ -3785,7 +3786,7 @@ if ~isempty(TcspcData.(type){Det,Rout})
         
     elseif nargin == 3 %%% read only the specified block
         %%% Calculates the block start times in clock ticks
-        Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
+        Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
         
         Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
@@ -3798,8 +3799,8 @@ if ~isempty(TcspcData.(type){Det,Rout})
         %%% time
         %%% Determine Macrotime Boundaries from ChunkNumber and ChunkSize
         %%% (defined in minutes)
-        LimitLow = (block-1)*chunk*60/FileInfo.SyncPeriod+1;
-        LimitHigh = block*chunk*60/FileInfo.SyncPeriod;
+        LimitLow = (block-1)*chunk*60/FileInfo.ClockPeriod+1;
+        LimitHigh = block*chunk*60/FileInfo.ClockPeriod;
         
         Photons_PIEchannel = TcspcData.(type){Det,Rout}(...
             TcspcData.MI{Det,Rout} >= From &...
@@ -3961,7 +3962,6 @@ h.MI.Calib_Det.Value=1;
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping correlation table updated  %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4011,6 +4011,7 @@ if obj == h.Cor.Table
     UserValues.Settings.Pam.Cor_Selection = h.Cor.Table.Data;
 end
 LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for correlating data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4080,12 +4081,12 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     %%% Finds the right combinations to correlate
     [Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
     %%% Calculates the maximum inter-photon time in clock ticks
-    Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.SyncPeriod)/UserValues.Settings.Pam.Cor_Divider;
+    Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.ClockPeriod)/UserValues.Settings.Pam.Cor_Divider;
     if h.Cor.Type.Value == 3 %%% Microtime Correlation
         Maxtime = Maxtime.*FileInfo.MI_Bins;
     end
     %%% Calculates the photon start times in clock ticks
-    Times=ceil(PamMeta.MT_Patch_Times/FileInfo.SyncPeriod);
+    Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
     Valid = find(PamMeta.Selected_MT_Patches)';
     %%% Uses truncated Filename
     switch FileInfo.FileType
@@ -4243,9 +4244,9 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Actually calculates the crosscorrelation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                 if h.Cor.Type.Value == 1
-                    Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider;
+                    Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
                 elseif h.Cor.Type.Value == 3
-                    Cor_Times=Cor_Times*FileInfo.SyncPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
+                    Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
                 %%% Calculates average and standard error of mean (without tinv_table yet
                 if size(Cor_Array,2)>1
@@ -4344,7 +4345,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 Bins=str2double(h.Cor.Pair_Bins.String);
                 Dist=[0,str2num(h.Cor.Pair_Dist.String)]; %#ok<ST2NM>
                 Dist= Dist(Dist<Bins); 
-                Times = (Times*FileInfo.SyncPeriod*FileInfo.ScanFreq);
+                Times = (Times*FileInfo.ClockPeriod*FileInfo.ScanFreq);
                 Maxtime = max(diff(Times));
                 h.Progress.Text.String='Assigning photons to bins';
                 h.Progress.Axes.Color=[1 0 0];
@@ -4364,7 +4365,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Sorts data                 
-                Data = floor(Data*FileInfo.SyncPeriod*FileInfo.ScanFreq);
+                Data = floor(Data*FileInfo.ClockPeriod*FileInfo.ScanFreq);
                 [DataBin,Index] = sort(mod(Data,1));
                 Data = Data(Index);
                 MI = MI(Index);
@@ -4408,7 +4409,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     %%% Sorts photons into spatial bins
-                    Data = floor(Data*FileInfo.SyncPeriod*FileInfo.ScanFreq);
+                    Data = floor(Data*FileInfo.ClockPeriod*FileInfo.ScanFreq);
                     [DataBin,Index] = sort(mod(Data,1));
                     Data = Data(Index);
                     MI = MI(Index);
@@ -4547,6 +4548,7 @@ end
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
 LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for (de)selecting individual correlation curves %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4626,7 +4628,6 @@ switch mode
         end
 end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to keep shift equal  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4638,6 +4639,7 @@ elseif obj==h.MI.Phasor_Slider
     h.MI.Phasor_Shift.String=num2str(h.MI.Phasor_Slider.Value);
 end
 Update_Display([],[],6);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to assign histogram as Phasor reference %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4651,6 +4653,7 @@ UserValues.Phasor.Reference(Det,:)=0;
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
 LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4705,7 +4708,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         
         %%% Selects and sorts photons;
-        Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.SyncPeriod;        
+        Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;        
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         
@@ -4716,7 +4719,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         
         %%% Calculates, which Photons belong to which pixel
-        Intensity=histc(Photons,Pixeltimes(1:end-1).*FileInfo.SyncPeriod);        
+        Intensity=histc(Photons,Pixeltimes(1:end-1).*FileInfo.ClockPeriod);        
         clear Photons
         Pixel=[1;cumsum(Intensity)];
         Pixel(Pixel==0)=1;
@@ -4783,7 +4786,6 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     h.Progress.Text.String = FileInfo.FileName{1};
     h.Progress.Axes.Color=UserValues.Look.Control;
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4903,6 +4905,7 @@ switch UserValues.BurstSearch.SmoothingMethod
                 h.Burst.BurstParameter5_Edit.Visible = 'off';
         end
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for updating BurstSearch Parameters in UserValues %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4917,6 +4920,7 @@ else %change in edit boxes
         str2double(h.Burst.BurstParameter5_Edit.String)];
 end
 LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5167,8 +5171,8 @@ Progress(0,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters..
 Number_of_Bursts = numel(Macrotime);
 
 Number_of_Photons = cellfun(@numel,Macrotime);
-Mean_Macrotime = cellfun(@mean,Macrotime)*FileInfo.SyncPeriod;
-Duration = cellfun(@(x) max(x)-min(x),Macrotime)*FileInfo.SyncPeriod/1E-3;
+Mean_Macrotime = cellfun(@mean,Macrotime)*FileInfo.ClockPeriod;
+Duration = cellfun(@(x) max(x)-min(x),Macrotime)*FileInfo.ClockPeriod/1E-3;
 
 Progress(0.1,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');
 
@@ -5203,7 +5207,7 @@ if any(BAMethod == [1 2]) %total of 6 channels
     Mean_Macrotime_per_Chan = zeros(Number_of_Bursts,6);
     Duration_per_Chan = cell(Number_of_Bursts,6);
     for i = 1:6 %only calculate Mean Macrotime for combined channels GG, GR, RR
-        Mean_Macrotime_per_Chan(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.SyncPeriod;
+        Mean_Macrotime_per_Chan(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.ClockPeriod;
         Duration_per_Chan(:,i) = cellfun(@(x,y) max(x(y == i))-min(x(y == i)),Macrotime,Channel,'UniformOutput',false);
     end
     
@@ -5212,23 +5216,23 @@ if any(BAMethod == [1 2]) %total of 6 channels
     Mean_Macrotime_per_Color = zeros(Number_of_Bursts,4);
     Duration_per_Color = cell(Number_of_Bursts,4);
     for i = 1:3 %only calculate Mean Macrotime for combined channels GG, GR, RR
-        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == 2*i-1 | y == 2*i)),Macrotime, Channel)*FileInfo.SyncPeriod;
+        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == 2*i-1 | y == 2*i)),Macrotime, Channel)*FileInfo.ClockPeriod;
         Duration_per_Color(:,i) = cellfun(@(x,y) max(x(y == 2*i-1 | y == 2*i))-min(x(y == 2*i-1 | y == 2*i)),Macrotime,Channel,'UniformOutput',false);
     end
     
     Progress(0.6,h.Progress.Axes, h.Progress.Text, 'Calculating Burstwise Parameters...');    
     %Also calculate GX
-    Mean_Macrotime_per_Color(:,4) = cellfun(@(x,y) mean(x(y == 1 | y == 2 | y == 3 | y == 4)),Macrotime, Channel)*FileInfo.SyncPeriod;
+    Mean_Macrotime_per_Color(:,4) = cellfun(@(x,y) mean(x(y == 1 | y == 2 | y == 3 | y == 4)),Macrotime, Channel)*FileInfo.ClockPeriod;
     Duration_per_Color(:,4) = cellfun(@(x,y) max(x(y == 1 | y == 2 | y == 3 | y == 4))-min(x(y == 1 | y == 2 | y == 3 | y == 4)),Macrotime,Channel,'UniformOutput',false);
        
     %there are empty cells for Duration_per_Chan if Channels are empty
     ix=cellfun('isempty',Duration_per_Chan);
     Duration_per_Chan(ix)={nan};
-    Duration_per_Chan = cell2mat(Duration_per_Chan)*FileInfo.SyncPeriod/1E-3;
+    Duration_per_Chan = cell2mat(Duration_per_Chan)*FileInfo.ClockPeriod/1E-3;
     
     ix=cellfun('isempty',Duration_per_Color);
     Duration_per_Color(ix)={nan};
-    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.SyncPeriod/1E-3;
+    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.ClockPeriod/1E-3;
     
     %Determine TGG-TGR and TGX-TRR
     TGG_TGR = abs(Mean_Macrotime_per_Color(:,1)-Mean_Macrotime_per_Color(:,2));
@@ -5302,31 +5306,31 @@ elseif any(BAMethod == [3 4]) %total of 12 channels
     end
     
     for i = 1:12 %only calculate Mean Macrotime for combined channels
-        Mean_Macrotime_per_Chan(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.SyncPeriod;
+        Mean_Macrotime_per_Chan(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.ClockPeriod;
         Duration_per_Chan(:,i) = cellfun(@(x,y) max(x(y == i))-min(x(y == i)),Macrotime,Channel,'UniformOutput',false);
     end
     
     Mean_Macrotime_per_Color = zeros(Number_of_Bursts,8);
     Duration_per_Color = cell(Number_of_Bursts,8);
     for i = 1:6 %only calculate Mean Macrotime for combined channels GG, GR, RR
-        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == 2*i-1 | y == 2*i)),Macrotime, Channel)*FileInfo.SyncPeriod;
+        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == 2*i-1 | y == 2*i)),Macrotime, Channel)*FileInfo.ClockPeriod;
         Duration_per_Color(:,i) = cellfun(@(x,y) max(x(y == 2*i-1 | y == 2*i))-min(x(y == 2*i-1 | y == 2*i)),Macrotime,Channel,'UniformOutput',false);
     end
     
     %Also for BX and GX
-    Mean_Macrotime_per_Color(:,7) = cellfun(@(x,y) mean(x(y == 1 | y == 2 | y == 3 | y == 4 | y == 5 | y == 6)),Macrotime, Channel)*FileInfo.SyncPeriod;
-    Mean_Macrotime_per_Color(:,8) = cellfun(@(x,y) mean(x(y == 7 | y == 8 | y == 9 | y == 10)),Macrotime, Channel)*FileInfo.SyncPeriod;
+    Mean_Macrotime_per_Color(:,7) = cellfun(@(x,y) mean(x(y == 1 | y == 2 | y == 3 | y == 4 | y == 5 | y == 6)),Macrotime, Channel)*FileInfo.ClockPeriod;
+    Mean_Macrotime_per_Color(:,8) = cellfun(@(x,y) mean(x(y == 7 | y == 8 | y == 9 | y == 10)),Macrotime, Channel)*FileInfo.ClockPeriod;
     Duration_per_Color(:,7) = cellfun(@(x,y) max(x(y == 1 | y == 2 | y == 3 | y == 4 | y == 5 | y == 6)) - min(x(y == 1 | y == 2 | y == 3 | y == 4 | y == 5 | y == 6)),Macrotime,Channel,'UniformOutput',false);
     Duration_per_Color(:,8) = cellfun(@(x,y) max(x(y == 7 | y == 8 | y == 9 | y == 10)) - min(x(y == 7 | y == 8 | y == 9 | y == 10)),Macrotime,Channel,'UniformOutput',false);
     
     %there are empty cells for Duration_per_Chan if Channels are empty
     ix=cellfun('isempty',Duration_per_Chan);
     Duration_per_Chan(ix)={nan};
-    Duration_per_Chan = cell2mat(Duration_per_Chan)*FileInfo.SyncPeriod/1E-3;
+    Duration_per_Chan = cell2mat(Duration_per_Chan)*FileInfo.ClockPeriod/1E-3;
     
     ix=cellfun('isempty',Duration_per_Color);
     Duration_per_Color(ix)={nan};
-    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.SyncPeriod/1E-3;
+    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.ClockPeriod/1E-3;
     
     %Determine TGG-TGR and TGX-TRR
     TGG_TGR = abs(Mean_Macrotime_per_Color(:,4)-Mean_Macrotime_per_Color(:,5));
@@ -5379,18 +5383,18 @@ elseif BAMethod == 5 %only 3 channels
     Mean_Macrotime_per_Color = zeros(Number_of_Bursts,3);
     Duration_per_Color = cell(Number_of_Bursts,3);
     for i = 1:3 %only calculate Mean Macrotime for combined channels GG, GR, RR
-        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.SyncPeriod;
+        Mean_Macrotime_per_Color(:,i) = cellfun(@(x,y) mean(x(y == i)),Macrotime, Channel)*FileInfo.ClockPeriod;
         Duration_per_Color(:,i) = cellfun(@(x,y) max(x(y == i)) - min(x(y == i)),Macrotime,Channel,'UniformOutput',false);
     end    
     
     %Also calculate GX
-    Mean_Macrotime_per_Color(:,4) = cellfun(@(x,y) mean(x(y == 1 | y == 2)),Macrotime, Channel)*FileInfo.SyncPeriod;
+    Mean_Macrotime_per_Color(:,4) = cellfun(@(x,y) mean(x(y == 1 | y == 2)),Macrotime, Channel)*FileInfo.ClockPeriod;
     Duration_per_Color(:,4) = cellfun(@(x,y) max(x(y == 1 | y == 2)) - min(x(y == 1 | y == 2)),Macrotime,Channel,'UniformOutput',false);
        
     %there are empty cells for Duration_per_Chan if Channels are empty
     ix=cellfun('isempty',Duration_per_Color);
     Duration_per_Color(ix)={nan};
-    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.SyncPeriod/1E-3;
+    Duration_per_Color = cell2mat(Duration_per_Color)*FileInfo.ClockPeriod/1E-3;
     
     %Determine TGG-TGR and TGX-TRR
     TGG_TGR = abs(Mean_Macrotime_per_Color(:,1)-Mean_Macrotime_per_Color(:,2));
@@ -5604,6 +5608,7 @@ BurstData.TACRange = FileInfo.TACRange;
 BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
 BurstData.SyncPeriod = FileInfo.SyncPeriod;
+BurstData.ClockPeriod = FileInfo.ClockPeriod;
 %%% Store also the FileInfo in BurstData
 BurstData.FileInfo = FileInfo;
 %%% Safe PIE channel information for loading of IRF later
@@ -5725,6 +5730,7 @@ end
 if h.Burst.BurstLifetime_Checkbox.Value
     BurstLifetime
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5750,7 +5756,7 @@ load(fullfile(Path,[File '.bps']),'-mat');
 h.Progress.Text.String = 'Calculating 2CDE Filter...'; drawnow;
 tic
 for t=1:numel(tau_2CDE)
-    tau = tau_2CDE(t)*1E-6/BurstData.SyncPeriod;
+    tau = tau_2CDE(t)*1E-6/BurstData.ClockPeriod;
     if numel(tau_2CDE) == 1
         tex = 'Calculating 2CDE Filter...';
     else
@@ -5815,6 +5821,20 @@ LSUserValues(1);
 load('-mat',fullfile(PathName,FileName));
 %%% Update FileName (if it was previously analyzed on a different computer)
 BurstData.FileName = fullfile(PathName,FileName);
+
+% burst analysis before December 16, 2015
+if ~isfield(BurstData, 'ClockPeriod')
+    BurstData.ClockPeriod = BurstData.SyncPeriod;
+    BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
+    if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
+        %if SPC-630 is used, set the SyncPeriod to what it really is
+        BurstData.SyncPeriod = 1/8E7*3;
+        BurstData.FileInfo.SyncPeriod = 1/8E7*3;
+        if rand < 0.05
+            msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+        end
+    end
+end
 
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
@@ -5983,7 +6003,7 @@ h = guidata(findobj('Tag','Pam'));
 BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
 if BurstIdentification == 1
     %All-Photon Burst Search based on Nir Paper (2006)
-    valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.SyncPeriod;
+    valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.ClockPeriod;
 
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1)+floor(M/2);
@@ -6015,11 +6035,11 @@ elseif BurstIdentification == 2
         dT_f = dT_m + (dT-dT_m).*dT_s./(dT_s+sig_0.^2);  
 
         % threshold
-        valid = dT_f < T*1e-6/FileInfo.SyncPeriod;
+        valid = dT_f < T*1e-6/FileInfo.ClockPeriod;
         
     elseif M == 1
         % threshold
-        valid = [Photons(1); diff(Photons)] < T*1e-6/FileInfo.SyncPeriod;
+        valid = [Photons(1); diff(Photons)] < T*1e-6/FileInfo.ClockPeriod;
     end
     % and find start and stop of bursts
     start = find(valid(1:end-1)-valid(2:end)==-1);
@@ -6067,14 +6087,14 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     PamMeta.Burst.Preview.InterphotonTime_Smoothed = [];
     
     %bintime for display, based on the time window used for the burst analysis
-    %Bin_Time = UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2)*1E-6/FileInfo.SyncPeriod;
+    %Bin_Time = UserValues.BurstSearch.SearchParameters{UserValues.BurstSearch.Method}(2)*1E-6/FileInfo.ClockPeriod;
     bin_time_ms = 1;
-    Bin_Time = bin_time_ms*1E-3/FileInfo.SyncPeriod;
+    Bin_Time = bin_time_ms*1E-3/FileInfo.ClockPeriod;
     %perform burst analysis on first 60 seconds
     %achieve loading of less photons by using chunksize of preview and first
     %chunk
     ChunkSize = 1; %1 minute
-    T_preview = 60*ChunkSize/FileInfo.SyncPeriod;
+    T_preview = 60*ChunkSize/FileInfo.ClockPeriod;
     BAMethod = UserValues.BurstSearch.Method;
     SmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
     
@@ -6186,7 +6206,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     stoptime = min(ceil(AllPhotons(stop)/Bin_Time)+1,xout(end));
     
     %Update PamMeta
-    PamMeta.Burst.Preview.x = xout*FileInfo.SyncPeriod;
+    PamMeta.Burst.Preview.x = xout*FileInfo.ClockPeriod;
     PamMeta.Burst.Preview.ch1 = ch1./bin_time_ms;
     PamMeta.Burst.Preview.ch2 = ch2./bin_time_ms;
     PamMeta.Burst.Preview.stop = stop;
@@ -6326,12 +6346,12 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
    
     h.Plots.BurstPreview.Channel1_Interphot.Visible = 'on';
     h.Plots.BurstPreview.Channel1_Interphot.Color = [0.6 0.6 0.6];
-    h.Plots.BurstPreview.Channel1_Interphot.XData = AllPhotons.*FileInfo.SyncPeriod;
-    h.Plots.BurstPreview.Channel1_Interphot.YData = dT.*FileInfo.SyncPeriod*1E6;
+    h.Plots.BurstPreview.Channel1_Interphot.XData = AllPhotons.*FileInfo.ClockPeriod;
+    h.Plots.BurstPreview.Channel1_Interphot.YData = dT.*FileInfo.ClockPeriod*1E6;
     h.Plots.BurstPreview.Channel2_Interphot.Visible = 'on';
     h.Plots.BurstPreview.Channel2_Interphot.Color = [0 0 0];
-    h.Plots.BurstPreview.Channel2_Interphot.XData = AllPhotons.*FileInfo.SyncPeriod;
-    h.Plots.BurstPreview.Channel2_Interphot.YData = dT_f.*FileInfo.SyncPeriod*1E6;
+    h.Plots.BurstPreview.Channel2_Interphot.XData = AllPhotons.*FileInfo.ClockPeriod;
+    h.Plots.BurstPreview.Channel2_Interphot.YData = dT_f.*FileInfo.ClockPeriod*1E6;
     
     %%% Set Threshold if Interphoton Time is selected
     if SmoothingMethod == 2
@@ -6339,20 +6359,20 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'on';
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Color = [0 0 1];
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.LineStyle = '--';
-        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.SyncPeriod;
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.ClockPeriod;
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = mean(M)*ones(1,numel(AllPhotons));
     else
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Visible = 'on';
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.Color = [0 0 1];
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.LineStyle = '--';
-        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.SyncPeriod;
+        h.Plots.BurstPreview.Interhpoton_Threshold_ch1.XData = AllPhotons.*FileInfo.ClockPeriod;
         h.Plots.BurstPreview.Interhpoton_Threshold_ch1.YData = (T/mean(M))*ones(1,numel(AllPhotons));
     end
     %%% Color selected regions in Interphoton time plot
     clear x
     for i=1:numel(start)
-        x{i} = AllPhotons(start(i):stop(i)).*FileInfo.SyncPeriod;
-        y{i} = dT_f(start(i):stop(i)).*FileInfo.SyncPeriod*1E6;
+        x{i} = AllPhotons(start(i):stop(i)).*FileInfo.ClockPeriod;
+        y{i} = dT_f(start(i):stop(i)).*FileInfo.ClockPeriod*1E6;
     end
     h.Plots.BurstPreview.SearchResult.Interphot = plot(h.Burst.Axes_Interphot, vertcat(x{:}),vertcat(y{:}),'.r');
     
@@ -6682,7 +6702,7 @@ switch BurstData.BAMethod
 end
 %%% Read out relevant parameters
 TauFitData.BAMethod = BurstData.BAMethod;
-TauFitData.SyncPeriod = BurstData.FileInfo.SyncPeriod;
+%TauFitData.ClockPeriod = BurstData.FileInfo.ClockPeriod;
 TauFitData.TACRange = BurstData.FileInfo.TACRange; % in seconds
 TauFitData.MI_Bins = double(BurstData.FileInfo.MI_Bins); %anders, why double?
 if ~isfield(BurstData,'Resolution')
@@ -7511,7 +7531,7 @@ switch e.Key
                         MI{j}=TcspcData.MI{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
                         MI{j}=MI{j}(MI{j}>=From & MI{j}<=To);
                         MT{j}=TcspcData.MT{Det,Rout}((FileInfo.LastPhoton{Det,Rout}(j-1)+1):FileInfo.LastPhoton{Det,Rout}(j));
-                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.SyncPeriod);
+                        MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.ClockPeriod);
                     end
                 end
                 assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;

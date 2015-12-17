@@ -140,7 +140,7 @@ switch mode
         SyncRate = fread(fid, 1, 'int32');
         
         Header.SyncRate = double(SyncRate);
-        Header.ClockRate = Header.SyncRate;
+        Header.ClockRate = Header.SyncRate; % the MT clock is the syncrate
         
         StopAfter = fread(fid, 1, 'int32');
         
@@ -167,7 +167,7 @@ switch mode
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        
+        % The macrotime clock rate is the syncrate.
         syncperiod = 1E9/SyncRate;      % in nanoseconds
         
         OverflowCorrection = 0;

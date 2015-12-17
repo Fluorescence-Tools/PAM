@@ -1,4 +1,4 @@
-function [MT, MI, PLF, SyncRate] = Read_BH(FileName,NoE,Scanner,Card)
+function [MT, MI, PLF, ClockRate, SyncRate] = Read_BH(FileName,NoE,Scanner,Card)
 
 %%% Input parameters:
 %%% Filename: Full filename
@@ -6,8 +6,9 @@ function [MT, MI, PLF, SyncRate] = Read_BH(FileName,NoE,Scanner,Card)
 %%% Mark: defines, which marks to use; [Pixel Line Frame];
 
 %%% Output parameters:
-%%% SyncRate: the macrotime clock, in 0.1 ns resolution, not necessarily
-%%% the actual sync rate.
+%%% ClockRate: the macrotime clock. For SPC-140/150/830/130, the Becker and 
+%%% Hickl software can be set to use the SyncRate as the MT clock, for SPC-630
+%%% the MT clock is 50 ns
 
 FileID = fopen(FileName, 'r');
 switch Card
@@ -49,6 +50,7 @@ switch Card
             %the sync rate is contained in the first 3 bytes of the first byte
             %record in units of 100 ps
             SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
+            ClockRate = SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
             ByteRecord(1)=[]; %%% Delete Header entry
             
             Rout=uint8(bitand(bitshift(ByteRecord, - 8), 240)); % Loads Routing bits
@@ -101,7 +103,8 @@ switch Card
         else
             %the clockrate is contained in the first 3 bytes of the first
             %record in units of 100 ps
-            SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
+            ClockRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
+            SyncRate = 8E7/3; %hardcoded SyncRate
             ByteRecord(1)=[]; %%% Delete Header entry
             % Non macro/microtime information
             Rout = uint8(bitand(bitshift(ByteRecord, - 21), 112));
@@ -179,7 +182,8 @@ switch Card
         else
             %the clockrate is contained in the first 3 bytes of the first
             %record in units of 100 ps
-            SyncRate = 1E10/double(ByteRecord(2));
+            SyncRate = 8E7/3; %hardcoded SyncRate
+            ClockRate = 1E10/double(ByteRecord(2));
             clear ByteRecord
             ByteRecord1(1)=[]; %%% Delete Header entry
             ByteRecord2(1)=[]; %%% Delete Header entry

@@ -1896,11 +1896,11 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                     NPhoton = 0;
                     j = 1;
                     while NPhoton<TPhoton
-                        MT = TcspcData.MT{i}((TcspcData.MT{i}>((j-1)*FileInfo.ImageTime/FileInfo.SyncPeriod)) & (TcspcData.MT{i}<=((j)*FileInfo.ImageTime/FileInfo.SyncPeriod)));
+                        MT = TcspcData.MT{i}((TcspcData.MT{i}>((j-1)*FileInfo.ImageTime/FileInfo.ClockPeriod)) & (TcspcData.MT{i}<=((j)*FileInfo.ImageTime/FileInfo.ClockPeriod)));
                         MI = TcspcData.MI{i}((NPhoton+1):(NPhoton+numel(MT)));
                         NPhoton = NPhoton+numel(MT);
                         j = j+1;
-                        Image=cumsum(histc(mod(MT,FileInfo.ImageTime/FileInfo.SyncPeriod),Pixeltimes))+1;
+                        Image=cumsum(histc(mod(MT,FileInfo.ImageTime/FileInfo.ClockPeriod),Pixeltimes))+1;
                         Pixel = cumsum(histc(Image,1:max(Image)))+1;
                         Pixel = Pixel(1:numel(MT));
                         for k=1:6
