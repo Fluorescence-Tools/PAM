@@ -2810,6 +2810,8 @@ if FilterIndex == 2 % KBA file was loaded
                 BurstData.TACRange = Data.TACrange;
             else
                 BurstData.TACRange = 1E9./Data.SyncRate; %kba file from old Pam
+                % this will not work when the syncrate and clock rate are
+                % different
             end
             BurstData.SyncPeriod = 1./Data.SyncRate;
             BurstData.ClockPeriod = BurstData.SyncPeriod;
@@ -2898,6 +2900,8 @@ if FilterIndex == 2 % KBA file was loaded
                 else
                     BurstData.TACRange =  1E9./Data.SyncRate;
                     BurstData.FileInfo.TACRange =  1E9./Data.SyncRate;
+                    % this will not work if the syncrate and clockrate are
+                    % different
                 end
                 BurstData.SyncPeriod = 1./Data.SyncRate;
                 BurstData.ClockPeriod = BurstData.SyncPeriod;  %kba file from old pam
