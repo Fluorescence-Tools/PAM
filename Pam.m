@@ -112,6 +112,18 @@ end
         'Label','Save Scatter/Background to File',...
         'Callback',@SaveLoadIrfScat);
     
+    h.Menu.LoadShift = uimenu(...
+        'Parent', h.Menu.File,...
+        'Separator','on',...
+        'Tag','LoadShift_Menu',...
+        'Label','Load Detector Shifts',...
+        'Callback',@SaveLoadShift);
+    h.Menu.SaveShiftFile = uimenu(...
+        'Parent', h.Menu.File,...
+        'Tag','SaveShiftFile_Menu',...
+        'Label','Save Detector Shifts to File',...
+        'Callback',@SaveLoadShift);
+    
     h.Menu.AdvancedAnalysis = uimenu(...
         'Parent',h.Pam,...
         'Tag','AdvancedAnalysis',...
@@ -6483,7 +6495,7 @@ switch obj
         h.Progress.Axes.Color = UserValues.Look.Control;
     case h.Menu.SaveIrfFile
         % Save IRF to .irf file
-        [File, Path] = uiputfile({'*.irf', 'IRF file'}, 'Save IRF', UserValues.File.Path);
+        [File, Path] = uiputfile([datestr(now,'yymmdd') '_irf.irf'], 'Save IRF', UserValues.File.Path);
         if all(File==0)
             return
         end
@@ -6493,7 +6505,7 @@ switch obj
         save(fullfile(Path,File),'s');
     case h.Menu.SaveScatterFile
         % Save Scatter Pattern and Backgrond counts to .scat file
-                [File, Path] = uiputfile({'*.scat', 'Scatter file'}, 'Save Scatter Pattern', UserValues.File.Path);
+                [File, Path] = uiputfile([datestr(now,'yymmdd') '_scatter.scat'], 'Save Scatter Pattern', UserValues.File.Path);
         if all(File==0)
             return
         end
@@ -6504,7 +6516,7 @@ switch obj
         save(fullfile(Path,File),'s');
     case h.Menu.LoadIrf
         % Load IRF from .irf file
-        [FileName, Path] = uigetfile({'*.irf', 'IRF file'}, 'Choose IRF file',UserValues.File.Path,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile('*.irf', 'Choose IRF file',UserValues.File.Path,'MultiSelect', 'off');
         if all(FileName==0)
             return
         end
@@ -6529,7 +6541,7 @@ switch obj
         Update_Display([],[],8)
     case h.Menu.LoadScatter
         % Load Scatter Pattern and Background counts from .scat file
-        [FileName, Path] = uigetfile({'*.scat', 'Scatter file'}, 'Choose Scatter Pattern',UserValues.File.Path,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile('*.scat', 'Choose Scatter Pattern',UserValues.File.Path,'MultiSelect', 'off');
         if all(FileName==0)
             return
         end
@@ -6555,6 +6567,49 @@ switch obj
         LSUserValues(1);
         Update_Display([],[],8)
         h.SaveScatter_Button.ForegroundColor = [0 1 0];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function grouping operations concerning the Detector shift %%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function SaveLoadShift(obj,~)
+global UserValues
+h = guidata(findobj('Tag','Pam'));
+
+switch obj
+    case h.Menu.SaveShiftFile
+        % Save the detector Shift to .sh file
+        [File, Path] = uiputfile([datestr(now,'yymmdd') '_detectorshift.sh'], 'Save Detector Shifts', UserValues.File.Path);
+        if all(File==0)
+            return
+        end
+        s = struct;
+        s.data = UserValues.Detector.Shift;
+        s.name = UserValues.Detector.Name;
+        save(fullfile(Path,File),'s');
+    case h.Menu.LoadShift
+        % Load detector shifts from .sh file
+        [FileName, Path] = uigetfile('*.sh', 'Choose Detector Shift file',UserValues.File.Path,'MultiSelect', 'off');
+        if all(FileName==0)
+            return
+        end
+        load('-mat',fullfile(Path,FileName));
+        mess = 'Shift of Detector number ';
+        err = 0;
+        for i = 1:numel(s.data)
+            if strcmp(UserValues.Detector.Name{i}, s.name{i})
+                UserValues.Detector.Shift{i} = s.data{i};
+            else 
+                err = 1;
+                mess = [mess num2str(i) ', '];
+            end
+        end
+        if err
+            msgbox([mess(1:end-2) ' not loaded because its name differed between current profile and loaded file.'])
+        end
+        clear s;
+        LSUserValues(1);
+        msgbox('load data again')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7058,52 +7113,58 @@ h.Progress.Axes.Color=[1 0 0];
 
 drawnow;
 if nargin<3 % calculate the shift
-    maxtick = str2double(h.MI.Calib_Single_Max.String);
-    Det=UserValues.Detector.Det(h.MI.Calib_Det.Value);
-    Rout=UserValues.Detector.Rout(h.MI.Calib_Det.Value);
-    Dif=[maxtick; uint16(diff(TcspcData.MT{Det,Rout}))];
-    Dif(Dif>maxtick)=maxtick;
-    MI=TcspcData.MI{Det,Rout};
-    
-    % make a 2D histogram of the interphoton time (0:maxtick) versus TAC bin
-    PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
-    PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
-    % sort from low to high counts along the TAC axis:
-    [Counts,Index]=sort(PamMeta.Det_Calib.Hist);
-    % for each interphoton macrotime, take the average TAC position of the
-    % 100 brightnest bins:
-    PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
-    PamMeta.Det_Calib.Shift=round(PamMeta.Det_Calib.Shift-PamMeta.Det_Calib.Shift(end));
-    PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
-    PamMeta.Det_Calib.Shift(1:5)=PamMeta.Det_Calib.Shift(6);
-    PamMeta.Det_Calib.Shift=PamMeta.Det_Calib.Shift-max(PamMeta.Det_Calib.Shift);
-    
-    clear Counts Index
-    
-    % uncorrected MI histogram (blue)
-    h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
-    h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
-   
-    % corrected MI histogram (red)
-    Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
-    for i=1:maxtick
-       Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
+    if ~isempty(UserValues.Detector.Shift{h.MI.Calib_Det.Value})
+        msgbox('A shift for this detector already exists in UserValues. Press the Clear shift button, Open data again in Pam, and press Calculate correction again!')
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color=UserValues.Look.Control;
+        return
+    else
+        maxtick = str2double(h.MI.Calib_Single_Max.String);
+        Det=UserValues.Detector.Det(h.MI.Calib_Det.Value);
+        Rout=UserValues.Detector.Rout(h.MI.Calib_Det.Value);
+        Dif=[maxtick; uint16(diff(TcspcData.MT{Det,Rout}))];
+        Dif(Dif>maxtick)=maxtick;
+        MI=TcspcData.MI{Det,Rout};
+        
+        % make a 2D histogram of the interphoton time (0:maxtick) versus TAC bin
+        PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
+        PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
+        % sort from low to high counts along the TAC axis:
+        [Counts,Index]=sort(PamMeta.Det_Calib.Hist);
+        % for each interphoton macrotime, take the average TAC position of the
+        % 100 brightnest bins:
+        PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
+        PamMeta.Det_Calib.Shift=round(PamMeta.Det_Calib.Shift-PamMeta.Det_Calib.Shift(end));
+        PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
+        PamMeta.Det_Calib.Shift(1:5)=PamMeta.Det_Calib.Shift(6);
+        PamMeta.Det_Calib.Shift=PamMeta.Det_Calib.Shift-max(PamMeta.Det_Calib.Shift);
+        
+        clear Counts Index
+        
+        % uncorrected MI histogram (blue)
+        h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
+        h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
+        
+        % corrected MI histogram (red)
+        Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
+        for i=1:maxtick
+            Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
+        end
+        h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
+        h.Plots.Calib.XData=1:FileInfo.MI_Bins;
+        
+        % slider
+        h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
+        
+        % interphoton time selected MI histogram (green)
+        h.Plots.Calib_Sel.YData=Cor_Hist(:,h.MI.Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI.Calib_Single.Value),5));
+        h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
+        
+        % shift plot (red)
+        h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
+        h.Plots.Calib_Shift_New.XData=1:maxtick;
+        h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
     end
-    h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
-    h.Plots.Calib.XData=1:FileInfo.MI_Bins;
-    
-    % slider
-    h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
-    
-    % interphoton time selected MI histogram (green)
-    h.Plots.Calib_Sel.YData=Cor_Hist(:,h.MI.Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI.Calib_Single.Value),5));
-    h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
-    
-    % shift plot (red)
-    h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
-    h.Plots.Calib_Shift_New.XData=1:maxtick;
-    h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
-    
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
         index = 1:numel(UserValues.Detector.Det);
@@ -7135,22 +7196,27 @@ h.Progress.Axes.Color=UserValues.Look.Control;
 function Det_Calib_Save(~,~)
 global UserValues PamMeta
 h=guidata(findobj('Tag','Pam'));
-if isfield(PamMeta.Det_Calib,'Shift')
+if isfield(PamMeta.Det_Calib, 'Shift')
     UserValues.Detector.Shift{h.MI.Calib_Det.Value}=PamMeta.Det_Calib.Shift;
     Shift_Detector([],[],'save');
     m = msgbox('Load data again');
     pause(1)
     delete(m)
+else
+    msgbox('shift not calculated yet')
+    return
 end
+PamMeta.Det_Calib = rmfield(PamMeta.Det_Calib, 'Shift');
+PamMeta.Det_Calib = rmfield(PamMeta.Det_Calib, 'Hist');
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Clears Shift from UserValues %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Det_Calib_Clear(~,~)
-global UserValues PamMeta
+global UserValues
 h=guidata(findobj('Tag','Pam'));
-if isfield(PamMeta.Det_Calib,'Shift')
+if ~isempty(UserValues.Detector.Shift{h.MI.Calib_Det.Value})
     UserValues.Detector.Shift{h.MI.Calib_Det.Value} = [];
     m = msgbox('Load data again');
     pause(1)
