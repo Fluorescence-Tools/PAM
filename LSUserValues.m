@@ -558,6 +558,10 @@ if Mode==0 %%% Loads user values
         S.TauFit.StartPar={0,0,0,0};
         disp('UserValues.TauFit.StartPar was incomplete');
     end
+    if numel(S.TauFit.StartPar) < 4
+        S.TauFit.StartPar{end+1} = 0;
+        disp('UserValues.TauFit.StartPar was wrong size');
+    end
     P.TauFit.StartPar = S.TauFit.StartPar;
     
     %%% Checks, if TauFit.Length exists
@@ -565,6 +569,10 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.TauFit,'Length')
         S.TauFit.Length={0,0,0,0};
         disp('UserValues.TauFit.Length was incomplete');
+    end
+    if numel(S.TauFit.Length) < 4
+        S.TauFit.Length{end+1} = 0;
+        disp('UserValues.TauFit.Length was wrong size');
     end
     P.TauFit.Length = S.TauFit.Length;
     
@@ -574,6 +582,10 @@ if Mode==0 %%% Loads user values
         S.TauFit.ShiftPer={1,1,1,1};
         disp('UserValues.TauFit.ShiftPer was incomplete');
     end
+    if numel(S.TauFit.ShiftPer) < 4
+        S.TauFit.ShiftPer{end+1} = 1;
+        disp('UserValues.TauFit.ShiftPer was wrong size');
+    end
     P.TauFit.ShiftPer = S.TauFit.ShiftPer;
     
     %%% Checks, if TauFit.IRFLength exists
@@ -582,12 +594,20 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRFLength={100,100,100,100};
         disp('UserValues.TauFit.IRFLength was incomplete');
     end
+    if numel(S.TauFit.IRFLength) < 4
+        S.TauFit.IRFLength{end+1} = 100;
+        disp('UserValues.TauFit.IRFLength was wrong size');
+    end
     P.TauFit.IRFLength = S.TauFit.IRFLength;
     %%% Checks, if TauFit.IRFShift exists
     %%% (This field contains the IRF Shift editbox/slider value)
     if ~isfield (S.TauFit,'IRFShift')
         S.TauFit.IRFShift={0,0,0,0};
         disp('UserValues.TauFit.IRFShift was incomplete');
+    end
+    if numel(S.TauFit.IRFShift) < 4
+        S.TauFit.IRFShift{end+1} = 0;
+        disp('UserValues.TauFit.IRFShift was wrong size');
     end
     P.TauFit.IRFShift = S.TauFit.IRFShift;
     
@@ -597,6 +617,10 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRFrelShift={0,0,0,0};
         disp('UserValues.TauFit.IRFrelShift was incomplete');
     end
+    if numel(S.TauFit.IRFrelShift) < 4
+        S.TauFit.IRFrelShift{end+1} = 0;
+        disp('UserValues.TauFit.IRFrelShift was wrong size');
+    end
     P.TauFit.IRFrelShift = S.TauFit.IRFrelShift;
     
     %%% Checks, if TauFit.ScatShift exists
@@ -604,6 +628,10 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.TauFit,'ScatShift')
         S.TauFit.ScatShift={0,0,0,0};
         disp('UserValues.TauFit.ScatShift was incomplete');
+    end
+    if numel(S.TauFit.ScatShift) < 4
+        S.TauFit.ScatShift{end+1} = 0;
+        disp('UserValues.TauFit.ScatShift was wrong size');
     end
     P.TauFit.ScatShift = S.TauFit.ScatShift;
     
@@ -613,6 +641,10 @@ if Mode==0 %%% Loads user values
         S.TauFit.ScatrelShift={0,0,0,0};
         disp('UserValues.TauFit.ScatrelShift was incomplete');
     end
+    if numel(S.TauFit.ScatrelShift) < 4
+        S.TauFit.ScatrelShift{end+1} = 0;
+        disp('UserValues.TauFit.ScatrelShift was wrong size');
+    end
     P.TauFit.ScatrelShift = S.TauFit.ScatrelShift;
     
     %%% Checks, if TauFit.Ignore exists
@@ -620,6 +652,10 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.TauFit,'Ignore')
         S.TauFit.Ignore={1,1,1,1};
         disp('UserValues.TauFit.Ignore was incomplete');
+    end
+    if numel(S.TauFit.Ignore) < 4
+        S.TauFit.Ignore{end+1} = 1;
+        disp('UserValues.TauFit.Ignore was wrong size');
     end
     P.TauFit.Ignore = S.TauFit.Ignore;
     
@@ -638,6 +674,10 @@ if Mode==0 %%% Loads user values
     if ~isfield (S.TauFit,'G')
         S.TauFit.G={1,1,1,1};
         disp('UserValues.TauFit.G was incomplete');
+    end
+    if numel(S.TauFit.G) < 4
+        S.TauFit.G{end+1} = 1;
+        disp('UserValues.TauFit.G was wrong size');
     end
     P.TauFit.G = S.TauFit.G;
     

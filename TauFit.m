@@ -1095,6 +1095,8 @@ if isempty(obj) || obj == h.LoadData_Button
             chan = 1;
         elseif PIEChannel_Par+PIEChannel_Per == 11
             chan = 2;
+        else %%% Set channel to 4 if no MFD channel was selected
+            chan = 4;
         end
     elseif UserValues.BurstSearch.Method == any(3,4) %3color MFD
         if PIEChannel_Par+PIEChannel_Per == 3
@@ -1103,12 +1105,9 @@ if isempty(obj) || obj == h.LoadData_Button
             chan = 2;
         elseif PIEChannel_Par+PIEChannel_Per == 23
             chan = 3;
+        else %%% Set channel to 4 if no MFD channel was selected
+            chan = 4;
         end
-    else
-        % Set channel to 4 if no MFD color channel is selected
-        chan = 4;
-        %msgbox('problem with the order of the PIE channels. see manual')
-        %return
     end
     TauFitData.chan = chan;
     %%% Read out Photons and Histogram
