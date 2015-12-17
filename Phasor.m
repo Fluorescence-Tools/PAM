@@ -667,7 +667,7 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Callback',{@Plot_Phasor,0,1:10},...
         'Style', 'popupmenu',...
         'ToolTipString', '<html>Colormap used to indicate position of pixels on line <br>',...
-        'String',{'Jet';'Hot';'HSV';'Gray'});        
+        'String',{'Jet';'Hot';'HSV';'GreenRed'});        
     %% Tab for FRET calculations
     h.FRET_Tab=uitab(...
         'title','FRET',...
@@ -2676,7 +2676,8 @@ for i=Images %%% Plots Phasor Data
                 case 3
                     FractionColor=[0 0 0; hsv(16)];
                 case 4
-                    FractionColor=[0 0 0; gray(16)];
+                    FractionColor = [linspace(0,1,16)',linspace(1,0,16)', zeros(16,1)];
+                    FractionColor = [0 0 0; FractionColor];  
             end
             
             if isempty(Z1)

@@ -1109,7 +1109,7 @@ switch mode
                     end
                 end
                 %% Plots data
-                switch Type               
+                switch Type
                     case 1 %%% Nothing plotted 
                         delete (H.Axes{i,j});                        
                     case {2 3} %%% On-Axes X Plots
@@ -1368,7 +1368,7 @@ switch mode
                             'FaceColor','Flat',...
                             'XData',x(1,:),...
                             'YData',y(:,1),...
-                            'ZData',Data,...
+                            'ZData',Out,...
                             'CData',Data2);
                         colormap(H.Axes{i,j},Color);
                         H.Colorbar{i,j} = colorbar(...
@@ -1381,7 +1381,7 @@ switch mode
                         H.Axes{i,j}.XLim = [x(1) x(end)];
                         H.Axes{i,j}.YLim = [y(1) x(end)]; 
                         H.Axes{i,j}.CLim = [-ErrorLim ErrorLim];
-                        H.Axes{i,j}.View = [45 25];
+                        H.Axes{i,j}.View = [135 25];
                         ZScale = max(max(Data)) - min(min(Data));
                         H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001]; 
                         H.Axes{i,j}.XLabel.String = '{\it\xi{}}';    
