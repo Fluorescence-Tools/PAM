@@ -2730,12 +2730,14 @@ BurstData.FileName = fullfile(PathName,FileName);
 if ~isfield(BurstData, 'ClockPeriod')
     BurstData.ClockPeriod = BurstData.SyncPeriod;
     BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
-    if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
-        %if SPC-630 is used, set the SyncPeriod to what it really is
-        BurstData.SyncPeriod = 1/8E7*3;
-        BurstData.FileInfo.SyncPeriod = 1/8E7*3;
-        if rand < 0.05
-            msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+    if isfield(BurstData.FileInfo,'Card')
+        if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
+            %if SPC-630 is used, set the SyncPeriod to what it really is
+            BurstData.SyncPeriod = 1/8E7*3;
+            BurstData.FileInfo.SyncPeriod = 1/8E7*3;
+            if rand < 0.05
+                msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+            end
         end
     end
 end
