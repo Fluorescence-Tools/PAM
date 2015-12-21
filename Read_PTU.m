@@ -112,7 +112,14 @@ while 1
             %fprintf(1, '%s', TagString);
             if TagIdx > -1
                EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
-            end;   
+            end;
+            if strcmp(TagIdent,'UsrHeadName') && exist('UsrHeadName','var')
+                %%% Catch case where length of TagString exceeds length of
+                %%% UsrHeadName character array
+                if eval(['size(' TagIdent ',2) < numel(TagString)'])
+                    eval([TagIdent '(:,end:numel(TagString)) = '' '''])
+                end
+            end
             eval([EvalName '=TagString;']);
         case tyWideString 
             % Matlab does not support Widestrings at all, just read and
