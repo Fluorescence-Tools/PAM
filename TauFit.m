@@ -1090,7 +1090,7 @@ if isempty(obj) || obj == h.LoadData_Button
     PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
     PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
     % PIE Channels have to be ordered correctly
-    if UserValues.BurstSearch.Method == any(1,2) %2color MFD
+    if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
         if PIEChannel_Par+PIEChannel_Per == 3
             chan = 1;
         elseif PIEChannel_Par+PIEChannel_Per == 11
@@ -1098,7 +1098,7 @@ if isempty(obj) || obj == h.LoadData_Button
         else %%% Set channel to 4 if no MFD channel was selected
             chan = 4;
         end
-    elseif UserValues.BurstSearch.Method == any(3,4) %3color MFD
+    elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
         if PIEChannel_Par+PIEChannel_Per == 3
             chan = 1;
         elseif PIEChannel_Par+PIEChannel_Per == 15
