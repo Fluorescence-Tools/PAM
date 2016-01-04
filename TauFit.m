@@ -63,6 +63,12 @@ h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
     'Label','Logscale',...
     'Tag','Plot_Logscale_MIPlot',...
     'Callback',@ChangeYScale);
+h.Microtime_Plot_Export = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','Export Plot',...
+    'Tag','Microtime_Plot_Export',...
+    'Callback',@ExportGraph);
+
 h.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
     h.Microtime_Plot_Menu_ResultPlot,...
@@ -623,9 +629,10 @@ if exist('ph','var')
                 'Checked','off',...
                 'Callback',@Start_Fit);
             h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
-        case ph.Burst.BurstLifetime_Button
+        case {ph.Burst.BurstLifetime_Button, ph.Database.Burst}
             TauFitData.Who = 'Burstwise';
-            %%%?User Clicks Burstwise Lifetime button in Pam
+            %%%?User Clicks Burstwise Lifetime button in Pam or clicks
+            %%%Burst Analysis on database tab in Pam
             h.ChannelSelect_Text = uicontrol(...
                 'Parent',h.PIEChannel_Panel,...
                 'Style','Text',...
@@ -672,7 +679,7 @@ if exist('ph','var')
             h.BurstWiseFit_Button = uicontrol(...
                 'Parent',h.PIEChannel_Panel,...
                 'Style','pushbutton',...
-                'Tag','StartFit_Button',...
+                'Tag','BurstWiseFit_Button',...
                 'Units','normalized',...
                 'BackgroundColor', Look.Control,...
                 'ForegroundColor', Look.Fore,...
@@ -1046,6 +1053,21 @@ if ~strcmp(TauFitData.Who, 'TauFit')
     Update_Plots(obj)
 end
 
+% if user does batch burst analysis in Pam (database tab), do the fitting immediately
+if isequal(obj, ph.Database.Burst)
+    for j = 1:numel(Channel_String) 
+        % Save images of the individual plots
+        h.ChannelSelect_Popupmenu.Value = j;
+        Update_Plots(obj)
+        f = ExportGraph(h.Microtime_Plot_Export);
+        close(f)
+        Start_Fit(h.Fit_Button)
+        f = ExportGraph(h.Export_Result);
+        close(f)
+    end
+    BurstWise_Fit(h.BurstWiseFit_Button)
+end
+
 function ChangeYScale(obj,~)
 h = guidata(obj);
 if strcmp(obj.Checked,'off')
@@ -1082,6 +1104,8 @@ elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = FileInfo.Resolution/1000;
 end
 
+TauFitData.FileName = fullfile(FileInfo.Path, FileInfo.FileName{1}); %only the first filename is stored!
+    
 %%% Cases to consider:
 %%% obj is empty or is Button for LoadData/LoadIRF
 %%% Data has been changed (PIE Channel changed, IRF loaded...)
@@ -2305,11 +2329,12 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Export Graph to figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ExportGraph(~,~)
+function f = ExportGraph(obj,~)
+global TauFitData
 % anders, in Burstbrowser there was code to plot fit parameters on graph.
 h = guidata(findobj('tag','TauFit'));
-fig = figure('Position',[100,100,700,500],'color',[1 1 1]);
-panel_copy = copyobj(h.TauFit_Panel,fig);
+f = figure('Position',[100,100,700,500],'color',[1 1 1]);
+panel_copy = copyobj(h.TauFit_Panel,f);
 panel_copy.Position = [0 0 1 1];
 panel_copy.ShadowColor = [1 1 1];
 %%% set Background Color to white
@@ -2327,8 +2352,24 @@ for i = 1:numel(ax)
     ax(i).FontSize = 20;
 end
 
-ax(1).Children(end).FontSize = 20;
-ax(1).Children(end).Position(2) = 0.9;
+if ~isequal(obj, h.Microtime_Plot_Export)
+    ax(1).Children(end).FontSize = 20; %resize the chi^2 thing
+    ax(1).Children(end).Position(2) = 0.9;
+end
+
+if strcmp(TauFitData.Who, 'TauFit')
+    a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
+        '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
+else% if strcmp(TauFitData.Who, 'BurstWise') or strcmp(TauFitData.Who, 'BurstBrowser')
+    a = ['_Decay_' h.ChannelSelect_Popupmenu.String{h.ChannelSelect_Popupmenu.Value}];
+end
+
+if isequal(obj,  h.Microtime_Plot_Export)
+    b = '_data.tif';
+else
+    b = '_fit.tif';
+end
+print(f, '-dtiff', '-r75', GenerateName([TauFitData.FileName(1:end-4) a b],1))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%

@@ -5740,7 +5740,7 @@ end
 
 % Perform burstwise lifetime fitting directly after burst search
 if h.Burst.BurstLifetime_Checkbox.Value
-    BurstLifetime
+    BurstLifetime(h.Database.Burst,[])
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
