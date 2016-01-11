@@ -3167,13 +3167,13 @@ MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
     MergeData{i} = load(Files{i,1},'-mat');
     % burst analysis before December 16, 2015
-    if ~isfield(MergeData{i}, 'ClockPeriod')
-        MergeData{i}.ClockPeriod = MergeData{i}.SyncPeriod;
-        MergeData{i}.FileInfo.ClockPeriod = MergeData{i}.FileInfo.SyncPeriod;
-        if ~strcmp(MergeData{i}.FileInfo.Card, 'SPC-140/150/830/130')
+    if ~isfield(MergeData{i}.BurstData, 'ClockPeriod')
+        MergeData{i}.BurstData.ClockPeriod = MergeData{i}.BurstData.SyncPeriod;
+        MergeData{i}.FileInfo.ClockPeriod = MergeData{i}.BurstData.FileInfo.SyncPeriod;
+        if ~strcmp(MergeData{i}.BurstData.FileInfo.Card, 'SPC-140/150/830/130')
             %if SPC-630 is used, set the SyncPeriod to what it really is
-            MergeData{i}.SyncPeriod = 1/8E7*3;
-            MergeData{i}.FileInfo.SyncPeriod = 1/8E7*3;
+            MergeData{i}.BurstData.SyncPeriod = 1/8E7*3;
+            MergeData{i}.BurstData.FileInfo.SyncPeriod = 1/8E7*3;
             if rand < 0.05
                 msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
             end
