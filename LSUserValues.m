@@ -113,6 +113,22 @@ if Mode==0 %%% Loads user values
         S.Detector.Plots=1;
         disp('UserValues.Detector was incomplete');
     end
+    % New Parameters have been added to the Detector, check if they exist
+    if any(~isfield(S.Detector, {'Filter';'Pol';'BS';'enabled'}))
+        S.Detector.Filter = {'500/25'};
+        S.Detector.Pol = {'none'};
+        S.Detector.BS = {'none'};
+        S.Detector.enabled = {'on'};
+        if numel(S.Detector.Det) > 1 %%% multiple detectors existed
+            for u = 2:numel(S.Detector.Det)
+                S.Detector.Filter{end+1} = '500/25';
+                S.Detector.Pol{end+1} = 'none';
+                S.Detector.BS{end+1} = 'none';
+                S.Detector.enabled{end+1} = 'on';
+            end
+        end
+        disp('UserValues.Detector was incomplete');
+    end
     P.Detector = [];
     P.Detector.Det = S.Detector.Det;
     P.Detector.Rout = S.Detector.Rout;
@@ -120,6 +136,10 @@ if Mode==0 %%% Loads user values
     P.Detector.Shift = S.Detector.Shift;
     P.Detector.Name = S.Detector.Name;
     P.Detector.Plots = S.Detector.Plots;
+    P.Detector.Filter = S.Detector.Filter;
+    P.Detector.Pol = S.Detector.Pol;
+    P.Detector.BS = S.Detector.BS;
+    P.Detector.enabled = S.Detector.enabled;
     %% Look: Definition of Pam colors and style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -335,6 +355,43 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
+    %% MetaData: User-dependend meta data
+     %%% Checks, if MetaData field exists
+    if ~isfield (S, 'MetaData')
+        S.MetaData=[];
+        disp('UserValues.MetaData was incomplete');
+    end
+    P.MetaData = [];
+    %%% Checks, if ExcitationWavelenghts subfield exists
+    if ~isfield (S.MetaData, 'ExcitationWavelengths')
+        S.MetaData.ExcitationWavelengths='532, 647';
+        disp('UserValues.MetaData.ExcitationWavelengths was incomplete');
+    end
+    P.MetaData.ExcitationWavelengths = S.MetaData.ExcitationWavelengths;
+    %%% Checks, if DyeNames subfield exists
+    if ~isfield (S.MetaData, 'DyeNames')
+        S.MetaData.DyeNames='Atto532, Atto647N';
+        disp('UserValues.MetaData.DyeNames was incomplete');
+    end
+    P.MetaData.DyeNames = S.MetaData.DyeNames;
+    %%% Checks, if BufferName subfield exists
+    if ~isfield (S.MetaData, 'BufferName')
+        S.MetaData.BufferName='Sample Buffer';
+        disp('UserValues.MetaData.BufferName was incomplete');
+    end
+    P.MetaData.BufferName = S.MetaData.BufferName;
+    %%% Checks, if SampleName subfield exists
+    if ~isfield (S.MetaData, 'SampleName')
+        S.MetaData.SampleName='Test Sample';
+        disp('UserValues.MetaData.SampleName was incomplete');
+    end
+    P.MetaData.SampleName = S.MetaData.SampleName;
+    %%% Checks, if User subfield exists
+    if ~isfield (S.MetaData, 'User')
+        S.MetaData.User='User';
+        disp('UserValues.MetaData.User was incomplete');
+    end
+    P.MetaData.User = S.MetaData.User;
     %% FCSFit
     %%% Checks, if FCSFit subfield exists
     if ~isfield (S, 'FCSFit')

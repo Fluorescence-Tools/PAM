@@ -2214,7 +2214,7 @@ end
         'KeyPressFcn',@Update_Profiles,...
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
-        'Position',[0.01 0.01 0.48 0.98]);   
+        'Position',[0.01 0.51 0.49 0.48]);   
     
     %%% Contexmenu for MI Channels List
     h.MI.Channels_Menu = uicontextmenu;
@@ -2225,38 +2225,61 @@ end
         'Tag','MI_Add',...
         'Callback',@MI_Channels_Functions);
     %%% Menu to delete MI channels
-    h.MI.Delete = uimenu(...
-        'Parent',h.MI.Channels_Menu,...
-        'Label','Delete selected microtime channels',...
-        'Tag','MI_Delete',...
-        'Callback',@MI_Channels_Functions);
+%     h.MI.Delete = uimenu(...
+%         'Parent',h.MI.Channels_Menu,...
+%         'Label','Delete selected microtime channels',...
+%         'Tag','MI_Delete',...
+%         'Callback',@MI_Channels_Functions);
     %%% Menu to rename MI channels
-    h.MI.Name = uimenu(...
-        'Parent',h.MI.Channels_Menu,...
-        'Label','Rename microtime channels',...
-        'Tag','MI_Rename',...
-        'Callback',@MI_Channels_Functions);
-
-    %%% Menu to change MI channel color
-    h.MI.Color = uimenu(...
-        'Parent',h.MI.Channels_Menu,...
-        'Label','Change microtime channel color',...
-        'Tag','MI_Color',...
-        'Callback',@MI_Channels_Functions);    
+%     h.MI.Name = uimenu(...
+%         'Parent',h.MI.Channels_Menu,...
+%         'Label','Rename microtime channels',...
+%         'Tag','MI_Rename',...
+%         'Callback',@MI_Channels_Functions);
+% 
+%     %%% Menu to change MI channel color
+%     h.MI.Color = uimenu(...
+%         'Parent',h.MI.Channels_Menu,...
+%         'Label','Change microtime channel color',...
+%         'Tag','MI_Color',...
+%         'Callback',@MI_Channels_Functions);    
     %%% List of detector/routing pairs to use     
-    h.MI.Channels_List = uicontrol(...
+%     h.MI.Channels_List = uicontrol(...
+%         'Parent',h.Profiles.Panel,...
+%         'Tag','MI_Channels_List',...
+%         'Style','listbox',...
+%         'Units','normalized',...
+%         'FontSize',14,...
+%         'Max',2,...
+%         'TooltipString',sprintf('List of detector/routing pairs to be loaded/displayed \n disabled denotes pairs that will be loaded but not displayed'),...
+%         'Uicontextmenu',h.MI.Channels_Menu,...
+%         'KeyPressFcn',@MI_Channels_Functions,...
+%         'BackgroundColor', Look.List,...
+%         'ForegroundColor', Look.ListFore,...
+%         'Position',[0.01 0.01 0.49 0.48]);
+    %%% Following is alternate implementation using a table instead of a
+    %%% list
+    TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on'};
+    ColumnNames = {'Name','Det#','Rout#','Color','Filter','Pol','BS','enabled'};
+    ColumnEditable = [false,true,true,false,true,true,true,true];
+    ColumnFormat = {'char','numeric','numeric','char','char',{'none','Par','Per'},{'none','50:50'},{'on','off'}};
+    RowNames = [];
+    h.MI.Channels_List = uitable(...
         'Parent',h.Profiles.Panel,...
         'Tag','MI_Channels_List',...
-        'Style','listbox',...
         'Units','normalized',...
         'FontSize',14,...
-        'Max',2,...
         'TooltipString',sprintf('List of detector/routing pairs to be loaded/displayed \n disabled denotes pairs that will be loaded but not displayed'),...
         'Uicontextmenu',h.MI.Channels_Menu,...
-        'KeyPressFcn',@MI_Channels_Functions,...
-        'BackgroundColor', Look.List,...
-        'ForegroundColor', Look.ListFore,...
-        'Position',[0.5 0.51 0.49 0.48]);
+        'CellEditCallback',@MI_Channels_Functions,...
+        'CellSelectionCallback',@MI_Channels_Functions,...
+        'Position',[0.01 0.01 0.98 0.48],...
+        'Data',TableData,...
+        'ColumnName',ColumnNames,...
+        'RowName',RowNames,...
+        'ColumnEditable',ColumnEditable,...
+        'ColumnFormat',ColumnFormat,...
+        'ColumnWidth','auto');
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.Profiles.Panel,...
@@ -2267,7 +2290,8 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String', 'Number of microtime tabs:',...
-        'Position',[0.5 0.4 0.4 0.05]);
+        'Position',[0.65 0.6 0.4 0.08]);
+    
     %%% Selects, how many microtime tabs to generate
     h.MI.NTabs = uicontrol(...
         'Parent',h.Profiles.Panel,...
@@ -2278,7 +2302,7 @@ end
         'ForegroundColor', Look.Fore,...
         'String', '1',...
         'Callback',{@Update_Detector_Channels, [0,1]},...
-        'Position',[0.91 0.4 0.06 0.05]);
+        'Position',[0.91 0.6 0.06 0.08]);
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.Profiles.Panel,...
@@ -2289,7 +2313,7 @@ end
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String', 'Number of plots per tab:',...
-        'Position',[0.5 0.34 0.4 0.05]);
+        'Position',[0.65 0.51 0.4 0.08]);
     %%% Selects, how many plots per microtime tabs to generate
     h.MI.NPlots = uicontrol(...
         'Parent', h.Profiles.Panel,...
@@ -2300,8 +2324,30 @@ end
         'ForegroundColor', Look.Fore,...
         'String', '1',...
         'Callback',{@Update_Detector_Channels, [0,1]},...
-        'Position',[0.91 0.34 0.06 0.05]);
-
+        'Position',[0.91 0.51 0.06 0.08]);
+    %%% Table to store additional meta data
+    ColumnNames = [];
+    RowNames = [];
+    ToolTipStr = 'For multiple entries, please provide a comma-separated list.';
+    ColumnFormat = {'char','char','char','char','char'};
+    DefaultData = {'Excitation Wavelenghts [nm]','532, 647';...
+        'Dye Names','Atto532, Atto647N';...
+        'Buffer Name','Sample Buffer';...
+        'Sample Name','Test Sample';...
+        'User','User'};
+    h.Profiles.MetaDataTable = uitable(...
+        'Parent',h.Profiles.Panel,...
+        'Units','normalized',...
+        'Position',[0.5 0.7 0.49 0.29],...
+        'Data',DefaultData,...
+        'CellEditCallback',@Update_MetaData,...
+        'ColumnName',ColumnNames,...
+        'RowName',RowNames,...
+        'TooltipString',ToolTipStr,...
+        'ColumnFormat',ColumnFormat,...
+        'ColumnEditable',[false,true],...
+        'ColumnWidth',{200,200}...
+        );
     
 %% Mac upscaling of Font Sizes
 if ismac
@@ -2320,12 +2366,6 @@ if ismac
                 h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
             end
         end
-%         if isprop(h.(fields{i}),'Style')
-%             if strcmp(h.(fields{i}).Style,'popupmenu')
-%                 h.(fields{i}).BackgroundColor = [1 1 1];
-%                 h.(fields{i}).ForegroundColor = [0 0 0];
-%             end
-%         end
     end
     
     %%% loop through h.Text structure containing only static text boxes
@@ -3532,6 +3572,14 @@ PamMeta.Selected_MT_Patches(i)=abs(PamMeta.Selected_MT_Patches(i)-1);
 Update_Display([],[],2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Callback functions of metadata table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_MetaData(~,e)
+global UserValues
+MetaDataList = {'ExcitationWavelengths';'DyeNames';'BufferName';'SampleName';'User'};
+UserValues.MetaData.(MetaDataList{e.Indices(1),1}) = e.NewData;
+LSUserValues(1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback functions of microtime channel list and UIContextmenues  %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% "+"-Key or Add menu: Generate new PIE channel
@@ -3539,6 +3587,105 @@ Update_Display([],[],2);
 %%% "c"-Key or Color menu: Opens menu to choose channel color
 %%% "n"-Key: Opens dialog menu to change Channel name
 function MI_Channels_Functions(obj,ed)
+global UserValues PamMeta
+h = guidata(findobj('Tag','Pam'));
+%% Check what object called the function
+action = '';
+if obj == h.MI.Add
+    action = 'add';
+    UserValues.Detector.Det(end+1)=1;
+    UserValues.Detector.Rout(end+1)=1;
+    UserValues.Detector.Name{end+1}='New Channel';
+    UserValues.Detector.Color(end+1,:)=[1 0 0];   %#ok<ST2NM>
+    UserValues.Detector.Filter{end+1} = '500/25';
+    UserValues.Detector.Pol{end+1} = 'none';
+    UserValues.Detector.BS{end+1} = 'none';
+    UserValues.Detector.enabled{end+1} = 'on';
+    UserValues.Detector.Shift{end+1}=[];
+    UserValues.Phasor.Reference(end+1,end)=0;
+end
+
+if obj == h.MI.Channels_List
+    %%% disable callback
+    h.MI.Channels_List.CellEditCallback = [];
+    h.MI.Channels_List.CellSelectionCallback = [];
+    if strcmp(ed.EventName,'CellEdit')
+        Sel=ed.Indices(1);
+        %%% Determine which cell was edited
+        switch ed.Indices(2)
+            case 2 %%% Detector was changed
+                UserValues.Detector.Det(Sel) = ed.NewData;
+            case 3 %%% Rout was changed
+                UserValues.Detector.Rout(Sel) = ed.NewData;
+            case 5 %%% Filter was changed
+                UserValues.Detector.Filter{Sel} = ed.NewData;
+            case 6 %%% Pol was changed
+                UserValues.Detector.Pol{Sel} = ed.NewData;
+            case 7 %%% BS was changed
+                UserValues.Detector.BS{Sel} = ed.NewData;
+            case 8 %%% enabled was changed
+                UserValues.Detector.enabled{Sel} = ed.NewData;
+        end
+    end
+
+    if strcmp(ed.EventName,'CellSelection')
+        if ~isempty(ed.Indices)
+            Sel=ed.Indices(1);
+            %%% Determine which cell was edited
+            switch ed.Indices(2)
+                case 1 %%% Name was clicked
+                    %%% query new name, also give option to delete
+                    NewName = inputdlg('Specify new name. Cancel to delete channel.','Change Channel Name',1,UserValues.Detector.Name(Sel));
+                    if isempty(NewName) %%% cancel was pressed, remove channel
+                        action = 'delete';
+                        %% Deletes all selected microtimechannels        
+                        UserValues.Detector.Det(Sel)=[];
+                        UserValues.Detector.Rout(Sel)=[];
+                        UserValues.Detector.Name(Sel)=[];
+                        UserValues.Detector.Color(Sel,:)=[];
+                        UserValues.Detector.Filter(Sel)=[];
+                        UserValues.Detector.Pol(Sel)=[];
+                        UserValues.Detector.BS(Sel)=[];
+                        UserValues.Detector.enabled(Sel)=[];
+                        try
+                        UserValues.Detector.Shift(Sel)=[];
+                        end
+                        PamMeta.MI_Hist(Sel)=[];
+                        %%% Saves new tabs in guidata
+                        guidata(h.Pam,h)       
+                    else
+                        Hex_color=dec2hex(round(UserValues.Detector.Color(Sel,:)*255))';
+                        h.MI.Channels_List.Data{Sel,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' NewName{1} '</Font></html>'];
+                        UserValues.Detector.Name{Sel} = NewName{1};
+                    end
+                case 4 %%% Color was clicked
+                    NewColor = uisetcolor;
+                    if NewColor == 0
+                        return;
+                    end
+                    UserValues.Detector.Color(Sel,:) = NewColor;
+                    %%% Update Color of Name also
+                    Hex_color = dec2hex(round(UserValues.Detector.Color(Sel,:)*255))';
+                    h.MI.Channels_List.Data{Sel,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.Detector.Name{Sel} '</Font></html>'];
+            end
+        end
+    end
+end
+%% Update
+LSUserValues(1);
+%%% Updates channels
+Update_Detector_Channels([],[],0:2)
+if strcmp(action,'add') || strcmp(action,'delete')
+    Update_Data([],[],0,0);
+end
+%%% Updates plots
+Update_Display([],[],4:5);
+
+%%% reenable callbacks
+h.MI.Channels_List.CellEditCallback = @MI_Channels_Functions;
+h.MI.Channels_List.CellSelectionCallback = @MI_Channels_Functions;
+
+function MI_Channels_Functions_old(obj,ed)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 %% Determines which buttons was pressed, if function was not called via key press 
@@ -3735,17 +3882,32 @@ if any(mode==1);
 end
 %% Updates detector list
 if any(mode==2)
-    List=cell(numel(UserValues.Detector.Name),1);
-    for i=1:numel(List)
-        %%% Calculates Hex code for detector color
+%     List=cell(numel(UserValues.Detector.Name),1);
+%     for i=1:numel(List)
+%         %%% Calculates Hex code for detector color
+%         Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
+%         List{i}=['<HTML><FONT color=#' Hex_color(:)' '>'... Sets entry color in HTML
+%             UserValues.Detector.Name{i}... Detector Name
+%             ': Detector: ' num2str(UserValues.Detector.Det(i))... Detector Number
+%             ' / Routing: ' num2str(UserValues.Detector.Rout(i))... Routing Number
+%             ' enabled </Font></html>'];
+%     end
+%     h.MI.Channels_List.String=List;
+    %%% Update Table
+    Data = cell(numel(UserValues.Detector.Name),8);
+    for i = 1:numel(UserValues.Detector.Name)
         Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
-        List{i}=['<HTML><FONT color=#' Hex_color(:)' '>'... Sets entry color in HTML
-            UserValues.Detector.Name{i}... Detector Name
-            ': Detector: ' num2str(UserValues.Detector.Det(i))... Detector Number
-            ' / Routing: ' num2str(UserValues.Detector.Rout(i))... Routing Number
-            ' enabled </Font></html>'];
+        Data{i,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.Detector.Name{i} '</Font></html>'];
+        Data{i,2} = UserValues.Detector.Det(i);
+        Data{i,3} = UserValues.Detector.Rout(i);
+        Data{i,4} = num2str(UserValues.Detector.Color(i,:));
+        Data{i,5} = UserValues.Detector.Filter{i};
+        Data{i,6} = UserValues.Detector.Pol{i};
+        Data{i,7} = UserValues.Detector.BS{i};
+        Data{i,8} = UserValues.Detector.enabled{i};
     end
-    h.MI.Channels_List.String=List;
+    h.MI.Channels_List.Data = Data;
+    
     %%% Updates plot selection lists
     for i=1:NTabs 
         for j=1:NPlots 
@@ -3971,6 +4133,10 @@ h.MI.Calib_Det.String=List;
 h.MI.Phasor_Det.Value=1;
 h.MI.Calib_Det.Value=1;    
 
+%%% Updates MetaData List
+h.Profiles.MetaDataTable.Data(:,2) = ...
+    {UserValues.MetaData.ExcitationWavelengths;UserValues.MetaData.DyeNames;UserValues.MetaData.BufferName;...
+    UserValues.MetaData.SampleName;UserValues.MetaData.User};
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
 
