@@ -760,6 +760,13 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.ConvolutionType = S.TauFit.ConvolutionType;
     
+    %%% Checks, if TauFit.use_weighted_residuals exists
+    if ~isfield (S.TauFit,'use_weighted_residuals')
+        S.TauFit.use_weighted_residuals=1;
+        disp('UserValues.TauFit.use_weighted_residuals was incomplete');
+    end
+    P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
+    
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2

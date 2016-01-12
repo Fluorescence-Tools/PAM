@@ -996,7 +996,7 @@ h.AutoFit_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.7 0.7 0.07],...
+    'Position',[0.05 0.7 0.7 0.05],...
     'String','Automatic fit',...
     'FontSize',12,...
     'Tag','AutoFit_Menu',...
@@ -1007,11 +1007,24 @@ h.NormalizeScatter_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.5 0.7 0.07],...
+    'Position',[0.05 0.5 0.65 0.05],...
     'String','Scatter offset = 0',...
     'FontSize',12,...
     'Tag','NormalizeScatter_Menu',...
     'Callback',@Update_Plots);
+
+h.UseWeightedResiduals_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.3 0.6 0.05],...
+    'String','Use weighted residuals',...
+    'Value',UserValues.TauFit.use_weighted_residuals,...
+    'FontSize',12,...
+    'Tag','UseWeightedResiduals_Menu',...
+    'Callback',@UpdateOptions);
 %% Set the FontSize to 12
 fields = fieldnames(h); %%% loop through h structure
 for i = 1:numel(fields)
@@ -1670,6 +1683,12 @@ switch obj
                 x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
                 lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
                 ub(1) = round(ub(1)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
                 %%% fit for different IRF offsets and compare the results
                 count = 1;
                 x = cell(numel(shift_range,1));
@@ -1678,16 +1697,18 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun)./sqrt(Decay);
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
                 
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
@@ -1718,6 +1739,12 @@ switch obj
                 x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
                 lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
                 ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -1726,16 +1753,18 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun)./sqrt(Decay);
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
                 
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
@@ -1779,6 +1808,12 @@ switch obj
                 x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
                 lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
                 ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -1787,16 +1822,18 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun)./sqrt(Decay);
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
                 
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
@@ -1848,6 +1885,12 @@ switch obj
                 x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
                 lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
                 ub(6) = round(ub(6)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -1856,16 +1899,18 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun)./sqrt(Decay);
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
                 
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
@@ -1909,6 +1954,12 @@ switch obj
                 x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
                 lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
                 ub(7) = round(ub(7)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -1917,17 +1968,18 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay(ignore:end),lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay(ignore:end);sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun)./sqrt(Decay);
-                
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
                 FitFun = FitFun(ignore:end);
@@ -1985,6 +2037,12 @@ switch obj
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay_stacked));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -1993,20 +2051,21 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-                wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
-                
+                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay_stacked);
+                end
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
                 wres_ignore = wres;
@@ -2072,6 +2131,12 @@ switch obj
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
                 Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay_stacked));
+                end
                 %%% fit for different IRF offsets and compare the results
                 x = cell(numel(shift_range,1));
                 residuals = cell(numel(shift_range,1));
@@ -2080,19 +2145,21 @@ switch obj
                     %%% Update Progressbar
                     Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                     xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata),...
-                        x0(~fixed),xdata,Decay_stacked,lb(~fixed),ub(~fixed));
+                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
                     x{count} = interlace(x0,x{count},fixed);
                     count = count +1;
                 end
-                sigma_est = Decay_stacked;sigma_est(sigma_est == 0) = 1;
-                chi2 = cellfun(@(x) sum(x.^2./sigma_est)/(numel(Decay_stacked)-numel(x0)),residuals);
+                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                 [~,best_fit] = min(chi2);
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-                wres = (Decay_stacked-FitFun)./sqrt(Decay_stacked); Decay = Decay_stacked;
+                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay_stacked);
+                end
                 
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
@@ -2151,7 +2218,11 @@ switch obj
         
         % plot chi^2 on graph
         h.Result_Plot_Text.Visible = 'on';
-        h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
+        if UserValues.TauFit.use_weighted_residuals
+            h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];
+        else
+            h.Result_Plot_Text.String = [sprintf('res^2 = %.2f', chi2(best_fit))];
+        end
         %h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
         h.Result_Plot_Text.Position = [0.8 0.95];
         
@@ -2174,6 +2245,22 @@ switch obj
             h.Plots.FitResult_ignore.Visible = 'off';
             h.Plots.IRFResult.Visible = 'off';
             ignore = 1;
+            
+            %%% plot anisotropy also
+            Decay_par = Decay(1:numel(Decay)/2);
+            Decay_per = Decay(numel(Decay)/2+1:end);
+            r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
+            Fit_par = FitFun(1:numel(Decay)/2);
+            Fit_per = FitFun(numel(Decay)/2+1:end);
+            r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
+            x = (1:numel(Decay)/2).*TACtoTime;
+            figure;
+            p1 = subplot(2,1,1);
+            plot(x,r_meas);hold on;plot(x,r_fit);
+            p2 = subplot(2,1,2);
+            plot(x,r_meas-r_fit);
+            p1.Position = [0.05 0.3 0.9 0.65];
+            p2.Position = [0.05 0.1 0.9 0.15];
         else
             IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
@@ -3451,3 +3538,4 @@ end
 UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
+UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
