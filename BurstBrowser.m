@@ -5,7 +5,7 @@ global UserValues %BurstMeta BurstData BurstTCSPCData
 LSUserValues(0);
 Look=UserValues.Look;
 
-addpath(genpath([pwd filesep 'functions']));
+addpath(genpath(['.' filesep 'functions']));
 
 if isempty(hfig)
     %% Define main window

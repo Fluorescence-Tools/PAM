@@ -2,7 +2,7 @@ function Mia(~,~)
 global UserValues MIAData
 h.Mia=findobj('Tag','Mia');
 
-addpath(genpath([pwd filesep 'functions']));
+addpath(genpath(['.' filesep 'functions']));
 
 if isempty(h.Mia)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

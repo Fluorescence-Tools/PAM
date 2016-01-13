@@ -5,7 +5,7 @@ function Phasor(~,~)
 global UserValues PhasorData
 h.Phasor=findobj('Tag','Phasor');
 
-addpath(genpath([pwd filesep 'functions']));
+addpath(genpath(['.' filesep 'functions']));
 
 if isempty(h.Phasor) % Creates new figure, if none exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

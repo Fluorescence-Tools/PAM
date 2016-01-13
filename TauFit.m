@@ -17,7 +17,7 @@ end
 if ~isempty(findobj('Tag','BurstBrowser'))
     bh = guidata(findobj('Tag','BurstBrowser'));
 end
-addpath(genpath([pwd filesep 'functions']));
+addpath(genpath(['.' filesep 'functions']));
 %% Figure Generation
 %%% Load user profile
 LSUserValues(0);

@@ -2,7 +2,7 @@ function FCSFit(~,~)
 global UserValues FCSData FCSMeta
 h.FCSFit=findobj('Tag','FCSFit');
 
-addpath(genpath([pwd filesep 'functions']));
+addpath(genpath(['.' filesep 'functions']));
 
 if isempty(h.FCSFit) % Creates new figure, if none exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
