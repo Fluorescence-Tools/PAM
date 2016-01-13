@@ -13,7 +13,9 @@ end
 
 if ~isempty(h.Pam) %%% Gives focus to Pam figure if it already exists
     figure(h.Pam); return;
-end     
+end
+
+addpath(genpath([pwd filesep 'functions']));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

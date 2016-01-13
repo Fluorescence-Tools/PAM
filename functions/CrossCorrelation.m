@@ -9,8 +9,6 @@ function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,We
 %%% ProgressStruct.Current: number of correlation bins previously completed
 
 %%% If no weights are specified, set to 1
-
-
 if (nargin < 4) || isempty(Weights1)
     Weights1 = cell(numel(Data1),1);
     Weights2 = cell(numel(Data2),1);

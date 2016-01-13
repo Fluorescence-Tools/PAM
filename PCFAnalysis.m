@@ -5,6 +5,9 @@ h.PCF=findobj('Tag','PCF');
 if ~isempty(h.PCF) % Gives focus to PCFAnalysis figure if it already exists
     figure(h.PCF); return;
 end     
+
+addpath(genpath([pwd filesep 'functions']));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -5,6 +5,8 @@ h.Sim=findobj('Tag','Sim');
 if ~isempty(h.Sim) % Creates new figure, if none exists
     return
 end
+
+addpath(genpath([pwd filesep 'functions']));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -914,7 +916,7 @@ h.Sim_UseNoise = uicontrol(...
            'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
    end
 
-%% Förster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% F?rster Radii parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Advanced Sim Settings Panel
 h.Sim_FRET_General_Panel = uibuttongroup(...

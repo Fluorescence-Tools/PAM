@@ -4,6 +4,9 @@ hfig=findobj('Tag','BurstBrowser');
 global UserValues %BurstMeta BurstData BurstTCSPCData
 LSUserValues(0);
 Look=UserValues.Look;
+
+addpath(genpath([pwd filesep 'functions']));
+
 if isempty(hfig)
     %% Define main window
     h.BurstBrowser = figure(...

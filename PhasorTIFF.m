@@ -5,6 +5,8 @@ function PhasorTIFF(~,~)
 global UserValues
 h.PhasorTIFF = findobj('Tag','PhasorTIFF');
 
+addpath(genpath([pwd filesep 'functions']));
+
 if isempty(h.PhasorTIFF)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

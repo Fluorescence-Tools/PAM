@@ -17,8 +17,7 @@ end
 if ~isempty(findobj('Tag','BurstBrowser'))
     bh = guidata(findobj('Tag','BurstBrowser'));
 end
-addpath([pwd filesep 'TauFit Models']);
-
+addpath(genpath([pwd filesep 'functions']));
 %% Figure Generation
 %%% Load user profile
 LSUserValues(0);
