@@ -1,11 +1,11 @@
 function BurstBrowser(~,~)
-
 hfig=findobj('Tag','BurstBrowser');
+
+addpath(genpath(['.' filesep 'functions']));
+
 global UserValues %BurstMeta BurstData BurstTCSPCData
 LSUserValues(0);
 Look=UserValues.Look;
-
-addpath(genpath(['.' filesep 'functions']));
 
 if isempty(hfig)
     %% Define main window

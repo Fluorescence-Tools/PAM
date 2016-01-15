@@ -1066,18 +1066,20 @@ if ~strcmp(TauFitData.Who, 'TauFit')
 end
 
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
-if isequal(obj, ph.Database.Burst)
-    for j = 1:numel(Channel_String) 
-        % Save images of the individual plots
-        h.ChannelSelect_Popupmenu.Value = j;
-        Update_Plots(obj)
-        f = ExportGraph(h.Microtime_Plot_Export);
-        close(f)
-        Start_Fit(h.Fit_Button)
-        f = ExportGraph(h.Export_Result);
-        close(f)
+if exist('ph','var')
+    if isequal(obj, ph.Database.Burst)
+        for j = 1:numel(Channel_String) 
+            % Save images of the individual plots
+            h.ChannelSelect_Popupmenu.Value = j;
+            Update_Plots(obj)
+            f = ExportGraph(h.Microtime_Plot_Export);
+            close(f)
+            Start_Fit(h.Fit_Button)
+            f = ExportGraph(h.Export_Result);
+            close(f)
+        end
+        BurstWise_Fit(h.BurstWiseFit_Button)
     end
-    BurstWise_Fit(h.BurstWiseFit_Button)
 end
 
 function ChangeYScale(obj,~)

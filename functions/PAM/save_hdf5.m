@@ -66,7 +66,11 @@ measurement_specs = py.dict(pyargs(...
 
 %%% to account for routing also, we need to use the detector/routing
 %%% pairing for each "virtual" detector in PAM and convert this to a single
-%%% detector number in hdf5
+%%% detector number in hdf5 in order of:
+%%% 1   -   donor par
+%%% 2   -   donor per
+%%% 3   -   acceptor par
+%%% 4   -   acceptor per
 
 timestamps = [];
 detectors = [];
