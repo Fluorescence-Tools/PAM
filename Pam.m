@@ -1021,7 +1021,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Title','fFCS');
     %%% Correlation panel
     h.Cor_fFCS.Panel = uibuttongroup(...
-        'Parent',h.Cor.Tab,...
+        'Parent',h.Cor_fFCS.Tab,...
         'Tag','Cor_fFCS_Panel',...
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
@@ -1030,13 +1030,125 @@ addpath(genpath(['.' filesep 'functions']));
         'ShadowColor', Look.Shadow,...
         'Position',[0 0.52 1 0.48]);
     %%% button for saving current measurements microtime pattern
-    h.Cor_fFCS.Save_MI_Button = uicontrol(...
-        'style','pushbutton',...
+    h.Cor_fFCS.Save_MIPattern_Button = uicontrol(...
         'Parent',h.Cor_fFCS.Panel,...
-        'String','Save as species...',...
+        'String','Save microtime pattern',...
         'Callback',@SaveLoadMIPattern,...
-        'Position',[0.01, 0.96, 0.05,0.03],...
-        'Tag','Save_MI_Button');
+        'Units','normalized',...
+        'Position',[0.01, 0.9, 0.2,0.08],...
+        'Tag','Save_MIPattern_Button',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore);
+     %%% button for loading microtime patterns
+    h.Cor_fFCS.Load_MIPattern_Button = uicontrol(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'String','Load microtime patterns',...
+        'Callback',@SaveLoadMIPattern,...
+        'Units','normalized',...
+        'Position',[0.01, 0.8, 0.2,0.08],...
+        'Tag','Load_MIPattern_Button',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore);
+    %%% button for plotting microtime patterns
+    h.Cor_fFCS.Prepare_Filter_Button  = uicontrol(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'String','Calculate Filters',...
+        'Callback',@Update_fFCS_GUI,...
+        'Units','normalized',...
+        'Position',[0.01, 0.7, 0.2,0.08],...
+        'Tag','Plot_MIPattern_Button',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore);
+    %%% button for calculating filters
+    h.Cor_fFCS.Do_fFCS_Button  = uicontrol(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'String','Correlation',...
+        'Callback',@Update_fFCS_GUI,...
+        'Units','normalized',...
+        'Position',[0.01, 0.6, 0.2,0.08],...
+        'Tag','Do_fFCS_Button',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore);
+    %%% table of loaded microtime patterns
+    RowName = [];
+    ColumnFormat = {'char','logical'};
+    ColumnName = {'Species','active'};
+    Data = {'',false};
+    ColumnEditable = [false,true];
+    h.Cor_fFCS.MIPattern_Table = uitable(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'Tag','MIPattern_Table',...
+        'Units','normalized',...
+        'Position',[0.01, 0.01, 0.28 ,0.48],...
+        'Data',Data,...
+        'ColumnName',ColumnName,...
+        'RowName',RowName,...
+        'ColumnEditable',ColumnEditable,...      
+        'ColumnFormat',ColumnFormat,...
+        'CellEditCallback',@Update_fFCS_GUI...
+        );
+    % format
+    h.Cor_fFCS.MIPattern_Table.Units = 'pixels';
+    x = h.Cor_fFCS.MIPattern_Table.Position(3);
+    h.Cor_fFCS.MIPattern_Table.ColumnWidth = {0.8*x,0.18*x};
+    h.Cor_fFCS.MIPattern_Table.Units = 'normalized';
+    
+    %%% cross-correlation table of loaded species
+    RowName = {'Scatter'};
+    ColumnFormat = {'logical'};
+    ColumnName = {'Scatter'};
+    Data = {false};
+    ColumnEditable = [true];
+    h.Cor_fFCS.Cor_fFCS_Table = uitable(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'Tag','Cor_fFCS_Table',...
+        'Units','normalized',...
+        'Position',[0.6, 0.01, 0.39 ,0.98],...
+        'Data',Data,...
+        'ColumnName',ColumnName,...
+        'RowName',RowName,...
+        'ColumnEditable',ColumnEditable,...      
+        'ColumnFormat',ColumnFormat...
+        );
+    
+    %%% plot for microtime patterns
+    h.Cor_fFCS.MIPattern_Axis = axes(...
+        'Parent',h.Cor_fFCS.Tab,...
+        'Tag','MIPattern_Axis',...
+        'Units','normalized',...
+        'NextPlot','add',...      
+        'XColor',Look.Fore,...
+        'YColor',Look.Fore,...
+        'Position',[0.06 0.275 0.925 0.22],...
+        'Box','on');
+    h.Cor_fFCS.MIPattern_Axis.XLabel.String='';
+    h.Cor_fFCS.MIPattern_Axis.XLabel.Color=Look.Fore;
+    h.Cor_fFCS.MIPattern_Axis.YLabel.String='PDF';
+    h.Cor_fFCS.MIPattern_Axis.YLabel.Color=Look.Fore;
+    h.Cor_fFCS.MIPattern_Axis.XLim=[1 4096];
+    h.Cor_fFCS.MIPattern_Axis.XTickLabel = [];
+    h.Plots.fFCS.MI_Plots{1} = handle(plot([0 1],[0 0],'b')); 
+    %%% plot for filter
+     %%% plot for microtime patterns
+    h.Cor_fFCS.Filter_Axis = axes(...
+        'Parent',h.Cor_fFCS.Tab,...
+        'Tag','Filter_Axis',...
+        'Units','normalized',...
+        'NextPlot','add',...      
+        'XColor',Look.Fore,...
+        'YColor',Look.Fore,...
+        'Position',[0.06 0.05 0.925 0.22],...
+        'Box','on');
+    h.Cor_fFCS.Filter_Axis.XLabel.String='TAC channel';
+    h.Cor_fFCS.Filter_Axis.XLabel.Color=Look.Fore;
+    h.Cor_fFCS.Filter_Axis.YLabel.String='filter value';
+    h.Cor_fFCS.Filter_Axis.YLabel.Color=Look.Fore;
+    h.Cor_fFCS.Filter_Axis.XLim=[1 4096];  
+    h.Plots.fFCS.Filter_Plots{1} = handle(plot([0 1],[0 0],'b')); 
     %% Additional detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Aditional detector functions tab
     h.Additional.Tab= uitab(...
@@ -2441,6 +2553,8 @@ Update_Detector_Channels([],[],[1,2]);
 %%% Initializes plots
 Update_Data([],[],0,0);
 Update_Display([],[],0);
+%%% Initializes fFCS GUI
+Update_fFCS_GUI([],[]);
 
 h.Pam.Visible='on';  
     
@@ -3868,6 +3982,7 @@ if any(mode==1);
             h.MI.Individual{i,2*(1+j)-1}.XLabel.String = 'TAC channel';
             h.MI.Individual{i,2*(1+j)-1}.YLabel.String = 'Counts';
             h.MI.Individual{i,2*(1+j)-1}.YLabel.Color = UserValues.Look.Fore;
+            h.MI.Individual{i,2*(1+j)-1}.XLabel.Color = UserValues.Look.Fore;
             h.MI.Individual{i,2*(1+j)-1}.XLim=[1 FileInfo.MI_Bins];
             %%% Individual microtime popup for channel selection
             h.MI.Individual{i,2*(1+j)} = uicontrol(...
@@ -3952,7 +4067,7 @@ Update_Display([],[],[4, 5, 8]);
 function [Photons_PIEchannel] = Get_Photons_from_PIEChannel(PIEchannel,type,block,chunk)
 %%% PIEchannel: Specifies the PIE channel as name or as number
 %%% type:       Specifies the type of Photons to be extracted
-%%%             (can be 'Macrotimes' or 'Microtimes')
+%%%             (can be 'Macrotime' or 'Microtime')
 %%% block:      specifies the number of the Block for FCS ErrorBar Calcula-
 %%%             tion
 %%%             (leave empty for loading whole measurement)
@@ -3994,7 +4109,9 @@ if ~isempty(TcspcData.(type){Det,Rout})
             TcspcData.MI{Det,Rout} <= To &...
             TcspcData.MT{Det,Rout} >= Times(block) &...
             TcspcData.MT{Det,Rout} < Times(block+1));
-        
+        if strcmp(type,'MT')
+            Photons_PIEchannel = Photons_PIEchannel - Times(block);
+        end
     elseif nargin == 4 %%% read only the specified chunk
         %%% define the chunk start and stop time based on chunksize and measurement
         %%% time
@@ -4326,6 +4443,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Progress((0)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
     h.Progress.Axes.Color=UserValues.Look.Control;
     drawnow;
+
     %%% For every active combination
     for i=1:numel(Cor_A)      
         %%% Findes all needed PIE channels
@@ -4352,7 +4470,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
             From2=UserValues.PIE.From(Cor_B(i));
         end
         
-        switch h.Cor.Type.Value %%% Assigns photons and does correlation
+        Type = h.Cor.Type.Value;
+        switch Type %%% Assigns photons and does correlation
             case {1,3} %%% Point correlation
                 %%% Initializes data cells
                 Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
@@ -4366,14 +4485,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Combines all photons to one vector
                     for l=1:numel(Det1)
                         if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
-                            if h.Cor.Type.Value == 1
+                            if Type == 1
                                 Data1{k}=[Data1{k};...
                                     TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
-                            elseif h.Cor.Type.Value == 3 %%% Microtime Correlation, add microtimes
+                            elseif Type == 3 %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
@@ -4399,14 +4518,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         %%% Combines all photons to one vector
                         for l=1:numel(Det2)
                             if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
-                                if h.Cor.Type.Value == 1
+                                if Type == 1
                                     Data2{k}=[Data2{k};...
                                         TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
-                                elseif h.Cor.Type.Value == 3 %%% Microtime Correlation, add microtimes
+                                elseif Type == 3 %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
@@ -4742,13 +4861,158 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end
                 %%% Saves File
                 save(Current_FileName,'PairInfo','PairInt','PairMI','PairCor');  
-                UserValues.File.PCFPath = FileInfo.Path;               
+                UserValues.File.PCFPath = FileInfo.Path;  
         end
     end
     guidata(h.Pam,h);
     Progress(1);
     Update_Display([],[],1);
 end
+
+%%% Set FCSFit Path to FilePath
+UserValues.File.FCSPath = FileInfo.Path;
+LSUserValues(1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for lifetime correlation  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Correlate_fFCS(~,~)
+h=guidata(findobj('Tag','Pam'));
+global UserValues FileInfo PamMeta
+
+h.Progress.Text.String = 'Starting Correlation';
+h.Progress.Axes.Color=[1 0 0];
+
+%%% Initializes matlabpool for paralell computation
+if strcmp(h.Cor.Multi_Menu.Checked,'on')
+    Pool=gcp;
+    if isempty(Pool)
+        h.Progress.Text.String='Opening matlabpool';
+        drawnow;
+        parpool('local');
+    end        
+end
+
+
+%%% Calculates the maximum inter-photon time in clock ticks
+Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.ClockPeriod)/UserValues.Settings.Pam.Cor_Divider;
+%%% Calculates the photon start times in clock ticks
+Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
+Valid = find(PamMeta.Selected_MT_Patches)';
+%%% Uses truncated Filename
+switch FileInfo.FileType
+    case {'FabsurfSPC','SPC'}
+        FileName = FileInfo.FileName{1}(1:end-5);
+    case {'HydraHarp','FabSurf-HydraHarp','Simulation'}
+        FileName = FileInfo.FileName{1}(1:end-4);
+    otherwise
+        FileName = FileInfo.FileName{1}(1:end-4);                
+end
+drawnow;   
+
+Progress(0,h.Progress.Axes,h.Progress.Text,'Correlating :')   
+h.Progress.Axes.Color=UserValues.Look.Control;
+drawnow;
+
+%%% read out which correlations to perform and map species to filter number
+[Cor_A, Cor_B] = find(cell2mat(h.Cor_fFCS.Cor_fFCS_Table.Data));
+active_species = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)));
+Names = [{'Scatter'};PamMeta.fFCS.MIPattern_Name'];
+
+filter = PamMeta.fFCS.filters;
+%% Initializes data cells
+Data=cell(sum(PamMeta.Selected_MT_Patches),1);
+Weights1=cell(sum(PamMeta.Selected_MT_Patches),1);
+Weights2=cell(sum(PamMeta.Selected_MT_Patches),1);
+MI=cell(sum(PamMeta.Selected_MT_Patches),1);
+
+k=1;
+Counts=0;
+%%% Seperate calculation for each block
+for j=find(PamMeta.Selected_MT_Patches)'
+    Data{k}=[];
+    MI{k} = [];
+    %%% Combines all photons to one vector
+    offset = 0;
+    for l = PamMeta.fFCS.PIEseletion
+        Data{k}=[Data{k};Get_Photons_from_PIEChannel(l,'Macrotime',j)];
+        MI{k} = [MI{k};Get_Photons_from_PIEChannel(l,'Microtime',j)+offset*FileInfo.MI_Bins];
+        offset = offset + 1;
+    end
+    %%% Calculates total photons
+    Counts=Counts+numel(Data{k});
+    %%% Only takes non empty channels as valid
+    if ~isempty(Data{k})
+        [Data{k}, idx] =sort(Data{k});
+        MI{k} = MI{k}(idx);
+        k=k+1;
+    else
+        Valid(k)=[];
+    end
+end
+%%% Deletes empty and invalid channels
+if k<=numel(Data)
+    Data(k:end)=[];
+    MI(k:end)=[];
+end             
+%%% Applies divider to data
+for j=1:numel(Data)
+    Data{j}=floor(Data{j}/UserValues.Settings.Pam.Cor_Divider);
+end     
+%%% loop over all filter combinations
+%%% this is different from normal corrlation, here the photon data
+%%% (macrotimes, microtimes) is the same for all correlations, but the
+%%% weights are changing
+
+for i = 1:numel(Cor_A)
+    %%% construct weights
+    for l = 1:numel(Data)
+        Weights1{l} = filter{Cor_A(i)}(MI{l});
+        Weights2{l} = filter{Cor_B(i)}(MI{l});
+    end
+    %%% Actually calculates the crosscorrelation
+    [Cor_Array,Cor_Times]=CrossCorrelation(Data,Data,Maxtime,Weights1,Weights2);
+    Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
+    %%% Calculates average and standard error of mean (without tinv_table yet
+    if size(Cor_Array,2)>1
+        Cor_Average=mean(Cor_Array,2);
+        %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
+        %%% Averages files before saving to reduce errorbars
+        Amplitude=sum(Cor_Array,1);
+        Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
+        Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
+
+    else
+        Cor_Average=Cor_Array;
+        Cor_SEM=Cor_Array;
+    end
+    %% Saves data
+    Name1=Names{active_species(Cor_A(i))};
+    Name2=Names{active_species(Cor_B(i))};              
+    %%% Generates filename
+    Current_FileName=fullfile(FileInfo.Path,[FileName '_' Name1 '_x_' Name2 '.mcor']);
+    %%% Checks, if file already exists
+    if  exist(Current_FileName,'file')
+        k=1;
+        %%% Adds 1 to filename
+        Current_FileName=[Current_FileName(1:end-5) num2str(k) '.mcor'];
+        %%% Increases counter, until no file is fount
+        while exist(Current_FileName,'file')
+            k=k+1;
+            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+        end
+    end
+
+    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
+    Counts = [Counts Counts]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
+    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
+    
+    Progress(i/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
+end
+guidata(h.Pam,h);
+Progress(1);
+Update_Display([],[],1);
+
 
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
@@ -8012,7 +8276,210 @@ switch e.Key
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions that exports the microtime pattern
-%%% %%%%%%%%%%%%%%%%%%%%%%%%%%j
+%%% Functions that exports the microtime pattern of all detectors %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SaveLoadMIPattern(obj,eventdata)
+function SaveLoadMIPattern(obj,~)
+global UserValues PamMeta FileInfo
+h = guidata(findobj('Tag','Pam'));
+
+switch obj
+    case h.Cor_fFCS.Save_MIPattern_Button
+        %%% Save MI Pattern to *.mi file
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        
+        MIPattern = cell(0);
+        for i = 1:numel(UserValues.Detector.Det);
+            MIPattern{UserValues.Detector.Det(i),UserValues.Detector.Rout(i)} = PamMeta.MI_Hist{i};
+        end
+        [~, FileName, ~] = fileparts(FileInfo.FileName{1});
+        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(FileInfo.Path,FileName));
+        if all(File==0)
+            return
+        end
+        save(fullfile(Path,File),'MIPattern');
+    case h.Cor_fFCS.Load_MIPattern_Button 
+        %%% Load MI Pattern from *.mi file
+        [File,Path,FilterIndex] = uigetfile({'*.mi','PAM microtime pattern file (*.mi)'},...
+            'Choose microtime patterns to load...',UserValues.File.Path,'Multiselect','on');
+        if FilterIndex == 0
+            return;
+        end
+        if ~iscell(File)
+            File = {File};
+        end
+        if ~isfield(PamMeta,'fFCS')
+            PamMeta.fFCS = struct;
+            PamMeta.fFCS.MIPattern = cell(0);
+            PamMeta.fFCS.MIPattern_Name = cell(0);
+        end
+        for i = 1:numel(File)
+            dummy = load(fullfile(Path,File{i}),'-mat');
+            [~, FileName, ~] = fileparts(File{i});
+            PamMeta.fFCS.MIPattern_Name{i} = FileName;
+            PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
+        end
+        Update_fFCS_GUI(obj,[]);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions tthat updates fFCS GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_fFCS_GUI(obj,e)
+global UserValues PamMeta FileInfo
+h = guidata(findobj('Tag','Pam'));
+
+if isempty(obj)
+    obj = 'initialize';
+end
+
+switch obj
+    case 'initialize' % Called on PAM startup, initialize GUI
+        %%% set species table to only contain scatter
+        h.Cor_fFCS.MIPattern_Table.Data = {'Scatter',false};
+    case h.Cor_fFCS.Load_MIPattern_Button
+        %%% Update mipattern table (default is all species selected, no
+        %%% scatter)
+        h.Cor_fFCS.MIPattern_Table.Data = [{'Scatter',false};...
+            [PamMeta.fFCS.MIPattern_Name',num2cell(true(numel(PamMeta.fFCS.MIPattern_Name),1))]];
+        PamMeta.fFCS.filters = [];
+        
+        %%% Update cross-correlation table
+        Names = PamMeta.fFCS.MIPattern_Name';
+        h.Cor_fFCS.Cor_fFCS_Table.RowName = Names;
+        h.Cor_fFCS.Cor_fFCS_Table.ColumnName = Names;
+        h.Cor_fFCS.Cor_fFCS_Table.Data = num2cell(false(numel(Names)));
+    case h.Cor_fFCS.Prepare_Filter_Button
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        
+        % clear plots
+        for i = 1:numel(h.Plots.fFCS.MI_Plots)
+            delete(h.Plots.fFCS.MI_Plots{i});
+        end
+        h.Plots.fFCS.MI_Plots={};
+        
+        PamMeta.fFCS.MI_Hist = {};
+        PamMeta.fFCS.Decay_Hist = {};
+        % read out PIE channel selection
+        sel = h.PIE.List.Value;
+        PamMeta.fFCS.PIEseletion = sel;
+        % read out avtive species
+        active = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)))';
+        
+        %%% rational: 
+        %%% 1.) read out mi patterns
+        %%% 2.) do checkup (length of loaded patterns need to be adjusted
+        %%% to curent measurement)
+        %%% 3.) construct stacked channel
+        
+        
+        %%% read mi pattern of loaded measurment and transfer loaded mi pattern data to new cell array
+        % top-down:   species - i
+        % left-right: PIE channel - sel
+        for j = sel
+            %%% current data
+            Decay_Hist{1,j} = PamMeta.MI_Hist{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
+        end
+        MI_Hist = {};
+        for i = active
+            for j = sel
+                %%% loaded patterns
+                if i == 1 %scatter pattern
+                    MI_Hist{i,j} = UserValues.PIE.ScatterPattern{j}';
+                else
+                    MI_Hist{i,j} = PamMeta.fFCS.MIPattern{i-1}{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
+                end
+            end
+        end
+        
+        %%% checkup of lengths
+        %%% it should be same lengths as of current measurement
+        LEN = FileInfo.MI_Bins;
+        len = cellfun(@numel,MI_Hist);
+        for i = active % adjust all active MI_Hist channels
+            for j = sel
+                if len(i,j) > LEN %%% exceeds wanted lengths, shorten
+                    MI_Hist{i,j} = MI_Hist{i,j}(1:LEN);
+                elseif len(i,j) < LEN %%% too short, add trailing zeros
+                    MI_Hist{i,j} = [MI_Hist{i,j}; zeros(LEN-len(i,j),1)];
+                end
+            end
+        end
+        
+        %%% construct stacked channel
+        PamMeta.fFCS.Decay_Hist = vertcat(Decay_Hist{:});
+        for i = 1:size(MI_Hist,1)
+            PamMeta.fFCS.MI_Hist{i} = vertcat(MI_Hist{i,:});
+            PamMeta.fFCS.MI_Hist{i} = PamMeta.fFCS.MI_Hist{i}./sum(PamMeta.fFCS.MI_Hist{i});
+        end
+        
+        %%% plot
+        for i = active
+            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{i},'--');
+        end
+        h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist./sum(PamMeta.fFCS.Decay_Hist),'k');
+        %%% update axes limits
+        h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(PamMeta.fFCS.Decay_Hist)];
+        
+        %%% calculate FLCS filters
+        %%% problem: only those bins where Decay is not zero are to be
+        %%% used!
+        %%% solution: perform calculations only on "valid" bins
+        valid = (PamMeta.fFCS.Decay_Hist ~= 0);
+        Decay = PamMeta.fFCS.Decay_Hist(valid);
+        diag_Decay = zeros(numel(Decay));
+        for i = 1:numel(Decay)
+            diag_Decay(i,i) = 1./Decay(i);
+        end
+        MI_species = [];
+        for i = active
+            MI_species = [MI_species, PamMeta.fFCS.MI_Hist{i}(valid)];
+        end
+        filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+        %%% rescale filters back to total microtime range (no cut with valid)
+        filters = zeros(numel(PamMeta.fFCS.Decay_Hist),numel(active));
+        for i = 1:numel(active)
+            filters(valid,i) = filters_temp(:,i);
+        end
+        for i = 1:size(filters,2)
+            PamMeta.fFCS.filters{i} = filters(:,i);
+        end
+        %%% plot new filters
+        % clear plots
+        for i = 1:numel(h.Plots.fFCS.Filter_Plots)
+            delete(h.Plots.fFCS.Filter_Plots{i});
+        end
+        h.Plots.fFCS.Filter_Plots={};
+        
+        for i = 1:numel(active)
+            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{i});
+        end
+        %%% update axes limits
+        h.Cor_fFCS.Filter_Axis.XLim = [1,numel(PamMeta.fFCS.Decay_Hist)];
+        
+        %%% save new plots in guidata
+        guidata(findobj('Tag','Pam'),h)
+    case h.Cor_fFCS.Do_fFCS_Button
+        %%% do actual correlation with stored filters
+        if isempty(PamMeta.fFCS.filters)
+            disp('Define filters first!');
+            return;
+        end
+        Correlate_fFCS([],[]);
+    case h.Cor_fFCS.MIPattern_Table
+        %%% on change of active/inactive in MIPattern_Table, update the
+        %%% species table
+        if e.Indices(2) == 2 %%% active column was clicked
+            active = cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2));
+            Names = ['Scatter';PamMeta.fFCS.MIPattern_Name'];
+            Names = Names(active);
+            h.Cor_fFCS.Cor_fFCS_Table.RowName = Names;
+            h.Cor_fFCS.Cor_fFCS_Table.ColumnName = Names;
+            h.Cor_fFCS.Cor_fFCS_Table.Data = num2cell(false(numel(Names)));
+        end
+end
