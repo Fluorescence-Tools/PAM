@@ -1675,6 +1675,12 @@ switch obj
         lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
         ub = cell2mat(h.FitPar_Table.Data(1:end-1,3))';
         fixed = cell2mat(h.FitPar_Table.Data(1:end-1,4));
+        if all(fixed) %%% all parameters fixed, instead just plot the current values
+            fit = 0;
+        else
+            fit = 1;
+        end
+        
         switch TauFitData.FitType
             case 'Single Exponential'
                 %%% Parameter:
@@ -1690,21 +1696,27 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                %%% fit for different IRF offsets and compare the results
-                count = 1;
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    count = 1;
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);   
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
                 wres = (Decay-FitFun);
                 if UserValues.TauFit.use_weighted_residuals
@@ -1746,21 +1758,27 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
                 wres = (Decay-FitFun);
                 if UserValues.TauFit.use_weighted_residuals
@@ -1815,21 +1833,28 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
                 wres = (Decay-FitFun);
                 if UserValues.TauFit.use_weighted_residuals
@@ -1892,21 +1917,28 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
                 wres = (Decay-FitFun);
                 if UserValues.TauFit.use_weighted_residuals
@@ -1961,21 +1993,27 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay(ignore:end)));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
                 wres = (Decay-FitFun);
                 if UserValues.TauFit.use_weighted_residuals
@@ -2044,21 +2082,28 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
@@ -2138,21 +2183,28 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
@@ -2243,21 +2295,28 @@ switch obj
                 else
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
-                %%% fit for different IRF offsets and compare the results
-                x = cell(numel(shift_range,1));
-                residuals = cell(numel(shift_range,1));
-                count = 1;
-                for i = shift_range
-                    %%% Update Progressbar
-                    Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                    xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                    [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
-                    x{count} = interlace(x0,x{count},fixed);
-                    count = count +1;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
                 end
-                chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
-                [~,best_fit] = min(chi2);
+                
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
@@ -2323,6 +2382,9 @@ switch obj
         h.Plots.IRFResult.Visible = 'on';
         
         % plot chi^2 on graph
+        if ~fit % plot only, chi2 was not calculated yet
+            chi2 = sum(wres.^2)./(numel(wres)-numel(x0));
+        end
         h.Result_Plot_Text.Visible = 'on';
         if UserValues.TauFit.use_weighted_residuals
             h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2(best_fit))];

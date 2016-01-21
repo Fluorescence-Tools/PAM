@@ -4917,7 +4917,7 @@ drawnow;
 %%% read out which correlations to perform and map species to filter number
 [Cor_A, Cor_B] = find(cell2mat(h.Cor_fFCS.Cor_fFCS_Table.Data));
 active_species = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)));
-Names = [{'Scatter'};PamMeta.fFCS.MIPattern_Name'];
+Names = [PamMeta.fFCS.MIPattern_Name';{'Scatter'}];
 
 filter = PamMeta.fFCS.filters;
 %% Initializes data cells
@@ -8342,8 +8342,8 @@ switch obj
     case h.Cor_fFCS.Load_MIPattern_Button
         %%% Update mipattern table (default is all species selected, no
         %%% scatter)
-        h.Cor_fFCS.MIPattern_Table.Data = [{'Scatter',false};...
-            [PamMeta.fFCS.MIPattern_Name',num2cell(true(numel(PamMeta.fFCS.MIPattern_Name),1))]];
+        h.Cor_fFCS.MIPattern_Table.Data = [[PamMeta.fFCS.MIPattern_Name',num2cell(true(numel(PamMeta.fFCS.MIPattern_Name),1))];...
+            {'Scatter',false}];
         PamMeta.fFCS.filters = [];
         
         %%% Update cross-correlation table
@@ -8381,18 +8381,23 @@ switch obj
         %%% read mi pattern of loaded measurment and transfer loaded mi pattern data to new cell array
         % top-down:   species - i
         % left-right: PIE channel - sel
+        
+        %%% we need to map the PIE channel detector/routing pair to the
+        %%% detector number as used in PamMeta.MI_Hist!
         for j = sel
+            det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
+            det = det(1); % in case there are redundant detector definitions
             %%% current data
-            Decay_Hist{1,j} = PamMeta.MI_Hist{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
+            Decay_Hist{1,j} = PamMeta.MI_Hist{det};
         end
         MI_Hist = {};
         for i = active
             for j = sel
                 %%% loaded patterns
-                if i == 1 %scatter pattern
+                if i == numel(PamMeta.fFCS.MIPattern_Name)+1 %last entry, scatter pattern
                     MI_Hist{i,j} = UserValues.PIE.ScatterPattern{j}';
                 else
-                    MI_Hist{i,j} = PamMeta.fFCS.MIPattern{i-1}{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
+                    MI_Hist{i,j} = PamMeta.fFCS.MIPattern{i}{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
                 end
             end
         end
@@ -8476,7 +8481,7 @@ switch obj
         %%% species table
         if e.Indices(2) == 2 %%% active column was clicked
             active = cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2));
-            Names = ['Scatter';PamMeta.fFCS.MIPattern_Name'];
+            Names = [PamMeta.fFCS.MIPattern_Name';'Scatter'];
             Names = Names(active);
             h.Cor_fFCS.Cor_fFCS_Table.RowName = Names;
             h.Cor_fFCS.Cor_fFCS_Table.ColumnName = Names;
