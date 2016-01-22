@@ -8365,6 +8365,7 @@ switch obj
         
         PamMeta.fFCS.MI_Hist = {};
         PamMeta.fFCS.Decay_Hist = {};
+        PamMeta.fFCS.filters = {};
         % read out PIE channel selection
         sel = h.PIE.List.Value;
         PamMeta.fFCS.PIEseletion = sel;
@@ -8424,12 +8425,23 @@ switch obj
         end
         
         %%% plot
-        for i = active
-            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{i},'--');
+        % for plotting, only consider the PIE channel range! (although the
+        % filter is still defined over the whole microtime range)
+        % this is just for easier inspection/visibility
+        plotrange = [];
+        k = 0;
+        for j = sel
+            plotrange = [plotrange, k*LEN+(UserValues.PIE.From(j):UserValues.PIE.To(j))];
+            k = k+1;
         end
-        h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist./sum(PamMeta.fFCS.Decay_Hist),'k');
+        for i = active
+            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{i}(plotrange),'--');
+        end
+        h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist(plotrange)./sum(PamMeta.fFCS.Decay_Hist),'k');
         %%% update axes limits
-        h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(PamMeta.fFCS.Decay_Hist)];
+        h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
+        %h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
+        h.Cor_fFCS.MIPattern_Axis.YLimMode = 'auto';
         
         %%% calculate FLCS filters
         %%% problem: only those bins where Decay and all microtime patterns are 
@@ -8448,7 +8460,7 @@ switch obj
         end
         MI_species = [];
         for i = active
-            MI_species = [MI_species, PamMeta.fFCS.MI_Hist{i}(valid)];
+            MI_species = [MI_species, PamMeta.fFCS.MI_Hist{i}(valid)./sum(PamMeta.fFCS.MI_Hist{i}(valid))]; % re-normalize here since not all bins are used!
         end
         filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
         %%% rescale filters back to total microtime range (no cut with valid)
@@ -8467,10 +8479,11 @@ switch obj
         h.Plots.fFCS.Filter_Plots={};
         
         for i = 1:numel(active)
-            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{i});
+            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{i}(plotrange));
         end
         %%% update axes limits
-        h.Cor_fFCS.Filter_Axis.XLim = [1,numel(PamMeta.fFCS.Decay_Hist)];
+        h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
+        h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
         
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)

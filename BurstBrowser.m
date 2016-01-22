@@ -3931,16 +3931,31 @@ CH = BurstTCSPCData.Channel(BurstData.Selected);
 MI = vertcat(MI{:});
 CH = vertcat(CH{:});
 
-hMI = cell(6,1);
-for i = 1:6 %%% 6 Channels (GG1,GG2,GR1,GR2,RR1,RR2)
+% read number of channels and compute microtime histograms
+NChan = numel(unique(CH));
+hMI = cell(NChan,1);
+for i = 1:NChan %%% 6 Channels (GG1,GG2,GR1,GR2,RR1,RR2)
     hMI{i} = histc(MI(CH == i),0:(BurstData.FileInfo.MI_Bins-1));
 end
 
 Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
 
-species = SelectedSpeciesName;
-newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '.mi'];
-save(newfilename, 'hMI', 'species');
+% assign donor/fret/acceptor channels back to routing/detector
+MIPattern = cell(0);
+for i = 1:numel(hMI)
+    MIPattern{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)} = hMI{i};
+end
+
+% save
+FileName = BurstData.SpeciesNames{BurstData.SelectedSpecies};
+Path = fileparts(BurstData.FileName);
+[~, FileName, ~] = fileparts(FileName);
+[File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
+if all(File==0)
+    return
+end
+save(fullfile(Path,File),'MIPattern');
+
 Progress(1,h.Progress_Axes,h.Progress_Text);
 h.Progress_Text.String = BurstData.DisplayName;
 
