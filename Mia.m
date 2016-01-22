@@ -4188,7 +4188,9 @@ for i=1:2
                 h.Mia_Image.Settings.Correction_Subtract_Pixel_Text.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Frames.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Frames_Text.Visible='on';
-                Box=[str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+                Box=[str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String),... 
+                     str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String),...
+                     str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
                  
                 %%% Forces averaging sizes into bounds
                 if any(Box<1) || any(Box>size(MIAData.Data{i,2}))
@@ -4301,7 +4303,7 @@ for i=Channel
             %%% Calculates mean of both subregions
             Mean1=filter2(Filter1,Data(:,:,j));
             Mean2=filter2(Filter2,Data(:,:,j));
-            %%% Calculates population variance for both subregions                  (sample2population var)
+            %%% Calculates population variance for both subregions (sample2population var)
             Var1=(filter2(Filter1,Data(:,:,j).^2)-Mean1.^2)*(Var_SubSub^2/(Var_SubSub^2-1));
             Var2=(filter2(Filter2,Data(:,:,j).^2)-Mean2.^2)*((Var_Sub^2)/(Var_Sub^2-1));
             %%% Discards samples with too low\high variance
@@ -4326,12 +4328,15 @@ for i=Channel
     
     %%% Removes pixels, if invalid pixels were used for averaging
     if h.Mia_Image.Settings.Correction_Add.Value==5 || h.Mia_Image.Settings.Correction_Subtract.Value==4
+        % you add the moving average or subtract the moving average
         if h.Mia_Image.Settings.Correction_Add.Value==5
+            % you add the moving average
             Box1=[str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
         else
             Box1=[1 1];
         end
         if h.Mia_Image.Settings.Correction_Subtract.Value==4
+            % you subtract the moving average
             Box2=[str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
         else
             Box2=[1 1];
