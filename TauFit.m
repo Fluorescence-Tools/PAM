@@ -695,7 +695,7 @@ if exist('ph','var')
             h.BackgroundInclusion_checkbox = uicontrol(...
                 'Parent',h.PIEChannel_Panel,...
                 'Style','checkbox',...
-                'Tag','PreFit_Button',...
+                'Tag','BackgroundInclusion_checkbox',...
                 'Units','normalized',...
                 'BackgroundColor', Look.Back,...
                 'ForegroundColor', Look.Fore,...
@@ -704,6 +704,19 @@ if exist('ph','var')
                 'ToolTipString','Includes a static scatter contribution into the fit. The contribution is estimated from background countrate and burst duration.',...
                 'Value',1,...
                 'Callback',[]);
+            %%% checkbox to include the channel in lifetime fitting
+            h.IncludeChannel_checkbox = uicontrol(...
+                'Parent',h.PIEChannel_Panel,...
+                'Style','checkbox',...
+                'Tag','IncludeChannel_checkbox',...
+                'Units','normalized',...
+                'BackgroundColor', Look.Back,...
+                'ForegroundColor', Look.Fore,...
+                'Position',[0.55 0.6 0.75 0.1],...
+                'String','fit channel',...
+                'ToolTipString','Include the channel during burstwise fitting.',...
+                'Value',UserValues.TauFit.IncludeChannel(1),...
+                'Callback',@IncludeChannel);
             %%% Button tostart fitting
             h.BurstWiseFit_Button = uicontrol(...
                 'Parent',h.PIEChannel_Panel,...
@@ -1253,10 +1266,11 @@ function Update_Plots(obj,~)
 global UserValues TauFitData
 h = guidata(findobj('Tag','TauFit'));
 
-if strcmp(TauFitData.Who, 'BurstWise')
+if strcmp(TauFitData.Who, 'Burstwise')
     % if burstwise fitting is done, user is not allowed to normalize the
     % constant offset of the scatter pattern
     h.NormalizeScatter_Menu.Value = 0;
+    h.IncludeChannel_checkbox.Value = UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value);
 end
 
 % How did we get here?
@@ -1297,7 +1311,15 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.Plots.Scat_Par.YData = TauFitData.hScat_Par{chan};
     h.Plots.Scat_Per.YData = TauFitData.hScat_Per{chan};
     h.Microtime_Plot.XLim = [min([TauFitData.XData_Par{chan}*TACtoTime TauFitData.XData_Per{chan}*TACtoTime]) max([TauFitData.XData_Par{chan}*TACtoTime TauFitData.XData_Per{chan}*TACtoTime])];
-    h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}]) 10/9*max([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}])];
+    try
+        h.Microtime_Plot.YLim = [min([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}]) 10/9*max([TauFitData.hMI_Par{chan}; TauFitData.hMI_Per{chan}])];
+    catch
+        % if there is no data, disable channel and stop
+        h.IncludeChannel_checkbox.Value = 0;
+        UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = 0;
+        LSUserValues(1);
+        return
+    end
     %%% Define the Slider properties
     %%% Values to consider:
     %%% The length of the shortest PIE channel
@@ -2699,7 +2721,7 @@ end
 if strcmp(TauFitData.Who, 'TauFit')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
         '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
-else% if strcmp(TauFitData.Who, 'BurstWise') or strcmp(TauFitData.Who, 'BurstBrowser')
+else% if strcmp(TauFitData.Who, 'Burstwise') or strcmp(TauFitData.Who, 'BurstBrowser')
     a = ['_Decay_' h.ChannelSelect_Popupmenu.String{h.ChannelSelect_Popupmenu.Value}];
 end
 
@@ -3229,37 +3251,11 @@ switch TauFitData.BAMethod
         background{1} = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
         background{2} = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
         
-        %% Prepare the data
-        for chan = 1:2
-            % Anders, I just read the data from the plots to avoid confusion.
-            h.ChannelSelect_Popupmenu.Value = chan;
-            Update_Plots(obj)
-            %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
-            %%% Changed this back so a better correction of the IRF can be
-            %%% performed, for which the total IRF pattern is needed!
-            %%% Apply the shift to the parallel IRF channel
-            hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
-            %%% Apply the shift to the perpendicular IRF channel
-            hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-            IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-            IRFPattern = IRFPattern'./sum(IRFPattern);
-            %%% additional processing of the IRF to remove constant background
-            IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-            Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
-            
-            %Irf = Irf-min(Irf(Irf~=0));
-            Irf = Irf./sum(Irf);
-            IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
-            %%% Scatter is still read from plots
-            Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
-            SCATTER{chan} = Scatter./sum(Scatter);
-            Length{chan} = numel(Scatter)-1;
-        end
-        
         Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         %%% Process in Chunk
         %%% Prepare Chunks:
-        parts = (floor(linspace(1,numel(Microtime),21)));parts(1) = 0;
+        parts = (floor(linspace(1,numel(Microtime),21)));
+        parts(1) = 0;
         %%% Preallocate lifetime array
         lifetime{1} = cell(numel(parts)-1,1);
         lifetime{2} = cell(numel(parts)-1,1);
@@ -3268,112 +3264,149 @@ switch TauFitData.BAMethod
         range_tau = 9.98;
         steps_tau = 2111;
         range = mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2;
+        %% Prepare the data
         for chan = 1:2
-            [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
-            T = TauFitData.TACChannelWidth*Length{chan};
-            GAMMA = T./tau;
-            p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
-            %p = p(1:length+1,:);
-            c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
-            c(c<0) = 0;
-            z = sum(c,1);
-            c = c./z(ones(size(c,1),1),:);
-            c = c(1:Length{chan}+1,:);
-            %         model = (1-background{chan})*c + background{chan};
-            %         z = sum(model,1);
-            %         model = model./z(ones(size(model,1),1),:);
-            %         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
-            model = c;
-            z = sum(model,1);
-            model = model./z(ones(size(model,1),1),:);
-            %%% Rebin to improve speed
-            model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
-            for i = 1:size(model,2)
-                model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+            if UserValues.TauFit.IncludeChannel(chan)
+                % Anders, I just read the data from the plots to avoid confusion.
+                h.ChannelSelect_Popupmenu.Value = chan;
+                Update_Plots(obj)
+                %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
+                %%% Changed this back so a better correction of the IRF can be
+                %%% performed, for which the total IRF pattern is needed!
+                %%% Apply the shift to the parallel IRF channel
+                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %%% Apply the shift to the perpendicular IRF channel
+                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+                IRFPattern = IRFPattern'./sum(IRFPattern);
+                %%% additional processing of the IRF to remove constant background
+                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                
+                %Irf = Irf-min(Irf(Irf~=0));
+                Irf = Irf./sum(Irf);
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                %%% Scatter is still read from plots
+                Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
+                SCATTER{chan} = Scatter./sum(Scatter);
+                Length{chan} = numel(Scatter)-1;
+                
+                [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
+                T = TauFitData.TACChannelWidth*Length{chan};
+                GAMMA = T./tau;
+                p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
+                %p = p(1:length+1,:);
+                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                c(c<0) = 0;
+                z = sum(c,1);
+                c = c./z(ones(size(c,1),1),:);
+                c = c(1:Length{chan}+1,:);
+                %         model = (1-background{chan})*c + background{chan};
+                %         z = sum(model,1);
+                %         model = model./z(ones(size(model,1),1),:);
+                %         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+                model = c;
+                z = sum(model,1);
+                model = model./z(ones(size(model,1),1),:);
+                %%% Rebin to improve speed
+                model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
+                for i = 1:size(model,2)
+                    model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                end
+                model = model_dummy;
+                z = sum(model,1);model = model./z(ones(size(model,1),1),:);
+                MODEL{chan} = model;
+                %%% Rebin SCATTER pattern
+                SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);
+                SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
             end
-            model = model_dummy;
-            z = sum(model,1);model = model./z(ones(size(model,1),1),:);
-            MODEL{chan} = model;
-            %%% Rebin SCATTER pattern
-            SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);
-            SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
         end
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));
             DUR = duration((parts(j)+1):parts(j+1));
-            %%% Create array of histogrammed microtimes
-            Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
-            Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-            Par2 = zeros(numel(MI),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
-            Per2 = zeros(numel(MI),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
-            parfor i = 1:numel(MI)
-                Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
-                Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
-                Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
-                Per2(i,:) = histc(MI{i}(CH{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+            if UserValues.TauFit.IncludeChannel(1)
+                %%% Create array of histogrammed microtimes
+                Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+                Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+                parfor i = 1:numel(MI)
+                    Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+                    Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+                end                
+                Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
+                
+                %%% Shift Microtimes
+                Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});                
+                Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+                clear Par1 Per1
+                
+                %%% Rebin to improve speed
+                Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
+                parfor i = 1:numel(MI)
+                    Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                end
+                Mic{1} = Mic1'; clear Mic1;
             end
-            
-            Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
-            Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
-            
-            %%% Shift Microtimes
-            Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-            Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
-            Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-            
-            Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
-            clear Par1 Per1
-            
-            Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-            Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
-            Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-            
-            Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
-            clear Par2 Per2
-            
-            %%% Rebin to improve speed
-            Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-            Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
-            
-            parfor i = 1:numel(MI)
-                Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
-                Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+            if UserValues.TauFit.IncludeChannel(2)
+                %%% Create array of histogrammed microtimes
+                Par2 = zeros(numel(MI),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
+                Per2 = zeros(numel(MI),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
+                parfor i = 1:numel(MI)
+                    Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+                    Per2(i,:) = histc(MI{i}(CH{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+                end
+                Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
+                
+                %%% Shift Microtimes
+                Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
+                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
+                Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+                clear Par2 Per2
+                
+                %%% Rebin to improve speed
+                Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
+                
+                parfor i = 1:numel(MI)
+                    Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                end
+                Mic{2} = Mic2'; clear Mic2;
             end
-            
-            Mic{1} = Mic1'; clear Mic1;
-            Mic{2} = Mic2'; clear Mic2;
             
             %% Fitting...
             %%% Prepare the fit inputs
             lt = zeros(numel(MI),2);
             for chan = 1:2
-                %%% Calculate Background fraction
-                bg = DUR.*background{chan};
-                signal = sum(Mic{chan},1)';
-                
-                use_bg = h.BackgroundInclusion_checkbox.Value;
-                if use_bg == 1
-                    fraction_bg = bg./signal;
-                    fraction_bg(fraction_bg>1) = 1;
-                else
-                    fraction_bg = zeros(size(bg,1),size(bg,2));
-                end
-                
-                scat = SCATTER{chan};
-                model = MODEL{chan};
-                parfor i = 1:size(Mic{chan},2)
-                    if fraction_bg(i) == 1
-                        lt(i,chan) = NaN;
+                if UserValues.TauFit.IncludeChannel(chan)
+                    %%% Calculate Background fraction
+                    bg = DUR.*background{chan};
+                    signal = sum(Mic{chan},1)';
+                    
+                    use_bg = h.BackgroundInclusion_checkbox.Value;
+                    if use_bg == 1
+                        fraction_bg = bg./signal;
+                        fraction_bg(fraction_bg>1) = 1;
                     else
-                        %%% Implementation of burst-wise background correction
-                        %%% Calculate Fractions of Background and Signal
-                        % if 50% of signal is background, fraction_bg in the following model will be approximately 0.5
-                        modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                        [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                        fraction_bg = zeros(size(bg,1),size(bg,2));
                     end
+                    
+                    scat = SCATTER{chan};
+                    model = MODEL{chan};
+                    parfor i = 1:size(Mic{chan},2)
+                        if fraction_bg(i) == 1
+                            lt(i,chan) = NaN;
+                        else
+                            %%% Implementation of burst-wise background correction
+                            %%% Calculate Fractions of Background and Signal
+                            % if 50% of signal is background, fraction_bg in the following model will be approximately 0.5
+                            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
+                            [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                        end
+                    end
+                    lifetime{j} = lt;
                 end
-                lifetime{j} = lt;
             end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
@@ -3382,6 +3415,7 @@ switch TauFitData.BAMethod
         Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
         idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
         idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+        % will be zeros if lifetime is not included
         BurstData.DataArray(:,idx_tauGG) = lifetime(:,1);
         BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
     case {3,4}
@@ -3407,37 +3441,12 @@ switch TauFitData.BAMethod
         background{1} = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
         background{2} = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
         background{3} = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-        %% Prepare the data
-        for chan = 1:3
-            % call Update_plots to get the correctly shifted Scatter and IRF directly from the plot
-            h.ChannelSelect_Popupmenu.Value = chan;
-            Update_Plots(obj)
-            %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
-            %%% Changed this back so a better correction of the IRF can be
-            %%% performed, for which the total IRF pattern is needed!
-            %%% Apply the shift to the parallel IRF channel
-            hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
-            %%% Apply the shift to the perpendicular IRF channel
-            hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-            IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-            IRFPattern = IRFPattern'./sum(IRFPattern);
-            %%% additional processing of the IRF to remove constant background
-            IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-            Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
-            
-            %Irf = Irf-min(Irf(Irf~=0));
-            Irf = Irf./sum(Irf);
-            IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
-            %%% Scatter is still read from the plots
-            Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
-            SCATTER{chan} = Scatter./sum(Scatter);
-            Length{chan} = numel(Scatter)-1;
-        end
         
         Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         %%% Process in Chunk
         %%% Prepare Chunks:
-        parts = (floor(linspace(1,numel(Microtime),21)));parts(1) = 0;
+        parts = (floor(linspace(1,numel(Microtime),21)));
+        parts(1) = 0;
         %%% Preallocate lifetime array
         lifetime{1} = cell(numel(parts)-1,1);
         lifetime{2} = cell(numel(parts)-1,1);
@@ -3447,124 +3456,169 @@ switch TauFitData.BAMethod
         range_tau = 9.98;
         steps_tau = 2111;
         range = mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2;
+        %% Prepare the data
         for chan = 1:3
-            [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
-            T = TauFitData.TACChannelWidth*Length{chan};
-            GAMMA = T./tau;
-            p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
-            %p = p(1:length+1,:);
-            c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
-            c(c<0) = 0;
-            z = sum(c,1);
-            c = c./z(ones(size(c,1),1),:);
-            c = c(1:Length{chan}+1,:);
-            %         model = (1-background{chan})*c + background{chan};
-            %         z = sum(model,1);
-            %         model = model./z(ones(size(model,1),1),:);
-            %         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
-            model = c;
-            z = sum(model,1);
-            model = model./z(ones(size(model,1),1),:);
-            %%% Rebin to improve speed
-            model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
-            for i = 1:size(model,2)
-                model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+            if UserValues.TauFit.IncludeChannel(chan)
+                % call Update_plots to get the correctly shifted Scatter and IRF directly from the plot
+                h.ChannelSelect_Popupmenu.Value = chan;
+                Update_Plots(obj)
+                %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
+                %%% Changed this back so a better correction of the IRF can be
+                %%% performed, for which the total IRF pattern is needed!
+                %%% Apply the shift to the parallel IRF channel
+                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %%% Apply the shift to the perpendicular IRF channel
+                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+                IRFPattern = IRFPattern'./sum(IRFPattern);
+                %%% additional processing of the IRF to remove constant background
+                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                
+                %Irf = Irf-min(Irf(Irf~=0));
+                Irf = Irf./sum(Irf);
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                %%% Scatter is still read from the plots
+                Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
+                SCATTER{chan} = Scatter./sum(Scatter);
+                Length{chan} = numel(Scatter)-1;
+                
+                [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
+                T = TauFitData.TACChannelWidth*Length{chan};
+                GAMMA = T./tau;
+                p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
+                %p = p(1:length+1,:);
+                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                c(c<0) = 0;
+                z = sum(c,1);
+                c = c./z(ones(size(c,1),1),:);
+                c = c(1:Length{chan}+1,:);
+                %         model = (1-background{chan})*c + background{chan};
+                %         z = sum(model,1);
+                %         model = model./z(ones(size(model,1),1),:);
+                %         model = (1-scatter{chan})*model + scatter{chan}*SCATTER{chan}(ones(steps_tau+1,1),:)';
+                model = c;
+                z = sum(model,1);
+                model = model./z(ones(size(model,1),1),:);
+                %%% Rebin to improve speed
+                model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
+                for i = 1:size(model,2)
+                    model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                end
+                model = model_dummy;
+                z = sum(model,1);model = model./z(ones(size(model,1),1),:);
+                MODEL{chan} = model;
+                %%% Rebin SCATTER pattern
+                SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
             end
-            model = model_dummy;
-            z = sum(model,1);model = model./z(ones(size(model,1),1),:);
-            MODEL{chan} = model;
-            %%% Rebin SCATTER pattern
-            SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
         end
-        
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));
             DUR = duration((parts(j)+1):parts(j+1));
-            %%% Create array of histogrammed microtimes
-            Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
-            Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-            Par2 = zeros(numel(MI),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
-            Per2 = zeros(numel(MI),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
-            Par3 = zeros(numel(MI),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
-            Per3 = zeros(numel(MI),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
-            
-            parfor i = 1:numel(MI)
-                Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
-                Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
-                Par2(i,:) = histc(MI{i}(CH{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
-                Per2(i,:) = histc(MI{i}(CH{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
-                Par3(i,:) = histc(MI{i}(CH{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
-                Per3(i,:) = histc(MI{i}(CH{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
+            if UserValues.TauFit.IncludeChannel(1)
+                %%% Create array of histogrammed microtimes
+                Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+                Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+                parfor i = 1:numel(MI)
+                    Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+                    Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+                end
+                Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
+                %%% Shift Microtimes
+                Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                
+                Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
+                clear Par1 Per
+                
+                %%% Rebin to improve speed
+                Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
+                parfor i = 1:numel(MI)
+                    Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                end
+                Mic{1} = Mic1'; clear Mic1;
             end
-            
-            Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
-            Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
-            Mic{3} = zeros(numel(MI),numel((TauFitData.StartPar{3}+1):TauFitData.Length{3}));
-            
-            %%% Shift Microtimes
-            Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-            Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
-            Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-            
-            Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
-            clear Par1 Per
-            
-            Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-            Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
-            Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-            
-            Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
-            clear Par2 Per2
-            
-            Par3 = Par3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
-            Per3 = circshift(Per3,[0,TauFitData.ShiftPer{3}]);
-            Per3 = Per3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
-            
-            Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
-            clear Par3 Per3
-            
-            %%% Rebin to improve speed
-            Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-            Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
-            Mic3 = zeros(numel(MI),floor(size(Mic{3},2)/new_bin_width));
-            parfor i = 1:numel(MI)
-                Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
-                Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
-                Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
+            if UserValues.TauFit.IncludeChannel(2)
+                %%% Create array of histogrammed microtimes
+                Par2 = zeros(numel(MI),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
+                Per2 = zeros(numel(MI),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
+                parfor i = 1:numel(MI)
+                    Par2(i,:) = histc(MI{i}(CH{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
+                    Per2(i,:) = histc(MI{i}(CH{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
+                end
+                Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
+                %%% Shift Microtimes
+                Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
+                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
+                
+                Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
+                clear Par2 Per2
+                %%% Rebin to improve speed
+                Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
+                parfor i = 1:numel(MI)
+                    Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                end
+                Mic{2} = Mic2'; clear Mic2;
             end
-            Mic{1} = Mic1'; clear Mic1;
-            Mic{2} = Mic2'; clear Mic2;
-            Mic{3} = Mic3'; clear Mic3;
-            
+            if UserValues.TauFit.IncludeChannel(3)
+                %%% Create array of histogrammed microtimes
+                Par3 = zeros(numel(MI),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
+                Per3 = zeros(numel(MI),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
+                parfor i = 1:numel(MI)
+                    Par3(i,:) = histc(MI{i}(CH{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
+                    Per3(i,:) = histc(MI{i}(CH{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
+                end
+                Mic{3} = zeros(numel(MI),numel((TauFitData.StartPar{3}+1):TauFitData.Length{3}));
+                
+                %%% Shift Microtimes
+                Par3 = Par3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
+                Per3 = circshift(Per3,[0,TauFitData.ShiftPer{3}]);
+                Per3 = Per3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
+                
+                Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
+                clear Par3 Per3
+                
+                %%% Rebin to improve speed
+                
+                Mic3 = zeros(numel(MI),floor(size(Mic{3},2)/new_bin_width));
+                parfor i = 1:numel(MI)
+                    Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
+                end
+                Mic{3} = Mic3'; clear Mic3;
+            end
             %% Fit
             %%% Preallocate fit outputs
             lt = zeros(numel(MI),3);
             for chan = 1:3
-                %%% Calculate Background fraction
-                bg = DUR.*background{chan};
-                signal = sum(Mic{chan},1)';
-                
-                use_bg = h.BackgroundInclusion_checkbox.Value;
-                if use_bg == 1
-                    fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
-                else
-                    fraction_bg = zeros(size(bg,1),size(bg,2));
-                end
-                
-                scat = SCATTER{chan};
-                model = MODEL{chan};
-                parfor i = 1:size(Mic{chan},2)
-                    if fraction_bg(i) == 1
-                        lt(i,chan) = NaN;
+                if UserValues.TauFit.IncludeChannel(chan)
+                    %%% Calculate Background fraction
+                    bg = DUR.*background{chan};
+                    signal = sum(Mic{chan},1)';
+                    
+                    use_bg = h.BackgroundInclusion_checkbox.Value;
+                    if use_bg == 1
+                        fraction_bg = bg./signal;fraction_bg(fraction_bg>1) = 1;
                     else
-                        %%% Implementation of burst-wise background correction
-                        %%% Calculate Fractions of Background and Signal
-                        modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                        [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                        fraction_bg = zeros(size(bg,1),size(bg,2));
                     end
+                    
+                    scat = SCATTER{chan};
+                    model = MODEL{chan};
+                    parfor i = 1:size(Mic{chan},2)
+                        if fraction_bg(i) == 1
+                            lt(i,chan) = NaN;
+                        else
+                            %%% Implementation of burst-wise background correction
+                            %%% Calculate Fractions of Background and Signal
+                            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
+                            [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                        end
+                    end
+                    lifetime{j} = lt;
                 end
-                lifetime{j} = lt;
             end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
@@ -3574,6 +3628,7 @@ switch TauFitData.BAMethod
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
         idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
         idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+        % will be zeros if lifetime is not included
         BurstData.DataArray(:,idx_tauBB) = lifetime(:,1);
         BurstData.DataArray(:,idx_tauGG) = lifetime(:,2);
         BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
@@ -3797,6 +3852,13 @@ UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
 UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
+
+function IncludeChannel(obj,~)
+global UserValues
+h = guidata(findobj('Tag','TauFit'));
+LSUserValues(0)
+UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = h.IncludeChannel_checkbox.Value;
+LSUserValues(1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
