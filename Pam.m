@@ -8432,10 +8432,15 @@ switch obj
         h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(PamMeta.fFCS.Decay_Hist)];
         
         %%% calculate FLCS filters
-        %%% problem: only those bins where Decay is not zero are to be
-        %%% used!
+        %%% problem: only those bins where Decay and all microtime patterns are 
+        %%% NOT zero are to be used!
+        %%% all zero bins filter values should just be zero (so they don't
+        %%% contribute to the correlation function)
         %%% solution: perform calculations only on "valid" bins
         valid = (PamMeta.fFCS.Decay_Hist ~= 0);
+        for i = active
+            valid = valid & (PamMeta.fFCS.MI_Hist{i} ~= 0);
+        end
         Decay = PamMeta.fFCS.Decay_Hist(valid);
         diag_Decay = zeros(numel(Decay));
         for i = 1:numel(Decay)

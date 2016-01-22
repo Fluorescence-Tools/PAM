@@ -43,6 +43,10 @@ h.TauFit = figure(...
 whitebg(Look.Axes);
 %%% Changes background; must be called after whitebg
 h.TauFit.Color=Look.Back;
+%%% menu
+h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
+h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','fitted microtime pattern',...
+    'Callback',@Export);
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
 h.TauFit_Panel = uibuttongroup(...
@@ -1065,6 +1069,11 @@ if ~strcmp(TauFitData.Who, 'TauFit')
     Update_Plots(obj)
 end
 
+% If burstwise fitting is performed, we don't need the export menu
+if strcmp(TauFitData.Who,'Burstwise')
+    h.Menu.Export_Menu.Visible = 'off';
+end
+
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
 if exist('ph','var')
     if isequal(obj, ph.Database.Burst)
@@ -1127,26 +1136,54 @@ if isempty(obj) || obj == h.LoadData_Button
     %%% find the number of the selected PIE channels
     PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
     PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
-    % PIE Channels have to be ordered correctly
+    % compare PIE channel selection to burst search selections for
+    % consistency between burstwise/ensemble
+    % (String comparison does not require correct ordering of PIE channels)
     if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
-        if PIEChannel_Par+PIEChannel_Per == 3
+        if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
+                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
             chan = 1;
-        elseif PIEChannel_Par+PIEChannel_Per == 11
+        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,1)) &&...
+                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,2)))
             chan = 2;
         else %%% Set channel to 4 if no MFD channel was selected
             chan = 4;
         end
     elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
-        if PIEChannel_Par+PIEChannel_Per == 3
+        if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
+                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
             chan = 1;
-        elseif PIEChannel_Par+PIEChannel_Per == 15
+        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,1)) &&...
+                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,2)))
             chan = 2;
-        elseif PIEChannel_Par+PIEChannel_Per == 23
+        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,1)) &&...
+                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,2)))
             chan = 3;
         else %%% Set channel to 4 if no MFD channel was selected
             chan = 4;
         end
     end
+    % old method:
+%     % PIE Channels have to be ordered correctly 
+%     if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
+%         if PIEChannel_Par+PIEChannel_Per == 3
+%             chan = 1;
+%         elseif PIEChannel_Par+PIEChannel_Per == 11
+%             chan = 2;
+%         else %%% Set channel to 4 if no MFD channel was selected
+%             chan = 4;
+%         end
+%     elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
+%         if PIEChannel_Par+PIEChannel_Per == 3
+%             chan = 1;
+%         elseif PIEChannel_Par+PIEChannel_Per == 15
+%             chan = 2;
+%         elseif PIEChannel_Par+PIEChannel_Per == 23
+%             chan = 3;
+%         else %%% Set channel to 4 if no MFD channel was selected
+%             chan = 4;
+%         end
+%     end
     TauFitData.chan = chan;
     %%% Read out Photons and Histogram
     MI_Par = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)},...
@@ -2429,18 +2466,26 @@ switch obj
             plot(x,r_meas-r_fit);
             p1.Position = [0.05 0.3 0.9 0.65];
             p2.Position = [0.05 0.1 0.9 0.15];
+            % store FitResult TauFitData also for use in export
+            TauFitData.FitResult = [Decay_par;Decay_per];
         else
             IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
             IRFPat = IRFPat./max(IRFPat).*max(Decay);
             h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
             h.Plots.IRFResult.YData = IRFPat;
+            % store FitResult TauFitData also for use in export
+            if ignore > 1
+                TauFitData.FitResult = [FitFun_ignore, FitFun];
+            else
+                TauFitData.FitResult = FitFun;
+            end
         end
         h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
         h.Plots.DecayResult.YData = Decay;
         h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
         h.Plots.FitResult.YData = FitFun;
-        
+
         h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
         h.Plots.DecayResult_ignore.YData = Decay_ignore;
         h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
@@ -3502,7 +3547,7 @@ handlesPam = guidata(hPam);
 handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Here are functions used for the fits  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [tau,Istar] = LifetimeFitMLE(SIG,model,range)
 %%% Inputs:
@@ -3696,6 +3741,9 @@ StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;r
 startpar = StartPar{model};
 names = Parameters{model};
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Updates UserValues on settings change  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateOptions(obj,~)
 h = guidata(obj);
 global UserValues TauFitData
@@ -3710,3 +3758,78 @@ UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
 UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Export(obj,~)
+global UserValues TauFitData FileInfo PamMeta
+h = guidata(findobj('Tag','TauFit'));
+switch obj
+    case h.Menu.Export_MIPattern
+        %%% export the fitted microtime pattern for use in fFCS filter
+        %%% generation
+        
+        %%% update the plot by evaluating the model with current parameter
+        %%% values
+        % fix all parameters and store fixed state
+        fixed_old = h.FitPar_Table.Data(1:end-1,4);
+        h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
+        % evaluate
+        Start_Fit(h.Fit_Button,[]);
+        % reset table
+        h.FitPar_Table.Data(1:end-1,4) = fixed_old;
+        
+        %%% read out selected PIE channels
+        % two cases to consider:
+        % - identical channels selected (only single PIE channel fit)
+        % - two channels selected (then only works for anisotropy fit)
+        if (h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value} == h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value})
+            % check that no anisotropy model is selected
+            if ~isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                disp('Select another model (no anisotropy).');
+                return;
+            end
+            % single PIE channel selected
+            PIEchannel = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+            PIEchannel = find(strcmp(UserValues.PIE.Name,PIEchannel)); % convert name to number
+            
+            % reconstruct mi pattern
+            mi_pattern = zeros(FileInfo.MI_Bins,1);
+            mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+            
+            % define output
+            MIPattern = cell(0);
+            MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
+            
+        else % two different channels selected
+            % check if anisotropy model is selected 
+            if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                disp('Select an anisotropy model.');
+                return;
+            end
+            % two PIE channels selected
+            PIEchannel1 = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+            PIEchannel1 = find(strcmp(UserValues.PIE.Name,PIEchannel1)); % convert name to number
+            PIEchannel2 = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
+            PIEchannel2 = find(strcmp(UserValues.PIE.Name,PIEchannel2)); % convert name to number
+            
+            % reconstruct mi patterns
+            mi_pattern1 = zeros(FileInfo.MI_Bins,1);
+            mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
+            mi_pattern2 = zeros(FileInfo.MI_Bins,1);
+            mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+            
+            % define output
+            MIPattern = cell(0);
+            MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
+            MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
+        end
+        % save
+        [~, FileName, ~] = fileparts(FileInfo.FileName{1});
+        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(FileInfo.Path,FileName));
+        if all(File==0)
+            return
+        end
+        save(fullfile(Path,File),'MIPattern');
+end
