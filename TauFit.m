@@ -99,9 +99,9 @@ hold on;
 h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5]);
 h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3]);
 h.Plots.Decay_Sum = plot([0 1],[0 0],'-k');
-h.Plots.Decay_Par = plot([0 1],[0 0],'-g');
+h.Plots.Decay_Par = plot([0 1],[0 0],'-b');
 h.Plots.Decay_Per = plot([0 1],[0 0],'-r');
-h.Plots.IRF_Par = plot([0 1],[0 0],'.g');
+h.Plots.IRF_Par = plot([0 1],[0 0],'.b');
 h.Plots.IRF_Per = plot([0 1],[0 0],'.r');
 h.Plots.FitPreview = plot([0 1],[0 0],'k');
 h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2);
@@ -161,8 +161,6 @@ h.Result_Plot.YLabel.Color = Look.Fore;
 h.Result_Plot.YLabel.String = 'Intensity [counts]';
 h.Result_Plot.XGrid = 'on';
 h.Result_Plot.YGrid = 'on';
-linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
-%h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
 h.Plots.DecayResult = plot([0 1],[0 0],'-k');
@@ -170,14 +168,42 @@ h.Plots.DecayResult_ignore = plot([0 1],[0 0],'Color',[0.4 0.4 0.4],'Visible','o
 h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2);
 h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off');
 h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6]);
+
+%%% Result Plot (Replaces Microtime Plot after fit is done)
+h.Result_Plot_Aniso = axes(...
+    'Parent',h.TauFit_Panel,...
+    'Units','normalized',...
+    'Position',[0.05 0.075 0.9 0.775],...
+    'Tag','Result_Plot_Aniso',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'Box','on',...
+    'Visible','on');
+
+h.Result_Plot_Aniso.XLim = [0 1];
+h.Result_Plot_Aniso.YLim = [0 1];
+h.Result_Plot_Aniso.XLabel.Color = Look.Fore;
+h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
+h.Result_Plot_Aniso.YLabel.Color = Look.Fore;
+h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
+h.Result_Plot_Aniso.XGrid = 'on';
+h.Result_Plot_Aniso.YGrid = 'on';
+hold on;
+h.Plots.AnisoResult = plot([0 1],[0 0],'-k');
+h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2);
+
+linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
+
 %%% dummy panel to hide plots
 h.HidePanel = uibuttongroup(...
     'Visible','off',...
     'Parent',h.TauFit_Panel,...
     'Tag','HidePanel');
 
-%%% Hide Result Plot
+%%% Hide Result Plot and Result Aniso Plot
 h.Result_Plot.Parent = h.HidePanel;
+h.Result_Plot_Aniso.Parent = h.HidePanel;
+
 %% Sliders
 %%% Define the container
 h.Slider_Panel = uibuttongroup(...
@@ -1789,6 +1815,7 @@ switch obj
                 x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
                 lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
                 ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -1835,11 +1862,13 @@ switch obj
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                
                 %%% Convert Fraction from Area Fraction to Amplitude Fraction
                 %%% (i.e. correct for brightness)
-                amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
-                amp1 = amp1./(amp1+amp2);
-                FitResult{3} = amp1;
+                % amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
+                % amp1 = amp1./(amp1+amp2);
+                % FitResult{3} = amp1;
+                
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -1912,12 +1941,14 @@ switch obj
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
+                
                 %%% Convert Fraction from Area Fraction to Amplitude Fraction
                 %%% (i.e. correct for brightness)
-                amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
-                amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
-                FitResult{4} = amp1;
-                FitResult{5} = amp2;
+                % amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
+                % amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
+                % FitResult{4} = amp1;
+                % FitResult{5} = amp2;
+                
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
@@ -2262,11 +2293,12 @@ switch obj
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
+                
                 %%% Convert Fraction from Area Fraction to Amplitude Fraction
                 %%% (i.e. correct for brightness)
-                amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
-                amp1 = amp1./(amp1+amp2);
-                FitResult{3} = amp1;
+                % amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
+                % amp1 = amp1./(amp1+amp2);
+                % FitResult{3} = amp1;
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
@@ -2417,10 +2449,11 @@ switch obj
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
         h.Plots.IRFResult.Visible = 'on';
+        h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
         
         % plot chi^2 on graph
         if ~fit % plot only, chi2 was not calculated yet
-            chi2 = sum(wres.^2)./(numel(wres)-numel(x0));
+            chi2 = sum(wres(~isinf(wres)).^2)./(numel(wres)-numel(x0));
         end
         h.Result_Plot_Text.Visible = 'on';
         if UserValues.TauFit.use_weighted_residuals
@@ -2451,7 +2484,13 @@ switch obj
             h.Plots.IRFResult.Visible = 'off';
             ignore = 1;
             
-            %%% plot anisotropy also
+            %%% plot anisotropy data also
+            % unhide Result Aniso Plot
+            h.Result_Plot_Aniso.Parent = h.TauFit_Panel;
+            % change axes positions
+            h.Result_Plot.Position = [0.05 0.5 0.9 0.35];
+            h.Result_Plot_Aniso.Position = [0.05 0.075 0.9 0.35];
+            
             Decay_par = Decay(1:numel(Decay)/2);
             Decay_per = Decay(numel(Decay)/2+1:end);
             r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
@@ -2459,15 +2498,15 @@ switch obj
             Fit_per = FitFun(numel(Decay)/2+1:end);
             r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
             x = (1:numel(Decay)/2).*TACtoTime;
-            figure;
-            p1 = subplot(2,1,1);
-            plot(x,r_meas);hold on;plot(x,r_fit);
-            p2 = subplot(2,1,2);
-            plot(x,r_meas-r_fit);
-            p1.Position = [0.05 0.3 0.9 0.65];
-            p2.Position = [0.05 0.1 0.9 0.15];
+            % update plots
+            h.Plots.AnisoResult.XData = x;
+            h.Plots.AnisoResult.YData = r_meas;
+            h.Plots.FitAnisoResult.XData = x;
+            h.Plots.FitAnisoResult.YData = r_fit;
+            axis(h.Result_Plot_Aniso,'tight');
+            
             % store FitResult TauFitData also for use in export
-            TauFitData.FitResult = [Decay_par;Decay_per];
+            TauFitData.FitResult = [Fit_par; Fit_per];
         else
             IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
@@ -3763,7 +3802,7 @@ UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export(obj,~)
-global UserValues TauFitData FileInfo PamMeta
+global UserValues TauFitData FileInfo BurstData
 h = guidata(findobj('Tag','TauFit'));
 switch obj
     case h.Menu.Export_MIPattern
@@ -3781,53 +3820,104 @@ switch obj
         h.FitPar_Table.Data(1:end-1,4) = fixed_old;
         
         %%% read out selected PIE channels
-        % two cases to consider:
-        % - identical channels selected (only single PIE channel fit)
-        % - two channels selected (then only works for anisotropy fit)
-        if (h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value} == h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value})
-            % check that no anisotropy model is selected
-            if ~isempty(strfind(TauFitData.FitType,'Anisotropy'))
-                disp('Select another model (no anisotropy).');
-                return;
+        if strcmp(TauFitData.Who,'TauFit')
+            % we came here from Pam
+            
+            % two cases to consider:
+            % - identical channels selected (only single PIE channel fit)
+            % - two channels selected (then only works for anisotropy fit)
+            if (h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value} == h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value})
+                % check that no anisotropy model is selected
+                if ~isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                    disp('Select another model (no anisotropy).');
+                    return;
+                end
+                % single PIE channel selected
+                PIEchannel = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+                PIEchannel = find(strcmp(UserValues.PIE.Name,PIEchannel)); % convert name to number
+
+                % reconstruct mi pattern
+                mi_pattern = zeros(FileInfo.MI_Bins,1);
+                mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+
+                % define output
+                MIPattern = cell(0);
+                MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
+
+            else % two different channels selected
+                % check if anisotropy model is selected 
+                if isempty(strfind(TauFitData.FitType,'Anisotropy'))
+                    disp('Select an anisotropy model.');
+                    return;
+                end
+                % two PIE channels selected
+                PIEchannel1 = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+                PIEchannel1 = find(strcmp(UserValues.PIE.Name,PIEchannel1)); % convert name to number
+                PIEchannel2 = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
+                PIEchannel2 = find(strcmp(UserValues.PIE.Name,PIEchannel2)); % convert name to number
+
+                % reconstruct mi patterns
+                mi_pattern1 = zeros(FileInfo.MI_Bins,1);
+                mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
+                mi_pattern2 = zeros(FileInfo.MI_Bins,1);
+                mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+
+                % define output
+                MIPattern = cell(0);
+                MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
+                MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
             end
-            % single PIE channel selected
-            PIEchannel = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
-            PIEchannel = find(strcmp(UserValues.PIE.Name,PIEchannel)); % convert name to number
+            FileName = FileInfo.FileName{1};
+            Path = FileInfo.Path;
+        elseif strcmp(TauFitData.Who,'BurstBrowser')
+            % we came here from BurstBrowser
             
-            % reconstruct mi pattern
-            mi_pattern = zeros(FileInfo.MI_Bins,1);
-            mi_pattern(UserValues.PIE.From(PIEchannel) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult;
+            % the only option to consider here is an anisotropy fit
+            % (maybe implement later to only fit par or per channel)
             
-            % define output
-            MIPattern = cell(0);
-            MIPattern{UserValues.PIE.Detector(PIEchannel),UserValues.PIE.Router(PIEchannel)}=mi_pattern;
-            
-        else % two different channels selected
             % check if anisotropy model is selected 
             if isempty(strfind(TauFitData.FitType,'Anisotropy'))
                 disp('Select an anisotropy model.');
                 return;
             end
-            % two PIE channels selected
-            PIEchannel1 = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
-            PIEchannel1 = find(strcmp(UserValues.PIE.Name,PIEchannel1)); % convert name to number
-            PIEchannel2 = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
-            PIEchannel2 = find(strcmp(UserValues.PIE.Name,PIEchannel2)); % convert name to number
             
-            % reconstruct mi patterns
-            mi_pattern1 = zeros(FileInfo.MI_Bins,1);
-            mi_pattern1(UserValues.PIE.From(PIEchannel1) + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(1,:);
-            mi_pattern2 = zeros(FileInfo.MI_Bins,1);
-            mi_pattern2(UserValues.PIE.From(PIEchannel2) - TauFitData.ShiftPer{TauFitData.chan} + ((TauFitData.StartPar{TauFitData.chan}+1):TauFitData.Length{TauFitData.chan})) = TauFitData.FitResult(2,:);
+            chan = h.ChannelSelect_Popupmenu.Value;
+            switch BurstData.BAMethod
+                case {1,2}
+                    switch chan
+                        case 1 % GG
+                            Par = 1; Per = 2;
+                        case 2 % RR
+                            Par = 5; Per = 6;
+                    end
+                case {3,4}
+                    switch chan
+                        case 1 % BB
+                            Par = 1; Per = 2;
+                        case 2 % GG
+                            Par = 7; Per = 8;
+                        case 3 % RR
+                            Par = 11; Per = 12;
+                    end
+            end
             
+            % reconstruct mi pattern
+            mi_pattern1 = zeros(BurstData.FileInfo.MI_Bins,1);
+            mi_pattern1(BurstData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+            mi_pattern2 = zeros(BurstData.FileInfo.MI_Bins,1);
+            mi_pattern2(BurstData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+           
             % define output
             MIPattern = cell(0);
-            MIPattern{UserValues.PIE.Detector(PIEchannel1),UserValues.PIE.Router(PIEchannel1)}=mi_pattern1;
-            MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
+            MIPattern{BurstData.PIE.Detector(Par),BurstData.PIE.Router(Par)}=mi_pattern1;
+            MIPattern{BurstData.PIE.Detector(Per),BurstData.PIE.Router(Per)}=mi_pattern2;
+            
+            FileName = BurstData.SpeciesNames{BurstData.SelectedSpecies};
+            Path = fileparts(BurstData.FileName);
         end
         % save
-        [~, FileName, ~] = fileparts(FileInfo.FileName{1});
-        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(FileInfo.Path,FileName));
+        [~, FileName, ~] = fileparts(FileName);
+        [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
         if all(File==0)
             return
         end
