@@ -1073,6 +1073,18 @@ addpath(genpath(['.' filesep 'functions']));
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore);
+    %%% checkbox for enabling cross-correlation
+    h.Cor_fFCS.CrossCorr_Checkbox  = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.Cor_fFCS.Panel,...
+        'String','Enable cross-correlation',...
+        'Callback',@Update_fFCS_GUI,...
+        'Units','normalized',...
+        'Position',[0.01, 0.5, 0.2,0.08],...
+        'Tag','CrossCorr_Checkbox',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
     %%% table of loaded microtime patterns
     RowName = [];
     ColumnFormat = {'char','logical'};
@@ -1096,6 +1108,31 @@ addpath(genpath(['.' filesep 'functions']));
     x = h.Cor_fFCS.MIPattern_Table.Position(3);
     h.Cor_fFCS.MIPattern_Table.ColumnWidth = {0.8*x,0.18*x};
     h.Cor_fFCS.MIPattern_Table.Units = 'normalized';
+    
+    %%% table of available PIE channels (determined from available
+    %%% information in loaded microtime patterns)
+    RowName = [];
+    ColumnFormat = {'char','logical'};
+    ColumnName = {'Channel','Use'};
+    Data = {'',false};
+    ColumnEditable = [false,true];
+    h.Cor_fFCS.PIEchan_Table = uitable(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'Tag','PIEchan_Table',...
+        'Units','normalized',...
+        'Position',[0.29, 0.01, 0.28 ,0.48],...
+        'Data',Data,...
+        'ColumnName',ColumnName,...
+        'RowName',RowName,...
+        'ColumnEditable',ColumnEditable,...      
+        'ColumnFormat',ColumnFormat,...
+        'CellEditCallback',@Update_fFCS_GUI...
+        );
+    % format
+    h.Cor_fFCS.PIEchan_Table.Units = 'pixels';
+    x = h.Cor_fFCS.PIEchan_Table.Position(3);
+    h.Cor_fFCS.PIEchan_Table.ColumnWidth = {0.8*x,0.18*x};
+    h.Cor_fFCS.PIEchan_Table.Units = 'normalized';
     
     %%% cross-correlation table of loaded species
     RowName = {'Scatter'};
@@ -1133,7 +1170,6 @@ addpath(genpath(['.' filesep 'functions']));
     h.Cor_fFCS.MIPattern_Axis.XTickLabel = [];
     h.Plots.fFCS.MI_Plots{1} = handle(plot([0 1],[0 0],'b')); 
     %%% plot for filter
-     %%% plot for microtime patterns
     h.Cor_fFCS.Filter_Axis = axes(...
         'Parent',h.Cor_fFCS.Tab,...
         'Tag','Filter_Axis',...
@@ -1149,6 +1185,8 @@ addpath(genpath(['.' filesep 'functions']));
     h.Cor_fFCS.Filter_Axis.YLabel.Color=Look.Fore;
     h.Cor_fFCS.Filter_Axis.XLim=[1 4096];  
     h.Plots.fFCS.Filter_Plots{1} = handle(plot([0 1],[0 0],'b')); 
+    
+    
     %% Additional detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Aditional detector functions tab
     h.Additional.Tab= uitab(...
@@ -4920,58 +4958,78 @@ active_species = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)));
 Names = [PamMeta.fFCS.MIPattern_Name';{'Scatter'}];
 
 filter = PamMeta.fFCS.filters;
+
 %% Initializes data cells
-Data=cell(sum(PamMeta.Selected_MT_Patches),1);
+Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
+Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
 Weights1=cell(sum(PamMeta.Selected_MT_Patches),1);
 Weights2=cell(sum(PamMeta.Selected_MT_Patches),1);
-MI=cell(sum(PamMeta.Selected_MT_Patches),1);
+MI1=cell(sum(PamMeta.Selected_MT_Patches),1);
+MI2=cell(sum(PamMeta.Selected_MT_Patches),1);
 
 k=1;
-Counts=0;
+Counts1=0;
+Counts2=0;
 %%% Seperate calculation for each block
 for j=find(PamMeta.Selected_MT_Patches)'
-    Data{k}=[];
-    MI{k} = [];
+    Data1{k}=[];
+    MI1{k} = [];
+
     %%% Combines all photons to one vector
     offset = 0;
-    for l = PamMeta.fFCS.PIEseletion
-        Data{k}=[Data{k};Get_Photons_from_PIEChannel(l,'Macrotime',j)];
-        MI{k} = [MI{k};Get_Photons_from_PIEChannel(l,'Microtime',j)+offset*FileInfo.MI_Bins];
+    for l = PamMeta.fFCS.PIEseletion{1}
+        Data1{k}=[Data1{k};Get_Photons_from_PIEChannel(l,'Macrotime',j)];
+        MI1{k} = [MI1{k};Get_Photons_from_PIEChannel(l,'Microtime',j)+offset*FileInfo.MI_Bins];
         offset = offset + 1;
     end
+
+    if ~isempty(Data1{k})
+        Data2{k}=[];
+        MI2{k} = [];
+        offset = 0;
+        for l = PamMeta.fFCS.PIEseletion{2}
+            Data2{k}=[Data2{k};Get_Photons_from_PIEChannel(l,'Macrotime',j)];
+            MI2{k} = [MI2{k};Get_Photons_from_PIEChannel(l,'Microtime',j)+offset*FileInfo.MI_Bins];
+            offset = offset + 1;
+        end
+    end
     %%% Calculates total photons
-    Counts=Counts+numel(Data{k});
-    %%% Only takes non empty channels as valid
-    if ~isempty(Data{k})
-        [Data{k}, idx] =sort(Data{k});
-        MI{k} = MI{k}(idx);
+    Counts1=Counts1+numel(Data1{k});
+    Counts2=Counts2+numel(Data2{k});
+
+    %%% sort
+    if ~isempty(Data2{k})
+        [Data1{k}, idx] =sort(Data1{k});
+        MI1{k} = MI1{k}(idx);
+        [Data2{k}, idx] =sort(Data2{k});
+        MI2{k} = MI2{k}(idx);
         k=k+1;
     else
         Valid(k)=[];
     end
 end
 %%% Deletes empty and invalid channels
-if k<=numel(Data)
-    Data(k:end)=[];
-    MI(k:end)=[];
+if k<=numel(Data1)
+    Data1(k:end)=[];
+    MI1(k:end)=[];
+    Data2(k:end)=[];
+    MI2(k:end)=[];
 end             
 %%% Applies divider to data
-for j=1:numel(Data)
-    Data{j}=floor(Data{j}/UserValues.Settings.Pam.Cor_Divider);
-end     
-%%% loop over all filter combinations
-%%% this is different from normal corrlation, here the photon data
-%%% (macrotimes, microtimes) is the same for all correlations, but the
-%%% weights are changing
+for j=1:numel(Data1)
+    Data1{j}=floor(Data1{j}/UserValues.Settings.Pam.Cor_Divider);
+    Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
+end  
 
+%%% loop over all filter combinations
 for i = 1:numel(Cor_A)
     %%% construct weights
-    for l = 1:numel(Data)
-        Weights1{l} = filter{Cor_A(i)}(MI{l});
-        Weights2{l} = filter{Cor_B(i)}(MI{l});
+    for l = 1:numel(Data1)
+        Weights1{l} = filter{1}{Cor_A(i)}(MI1{l});
+        Weights2{l} = filter{2}{Cor_B(i)}(MI2{l});
     end
     %%% Actually calculates the crosscorrelation
-    [Cor_Array,Cor_Times]=CrossCorrelation(Data,Data,Maxtime,Weights1,Weights2);
+    [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
     %%% Calculates average and standard error of mean (without tinv_table yet
     if size(Cor_Array,2)>1
@@ -5004,9 +5062,9 @@ for i = 1:numel(Cor_A)
     end
 
     Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-    Counts = [Counts Counts]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
+    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');  
-    
+
     Progress(i/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')   
 end
 guidata(h.Pam,h);
@@ -8312,9 +8370,9 @@ switch obj
         end
         if ~isfield(PamMeta,'fFCS')
             PamMeta.fFCS = struct;
-            PamMeta.fFCS.MIPattern = cell(0);
-            PamMeta.fFCS.MIPattern_Name = cell(0);
         end
+        PamMeta.fFCS.MIPattern = cell(0);
+        PamMeta.fFCS.MIPattern_Name = cell(0);
         for i = 1:numel(File)
             dummy = load(fullfile(Path,File{i}),'-mat');
             [~, FileName, ~] = fileparts(File{i});
@@ -8351,6 +8409,50 @@ switch obj
         h.Cor_fFCS.Cor_fFCS_Table.RowName = Names;
         h.Cor_fFCS.Cor_fFCS_Table.ColumnName = Names;
         h.Cor_fFCS.Cor_fFCS_Table.Data = num2cell(false(numel(Names)));
+        
+        %%% Update PIE channel table
+        % find out what PIE channels are available in all loaded microtime patterns
+        PIEexist = zeros(numel(UserValues.PIE.Name),numel(PamMeta.fFCS.MIPattern_Name)+1); % +1 for scatter pattern
+        for i = 1:numel(UserValues.PIE.Name) % loop over PIE channels
+            for j = 1:(numel(PamMeta.fFCS.MIPattern_Name)+1)
+                if j < (numel(PamMeta.fFCS.MIPattern_Name)+1)
+                    if isempty(UserValues.PIE.Combined{i}) %exclude combined channels
+                        if ~isempty(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)})
+                            % there is data in the corresponding detector/router channel
+                            if sum(PamMeta.fFCS.MIPattern{j}{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                                % there is data in the PIE channel range
+                                PIEexist(i,j) = 1;
+                            end
+                        end
+                    end
+                elseif j == (numel(PamMeta.fFCS.MIPattern_Name)+1) %scatter pattern
+                    if ~isempty(UserValues.PIE.ScatterPattern{i})
+                        PIEexist(i,j) = 1;
+                    end
+                end
+            end
+        end
+        % find out what PIE channels are available in the loaded measurement!
+        valid = zeros(numel(UserValues.PIE.Name),1);
+        for i = 1:numel(UserValues.PIE.Name)
+            if isempty(UserValues.PIE.Combined{i}) %exclude combined channels
+                % map detector/rout to detector plot definition
+                det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
+                if ~isempty(PamMeta.MI_Hist{det})
+                    % there is data in the corresponding detector/router channel
+                    if sum(PamMeta.MI_Hist{det}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                         % there is data in the PIE channel range
+                         valid(i) = 1;
+                    end
+                end
+            end
+        end
+        % valid are all PIE channels that exist for all species AND have data for the loaded measurement
+        PIEexist = (sum(PIEexist,2) > 1);
+        PIEexist = logical(PIEexist.*valid);
+        % update the PIEchannel table
+        Names = [UserValues.PIE.Name';'Scatter'];
+        h.Cor_fFCS.PIEchan_Table.Data = [Names(PIEexist),num2cell(false(sum(PIEexist),1))];
     case h.Cor_fFCS.Prepare_Filter_Button
         if strcmp(FileInfo.FileName{1},'Nothing loaded')
             errordlg('Load a measurement first!','No measurement loaded...');
@@ -8362,129 +8464,152 @@ switch obj
             delete(h.Plots.fFCS.MI_Plots{i});
         end
         h.Plots.fFCS.MI_Plots={};
-        
-        PamMeta.fFCS.MI_Hist = {};
-        PamMeta.fFCS.Decay_Hist = {};
-        PamMeta.fFCS.filters = {};
-        % read out PIE channel selection
-        sel = h.PIE.List.Value;
-        PamMeta.fFCS.PIEseletion = sel;
-        % read out avtive species
-        active = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)))';
-        
-        %%% rational: 
-        %%% 1.) read out mi patterns
-        %%% 2.) do checkup (length of loaded patterns need to be adjusted
-        %%% to curent measurement)
-        %%% 3.) construct stacked channel
-        
-        
-        %%% read mi pattern of loaded measurment and transfer loaded mi pattern data to new cell array
-        % top-down:   species - i
-        % left-right: PIE channel - sel
-        
-        %%% we need to map the PIE channel detector/routing pair to the
-        %%% detector number as used in PamMeta.MI_Hist!
-        for j = sel
-            det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
-            det = det(1); % in case there are redundant detector definitions
-            %%% current data
-            Decay_Hist{1,j} = PamMeta.MI_Hist{det};
-        end
-        MI_Hist = {};
-        for i = active
-            for j = sel
-                %%% loaded patterns
-                if i == numel(PamMeta.fFCS.MIPattern_Name)+1 %last entry, scatter pattern
-                    MI_Hist{i,j} = UserValues.PIE.ScatterPattern{j}';
-                else
-                    MI_Hist{i,j} = PamMeta.fFCS.MIPattern{i}{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
-                end
-            end
-        end
-        
-        %%% checkup of lengths
-        %%% it should be same lengths as of current measurement
-        LEN = FileInfo.MI_Bins;
-        len = cellfun(@numel,MI_Hist);
-        for i = active % adjust all active MI_Hist channels
-            for j = sel
-                if len(i,j) > LEN %%% exceeds wanted lengths, shorten
-                    MI_Hist{i,j} = MI_Hist{i,j}(1:LEN);
-                elseif len(i,j) < LEN %%% too short, add trailing zeros
-                    MI_Hist{i,j} = [MI_Hist{i,j}; zeros(LEN-len(i,j),1)];
-                end
-            end
-        end
-        
-        %%% construct stacked channel
-        PamMeta.fFCS.Decay_Hist = vertcat(Decay_Hist{:});
-        for i = 1:size(MI_Hist,1)
-            PamMeta.fFCS.MI_Hist{i} = vertcat(MI_Hist{i,:});
-            PamMeta.fFCS.MI_Hist{i} = PamMeta.fFCS.MI_Hist{i}./sum(PamMeta.fFCS.MI_Hist{i});
-        end
-        
-        %%% plot
-        % for plotting, only consider the PIE channel range! (although the
-        % filter is still defined over the whole microtime range)
-        % this is just for easier inspection/visibility
-        plotrange = [];
-        k = 0;
-        for j = sel
-            plotrange = [plotrange, k*LEN+(UserValues.PIE.From(j):UserValues.PIE.To(j))];
-            k = k+1;
-        end
-        for i = active
-            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{i}(plotrange),'--');
-        end
-        h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist(plotrange)./sum(PamMeta.fFCS.Decay_Hist),'k');
-        %%% update axes limits
-        h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
-        %h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
-        h.Cor_fFCS.MIPattern_Axis.YLimMode = 'auto';
-        
-        %%% calculate FLCS filters
-        %%% problem: only those bins where Decay and all microtime patterns are 
-        %%% NOT zero are to be used!
-        %%% all zero bins filter values should just be zero (so they don't
-        %%% contribute to the correlation function)
-        %%% solution: perform calculations only on "valid" bins
-        valid = (PamMeta.fFCS.Decay_Hist ~= 0);
-        for i = active
-            valid = valid & (PamMeta.fFCS.MI_Hist{i} ~= 0);
-        end
-        Decay = PamMeta.fFCS.Decay_Hist(valid);
-        diag_Decay = zeros(numel(Decay));
-        for i = 1:numel(Decay)
-            diag_Decay(i,i) = 1./Decay(i);
-        end
-        MI_species = [];
-        for i = active
-            MI_species = [MI_species, PamMeta.fFCS.MI_Hist{i}(valid)./sum(PamMeta.fFCS.MI_Hist{i}(valid))]; % re-normalize here since not all bins are used!
-        end
-        filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
-        %%% rescale filters back to total microtime range (no cut with valid)
-        filters = zeros(numel(PamMeta.fFCS.Decay_Hist),numel(active));
-        for i = 1:numel(active)
-            filters(valid,i) = filters_temp(:,i);
-        end
-        for i = 1:size(filters,2)
-            PamMeta.fFCS.filters{i} = filters(:,i);
-        end
-        %%% plot new filters
-        % clear plots
         for i = 1:numel(h.Plots.fFCS.Filter_Plots)
             delete(h.Plots.fFCS.Filter_Plots{i});
         end
         h.Plots.fFCS.Filter_Plots={};
         
-        for i = 1:numel(active)
-            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{i}(plotrange));
-        end
-        %%% update axes limits
-        h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
-        h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
+        PamMeta.fFCS.MI_Hist = {};
+        PamMeta.fFCS.Decay_Hist = {};
+        PamMeta.fFCS.filters = {};
         
+        % different photon streams named "A" and "B" (1 and 2) for
+        % independent filter generation
+        % (if autocorrelation is selected, simply set the second photon
+        % stream selection equal to the first one!)
+        
+        % read out PIE channel selection
+        % read active PIE channels and map back to original PIE channel list
+        % A
+        sel_name = h.Cor_fFCS.PIEchan_Table.Data(cell2mat(h.Cor_fFCS.PIEchan_Table.Data(:,2)),1);
+        for i = 1:numel(sel_name)
+            sel{1}(i) = find(strcmp(UserValues.PIE.Name,sel_name{i}));
+        end
+        % B
+        if h.Cor_fFCS.CrossCorr_Checkbox.Value == 1
+            sel_name = h.Cor_fFCS.PIEchan_Table.Data(cell2mat(h.Cor_fFCS.PIEchan_Table.Data(:,3)),1);
+            for i = 1:numel(sel_name)
+                sel{2}(i) = find(strcmp(UserValues.PIE.Name,sel_name{i}));
+            end
+        else
+            % autocorrelation, copy from previous selection
+            sel{2} = sel{1};
+        end
+        PamMeta.fFCS.PIEseletion = sel;
+        
+        % read out avtive species
+        active = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)))';
+
+        %%% rational: 
+        %%% 1.) read out mi patterns
+        %%% 2.) do checkup (length of loaded patterns need to be adjusted
+        %%% to curent measurement)
+        %%% 3.) construct stacked channel
+
+
+        %%% read mi pattern of loaded measurment and transfer loaded mi pattern data to new cell array
+        % top-down:   species - i
+        % left-right: PIE channel - sel
+        for u = 1:2 %loop over A and B (photon streams 1 and 2)
+            %%% we need to map the PIE channel detector/routing pair to the
+            %%% detector number as used in PamMeta.MI_Hist!
+            for j = sel{u}
+                det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
+                det = det(1); % in case there are redundant detector definitions
+                %%% current data
+                Decay_Hist{u}{1,j} = PamMeta.MI_Hist{det};
+            end
+            MI_Hist = {};
+            for i = active
+                for j = sel{u}
+                    %%% loaded patterns
+                    if i == numel(PamMeta.fFCS.MIPattern_Name)+1 %last entry, scatter pattern
+                        MI_Hist{u}{i,j} = UserValues.PIE.ScatterPattern{j}';
+                    else
+                        MI_Hist{u}{i,j} = PamMeta.fFCS.MIPattern{i}{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)};
+                    end
+                end
+            end
+
+            %%% checkup of lengths
+            %%% it should be same lengths as of current measurement
+            LEN = FileInfo.MI_Bins;
+            len = cellfun(@numel,MI_Hist{u});
+            for i = active % adjust all active MI_Hist channels
+                for j = sel{u}
+                    if len(i,j) > LEN %%% exceeds wanted lengths, shorten
+                        MI_Hist{u}{i,j} = MI_Hist{u}{i,j}(1:LEN);
+                    elseif len(i,j) < LEN %%% too short, add trailing zeros
+                        MI_Hist{u}{i,j} = [MI_Hist{u}{i,j}; zeros(LEN-len(i,j),1)];
+                    end
+                end
+            end
+
+            %%% construct stacked channel
+            PamMeta.fFCS.Decay_Hist{u} = vertcat(Decay_Hist{u}{:});
+            for i = 1:size(MI_Hist{u},1)
+                PamMeta.fFCS.MI_Hist{u}{i} = vertcat(MI_Hist{u}{i,:});
+                PamMeta.fFCS.MI_Hist{u}{i} = PamMeta.fFCS.MI_Hist{u}{i}./sum(PamMeta.fFCS.MI_Hist{u}{i});
+            end
+
+            %%% plot
+            % for plotting, only consider the PIE channel range! (although the
+            % filter is still defined over the whole microtime range)
+            % this is just for easier inspection/visibility
+            plotrange = [];
+            k = 0;
+            for j = sel{u}
+                plotrange = [plotrange, k*LEN+(UserValues.PIE.From(j):UserValues.PIE.To(j))];
+                k = k+1;
+            end
+            for i = active
+                h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--');
+            end
+            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist{u}(plotrange)./sum(PamMeta.fFCS.Decay_Hist{u}),'k');
+
+            %%% calculate FLCS filters
+            %%% problem: only those bins where Decay and all microtime patterns are 
+            %%% NOT zero are to be used!
+            %%% all zero bins filter values should just be zero (so they don't
+            %%% contribute to the correlation function)
+            %%% solution: perform calculations only on "valid" bins
+            valid = [];
+            valid = (PamMeta.fFCS.Decay_Hist{u} ~= 0);
+            for i = active
+                valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
+            end
+            Decay = PamMeta.fFCS.Decay_Hist{u}(valid);
+            diag_Decay = zeros(numel(Decay));
+            for i = 1:numel(Decay)
+                diag_Decay(i,i) = 1./Decay(i);
+            end
+            MI_species = [];
+            for i = active
+                MI_species = [MI_species, PamMeta.fFCS.MI_Hist{u}{i}(valid)./sum(PamMeta.fFCS.MI_Hist{u}{i}(valid))]; % re-normalize here since not all bins are used!
+            end
+            filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+            %%% rescale filters back to total microtime range (no cut with valid)
+            filters = zeros(numel(PamMeta.fFCS.Decay_Hist{u}),numel(active));
+            for i = 1:numel(active)
+                filters(valid,i) = filters_temp(:,i);
+            end
+            for i = 1:size(filters,2)
+                PamMeta.fFCS.filters{u}{i} = filters(:,i);
+            end
+
+            %%% plot new filters
+            for i = 1:numel(active)
+                h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange));
+            end
+
+            %%% update axes limits
+            h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
+            %h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
+            h.Cor_fFCS.MIPattern_Axis.YLimMode = 'auto';
+
+            h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
+            h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
+        end
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)
     case h.Cor_fFCS.Do_fFCS_Button
@@ -8504,5 +8629,16 @@ switch obj
             h.Cor_fFCS.Cor_fFCS_Table.RowName = Names;
             h.Cor_fFCS.Cor_fFCS_Table.ColumnName = Names;
             h.Cor_fFCS.Cor_fFCS_Table.Data = num2cell(false(numel(Names)));
+        end
+    case h.Cor_fFCS.PIEchan_Table 
+        % on change of PIE channel selection, reset calculated
+        % filters/plots
+    case h.Cor_fFCS.CrossCorr_Checkbox
+        if obj.Value == 1
+            % add second channel to PIEchan_Table
+            h.Cor_fFCS.PIEchan_Table.Data = [h.Cor_fFCS.PIEchan_Table.Data, num2cell(false(size(h.Cor_fFCS.PIEchan_Table.Data,1),1))];
+            h.Cor_fFCS.PIEchan_Table.ColumnEditable = [false,true,true];
+        elseif obj.Value == 0
+            h.Cor_fFCS.PIEchan_Table.Data = h.Cor_fFCS.PIEchan_Table.Data(:,1:2);
         end
 end
