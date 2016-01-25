@@ -1185,8 +1185,6 @@ addpath(genpath(['.' filesep 'functions']));
     h.Cor_fFCS.Filter_Axis.YLabel.Color=Look.Fore;
     h.Cor_fFCS.Filter_Axis.XLim=[1 4096];  
     h.Plots.fFCS.Filter_Plots{1} = handle(plot([0 1],[0 0],'b')); 
-    
-    
     %% Additional detector functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Aditional detector functions tab
     h.Additional.Tab= uitab(...
@@ -1637,7 +1635,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Position',[0.01 0.01 0.7 0.98]);
     h.Plots.Image=imagesc(0);
     h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
-    h.Image.Colorbar=colorbar;
+    h.Image.Colorbar=colorbar(h.Image.Axes);
     colormap(jet);
     h.Image.Colorbar.Color=Look.Fore;
     
@@ -8503,16 +8501,17 @@ switch obj
         %%% rational: 
         %%% 1.) read out mi patterns
         %%% 2.) do checkup (length of loaded patterns need to be adjusted
-        %%% to curent measurement)
+        %%% to current measurement)
         %%% 3.) construct stacked channel
-
+        %%% 4.) calculate filter
 
         %%% read mi pattern of loaded measurment and transfer loaded mi pattern data to new cell array
         % top-down:   species - i
         % left-right: PIE channel - sel
         for u = 1:2 %loop over A and B (photon streams 1 and 2)
             %%% we need to map the PIE channel detector/routing pair to the
-            %%% detector number as used in PamMeta.MI_Hist!
+            %%% detector number as used in PamMeta.MI_Hist to construct the
+            %%% measured decay hist
             for j = sel{u}
                 det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
                 det = det(1); % in case there are redundant detector definitions
@@ -8573,7 +8572,6 @@ switch obj
             %%% all zero bins filter values should just be zero (so they don't
             %%% contribute to the correlation function)
             %%% solution: perform calculations only on "valid" bins
-            valid = [];
             valid = (PamMeta.fFCS.Decay_Hist{u} ~= 0);
             for i = active
                 valid = valid & (PamMeta.fFCS.MI_Hist{u}{i} ~= 0);
@@ -8601,15 +8599,16 @@ switch obj
             for i = 1:numel(active)
                 h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange));
             end
-
-            %%% update axes limits
-            h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
-            %h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
-            h.Cor_fFCS.MIPattern_Axis.YLimMode = 'auto';
-
-            h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
-            h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
         end
+        
+        %%% update axes limits
+        h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
+        %h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
+        h.Cor_fFCS.MIPattern_Axis.YLimMode = 'auto';
+
+        h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
+        h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
+        
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)
     case h.Cor_fFCS.Do_fFCS_Button
