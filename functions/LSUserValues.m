@@ -767,6 +767,13 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
     
+    %%% Checks, if TauFit.IncludeChannel exists
+    if ~isfield (S.TauFit,'IncludeChannel')
+        S.TauFit.IncludeChannel=[1,1,1];
+        disp('UserValues.TauFit.IncludeChannel was incomplete');
+    end
+    P.TauFit.IncludeChannel = S.TauFit.IncludeChannel;
+    
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
