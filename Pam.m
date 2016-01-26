@@ -3713,7 +3713,7 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         UserValues.PIE.Router(Sel)=str2double(h.PIE.Routing.String);
     %%% Updates PIE mictrotime minimum
     elseif obj == h.PIE.From
-        UserValues.PIE.From(Sel)=max([str2double(h.PIE.From.String),0]);
+        UserValues.PIE.From(Sel)=max([str2double(h.PIE.From.String),1]);
         obj.String = num2str(UserValues.PIE.From(Sel));
     %%% Updates PIE microtime maximum
     elseif obj == h.PIE.To
@@ -6351,12 +6351,14 @@ BurstData.FileName = fullfile(PathName,FileName);
 if ~isfield(BurstData, 'ClockPeriod')
     BurstData.ClockPeriod = BurstData.SyncPeriod;
     BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
-    if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
-        %if SPC-630 is used, set the SyncPeriod to what it really is
-        BurstData.SyncPeriod = 1/8E7*3;
-        BurstData.FileInfo.SyncPeriod = 1/8E7*3;
-        if rand < 0.05
-            msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+    if isfield(BurstData.FileInfo,'Card')
+        if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
+            %if SPC-630 is used, set the SyncPeriod to what it really is
+            BurstData.SyncPeriod = 1/8E7*3;
+            BurstData.FileInfo.SyncPeriod = 1/8E7*3;
+            if rand < 0.05
+                msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+            end
         end
     end
 end
