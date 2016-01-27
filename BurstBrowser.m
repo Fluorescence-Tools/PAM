@@ -3724,6 +3724,28 @@ switch BurstData.BAMethod
             PDA.BrightnessReference.N = NGP + NGS;
         end
         save(newfilename, 'PDA', 'timebin')
+    case 5 %noMFD
+        PDA.NG = zeros(total,1);
+        PDA.NF = zeros(total,1);
+        PDA.NR = zeros(total,1);
+        
+        PDA.NG = cellfun(@(x) sum((x==1)),PDAdata);
+        PDA.NF = cellfun(@(x) sum((x==2)),PDAdata);
+        PDA.NR = cellfun(@(x) sum((x==3)),PDAdata);
+        
+        PDA.Corrections = BurstData.Corrections;
+        PDA.Background = BurstData.Background;
+        for i = fieldnames(PDA.Background)'
+            PDA.Background.(i{1}) = PDA.Background.(i{1})/2;
+        end
+        if save_brightness_reference
+            posS = (strcmp(BurstData.NameArray,'Stoichiometry'));
+            donly = (BurstData.DataArray(:,posS) > 0.95);
+            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+            NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
+            PDA.BrightnessReference.N = NG;
+        end
+        save(newfilename, 'PDA', 'timebin')
     case {3,4}
         switch obj
             case h.ExportSpeciesToPDAMenuItem
