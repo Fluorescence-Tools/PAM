@@ -2954,7 +2954,7 @@ end
 
 try
     %%% Fix missing "FRET" in Efficiency naming (NameArray)
-    if any(BurstData.BAMethod == [1,2])
+    if any(BurstData.BAMethod == [1,2,5])
         BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
         %%% also fix Cuts
         if isfield(BurstData,'Cut')
@@ -3028,7 +3028,7 @@ if ~isempty(findobj('Tag','Pam'))
     %%% Enable Lifetime and 2CDE Button
     h_pam.BurstLifetime_Button.Enable = 'on';
     %%% Check if lifetime has been fit already
-    if any(BurstData.BAMethod == [1,2])
+    if any(BurstData.BAMethod == [1,2,5])
         if (sum(BurstData.DataArray(:,strcmp('Lifetime GG [ns]',BurstData.NameArray))) == 0 )
             %%% no lifetime fit
             h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
@@ -3048,7 +3048,7 @@ if ~isempty(findobj('Tag','Pam'))
     
     h_pam.NirFilter_Button.Enable = 'on';
     %%% Check if NirFilter was calculated before
-    if any(BurstData.BAMethod == [1,2])
+    if any(BurstData.BAMethod == [1,2,5])
         if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
             %%% no lifetime fit
             h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
@@ -3067,7 +3067,7 @@ if ~isempty(findobj('Tag','Pam'))
     end
 end
 
-if any(BurstData.BAMethod == [1,2]) %%% Two-Color MFD
+if any(BurstData.BAMethod == [1,2,5]) %%% Two-Color MFD
     %find positions of FRET Efficiency and Stoichiometry in NameArray
     posE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
     %%% Compatibility check for old BurstExplorer Data
@@ -4775,9 +4775,15 @@ elseif cutT == 1
 end
 
 %%% Read out corrections
-Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+if ~(BurstData.BAMethod == 5) %%% MFD
+    Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+    Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+    Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+elseif BurstData.BAMethod == 5
+    Background_GR = BurstData.Background.Background_GRpar;
+    Background_GG = BurstData.Background.Background_GGpar;
+    Background_RR = BurstData.Background.Background_RRpar;
+end
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
@@ -5148,9 +5154,15 @@ elseif cutT == 1
 end
 
 %%% Read out corrections
-Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+if ~(BurstData.BAMethod == 5) % MFD
+    Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+    Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+    Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+elseif BurstData.BAMethod == 5 % noMFD
+    Background_GR = BurstData.Background.Background_GRpar;
+    Background_GG = BurstData.Background.Background_GGpar;
+    Background_RR = BurstData.Background.Background_RRpar;
+end
 
 %%% use selected species
 S_threshold = UpdateCuts();
@@ -5332,9 +5344,15 @@ gamma_gr = BurstData.Corrections.Gamma_GR;
 beta_gr = BurstData.Corrections.Beta_GR;
 ct_gr = BurstData.Corrections.CrossTalk_GR;
 de_gr = BurstData.Corrections.DirectExcitation_GR;
-BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+if ~(BurstData.BAMethod == 5) % MFD
+    BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
+    BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
+    BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+elseif BurstData.BAMethod == 5 % noMFD
+    BG_GG = BurstData.Background.Background_GGpar;
+    BG_GR = BurstData.Background.Background_GRpar;
+    BG_RR = BurstData.Background.Background_RRpar;
+end
 
 %%% Apply Background corrections
 NGG = NGG - Dur.*BG_GG;
@@ -6402,6 +6420,10 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                     BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                     BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                     BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                case {5}
+                    BurstData.Background.Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData.Background.Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData.Background.Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar;
             end
         end
         %%% Backwards Compatibility Check (Remove at some point)
@@ -6434,7 +6456,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         %%% are stored individually per measurement.
         if ~isfield(BurstData,'Corrections') || ~isstruct(BurstData.Corrections) % Second check for compatibility of old data
             switch BurstData.BAMethod
-                case {1,2}
+                case {1,2,5}
                     BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                     BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                     BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
@@ -6508,7 +6530,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
                 h.r0Red_edit = num2str(BurstData.Corrections.r0_red);
         end
         
-        if any(BurstData.BAMethod == [1,2]) %%% 2cMFD, same as default
+        if any(BurstData.BAMethod == [1,2,5]) %%% 2cMFD, same as default
             h.CorrectionsTable.Data = {BurstData.Corrections.Gamma_GR;...
                 BurstData.Corrections.Beta_GR;...
                 BurstData.Corrections.CrossTalk_GR;...
@@ -6561,7 +6583,7 @@ else %%% Update UserValues with new values
     switch obj
         case h.CorrectionsTable
             h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
-            if any(BurstData.BAMethod == [1,2]) %%% 2cMFD
+            if any(BurstData.BAMethod == [1,2,5]) %%% 2cMFD
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
                 BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = obj.Data{2};
@@ -7058,7 +7080,7 @@ if isempty(BurstData)
     return;
 end
 switch BurstData.BAMethod
-    case {1,2}
+    case {1,2,5}
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
@@ -7476,7 +7498,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
     %%% Determine Donor Only lifetime from data with S > 0.95
     idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
     idxS = BurstMeta.posS;
-    if any(BurstData.BAMethod == [1,2])
+    if any(BurstData.BAMethod == [1,2,5])
         valid = (BurstData.DataArray(:,idxS) > 0.95);
     elseif any(BurstData.BAMethod == [3,4])
         idxSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
@@ -7494,7 +7516,7 @@ if obj.Value == 1 %%% Checkbox was clicked on
     %%% Determine Acceptor Only Lifetime from data with S < 0.1
     idx_tauRR = strcmp(BurstData.NameArray,'Lifetime RR [ns]');
     idxS = BurstMeta.posS;
-    if any(BurstData.BAMethod == [1,2])
+    if any(BurstData.BAMethod == [1,2,5])
         valid = (BurstData.DataArray(:,idxS) < 0.1);
     elseif any(BurstData.BAMethod == [3,4])
         idxSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
@@ -8014,7 +8036,7 @@ h.Progress_Text.String = BurstData.DisplayName;
 function SwitchGUI(BAMethod)
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% convert BAMethod to 2 (2colorMFD) or 3 (3cMFD)
-if any(BAMethod == [1,2])
+if any(BAMethod == [1,2,5])
     BAMethod = 2;
 elseif any(BAMethod == [3,4])
     BAMethod = 3;
@@ -8341,7 +8363,7 @@ switch obj
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
-        if any(BurstData.BAMethod == [1,2])
+        if any(BurstData.BAMethod == [1,2,5])
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];

@@ -5623,7 +5623,7 @@ for i = 1:Number_of_Chunks
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',i,ChunkSize);
         Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',i,ChunkSize);
         Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',i,ChunkSize);
-        AllPhotons_unsort = horzcat(Photons{:});
+        AllPhotons_unsort = vertcat(Photons{:});
         %sort
         [AllPhotons, index] = sort(AllPhotons_unsort);
         clear AllPhotons_unsort
@@ -6090,8 +6090,6 @@ elseif BAMethod == 5
         S...
         tauGG...
         tauRR...
-        rGG...
-        rRR...
         TGX_TRR(:,1)...
         ALEX_2CDE...
         TGG_TGR(:,1)...
@@ -6104,7 +6102,7 @@ elseif BAMethod == 5
         Number_of_Photons_per_Color...
         ];
 
-    BurstData.NameArray = {'Efficiency',...
+    BurstData.NameArray = {'FRET Efficiency',...
                 'Stoichiometry',...
                 'Proximity Ratio',...
                 'Stoichiometry (raw)',...
@@ -6126,9 +6124,8 @@ elseif BAMethod == 5
                 'Number of Photons (RR)'...
                 };
 end
+
 %%% Append other important parameters/values to BurstData structure
-
-
 BurstData.TACRange = FileInfo.TACRange;
 BurstData.BAMethod = BAMethod;
 BurstData.Filetype = FileInfo.FileType;
@@ -6273,7 +6270,7 @@ if isnan(tau_2CDE)
     h.Burst.NirFilter_Edit.String =  '100';
     tau_2CDE = 100;
 end
-
+BAMethod = BurstData.BAMethod;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
@@ -6287,7 +6284,7 @@ for t=1:numel(tau_2CDE)
     else
         tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
     end
-    if any(BurstData.BAMethod == [1,2]) %2 Color Data
+    if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
         FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
         ALEX_2CDE = zeros(numel(Macrotime),1);
 
@@ -6296,7 +6293,7 @@ for t=1:numel(tau_2CDE)
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
             parfor i = parts(j):parts(j+1)
-                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau); %#ok<USENS,PFIIN>
+                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
             end
         end
         idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
@@ -6701,7 +6698,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
         Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime',1,ChunkSize);
         Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime',1,ChunkSize);
         Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime',1,ChunkSize);
-        AllPhotons_unsort = horzcat(Photons{:});
+        AllPhotons_unsort = vertcat(Photons{:});
         %sort
         [AllPhotons, ~] = sort(AllPhotons_unsort);
         clear AllPhotons_unsort
@@ -6725,7 +6722,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             [ch1] = hist([Photons{7}; Photons{8}; Photons{9}; Photons{10}], xout);
             [ch2] = hist([Photons{11}; Photons{12}], xout);
         case 5
-            [ch1] = hist([Photons{1} Photons{2}], xout);
+            [ch1] = hist([Photons{1}; Photons{2}], xout);
             [ch2] = hist([Photons{3}], xout);
     end
     %convert photon number to bin number
@@ -7269,6 +7266,41 @@ switch BurstData.BAMethod
         TauFitData.XData_Per{2} = (BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp])) - BurstData.PIE.From(8);
         TauFitData.XData_Par{3} = (BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar])) - BurstData.PIE.From(11);
         TauFitData.XData_Per{3} = (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])) - BurstData.PIE.From(12);
+    case 5 %noMFD
+        %%% Read out the indices of the PIE channels
+        idx_GG = 1;
+        idx_RR = 3;
+        
+        max_MIBins_GG = min([numel(BurstData.IRF{idx_GG}) numel(BurstData.ScatterPattern{idx_GG})]);
+        max_MIBins_RR = min([numel(BurstData.IRF{idx_RR}) numel(BurstData.ScatterPattern{idx_RR})]);
+        
+        %%% Calculate and store Histograms in TauFitData
+        TauFitData.hMI_Par{1} = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GG])));
+        TauFitData.hMI_Par{2} = histc(Microtime(Channel == 3), (BurstData.PIE.From(3):min([BurstData.PIE.To(3) max_MIBins_RR])));
+        TauFitData.hMI_Per = TauFitData.hMI_Par;
+        
+        %%% Read out the Microtime Histograms of the IRF for the two channels        
+        TauFitData.hIRF_Par{1} = BurstData.IRF{idx_GG}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GG])));
+        TauFitData.hIRF_Par{2} = BurstData.IRF{idx_RR}((BurstData.PIE.From(3):min([BurstData.PIE.To(3) max_MIBins_RR])));
+        %%% Normalize IRF for better Visibility
+        for i = 1:2
+            TauFitData.hIRF_Par{i} = (TauFitData.hIRF_Par{i}./max(TauFitData.hIRF_Par{i})).*max(TauFitData.hMI_Par{i});
+        end
+        TauFitData.hIRF_Per = TauFitData.hIRF_Par;
+        
+        %%% Read out the Microtime Histograms of the Scatter for the two channels
+        TauFitData.hScat_Par{1} = BurstData.ScatterPattern{idx_GG}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GG])));
+        TauFitData.hScat_Par{2} = BurstData.ScatterPattern{idx_RR}((BurstData.PIE.From(3):min([BurstData.PIE.To(3) max_MIBins_RR])));
+        %%% Normalize Scatter Pattern for better Visibility
+        for i = 1:2
+            TauFitData.hScat_Par{i} = (TauFitData.hScat_Par{i}./max(TauFitData.hScat_Par{i})).*max(TauFitData.hMI_Par{i});
+        end
+        TauFitData.hScat_Per = TauFitData.hScat_Par;
+        
+        %%% Generate XData
+        TauFitData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GG])) - BurstData.PIE.From(1);
+        TauFitData.XData_Par{2} = (BurstData.PIE.From(3):min([BurstData.PIE.To(3) max_MIBins_RR])) - BurstData.PIE.From(3);
+        TauFitData.XData_Per = TauFitData.XData_Par;
 end
 %%% Read out relevant parameters
 TauFitData.BAMethod = BurstData.BAMethod;
@@ -7338,6 +7370,13 @@ if any(mode==0)
                 hIRF_GGpar; hIRF_GGperp;...
                 hIRF_GRpar; hIRF_GRperp;...
                 hIRF_RRpar; hIRF_RRperp};
+        case 5 %noMFD
+            hIRF_GG = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hIRF_GR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hIRF_RR = UserValues.PIE.IRF{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            BurstData.IRF = {hIRF_GG;...
+                hIRF_GR;...
+                hIRF_RR};
     end
 end
 if any(mode==1)
@@ -7374,6 +7413,14 @@ if any(mode==1)
                 hScat_GGpar; hScat_GGperp;...
                 hScat_GRpar; hScat_GRperp;...
                 hScat_RRpar; hScat_RRperp};
+        case 5 %noMFD
+            % Scatter patterns for all burst channels
+            hScat_GG = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{1,1})};
+            hScat_GR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{2,1})};
+            hScat_RR = UserValues.PIE.ScatterPattern{strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BurstData.BAMethod}{3,1})};
+            BurstData.ScatterPattern = {hScat_GG;...
+                hScat_GR;...
+                hScat_RR};
     end
     %%% Background Counts
     BAMethod = BurstData.BAMethod;
@@ -7417,6 +7464,17 @@ if any(mode==1)
                 UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,1}));
             BurstData.Background.Background_RRperp = ...
                 UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{6,2}));
+        case 5
+            % Background for all burst channels
+            BurstData.Background.Background_GGpar = ...
+                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+            BurstData.Background.Background_GGperp = BurstData.Background.Background_GGpar;
+            BurstData.Background.Background_GRpar = ...
+                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
+            BurstData.Background.Background_GRperp = BurstData.Background.Background_GRpar;
+            BurstData.Background.Background_RRpar = ...
+                UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
+            BurstData.Background.Background_RRperp = BurstData.Background.Background_RRpar;
     end
 end
 
@@ -7451,13 +7509,21 @@ E = exp(-M./tau);
 E(M==0) = 0;
 KDE = sum(E,1)';
 KDE = (1+2/numel(B)).*KDE;
-function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau)
+function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
 
 if numel(Trace) < 10000
-T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
-T_GR = Trace(Chan_Trace == 3 | Chan_Trace == 4);
-T_RR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
-T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4);
+switch BAMethod
+    case {1,2} %MFD
+        T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
+        T_GR = Trace(Chan_Trace == 3 | Chan_Trace == 4);
+        T_RR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
+        T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4);
+    case 5 %noMFD
+        T_GG = Trace(Chan_Trace == 1);
+        T_GR = Trace(Chan_Trace == 2);
+        T_RR = Trace(Chan_Trace == 3);
+        T_GX = Trace(Chan_Trace == 1 | Chan_Trace == 2);
+end
 %tau = 100E-6; standard value
 %KDE calculation
 

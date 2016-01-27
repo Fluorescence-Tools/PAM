@@ -675,7 +675,7 @@ if exist('ph','var')
                 'String','Select Channel',...
                 'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
             switch BurstData.BAMethod
-                case {1,2}
+                case {1,2,5}
                     Channel_String = {'GG','RR'};
                 case {3,4}
                     Channel_String = {'BB','GG','RR'};
@@ -740,6 +740,21 @@ if exist('ph','var')
                 'Position',[0.05 0.05 0.2 0.15],...
                 'String','Pre-Fit',...
                 'Callback',@Start_Fit);
+            if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
+                set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
+                    h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
+                    h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text],...
+                    'Visible','off');
+                %%% also set shift values ins UserValues of polarization sliders to 0
+                for i = 1:3
+                    UserValues.TauFit.ShiftPer{i} = 0;
+                    UserValues.TauFit.IRFrelShift{i} = 0;
+                    UserValues.TauFit.ScatrelShift{i} = 0;
+                    UserValues.TauFit.Ignore{i} = 1;
+                end;
+            end
+            %%% hide the ignore slider, we don't need it for burstwise fitting
+            set([h.Ignore_Slider,h.Ignore_Edit,h.Ignore_Text],'Visible','off');
     end
 end
 if exist('bh','var')
@@ -761,7 +776,7 @@ if exist('bh','var')
             'String','Select Channel',...
             'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
         switch BurstData.BAMethod
-            case {1,2}
+            case {1,2,5}
                 Channel_String = {'GG','RR'};
             case {3,4}
                 Channel_String = {'BB','GG','RR'};
@@ -816,6 +831,23 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+        
+        if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
+            set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
+                h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
+                h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text,...
+                h.Fit_Aniso_Button],...
+                'Visible','off');
+            %%% also set shift values ins UserValues of polarization sliders to 0
+            for i = 1:3
+                UserValues.TauFit.ShiftPer{i} = 0;
+                UserValues.TauFit.IRFrelShift{i} = 0;
+                UserValues.TauFit.ScatrelShift{i} = 0;
+                UserValues.TauFit.Ignore{i} = 1;
+            end;
+        end
+        %%% hide the ignore slider, we don't need it for burstwise fitting
+        set([h.Ignore_Slider,h.Ignore_Edit,h.Ignore_Text],'Visible','off');
     end
 end
 h.FitMethod_Popupmenu = uicontrol(...
@@ -1085,7 +1117,7 @@ if ismac
     end
 end
 
-%% Initialize sliders
+%% Initialize values
 for i = 1:3 %max number of pairs for fitting
     TauFitData.Length{i} = UserValues.TauFit.Length{i};
     TauFitData.StartPar{i} = UserValues.TauFit.StartPar{i};
@@ -1095,7 +1127,7 @@ for i = 1:3 %max number of pairs for fitting
     TauFitData.IRFrelShift{i} = UserValues.TauFit.IRFrelShift{i};
     TauFitData.ScatShift{i} = UserValues.TauFit.ScatShift{i};
     TauFitData.ScatrelShift{i} = UserValues.TauFit.ScatrelShift{i};
-    TauFitData.Ignore{i} = UserValues.TauFit.IRFShift{i};
+    TauFitData.Ignore{i} = UserValues.TauFit.Ignore{i};
 end
 TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
 TauFitData.FitMethods = h.FitMethods;
@@ -3228,7 +3260,7 @@ h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
 
 switch TauFitData.BAMethod
-    case {1,2}
+    case {1,2,5}
         %% 2 color MFD
         %% Read out corrections
         G = UserValues.TauFit.G; %is a cell, contains all G factors
@@ -3244,12 +3276,8 @@ switch TauFitData.BAMethod
         %%% Read out burst duration
         duration = BurstData.DataArray(:,strcmp(BurstData.NameArray,'Duration [ms]'));
         %%% Read out Background Countrates per Chan
-        % Anders, shouldn't the program read the background from the
-        % burstdata structure instead of UserValues?
-        %background{1} = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
-        %background{2} = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
-        background{1} = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-        background{2} = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+        background{1} = G{1}*(1-3*l2)*BurstData.Background.Background_GGpar + (2-3*l1)*BurstData.Background.Background_GGperp;
+        background{2} = G{2}*(1-3*l2)*BurstData.Background.Background_RRpar + (2-3*l1)*BurstData.Background.Background_RRperp;
         
         Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         %%% Process in Chunk
@@ -3277,7 +3305,7 @@ switch TauFitData.BAMethod
                 hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
                 %%% Apply the shift to the perpendicular IRF channel
                 hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-                IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+                IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern'./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
@@ -3327,14 +3355,23 @@ switch TauFitData.BAMethod
             DUR = duration((parts(j)+1):parts(j+1));
             if UserValues.TauFit.IncludeChannel(1)
                 %%% Create array of histogrammed microtimes
-                Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
-                Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-                parfor i = 1:numel(MI)
-                    Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
-                    Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
-                end                
+                switch TauFitData.BAMethod
+                    case {1,2}
+                        Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+                        Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
+                        parfor i = 1:numel(MI)
+                            Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+                            Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
+                        end                
+                    case 5
+                        Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
+                        Per1 = Par;
+                        parfor i = 1:numel(MI)
+                            Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
+                            Per1(i,:) = Par1(i,:);
+                        end                
+                end
                 Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
-                
                 %%% Shift Microtimes
                 Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
                 Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
@@ -3351,11 +3388,21 @@ switch TauFitData.BAMethod
             end
             if UserValues.TauFit.IncludeChannel(2)
                 %%% Create array of histogrammed microtimes
-                Par2 = zeros(numel(MI),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
-                Per2 = zeros(numel(MI),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
-                parfor i = 1:numel(MI)
-                    Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
-                    Per2(i,:) = histc(MI{i}(CH{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+                switch TauFitData.BAMethod
+                    case {1,2}
+                        Par2 = zeros(numel(MI),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
+                        Per2 = zeros(numel(MI),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
+                        parfor i = 1:numel(MI)
+                            Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+                            Per2(i,:) = histc(MI{i}(CH{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
+                        end
+                    case 5
+                        Par2 = zeros(numel(MI),numel(BurstData.PIE.From(3):BurstData.PIE.To(3)));
+                        Per2 = Par2;
+                        parfor i = 1:numel(MI)
+                            Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+                            Per2(i,:) = Par2(i,:);
+                        end
                 end
                 Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
                 
@@ -3416,8 +3463,12 @@ switch TauFitData.BAMethod
         idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
         idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
         % will be zeros if lifetime is not included
-        BurstData.DataArray(:,idx_tauGG) = lifetime(:,1);
-        BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
+        if UserValues.TauFit.IncludeChannel(1)
+            BurstData.DataArray(:,idx_tauGG) = lifetime(:,1);
+        end
+        if UserValues.TauFit.IncludeChannel(2)
+            BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
+        end
     case {3,4}
         %% Three-Color MFD
         %% Read out corrections
@@ -3438,9 +3489,9 @@ switch TauFitData.BAMethod
         %         background{1} = UserValues.BurstBrowser.Corrections.Background_BBpar + UserValues.BurstBrowser.Corrections.Background_BBperp;
         %         background{2} = UserValues.BurstBrowser.Corrections.Background_GGpar + UserValues.BurstBrowser.Corrections.Background_GGperp;
         %         background{3} = UserValues.BurstBrowser.Corrections.Background_RRpar + UserValues.BurstBrowser.Corrections.Background_RRperp;
-        background{1} = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-        background{2} = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-        background{3} = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
+        background{1} = G{1}*(1-3*l2)*BurstData.Background.Background_BBpar + (2-3*l1)*BurstData.Background.Background_BBperp;
+        background{2} = G{2}*(1-3*l2)*BurstData.Background.Background_GGpar + (2-3*l1)*BurstData.Background.Background_GGperp;
+        background{3} = G{3}*(1-3*l2)*BurstData.Background.Background_RRpar + (2-3*l1)*BurstData.Background.Background_RRperp;
         
         Progress(0,h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         %%% Process in Chunk
@@ -3469,7 +3520,7 @@ switch TauFitData.BAMethod
                 hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
                 %%% Apply the shift to the perpendicular IRF channel
                 hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
-                IRFPattern = G{chan}+(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
+                IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern'./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
@@ -3629,9 +3680,15 @@ switch TauFitData.BAMethod
         idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
         idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
         % will be zeros if lifetime is not included
-        BurstData.DataArray(:,idx_tauBB) = lifetime(:,1);
-        BurstData.DataArray(:,idx_tauGG) = lifetime(:,2);
-        BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
+        if UserValues.TauFit.IncludeChannel(1)
+            BurstData.DataArray(:,idx_tauBB) = lifetime(:,1);
+        end
+        if UserValues.TauFit.IncludeChannel(2)
+            BurstData.DataArray(:,idx_tauGG) = lifetime(:,2);
+        end
+        if UserValues.TauFit.IncludeChannel(3)
+            BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
+        end
 end
 save(TauFitData.FileName,'BurstData');
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
