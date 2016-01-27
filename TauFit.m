@@ -3365,7 +3365,7 @@ switch TauFitData.BAMethod
                         end                
                     case 5
                         Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
-                        Per1 = Par;
+                        Per1 = Par1;
                         parfor i = 1:numel(MI)
                             Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
                             Per1(i,:) = Par1(i,:);
@@ -3400,7 +3400,7 @@ switch TauFitData.BAMethod
                         Par2 = zeros(numel(MI),numel(BurstData.PIE.From(3):BurstData.PIE.To(3)));
                         Per2 = Par2;
                         parfor i = 1:numel(MI)
-                            Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
+                            Par2(i,:) = histc(MI{i}(CH{i} == 3),(BurstData.PIE.From(3):BurstData.PIE.To(3)))';
                             Per2(i,:) = Par2(i,:);
                         end
                 end
