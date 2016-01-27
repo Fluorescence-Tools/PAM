@@ -115,13 +115,13 @@ if Mode==0 %%% Loads user values
     end
     % New Parameters have been added to the Detector, check if they exist
     if any(~isfield(S.Detector, {'Filter';'Pol';'BS';'enabled'}))
-        S.Detector.Filter = {'500/25'};
+        S.Detector.Filter = {'500/50'};
         S.Detector.Pol = {'none'};
         S.Detector.BS = {'none'};
         S.Detector.enabled = {'on'};
         if numel(S.Detector.Det) > 1 %%% multiple detectors existed
             for u = 2:numel(S.Detector.Det)
-                S.Detector.Filter{end+1} = '500/25';
+                S.Detector.Filter{end+1} = '500/50';
                 S.Detector.Pol{end+1} = 'none';
                 S.Detector.BS{end+1} = 'none';
                 S.Detector.enabled{end+1} = 'on';
