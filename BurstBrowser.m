@@ -5394,45 +5394,47 @@ end
 %%% Update Values in the DataArray
 BurstData.DataArray(:,indE) = E;
 BurstData.DataArray(:,indS) = S;
-%% Anisotropy Corrections
-%%% Read out indices of parameters
-ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
-ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
-indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
-indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
-indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
-indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
 
-%%% Read out photons counts and duration
-NGGpar = BurstData.DataArray(:,indNGGpar);
-NGGperp = BurstData.DataArray(:,indNGGperp);
-NRRpar = BurstData.DataArray(:,indNRRpar);
-NRRperp = BurstData.DataArray(:,indNRRperp);
+if BurstData.BAMethod ~= 5 % ensure that polarized detection was used
+    %% Anisotropy Corrections
+    %%% Read out indices of parameters
+    ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
+    ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
+    indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
+    indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
+    indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
+    indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
 
-%%% Read out corrections
-Ggreen = BurstData.Corrections.GfactorGreen;
-Gred = BurstData.Corrections.GfactorRed;
-l1 = UserValues.BurstBrowser.Corrections.l1;
-l2 = UserValues.BurstBrowser.Corrections.l2;
-BG_GGpar = BurstData.Background.Background_GGpar;
-BG_GGperp = BurstData.Background.Background_GGperp;
-BG_RRpar = BurstData.Background.Background_RRpar;
-BG_RRperp = BurstData.Background.Background_RRperp;
+    %%% Read out photons counts and duration
+    NGGpar = BurstData.DataArray(:,indNGGpar);
+    NGGperp = BurstData.DataArray(:,indNGGperp);
+    NRRpar = BurstData.DataArray(:,indNRRpar);
+    NRRperp = BurstData.DataArray(:,indNRRperp);
 
-%%% Apply Background corrections
-NGGpar = NGGpar - Dur.*BG_GGpar;
-NGGperp = NGGperp - Dur.*BG_GGperp;
-NRRpar = NRRpar - Dur.*BG_RRpar;
-NRRperp = NRRperp - Dur.*BG_RRperp;
+    %%% Read out corrections
+    Ggreen = BurstData.Corrections.GfactorGreen;
+    Gred = BurstData.Corrections.GfactorRed;
+    l1 = UserValues.BurstBrowser.Corrections.l1;
+    l2 = UserValues.BurstBrowser.Corrections.l2;
+    BG_GGpar = BurstData.Background.Background_GGpar;
+    BG_GGperp = BurstData.Background.Background_GGperp;
+    BG_RRpar = BurstData.Background.Background_RRpar;
+    BG_RRperp = BurstData.Background.Background_RRperp;
 
-%%% Recalculate Anisotropies
-rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
-rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
+    %%% Apply Background corrections
+    NGGpar = NGGpar - Dur.*BG_GGpar;
+    NGGperp = NGGperp - Dur.*BG_GGperp;
+    NRRpar = NRRpar - Dur.*BG_RRpar;
+    NRRperp = NRRperp - Dur.*BG_RRperp;
 
-%%% Update Values in the DataArray
-BurstData.DataArray(:,ind_rGG) = rGG;
-BurstData.DataArray(:,ind_rRR) = rRR;
+    %%% Recalculate Anisotropies
+    rGG = (Ggreen.*NGGpar - NGGperp)./( (1-3*l2).*Ggreen.*NGGpar + (2-3*l1).*NGGperp);
+    rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
 
+    %%% Update Values in the DataArray
+    BurstData.DataArray(:,ind_rGG) = rGG;
+    BurstData.DataArray(:,ind_rRR) = rRR;
+end
 %% 3colorMFD
 if any(BurstData.BAMethod == [3,4])
     %% FRET Efficiencies and Stoichiometries
@@ -7018,38 +7020,40 @@ BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_EvsTauRR,'tight');
 ylim(h.axes_EvsTauRR,[-0.05 1]);
-%% Plot rGG vs. tauGG in third plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
-BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
-BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
-BurstMeta.Plots.rGGvsTauGG(1).CData = H;
-if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
-elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
+if BurstData.BAMethod ~= 5 %ensure that polarized detection was used
+    %% Plot rGG vs. tauGG in third plot
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
+    BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
+    BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
+    BurstMeta.Plots.rGGvsTauGG(1).CData = H;
+    if ~UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
+    elseif UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
+    end
+    BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
+    BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
+    BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
+    BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    axis(h.axes_rGGvsTauGG,'tight');
+    ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
+    %% Plot rRR vs. tauRR in fourth plot
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
+    BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
+    BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
+    BurstMeta.Plots.rRRvsTauRR(1).CData = H;
+    if ~UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
+    elseif UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
+    end
+    BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
+    BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
+    BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
+    BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    axis(h.axes_rRRvsTauRR,'tight');
+    ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 end
-BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
-BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
-BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
-BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-axis(h.axes_rGGvsTauGG,'tight');
-ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
-%% Plot rRR vs. tauRR in fourth plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
-BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
-BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
-BurstMeta.Plots.rRRvsTauRR(1).CData = H;
-if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
-elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
-end
-BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
-BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
-BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
-BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-axis(h.axes_rRRvsTauRR,'tight');
-ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 %% 3cMFD
 if any(BurstData.BAMethod == [3,4])
     idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
