@@ -1190,7 +1190,7 @@ switch mode
         switch e.Indices(2)
             case 1 %%% Changes file color
                 NewColor = uisetcolor;
-                if NewColor == 0
+                if numel(NewColor) == 1%NewColor == 0
                     return;
                 end
                 for i=File
