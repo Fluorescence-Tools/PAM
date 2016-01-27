@@ -6116,6 +6116,9 @@ switch BurstData.BAMethod
         c{1} = [1,2]; %% BB
         c{2} = [7,8]; %% GG
         c{3} = [11,12];%% RR
+    case 5
+        c{1} = [1,1];
+        c{2} = [3,3];
 end
 for chan = 1:size(c,2)
     MI_par = MI_total(CH_total == c{chan}(1));

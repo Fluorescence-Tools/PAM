@@ -203,7 +203,6 @@ h.HidePanel = uibuttongroup(...
 %%% Hide Result Plot and Result Aniso Plot
 h.Result_Plot.Parent = h.HidePanel;
 h.Result_Plot_Aniso.Parent = h.HidePanel;
-
 %% Sliders
 %%% Define the container
 h.Slider_Panel = uibuttongroup(...
@@ -547,7 +546,6 @@ h.ScatrelShift_Text = uicontrol(...
     'TooltipString','Shift of the Scat perpendicular with respect to the parallel Scat',...
     'Position',[0.51 0.025 0.1 0.15],...
     'Tag','ScatrelShift_Text');
-
 %% PIE Channel Selection and general Buttons
 h.PIEChannel_Panel = uibuttongroup(...
     'Parent',h.TauFit,...
@@ -740,19 +738,6 @@ if exist('ph','var')
                 'Position',[0.05 0.05 0.2 0.15],...
                 'String','Pre-Fit',...
                 'Callback',@Start_Fit);
-            if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
-                set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
-                    h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
-                    h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text],...
-                    'Visible','off');
-                %%% also set shift values ins UserValues of polarization sliders to 0
-                for i = 1:3
-                    UserValues.TauFit.ShiftPer{i} = 0;
-                    UserValues.TauFit.IRFrelShift{i} = 0;
-                    UserValues.TauFit.ScatrelShift{i} = 0;
-                    UserValues.TauFit.Ignore{i} = 1;
-                end;
-            end
             %%% hide the ignore slider, we don't need it for burstwise fitting
             set([h.Ignore_Slider,h.Ignore_Edit,h.Ignore_Text],'Visible','off');
     end
@@ -831,23 +816,6 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
-        
-        if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
-            set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
-                h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
-                h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text,...
-                h.Fit_Aniso_Button],...
-                'Visible','off');
-            %%% also set shift values ins UserValues of polarization sliders to 0
-            for i = 1:3
-                UserValues.TauFit.ShiftPer{i} = 0;
-                UserValues.TauFit.IRFrelShift{i} = 0;
-                UserValues.TauFit.ScatrelShift{i} = 0;
-                UserValues.TauFit.Ignore{i} = 1;
-            end;
-        end
-        %%% hide the ignore slider, we don't need it for burstwise fitting
-        set([h.Ignore_Slider,h.Ignore_Edit,h.Ignore_Text],'Visible','off');
     end
 end
 h.FitMethod_Popupmenu = uicontrol(...
@@ -883,7 +851,6 @@ h.Determine_GFactor_Button = uicontrol(...
     'Position',[0.75 0.05 0.15 0.15],...
     'String','Get G',...
     'Callback',@DetermineGFactor);
-
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
 h.Progress_Panel = uibuttongroup(...
@@ -1099,6 +1066,28 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'FontSize',12,...
     'Tag','UseWeightedResiduals_Menu',...
     'Callback',@UpdateOptions);
+%% Special case for Burstwise and noMFD
+if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
+    if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
+        set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
+            h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
+            h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text,...
+            h.Determine_GFactor_Button,h.l1_edit, h.l1_text,h.l2_edit,h.l2_text,...
+            h.G_factor_edit, h.G_factor_text],...
+            'Visible','off');
+        %%% also set shift values ins UserValues of polarization sliders to 0
+        %%% and G factor to 1, l1 and l2 to 0
+        for i = 1:3
+            UserValues.TauFit.ShiftPer{i} = 0;
+            UserValues.TauFit.IRFrelShift{i} = 0;
+            UserValues.TauFit.ScatrelShift{i} = 0;
+            UserValues.TauFit.Ignore{i} = 1;
+            UserValues.TauFit.G{i} = 1;
+        end
+        UserValues.TauFit.l1 = 0;
+        UserValues.TauFit.l2 = 0;
+    end
+end
 %% Set the FontSize to 12
 fields = fieldnames(h); %%% loop through h structure
 for i = 1:numel(fields)
@@ -1116,7 +1105,6 @@ if ismac
         end
     end
 end
-
 %% Initialize values
 for i = 1:3 %max number of pairs for fitting
     TauFitData.Length{i} = UserValues.TauFit.Length{i};
