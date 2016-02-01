@@ -23,10 +23,10 @@ global UserValues PDAMeta PDAData
 
 h.GlobalPDAFit=findobj('Tag','GlobalPDAFit');
 
+addpath(genpath(['.' filesep 'functions']));
+
 LSUserValues(0);
 Look=UserValues.Look;
-
-addpath(genpath(['.' filesep 'functions']));
 
 %h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value} = 'Histogram Library'; % {'Histogram Library','MLE','MonteCarlo'}
 %h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value} = 'Simplex'; % {'Simplex','Gradient-Based','Patternsearch'}
