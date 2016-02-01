@@ -2923,7 +2923,11 @@ switch mode
         h.ParametersTab.Table.CellEditCallback=[];
         for i = 1:numel(PDAData.FileName)
             tmp(i,1) = PDAData.Corrections{i}.Gamma_GR;
-            tmp(i,2) = 0; %see above for explanation! PDAData.Corrections{i}.DirectExcitation_GR;
+            if ~isfield(PDAData.Corrections{i},'DirectExcitationProb') % value was not yet set in PDA
+                tmp(i,2) = 0; %see above for explanation! PDAData.Corrections{i}.DirectExcitation_GR;
+            else
+                tmp(i,2) = PDAData.Corrections{i}.DirectExcitationProb;
+            end
             tmp(i,3) = PDAData.Corrections{i}.CrossTalk_GR;
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
@@ -2950,6 +2954,18 @@ switch mode
             h.ParametersTab.Table.Data(:,e.Indices(2))=deal({NewData});
         end
         PDAMeta.PreparationDone = 0;
+        
+        %%% Values were changed, store this in PDAData structure so it is
+        %%% saved with the files
+        Data = h.ParametersTab.Table.Data;
+        for i = 1:numel(PDAData.Corrections)
+            PDAData.Corrections{i}.Gamma_GR = Data{i,1};
+            PDAData.Corrections{i}.DirectExcitationProb = Data{i,2};
+            PDAData.Corrections{i}.CrossTalk_GR = Data{i,3};
+            % left out background countrates here because they should
+            % barely ever change
+            PDAData.Corrections{i}.FoersterRadius = Data{i,6};
+        end
 end
 
 %%% Enables cell callback again
