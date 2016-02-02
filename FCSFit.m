@@ -223,7 +223,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
-        'String',{'None';'Fit N 3D';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset'},...
+        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset'},...
         'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
@@ -1302,7 +1302,7 @@ for i=1:size(FCSMeta.Plots,1)
             case 1
                 %% No normalization
                 B=1;
-            case {2,6}
+            case {2,7}
                 %% Normalizes to number of particles 3D (defined in model)
                 P=FCSMeta.Params(:,i);
                 eval(FCSMeta.Model.Brightness);
@@ -1311,6 +1311,10 @@ for i=1:size(FCSMeta.Plots,1)
                     B=1;
                 end
             case 3
+                %% subtract the offset
+                P=FCSMeta.Params(:,i);
+                B=1;
+            case 4
                 %% Normalizes to G(0) of the fit
                 P=FCSMeta.Params(:,i);x=0;
                 %eval(FCSMeta.Model.Function);
@@ -1319,7 +1323,7 @@ for i=1:size(FCSMeta.Plots,1)
                 if isnan(B) || B==0 || isinf(B)
                     B=1;
                 end               
-            case 4
+            case 5
                 %% Normalizes to number of particles 2D (defined in model)
                 P=FCSMeta.Params(:,i);
                 eval(FCSMeta.Model.Brightness);
@@ -1327,14 +1331,14 @@ for i=1:size(FCSMeta.Plots,1)
                 if isnan(B) || B==0 || isinf(B)
                     B=1;
                 end
-            case 5
-                %% Normalizes to timepoint cosest to set value
+            case 6
+                %% Normalizes to timepoint closest to set value
                 h.Norm_Time.Visible='on';
                 T=find(FCSMeta.Data{i,1}>=str2double(h.Norm_Time.String),1,'first');
                 B=FCSMeta.Data{i,2}(T);
         end      
         %% Updates data plot y values
-        if Normalization_Method ~= 6
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B;  
         else % substract offset
             FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
@@ -1354,7 +1358,7 @@ for i=1:size(FCSMeta.Plots,1)
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
-        if Normalization_Method ~= 6
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
             FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
