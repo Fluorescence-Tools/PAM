@@ -2035,10 +2035,11 @@ hFit = sum(horzcat(hFit_Ind{:}),2)';
 error = sqrt(PDAMeta.hProx{i});
 error(error == 0) = 1;
 w_res = (PDAMeta.hProx{i}-hFit)./error;
+usedBins = sum(PDAMeta.hProx{i} ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
-    chi2 = sum((w_res.^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
+    chi2 = sum((w_res.^2))/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
 else
-    chi2 = sum(((w_res(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~PDAMeta.Fixed(i,:))-1);
+    chi2 = sum(((w_res(2:end-1)).^2))/(usedBins-sum(~PDAMeta.Fixed(i,:))-1);
     w_res(1) = 0;
     w_res(end) = 0;
 end
@@ -2117,11 +2118,12 @@ for j=1:sum(PDAMeta.Active)
     error(error == 0) = 1;
     PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
     PDAMeta.hFit{i} = hFit;
+    usedBins = sum(PDAMeta.hProx{i} ~= 0);
     if ~h.SettingsTab.OuterBins_Fix.Value
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~Fixed(i,:))-1);
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}).^2))/(usedBins-sum(~Fixed(i,:))-1);
     else
         % disregard last bins
-        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(str2double(h.SettingsTab.NumberOfBins_Edit.String)-sum(~Fixed(i,:))-3);
+        PDAMeta.chi2(i) = sum(((PDAMeta.w_res{i}(2:end-1)).^2))/(usedBins-sum(~Fixed(i,:))-3);
         PDAMeta.w_res{i}(1) = 0;
         PDAMeta.w_res{i}(end) = 0;
     end
@@ -2432,12 +2434,12 @@ hFit = sum(H_meas)*hFit./sum(hFit);
 error = sqrt(H_meas);
 error(error == 0) = 1;
 w_res = (H_meas-hFit)./error;
-
+usedBins = sum(H_meas ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
-    chi2 = sum((w_res.^2))/(Nobins-numel(fitpar)-1);
+    chi2 = sum((w_res.^2))/(usedBins-numel(fitpar)-1);
 else
     % disregard outer bins
-    chi2 = sum((w_res(2:end-1).^2))/(Nobins-numel(fitpar)-3);
+    chi2 = sum((w_res(2:end-1).^2))/(usedBins-numel(fitpar)-3);
     w_res(1) = 0;
     w_res(end) = 0;
 end
