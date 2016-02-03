@@ -4151,21 +4151,23 @@ end
 [H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
 
 if(get(h.Hist_log10, 'Value'))
-    H = log10(H);
+    HH = log10(H);
+else
+    HH = H;
 end
 
 %%% Update Image Plot and Contour Plot
 BurstMeta.Plots.Main_Plot(1).XData = xbins;
 BurstMeta.Plots.Main_Plot(1).YData = ybins;
-BurstMeta.Plots.Main_Plot(1).CData = H;
+BurstMeta.Plots.Main_Plot(1).CData = HH;
 if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (H > 0);
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
 elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
 end
 BurstMeta.Plots.Main_Plot(2).XData = xbins;
 BurstMeta.Plots.Main_Plot(2).YData = ybins;
-BurstMeta.Plots.Main_Plot(2).ZData = H/max(max(H));
+BurstMeta.Plots.Main_Plot(2).ZData = HH/max(max(HH));
 BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 
 axis(h.axes_general,'tight');
@@ -4619,7 +4621,7 @@ if nargin < 1
     species = BurstData.SelectedSpecies;
 end
 
-%%% If species number is to high, return
+%%% If species number is too high, return
 if species > numel(BurstData.SpeciesNames)
     return;
 end
@@ -4630,7 +4632,7 @@ end
 
 CutState = vertcat(BurstData.Cut{species}{:});
 Valid = true(size(BurstData.DataArray,1),1);
-if ~isempty(CutState) %%% only procede if there are elements in the CutTable
+if ~isempty(CutState) %%% only proceed if there are elements in the CutTable
     for i = 1:size(CutState,1)
         if CutState{i,4} == 1 %%% only if the Cut is set to "active"
             Index = find(strcmp(CutState(i,1),BurstData.NameArray));
@@ -6102,10 +6104,13 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 % User clicks Send Species to TauFit
 if isempty(BurstTCSPCData)
+    %store TCSPC data globally, so you don't have to load it every time you
+    %do subensemble analysis of a different species
     Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
         %%% load if it exists
         load([BurstData.FileName(1:end-3) 'bps'],'-mat');
+        BurstTCSPCData.FileName = BurstData.FileName;
     else
         %%% else ask for the file
         [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
@@ -6114,13 +6119,15 @@ if isempty(BurstTCSPCData)
         end
         load('-mat',fullfile(PathName,FileName));
         %%% Store the correct Path in TauFitData
-        TauFitData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
+        BurstTCSPCData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
     end
     BurstTCSPCData.Macrotime = Macrotime;
     BurstTCSPCData.Microtime = Microtime;
     BurstTCSPCData.Channel = Channel;
     clear Macrotime Microtime Channel
 end
+
+TauFitData.FileName = BurstTCSPCData.FileName;
 %%% Read out the bursts contained in the different species selections
 species = h.SpeciesList.Value;
 valid = UpdateCuts(species);
@@ -6128,8 +6135,10 @@ valid = UpdateCuts(species);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
 
 %%% find selected bursts
-MI_total = BurstTCSPCData.Microtime(valid);MI_total = vertcat(MI_total{:});
-CH_total = BurstTCSPCData.Channel(valid);CH_total = vertcat(CH_total{:});
+MI_total = BurstTCSPCData.Microtime(valid);
+MI_total = vertcat(MI_total{:});
+CH_total = BurstTCSPCData.Channel(valid);
+CH_total = vertcat(CH_total{:});
 switch BurstData.BAMethod
     case {1,2} 
         %%% 2color MFD
