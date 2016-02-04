@@ -8,6 +8,8 @@ LSUserValues(0);
 Look=UserValues.Look;
 
 if isempty(hfig)
+    warning('off','MATLAB:uigridcontainer:MigratingFunction');
+    warning('off','MATLAB:uiflowcontainer:MigratingFunction');
     %% Define main window
     h.BurstBrowser = figure(...
         'Units','normalized',...
@@ -3526,7 +3528,7 @@ if strcmpi(clickType,'right')
         end
     end
     
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(:,param)),max(BurstData.DataCut(:,param)), true,false};
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(:,param)),max(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)), true,false};
     
     %%% If Global Cuts, Update all other species
     if species == 1
