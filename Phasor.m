@@ -2629,6 +2629,7 @@ for i=Images %%% Plots Phasor Data
                         PhasorData.Data{PhasorData.Plot(i)}.s<=(Pos(2)+Pos(4)) &...
                         PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
                         PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;  
+                    
                     %%% Applies ROI color
                     Mask(:,:,1)=Mask(:,:,1)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(1);
                     Mask(:,:,2)=Mask(:,:,2)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(2);
@@ -2662,6 +2663,7 @@ for i=Images %%% Plots Phasor Data
                     Mask(:,:,3)=Mask(:,:,3)+roi(:,:,j)*h.ROI_Color{j}.BackgroundColor(3);                    
                 end
             end
+            a=squeeze(sum(sum(roi(:,:,1:2))));
             %%% Generates total ROI map
             ROI=repmat(sum(roi,3),[1 1 3]);
             %%% Averages ROI color
@@ -2678,8 +2680,9 @@ for i=Images %%% Plots Phasor Data
                 case 3
                     FractionColor=[0 0 0; hsv(16)];
                 case 4
-                    FractionColor = [linspace(0,1,16)',linspace(1,0,16)', zeros(16,1)];
-                    FractionColor = [0 0 0; FractionColor];  
+                    FractionColor(1:17,1) = [0; linspace(0,1,8)';ones(8,1) ];
+                    FractionColor(1:17,2) = [0; ones(8,1); linspace(1,0,8)'];
+                    FractionColor(1:17,3) = zeros(17,1);
             end
             
             if isempty(Z1)
@@ -2732,7 +2735,7 @@ for i=Images %%% Plots Phasor Data
 
             %%% Reduces number of points to 20 for the colormap
             while numel(x)>20
-               dist=diff(x(2:end)).^2+diff(y(2:end)).^2;
+               dist=diff(x).^2+diff(y).^2;
                x(find(dist==min(dist),1,'last')+1)=[];
                y(find(dist==min(dist),1,'last')+1)=[];
             end

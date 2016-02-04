@@ -4506,8 +4506,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
             From2=UserValues.PIE.From(Cor_B(i));
         end
         
-        Type = h.Cor.Type.Value;
-        switch Type %%% Assigns photons and does correlation
+        Cor_Type = h.Cor.Type.Value;
+        switch Cor_Type %%% Assigns photons and does correlation
             case {1,3} %%% Point correlation
                 %%% Initializes data cells
                 Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
@@ -4521,14 +4521,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Combines all photons to one vector
                     for l=1:numel(Det1)
                         if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
-                            if Type == 1
+                            if Cor_Type == 1
                                 Data1{k}=[Data1{k};...
                                     TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
-                            elseif Type == 3 %%% Microtime Correlation, add microtimes
+                            elseif Cor_Type == 3 %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
@@ -4554,14 +4554,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         %%% Combines all photons to one vector
                         for l=1:numel(Det2)
                             if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
-                                if Type == 1
+                                if Cor_Type == 1
                                     Data2{k}=[Data2{k};...
                                         TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
-                                elseif Type == 3 %%% Microtime Correlation, add microtimes
+                                elseif Cor_Type == 3 %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
@@ -4725,7 +4725,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     end
                 end
                 %%% Sorts data                 
-                Data = floor(Data*FileInfo.ClockPeriod*FileInfo.ScanFreq);
+                Data = Data*FileInfo.ClockPeriod*FileInfo.ScanFreq;
                 [DataBin,Index] = sort(mod(Data,1));
                 Data = Data(Index);
                 MI = MI(Index);
@@ -4769,7 +4769,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                         end
                     end
                     %%% Sorts photons into spatial bins
-                    Data = floor(Data*FileInfo.ClockPeriod*FileInfo.ScanFreq);
+                    Data = Data*FileInfo.ClockPeriod*FileInfo.ScanFreq;
                     [DataBin,Index] = sort(mod(Data,1));
                     Data = Data(Index);
                     MI = MI(Index);
