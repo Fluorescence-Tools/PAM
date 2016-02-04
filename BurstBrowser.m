@@ -6653,6 +6653,10 @@ else %%% Update UserValues with new values
                 %%% first update the gamma values!
                 %%% gamma_br = gamma_bg*gamma_gr
                 switch e.Indices(1)
+                    case 1 %%% gamma GR was changed
+                        %%% hold gamma BR constant, but change gamma BG
+                        %%% (gamma BG is not really used directly in the code)
+                        obj.Data{2} = obj.Data{3}/obj.Data{1};
                     case 2 %%% gamma BG was changed, update gamma BR
                         obj.Data{3} = obj.Data{2}*obj.Data{1};
                     case 3 %%% gamma BR was changed, update gamma BG

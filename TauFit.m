@@ -2491,8 +2491,7 @@ switch obj
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
         h.Plots.IRFResult.Visible = 'on';
-        h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
-        
+
         % plot chi^2 on graph
         if ~fit % plot only, chi2 was not calculated yet
             chi2 = sum(wres(~isinf(wres)).^2)./(numel(wres)-numel(x0));
@@ -2550,6 +2549,10 @@ switch obj
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
         else
+            %%% hide aniso plots
+            h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
+            h.Result_Plot_Aniso.Parent = h.HidePanel;
+            
             IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
             IRFPat = IRFPat./max(IRFPat).*max(Decay);
@@ -2650,6 +2653,10 @@ switch obj
         h.Residuals_Plot.YLim = [min(res) max(res)];
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Anisotropy';
+        
+        %%% hide aniso plots
+        h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
+        h.Result_Plot_Aniso.Parent = h.HidePanel;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
