@@ -740,7 +740,7 @@ switch Type
             end           
             %%% Creates entry for each individual curve
             for j=1:size(Data.Cor_Array,2)
-                FCSData.Data{end+1} = Data;
+                FCSData.Data{end+1} = Data;              
                 FCSData.FileName{end+1} = [FileName{i}(1:end-5) ' Curve ' num2str(Data.Valid(j))];
                 FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
                 FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Array(:,j);
@@ -778,20 +778,23 @@ h = guidata(findobj('Tag','FCSFit'));
 %%% Merge only the active files
 active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
 %%% check for length difference
+len = zeros(1,numel(active));
+k = 1;
 for i = active'
-    len(i) = numel(FCSData.Data{active(i)}.Cor_Times);
+    len(k) = numel(FCSData.Data{i}.Cor_Times);
+    k = k+1;
 end
 minlen = min(len);
 minlen_ix = find(len == min(len));
 
 Valid = [];
 Cor_Array = [];
-Cor_Times = FCSData.Data{active(minlen_ix(1))}.Cor_Times; % Take Cor_Times from first file, should be same for all.
+Cor_Times = FCSMeta.Data{active(minlen_ix(1)),1}; % Take Cor_Times from first file, should be same for all.
 Header = cell(0);
 Counts = [0,0];
 for i = active'
-    Valid = [Valid, FCSData.Data{i}.Valid];
-    Cor_Array = [Cor_Array, FCSData.Data{i}.Cor_Array(1:minlen,:)];
+    Valid = [Valid, 1];
+    Cor_Array = [Cor_Array, FCSMeta.Data{i,2}(1:minlen,:)];
     Header{end+1} = FCSData.Data{i}.Header;
     Counts = Counts + FCSData.Data{i}.Counts;
 end
