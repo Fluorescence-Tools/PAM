@@ -663,6 +663,7 @@ end
 
 switch Type
     case {1,2} %%% Averaged correlation files
+        FCSMeta.DataType = 'averaged';
         for i=1:numel(FileName)
             %%% Reads files (1 == .mcor; 2 == .cor)
             if Type == 1
@@ -713,6 +714,7 @@ switch Type
             FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
     case {3,4} %% Individual curves from correlation files
+        FCSMeta.DataType = 'individual';
         for i=1:numel(FileName)
             %%% Reads files (3 == .mcor; 4 == .cor)
             if Type == 3
@@ -789,16 +791,28 @@ minlen_ix = find(len == min(len));
 
 Valid = [];
 Cor_Array = [];
-Cor_Times = FCSMeta.Data{active(minlen_ix(1)),1}; % Take Cor_Times from first file, should be same for all.
 Header = cell(0);
 Counts = [0,0];
-for i = active'
-    Valid = [Valid, 1];
-    Cor_Array = [Cor_Array, FCSMeta.Data{i,2}(1:minlen,:)];
-    Header{end+1} = FCSData.Data{i}.Header;
-    Counts = Counts + FCSData.Data{i}.Counts;
+switch FCSMeta.DataType
+    case 'averaged'
+        % multiple averaged file were loaded
+        Cor_Times = FCSData.Data{active(minlen_ix(1))}.Cor_Times; % Take Cor_Times from first file, should be same for all.
+        for i = active'
+            Valid = [Valid, FCSData.Data{i}.Valid];
+            Cor_Array = [Cor_Array, FCSData.Data{i}.Cor_Array(1:minlen,:)];
+            Header{end+1} = FCSData.Data{i}.Header;
+            Counts = Counts + FCSData.Data{i}.Counts;
+        end
+    case 'individual'
+        % individual curves from 1 file were loaded
+        Cor_Times = FCSMeta.Data{active(minlen_ix(1)),1}; % Take Cor_Times from first file, should be same for all.
+        for i = active'
+            Valid = [Valid, 1];
+            Cor_Array = [Cor_Array, FCSMeta.Data{i,2}(1:minlen,:)];
+            Header{end+1} = FCSData.Data{i}.Header;
+            Counts = Counts + FCSData.Data{i}.Counts;
+        end
 end
-
 Counts = Counts./numel(active);
 
 %%% Recalculate Average and SEM
