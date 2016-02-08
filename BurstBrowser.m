@@ -6752,6 +6752,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
+            UpdateLifetimePlots([],[]);
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
@@ -6759,6 +6760,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
             end
+            UpdateLifetimePlots([],[]);
         case h.FoersterRadiusBGEdit
             if ~isnan(str2double(h.FoersterRadiusBGEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBG = str2double(h.FoersterRadiusBGEdit.String);
@@ -6766,6 +6768,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
+            UpdateLifetimePlots([],[]);
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
@@ -6773,6 +6776,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBG);
             end
+            UpdateLifetimePlots([],[]);
         case h.FoersterRadiusBREdit
             if ~isnan(str2double(h.FoersterRadiusBREdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBR = str2double(h.FoersterRadiusBREdit.String);
@@ -6780,6 +6784,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
+            UpdateLifetimePlots([],[]);
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
@@ -6787,6 +6792,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthBREdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBR);
             end
+            UpdateLifetimePlots([],[]);
         case h.r0Green_edit
             if ~isnan(str2double(h.r0Green_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_green = str2double(h.r0Green_edit.String);
