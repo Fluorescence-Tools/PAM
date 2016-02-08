@@ -2523,7 +2523,19 @@ addpath(genpath(['.' filesep 'functions']));
         'ColumnEditable',[false,true],...
         'ColumnWidth',{200,200}...
         );
-    
+    %%% Button for export of meta data to txt file in the folder of the
+    %%% current file
+    h.Profiles.MetaDataExport_Button = uicontrol(...
+        'Parent',h.Profiles.Panel,...
+        'Tag','MetaDataExport_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Save metadata',...
+        'Callback',@Save_MetaData,...
+        'Position',[0.51 0.51 0.13 0.07],...
+        'Tooltipstring', 'Load database from file');
 %% Mac upscaling of Font Sizes
 if ismac
     scale_factor = 1.25;
@@ -8449,7 +8461,7 @@ switch obj
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions tthat updates fFCS GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions that updates fFCS GUI %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_fFCS_GUI(obj,e)
 global UserValues PamMeta FileInfo
@@ -8708,4 +8720,67 @@ switch obj
         elseif obj.Value == 0
             h.Cor_fFCS.PIEchan_Table.Data = h.Cor_fFCS.PIEchan_Table.Data(:,1:2);
         end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function that exports MetaData to txt file %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Save_MetaData(obj,~)
+global UserValues PamMeta FileInfo
+h = guidata(findobj('Tag','Pam'));
+
+if strcmp(FileInfo.FileName{1},'Nothing loaded')
+    return;
+end
+
+[~,FileName,~] = fileparts(FileInfo.FileName{1});
+FilePath = [FileInfo.Path filesep FileName '.txt'];
+%%% open file
+[fid,err] = fopen(FilePath,'w');
+if fid == -1
+    return;
+end
+
+%%% write metadata
+fprintf(fid,'User:\t\t%s\n\n',UserValues.MetaData.User);
+fprintf(fid,'Filename:\t%s\n',FileInfo.FileName{1});
+fprintf(fid,'Sample:\t\t%s\n',UserValues.MetaData.SampleName);
+fprintf(fid,'Buffer:\t\t%s\n',UserValues.MetaData.BufferName);
+fprintf(fid,'Exc. Wav.:\t%s\n',UserValues.MetaData.ExcitationWavelengths);
+fprintf(fid,'Dyes:\t\t%s\n',UserValues.MetaData.DyeNames);
+fprintf(fid,'Meas. Dur.:\t%.2f s\n\n',FileInfo.MeasurementTime);
+
+%%% detector information
+fprintf(fid,'Detector Information\n');
+%find longest name
+maxL = max(cellfun(@numel,UserValues.Detector.Name));
+%round to next multiple of 4
+maxL = 4*(floor(maxL/4)+1);
+fprintf(fid,['Name:' blanks(maxL-5) 'Det#' blanks(1) 'Rout#' blanks(1) 'Filter' blanks(1) 'Pol' blanks(2) 'BS\n']);%header
+for i = 1:numel(UserValues.Detector.Det)
+    fprintf(fid,['%s' blanks(maxL-numel(UserValues.Detector.Name{i})) '%i' blanks(4) '%i' blanks(5) '%s' blanks(1) '%s' blanks(1) '%s\n'],...
+        UserValues.Detector.Name{i},...
+        UserValues.Detector.Det(i),...
+        UserValues.Detector.Rout(i),...
+        UserValues.Detector.Filter{i},...
+        UserValues.Detector.Pol{i},...
+        UserValues.Detector.BS{i});
+end
+
+fprintf(fid,'\n');
+%%% PIE channel information
+fprintf(fid,'PIE Channel Information\n');
+%find longest name
+maxL = max(cellfun(@numel,UserValues.PIE.Name));
+%round to next multiple of 4
+maxL = 4*(floor(maxL/4)+1);
+fprintf(fid,['Name:' blanks(maxL-5) 'Det#' blanks(1) 'Rout#' blanks(1) 'From' blanks(1) 'To' blanks(3) 'Background [kHz]\n']);%header
+for i = 1:numel(UserValues.PIE.Name)
+    fprintf(fid,['%s' blanks(maxL-numel(UserValues.PIE.Name{i})) '%i' blanks(4) '%i' blanks(5) '%i' blanks(5-numel(num2str(UserValues.PIE.From(i)))) '%i' blanks(5-numel(num2str(UserValues.PIE.To(i)))) '%.2f\n'],...
+        UserValues.PIE.Name{i},...
+        UserValues.PIE.Detector(i),...
+        UserValues.PIE.Router(i),...
+        UserValues.PIE.From(i),...
+        UserValues.PIE.To(i),...
+        UserValues.PIE.Background(i));
 end
