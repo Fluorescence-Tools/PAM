@@ -520,6 +520,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.MIAFit.Omit was incomplete');
     end
     P.MIAFit.Omit = S.MIAFit.Omit;
+    %%% Checks if MIAFit.Omit_Center_Line subfield exists
+    if ~isfield (S.MIAFit, 'Omit_Center_Line')
+        S.MIAFit.Omit_Center_Line=0;
+        disp('UserValues.MIAFit.Omit_Center_Line was incomplete');
+    end
+    P.MIAFit.Omit_Center_Line = S.MIAFit.Omit_Center_Line;
     %%% Checks if MIAFit.Hide_Legend subfield exists
     if ~isfield (S.MIAFit, 'Hide_Legend') || ~isscalar(S.MIAFit.Hide_Legend)
         S.MIAFit.Hide_Legend=0;
