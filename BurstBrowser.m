@@ -3528,7 +3528,7 @@ if strcmpi(clickType,'right')
         end
     end
     
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(:,param)),max(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)), true,false};
+    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)),max(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)), true,false};
     
     %%% If Global Cuts, Update all other species
     if species == 1
@@ -4114,11 +4114,11 @@ if size(CutState,2) > 0
                 CutState{strcmp(BurstData.NameArray{x},CutParameters),3}];
         else
             %%% set to min max
-            xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];
+            xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
         end
     else
         %%% set to min max
-        xlimits = [min(datatoplot(:,x)), max(datatoplot(:,x))];
+        xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
     end
     
     if any(strcmp(BurstData.NameArray{y},CutParameters))
@@ -4128,11 +4128,11 @@ if size(CutState,2) > 0
                 CutState{strcmp(BurstData.NameArray{y},CutParameters),3}];
         else
             %%% set to min max
-            ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];
+            ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)), max(datatoplot(isfinite(datatoplot(:,y)),y))];
         end
     else
         %%% set to min max
-        ylimits = [min(datatoplot(:,y)), max(datatoplot(:,y))];
+        ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)), max(datatoplot(isfinite(datatoplot(:,y)),y))];
     end
     if isempty(xlimits)
         %selection is empty
