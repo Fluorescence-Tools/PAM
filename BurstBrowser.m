@@ -2998,7 +2998,14 @@ end
 % burst analysis before December 16, 2015
 if ~isfield(BurstData, 'ClockPeriod')
     BurstData.ClockPeriod = BurstData.SyncPeriod;
-    BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
+    if isfield(BurstData,'FileInfo')
+        if isfield(BurstData.FileInfo,'SyncPeriod')
+            BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
+        end
+    else
+        BurstData.FileInfo.SyncPeriod = BurstData.SyncPeriod;
+        BurstData.FileInfo.ClockPeriod = BurstData.SyncPeriod;
+    end
     if isfield(BurstData.FileInfo,'Card')
         if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
             %if SPC-630 is used, set the SyncPeriod to what it really is
