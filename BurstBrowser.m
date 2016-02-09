@@ -2629,6 +2629,8 @@ switch mode
         [~,BurstMeta.Plots.gamma_threecolor_lifetime(2)] = contourf(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Visible','off');
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime = plot(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         
+        ChangePlotType(h.PlotTypePopumenu,[])
+        ChangePlotType(h.PlotContourLines,[])
     case 2
         %%% reset plots
         obj = [findall(h.BurstBrowser,'Type','stair');...
@@ -4224,6 +4226,8 @@ if UserValues.BurstBrowser.Display.ColorMapInvert
     colormap(flipud(colormap));
 end
 
+% update plot type
+ChangePlotType([],[]);
 % Update no. bursts
 set(h.text_nobursts, 'String', {[num2str(sum(BurstData.Selected)) ' bursts']; [num2str(round(sum(BurstData.Selected/numel(BurstData.Selected)*1000))/10) '% of total']})
 
@@ -4269,7 +4273,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ChangePlotType(obj,~)
 global UserValues BurstMeta
-h = guidata(obj);
+h = guidata(findobj('Tag','BurstBrowser'));
+
+if isempty(obj)
+    obj = h.PlotTypePopumenu;
+end
+
 switch obj
     case h.PlotTypePopumenu
         UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
