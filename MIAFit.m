@@ -1238,6 +1238,9 @@ switch mode
                         switch Type
                             case 7 %%% Correlation image
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
+                                if h.Omit_Center_Line.Value
+                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                end
                             case 8 %%% Fit image
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
@@ -1265,6 +1268,9 @@ switch mode
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
+                                if h.Omit_Center_Line.Value
+                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                end
                                 if h.Fit_Weights.Value
                                     Data = ((Data-Out)./Data)^2;
                                 else
@@ -1310,6 +1316,9 @@ switch mode
                         switch Type
                             case 10 %%% Correlation surf
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
+                                if h.Omit_Center_Line.Value
+                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                end
                             case 11 %%% Fit surf
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
@@ -1337,6 +1346,9 @@ switch mode
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
+                                if h.Omit_Center_Line.Value
+                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                end
                                 if h.Fit_Weights.Value
                                     Data = ((Data-Out)./Data).^2;
                                 else
@@ -1374,6 +1386,9 @@ switch mode
                         H.Axes{i,j}.Position(4) = H.Axes{i,j}.Position(4)+3.5*FontSize;
                         %%% Extract Data
                         Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
+                        if h.Omit_Center_Line.Value
+                            Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                        end
                         Error = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         
                         P=MIAFitMeta.Params(:,File);
@@ -2210,6 +2225,8 @@ if sum(Global)==0
             Omit = MIAFitData.Data{i,1}(Center(1), Center(2));
         elseif h.Omit_Center_Line.Value
             Omit = MIAFitData.Data{i,1}(Center(1), Center(2)+(min(min(x)):max(max(x))));
+        else
+            Omit = [];
         end
         %%% Disables weights
         if ~Use_Weights
@@ -2252,6 +2269,8 @@ else
             Omit = [Omit; MIAFitData.Data{i,1}(Center(1), Center(2))];
         elseif h.Omit_Center_Line.Value
             Omit = [Omit; MIAFitData.Data{i,1}(Center(1),Center(2)+(min(min(x)):max(max(x))))];
+        else
+            Omit = [];
         end
         Points(end+1) = numel(x);
         %%% Concaternates initial values and bounds for non fixed parameters
