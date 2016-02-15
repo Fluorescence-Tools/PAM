@@ -7875,7 +7875,7 @@ global BurstData BurstTCSPCData PhotonStream UserValues BurstMeta
 h = guidata(obj);
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
-
+file = BurstMeta.SelectedFile;
 %%% Read out the species name
 if (BurstData{file}.SelectedSpecies == 1)
     species = 'global';
