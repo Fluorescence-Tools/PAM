@@ -3,7 +3,7 @@ hfig=findobj('Tag','BurstBrowser');
 
 addpath(genpath(['.' filesep 'functions']));
 
-global UserValues %BurstMeta BurstData BurstTCSPCData
+global UserValues BurstMeta
 LSUserValues(0);
 Look=UserValues.Look;
 
@@ -43,9 +43,15 @@ if isempty(hfig)
     %%% Load Burst Data Callback
     h.Load_Bursts = uimenu(...
         'Parent',h.File_Menu,...
-        'Label','Load Burst Data (Crtl+N)',...
+        'Label','Load New Burst Data (Crtl+N)',...
         'Callback',@Load_Burst_Data_Callback,...
         'Tag','Load_Burst_Data');
+    h.Append_File = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','Add Burst Data',...
+        'Callback',@Load_Burst_Data_Callback,...
+        'Tag','Load_Burst_Data',...
+        'Enable','off');
     h.Database.Add = uimenu(...
         'Parent', h.File_Menu,...
         'Tag','Database_Add',...
@@ -400,107 +406,50 @@ if isempty(hfig)
         'Tag','SecondaryTabDatabasePanel');
     
     
-    %%% Species List Right-click Menu
-    h.SpeciesListMenu = uicontextmenu;
-    
-    h.AddSpeciesMenuItem = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Add Species',...
-        'Tag','AddSpeciesMenuItem',...
-        'Callback',@AddSpecies);
-    
-    h.RemoveSpeciesMenuItem = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Remove Species',...
-        'Tag','RemoveSpeciesMenuItem',...
-        'Callback',@RemoveSpecies);
-    
-    h.RenameSpeciesMenuItem = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Rename Species',...
-        'Tag','RenameSpeciesMenuItem',...
-        'Callback',@RenameSpecies);
-    
-    h.ExportSpeciesToPDAMenuItem = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Export Species to PDA',...
-        'Tag','ExportSpeciesToPDAMenuItem',...
-        'Separator','on',...
-        'Callback',@Export_To_PDA);
-    
-    h.ExportMicrotimePattern = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Export Microtime Pattern',...
-        'Tag','ExportMicrotimePatternMenuItem',...
-        'Callback',@Export_Microtime_Pattern);
-    
-    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem = uimenu('Parent',h.SpeciesListMenu,...
-        'Label','Export Species to 2C-PDA',...
-        'Tag','ExportSpeciesToPDA_2C_for3CMFD_MenuItem',...
-        'Visible','off');
-     h.ExportSpeciesToPDA_2C_for3CMFD_GR = uimenu(...
-        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
-        'Label','GR',...
-        'Tag','ExportSpeciesToPDA_2C_for3CMFD_GR',...
-        'Callback',@Export_To_PDA,...
-        'Visible','on');
-    h.ExportSpeciesToPDA_2C_for3CMFD_BG = uimenu(...
-        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
-        'Label','BG',...
-        'Tag','ExportSpeciesToPDA_2C_for3CMFD_BG',...
-        'Callback',@Export_To_PDA,...
-        'Visible','on');
-    h.ExportSpeciesToPDA_2C_for3CMFD_BR = uimenu(...
-        'Parent',h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem,...
-        'Label','BR',...
-        'Tag','ExportSpeciesToPDA_2C_for3CMFD_BR',...
-        'Callback',@Export_To_PDA,...
-        'Visible','on');
-    h.DoTimeWindowAnalysis = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Time Window Analysis',...
-        'Tag','DoTimeWindowAnalysis',...
-        'Callback',@Time_Window_Analysis);
-    
-    h.Export_FRET_Hist_Menu = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Export FRET Hist',...
-        'Tag','Export_FRET_Hist_Menu',...
-        'Callback',@Export_FRET_Hist);
-    h.SendToTauFit = uimenu(...
-        'Parent',h.SpeciesListMenu,...
-        'Label','Send Selected Species to TauFit',...
-        'Tag','SendToTauFit',...
-        'Callback',@Send_To_TauFit);
-    %     h.ExportPDA_PN_Donoronly = uimenu(...
-    %         'Parent',h.SpeciesListMenu,...
-    %         'Label','Export Photon Count Distribution of Donor only Species for PDA',...
-    %         'Tag','ExportPDA_PN_Donoronly',...
-    %         'Callback',@Export_To_PDA);
-    
+    %%% jave based right-click menu for uitree implementation
+    %%% see http://undocumentedmatlab.com/blog/adding-context-menu-to-uitree
+    % Prepare the context menu (can use HTML labels)
+    h.AddSpeciesMenuItem = javax.swing.JMenuItem('Add Species');
+    h.RemoveSpeciesMenuItem = javax.swing.JMenuItem('Remove Species');
+    h.RenameSpeciesMenuItem = javax.swing.JMenuItem('Rename Species');
+    h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
+    h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
+    h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
+    h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Histogram');
+    h.SendToTauFit = javax.swing.JMenuItem('Send Selected Species to TauFit');
+    % set callbacks
+    set(h.AddSpeciesMenuItem,'ActionPerformedCallback',@AddSpecies);
+    set(h.RemoveSpeciesMenuItem,'ActionPerformedCallback',@RemoveSpecies);
+    set(h.RenameSpeciesMenuItem,'ActionPerformedCallback',@RenameSpecies);
+    set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
+    set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
+    set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
+    set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
+    set(h.SendToTauFit,'ActionPerformedCallback',@Send_To_TauFit);
+    % construct contextmenu
+    h.SpeciesListMenu = javax.swing.JPopupMenu;
+    h.SpeciesListMenu.add(h.AddSpeciesMenuItem);
+    h.SpeciesListMenu.add(h.RemoveSpeciesMenuItem);
+    h.SpeciesListMenu.add(h.RenameSpeciesMenuItem);
+    h.SpeciesListMenu.addSeparator;
+    h.SpeciesListMenu.add(h.ExportSpeciesToPDAMenuItem);
+    h.SpeciesListMenu.add(h.ExportMicrotimePattern);
+    h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
+    h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
+    h.SpeciesListMenu.add(h.Export_FRET_Hist_Menu);
+    h.SpeciesListMenu.add(h.SendToTauFit);
+
     %%% Define Species List
-    h.SpeciesList = uicontrol(...
-        'Parent',h.SecondaryTabSelectionPanel,...
-        'Units','normalized',...
-        'BackgroundColor', Look.List,...
-        'ForegroundColor', Look.ListFore,...
-        'KeyPressFcn',[],...
-        'Max',5,...
-        'Position',[0 0 1 0.2],...
-        'Style','listbox',...
-        'Tag','SpeciesList',...
-        'UIContextMenu',h.SpeciesListMenu,...
-        'Callback',@SpeciesList_ButtonDownFcn);
-    %'ButtonDownFcn',@List_ButtonDownFcn,...
-    %'CallBack',@List_ButtonDownFcn,...
-    % for right click selection to work, we need to access the underlying
-    % java object
-    %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
-    %     drawnow;
-    %     jScrollPane = findjobj(h.SpeciesList);
-    %     jSpeciesList = jScrollPane.getViewport.getComponent(0);
-    %     jSpeciesList = handle(jSpeciesList, 'CallbackProperties');
-    %     set(jSpeciesList, 'MousePressedCallback',{@SpeciesList_ButtonDownFcn,h.SpeciesList});
+    % new: use uitreenode
+    h.SpeciesList.Root = uitreenode('v0','internalHandle','Data Tree',[],false);
+    [h.SpeciesList.Tree, h.SpeciesList.container] = uitree('v0','Root',h.SpeciesList.Root);
+    set(h.SpeciesList.container, 'Parent', h.SecondaryTabSelectionPanel,...
+        'Units','normalize',...
+        'Position',[0 0 1 0.25]);  % fix the uitree Parent
+    set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
+    
+    % Set the tree mouse-click callback
+    set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
     %define the cut table
     cname = {'min','max','active','delete'};
@@ -513,7 +462,7 @@ if isempty(hfig)
         'Parent',h.SecondaryTabSelectionPanel,...
         'Units','normalized',...
         'ForegroundColor',[0,0,0],...
-        'Position',[0 0.2 1 0.3],...
+        'Position',[0 0.25 1 0.25],...
         'BackgroundColor', [Look.Table1;Look.Table2],...
         'ForegroundColor', Look.TableFore,...
         'Tag','CutTable',...
@@ -589,6 +538,19 @@ if isempty(hfig)
         'String','Manual Cut (space)',...
         'FontSize',12,...
         'Callback',@ManualCut);
+    
+    %define cut selection popupmenu
+    h.CutSelection = uicontrol(...
+        'Parent',h.SecondaryTabSelectionPanel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.675 0.51 0.3 0.03],...
+        'Style','popupmenu',...
+        'Tag','CutSelection',...
+        'String',{'none'},...
+        'FontSize',12,...
+        'Callback',@UpdateCuts);   
     %% Secondary tab corrections
     %%% Buttons
     %%% vertical layout for buttons
@@ -613,32 +575,32 @@ if isempty(hfig)
         'Callback',@DetermineCorrections);
     
     %%% Layout container for edit box and text
-    h.CorrectionsFilterContainer = uigridcontainer(...
-        'GridSize',[1,2],...
-        'HorizontalWeight',[0.7,0.3],...
-        'Parent',h.CorrectionsButtonsContainer,...
-        'Units','norm',...
-        'Position',[.1,.1,.8,.8],...
-        'BackgroundColor',Look.Back);
-    h.TGX_TRR_text = uicontrol('Style','text',...
-        'Tag','T_Threshold_Text',...
-        'String','Threshold |TGX-TRR|',...
-        'FontSize',12,...
-        'Units','normalized',...
-        'Parent',h.CorrectionsFilterContainer,...
-        'Position',[0.45 0.96 0.35 0.02],...
-        'BackgroundColor',Look.Back,...
-        'ForegroundColor',Look.Fore);
-    
-    h.T_Threshold_Edit =  uicontrol('Style','edit',...
-        'Tag','T_Threshold_Edit',...
-        'String','0.1',...
-        'FontSize',12,...
-        'Units','normalized',...
-        'Parent',h.CorrectionsFilterContainer,...
-        'Position',[0.8 0.96 0.15 0.02],...
-        'BackgroundColor',Look.Control,...
-        'ForegroundColor',Look.Fore);
+%     h.CorrectionsFilterContainer = uigridcontainer(...
+%         'GridSize',[1,2],...
+%         'HorizontalWeight',[0.7,0.3],...
+%         'Parent',h.CorrectionsButtonsContainer,...
+%         'Units','norm',...
+%         'Position',[.1,.1,.8,.8],...
+%         'BackgroundColor',Look.Back);
+%     h.TGX_TRR_text = uicontrol('Style','text',...
+%         'Tag','T_Threshold_Text',...
+%         'String','Threshold |TGX-TRR|',...
+%         'FontSize',12,...
+%         'Units','normalized',...
+%         'Parent',h.CorrectionsFilterContainer,...
+%         'Position',[0.45 0.96 0.35 0.02],...
+%         'BackgroundColor',Look.Back,...
+%         'ForegroundColor',Look.Fore);
+%     
+%     h.T_Threshold_Edit =  uicontrol('Style','edit',...
+%         'Tag','T_Threshold_Edit',...
+%         'String','0.1',...
+%         'FontSize',12,...
+%         'Units','normalized',...
+%         'Parent',h.CorrectionsFilterContainer,...
+%         'Position',[0.8 0.96 0.15 0.02],...
+%         'BackgroundColor',Look.Control,...
+%         'ForegroundColor',Look.Fore);
     
     %%% Button to fit gamma
     h.FitGammaButton = uicontrol(...
@@ -1585,20 +1547,20 @@ if isempty(hfig)
         'KeyPressFcn',{@Database,0},...
         'Tooltipstring', ['<html>'...
                           'List of files in database <br>',...
-                          '<i>"return"</i>: Loads selected files <b>!!!Only works with same Path and Type!!!</b><br>',...
+                          '<i>"return"</i>: Loads selected files<br>',...
                           '<I>"delete"</i>: Removes selected files from list </b>'],...
-        'Position',[0.01 0.01 0.7 0.98]);   
-    h.DatabaseBB.Text = {};
-    h.DatabaseBB.Text{end+1} = uicontrol(...
-        'Parent',h.DatabaseBB.Panel,...
-        'Style','text',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'HorizontalAlignment','left',...
-        'String','Manage database',...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.75 0.90 0.24 0.07]);
+        'Position',[0.01 0.01 0.98 0.88]);   
+%     h.DatabaseBB.Text = {};
+%     h.DatabaseBB.Text{end+1} = uicontrol(...
+%         'Parent',h.DatabaseBB.Panel,...
+%         'Style','text',...
+%         'Units','normalized',...
+%         'FontSize',12,...
+%         'HorizontalAlignment','left',...
+%         'String','Manage database',...
+%         'BackgroundColor', Look.Back,...
+%         'ForegroundColor', Look.Fore,...
+%         'Position',[0.75 0.90 0.24 0.07]);
     h.DatabaseBB.Load = uicontrol(...
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Load_Button',...
@@ -1608,7 +1570,7 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'String','Load database',...
         'Callback',{@Database,3},...
-        'Position',[0.75 0.84 0.24 0.07],...
+        'Position',[0.05 0.95 0.35 0.035],...
         'Tooltipstring', 'Load database from file');
     %%% Button to add files to the database
     h.DatabaseBB.Save = uicontrol(...
@@ -1620,47 +1582,37 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'String','Save Database',...
         'Callback',{@Database,4},...
-        'Position',[0.75 0.76 0.24 0.07],...
+        'Position',[0.05 0.91 0.35 0.035],...
         'enable', 'off',...
         'Tooltipstring', 'Save database to a file');
-    h.DatabaseBB.Text{end+1} = uicontrol(...
-        'Parent',h.DatabaseBB.Panel,...
-        'Style','text',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'HorizontalAlignment','left',...
-        'String','Batch analysis',...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.75 0.66 0.24 0.07]);
-    %%% Button to add files to the database
-    h.DatabaseBB.Correlate = uicontrol(...
+    %%% Button to add files to the database from dialog
+    h.DatabaseBB.AddFiles = uicontrol(...
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Correlate_Button',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'String','Correlate',...
-        'Callback',{@Database,5},...
-        'Position',[0.75 0.60 0.24 0.07],...
-        'enable', 'off',...
+        'String','Add files to database',...
+        'Callback',{@Database,1},...
+        'Position',[0.5 0.95 0.35 0.035],...
+        'enable', 'on',...
         'UserData',0,...
-        'Tooltipstring', 'Make sure "Correlate" tab settings are correct!');  
-    %%% Button to add files to the database
-    h.DatabaseBB.Burst = uicontrol(...
+        'Tooltipstring', ''); 
+    %%% Button to add all loaded files to the database
+    h.DatabaseBB.AppendLoadedFiles = uicontrol(...
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Burst_Button',...
         'Units','normalized',...
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'String','Burst analysis',...
-        'Callback',{@Database,6},...
-        'Position',[0.75 0.52 0.24 0.07],...
+        'String','Append loaded files to database',...
+        'Callback',{@Database,1},...
+        'Position',[0.5 0.91 0.35 0.035],...
         'enable', 'off',...
         'UserData',0,...
-        'Tooltipstring', 'Make sure "Burst analysis" tab settings are correct');  
+        'Tooltipstring', '');  
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Data Processing Options Panel
@@ -1688,7 +1640,6 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
-    
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
@@ -2434,7 +2385,6 @@ if isempty(hfig)
         'FontSize',12,...
         'nextplot','add',...
         'XTickLabel',[]);
-
     %% Mac upscaling of Font Sizes
     if ismac
         scale_factor = 1.2;
@@ -2455,6 +2405,8 @@ if isempty(hfig)
     guidata(h.BurstBrowser,h);
     %%% Initialize Plots
     Initialize_Plots(1);
+    BurstMeta.SelectedFile = 1;
+    BurstMeta.Database = cell(0);
     %% set UserValues in GUI
     UpdateCorrections([],[]);
     %%% Update ColorMap
@@ -2647,7 +2599,7 @@ end
 %%%%%%% Close Function: Clear global Variable on closing  %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_BurstBrowser(~,~)
-global BurstData UserValues BurstTCSPCData PhotonStream
+global BurstData UserValues BurstTCSPCData PhotonStream BurstMeta
 if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     %%% Ask for saving
     choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
@@ -2680,36 +2632,43 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Burst_Data_Callback(~,~)
-h = guidata(gcbo);
+function Load_Burst_Data_Callback(obj,~)
+h = guidata(findobj('Tag','BurstBrowser'));
 global BurstData UserValues BurstMeta PhotonStream BurstTCSPCData
-if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
-    %%% Ask for saving
-    choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
-    switch choice
-        case 'Yes'
-            Save_Analysis_State_Callback([],[]);
-        case 'Cancel'
-            return;
-    end
-end
-if isfield(BurstMeta,'fFCS')
-    BurstMeta = rmfield(BurstMeta,'fFCS');
-end
-if isfield(BurstMeta,'Data')
-    BurstMeta = rmfield(BurstMeta,'Data');
-end
-LSUserValues(0);
-[FileName,PathName,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
-if FileName == 0
-    return;
+if obj ~= h.DatabaseBB.List
+    if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
+        %%% Ask for saving
+        choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
+        switch choice
+            case 'Yes'
+                Save_Analysis_State_Callback([],[]);
+            case 'Cancel'
+                return;
+        end
+    end
+
+    LSUserValues(0);
+    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'on');
+
+    if FilterIndex == 0
+        return;
+    end
+    %%% make pathname to cell array
+    for i = 1:numel(FileName)
+        PathName{i} = pathname;
+    end
+elseif obj == h.DatabaseBB.List
+    %%% get Filelist from Database
+    PathName = BurstMeta.Database(h.DatabaseBB.List.Value,2);
+    FileName = BurstMeta.Database(h.DatabaseBB.List.Value,1);
+    FilterIndex = 1;
 end
-%%% clear global variable
-%clearvars -global BurstData BurstTCSPCData PhotonStream
-BurstData = [];
-BurstTCSPCData = [];
-PhotonStream = [];
+
+LSUserValues(0);
+UserValues.File.BurstBrowserPath=PathName{1};
+LSUserValues(1);
+
 %%% Reset Pam Burst GUI
 if ~isempty(findobj('Tag','Pam'))
     h_pam = guidata(findobj('Tag','Pam'));
@@ -2726,410 +2685,131 @@ if ~isempty(findobj('Tag','Pam'))
     h_pam.Burst.NirFilter_Button.ForegroundColor = UserValues.Look.Fore;
 end
 
-LSUserValues(0);
-UserValues.File.BurstBrowserPath=PathName;
-LSUserValues(1);
-load('-mat',fullfile(PathName,FileName));
-BurstData.FileName = fullfile(PathName,FileName);
-
-
 %%% Reset FCS buttons (no *.aps loaded anymore!)
 h.CorrelateWindow_Button.Enable = 'off';
 h.CorrelateWindow_Edit.Enable = 'off';
-%%% Determine if an APBS or DCBS file was loaded
-%%% This is important because for APBS, the donor only lifetime can be
-%%% determined from the measurement!
-%%% Check for DCBS/TCBS
-if isfield(BurstData,'BAMethod')
-    if ~any(BurstData.BAMethod == [2,4])%~isempty(strfind(FileName,'APBS')) || ~isempty(strfind(FileName,'ACBS'))
-        %%% Enable the donor only lifetime checkbox
-        h.DonorLifetimeFromDataCheckbox.Enable = 'on';
-        %%% Crosstalk/direct excitation can be determined!
-        %%% set flag:
-        BurstMeta.APBS = 1;
-    end
+%%% Load data
+switch obj
+    case {h.Load_Bursts, h.DatabaseBB.List}
+        %%% clear global variable
+        BurstData = [];
+        BurstTCSPCData = [];
+        PhotonStream = [];
+        Load_BurstFile(PathName,FileName,FilterIndex);
+        %%% Enable append file
+        h.Append_File.Enable = 'on';
+    case h.Append_File
+        Load_BurstFile(PathName,FileName,FilterIndex,1)
 end
-%%% Convert old File Format to new
-if FilterIndex == 2 % KBA file was loaded
-    if ~exist('Data','var') % no variable named Data exists (very old)
-        %%% find out the BurstSearch Type from filename
-        if ~isempty(strfind(FileName,'ACBS_2C'))
-            Data.BAMethod = 1;
-        elseif ~isempty(strfind(FileName,'DCBS_2C'))
-            Data.BAMethod = 2;
-        elseif ~isempty(strfind(FileName,'ACBS_3C'))
-            Data.BAMethod = 3;
-        elseif ~isempty(strfind(FileName,'TCBS_3C'))
-            Data.BAMethod = 4;
-        end
-    end
-    switch Data.BAMethod
-        case {1,2} %%% 2 Color MFD
-            %%% Convert NameArray
-            NameArray{strcmp(NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
-            NameArray{strcmp(NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
-            NameArray{strcmp(NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
-            NameArray{strcmp(NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
-            NameArray{strcmp(NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
-            NameArray{strcmp(NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
-            NameArray{strcmp(NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
-            NameArray{strcmp(NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
-            NameArray{strcmp(NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
-            NameArray{strcmp(NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
-            if sum(strcmp(NameArray,'tau(green)')) > 0
-                NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
-                NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
-                DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
-                DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
-            else %%% create zero value arrays
-                NameArray{end+1} = 'Lifetime GG [ns]';
-                NameArray{end+1} = 'Lifetime RR [ns]';
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-            end
-            NameArray{end+1} = 'Anisotropy GG';
-            NameArray{end+1} = 'Anisotropy RR';
-            %%% Caculate Anisotropies
-            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
-                (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
-            DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
-                (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
-            
-            BurstData.NameArray = NameArray;
-            BurstData.DataArray = DataArray;
-            BurstData.BAMethod = Data.BAMethod;
-            BurstData.FileType = Data.Filetype;
-            if isfield(Data,'TACrange')
-                BurstData.TACRange = Data.TACrange;
-            else
-                BurstData.TACRange = 1E9./Data.SyncRate; %kba file from old Pam
-                % this will not work when the syncrate and clock rate are
-                % different
-            end
-            BurstData.SyncPeriod = 1./Data.SyncRate;
-            BurstData.ClockPeriod = BurstData.SyncPeriod;
-            BurstData.FileInfo.MI_Bins = 4096;
-            BurstData.FileInfo.TACRange = BurstData.TACRange;
-            if isfield(Data,'PIEChannels')
-                BurstData.PIE.From = [Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
-                    Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
-                    Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
-                BurstData.PIE.To = [Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
-                    Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
-                    Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
-            elseif isfield(Data,'fFCS')
-                BurstData.PIE.From = Data.fFCS.lower;
-                BurstData.PIE.To = Data.fFCS.upper;
-            end
-            
-            %%% Calculate IRF microtime histogram
-            if isfield(Data,'IRFmicrotime')
-                for i = 1:6
-                    BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
-                end
-                BurstData.ScatterPattern = BurstData.IRF;
-            end
-            
-            BurstTCSPCData.Macrotime = Data.Macrotime;
-            BurstTCSPCData.Microtime = Data.Microtime;
-            BurstTCSPCData.Channel = Data.Channel;
-            BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
-            BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
-            BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
-        case {3,4} %%% 3Color MFD
-            %%% Convert NameArray
-            NameArray{strcmp(NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
-            NameArray{strcmp(NameArray,'TB - TR (PIE)')} = '|TBX-TRR| Filter';
-            NameArray{strcmp(NameArray,'TB - TG (PIE)')} = '|TBX-TGX| Filter';
-            NameArray{strcmp(NameArray,'Efficiency* (G -> R)')} = 'FRET Efficiency GR';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> R)')} = 'FRET Efficiency BR';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> G)')} = 'FRET Efficiency BG';
-            NameArray{strcmp(NameArray,'Efficiency* (B -> G+R)')} = 'FRET Efficiency B->G+R';
-            NameArray{strcmp(NameArray,'Stochiometry (GR)')} = 'Stoichiometry GR';
-            NameArray{strcmp(NameArray,'Stochiometry (BG)')} = 'Stoichiometry BG';
-            NameArray{strcmp(NameArray,'Stochiometry (BR)')} = 'Stoichiometry BR';
-            if sum(strcmp(NameArray,'tau(green)')) > 0
-                NameArray{strcmp(NameArray,'tau(blue)')} = 'Lifetime BB [ns]';
-                NameArray{strcmp(NameArray,'tau(green)')} = 'Lifetime GG [ns]';
-                NameArray{strcmp(NameArray,'tau(red)')} = 'Lifetime RR [ns]';
-                DataArray(:,strcmp(NameArray,'Lifetime BB [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime BB [ns]'))*1E9;
-                DataArray(:,strcmp(NameArray,'Lifetime GG [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime GG [ns]'))*1E9;
-                DataArray(:,strcmp(NameArray,'Lifetime RR [ns]')) = DataArray(:,strcmp(NameArray,'Lifetime RR [ns]'))*1E9;
-            else %%% create zero value arrays
-                NameArray{end+1} = 'Lifetime BB [ns]';
-                NameArray{end+1} = 'Lifetime GG [ns]';
-                NameArray{end+1} = 'Lifetime RR [ns]';
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-            end
-            
-            %%% Calculate Anisotropies
-            NameArray{end+1} = 'Anisotropy BB';
-            NameArray{end+1} = 'Anisotropy GG';
-            NameArray{end+1} = 'Anisotropy RR';
-            if sum(strcmp(NameArray,'Number of Photons (BB par)'))
-                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')))./...
-                    (DataArray(:,strcmp(NameArray,'Number of Photons (BB par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (BB perp)')));
-                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')))./...
-                    (DataArray(:,strcmp(NameArray,'Number of Photons (GG par)')) + 2.*DataArray(:,strcmp(NameArray,'Number of Photons (GG perp)')));
-                DataArray(:,end+1) = (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) - DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')))./...
-                    (DataArray(:,strcmp(NameArray,'Number of Photons (RR par)')) + 2*DataArray(:,strcmp(NameArray,'Number of Photons (RR perp)')));
-            else
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-                DataArray(:,end+1) = zeros(size(DataArray,1),1);
-            end
-            BurstData.NameArray = NameArray;
-            BurstData.DataArray = DataArray;
-            BurstData.BAMethod = Data.BAMethod;
-            if isfield(Data,'Filetype')
-                BurstData.FileType = Data.Filetype;
-            end
-            if isfield(Data,'SyncRate')
-                if isfield(Data,'TACrange')
-                    BurstData.TACRange = Data.TACrange;
-                    BurstData.FileInfo.TACRange = Data.TACrange;
-                else
-                    BurstData.TACRange =  1E9./Data.SyncRate;
-                    BurstData.FileInfo.TACRange =  1E9./Data.SyncRate;
-                    % this will not work if the syncrate and clockrate are
-                    % different
-                end
-                BurstData.SyncPeriod = 1./Data.SyncRate;
-                BurstData.ClockPeriod = BurstData.SyncPeriod;  %kba file from old pam
-            end
-            BurstData.FileInfo.MI_Bins = 4096;
-            
-            if isfield(Data,'PIEChannels')
-                BurstData.PIE.From = [Data.PIEChannels.fromBB1, Data.PIEChannels.fromBB2,...
-                    Data.PIEChannels.fromBG1, Data.PIEChannels.fromBG2,...
-                    Data.PIEChannels.fromBR1, Data.PIEChannels.fromBR2,...
-                    Data.PIEChannels.fromGG1, Data.PIEChannels.fromGG2,...
-                    Data.PIEChannels.fromGR1, Data.PIEChannels.fromGR2,...
-                    Data.PIEChannels.fromRR1, Data.PIEChannels.fromRR2];
-                BurstData.PIE.To = [Data.PIEChannels.toBB1, Data.PIEChannels.toBB2,...
-                    Data.PIEChannels.toBG1, Data.PIEChannels.toBG2,...
-                    Data.PIEChannels.toBR1, Data.PIEChannels.toBR2,...
-                    Data.PIEChannels.toGG1, Data.PIEChannels.toGG2,...
-                    Data.PIEChannels.toGR1, Data.PIEChannels.toGR2,...
-                    Data.PIEChannels.toRR1, Data.PIEChannels.toRR2];
-            elseif isfield(Data,'fFCS')
-                BurstData.PIE.From = Data.fFCS.lower;
-                BurstData.PIE.To = Data.fFCS.upper;
-            end
-            
-            %%% Calculate IRF microtime histogram
-            if isfield(Data,'IRFmicrotime')
-                for i = 1:12
-                    BurstData.IRF{i} = histc( Data.IRFmicrotime{i}, 0:(BurstData.FileInfo.MI_Bins-1));
-                end
-                BurstData.ScatterPattern = BurstData.IRF;
-            end
-            if isfield(Data,'Macrotime')
-                BurstTCSPCData.Macrotime = Data.Macrotime;
-                BurstTCSPCData.Microtime = Data.Microtime;
-                BurstTCSPCData.Channel = Data.Channel;
-                BurstTCSPCData.Macrotime = cellfun(@(x) x',BurstTCSPCData.Macrotime,'UniformOutput',false);
-                BurstTCSPCData.Microtime = cellfun(@(x) x',BurstTCSPCData.Microtime,'UniformOutput',false);
-                BurstTCSPCData.Channel = cellfun(@(x) x',BurstTCSPCData.Channel,'UniformOutput',false);
-            end
-    end
-end
-
-%%% Add corrected proximity ratios (== signal fractions) for three-colorMFD
-if any(BurstData.BAMethod == [3,4])
-    if ~any(strcmp(BurstData.NameArray,'Proximity Ratio GR (raw)'))
-        NameArray_dummy = cell(1,size(BurstData.NameArray,2)+4);
-        DataArray_dummy = zeros(size(BurstData.DataArray,1),size(BurstData.DataArray,2)+4);
-        %%% Insert corrected proximity ratios into namearray
-        NameArray_dummy(1:11) = BurstData.NameArray(1:11);
-        NameArray_dummy(12:15) = {'Proximity Ratio GR (raw)','Proximity Ratio BG (raw)','Proximity Ratio BR (raw)','Proximity Ratio B->G+R (raw)'};
-        NameArray_dummy(16:end) = BurstData.NameArray(12:end);
-        %%% duplicate proximity ratios into data array
-        DataArray_dummy(:,1:11) = BurstData.DataArray(:,1:11);
-        DataArray_dummy(:,12:15) = BurstData.DataArray(:,8:11);
-        DataArray_dummy(:,16:end) = BurstData.DataArray(:,12:end);
-        %%% replace arrays
-        BurstData.NameArray = NameArray_dummy;
-        BurstData.DataArray = DataArray_dummy;
-    end
-end
-
-try
-    %%% Fix missing "FRET" in Efficiency naming (NameArray)
-    if any(BurstData.BAMethod == [1,2,5])
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
-        %%% also fix Cuts
-        if isfield(BurstData,'Cut')
-            for i = 1:numel(BurstData.Cut) %%% loop over species
-                for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
-                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency')
-                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency';
-                    end
-                end
-            end
-        end
-    elseif any(BurstData.BAMethod == [3,4])
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency GR')} = 'FRET Efficiency GR';
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BG')} = 'FRET Efficiency BG';
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency BR')} = 'FRET Efficiency BR';
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Efficiency B->G+R')} = 'FRET Efficiency B->G+R';
-        %%% also fix Cuts
-        if isfield(BurstData,'Cut')
-            for i = 1:numel(BurstData.Cut) %%% loop over species
-                for j = 1:numel(BurstData.Cut{i}) %%% loop over cuts in species
-                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency GR')
-                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency GR';
-                    end
-                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BG')
-                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency BG';
-                    end
-                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency BR')
-                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency BR';
-                    end
-                    if strcmp(BurstData.Cut{i}{j}{1},'Efficiency B->G+R')
-                        BurstData.Cut{i}{j}{1} = 'FRET Efficiency B->G+R';
-                    end
-                end
-            end
-        end
-    end
-end
-
-% burst analysis before December 16, 2015
-if ~isfield(BurstData, 'ClockPeriod')
-    BurstData.ClockPeriod = BurstData.SyncPeriod;
-    if isfield(BurstData,'FileInfo')
-        if isfield(BurstData.FileInfo,'SyncPeriod')
-            BurstData.FileInfo.ClockPeriod = BurstData.FileInfo.SyncPeriod;
-        end
-    else
-        BurstData.FileInfo.SyncPeriod = BurstData.SyncPeriod;
-        BurstData.FileInfo.ClockPeriod = BurstData.SyncPeriod;
-    end
-    if isfield(BurstData.FileInfo,'Card')
-        if ~strcmp(BurstData.FileInfo.Card, 'SPC-140/150/830/130')
-            %if SPC-630 is used, set the SyncPeriod to what it really is
-            BurstData.SyncPeriod = 1/8E7*3;
-            BurstData.FileInfo.SyncPeriod = 1/8E7*3;
-            if rand < 0.05
-                msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
-            end
-        end
-    end
-end
-
+BurstMeta.SelectedFile = 1;
 %%% Update Figure Name
-if ~isfield(BurstData,'DisplayName')
-    [~,BurstData.DisplayName,~] = fileparts(BurstData.FileName);
-end
-h.BurstBrowser.Name = ['BurstBrowser - ' BurstData.DisplayName];
-h.Progress_Text.String = BurstData.DisplayName;
+BurstMeta.DisplayName = BurstData{1}.FileName;
+h.BurstBrowser.Name = ['BurstBrowser - ' BurstMeta.DisplayName];
+
+h.Progress_Text.String = BurstMeta.DisplayName;
 %%% If Pam is open, indicate that a file is loaded
 if ~isempty(findobj('Tag','Pam'))
-    h_pam = guidata(findobj('Tag','Pam'));
-    %%% Update Textbox
-    [~,h_pam.Burst_LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
-    [~,h.Burst_LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
-    %%% Set Analysis Buttons in Pam
-    %%% set the text of the BurstSearch Button to green color to indicate that
-    %%% a burst search has been done
-    h_pam.Burst_Button.ForegroundColor = [0 0.8 0];
-    %%% Enable Lifetime and 2CDE Button
-    h_pam.BurstLifetime_Button.Enable = 'on';
-    %%% Check if lifetime has been fit already
-    if any(BurstData.BAMethod == [1,2,5])
-        if (sum(BurstData.DataArray(:,strcmp('Lifetime GG [ns]',BurstData.NameArray))) == 0 )
-            %%% no lifetime fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
-        else
-            %%% lifetime was fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
+    %%% only do if only one file is loaded, otherwise it won't work
+    if numel(BurstData) == 1
+        h_pam = guidata(findobj('Tag','Pam'));
+        %%% Update Textbox
+        h_pam.Burst_LoadedFile_Text.String = BurstData{file}.FileName{1};
+        h.Burst_LoadedFile_Text.TooltipString = BurstData{file}.FileName{1};
+        %%% Set Analysis Buttons in Pam
+        %%% set the text of the BurstSearch Button to green color to indicate that
+        %%% a burst search has been done
+        h_pam.Burst_Button.ForegroundColor = [0 0.8 0];
+        %%% Enable Lifetime and 2CDE Button
+        h_pam.BurstLifetime_Button.Enable = 'on';
+        %%% Check if lifetime has been fit already
+        if any(BurstData{1}.BAMethod == [1,2,5])
+            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime GG [ns]',BurstData{1}.NameArray))) == 0 )
+                %%% no lifetime fit
+                h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
+            else
+                %%% lifetime was fit
+                h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
+            end
+        elseif any(BurstData{1}.BAMethod == [3,4])
+            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime BB [ns]',BurstData{1}.NameArray))) == 0 )
+                %%% no lifetime fit
+                h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
+            else
+                %%% lifetime was fit
+                h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
+            end
         end
-    elseif any(BurstData.BAMethod == [3,4])
-        if (sum(BurstData.DataArray(:,strcmp('Lifetime BB [ns]',BurstData.NameArray))) == 0 )
-            %%% no lifetime fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
-        else
-            %%% lifetime was fit
-            h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
-        end
-    end
-    
-    h_pam.NirFilter_Button.Enable = 'on';
-    %%% Check if NirFilter was calculated before
-    if any(BurstData.BAMethod == [1,2,5])
-        if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
-            %%% no lifetime fit
-            h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
-        else
-            %%% lifetime was fit
-            h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
-        end
-    elseif any(BurstData.BAMethod == [3,4])
-        if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData.NameArray))) == 0 )
-            %%% no filter
-            h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
-        else
-            %%% filter was calculated
-            h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
+        
+        h_pam.NirFilter_Button.Enable = 'on';
+        %%% Check if NirFilter was calculated before
+        if any(BurstData{1}.BAMethod == [1,2,5])
+            if (sum(BurstData{1}.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData{1}.NameArray))) == 0 )
+                %%% no lifetime fit
+                h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
+            else
+                %%% lifetime was fit
+                h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
+            end
+        elseif any(BurstData{1}.BAMethod == [3,4])
+            if (sum(BurstData{1}.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData{1}.NameArray))) == 0 )
+                %%% no filter
+                h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
+            else
+                %%% filter was calculated
+                h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
+            end
         end
     end
 end
 
-if any(BurstData.BAMethod == [1,2,5]) %%% Two-Color MFD
+% set default to efficiency and stoichiometry
+if any(BurstData{1}.BAMethod == [1,2,5]) %%% Two-Color MFD
     %find positions of FRET Efficiency and Stoichiometry in NameArray
-    posE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
+    posE = find(strcmp(BurstData{1}.NameArray,'FRET Efficiency'));
     %%% Compatibility check for old BurstExplorer Data
-    if sum(strcmp(BurstData.NameArray,'Stoichiometry')) == 0
-        BurstData.NameArray{strcmp(BurstData.NameArray,'Stochiometry')} = 'Stoichiometry';
+    if sum(strcmp(BurstData{1}.NameArray,'Stoichiometry')) == 0
+        BurstData{1}.NameArray{strcmp(BurstData{1}.NameArray,'Stochiometry')} = 'Stoichiometry';
     end
-    posS = find(strcmp(BurstData.NameArray,'Stoichiometry'));
-elseif any(BurstData.BAMethod == [3,4]) %%% Three-Color MFD
-    posE = find(strcmp(BurstData.NameArray,'FRET Efficiency GR'));
-    posS = find(strcmp(BurstData.NameArray,'Stoichiometry GR'));
+    posS = find(strcmp(BurstData{1}.NameArray,'Stoichiometry'));
+elseif any(BurstData{1}.BAMethod == [3,4]) %%% Three-Color MFD
+    posE = find(strcmp(BurstData{1}.NameArray,'FRET Efficiency GR'));
+    posS = find(strcmp(BurstData{1}.NameArray,'Stoichiometry GR'));
 end
-%%% store posE and posS in BurstMeta
-BurstMeta.posE = posE;
-BurstMeta.posS = posS;
 
-set(h.ParameterListX, 'String', BurstData.NameArray);
+set(h.ParameterListX, 'String', BurstData{1}.NameArray);
 set(h.ParameterListX, 'Value', posE);
 
-set(h.ParameterListY, 'String', BurstData.NameArray);
+set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 set(h.ParameterListY, 'Value', posS);
 
-if ~isfield(BurstData,'Cut')
-    %initialize Cut Cell Array
-    BurstData.Cut{1} = {};
-    BurstData.Cut{2} = {};
-    BurstData.Cut{3} = {};
-    %add species to list
-    BurstData.SpeciesNames{1} = 'Global Cuts';
-    % also add two species for convenience
-    BurstData.SpeciesNames{2} = 'Species 1';
-    BurstData.SpeciesNames{3} = 'Species 2';
-    %update species list
-    set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
-    BurstData.SelectedSpecies = 1;
+if BurstData{1}.APBS == 1
+    %%% Enable the donor only lifetime checkbox
+    h.DonorLifetimeFromDataCheckbox.Enable = 'on';
 end
 
-BurstData.DataCut = BurstData.DataArray;
-
-if isfield(BurstData,'SpeciesNames') %%% Previous Cuts exist
-    if ~isempty(BurstData.SpeciesNames)
-        %%% Update the Species List
-        h.SpeciesList.String = BurstData.SpeciesNames;
-        h.SpeciesList.Value = BurstData.SelectedSpecies;
-    end
-end
-
+%%% Enable DataBase Append Loaded Files
+h.DatabaseBB.AppendLoadedFiles.Enable = 'on';
 %%% Reset Plots
 Initialize_Plots(2);
-UpdateCorrections([],[]);
+%%% Initialize Corrections for every loaded file
+for i = 1:numel(BurstData)
+    BurstMeta.SelectedFile = i;
+    UpdateCorrections([],[]);
+end
+BurstMeta.SelectedFile = 1;
+
+if isfield(BurstMeta,'fFCS')
+    BurstMeta = rmfield(BurstMeta,'fFCS');
+end
+if isfield(BurstMeta,'Data')
+    BurstMeta = rmfield(BurstMeta,'Data');
+end
+
+%%% Update Species List
+UpdateSpeciesList();
+
 %%% Switches GUI to 3cMFD or 2cMFD format
-SwitchGUI(BurstData.BAMethod);
+SwitchGUI(BurstData{1}.BAMethod);
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([]);
@@ -3139,6 +2819,386 @@ ChangePlotType(h.PlotContourLines) %to make the display correct at initial
 DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
 
+function Load_BurstFile(PathName,FileName,FilterIndex,append)
+global BurstData BurstMeta BurstTCSPCData PhotonStream
+if ischar(FileName)
+    FileName = {FileName};
+end
+if nargin < 4
+    append = 0;
+end
+
+for i = 1:numel(FileName)
+    S = load('-mat',fullfile(PathName{i},FileName{i}));
+    
+    %%% Convert old File Format to new
+    if FilterIndex == 2 % KBA file was loaded
+        if ~isfield(S,'Data') % no variable named Data exists (very old)
+            %%% find out the BurstSearch Type from filename
+            if ~isempty(strfind(FileName{i},'ACBS_2C'))
+                S.Data.BAMethod = 1;
+            elseif ~isempty(strfind(FileName{i},'DCBS_2C'))
+                S.Data.BAMethod = 2;
+            elseif ~isempty(strfind(FileName{i},'ACBS_3C'))
+                S.Data.BAMethod = 3;
+            elseif ~isempty(strfind(FileName{i},'TCBS_3C'))
+                S.Data.BAMethod = 4;
+            end
+        end
+        switch S.Data.BAMethod
+            case {1,2} %%% 2 Color MFD
+                %%% Convert NameArray
+                S.NameArray{strcmp(S.NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
+                if sum(strcmp(S.NameArray,'tau(green)')) > 0
+                    S.NameArray{strcmp(S.NameArray,'tau(green)')} = 'Lifetime GG [ns]';
+                    S.NameArray{strcmp(S.NameArray,'tau(red)')} = 'Lifetime RR [ns]';
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]'))*1E9;
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]'))*1E9;
+                else %%% create zero value arrays
+                    S.NameArray{end+1} = 'Lifetime GG [ns]';
+                    S.NameArray{end+1} = 'Lifetime RR [ns]';
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                end
+                S.NameArray{end+1} = 'Anisotropy GG';
+                S.NameArray{end+1} = 'Anisotropy RR';
+                %%% Caculate Anisotropies
+                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')))./...
+                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')));
+                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')))./...
+                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')));
+
+                S.BurstData.NameArray = S.NameArray;
+                S.BurstData.DataArray = S.DataArray;
+                S.BurstData.BAMethod = S.Data.BAMethod;
+                S.BurstData.FileType = S.Data.Filetype;
+                if isfield(S.Data,'TACrange')
+                    S.BurstData.TACRange = S.Data.TACrange;
+                else
+                    S.BurstData.TACRange = 1E9./S.Data.SyncRate; %kba file from old Pam
+                    % this will not work when the syncrate and clock rate are
+                    % different
+                end
+                S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
+                S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;
+                S.BurstData.FileInfo.MI_Bins = 4096;
+                S.BurstData.FileInfo.TACRange = S.BurstData.TACRange;
+                if isfield(S.Data,'PIEChannels')
+                    S.BurstData.PIE.From = [S.Data.PIEChannels.fromGG1, S.Data.PIEChannels.fromGG2,...
+                        S.Data.PIEChannels.fromGR1, S.Data.PIEChannels.fromGR2,...
+                        S.Data.PIEChannels.fromRR1, S.Data.PIEChannels.fromRR2];
+                    S.BurstData.PIE.To = [S.Data.PIEChannels.toGG1, S.Data.PIEChannels.toGG2,...
+                        S.Data.PIEChannels.toGR1, S.Data.PIEChannels.toGR2,...
+                        S.Data.PIEChannels.toRR1, S.Data.PIEChannels.toRR2];
+                elseif isfield(S.Data,'fFCS')
+                    S.BurstData.PIE.From = S.Data.fFCS.lower;
+                    S.BurstData.PIE.To = S.Data.fFCS.upper;
+                end
+
+                %%% Calculate IRF microtime histogram
+                if isfield(S.Data,'IRFmicrotime')
+                    for j = 1:6
+                        S.BurstData.IRF{j} = histc(S.Data.IRFmicrotime{j}, 0:(S.BurstData.FileInfo.MI_Bins-1));
+                    end
+                    S.BurstData.ScatterPattern = S.BurstData.IRF;
+                end
+
+                S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
+                S.BurstTCSPCData.Microtime = S.Data.Microtime;
+                S.BurstTCSPCData.Channel = S.Data.Channel;
+                S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
+                S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
+                S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+            case {3,4} %%% 3Color MFD
+                %%% Convert NameArray
+                S.NameArray{strcmp(S.NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
+                S.NameArray{strcmp(S.NameArray,'TB - TR (PIE)')} = '|TBX-TRR| Filter';
+                S.NameArray{strcmp(S.NameArray,'TB - TG (PIE)')} = '|TBX-TGX| Filter';
+                S.NameArray{strcmp(S.NameArray,'Efficiency* (G -> R)')} = 'FRET Efficiency GR';
+                S.NameArray{strcmp(S.NameArray,'Efficiency* (B -> R)')} = 'FRET Efficiency BR';
+                S.NameArray{strcmp(S.NameArray,'Efficiency* (B -> G)')} = 'FRET Efficiency BG';
+                S.NameArray{strcmp(S.NameArray,'Efficiency* (B -> G+R)')} = 'FRET Efficiency B->G+R';
+                S.NameArray{strcmp(S.NameArray,'Stochiometry (GR)')} = 'Stoichiometry GR';
+                S.NameArray{strcmp(S.NameArray,'Stochiometry (BG)')} = 'Stoichiometry BG';
+                S.NameArray{strcmp(S.NameArray,'Stochiometry (BR)')} = 'Stoichiometry BR';
+                if sum(strcmp(S.NameArray,'tau(green)')) > 0
+                    S.NameArray{strcmp(S.NameArray,'tau(blue)')} = 'Lifetime BB [ns]';
+                    S.NameArray{strcmp(S.NameArray,'tau(green)')} = 'Lifetime GG [ns]';
+                    S.NameArray{strcmp(S.NameArray,'tau(red)')} = 'Lifetime RR [ns]';
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime BB [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime BB [ns]'))*1E9;
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]'))*1E9;
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]'))*1E9;
+                else %%% create zero value arrays
+                    S.NameArray{end+1} = 'Lifetime BB [ns]';
+                    S.NameArray{end+1} = 'Lifetime GG [ns]';
+                    S.NameArray{end+1} = 'Lifetime RR [ns]';
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                end
+
+                %%% Calculate Anisotropies
+                S.NameArray{end+1} = 'Anisotropy BB';
+                S.NameArray{end+1} = 'Anisotropy GG';
+                S.NameArray{end+1} = 'Anisotropy RR';
+                if sum(strcmp(NameArray,'Number of Photons (BB par)'))
+                    S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB perp)')))./...
+                        (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB perp)')));
+                    S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')))./...
+                        (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')));
+                    S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')))./...
+                        (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')));
+                else
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                    S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
+                end
+                S.BurstData.NameArray = S.NameArray;
+                S.BurstData.DataArray = S.DataArray;
+                S.BurstData.BAMethod = S.Data.BAMethod;
+                if isfield(S.Data,'Filetype')
+                    S.BurstData.FileType = S.Data.Filetype;
+                end
+                if isfield(S.Data,'SyncRate')
+                    if isfield(S.Data,'TACrange')
+                        S.BurstData.TACRange = S.Data.TACrange;
+                        S.BurstData.FileInfo.TACRange = S.Data.TACrange;
+                    else
+                        S.BurstData.TACRange =  1E9./S.Data.SyncRate;
+                        S.BurstData.FileInfo.TACRange =  1E9./S.Data.SyncRate;
+                        % this will not work if the syncrate and clockrate are
+                        % different
+                    end
+                    S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
+                    S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;  %kba file from old pam
+                end
+                S.BurstData.FileInfo.MI_Bins = 4096;
+
+                if isfield(S.Data,'PIEChannels')
+                    S.BurstData.PIE.From = [S.Data.PIEChannels.fromBB1, S.Data.PIEChannels.fromBB2,...
+                        S.Data.PIEChannels.fromBG1, S.Data.PIEChannels.fromBG2,...
+                        S.Data.PIEChannels.fromBR1, S.Data.PIEChannels.fromBR2,...
+                        S.Data.PIEChannels.fromGG1, S.Data.PIEChannels.fromGG2,...
+                        S.Data.PIEChannels.fromGR1, S.Data.PIEChannels.fromGR2,...
+                        S.Data.PIEChannels.fromRR1, S.Data.PIEChannels.fromRR2];
+                    S.BurstData.PIE.To = [S.Data.PIEChannels.toBB1, S.Data.PIEChannels.toBB2,...
+                        S.Data.PIEChannels.toBG1, S.Data.PIEChannels.toBG2,...
+                        S.Data.PIEChannels.toBR1, S.Data.PIEChannels.toBR2,...
+                        S.Data.PIEChannels.toGG1, S.Data.PIEChannels.toGG2,...
+                        S.Data.PIEChannels.toGR1, S.Data.PIEChannels.toGR2,...
+                        S.Data.PIEChannels.toRR1, S.Data.PIEChannels.toRR2];
+                elseif isfield(S.Data,'fFCS')
+                    S.BurstData.PIE.From = S.Data.fFCS.lower;
+                    S.BurstData.PIE.To = S.Data.fFCS.upper;
+                end
+
+                %%% Calculate IRF microtime histogram
+                if isfield(S.Data,'IRFmicrotime')
+                    for j = 1:12
+                        S.BurstData.IRF{j} = histc(S.Data.IRFmicrotime{j}, 0:(S.BurstData.FileInfo.MI_Bins-1));
+                    end
+                    S.BurstData.ScatterPattern = S.BurstData.IRF;
+                end
+                if isfield(S.Data,'Macrotime')
+                    S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
+                    S.BurstTCSPCData.Microtime = S.Data.Microtime;
+                    S.BurstTCSPCData.Channel = S.Data.Channel;
+                    S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
+                    S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
+                    S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                end
+        end
+    end
+    
+    %%% Determine if an APBS or DCBS file was loaded
+    %%% This is important because for APBS, the donor only lifetime can be
+    %%% determined from the measurement!
+    %%% Check for DCBS/TCBS
+    if isfield(S.BurstData,'BAMethod')
+        if ~any(S.BurstData.BAMethod == [2,4]);
+            %%% Crosstalk/direct excitation can be determined!
+            %%% set flag:
+            S.BurstData.APBS = 1;
+        end
+    end
+    
+    %%% Add corrected proximity ratios (== signal fractions) for three-colorMFD
+    if any(S.BurstData.BAMethod == [3,4])
+        if ~any(strcmp(S.BurstData.NameArray,'Proximity Ratio GR (raw)'))
+            NameArray_dummy = cell(1,size(S.BurstData.NameArray,2)+4);
+            DataArray_dummy = zeros(size(S.BurstData.DataArray,1),size(S.BurstData.DataArray,2)+4);
+            %%% Insert corrected proximity ratios into namearray
+            NameArray_dummy(1:11) = S.BurstData.NameArray(1:11);
+            NameArray_dummy(12:15) = {'Proximity Ratio GR (raw)','Proximity Ratio BG (raw)','Proximity Ratio BR (raw)','Proximity Ratio B->G+R (raw)'};
+            NameArray_dummy(16:end) = S.BurstData.NameArray(12:end);
+            %%% duplicate proximity ratios into data array
+            DataArray_dummy(:,1:11) = S.BurstData.DataArray(:,1:11);
+            DataArray_dummy(:,12:15) = S.BurstData.DataArray(:,8:11);
+            DataArray_dummy(:,16:end) = S.BurstData.DataArray(:,12:end);
+            %%% replace arrays
+            S.BurstData.NameArray = NameArray_dummy;
+            S.BurstData.DataArray = DataArray_dummy;
+        end
+    end
+
+    %%% Fix missing "FRET" in Efficiency naming (NameArray)
+    try
+        if any(S.BurstData.BAMethod == [1,2,5])
+            S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
+            %%% also fix Cuts
+            if isfield(S.BurstData,'Cut')
+                for k = 1:numel(S.BurstData.Cut) %%% loop over species
+                    for l = 1:numel(S.BurstData.Cut{k}) %%% loop over cuts in species
+                        if strcmp(S.BurstData.Cut{k}{l}{1},'Efficiency')
+                            S.BurstData.Cut{k}{l}{1} = 'FRET Efficiency';
+                        end
+                    end
+                end
+            end
+        elseif any(S.BurstData.BAMethod == [3,4])
+            S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency GR')} = 'FRET Efficiency GR';
+            S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency BG')} = 'FRET Efficiency BG';
+            S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency BR')} = 'FRET Efficiency BR';
+            S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency B->G+R')} = 'FRET Efficiency B->G+R';
+            %%% also fix Cuts
+            if isfield(S.BurstData,'Cut')
+                for k = 1:numel(S.BurstData.Cut) %%% loop over species
+                    for j = 1:numel(S.BurstData.Cut{k}) %%% loop over cuts in species
+                        if strcmp(S.BurstData.Cut{k}{j}{1},'Efficiency GR')
+                            S.BurstData.Cut{k}{j}{1} = 'FRET Efficiency GR';
+                        end
+                        if strcmp(S.BurstData.Cut{k}{j}{1},'Efficiency BG')
+                            S.BurstData.Cut{k}{j}{1} = 'FRET Efficiency BG';
+                        end
+                        if strcmp(S.BurstData.Cut{k}{j}{1},'Efficiency BR')
+                            S.BurstData.Cut{k}{j}{1} = 'FRET Efficiency BR';
+                        end
+                        if strcmp(S.BurstData.Cut{k}{j}{1},'Efficiency B->G+R')
+                            S.BurstData.Cut{k}{j}{1} = 'FRET Efficiency B->G+R';
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    % burst analysis before December 16, 2015
+    if ~isfield(S.BurstData, 'ClockPeriod')
+        S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;
+        if isfield(S.BurstData,'FileInfo')
+            if isfield(S.BurstData.FileInfo,'SyncPeriod')
+                S.BurstData.FileInfo.ClockPeriod = S.BurstData.FileInfo.SyncPeriod;
+            end
+        else
+            S.BurstData.FileInfo.SyncPeriod = S.BurstData.SyncPeriod;
+            S.BurstData.FileInfo.ClockPeriod = S.BurstData.SyncPeriod;
+        end
+        if isfield(S.BurstData.FileInfo,'Card')
+            if ~strcmp(S.BurstData.FileInfo.Card, 'SPC-140/150/830/130')
+                %if SPC-630 is used, set the SyncPeriod to what it really is
+                S.BurstData.SyncPeriod = 1/8E7*3;
+                S.BurstData.FileInfo.SyncPeriod = 1/8E7*3;
+                if rand < 0.05
+                    msgbox('Be aware that the SyncPeriod is hardcoded. This message appears 1 out of 20 times.')
+                end
+            end
+        end
+    end
+    
+    S.BurstData.FileName = FileName{i};
+    S.BurstData.PathName = PathName{i};
+    %%% check for existing Cuts
+    if ~isfield(S.BurstData,'Cut') %%% no cuts existed
+        %initialize Cut Cell Array
+        S.BurstData.Cut{1} = {};
+        S.BurstData.Cut{2} = {};
+        S.BurstData.Cut{3} = {};
+        %add species to list
+        S.BurstData.SpeciesNames{1} = 'Global Cuts';
+        % also add two species for convenience
+        S.BurstData.SpeciesNames{2} = 'Subspecies 1';
+        S.BurstData.SpeciesNames{3} = 'Subspecies 2';
+        S.BurstData.SelectedSpecies = [1,1];
+    elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
+        if isfield(S.BurstData,'SelectedSpecies')
+            if numel(S.BurstData.SelectedSpecies) == 1
+                S.BurstData.SelectedSpecies = [1,1];
+            end
+        end
+    end
+    %%% New: Cuts stored in Additional Variable when it was already saved
+    %%% once in BurstBrowser
+    %%% overwrite BurstData subfields with separately saved variables
+    if isfield(S,'Cut')
+        S.BurstData.Cut = S.Cut;
+    end
+    if isfield(S,'SpeciesNames')
+        S.BurstData.SpeciesNames = S.SpeciesNames;
+    end
+    if isfield(S,'SelectedSpecies')
+        S.BurstData.SelectedSpecies = S.SelectedSpecies;
+    end
+    if isfield(S,'Background')
+        S.BurstData.Background = S.Background;
+    end
+    if isfield(S,'Corrections')
+        S.BurstData.Corrections = S.Corrections;
+    end
+    %%% initialize DataCut
+    S.BurstData.DataCut = S.BurstData.DataArray;
+    %%% transfer to Global BurstData Structure holding all loaded files
+    if append
+        BurstData{end+1} = S.BurstData;
+        if ~isfield(S,'BurstTCSPCData')
+            BurstTCSPCData{end+1} = [];
+        elseif isfield(S,'BurstTCSPCData')
+            BurstTCSPCData{end+1} = S.BurstTCSPCData;
+        end
+        PhotonStream{end+1} = [];
+    else
+        BurstData{i} = S.BurstData;
+        if ~isfield(S,'BurstTCSPCData')
+            BurstTCSPCData{i} = [];
+        elseif isfield(S,'BurstTCSPCData')
+            BurstTCSPCData{i} = S.BurstTCSPCData;
+        end
+        PhotonStream{i} = [];
+    end
+end
+
+BurstMeta.SelectedFile = 1;
+
+function Files = GetMultipleFiles(FilterSpec,Title,PathName)
+FileName = 1;
+count = 0;
+while FileName ~= 0
+    [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
+    if ~iscell(FileName)
+        if FileName ~= 0
+            count = count+1;
+            Files{count,1} = FileName;
+            Files{count,2} = PathName;
+        end
+    elseif iscell(FileName)
+        for i = 1:numel(FileName)
+            if FileName{i} ~= 0
+                count = count+1;
+                Files{count,1} = FileName{i};
+                Files{count,2} = PathName;
+            end
+        end
+        FileName = FileName{end};
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3147,28 +3207,7 @@ h = guidata(gcbo);
 global UserValues
 
 %%% Select files
-FileName = 1;
-PathName = UserValues.File.BurstBrowserPath;
-count = 0;
-while FileName ~= 0
-    [FileName,PathName] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', PathName, 'MultiSelect', 'on');
-    if ~iscell(FileName)
-        if FileName ~= 0
-            count = count+1;
-            Files{count,1} = fullfile(PathName,FileName);
-            Files{count,2} = FileName;
-        end
-    elseif iscell(FileName)
-        for i = 1:numel(FileName)
-            if FileName{i} ~= 0
-                count = count+1;
-                Files{count,1} = fullfile(PathName,FileName{i});
-                Files{count,2} = FileName{i};
-            end
-        end
-        FileName = FileName{end};
-    end
-end
+Files = GetMultipleFiles({'*.bur','*.bur file'}, 'Choose a file', UserValues.File.BurstBrowserPath);
 
 if size(Files,1) < 2
     m = msgbox('Select more than one file!');
@@ -3180,7 +3219,7 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Merging files...');
 %%% Load Files in CellArray
 MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
-    MergeData{i} = load(Files{i,1},'-mat');
+    MergeData{i} = load(fullfile(Files{i,2},Files{i,1}),'-mat');
     % burst analysis before December 16, 2015
     if ~isfield(MergeData{i}.BurstData, 'ClockPeriod')
         MergeData{i}.BurstData.ClockPeriod = MergeData{i}.BurstData.SyncPeriod;
@@ -3279,7 +3318,7 @@ end
 Progress(0.6,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
 
 %%% Save merged data
-[FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fileparts(fileparts(Files{1,1})));
+[FileName,PathName] = uiputfile({'*.bur','*.bur file'},'Choose a filename for the merged file',fileparts(Files{1,1}));
 if FileName == 0
     m = msgbox('No valid filepath specified... Canceling');
     pause(1);
@@ -3287,11 +3326,12 @@ if FileName == 0
     return;
 end
 BurstData.PathName = PathName;
-BurstData.FileName = fullfile(PathName,FileName);
+BurstData.FileName = FileName;
 
-save(BurstData.FileName,'BurstData');
+filename = fullfile(BurstData.PathName,BurstData.FileName);
+save(filename,'BurstData');
 Progress(0.8,h.Progress_Axes,h.Progress_Text,'Saving merged file...');
-save([BurstData.FileName(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
+save([filename(1:end-3) 'bps'],'Macrotime','Microtime','Channel');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
@@ -3513,50 +3553,48 @@ LSUserValues(1);
 function ParameterList_ButtonDownFcn(hListbox,~,clickType)
 clickedIndex = hListbox.Value;
 h = guidata(hListbox);
-global BurstData
+global BurstData BurstMeta
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
 
 if strcmpi(clickType,'right')
-    %%%add to cut list if right-clicked
-    if ~isfield(BurstData,'Cut')
-        %initialize Cut Cell Array
-        BurstData.Cut{1} = {};
-        %add species to list
-        BurstData.SpeciesNames{1} = 'Global Cuts';
-        %update species list
-        set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
-        BurstData.SelectedSpecies = 1;
+    %%% check if master species is selected
+    if all(species == [0,0])
+        return;
     end
-    species = get(h.SpeciesList,'Value');
+    %%%add to cut list if right-clicked
     param = clickedIndex;
     
     %%% Check whether the CutParameter already exists or not
-    ExistingCuts = vertcat(BurstData.Cut{species}{:});
+    ExistingCuts = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
     if ~isempty(ExistingCuts)
-        if any(strcmp(BurstData.NameArray{param},ExistingCuts(:,1)))
+        if any(strcmp(BurstData{file}.NameArray{param},ExistingCuts(:,1)))
             return;
         end
     end
     
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{param}, min(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)),max(BurstData.DataCut(~isinf(BurstData.DataCut(:,param)),param)), true,false};
+    BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{param}, min(BurstData{file}.DataCut(~isinf(BurstData{file}.DataCut(:,param)),param)),max(BurstData{file}.DataCut(~isinf(BurstData{file}.DataCut(:,param)),param)), true,false};
     
     %%% If Global Cuts, Update all other species
-    if species == 1
-        ChangedParameterName = BurstData.NameArray{param};
-        if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+    if species(2) == 1
+        ChangedParameterName = BurstData{file}.NameArray{param};
+        %%% find number of species for species group
+        num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+        if num_species > 1 %%% Check if there are other species defined
             %%% cycle through the number of other species
-            for j = 2:numel(BurstData.Cut)
+            for j = 2:num_species
                 %%% Check if the parameter already exists in the species j
-                ParamList = vertcat(BurstData.Cut{j}{:});
+                ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
                 if ~isempty(ParamList)
-                    ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                    ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
                     CheckParam = strcmp(ParamList,ChangedParameterName);
                     if any(CheckParam)
                         %%% do nothing
                     else %%% Parameter is new to species
-                        BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+                        BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(end);
                     end
                 else %%% Parameter is new to GlobalCut
-                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(end);
+                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(end);
                 end
             end
         end
@@ -3575,46 +3613,134 @@ UpdatePlot([],[]);
 %%%%%%% Left-click: Change plot to selected Species %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function SpeciesList_ButtonDownFcn(hListbox,eventData)
-clickedIndex = hListbox.Value;
-
-listValues = get(hListbox,'string');
-if isempty(listValues)
+function SpeciesList_ButtonDownFcn(hTree,eventData)
+global BurstData BurstMeta
+if isempty(BurstData)
     return;
 end
+h = guidata(findobj('Tag','BurstBrowser'));
 
-clickedString = listValues{clickedIndex};
+%%% get the clicked node
+%clicked = eventData.getCurrentNode;
+clicked = hTree.getSelectedNodes;
+clicked = clicked(1);
+%%% find out what exact node was clicked on with relation to array of
+%%% species names
+switch clicked.getLevel
+    case 0
+        % top level was clicked
+        %%% reset selected node according to BurstData{file}.SelectedSpecies
+        if all(BurstData{BurstMeta.SelectedFile}.SelectedSpecies == [0,0])
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.File(BurstMeta.SelectedFile));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) == 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+        end
+    case 1
+        % file was clicked
+        % which one?
+        for i = 1:numel(h.SpeciesList.File)
+            file(i) = h.SpeciesList.File(i).equals(clicked);
+        end
+        file = find(file);
+        BurstMeta.SelectedFile = file;
+        BurstData{file}.SelectedSpecies = [0,0];
+        %%% enable/disable gui elements based on type of file
+        if BurstData{file}.APBS == 1
+            %%% Enable the donor only lifetime checkbox
+            h.DonorLifetimeFromDataCheckbox.Enable = 'on';
+        else
+            h.DonorLifetimeFromDataCheckbox.Enable = 'off';
+        end
+       
+    case 2
+        % species group was clicked
+        % which file?
+        f = clicked.getParent;
+        for i = 1:numel(h.SpeciesList.File)
+            file(i) = h.SpeciesList.File(i).equals(f);
+        end
+        file = find(file);
+        % which one?
+        for i = 1:numel(h.SpeciesList.Species{file})
+            species(i) = h.SpeciesList.Species{file}(i).equals(clicked);
+        end
+        species = find(species);
+        
+        BurstMeta.SelectedFile = file;
+        BurstData{file}.SelectedSpecies = [species,1];
+    case 3
+        % subspecies was clicked
+        % which parent file?
+        f = clicked.getParent.getParent;
+        for i = 1:numel(h.SpeciesList.File)
+            file(i) = h.SpeciesList.File(i).equals(f);
+        end
+        file = find(file);
+        % which parent species?
+        parent = clicked.getParent;
+        for i = 1:numel(h.SpeciesList.Species{file})
+            group(i) = h.SpeciesList.Species{file}(i).equals(parent);
+        end
+        group = find(group);
+        % which subspecies?
+        for i = 1:parent.getChildCount
+            subspecies(i) = parent.getChildAt(i-1).equals(clicked);
+        end
+        subspecies = find(subspecies)+1;
+        
+        BurstMeta.SelectedFile = file;
+        BurstData{file}.SelectedSpecies = [group,subspecies];
+end
 
-h = guidata(hListbox);
-global BurstData
-
-
-set(hListbox,'Value',clickedIndex);
-BurstData.SelectedSpecies = clickedIndex;
-
+UpdateCorrections([],[]);
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot(hListbox);
-Update_fFCS_GUI(hListbox,[]);
-UpdateLifetimePlots(hListbox,[]);
+UpdatePlot(hTree);
+Update_fFCS_GUI(hTree,[]);
+UpdateLifetimePlots(hTree,[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function AddSpecies(~,~)
-global BurstData
+function AddSpecies(obj,eventData)
+global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-hListbox = h.SpeciesList;
-%add a species to the list
-BurstData.SpeciesNames{end+1} = ['Species ' num2str(numel(get(hListbox,'String')))];
-set(hListbox,'String',BurstData.SpeciesNames);
-%set to new species
-set(hListbox,'Value',numel(get(hListbox,'String')));
-BurstData.SelectedSpecies = get(hListbox,'Value');
 
-%initialize new species Cut array - Copy from Global Cuts
-BurstData.Cut{BurstData.SelectedSpecies} = BurstData.Cut{1};
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+% distinguish between top level ('Species') or SpeciesGroup 
+% using name --> level = 0,1
+if all(species == [0,0])
+    level = 0;
+elseif species(2) == 1
+    level = 1;
+else
+    return;
+end
 
+switch level
+    case 0
+        %add a species group to top level
+        name = ['Species ' num2str(size(BurstData{file}.SpeciesNames,1)+1)];
+        BurstData{file}.SpeciesNames{end+1,1} = name;
+        BurstData{file}.Cut{end+1,1} = {};
+        BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
+    case 1
+        % add species to species group
+        % check if species group exists
+        if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
+            % find out number of existing species for species group
+            num_species= sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+            name = ['Subspecies ' num2str(num_species)];
+            BurstData{file}.SpeciesNames{species(1),num_species+1} = name;
+            BurstData{file}.Cut{species(1),num_species+1} = BurstData{file}.Cut{species(1),1};
+            BurstData{file}.SelectedSpecies(2) = num_species+1;
+        end
+end
+        
+UpdateSpeciesList();
 UpdateCutTable(h);
 UpdateCuts();
 UpdatePlot([],[]);
@@ -3625,29 +3751,58 @@ Update_fFCS_GUI([],[]);
 %%%%%%% Remove Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function RemoveSpecies(~,~)
-global BurstData
+global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-if numel(get(h.SpeciesList,'String')) > 1 %remove selected field
-    val = h.SpeciesList.Value;
-    BurstData.SpeciesNames(val) = [];
-    set(h.SpeciesList,'Value',val-1);
-    set(h.SpeciesList,'String',BurstData.SpeciesNames);
+
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+% distinguish between  SpeciesGroup or Species
+% using name --> level = 1,2
+if species(2) == 1
+    level = 1;
+elseif species(2) > 1
+    level = 2;
+else
+    return;
 end
+switch level
+    case 1
+        %%% remove entire species group
+        BurstData{file}.SpeciesNames(species(1),:) = [];
+        BurstData{file}.Cut(species(1),:) = [];
+        BurstData{file}.SelectedSpecies(1)=species(1)-1;
+    case 2
+        %%% remove only the one field and shift right of it to the left
+        BurstData{file}.SpeciesNames{species(1),species(2)} = [];
+        temp = BurstData{file}.SpeciesNames(species(1),:);
+        temp = temp(~cellfun(@isempty,temp));
+        BurstData{file}.SpeciesNames(species(1),:) = [];
+        BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
+        
+        BurstData{file}.Cut{species(1),species(2)} = [];
+        temp = BurstData{file}.Cut(species(1),:);
+        temp = temp(~cellfun(@isempty,temp));
+        BurstData{file}.Cut(species(1),:) = [];
+        BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+end
+
+UpdateSpeciesList();
 Update_fFCS_GUI([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Rename Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function RenameSpecies(~,~)
-global BurstData
+global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-SelectedSpecies = h.SpeciesList.Value;
-SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+SelectedSpeciesName = BurstData{file}.SpeciesNames{species(1),species(2)};
 NewName = inputdlg('Specify the new species name','Rename Species',[1 50],{SelectedSpeciesName},'on');
 
 if ~isempty(NewName)
-    BurstData.SpeciesNames{SelectedSpecies} = NewName{1};
-    set(h.SpeciesList,'String',BurstData.SpeciesNames);
+    BurstData{file}.SpeciesNames{species(1),species(2)} = NewName{1};
+    UpdateSpeciesList;
 end
 Update_fFCS_GUI([],[]);
 
@@ -3655,41 +3810,26 @@ Update_fFCS_GUI([],[]);
 %%%%%%% Export Photons for PDA analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_To_PDA(obj,~)
-global BurstData BurstTCSPCData UserValues
+global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-SelectedSpecies = h.SpeciesList.Value;
-SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
+file = BurstMeta.SelectedFile;
+SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
 %Valid = UpdateCuts(SelectedSpecies);
-Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-if isempty(BurstTCSPCData)
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in BurstData
-        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
+if isempty(BurstTCSPCData{file})
+    Load_Photons([],[]);
 end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
+
 %% Export FRET Species
 %%% find selected bursts
-MT = BurstTCSPCData.Macrotime(BurstData.Selected);
-CH = BurstTCSPCData.Channel(BurstData.Selected);
+MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
+CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 %%% Hard-Code 1ms here
 timebin = 1E-3;
-duration = timebin/BurstData.ClockPeriod;
+duration = timebin/BurstData{file}.ClockPeriod;
 
 PDAdata = Bursts_to_Timebins(MT,CH,duration);
 
@@ -3699,8 +3839,9 @@ Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
 save_brightness_reference = 1;
 %now save channel wise photon numbers
 total = numel(PDAdata);
-newfilename = GenerateName([BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
-switch BurstData.BAMethod
+filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+newfilename = GenerateName([filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
+switch BurstData{file}.BAMethod
     case {1,2}
         PDA.NGP = zeros(total,1);
         PDA.NGS = zeros(total,1);
@@ -3724,12 +3865,12 @@ switch BurstData.BAMethod
         PDA.NF = PDA.NFP + PDA.NFS;
         PDA.NR = PDA.NRP + PDA.NRS;
         
-        PDA.Corrections = BurstData.Corrections;
-        PDA.Background = BurstData.Background;
+        PDA.Corrections = BurstData{file}.Corrections;
+        PDA.Background = BurstData{file}.Background;
         if save_brightness_reference
-            posS = (strcmp(BurstData.NameArray,'Stoichiometry'));
-            donly = (BurstData.DataArray(:,posS) > 0.95);
-            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+            posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+            donly = (BurstData{file}.DataArray(:,posS) > 0.95);
+            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
             NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
             NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
             PDA.BrightnessReference.N = NGP + NGS;
@@ -3744,22 +3885,29 @@ switch BurstData.BAMethod
         PDA.NF = cellfun(@(x) sum((x==2)),PDAdata);
         PDA.NR = cellfun(@(x) sum((x==3)),PDAdata);
         
-        PDA.Corrections = BurstData.Corrections;
-        PDA.Background = BurstData.Background;
+        PDA.Corrections = BurstData{file}.Corrections;
+        PDA.Background = BurstData{file}.Background;
         for i = fieldnames(PDA.Background)'
             PDA.Background.(i{1}) = PDA.Background.(i{1})/2;
         end
         if save_brightness_reference
-            posS = (strcmp(BurstData.NameArray,'Stoichiometry'));
-            donly = (BurstData.DataArray(:,posS) > 0.95);
-            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+            posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+            donly = (BurstData{file}.DataArray(:,posS) > 0.95);
+            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
             NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
             PDA.BrightnessReference.N = NG;
         end
         save(newfilename, 'PDA', 'timebin')
     case {3,4}
-        switch obj
-            case h.ExportSpeciesToPDAMenuItem
+        %%% ask user for either 3CPDA or two color subpopulation
+        [choice, ok] = listdlg('PromptString','Select Export Mode:',...
+            'SelectionMode','single',...
+            'ListString',{'3CPDA','GR','BG','BR'});
+        if ~ok
+            return;
+        end
+        switch choice
+            case 1
                 NBBP = cellfun(@(x) sum((x==1)),PDAdata);
                 NBBS = cellfun(@(x) sum((x==2)),PDAdata);
                 NBGP = cellfun(@(x) sum((x==3)),PDAdata);
@@ -3781,28 +3929,28 @@ switch BurstData.BAMethod
                 tcPDAstruct.NRR = NRRP + NRRS;
                 tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
                 tcPDAstruct.timebin = timebin*1000;
-                tcPDAstruct.corrections = BurstData.Corrections;
-                tcPDAstruct.background = BurstData.Background;
+                tcPDAstruct.corrections = BurstData{file}.Corrections;
+                tcPDAstruct.background = BurstData{file}.Background;
                 
                 if save_brightness_reference
-                    posSGR = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
-                    posSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-                    posSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
-                    gonly = (BurstData.DataArray(:,posSGR) > 0.95) & (BurstData.DataArray(:,posSBG) < 0.05);
-                    GOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(gonly),BurstTCSPCData.Channel(gonly),duration);
+                    posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
+                    posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+                    posSBR = (strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
+                    gonly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
+                    GOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(gonly),BurstTCSPCData{file}.Channel(gonly),duration);
                     NGP = cellfun(@(x) sum((x==7)),GOnly_PDA);
                     NGS = cellfun(@(x) sum((x==8)),GOnly_PDA);
                     tcPDAstruct.BrightnessReference.NG = NGP + NGS;
-                    bonly = (BurstData.DataArray(:,posSBR) > 0.95) & (BurstData.DataArray(:,posSBG) > 0.95);
-                    BOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(bonly),BurstTCSPCData.Channel(bonly),duration);
+                    bonly = (BurstData{file}.DataArray(:,posSBR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) > 0.95);
+                    BOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(bonly),BurstTCSPCData{file}.Channel(bonly),duration);
                     NBP = cellfun(@(x) sum((x==1)),BOnly_PDA);
                     NBS = cellfun(@(x) sum((x==2)),BOnly_PDA);
                     tcPDAstruct.BrightnessReference.NB = NBP + NBS;
                 end
-                
-                newfilename = [BurstData.FileName(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
+                filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+                newfilename = [filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
                 save(newfilename, 'tcPDAstruct', 'timebin')
-            case {h.ExportSpeciesToPDA_2C_for3CMFD_GR,h.ExportSpeciesToPDA_2C_for3CMFD_BG,h.ExportSpeciesToPDA_2C_for3CMFD_BR}
+            case {2,3,4}
                 PDA.NGP = zeros(total,1);
                 PDA.NGS = zeros(total,1);
                 PDA.NFP = zeros(total,1);
@@ -3816,14 +3964,14 @@ switch BurstData.BAMethod
                 
                 %chan gives the photon counts in format
                 %[Donor_par/perp,FRET_par/perp,Acc_par/perp]
-                switch obj
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_GR
+                switch choice
+                    case 2
                         chan = [7,8,9,10,11,12];
                         newfilename = [newfilename(1:end-4) '_GR.pda'];
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_BG
+                    case 3
                         chan = [1, 2, 3, 4, 7, 8];
                         newfilename = [newfilename(1:end-4) '_BG.pda'];
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_BR
+                    case 4
                         chan = [1, 2, 5, 6, 11, 12];
                         newfilename = [newfilename(1:end-4) '_BR.pda'];
                 end
@@ -3846,8 +3994,8 @@ switch BurstData.BAMethod
                 PDA.NF = PDA.NFP + PDA.NFS;
                 PDA.NR = PDA.NRP + PDA.NRS;
                 
-                PDA.Corrections = BurstData.Corrections;
-                PDA.Background = BurstData.Background;
+                PDA.Corrections = BurstData{file}.Corrections;
+                PDA.Background = BurstData{file}.Background;
                 %%% change corrections with values for selected species
                 switch obj
                     case h.ExportSpeciesToPDA_2C_for3CMFD_GR
@@ -3872,10 +4020,10 @@ switch BurstData.BAMethod
                         PDA.Background.Background_GRperp = PDA.Background.Background_BRperp;
                 end
                 if save_brightness_reference
-                    posSGR = (strcmp(BurstData.NameArray,'Stoichiometry GR'));
-                    posSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-                    donly = (BurstData.DataArray(:,posSGR) > 0.95) & (BurstData.DataArray(:,posSBG) < 0.05);
-                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData.Macrotime(donly),BurstTCSPCData.Channel(donly),duration);
+                    posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
+                    posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+                    donly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
+                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
                     NGP = cellfun(@(x) sum((x==7)),DOnly_PDA);
                     NGS = cellfun(@(x) sum((x==8)),DOnly_PDA);
                     PDA.BrightnessReference.N = NGP + NGS;
@@ -3885,7 +4033,7 @@ switch BurstData.BAMethod
 end
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
 
@@ -3930,38 +4078,20 @@ end
 %%%%%%% Export Microtime Pattern for fFCS analysis %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_Microtime_Pattern(~,~)
-global BurstData BurstTCSPCData UserValues
+global BurstData BurstTCSPCData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-SelectedSpecies = h.SpeciesList.Value;
-SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
-%Valid = UpdateCuts(SelectedSpecies);
+file = BurstMeta.SelectedFile;
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-if isempty(BurstTCSPCData)
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in BurstData
-        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+if isempty(BurstTCSPCData{file})
+    Load_Photons([],[]);
 end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% find selected bursts
-MI = BurstTCSPCData.Microtime(BurstData.Selected);
-CH = BurstTCSPCData.Channel(BurstData.Selected);
+MI = BurstTCSPCData{file}.Microtime(BurstData{file}.Selected);
+CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
 MI = vertcat(MI{:});
 CH = vertcat(CH{:});
@@ -3970,7 +4100,7 @@ CH = vertcat(CH{:});
 NChan = numel(unique(CH));
 hMI = cell(NChan,1);
 for i = 1:NChan %%% 6 Channels (GG1,GG2,GR1,GR2,RR1,RR2)
-    hMI{i} = histc(MI(CH == i),0:(BurstData.FileInfo.MI_Bins-1));
+    hMI{i} = histc(MI(CH == i),0:(BurstData{file}.FileInfo.MI_Bins-1));
 end
 
 Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
@@ -3978,13 +4108,14 @@ Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
 % assign donor/fret/acceptor channels back to routing/detector
 MIPattern = cell(0);
 for i = 1:numel(hMI)
-    MIPattern{BurstData.PIE.Detector(i),BurstData.PIE.Router(i)} = hMI{i};
+    MIPattern{BurstData{file}.PIE.Detector(i),BurstData{file}.PIE.Router(i)} = hMI{i};
 end
 
 % save
-FileName = BurstData.SpeciesNames{BurstData.SelectedSpecies};
-Path = fileparts(BurstData.FileName);
-[~, FileName, ~] = fileparts(FileName);
+SpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+SpeciesName = strrep(SpeciesName,' ','_');
+Path = BurstData{file}.PathName;
+FileName = [BurstData{file}.FileName(1:end-4) '_' SpeciesName];
 [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
 if all(File==0)
     return
@@ -3992,7 +4123,7 @@ end
 save(fullfile(Path,File),'MIPattern');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4004,85 +4135,9 @@ if isempty(BurstData)
     return;
 end
 h = guidata(findobj('Tag','BurstBrowser'));
-%LSUserValues(0);
-% if (gcbo ~= h.DetermineCorrectionsButton) && (gcbo ~= h.DetermineGammaManuallyButton) && (h.Main_Tab.SelectedTab ~= h.Main_Tab_Lifetime) && (gcbo ~= h.DetermineGammaLifetimeButton)
-%     %%% Change focus to GeneralTab
-%     h.Main_Tab.SelectedTab = h.Main_Tab_General;
-% end
+
 %%% If a display option was changed, update the UserValues!
-if obj == h.NumberOfBinsXEdit
-    nbinsX = str2double(h.NumberOfBinsXEdit.String);
-    if ~isnan(nbinsX)
-        if nbinsX > 0
-            UserValues.BurstBrowser.Display.NumberOfBinsX = nbinsX;
-        else
-            h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
-        end
-    else
-        h.NumberOfBinsXEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsX);
-    end
-    UpdateLifetimePlots(obj,[]);
-    LSUserValues(1);
-end
-if obj == h.NumberOfBinsYEdit
-    nbinsY = str2double(h.NumberOfBinsYEdit.String);
-    if ~isnan(nbinsY)
-        if nbinsY > 0
-            UserValues.BurstBrowser.Display.NumberOfBinsY = nbinsY;
-        else
-            h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
-        end
-    else
-        h.NumberOfBinsYEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsY);
-    end
-    UpdateLifetimePlots(obj,[]);
-    LSUserValues(1);
-end
-if obj == h.NumberOfContourLevels_edit
-    nClevels = str2double(h.NumberOfContourLevels_edit.String);
-    if ~isnan(nClevels)
-        if nClevels > 1
-            UserValues.BurstBrowser.Display.NumberOfContourLevels = nClevels;
-        else
-            h.NumberOfContourLevels_edit.String = UserValues.BurstBrowser.Display.NumberOfContourLevels;
-        end
-    else
-        h.NumberOfContourLevels_edit.String = num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    end
-    UpdateLifetimePlots([],[]);
-    LSUserValues(1);
-end
-if obj == h.ContourOffset_edit
-    ContourOffset = str2double(h.ContourOffset_edit.String);
-    if ~isnan(ContourOffset)
-        if ContourOffset >=0 && ContourOffset<=100
-            UserValues.BurstBrowser.Display.ContourOffset = ContourOffset;
-        else
-            h.ContourOffset_edit.String = UserValues.BurstBrowser.Display.ContourOffset;
-        end
-    else
-        h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
-    end
-    UpdateLifetimePlots([],[]);
-    LSUserValues(1);
-end
-if obj == h.ColorMapPopupmenu
-    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
-        UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
-    else %%% custom colormap
-        UserValues.BurstBrowser.Display.ColorMap = jetvar;
-    end
-    LSUserValues(1);
-end
-if obj == h.SmoothKDE
-    UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;
-    UpdateLifetimePlots(obj,[]);
-    LSUserValues(1);
-end
-if obj == h.ColorMapInvert
-    UserValues.BurstBrowser.Display.ColorMapInvert = h.ColorMapInvert.Value;
-    LSUserValues(1);
-end
+UpdateGUIOptions(obj,[]);
 
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
@@ -4092,35 +4147,35 @@ nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
 %% Update Plot
-% %%% Disable/Enable respective plots
-% switch UserValues.BurstBrowser.Display.PlotType
-%     case 'Image'
-%         BurstMeta.Plots.Main_Plot(1).Visible = 'on';
-%         BurstMeta.Plots.Main_Plot(2).Visible = 'off';
-%     case 'Contour'
-%         BurstMeta.Plots.Main_Plot(1).Visible = 'off';
-%         BurstMeta.Plots.Main_Plot(2).Visible = 'on';
-% end
+%%% Disable/Enable respective plots
 BurstMeta.Plots.Main_histX.Visible = 'on';
 BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
 set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
-datatoplot = BurstData.DataCut;
+file = BurstMeta.SelectedFile;
+datatoplot = BurstData{file}.DataCut;
+species = BurstData{file}.SelectedSpecies;
+NameArray = BurstData{file}.NameArray;
 
 %%% set limits
 xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)) max(datatoplot(isfinite(datatoplot(:,x)),x))];
 ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)) max(datatoplot(isfinite(datatoplot(:,y)),y))];
 %%% find cuts to parameters to be plotted and change limits if needed
-CutState = vertcat(BurstData.Cut{BurstData.SelectedSpecies}{:});
+if all(species == [0,0])
+    CutState= {};
+else
+    Cut = BurstData{file}.Cut{species(1),species(2)};
+    CutState = vertcat(Cut{:});
+end
 if size(CutState,2) > 0
     CutParameters = CutState(:,1);
-    if any(strcmp(BurstData.NameArray{x},CutParameters))
-        if CutState{strcmp(BurstData.NameArray{x},CutParameters),4} == 1 %%% Check if active
+    if any(strcmp(NameArray{x},CutParameters))
+        if CutState{strcmp(NameArray{x},CutParameters),4} == 1 %%% Check if active
             %%% Set x-axis limits according to cut boundaries of selected parameter
-            xlimits = [CutState{strcmp(BurstData.NameArray{x},CutParameters),2},...
-                CutState{strcmp(BurstData.NameArray{x},CutParameters),3}];
+            xlimits = [CutState{strcmp(NameArray{x},CutParameters),2},...
+                CutState{strcmp(NameArray{x},CutParameters),3}];
         else
             %%% set to min max
             xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
@@ -4130,11 +4185,11 @@ if size(CutState,2) > 0
         xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
     end
     
-    if any(strcmp(BurstData.NameArray{y},CutParameters))
-        if CutState{strcmp(BurstData.NameArray{y},CutParameters),4} == 1 %%% Check if active
+    if any(strcmp(NameArray{y},CutParameters))
+        if CutState{strcmp(NameArray{y},CutParameters),4} == 1 %%% Check if active
             %%% Set x-axis limits according to cut boundaries of selected parameter
-            ylimits = [CutState{strcmp(BurstData.NameArray{y},CutParameters),2},...
-                CutState{strcmp(BurstData.NameArray{y},CutParameters),3}];
+            ylimits = [CutState{strcmp(NameArray{y},CutParameters),2},...
+                CutState{strcmp(NameArray{y},CutParameters),3}];
         else
             %%% set to min max
             ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)), max(datatoplot(isfinite(datatoplot(:,y)),y))];
@@ -4186,25 +4241,15 @@ axis(h.axes_general,'tight');
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
 xlabel(h.axes_1d_x,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
-%xlabel(h.axes_1d_y,h.ParameterListY.String{y}, 'rot', -90);
-
-
-%[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY]);
 
 %plot 1D hists
-%hx = histc(datatoplot(:,x),xbins_1d);
-%hx(end-1) = hx(end-1) + hx(end); hx(end) = [];
 BurstMeta.Plots.Main_histX.XData = xbins;
-%BurstMeta.Plots.Main_histX.YData = hx;
 BurstMeta.Plots.Main_histX.YData = sum(H,1);
 h.axes_1d_x.YTickMode = 'auto';
 yticks= get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
-%hy = histc(datatoplot(:,y),ybins_1d);
-%hy(end-1) = hy(end-1) + hy(end); hy(end) = [];
 BurstMeta.Plots.Main_histY.XData = ybins;
-%BurstMeta.Plots.Main_histY.YData = hy;
 BurstMeta.Plots.Main_histY.YData = sum(H,2);
 h.axes_1d_y.YTickMode = 'auto';
 yticks = get(h.axes_1d_y,'YTick');
@@ -4229,7 +4274,7 @@ end
 % update plot type
 ChangePlotType([],[]);
 % Update no. bursts
-set(h.text_nobursts, 'String', {[num2str(sum(BurstData.Selected)) ' bursts']; [num2str(round(sum(BurstData.Selected/numel(BurstData.Selected)*1000))/10) '% of total']})
+set(h.text_nobursts, 'String', {[num2str(sum(BurstData{file}.Selected)) ' bursts']; [num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total']})
 
 if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
@@ -4335,9 +4380,101 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function MultiPlot(~,~)
+function MultiPlot(obj,~)
 h = guidata(findobj('Tag','BurstBrowser'));
 global BurstData UserValues BurstMeta
+
+%%% find which species were clicked
+if ~isfield(BurstMeta,'MultiPlotMode')
+    % first time this button is clicked, set to 0
+    BurstMeta.MultiPlotMode = 0;
+end
+if BurstMeta.MultiPlotMode == 0
+    % disable callback
+    set(h.SpeciesList.Tree,'NodeSelectedCallback',[]);
+    % set multiselect of species list to on
+    h.SpeciesList.Tree.setMultipleSelectionEnabled(true);
+    % disable right click
+    set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', []);
+    obj.ForegroundColor = [1 0 0];
+    BurstMeta.MultiPlotMode = 1;
+    return;
+elseif BurstMeta.MultiPlotMode == 1
+    sel = h.SpeciesList.Tree.getSelectedNodes;
+    k = 1;
+    for s = 1:numel(sel)
+        switch sel(s).getLevel
+            case 0
+                % top level was clicked
+                % ignore
+            case 1
+                % file was clicked
+                % which one?
+                for i = 1:numel(h.SpeciesList.File)
+                    file(i) = h.SpeciesList.File(i).equals(sel(s));
+                end
+                file = find(file);
+                
+                species_n(k) = 0;
+                subspecies_n(k) = 0;
+                file_n(k) = file;
+                k = k+1;
+            case 2
+                % species group was clicked
+                % which file?
+                f = sel(s).getParent;
+                for i = 1:numel(h.SpeciesList.File)
+                    file(i) = h.SpeciesList.File(i).equals(f);
+                end
+                file = find(file);
+                % which one?
+                for i = 1:numel(h.SpeciesList.Species{file})
+                    species(i) = h.SpeciesList.Species{file}(i).equals(sel(s));
+                end
+                species = find(species);
+                
+                species_n(k) = species;
+                subspecies_n(k) = 1;
+                file_n(k) = file;
+                k = k+1;
+            case 3
+                % subspecies was clicked
+                % which parent file?
+                f = sel(s).getParent.getParent;
+                for i = 1:numel(h.SpeciesList.File)
+                    file(i) = h.SpeciesList.File(i).equals(f);
+                end
+                file = find(file);
+                % which parent species?
+                parent = sel(s).getParent;
+                for i = 1:numel(h.SpeciesList.Species{file})
+                    group(i) = h.SpeciesList.Species{file}(i).equals(parent);
+                end
+                species = find(group);
+                % which subspecies?
+                for i = 1:parent.getChildCount
+                    subspecies(i) = parent.getChildAt(i-1).equals(sel(s));
+                end
+                subspecies = find(subspecies)+1;
+                
+                species_n(k) = species;
+                subspecies_n(k) = find(subspecies)+1;
+                file_n(k) = file;
+                k = k+1;
+        end
+    end
+    obj.ForegroundColor = UserValues.Look.Fore;
+    BurstMeta.MultiPlotMode = 0;
+    % reset multiselect
+    h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
+    h.SpeciesList.Tree.setSelectedNode(sel(1));
+    % reenable right click
+    set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
+    % reenable callback
+    set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
+end
+
+num_species = numel(file_n);
 
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
@@ -4345,7 +4482,7 @@ y = get(h.ParameterListY,'Value');
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
-num_species = numel(get(h.SpeciesList,'String')) - 1;
+
 if num_species == 1
     return;
 end
@@ -4355,12 +4492,7 @@ end
 
 datatoplot = cell(num_species,1);
 for i = 1:num_species
-    UpdateCuts(i+1);
-    if ~isfield(BurstData,'Cut') || isempty(BurstData.Cut{i+1})
-        datatoplot{i} = BurstData.DataArray;
-    elseif isfield(BurstData,'Cut')
-        datatoplot{i} = BurstData.DataCut;
-    end
+    [~,datatoplot{i}] = UpdateCuts([species_n(i),subspecies_n(i)],file_n(i));
 end
 
 %find data ranges
@@ -4439,7 +4571,8 @@ ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
 %plot first histogram
 hx = sum(H{1},1);
 %normalize
-hx = hx./sum(hx); hx = hx';
+hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
+xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
 BurstMeta.Plots.Multi.Multi_histX(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histX(1).XData = xbins;
 BurstMeta.Plots.Multi.Multi_histX(1).YData = hx;
@@ -4448,7 +4581,7 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'on';
     hx = sum(H{i},1);
     %normalize
-    hx = hx./sum(hx); hx = hx';
+    hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
     BurstMeta.Plots.Multi.Multi_histX(i).YData = hx;
 end
@@ -4459,7 +4592,8 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 %plot first histogram
 hy = sum(H{1},2);
 %normalize
-hy = hy./sum(hy); hy = hy';
+hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
+ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
 BurstMeta.Plots.Multi.Multi_histY(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histY(1).XData = ybins;
 BurstMeta.Plots.Multi.Multi_histY(1).YData = hy;
@@ -4468,7 +4602,7 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'on';
     hy = sum(H{i},2);
     %normalize
-    hy = hy./sum(hy); hy = hy';
+    hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
     BurstMeta.Plots.Multi.Multi_histY(i).YData = hy;
 end
@@ -4480,8 +4614,8 @@ set(h.axes_1d_y,'YTick',yticks(2:end));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ManualCut(~,~)
 
-h = guidata(gcbo);
-global BurstData
+h = guidata(findobj('Tag','BurstBrowser'));
+global BurstData BurstMeta
 set(gcf,'Pointer','cross');
 k = waitforbuttonpress;
 point1 = get(gca,'CurrentPoint');    % button down detected
@@ -4500,80 +4634,71 @@ if (all(point1(1:2) == point2(1:2)))
     return;
 end
 
-if ~isfield(BurstData,'Cut')
-    %initialize Cut Cell Array
-    BurstData.Cut{1} = {};
-    %add species to list
-    BurstData.SpeciesNames{1} = 'Species 1';
-    %update species list
-    set(h.SpeciesList,'String',BurstData.SpeciesNames,'Value',1);
-    BurstData.SelectedSpecies = 1;
-end
-
-species = get(h.SpeciesList,'Value');
+species = BurstData{file}.SelectedSpecies;
 
 %%% Check whether the CutParameter already exists or not
-ExistingCuts = vertcat(BurstData.Cut{species}{:});
+ExistingCuts = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
 param_x = get(h.ParameterListX,'Value');
 param_y = get(h.ParameterListY,'Value');
 if ~isempty(ExistingCuts)
-    if any(strcmp(BurstData.NameArray{param_x},ExistingCuts(:,1)))
-        BurstData.Cut{species}{strcmp(BurstData.NameArray{param_x},ExistingCuts(:,1))} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+    if any(strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1)))
+        BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
     else
-        BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+        BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
     end
     
-    if any(strcmp(BurstData.NameArray{param_y},ExistingCuts(:,1)))
-        BurstData.Cut{species}{strcmp(BurstData.NameArray{param_y},ExistingCuts(:,1))} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+    if any(strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1)))
+        BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
     else
-        BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+        BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
     end
 else
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
-    BurstData.Cut{species}{end+1} = {BurstData.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+    BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+    BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
 end
 
 %%% If a change was made to the GlobalCuts Species, update all other
 %%% existent species with the changes
-if BurstData.SelectedSpecies == 1
-    if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
-        ChangedParamX = BurstData.NameArray{get(h.ParameterListX,'Value')};
-        ChangedParamY = BurstData.NameArray{get(h.ParameterListY,'Value')};
-        GlobalParams = vertcat(BurstData.Cut{1}{:});
-        GlobalParams = GlobalParams(1:numel(BurstData.Cut{1}),1);
+if species(2) == 1
+    if numel(BurstData{file}.Cut) > 1 %%% Check if there are other species defined
+        ChangedParamX = BurstData{file}.NameArray{get(h.ParameterListX,'Value')};
+        ChangedParamY = BurstData{file}.NameArray{get(h.ParameterListY,'Value')};
+        GlobalParams = vertcat(BurstData{file}.Cut{species(1),1}{:});
+        GlobalParams = GlobalParams(1:numel(BurstData{file}.Cut{species(1),1}),1);
         %%% cycle through the number of other species
-        for j = 2:numel(BurstData.Cut)
+        num_species = sum(~cellfun(@isempty,BurstData{file}.Cut(species(1),:)));
+        for j = 2:num_species
             %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData.Cut{j}{:});
+            ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
             if ~isempty(ParamList)
-                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
                 CheckParam = strcmp(ParamList,ChangedParamX);
                 if any(CheckParam)
                     %%% Parameter added or changed
                     %%% Override the parameter with GlobalCut
-                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+                    BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
                 else %%% Parameter is new to GlobalCut
-                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
                 end
             else %%% Parameter is new to GlobalCut
-                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamX));
+                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
             end
         end
-        for j = 2:numel(BurstData.Cut)
+        for j = 2:num_species
             %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData.Cut{j}{:});
+            ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
             if ~isempty(ParamList)
-                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
                 CheckParam = strcmp(ParamList,ChangedParamY);
                 if any(CheckParam)
                     %%% Parameter added or changed
                     %%% Override the parameter with GlobalCut
-                    BurstData.Cut{j}(CheckParam) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+                    BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
                 else %%% Parameter is new to GlobalCut
-                    BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
                 end
             else %%% Parameter is new to GlobalCut
-                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(strcmp(GlobalParams,ChangedParamY));
+                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
             end
         end
     end
@@ -4615,52 +4740,58 @@ end
 %%%%%%% Updates/Initializes the Cut Table in GUI with stored Cuts  %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCutTable(h)
-global BurstData
-species = BurstData.SelectedSpecies;
+global BurstData BurstMeta
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
 
-if ~isempty(BurstData.Cut{species})
-    data = vertcat(BurstData.Cut{species}{:});
-    rownames = data(:,1);
-    data = data(:,2:end);
-else %data has been deleted, reset to default values
+if all(species == [0,0])
     data = {'','',false,false};
     rownames = {''};
+else
+    if ~isempty(BurstData{file}.Cut{species(1),species(2)})
+        data = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
+        rownames = data(:,1);
+        data = data(:,2:end);
+    else %data has been deleted, reset to default values
+        data = {'','',false,false};
+        rownames = {''};
+    end
 end
-
 set(h.CutTable,'Data',data,'RowName',rownames);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Applies Cuts to Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [Valid] = UpdateCuts(species)
-global BurstData
+function [Valid, Data] = UpdateCuts(species,file)
+global BurstData BurstMeta
 %%% If no species is specified, read out selected species.
-if nargin < 1
-    species = BurstData.SelectedSpecies;
+if nargin == 0
+    file = BurstMeta.SelectedFile;
+    species = BurstData{file}.SelectedSpecies;
+end
+if nargin < 2 % no file specified
+    file = BurstMeta.SelectedFile;
 end
 
-%%% If species number is too high, return
-if species > numel(BurstData.SpeciesNames)
-    return;
-end
-%%% If no Cuts are specified yet, return.
-if ~isfield(BurstData,'Cut')
-    return;
-end
+Valid = true(size(BurstData{file}.DataArray,1),1);
 
-CutState = vertcat(BurstData.Cut{species}{:});
-Valid = true(size(BurstData.DataArray,1),1);
-if ~isempty(CutState) %%% only proceed if there are elements in the CutTable
-    for i = 1:size(CutState,1)
-        if CutState{i,4} == 1 %%% only if the Cut is set to "active"
-            Index = find(strcmp(CutState(i,1),BurstData.NameArray));
-            Valid = Valid & (BurstData.DataArray(:,Index) >= CutState{i,2}) & (BurstData.DataArray(:,Index) <= CutState{i,3});
+if ~all(species == [0,0])
+    CutState = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
+    if ~isempty(CutState) %%% only proceed if there are elements in the CutTable
+        for i = 1:size(CutState,1)
+            if CutState{i,4} == 1 %%% only if the Cut is set to "active"
+                Index = find(strcmp(CutState(i,1),BurstData{file}.NameArray));
+                Valid = Valid & (BurstData{file}.DataArray(:,Index) >= CutState{i,2}) & (BurstData{file}.DataArray(:,Index) <= CutState{i,3});
+            end
         end
     end
 end
+
+Data = BurstData{file}.DataArray(Valid,:);
+
 if nargout == 0 %%% Only update global Variable if no output is requested!
-    BurstData.Selected = Valid;
-    BurstData.DataCut = BurstData.DataArray(Valid,:);
+    BurstData{file}.Selected = Valid;
+    BurstData{file}.DataCut = Data;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4670,52 +4801,54 @@ end
 function CutTableChange(hObject,eventdata)
 %this executes if a value in the CutTable is changed
 h = guidata(hObject);
-global BurstData
+global BurstData BurstMeta
 %check which cell was changed
 index = eventdata.Indices;
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
 %read out the parameter name
-ChangedParameterName = BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1};
+ChangedParameterName = BurstData{file}.Cut{species(1),species(2)}{index(1)}{1};
 %change value in structure
 NewData = eventdata.NewData;
 switch index(2)
     case {1} %min boundary was changed
         %%% if upper boundary is lower than new min boundary -> reject
-        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{3} < NewData
+        if BurstData{file}.Cut{species(1),species(2)}{index(1)}{3} < NewData
             NewData = eventdata.PreviousData;
         end
-        if BurstData.SelectedSpecies ~= 1
+        if species(2) ~= 1
             %%% if new lower boundary is lower than global lower boundary -->
             %%% reset to global lower boundary
-            if ~isempty(BurstData.Cut{1})
+            if ~isempty(BurstData{file}.Cut{species(1),1})
                 %%% check whether the parameter exists in global cuts
                 %%% already
-                for l = 1:numel(BurstData.Cut{1})
-                    exist(l) = strcmp(BurstData.Cut{1}{l}{1},BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1});
+                for l = 1:numel(BurstData{file}.Cut{species(1),1})
+                    exist(l) = strcmp(BurstData{file}.Cut{species(1),1}{l}{1},BurstData{file}.Cut{species(1),species(2)}{index(1)}{1});
                 end
                 if any(exist == 1)
-                    if NewData < BurstData.Cut{1}{index(1)}{index(2)+1}
-                        NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                    if NewData < BurstData{file}.Cut{1}{index(1)}{index(2)+1}
+                        NewData = BurstData{file}.Cut{1}{index(1)}{index(2)+1};
                     end
                 end
             end
         end
     case {2} %max boundary was changed
         %%% if lower boundary is higher than new upper boundary --> reject
-        if BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{2} > NewData
+        if BurstData{file}.Cut{species(1),species(2)}{index(1)}{2} > NewData
             NewData = eventdata.PreviousData;
         end
-        if BurstData.SelectedSpecies ~= 1
+        if species(2) ~= 1
             %%% if new upper boundary is higher than global upper boundary -->
             %%% reset to global upper boundary
-            if ~isempty(BurstData.Cut{1})
+            if ~isempty(BurstData{file}.Cut{species(1),1})
                 %%% check whether the parameter exists in global cuts
                 %%% already
-                for l = 1:numel(BurstData.Cut{1})
-                    exist(l) = strcmp(BurstData.Cut{1}{l}{1},BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{1});
+                for l = 1:numel(BurstData{file}.Cut{species(1),1})
+                    exist(l) = strcmp(BurstData{file}.Cut{species(1),1}{l}{1},BurstData{file}.Cut{species(1),species(2)}{index(1)}{1});
                 end
                 if any(exist == 1)
-                    if NewData > BurstData.Cut{1}{index(1)}{index(2)+1}
-                        NewData = BurstData.Cut{1}{index(1)}{index(2)+1};
+                    if NewData > BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1}
+                        NewData = BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1};
                     end
                 end
             end
@@ -4726,21 +4859,23 @@ switch index(2)
 end
 
 if index(2) ~= 4
-    BurstData.Cut{BurstData.SelectedSpecies}{index(1)}{index(2)+1}=NewData;
+    BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1}=NewData;
 elseif index(2) == 4 %delete this entry
-    BurstData.Cut{BurstData.SelectedSpecies}(index(1)) = [];
+    BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
 end
 
 %%% If a change was made to the GlobalCuts Species, update all other
 %%% existent species with the changes
-if BurstData.SelectedSpecies == 1
-    if numel(BurstData.Cut) > 1 %%% Check if there are other species defined
+if species(2) == 1
+    %%% find number of species for species group
+    num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+    if  num_species > 1 %%% Check if there are other species defined
         %%% cycle through the number of other species
-        for j = 2:numel(BurstData.Cut)
+        for j = 2:num_species
             %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData.Cut{j}{:});
+            ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
             if ~isempty(ParamList)
-                ParamList = ParamList(1:numel(BurstData.Cut{j}),1);
+                ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
                 CheckParam = strcmp(ParamList,ChangedParameterName);
                 if any(CheckParam)
                     %%% Check wheter do delete or change the parameter
@@ -4752,26 +4887,26 @@ if BurstData.SelectedSpecies == 1
                             case 1 %%% lower boundary changed
                                 %%% If new global lower boundary is above
                                 %%% species lower boundary, update
-                                if BurstData.Cut{1}{index(1)}{index(2)+1} > BurstData.Cut{j}{CheckParam}{index(2)+1}
-                                    BurstData.Cut{j}{CheckParam}(index(2)+1) = BurstData.Cut{1}{index(1)}(index(2)+1);
+                                if BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1} > BurstData{file}.Cut{species(1),j}{CheckParam}{index(2)+1}
+                                    BurstData{file}.Cut{species(1),j}{CheckParam}(index(2)+1) = BurstData{file}.Cut{species(1),1}{index(1)}(index(2)+1);
                                 end
                             case 2 %%% upper boundary changed
                                 %%% If new global upper boundary is below
                                 %%% species upper boundary, update
-                                if BurstData.Cut{1}{index(1)}{index(2)+1} < BurstData.Cut{j}{CheckParam}{index(2)+1}
-                                    BurstData.Cut{j}{CheckParam}(index(2)+1) = BurstData.Cut{1}{index(1)}(index(2)+1);
+                                if BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1} < BurstData{file}.Cut{species(1),j}{CheckParam}{index(2)+1}
+                                    BurstData{file}.Cut{species(1),j}{CheckParam}(index(2)+1) = BurstData{file}.Cut{species(1),1}{index(1)}(index(2)+1);
                                 end
                         end
                     elseif index(2) == 4 %%% Parameter was deleted
-                        BurstData.Cut{j}(CheckParam) = [];
+                        BurstData{file}.Cut{species(1),j}(CheckParam) = [];
                     end
                 else %%% Parameter is new to species
                     if index(2) ~= 4 %%% Parameter added or changed
-                        BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
+                        BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(index(1));
                     end
                 end
             else %%% Parameter is new to GlobalCut
-                BurstData.Cut{j}(end+1) = BurstData.Cut{1}(index(1));
+                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(index(1));
             end
         end
     end
@@ -4791,46 +4926,39 @@ global BurstData BurstMeta UserValues
 LSUserValues(0);
 h = guidata(obj);
 
+file = BurstMeta.SelectedFile;
+
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 %%% Change focus to CorrectionsTab
-%h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
-indS = BurstMeta.posS;
-%indE = find(strcmp(BurstData.NameArray,'FRET Efficiency'));
-indDur = find(strcmp(BurstData.NameArray,'Duration [ms]'));
-indNGG = find(strcmp(BurstData.NameArray,'Number of Photons (GG)'));
-indNGR = find(strcmp(BurstData.NameArray,'Number of Photons (GR)'));
-indNRR = find(strcmp(BurstData.NameArray,'Number of Photons (RR)'));
-
-T_threshold = str2double(h.T_Threshold_Edit.String);
-if isnan(T_threshold)
-    T_threshold = 0.1;
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+    case {3,4}
+        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
 end
+%indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+indDur = find(strcmp(BurstData{file}.NameArray,'Duration [ms]'));
+indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
+indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
+indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
 
-cutT = 1;
-
-if cutT == 0
-    data_for_corrections = BurstData.DataArray;
-elseif cutT == 1
-    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-    valid = (BurstData.DataArray(:,T) < T_threshold);
-    data_for_corrections = BurstData.DataArray(valid,:);
-end
+data_for_corrections = BurstData{file}.DataArray;
 
 %%% Read out corrections
-if ~(BurstData.BAMethod == 5) %%% MFD
-    Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-    Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-    Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-elseif BurstData.BAMethod == 5
-    Background_GR = BurstData.Background.Background_GRpar;
-    Background_GG = BurstData.Background.Background_GGpar;
-    Background_RR = BurstData.Background.Background_RRpar;
+if ~(BurstData{file}.BAMethod == 5) %%% MFD
+    Background_GR = BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp;
+    Background_GG = BurstData{file}.Background.Background_GGpar + BurstData{file}.Background.Background_GGperp;
+    Background_RR = BurstData{file}.Background.Background_RRpar + BurstData{file}.Background.Background_RRperp;
+elseif BurstData{file}.BAMethod == 5
+    Background_GR = BurstData{file}.Background.Background_GRpar;
+    Background_GG = BurstData{file}.Background.Background_GGpar;
+    Background_RR = BurstData{file}.Background.Background_RRpar;
 end
 %% 2cMFD Corrections
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
     %% plot raw FRET Efficiency for S>0.9
-    x_axis = linspace(0,0.3,50);
+    x_axis = linspace(0,0.3,120);
     Smin = 0.9;
     S_threshold = (data_for_corrections(:,indS)>Smin);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
@@ -4846,11 +4974,11 @@ if obj == h.DetermineCorrectionsButton
     BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
-    BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+    BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
     %% plot raw data for S < 0.25 for direct excitation
     %%% check if plot exists
     Smax = 0.25;
-    x_axis = linspace(0,Smax,20);
+    x_axis = linspace(0,Smax,100);
     S_threshold = (data_for_corrections(:,indS)<Smax);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
@@ -4865,7 +4993,7 @@ if obj == h.DetermineCorrectionsButton
     BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
-    BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+    BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
 end
 if obj == h.FitGammaButton
     %% plot gamma plot for two populations (or lifetime versus E)
@@ -4875,10 +5003,10 @@ if obj == h.FitGammaButton
     S_threshold = UpdateCuts();
     %%% Calculate "raw" E and S with gamma = 1, but still apply direct
     %%% excitation,crosstalk, and background corrections!
-    NGR = BurstData.DataArray(S_threshold,indNGR) - Background_GR.*BurstData.DataArray(S_threshold,indDur);
-    NGG = BurstData.DataArray(S_threshold,indNGG) - Background_GG.*BurstData.DataArray(S_threshold,indDur);
-    NRR = BurstData.DataArray(S_threshold,indNRR) - Background_RR.*BurstData.DataArray(S_threshold,indDur);
-    NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
+    NGR = BurstData{file}.DataArray(S_threshold,indNGR) - Background_GR.*BurstData{file}.DataArray(S_threshold,indDur);
+    NGG = BurstData{file}.DataArray(S_threshold,indNGG) - Background_GG.*BurstData{file}.DataArray(S_threshold,indDur);
+    NRR = BurstData{file}.DataArray(S_threshold,indNRR) - Background_RR.*BurstData{file}.DataArray(S_threshold,indDur);
+    NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
     [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
@@ -4915,36 +5043,27 @@ if obj == h.FitGammaButton
     %b) m = fitGamma.Coefficients{2,1}; b = fitGamma.Coefficients{1,1};
     UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
     %UserValues.BurstBrowser.Corrections.Gamma_GR = g;
-    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+    BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
     UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
     %UserValues.BurstBrowser.Corrections.Beta_GR = b;
-    BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+    BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
 end
-if any(BurstData.BAMethod == [3,4])
+if any(BurstData{file}.BAMethod == [3,4])
     %% 3cMFD corrections
     %%% Read out parameter positions
-    indSBG = find(strcmp(BurstData.NameArray,'Stoichiometry BG'));
-    indSBR = find(strcmp(BurstData.NameArray,'Stoichiometry BR'));
+    indSBG = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+    indSBR = find(strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
     %%% Read out photon counts
-    indNBB = find(strcmp(BurstData.NameArray,'Number of Photons (BB)'));
-    indNBG = find(strcmp(BurstData.NameArray,'Number of Photons (BG)'));
-    indNBR = find(strcmp(BurstData.NameArray,'Number of Photons (BR)'));
+    indNBB = find(strcmp(BurstData{file}.NameArray,'Number of Photons (BB)'));
+    indNBG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (BG)'));
+    indNBR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (BR)'));
     %%% Read out corrections
-    Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-    Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
-    Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
-    %%% define T-threshold
-    if cutT == 0
-        data_for_corrections = BurstData.DataArray;
-    elseif cutT == 1
-        T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-        T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
-        T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
-        valid = (BurstData.DataArray(:,T1) < T_threshold) &...
-            (BurstData.DataArray(:,T2) < T_threshold) &...
-            (BurstData.DataArray(:,T3) < T_threshold);
-        data_for_corrections = BurstData.DataArray(valid,:);
-    end
+    Background_BB = BurstData{file}.Background.Background_BBpar + BurstData{file}.Background.Background_BBperp;
+    Background_BG = BurstData{file}.Background.Background_BGpar + BurstData{file}.Background.Background_BGperp;
+    Background_BR = BurstData{file}.Background.Background_BRpar + BurstData{file}.Background.Background_BRperp;
+
+    data_for_corrections = BurstData{file}.DataArray;
+    
     if obj == h.DetermineCorrectionsButton
         %% Blue dye only
         S_threshold = ( (data_for_corrections(:,indSBG) > 0.9) &...
@@ -4964,7 +5083,7 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.Fits.histEBG_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBG_blueonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.CrossTalk_BG = mean_ct./(1-mean_ct);
-        BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
+        BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
         %%% Crosstalk B->R
         x_axis = linspace(-0.05,0.25,50);
         EBR_raw = NBR./(NBR+NBB);
@@ -4977,7 +5096,7 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.Fits.histEBR_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBR_blueonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.CrossTalk_BR = mean_ct./(1-mean_ct);
-        BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
+        BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
         %% Green dye only
         S_threshold = ( (data_for_corrections(:,indSBG) < 0.2) &...
             (data_for_corrections(:,indS) > 0.9) );
@@ -4996,7 +5115,7 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.Fits.histSBG_greenonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBG_greenonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.DirectExcitation_BG = mean_de./(1-mean_de);
-        BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
+        BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
         %% Red dye only
         S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
             (data_for_corrections(:,indSBR) < 0.2) );
@@ -5015,7 +5134,7 @@ if any(BurstData.BAMethod == [3,4])
         BurstMeta.Plots.Fits.histSBR_redonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBR_redonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.DirectExcitation_BR = mean_de./(1-mean_de);
-        BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
+        BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
     end
     if obj == h.FitGammaButton
         m = msgbox('Not implemented for three-color gamma factors.');
@@ -5030,7 +5149,7 @@ if any(BurstData.BAMethod == [3,4])
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
         NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
         NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
-        NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
+        NBG = NBG - BurstData{file}.Corrections.DirectExcitation_BG.*NGG - BurstData{file}.Corrections.CrossTalk_BG.*NBB;
         EBG_raw = NBG./(NBG+NBB);
         SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
         %%% Calculate 2D-Hist and Fit
@@ -5063,9 +5182,9 @@ if any(BurstData.BAMethod == [3,4])
         %%% Determine Gamma and Beta
         coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
         UserValues.BurstBrowser.Corrections.Gamma_BG = (b - 1)/(b + m - 1);
-        BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+        BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
         UserValues.BurstBrowser.Corrections.Beta_BG = b+m-1;
-        BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
+        BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
         
         S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
             (data_for_corrections(:,indSBG) > 0.9) &...
@@ -5073,7 +5192,7 @@ if any(BurstData.BAMethod == [3,4])
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
         NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
         NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-        NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB;
+        NBR = NBR - BurstData{file}.Corrections.DirectExcitation_BR.*NRR - BurstData{file}.Corrections.CrossTalk_BR.*NBB;
         EBR_raw = NBR./(NBR+NBB);
         SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
         %%% Calculate 2D-Hist and Fit
@@ -5107,9 +5226,9 @@ if any(BurstData.BAMethod == [3,4])
         %%% Determine Gamma and Beta
         coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
         UserValues.BurstBrowser.Corrections.Gamma_BR = (b - 1)/(b + m - 1);
-        BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+        BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
         UserValues.BurstBrowser.Corrections.Beta_BR = b+m-1;
-        BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+        BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
     end
 end
 %% Save and Update GUI
@@ -5126,6 +5245,7 @@ ApplyCorrections(gcbo,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DetermineGammaManually(~,~)
 global UserValues BurstMeta BurstData
+file = BurstMeta.SelectedFile;
 h = guidata(findobj('Tag','BurstBrowser'));
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
 [H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
@@ -5154,7 +5274,7 @@ m = (s(2)-s(1))./(e(2)-e(1));
 b = s(2) - m.*e(2);
 
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
-BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 
 
 %%% Save UserValues
@@ -5172,38 +5292,27 @@ function DetermineGammaLifetime(obj,~)
 global BurstData UserValues BurstMeta
 h = guidata(obj);
 LSUserValues(0);
-%%% Change focus to CorrectionsTab
-%h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
+
+file = BurstMeta.SelectedFile;
 %% 2cMFD
 %%% Prepare photon counts
-indS = BurstMeta.posS;
-indDur = (strcmp(BurstData.NameArray,'Duration [ms]'));
-indNGG = (strcmp(BurstData.NameArray,'Number of Photons (GG)'));
-indNGR = (strcmp(BurstData.NameArray,'Number of Photons (GR)'));
-indNRR = (strcmp(BurstData.NameArray,'Number of Photons (RR)'));
-indTauGG = (strcmp(BurstData.NameArray,'Lifetime GG [ns]'));
-T_threshold = str2double(h.T_Threshold_Edit.String);
-if isnan(T_threshold)
-    T_threshold = 0.1;
-end
-cutT = 0;
-if cutT == 0
-    data_for_corrections = BurstData.DataArray;
-elseif cutT == 1
-    T = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-    valid = (BurstData.DataArray(:,T) < T_threshold);
-    data_for_corrections = BurstData.DataArray(valid,:);
-end
+indDur = (strcmp(BurstData{file}.NameArray,'Duration [ms]'));
+indNGG = (strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
+indNGR = (strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
+indNRR = (strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
+indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+
+data_for_corrections = BurstData{file}.DataArray;
 
 %%% Read out corrections
-if ~(BurstData.BAMethod == 5) % MFD
-    Background_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-    Background_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-    Background_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-elseif BurstData.BAMethod == 5 % noMFD
-    Background_GR = BurstData.Background.Background_GRpar;
-    Background_GG = BurstData.Background.Background_GGpar;
-    Background_RR = BurstData.Background.Background_RRpar;
+if ~(BurstData{file}.BAMethod == 5) % MFD
+    Background_GR = BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp;
+    Background_GG = BurstData{file}.Background.Background_GGpar + BurstData{file}.Background.Background_GGperp;
+    Background_RR = BurstData{file}.Background.Background_RRpar + BurstData{file}.Background.Background_RRperp;
+elseif BurstData{file}.BAMethod == 5 % noMFD
+    Background_GR = BurstData{file}.Background.Background_GRpar;
+    Background_GG = BurstData{file}.Background.Background_GGpar;
+    Background_RR = BurstData{file}.Background.Background_RRpar;
 end
 
 %%% use selected species
@@ -5213,25 +5322,25 @@ S_threshold = UpdateCuts();
 NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
 NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
 NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
+NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
 
 if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% Calculate static FRET line in presence of linker fluctuations
     tau = linspace(0,5,100);
-    [~, statFRETfun] = conversion_tau(BurstData.Corrections.DonorLifetime,...
-        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+    [~, statFRETfun] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
         tau);
-    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetime;
+    %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
-    valid = (tauGG < BurstData.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
+    valid = (tauGG < BurstData{file}.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
     %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
     %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
-        gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
-        gamma_fit = coeffvalues(gamma_fit);
+    gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
+    gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData.Corrections.DonorLifetime+1.5])],[-0.05 1]);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.05 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -5250,48 +5359,27 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+    BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 end
 %% 3cMFD - Fit E1A vs. TauBlue
 if obj == h.DetermineGammaLifetimeThreeColorButton
-    if any(BurstData.BAMethod == [3,4])
+    if any(BurstData{file}.BAMethod == [3,4])
         %%% Prepare photon counts
-        indNBB = (strcmp(BurstData.NameArray,'Number of Photons (BB)'));
-        indNBG = (strcmp(BurstData.NameArray,'Number of Photons (BG)'));
-        indNBR = (strcmp(BurstData.NameArray,'Number of Photons (BR)'));
-        indTauBB = (strcmp(BurstData.NameArray,'Lifetime BB [ns]'));
-        indSBG = (strcmp(BurstData.NameArray,'Stoichiometry BG'));
-        indSBR = (strcmp(BurstData.NameArray,'Stoichiometry BR'));
+        indNBB = (strcmp(BurstData{file}.NameArray,'Number of Photons (BB)'));
+        indNBG = (strcmp(BurstData{file}.NameArray,'Number of Photons (BG)'));
+        indNBR = (strcmp(BurstData{file}.NameArray,'Number of Photons (BR)'));
+        indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
+        indSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+        indSBR = (strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
         
-        T_threshold = str2double(h.T_Threshold_Edit.String);
-        if isnan(T_threshold)
-            T_threshold = 0.1;
-        end
-        cutT = 0;
-        %%% define T-threshold
-        if cutT == 0
-            data_for_corrections = BurstData.DataArray;
-        elseif cutT == 1
-            T1 = strcmp(BurstData.NameArray,'|TGX-TRR| Filter');
-            T2 = strcmp(BurstData.NameArray,'|TBX-TRR| Filter');
-            T3 = strcmp(BurstData.NameArray,'|TBX-TGX| Filter');
-            valid = (BurstData.DataArray(:,T1) < T_threshold) &...
-                (BurstData.DataArray(:,T2) < T_threshold) &...
-                (BurstData.DataArray(:,T3) < T_threshold);
-            data_for_corrections = BurstData.DataArray(valid,:);
-        end
+        data_for_corrections = BurstData{file}.DataArray;
         
         %%% Read out corrections
-        Background_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-        Background_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
-        Background_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
+        Background_BB = BurstData{file}.Background.Background_BBpar + BurstData{file}.Background.Background_BBperp;
+        Background_BG = BurstData{file}.Background.Background_BGpar + BurstData{file}.Background.Background_BGperp;
+        Background_BR = BurstData{file}.Background.Background_BRpar + BurstData{file}.Background.Background_BRperp;
         
-        %%% get E-S values between 0.1 and 0.9;
-        %         S_threshold = ( (data_for_corrections(:,indS) > 0.1) & (data_for_corrections(:,indS) < 0.9) &...
-        %             (data_for_corrections(:,indSBG) > 0.1) & (data_for_corrections(:,indSBG) < 0.9) &...
-        %             (data_for_corrections(:,indSBR) > 0.1) & (data_for_corrections(:,indSBR) < 0.9) );
-        
-        %%%instead, use selected species
+        %%% use selected species
         S_threshold = UpdateCuts();
         %%% also use Lifetime Threshold
         S_threshold = S_threshold & (data_for_corrections(:,indTauBB) > 0.05);
@@ -5303,22 +5391,22 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
         NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
         NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
-        NGR = NGR - BurstData.Corrections.DirectExcitation_GR.*NRR - BurstData.Corrections.CrossTalk_GR.*NGG;
-        gamma_gr = BurstData.Corrections.Gamma_GR;
+        NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
+        gamma_gr = BurstData{file}.Corrections.Gamma_GR;
         EGR = NGR./(gamma_gr.*NGG+NGR);
-        NBR = NBR - BurstData.Corrections.DirectExcitation_BR.*NRR - BurstData.Corrections.CrossTalk_BR.*NBB -...
-            BurstData.Corrections.CrossTalk_GR.*(NBG-BurstData.Corrections.CrossTalk_BG.*NBB) -...
-            BurstData.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
-        NBG = NBG - BurstData.Corrections.DirectExcitation_BG.*NGG - BurstData.Corrections.CrossTalk_BG.*NBB;
+        NBR = NBR - BurstData{file}.Corrections.DirectExcitation_BR.*NRR - BurstData{file}.Corrections.CrossTalk_BR.*NBB -...
+            BurstData{file}.Corrections.CrossTalk_GR.*(NBG-BurstData{file}.Corrections.CrossTalk_BG.*NBB) -...
+            BurstData{file}.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
+        NBG = NBG - BurstData{file}.Corrections.DirectExcitation_BG.*NGG - BurstData{file}.Corrections.CrossTalk_BG.*NBB;
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(0,5,100);
-        [~, statFRETfun] = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
-            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
-            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
+        [~, statFRETfun] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+            BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
+            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR,...
             tau);
-        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData.Corrections.DonorLifetimeBlue;
+        %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetimeBlue;
         tauBB = data_for_corrections(S_threshold,indTauBB);
-        valid = (tauBB < BurstData.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
+        valid = (tauBB < BurstData{file}.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
         valid = find(valid);
         valid = valid(~isnan(statFRETfun( tauBB(valid))));
         %%% minimize deviation from static FRET line as a function of gamma_br!
@@ -5326,7 +5414,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -5344,8 +5432,8 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
-        BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
-        BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+        BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+        BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
     end
 end
 %%% Save UserValues
@@ -5360,40 +5448,49 @@ ApplyCorrections(obj,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ApplyCorrections(obj,~)
 global BurstData UserValues BurstMeta
-h = guidata(obj);
-if obj == h.UseBetaCheckbox
-    UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
-    LSUserValues(1);
+h = guidata(findobj('Tag','BurstBrowser'));
+if nargin > 0
+    if obj == h.UseBetaCheckbox
+        UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
+        LSUserValues(1);
+    end
 end
+file = BurstMeta.SelectedFile;
 %% 2colorMFD
 %% FRET and Stoichiometry Corrections
 %%% Read out indices of parameters
-indS = BurstMeta.posS;
-indE = BurstMeta.posE;
-indDur = strcmp(BurstData.NameArray,'Duration [ms]');
-indNGG = strcmp(BurstData.NameArray,'Number of Photons (GG)');
-indNGR = strcmp(BurstData.NameArray,'Number of Photons (GR)');
-indNRR = strcmp(BurstData.NameArray,'Number of Photons (RR)');
+switch BurstData{file}.BAMethod
+    case {1,2,5} %2color
+        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+        indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+    case {3,4} %3color
+        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
+        indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
+end
+indDur = strcmp(BurstData{file}.NameArray,'Duration [ms]');
+indNGG = strcmp(BurstData{file}.NameArray,'Number of Photons (GG)');
+indNGR = strcmp(BurstData{file}.NameArray,'Number of Photons (GR)');
+indNRR = strcmp(BurstData{file}.NameArray,'Number of Photons (RR)');
 
 %%% Read out photons counts and duration
-NGG = BurstData.DataArray(:,indNGG);
-NGR = BurstData.DataArray(:,indNGR);
-NRR = BurstData.DataArray(:,indNRR);
-Dur = BurstData.DataArray(:,indDur);
+NGG = BurstData{file}.DataArray(:,indNGG);
+NGR = BurstData{file}.DataArray(:,indNGR);
+NRR = BurstData{file}.DataArray(:,indNRR);
+Dur = BurstData{file}.DataArray(:,indDur);
 
 %%% Read out corrections
-gamma_gr = BurstData.Corrections.Gamma_GR;
-beta_gr = BurstData.Corrections.Beta_GR;
-ct_gr = BurstData.Corrections.CrossTalk_GR;
-de_gr = BurstData.Corrections.DirectExcitation_GR;
-if ~(BurstData.BAMethod == 5) % MFD
-    BG_GG = BurstData.Background.Background_GGpar + BurstData.Background.Background_GGperp;
-    BG_GR = BurstData.Background.Background_GRpar + BurstData.Background.Background_GRperp;
-    BG_RR = BurstData.Background.Background_RRpar + BurstData.Background.Background_RRperp;
-elseif BurstData.BAMethod == 5 % noMFD
-    BG_GG = BurstData.Background.Background_GGpar;
-    BG_GR = BurstData.Background.Background_GRpar;
-    BG_RR = BurstData.Background.Background_RRpar;
+gamma_gr = BurstData{file}.Corrections.Gamma_GR;
+beta_gr = BurstData{file}.Corrections.Beta_GR;
+ct_gr = BurstData{file}.Corrections.CrossTalk_GR;
+de_gr = BurstData{file}.Corrections.DirectExcitation_GR;
+if ~(BurstData{file}.BAMethod == 5) % MFD
+    BG_GG = BurstData{file}.Background.Background_GGpar + BurstData{file}.Background.Background_GGperp;
+    BG_GR = BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp;
+    BG_RR = BurstData{file}.Background.Background_RRpar + BurstData{file}.Background.Background_RRperp;
+elseif BurstData{file}.BAMethod == 5 % noMFD
+    BG_GG = BurstData{file}.Background.Background_GGpar;
+    BG_GR = BurstData{file}.Background.Background_GRpar;
+    BG_RR = BurstData{file}.Background.Background_RRpar;
 end
 
 %%% Apply Background corrections
@@ -5412,34 +5509,34 @@ elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
     S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
 end
 %%% Update Values in the DataArray
-BurstData.DataArray(:,indE) = E;
-BurstData.DataArray(:,indS) = S;
+BurstData{file}.DataArray(:,indE) = E;
+BurstData{file}.DataArray(:,indS) = S;
 
-if BurstData.BAMethod ~= 5 % ensure that polarized detection was used
+if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
     %%% Read out indices of parameters
-    ind_rGG = strcmp(BurstData.NameArray,'Anisotropy GG');
-    ind_rRR = strcmp(BurstData.NameArray,'Anisotropy RR');
-    indNGGpar = strcmp(BurstData.NameArray,'Number of Photons (GG par)');
-    indNGGperp = strcmp(BurstData.NameArray,'Number of Photons (GG perp)');
-    indNRRpar = strcmp(BurstData.NameArray,'Number of Photons (RR par)');
-    indNRRperp = strcmp(BurstData.NameArray,'Number of Photons (RR perp)');
+    ind_rGG = strcmp(BurstData{file}.NameArray,'Anisotropy GG');
+    ind_rRR = strcmp(BurstData{file}.NameArray,'Anisotropy RR');
+    indNGGpar = strcmp(BurstData{file}.NameArray,'Number of Photons (GG par)');
+    indNGGperp = strcmp(BurstData{file}.NameArray,'Number of Photons (GG perp)');
+    indNRRpar = strcmp(BurstData{file}.NameArray,'Number of Photons (RR par)');
+    indNRRperp = strcmp(BurstData{file}.NameArray,'Number of Photons (RR perp)');
 
     %%% Read out photons counts and duration
-    NGGpar = BurstData.DataArray(:,indNGGpar);
-    NGGperp = BurstData.DataArray(:,indNGGperp);
-    NRRpar = BurstData.DataArray(:,indNRRpar);
-    NRRperp = BurstData.DataArray(:,indNRRperp);
+    NGGpar = BurstData{file}.DataArray(:,indNGGpar);
+    NGGperp = BurstData{file}.DataArray(:,indNGGperp);
+    NRRpar = BurstData{file}.DataArray(:,indNRRpar);
+    NRRperp = BurstData{file}.DataArray(:,indNRRperp);
 
     %%% Read out corrections
-    Ggreen = BurstData.Corrections.GfactorGreen;
-    Gred = BurstData.Corrections.GfactorRed;
+    Ggreen = BurstData{file}.Corrections.GfactorGreen;
+    Gred = BurstData{file}.Corrections.GfactorRed;
     l1 = UserValues.BurstBrowser.Corrections.l1;
     l2 = UserValues.BurstBrowser.Corrections.l2;
-    BG_GGpar = BurstData.Background.Background_GGpar;
-    BG_GGperp = BurstData.Background.Background_GGperp;
-    BG_RRpar = BurstData.Background.Background_RRpar;
-    BG_RRperp = BurstData.Background.Background_RRperp;
+    BG_GGpar = BurstData{file}.Background.Background_GGpar;
+    BG_GGperp = BurstData{file}.Background.Background_GGperp;
+    BG_RRpar = BurstData{file}.Background.Background_RRpar;
+    BG_RRperp = BurstData{file}.Background.Background_RRperp;
 
     %%% Apply Background corrections
     NGGpar = NGGpar - Dur.*BG_GGpar;
@@ -5452,43 +5549,43 @@ if BurstData.BAMethod ~= 5 % ensure that polarized detection was used
     rRR = (Gred.*NRRpar - NRRperp)./( (1-3*l2).*Gred.*NRRpar + (2-3*l1).*NRRperp);
 
     %%% Update Values in the DataArray
-    BurstData.DataArray(:,ind_rGG) = rGG;
-    BurstData.DataArray(:,ind_rRR) = rRR;
+    BurstData{file}.DataArray(:,ind_rGG) = rGG;
+    BurstData{file}.DataArray(:,ind_rRR) = rRR;
 end
 %% 3colorMFD
-if any(BurstData.BAMethod == [3,4])
+if any(BurstData{file}.BAMethod == [3,4])
     %% FRET Efficiencies and Stoichiometries
     %%% Read out indices of parameters
-    indE1A = strcmp(BurstData.NameArray,'FRET Efficiency B->G+R');
-    indEBG = strcmp(BurstData.NameArray,'FRET Efficiency BG');
-    indEBR = strcmp(BurstData.NameArray,'FRET Efficiency BR');
-    indSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
-    indSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
-    indPrGR = strcmp(BurstData.NameArray,'Proximity Ratio GR');
-    indPrBG = strcmp(BurstData.NameArray,'Proximity Ratio BG');
-    indPrBR = strcmp(BurstData.NameArray,'Proximity Ratio BR');
-    indPrBtoGR = strcmp(BurstData.NameArray,'Proximity Ratio B->G+R');
-    indNBB = strcmp(BurstData.NameArray,'Number of Photons (BB)');
-    indNBG = strcmp(BurstData.NameArray,'Number of Photons (BG)');
-    indNBR= strcmp(BurstData.NameArray,'Number of Photons (BR)');
+    indE1A = strcmp(BurstData{file}.NameArray,'FRET Efficiency B->G+R');
+    indEBG = strcmp(BurstData{file}.NameArray,'FRET Efficiency BG');
+    indEBR = strcmp(BurstData{file}.NameArray,'FRET Efficiency BR');
+    indSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+    indSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
+    indPrGR = strcmp(BurstData{file}.NameArray,'Proximity Ratio GR');
+    indPrBG = strcmp(BurstData{file}.NameArray,'Proximity Ratio BG');
+    indPrBR = strcmp(BurstData{file}.NameArray,'Proximity Ratio BR');
+    indPrBtoGR = strcmp(BurstData{file}.NameArray,'Proximity Ratio B->G+R');
+    indNBB = strcmp(BurstData{file}.NameArray,'Number of Photons (BB)');
+    indNBG = strcmp(BurstData{file}.NameArray,'Number of Photons (BG)');
+    indNBR= strcmp(BurstData{file}.NameArray,'Number of Photons (BR)');
     
     %%% Read out photons counts and duration
-    NBB= BurstData.DataArray(:,indNBB);
-    NBG = BurstData.DataArray(:,indNBG);
-    NBR = BurstData.DataArray(:,indNBR);
+    NBB= BurstData{file}.DataArray(:,indNBB);
+    NBG = BurstData{file}.DataArray(:,indNBG);
+    NBR = BurstData{file}.DataArray(:,indNBR);
     
     %%% Read out corrections
-    gamma_bg = BurstData.Corrections.Gamma_BG;
-    beta_bg = BurstData.Corrections.Beta_BG;
-    gamma_br = BurstData.Corrections.Gamma_BR;
-    beta_br = BurstData.Corrections.Beta_BR;
-    ct_bg = BurstData.Corrections.CrossTalk_BG;
-    de_bg = BurstData.Corrections.DirectExcitation_BG;
-    ct_br = BurstData.Corrections.CrossTalk_BR;
-    de_br = BurstData.Corrections.DirectExcitation_BR;
-    BG_BB = BurstData.Background.Background_BBpar + BurstData.Background.Background_BBperp;
-    BG_BG = BurstData.Background.Background_BGpar + BurstData.Background.Background_BGperp;
-    BG_BR = BurstData.Background.Background_BRpar + BurstData.Background.Background_BRperp;
+    gamma_bg = BurstData{file}.Corrections.Gamma_BG;
+    beta_bg = BurstData{file}.Corrections.Beta_BG;
+    gamma_br = BurstData{file}.Corrections.Gamma_BR;
+    beta_br = BurstData{file}.Corrections.Beta_BR;
+    ct_bg = BurstData{file}.Corrections.CrossTalk_BG;
+    de_bg = BurstData{file}.Corrections.DirectExcitation_BG;
+    ct_br = BurstData{file}.Corrections.CrossTalk_BR;
+    de_br = BurstData{file}.Corrections.DirectExcitation_BR;
+    BG_BB = BurstData{file}.Background.Background_BBpar + BurstData{file}.Background.Background_BBperp;
+    BG_BG = BurstData{file}.Background.Background_BGpar + BurstData{file}.Background.Background_BGperp;
+    BG_BR = BurstData{file}.Background.Background_BRpar + BurstData{file}.Background.Background_BRperp;
     
     %%% Apply Background corrections
     NBB = NBB - Dur.*BG_BB;
@@ -5517,29 +5614,29 @@ if any(BurstData.BAMethod == [3,4])
     PrBR = NBR./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
     PrBtoGR = gamma_br.*NBB./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
     %%% Update Values in the DataArray
-    BurstData.DataArray(:,indE1A) = E1A;
-    BurstData.DataArray(:,indEBG) = EBG;
-    BurstData.DataArray(:,indEBR) = EBR;
-    BurstData.DataArray(:,indSBG) = SBG;
-    BurstData.DataArray(:,indSBR) = SBR;
-    BurstData.DataArray(:,indPrGR) = PrGR;
-    BurstData.DataArray(:,indPrBG) = PrBG;
-    BurstData.DataArray(:,indPrBR) = PrBR;
-    BurstData.DataArray(:,indPrBtoGR) = PrBtoGR;
+    BurstData{file}.DataArray(:,indE1A) = E1A;
+    BurstData{file}.DataArray(:,indEBG) = EBG;
+    BurstData{file}.DataArray(:,indEBR) = EBR;
+    BurstData{file}.DataArray(:,indSBG) = SBG;
+    BurstData{file}.DataArray(:,indSBR) = SBR;
+    BurstData{file}.DataArray(:,indPrGR) = PrGR;
+    BurstData{file}.DataArray(:,indPrBG) = PrBG;
+    BurstData{file}.DataArray(:,indPrBR) = PrBR;
+    BurstData{file}.DataArray(:,indPrBtoGR) = PrBtoGR;
     %% Anisotropy Correction of blue channel
     %%% Read out indices of parameters
-    ind_rBB = strcmp(BurstData.NameArray,'Anisotropy BB');
-    indNBBpar = strcmp(BurstData.NameArray,'Number of Photons (BB par)');
-    indNBBperp = strcmp(BurstData.NameArray,'Number of Photons (BB perp)');
+    ind_rBB = strcmp(BurstData{file}.NameArray,'Anisotropy BB');
+    indNBBpar = strcmp(BurstData{file}.NameArray,'Number of Photons (BB par)');
+    indNBBperp = strcmp(BurstData{file}.NameArray,'Number of Photons (BB perp)');
     
     %%% Read out photons counts and duration
-    NBBpar = BurstData.DataArray(:,indNBBpar);
-    NBBperp = BurstData.DataArray(:,indNBBperp);
+    NBBpar = BurstData{file}.DataArray(:,indNBBpar);
+    NBBperp = BurstData{file}.DataArray(:,indNBBperp);
     
     %%% Read out corrections
-    Gblue = BurstData.Corrections.GfactorBlue;
-    BG_BBpar = BurstData.Background.Background_BBpar;
-    BG_BBperp = BurstData.Background.Background_BBperp;
+    Gblue = BurstData{file}.Corrections.GfactorBlue;
+    BG_BBpar = BurstData{file}.Background.Background_BBpar;
+    BG_BBperp = BurstData{file}.Background.Background_BBperp;
     
     %%% Apply Background corrections
     NBBpar = NBBpar - Dur.*BG_BBpar;
@@ -5549,7 +5646,7 @@ if any(BurstData.BAMethod == [3,4])
     rBB = (Gblue.*NBBpar - NBBperp)./( (1-3*l2).*Gblue.*NBBpar + (2-3*l1).*NBBperp);
     
     %%% Update Value in the DataArray
-    BurstData.DataArray(:,ind_rBB) = rBB;
+    BurstData{file}.DataArray(:,ind_rBB) = rBB;
 end
 
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
@@ -5620,14 +5717,20 @@ end
 %%%%%%% Updates GUI elements in fFCS tab and Lifetime Tab %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_fFCS_GUI(~,~)
-global BurstData
+global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-
-if numel(BurstData.SpeciesNames) > 1
-    h.fFCS_Species1_popupmenu.String = BurstData.SpeciesNames(2:end);
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+if all(species == [0,0])
+    num_species = 0;
+else
+    num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+end
+if num_species > 1
+    h.fFCS_Species1_popupmenu.String = BurstData{file}.SpeciesNames(species(1),2:num_species);
     h.fFCS_Species1_popupmenu.Value = 1;
-    h.fFCS_Species2_popupmenu.String = BurstData.SpeciesNames(2:end);
-    if numel(BurstData.SpeciesNames) > 2
+    h.fFCS_Species2_popupmenu.String = BurstData{file}.SpeciesNames(species(1),2:num_species);
+    if num_species > 2
         h.fFCS_Species2_popupmenu.Value = 2;
     else
         h.fFCS_Species2_popupmenu.Value = 1;
@@ -5653,63 +5756,47 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 %%% Load associated *.bps data if it doesn't exist yet
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
-
+file = BurstMeta.SelectedFile;
 h.Calc_fFCS_Filter_button.Enable = 'off';
 h.Do_fFCS_button.Enable = 'off';
 %%% Read out the bursts contained in the different species selections
-valid_total = UpdateCuts(1);
-species1 = h.fFCS_Species1_popupmenu.Value + 1;BurstMeta.fFCS.Names{1} = h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value};
-species2 = h.fFCS_Species2_popupmenu.Value + 1;BurstMeta.fFCS.Names{2} = h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value};
-valid_species1 = UpdateCuts(species1);
-valid_species2 = UpdateCuts(species2);
+valid_total = UpdateCuts([BurstData{file}.SelectedSpecies(1),1],file);
+species1 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species1_popupmenu.Value + 1];
+species2 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species2_popupmenu.Value + 1];
+valid_species1 = UpdateCuts(species1,file);
+valid_species2 = UpdateCuts(species2,file);
 
-if isempty(BurstTCSPCData)
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in BurstData
-        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+if isempty(BurstTCSPCData{file})
+    Load_Photons([],[]);
 end
 
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
-    if isempty(PhotonStream)
+    if isempty(PhotonStream{file})
         Progress(1,h.Progress_Axes,h.Progress_Text);
-        h.Progress_Text.String = BurstData.DisplayName;
+        h.Progress_Text.String = BurstMeta.DisplayName;
         m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab, or unselect time window for fFCS!');
         pause(5)
         delete(m)
         return;
     end
-    start = PhotonStream.start(valid_total);
-    stop = PhotonStream.stop(valid_total);
+    start = PhotonStream{file}.start(valid_total);
+    stop = PhotonStream{file}.stop(valid_total);
     
     use_time = 1; %%% use time or photon window
     if use_time
         %%% histogram the Macrotimes in bins of 10 ms
-        bw = ceil(10E-3./BurstData.ClockPeriod);
-        bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
+        bw = ceil(10E-3./BurstData{file}.ClockPeriod);
+        bins_time = bw.*(0:1:ceil(PhotonStream{file}.Macrotime(end)./bw));
         if ~isfield(PhotonStream,'MT_bin')
             %%% finds the PHOTON index of the first photon in each
             %%% time bin
-            [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
+            [~, PhotonStream{file}.MT_bin] = histc(PhotonStream{file}.Macrotime,bins_time);
             Progress(0.2,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
-            [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+            [PhotonStream{file}.unique,PhotonStream{file}.first_idx,~] = unique(PhotonStream{file}.MT_bin);
             Progress(0.4,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
             used_tw = zeros(numel(bins_time),1);
-            used_tw(PhotonStream.unique) = PhotonStream.first_idx;
+            used_tw(PhotonStream{file}.unique) = PhotonStream{file}.first_idx;
             %%% fill zeros with previous value
             if used_tw(1) == 0
                 used_tw(1) = 1;
@@ -5718,15 +5805,15 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
                 used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
             end
             Progress(0.6,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
-            PhotonStream.first_idx = used_tw;
+            PhotonStream{file}.first_idx = used_tw;
         end
-        [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
-        [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
+        [~, start_bin] = histc(PhotonStream{file}.Macrotime(start),bins_time);
+        [~, stop_bin] = histc(PhotonStream{file}.Macrotime(stop),bins_time);
         
         Progress(0.8,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
         
-        [~, start_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.start),bins_time);
-        [~, stop_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.stop),bins_time);
+        [~, start_all_bin] = histc(PhotonStream{file}.Macrotime(PhotonStream{file}.start),bins_time);
+        [~, stop_all_bin] = histc(PhotonStream{file}.Macrotime(PhotonStream{file}.stop),bins_time);
         
         Progress(1,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
         use = ones(numel(start),1);
@@ -5758,15 +5845,15 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
         k=1;
         for i = 1:numel(start_tw)
             if use(i)
-                range = PhotonStream.first_idx(start_tw(i)):(PhotonStream.first_idx(stop_tw(i)+1)-1);
-                MT_total{k} = PhotonStream.Macrotime(range);
+                range = PhotonStream{file}.first_idx(start_tw(i)):(PhotonStream{file}.first_idx(stop_tw(i)+1)-1);
+                MT_total{k} = PhotonStream{file}.Macrotime(range);
                 MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
-                CH_total{k} = PhotonStream.Channel(range);
-                MI_total{k} = PhotonStream.Microtime(range);
-                %val = (PhotonStream.MT_bin > start_tw(i)) & (PhotonStream.MT_bin < stop_tw(i) );
-                %MT{k} = PhotonStream.Macrotime(val);
+                CH_total{k} = PhotonStream{file}.Channel(range);
+                MI_total{k} = PhotonStream{file}.Microtime(range);
+                %val = (PhotonStream{file}.MT_bin > start_tw(i)) & (PhotonStream{file}.MT_bin < stop_tw(i) );
+                %MT{k} = PhotonStream{file}.Macrotime(val);
                 %MT{k} = MT{k}-MT{k}(1) +1;
-                %CH{k} = PhotonStream.Channel(val);
+                %CH{k} = PhotonStream{file}.Channel(val);
                 k = k+1;
             end
             %Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
@@ -5782,9 +5869,9 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
         
         for i = 1:numel(start_tw)
             %%% Check if ANY burst falls into the time window
-            val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
+            val = (PhotonStream{file}.start < stop_tw(i)) & (PhotonStream{file}.stop > start_tw(i));
             %%% Check if they are of the same species
-            inval = val & (~BurstData.Selected);
+            inval = val & (~BurstData{file}.Selected);
             %%% if there are bursts of another species in the timewindow,
             %%% --> remove it
             if sum(inval) > 0
@@ -5801,9 +5888,9 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
         k=1;
         for i = 1:numel(start_tw)
             if use(i)
-                MT_total{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
-                CH_total{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
-                MI_total{k} = PhotonStream.Microtime(start_tw(i):stop_tw(i));
+                MT_total{k} = PhotonStream{file}.Macrotime(start_tw(i):stop_tw(i));MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
+                CH_total{k} = PhotonStream{file}.Channel(start_tw(i):stop_tw(i));
+                MI_total{k} = PhotonStream{file}.Microtime(start_tw(i):stop_tw(i));
                 k = k+1;
             end
             Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
@@ -5819,24 +5906,24 @@ elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4])
     %%% later (automatically)
     if isempty(PhotonStream)
         Progress(1,h.Progress_Axes,h.Progress_Text);
-        h.Progress_Text.String = BurstData.DisplayName;
+        h.Progress_Text.String = BurstMeta.DisplayName;
         m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab!');
         pause(5)
         delete(m)
         return;
     end
-    MT_total = PhotonStream.Macrotime;
-    MI_total = PhotonStream.Microtime;
-    CH_total = PhotonStream.Channel;
+    MT_total = PhotonStream{file}.Macrotime;
+    MI_total = PhotonStream{file}.Microtime;
+    CH_total = PhotonStream{file}.Channel;
     %BurstMeta.fFCS.Photons.MT_total = MT_total;
     %BurstMeta.fFCS.Photons.MI_total = MI_total;
     %BurstMeta.fFCS.Photons.CH_total = CH_total;
 elseif UserValues.BurstBrowser.Settings.fFCS_Mode == 1
     % Burstwise only
     %%% find selected bursts
-    MI_total = BurstTCSPCData.Microtime(valid_total);
-    CH_total = BurstTCSPCData.Channel(valid_total);
-    MT_total = BurstTCSPCData.Macrotime(valid_total);
+    MI_total = BurstTCSPCData{file}.Microtime(valid_total);
+    CH_total = BurstTCSPCData{file}.Channel(valid_total);
+    MT_total = BurstTCSPCData{file}.Macrotime(valid_total);
     for k = 1:numel(MT_total)
         MT_total{k} = MT_total{k}-MT_total{k}(1) +1;
     end
@@ -5851,14 +5938,14 @@ if any(UserValues.BurstBrowser.Settings.fFCS_Mode == [1,2])
     CH_total = vertcat(CH_total{:});
     MT_total = vertcat(MT_total{:});
 end
-%MT_species{1} = BurstTCSPCData.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
-MI_species{1} = BurstTCSPCData.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
-CH_species{1} = BurstTCSPCData.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
-%MT_species{2} = BurstTCSPCData.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
-MI_species{2} = BurstTCSPCData.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
-CH_species{2} = BurstTCSPCData.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
+%MT_species{1} = BurstTCSPCData{file}.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
+MI_species{1} = BurstTCSPCData{file}.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
+CH_species{1} = BurstTCSPCData{file}.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
+%MT_species{2} = BurstTCSPCData{file}.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
+MI_species{2} = BurstTCSPCData{file}.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
+CH_species{2} = BurstTCSPCData{file}.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
 
-switch BurstData.BAMethod
+switch BurstData{file}.BAMethod
     case {1,2} %%% 2ColorMFD
         if UserValues.BurstBrowser.Settings.fFCS_UseFRET
             ParChans = [1,3]; %% GG1 and GR1
@@ -5881,11 +5968,11 @@ end
 MI_par{1} = [];MI_par{2} = [];
 MI_perp{1} = [];MI_perp{2} = [];
 %%% read out the limits of the PIE channels
-limit_low_par = [0, BurstData.PIE.From(ParChans)];
-limit_high_par = [0, BurstData.PIE.To(ParChans)];
+limit_low_par = [0, BurstData{file}.PIE.From(ParChans)];
+limit_high_par = [0, BurstData{file}.PIE.To(ParChans)];
 dif_par = cumsum(limit_high_par)-cumsum(limit_low_par);
-limit_low_perp = [0,BurstData.PIE.From(PerpChans)];
-limit_high_perp = [0, BurstData.PIE.To(PerpChans)];
+limit_low_perp = [0,BurstData{file}.PIE.From(PerpChans)];
+limit_high_perp = [0, BurstData{file}.PIE.To(PerpChans)];
 dif_perp = cumsum(limit_high_perp)-cumsum(limit_low_perp);
 for i = 1:2 %%% loop over species
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
@@ -5909,9 +5996,9 @@ for i = 1:2 %%% loop over species
 end
 
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 4 %%% add donor only species
-    valid_donly = BurstData.DataArray(:,2) > 0.95; %%% Stoichiometry threshold
-    MI_donly = BurstTCSPCData.Microtime(valid_donly);MI_donly = vertcat(MI_donly{:});
-    CH_donly = BurstTCSPCData.Channel(valid_donly);CH_donly = vertcat(CH_donly{:});
+    valid_donly = BurstData{file}.DataArray(:,2) > 0.95; %%% Stoichiometry threshold
+    MI_donly = BurstTCSPCData{file}.Microtime(valid_donly);MI_donly = vertcat(MI_donly{:});
+    CH_donly = BurstTCSPCData{file}.Channel(valid_donly);CH_donly = vertcat(CH_donly{:});
     MI_donly_par = [];MI_donly_perp = [];
     for j = 1:numel(ParChans) %%% loop over channels to consider for par/perp
         MI_donly_par = vertcat(MI_donly_par,...
@@ -5994,10 +6081,10 @@ end
 %%% Downsampling if checked
 %%% New binwidth in picoseconds
 if UserValues.BurstBrowser.Settings.Downsample_fFCS
-    if ~isfield(BurstData.FileInfo,'Resolution')
-        TACChannelWidth = BurstData.FileInfo.ClockPeriod*1E9/BurstData.FileInfo.MI_Bins;
-    elseif isfield(BurstData.FileInfo,'Resolution') %%% HydraHarp Data
-        TACChannelWidth = BurstData.FileInfo.Resolution/1000;
+    if ~isfield(BurstData{file}.FileInfo,'Resolution')
+        TACChannelWidth = BurstData{file}.FileInfo.ClockPeriod*1E9/BurstData{file}.FileInfo.MI_Bins;
+    elseif isfield(BurstData{file}.FileInfo,'Resolution') %%% HydraHarp Data
+        TACChannelWidth = BurstData{file}.FileInfo.Resolution/1000;
     end
     new_bin_width = floor(UserValues.BurstBrowser.Settings.Downsample_fFCS_Time/(1000*TACChannelWidth));
     MI_total_par = ceil(double(MI_total_par)/new_bin_width);
@@ -6038,15 +6125,15 @@ BurstMeta.Plots.fFCS.Microtime_Species2_perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Microtime_Species2_perp.YData = BurstMeta.fFCS.hist_MIperp_Species{2}./sum(BurstMeta.fFCS.hist_MIperp_Species{2});
 
 %%% Add IRF Pattern if existent
-if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF
+if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF
     BurstMeta.Plots.fFCS.IRF_par.Visible = 'on';
     BurstMeta.Plots.fFCS.IRF_perp.Visible = 'on';
     
     hScat_par = [];
     hScat_perp = [];
     for i = 1:numel(ParChans)
-        hScat_par = [hScat_par, BurstData.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
-        hScat_perp = [hScat_perp, BurstData.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
+        hScat_par = [hScat_par, BurstData{file}.ScatterPattern{ParChans(i)}(limit_low_par(i+1):limit_high_par(i+1))];
+        hScat_perp = [hScat_perp, BurstData{file}.ScatterPattern{PerpChans(i)}(limit_low_perp(i+1):limit_high_perp(i+1))];
     end
     
     if UserValues.BurstBrowser.Settings.Downsample_fFCS
@@ -6108,7 +6195,7 @@ h.Calc_fFCS_Filter_button.Enable = 'on';
 axis(h.axes_fFCS_DecayPar,'tight');
 axis(h.axes_fFCS_DecayPerp,'tight');
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Prepare data for subensemble TCSPC fitting %%%%%%%%%%%%%%%%%%%%%%%%
@@ -6117,50 +6204,31 @@ function Send_To_TauFit(obj,~)
 % Close TauFit cause it might be called from somewhere else than before
 delete(findobj('Tag','TauFit'));
 clear global TauFitData    
-global BurstData BurstTCSPCData UserValues TauFitData
+global BurstData BurstTCSPCData UserValues TauFitData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
-%%% Load associated *.bps data if it doesn't exist yet
-%%% Load associated .bps file, containing Macrotime, Microtime and Channel
+
+file = BurstMeta.SelectedFile;
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 % User clicks Send Species to TauFit
-if isempty(BurstTCSPCData)
-    %store TCSPC data globally, so you don't have to load it every time you
-    %do subensemble analysis of a different species
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-        BurstTCSPCData.FileName = BurstData.FileName;
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in TauFitData
-        BurstTCSPCData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+if isempty(BurstTCSPCData{file})
+    Load_Photons([],[]);
 end
 
-TauFitData.FileName = BurstTCSPCData.FileName;
+TauFitData.FileName = BurstData{file}.FileName;
+
 %%% Read out the bursts contained in the different species selections
-species = h.SpeciesList.Value;
-valid = UpdateCuts(species);
+valid = UpdateCuts([BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)],file);
 
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
 
 %%% find selected bursts
-MI_total = BurstTCSPCData.Microtime(valid);
+MI_total = BurstTCSPCData{file}.Microtime(valid);
 MI_total = vertcat(MI_total{:});
-CH_total = BurstTCSPCData.Channel(valid);
+CH_total = BurstTCSPCData{file}.Channel(valid);
 CH_total = vertcat(CH_total{:});
-switch BurstData.BAMethod
+switch BurstData{file}.BAMethod
     case {1,2} 
         %%% 2color MFD
         c{1} = [1,2]; %% GG
@@ -6179,35 +6247,35 @@ for chan = 1:size(c,2)
     MI_perp = MI_total(CH_total == c{chan}(2));
     
     %%% Calculate the histograms
-    MI_par = histc(MI_par,0:(BurstData.FileInfo.MI_Bins-1));
-    MI_perp = histc(MI_perp,0:(BurstData.FileInfo.MI_Bins-1));
-    TauFitData.hMI_Par{chan} = MI_par(BurstData.PIE.From(c{chan}(1)):min([BurstData.PIE.To(c{chan}(1)) end]));
-    TauFitData.hMI_Per{chan} = MI_perp(BurstData.PIE.From(c{chan}(2)):min([BurstData.PIE.To(c{chan}(2)) end]));
+    MI_par = histc(MI_par,0:(BurstData{file}.FileInfo.MI_Bins-1));
+    MI_perp = histc(MI_perp,0:(BurstData{file}.FileInfo.MI_Bins-1));
+    TauFitData.hMI_Par{chan} = MI_par(BurstData{file}.PIE.From(c{chan}(1)):min([BurstData{file}.PIE.To(c{chan}(1)) end]));
+    TauFitData.hMI_Per{chan} = MI_perp(BurstData{file}.PIE.From(c{chan}(2)):min([BurstData{file}.PIE.To(c{chan}(2)) end]));
     
     % IRF
-    TauFitData.hIRF_Par{chan} = BurstData.IRF{c{chan}(1)}(BurstData.PIE.From(c{chan}(1)):min([BurstData.PIE.To(c{chan}(1)) end]));
-    TauFitData.hIRF_Per{chan} = BurstData.IRF{c{chan}(2)}(BurstData.PIE.From(c{chan}(2)):min([BurstData.PIE.To(c{chan}(2)) end]));
+    TauFitData.hIRF_Par{chan} = BurstData{file}.IRF{c{chan}(1)}(BurstData{file}.PIE.From(c{chan}(1)):min([BurstData{file}.PIE.To(c{chan}(1)) end]));
+    TauFitData.hIRF_Per{chan} = BurstData{file}.IRF{c{chan}(2)}(BurstData{file}.PIE.From(c{chan}(2)):min([BurstData{file}.PIE.To(c{chan}(2)) end]));
     TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
     TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
     
     % Scatter Pattern
-    TauFitData.hScat_Par{chan} = BurstData.ScatterPattern{c{chan}(1)}(BurstData.PIE.From(c{chan}(1)):min([BurstData.PIE.To(c{chan}(1)) end]));
-    TauFitData.hScat_Per{chan} = BurstData.ScatterPattern{c{chan}(2)}(BurstData.PIE.From(c{chan}(2)):min([BurstData.PIE.To(c{chan}(2)) end]));
+    TauFitData.hScat_Par{chan} = BurstData{file}.ScatterPattern{c{chan}(1)}(BurstData{file}.PIE.From(c{chan}(1)):min([BurstData{file}.PIE.To(c{chan}(1)) end]));
+    TauFitData.hScat_Per{chan} = BurstData{file}.ScatterPattern{c{chan}(2)}(BurstData{file}.PIE.From(c{chan}(2)):min([BurstData{file}.PIE.To(c{chan}(2)) end]));
     TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
     TauFitData.hScat_Per{chan} = (TauFitData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
     
     %%% Generate XData
-    TauFitData.XData_Par{chan} = (BurstData.PIE.From(c{chan}(1)):BurstData.PIE.To(c{chan}(1))) - BurstData.PIE.From(c{chan}(1));
-    TauFitData.XData_Per{chan} = (BurstData.PIE.From(c{chan}(2)):BurstData.PIE.To(c{chan}(2))) - BurstData.PIE.From(c{chan}(2));
+    TauFitData.XData_Par{chan} = (BurstData{file}.PIE.From(c{chan}(1)):BurstData{file}.PIE.To(c{chan}(1))) - BurstData{file}.PIE.From(c{chan}(1));
+    TauFitData.XData_Per{chan} = (BurstData{file}.PIE.From(c{chan}(2)):BurstData{file}.PIE.To(c{chan}(2))) - BurstData{file}.PIE.From(c{chan}(2));
 end
-    TauFitData.TACRange = BurstData.FileInfo.TACRange; % in seconds
-    TauFitData.MI_Bins = double(BurstData.FileInfo.MI_Bins); %Anders, why double
+    TauFitData.TACRange = BurstData{file}.FileInfo.TACRange; % in seconds
+    TauFitData.MI_Bins = double(BurstData{file}.FileInfo.MI_Bins); %Anders, why double
     if ~isfield(BurstData,'Resolution')
         % in nanoseconds/microtime bin
         TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
     elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
-        TauFitData.TACChannelWidth = BurstData.Resolution/1000;
-        %Anders, does BurstData.Resolution ever exist?
+        TauFitData.TACChannelWidth = BurstData{file}.Resolution/1000;
+        %Anders, does BurstData{file}.Resolution ever exist?
     end
 TauFit(obj)
 
@@ -6217,11 +6285,11 @@ TauFit(obj)
 function Calc_fFCS_Filters(obj,~)
 global BurstMeta BurstData UserValues
 h = guidata(obj);
-
+file = BurstMeta.SelectedFile;
 %%% Concatenate Decay Patterns
 Decay_par = [BurstMeta.fFCS.hist_MIpar_Species{1},...
     BurstMeta.fFCS.hist_MIpar_Species{2}];
-if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
+if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
     if isfield(BurstMeta.fFCS,'hScat_par')
         Decay_par = [Decay_par, BurstMeta.fFCS.hScat_par(1:size(Decay_par,1))'];
     end
@@ -6237,7 +6305,7 @@ Decay_total_par = BurstMeta.fFCS.hist_MItotal_par;
 Decay_total_par(Decay_total_par == 0) = 1; %%% fill zeros with eps
 Decay_perp = [BurstMeta.fFCS.hist_MIperp_Species{1},...
     BurstMeta.fFCS.hist_MIperp_Species{2}];
-if isfield(BurstData,'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
+if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings.fFCS_UseIRF %%% include scatter pattern
     if isfield(BurstMeta.fFCS,'hScat_perp')
         Decay_perp = [Decay_perp, BurstMeta.fFCS.hScat_perp(1:size(Decay_perp,1))'];
     end
@@ -6390,7 +6458,7 @@ for i=1:NumChans
                 %%% Do Correlation
                 [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
             end
-            Cor_Times = Cor_Times*BurstData.ClockPeriod;
+            Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
             if numel(Cor_Array)>1
@@ -6403,7 +6471,8 @@ for i=1:NumChans
             
             %%% Save the correlation file
             %%% Generates filename
-            Current_FileName=[BurstData.FileName(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+            filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+            Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
             %%% Checks, if file already exists
             if  exist(Current_FileName,'file')
                 k=1;
@@ -6416,8 +6485,8 @@ for i=1:NumChans
                 end
             end
             
-            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
+            Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+            %Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
@@ -6427,14 +6496,16 @@ for i=1:NumChans
     end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateCorrections(obj,e)
-global UserValues BurstData
+global UserValues BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
+
+file = BurstMeta.SelectedFile;
 if isempty(obj) %%% Just change the data to what is stored in UserValues
     if isempty(BurstData)
         %%% function was called on GUI startup, default to 2cMFD
@@ -6455,183 +6526,183 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
     else
         %%% Catch case where no Background Information is stored in
         %%% BurstData
-        if ~isfield(BurstData,'Background')
-            switch BurstData.BAMethod
+        if ~isfield(BurstData{file},'Background')
+            switch BurstData{file}.BAMethod
                 case {1,2}
-                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-                    BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
-                    BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
-                    BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-                    BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                    BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                    BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                    BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
                 case {3,4}
-                    BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
-                    BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
-                    BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
-                    BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
-                    BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
-                    BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
-                    BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
-                    BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
-                    BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
-                    BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
-                    BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
-                    BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                    BurstData{file}.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
+                    BurstData{file}.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+                    BurstData{file}.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
+                    BurstData{file}.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
+                    BurstData{file}.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
+                    BurstData{file}.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
+                    BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                    BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                    BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                    BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
                 case {5}
-                    BurstData.Background.Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar;
-                    BurstData.Background.Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar;
-                    BurstData.Background.Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                    BurstData{file}.Background.Background_GG = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                    BurstData{file}.Background.Background_GR = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                    BurstData{file}.Background.Background_RR = UserValues.BurstBrowser.Corrections.Background_RRpar;
             end
         end
         %%% Backwards Compatibility Check (Remove at some point)
-        if ~isstruct(BurstData.Background) % Second check for compatibility of old data (Background was stored in array, not in struct)
-            switch BurstData.BAMethod
+        if ~isstruct(BurstData{file}.Background) % Second check for compatibility of old data (Background was stored in array, not in struct)
+            switch BurstData{file}.BAMethod
                 case {1,2}
-                    Background.Background_GGpar = BurstData.Background(1);
-                    Background.Background_GGperp = BurstData.Background(2);
-                    Background.Background_GRpar = BurstData.Background(3);
-                    Background.Background_GRperp = BurstData.Background(4);
-                    Background.Background_RRpar = BurstData.Background(5);
-                    Background.Background_RRperp = BurstData.Background(6);
+                    Background.Background_GGpar = BurstData{file}.Background(1);
+                    Background.Background_GGperp = BurstData{file}.Background(2);
+                    Background.Background_GRpar = BurstData{file}.Background(3);
+                    Background.Background_GRperp = BurstData{file}.Background(4);
+                    Background.Background_RRpar = BurstData{file}.Background(5);
+                    Background.Background_RRperp = BurstData{file}.Background(6);
                 case {3,4}
-                    Background.Background_BBpar = BurstData.Background(1);
-                    Background.Background_BBperp = BurstData.Background(2);
-                    Background.Background_BGpar = BurstData.Background(3);
-                    Background.Background_BGperp = BurstData.Background(4);
-                    Background.Background_BRpar = BurstData.Background(5);
-                    Background.Background_BRperp = BurstData.Background(6);
-                    Background.Background_GGpar = BurstData.Background(7);
-                    Background.Background_GGperp = BurstData.Background(8);
-                    Background.Background_GRpar = BurstData.Background(9);
-                    Background.Background_GRperp = BurstData.Background(10);
-                    Background.Background_RRpar = BurstData.Background(11);
-                    Background.Background_RRperp = BurstData.Background(12);
+                    Background.Background_BBpar = BurstData{file}.Background(1);
+                    Background.Background_BBperp = BurstData{file}.Background(2);
+                    Background.Background_BGpar = BurstData{file}.Background(3);
+                    Background.Background_BGperp = BurstData{file}.Background(4);
+                    Background.Background_BRpar = BurstData{file}.Background(5);
+                    Background.Background_BRperp = BurstData{file}.Background(6);
+                    Background.Background_GGpar = BurstData{file}.Background(7);
+                    Background.Background_GGperp = BurstData{file}.Background(8);
+                    Background.Background_GRpar = BurstData{file}.Background(9);
+                    Background.Background_GRperp = BurstData{file}.Background(10);
+                    Background.Background_RRpar = BurstData{file}.Background(11);
+                    Background.Background_RRperp = BurstData{file}.Background(12);
             end
-            BurstData.Background = Background;
+            BurstData{file}.Background = Background;
         end
         %%% Set Correction Struct to UserValues. From here on, corrections
         %%% are stored individually per measurement.
-        if ~isfield(BurstData,'Corrections') || ~isstruct(BurstData.Corrections) % Second check for compatibility of old data
-            switch BurstData.BAMethod
+        if ~isfield(BurstData{file},'Corrections') || ~isstruct(BurstData{file}.Corrections) % Second check for compatibility of old data
+            switch BurstData{file}.BAMethod
                 case {1,2,5}
-                    BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-                    BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
-                    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-                    BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
-                    BurstData.Corrections.GfactorGreen =  UserValues.BurstBrowser.Corrections.GfactorGreen;
-                    BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
-                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
-                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
-                    BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
-                    BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                    BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                    BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                    BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                    BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                    BurstData{file}.Corrections.GfactorGreen =  UserValues.BurstBrowser.Corrections.GfactorGreen;
+                    BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                    BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                    BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+                    BurstData{file}.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                    BurstData{file}.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
                 case {3,4}
-                    BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
-                    BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
-                    BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
-                    BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
-                    BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
-                    BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
-                    BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-                    BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
-                    BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
-                    BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
-                    BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
-                    BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
-                    BurstData.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
-                    BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
-                    BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
-                    BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
-                    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
-                    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
-                    BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
-                    BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
-                    BurstData.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
-                    BurstData.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
-                    BurstData.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
-                    BurstData.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
-                    BurstData.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
-                    BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
-                    BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+                    BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                    BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
+                    BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
+                    BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                    BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
+                    BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
+                    BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                    BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+                    BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+                    BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                    BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
+                    BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+                    BurstData{file}.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
+                    BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                    BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                    BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+                    BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                    BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+                    BurstData{file}.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                    BurstData{file}.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                    BurstData{file}.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
+                    BurstData{file}.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
+                    BurstData{file}.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
+                    BurstData{file}.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
+                    BurstData{file}.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+                    BurstData{file}.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+                    BurstData{file}.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
             end
         end
-        if ~isfield(BurstData.Corrections,'r0_green')
-            BurstData.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+        if ~isfield(BurstData{file}.Corrections,'r0_green')
+            BurstData{file}.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
         end
-        if ~isfield(BurstData.Corrections,'r0_red')
-            BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+        if ~isfield(BurstData{file}.Corrections,'r0_red')
+            BurstData{file}.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
         end
-        if ~isfield(BurstData.Corrections,'r0_blue') && any(BurstData.BAMethod == [3,4])
-            BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+        if ~isfield(BurstData{file}.Corrections,'r0_blue') && any(BurstData{file}.BAMethod == [3,4])
+            BurstData{file}.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
         end
         %%% Update GUI with values stored in BurstData Structure
-        switch BurstData.BAMethod
+        switch BurstData{file}.BAMethod
             case {1,2}
-                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
-                h.AcceptorLifetimeEdit.String = num2str(BurstData.Corrections.AcceptorLifetime);
-                h.FoersterRadiusEdit = num2str(BurstData.Corrections.FoersterRadius);
-                h.LinkerLengthEdit = num2str(BurstData.Corrections.LinkerLength);
-                h.r0Green_edit.String = num2str(BurstData.Corrections.r0_green);
-                h.r0Red_edit = num2str(BurstData.Corrections.r0_red);
+                h.DonorLifetimeEdit.String = num2str(BurstData{file}.Corrections.DonorLifetime);
+                h.AcceptorLifetimeEdit.String = num2str(BurstData{file}.Corrections.AcceptorLifetime);
+                h.FoersterRadiusEdit = num2str(BurstData{file}.Corrections.FoersterRadius);
+                h.LinkerLengthEdit = num2str(BurstData{file}.Corrections.LinkerLength);
+                h.r0Green_edit.String = num2str(BurstData{file}.Corrections.r0_green);
+                h.r0Red_edit = num2str(BurstData{file}.Corrections.r0_red);
             case {3,4}
-                h.DonorLifetimeBlueEdit.String = num2str(BurstData.Corrections.DonorLifetimeBlue);
-                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
-                h.AcceptorLifetimeEdit.String = num2str(BurstData.Corrections.AcceptorLifetime);
-                h.FoersterRadiusEdit = num2str(BurstData.Corrections.FoersterRadius);
-                h.LinkerLengthEdit = num2str(BurstData.Corrections.LinkerLength);
-                h.FoersterRadiusBGEdit = num2str(BurstData.Corrections.FoersterRadiusBG);
-                h.LinkerLengthBGEdit = num2str(BurstData.Corrections.LinkerLengthBG);
-                h.FoersterRadiusBREdit = num2str(BurstData.Corrections.FoersterRadiusBR);
-                h.LinkerLengthBREdit = num2str(BurstData.Corrections.LinkerLengthBR);
-                h.r0Blue_edit.String = num2str(BurstData.Corrections.r0_blue);
-                h.r0Green_edit.String = num2str(BurstData.Corrections.r0_green);
-                h.r0Red_edit = num2str(BurstData.Corrections.r0_red);
+                h.DonorLifetimeBlueEdit.String = num2str(BurstData{file}.Corrections.DonorLifetimeBlue);
+                h.DonorLifetimeEdit.String = num2str(BurstData{file}.Corrections.DonorLifetime);
+                h.AcceptorLifetimeEdit.String = num2str(BurstData{file}.Corrections.AcceptorLifetime);
+                h.FoersterRadiusEdit = num2str(BurstData{file}.Corrections.FoersterRadius);
+                h.LinkerLengthEdit = num2str(BurstData{file}.Corrections.LinkerLength);
+                h.FoersterRadiusBGEdit = num2str(BurstData{file}.Corrections.FoersterRadiusBG);
+                h.LinkerLengthBGEdit = num2str(BurstData{file}.Corrections.LinkerLengthBG);
+                h.FoersterRadiusBREdit = num2str(BurstData{file}.Corrections.FoersterRadiusBR);
+                h.LinkerLengthBREdit = num2str(BurstData{file}.Corrections.LinkerLengthBR);
+                h.r0Blue_edit.String = num2str(BurstData{file}.Corrections.r0_blue);
+                h.r0Green_edit.String = num2str(BurstData{file}.Corrections.r0_green);
+                h.r0Red_edit = num2str(BurstData{file}.Corrections.r0_red);
         end
         
-        if any(BurstData.BAMethod == [1,2,5]) %%% 2cMFD, same as default
-            h.CorrectionsTable.Data = {BurstData.Corrections.Gamma_GR;...
-                BurstData.Corrections.Beta_GR;...
-                BurstData.Corrections.CrossTalk_GR;...
-                BurstData.Corrections.DirectExcitation_GR;...
-                BurstData.Corrections.GfactorGreen;...
-                BurstData.Corrections.GfactorRed;...
+        if any(BurstData{file}.BAMethod == [1,2,5]) %%% 2cMFD, same as default
+            h.CorrectionsTable.Data = {BurstData{file}.Corrections.Gamma_GR;...
+                BurstData{file}.Corrections.Beta_GR;...
+                BurstData{file}.Corrections.CrossTalk_GR;...
+                BurstData{file}.Corrections.DirectExcitation_GR;...
+                BurstData{file}.Corrections.GfactorGreen;...
+                BurstData{file}.Corrections.GfactorRed;...
                 UserValues.BurstBrowser.Corrections.l1;...
                 UserValues.BurstBrowser.Corrections.l2;...
-                BurstData.Background.Background_GGpar;...
-                BurstData.Background.Background_GGperp;...
-                BurstData.Background.Background_GRpar;...
-                BurstData.Background.Background_GRperp;...
-                BurstData.Background.Background_RRpar;...
-                BurstData.Background.Background_RRperp};
-        elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
-            h.CorrectionsTable.Data = {BurstData.Corrections.Gamma_GR;...
-                BurstData.Corrections.Gamma_BG;...
-                BurstData.Corrections.Gamma_BR;...
-                BurstData.Corrections.Beta_GR;...
-                BurstData.Corrections.Beta_BG;...
-                BurstData.Corrections.Beta_BR;...
-                BurstData.Corrections.CrossTalk_GR;...
-                BurstData.Corrections.CrossTalk_BG;...
-                BurstData.Corrections.CrossTalk_BR;...
-                BurstData.Corrections.DirectExcitation_GR;...
-                BurstData.Corrections.DirectExcitation_BG;...
-                BurstData.Corrections.DirectExcitation_BR;...
-                BurstData.Corrections.GfactorBlue;...
-                BurstData.Corrections.GfactorGreen;...
-                BurstData.Corrections.GfactorRed;...
+                BurstData{file}.Background.Background_GGpar;...
+                BurstData{file}.Background.Background_GGperp;...
+                BurstData{file}.Background.Background_GRpar;...
+                BurstData{file}.Background.Background_GRperp;...
+                BurstData{file}.Background.Background_RRpar;...
+                BurstData{file}.Background.Background_RRperp};
+        elseif any(BurstData{file}.BAMethod == [3,4]) %%% 3cMFD
+            h.CorrectionsTable.Data = {BurstData{file}.Corrections.Gamma_GR;...
+                BurstData{file}.Corrections.Gamma_BG;...
+                BurstData{file}.Corrections.Gamma_BR;...
+                BurstData{file}.Corrections.Beta_GR;...
+                BurstData{file}.Corrections.Beta_BG;...
+                BurstData{file}.Corrections.Beta_BR;...
+                BurstData{file}.Corrections.CrossTalk_GR;...
+                BurstData{file}.Corrections.CrossTalk_BG;...
+                BurstData{file}.Corrections.CrossTalk_BR;...
+                BurstData{file}.Corrections.DirectExcitation_GR;...
+                BurstData{file}.Corrections.DirectExcitation_BG;...
+                BurstData{file}.Corrections.DirectExcitation_BR;...
+                BurstData{file}.Corrections.GfactorBlue;...
+                BurstData{file}.Corrections.GfactorGreen;...
+                BurstData{file}.Corrections.GfactorRed;...
                 UserValues.BurstBrowser.Corrections.l1;...
                 UserValues.BurstBrowser.Corrections.l2;...
-                BurstData.Background.Background_BBpar;...
-                BurstData.Background.Background_BBperp;...
-                BurstData.Background.Background_BGpar;...
-                BurstData.Background.Background_BGperp;...
-                BurstData.Background.Background_BRpar;...
-                BurstData.Background.Background_BRperp;...
-                BurstData.Background.Background_GGpar;...
-                BurstData.Background.Background_GGperp;...
-                BurstData.Background.Background_GRpar;...
-                BurstData.Background.Background_GRperp;...
-                BurstData.Background.Background_RRpar;...
-                BurstData.Background.Background_RRperp};
+                BurstData{file}.Background.Background_BBpar;...
+                BurstData{file}.Background.Background_BBperp;...
+                BurstData{file}.Background.Background_BGpar;...
+                BurstData{file}.Background.Background_BGperp;...
+                BurstData{file}.Background.Background_BRpar;...
+                BurstData{file}.Background.Background_BRperp;...
+                BurstData{file}.Background.Background_GGpar;...
+                BurstData{file}.Background.Background_GGperp;...
+                BurstData{file}.Background.Background_GRpar;...
+                BurstData{file}.Background.Background_GRperp;...
+                BurstData{file}.Background.Background_RRpar;...
+                BurstData{file}.Background.Background_RRperp};
         end
         
     end
@@ -6640,34 +6711,34 @@ else %%% Update UserValues with new values
     switch obj
         case h.CorrectionsTable
             h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
-            if any(BurstData.BAMethod == [1,2,5]) %%% 2cMFD
+            if any(BurstData{file}.BAMethod == [1,2,5]) %%% 2cMFD
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
-                BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = obj.Data{2};
-                BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{3};
-                BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{4};
-                BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{5};
-                BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{6};
-                BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = obj.Data{7};
                 UserValues.BurstBrowser.Corrections.l2 = obj.Data{8};
                 UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{9};
-                BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{10};
-                BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{11};
-                BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{12};
-                BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                 UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{13};
-                BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{14};
-                BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
-            elseif any(BurstData.BAMethod == [3,4]) %%% 3cMFD
+                BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+            elseif any(BurstData{file}.BAMethod == [3,4]) %%% 3cMFD
                 %%% first update the gamma values!
                 %%% gamma_br = gamma_bg*gamma_gr
                 switch e.Indices(1)
@@ -6681,74 +6752,74 @@ else %%% Update UserValues with new values
                         obj.Data{2} = obj.Data{3}/obj.Data{1};
                 end
                 UserValues.BurstBrowser.Corrections.Gamma_GR = obj.Data{1};
-                BurstData.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Gamma_BG = obj.Data{2};
-                BurstData.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+                BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
                 UserValues.BurstBrowser.Corrections.Gamma_BR = obj.Data{3};
-                BurstData.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+                BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = obj.Data{4};
-                BurstData.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.Beta_BG = obj.Data{5};
-                BurstData.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
+                BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
                 UserValues.BurstBrowser.Corrections.Beta_BR = obj.Data{6};
-                BurstData.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+                BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = obj.Data{7};
-                BurstData.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BG = obj.Data{8};
-                BurstData.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
+                BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BR = obj.Data{9};
-                BurstData.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
+                BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= obj.Data{10};
-                BurstData.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BG= obj.Data{11};
-                BurstData.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
+                BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BR= obj.Data{12};
-                BurstData.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
+                BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
                 UserValues.BurstBrowser.Corrections.GfactorBlue = obj.Data{13};
-                BurstData.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
+                BurstData{file}.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = obj.Data{14};
-                BurstData.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = obj.Data{15};
-                BurstData.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = obj.Data{16};
                 UserValues.BurstBrowser.Corrections.l2 = obj.Data{17};
                 UserValues.BurstBrowser.Corrections.Background_BBpar= obj.Data{18};
-                BurstData.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
+                BurstData{file}.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
                 UserValues.BurstBrowser.Corrections.Background_BBperp= obj.Data{19};
-                BurstData.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+                BurstData{file}.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
                 UserValues.BurstBrowser.Corrections.Background_BGpar= obj.Data{20};
-                BurstData.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
+                BurstData{file}.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
                 UserValues.BurstBrowser.Corrections.Background_BGperp= obj.Data{21};
-                BurstData.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
+                BurstData{file}.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
                 UserValues.BurstBrowser.Corrections.Background_BRpar= obj.Data{22};
-                BurstData.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
+                BurstData{file}.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
                 UserValues.BurstBrowser.Corrections.Background_BRperp= obj.Data{23};
-                BurstData.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
+                BurstData{file}.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
                 UserValues.BurstBrowser.Corrections.Background_GGpar= obj.Data{24};
-                BurstData.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= obj.Data{25};
-                BurstData.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= obj.Data{26};
-                BurstData.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= obj.Data{27};
-                BurstData.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                 UserValues.BurstBrowser.Corrections.Background_RRpar= obj.Data{28};
-                BurstData.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= obj.Data{29};
-                BurstData.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
             end
         case h.DonorLifetimeEdit
             if ~isnan(str2double(h.DonorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetime = str2double(h.DonorLifetimeEdit.String);
-                BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
             else %%% Reset value
-                h.DonorLifetimeEdit.String = num2str(BurstData.Corrections.DonorLifetime);
+                h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
             end
             UpdateLifetimePlots([],[]);
         case h.AcceptorLifetimeEdit
             if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
-                BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+                BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
             else %%% Reset value
                 h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
             end
@@ -6756,7 +6827,7 @@ else %%% Update UserValues with new values
         case h.DonorLifetimeBlueEdit
             if ~isnan(str2double(h.DonorLifetimeBlueEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = str2double(h.DonorLifetimeBlueEdit.String);
-                BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+                BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
             else %%% Reset value
                 h.DonorLifetimeBlueEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue);
             end
@@ -6764,7 +6835,7 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusEdit
             if ~isnan(str2double(h.FoersterRadiusEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
-                BurstData.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                BurstData{file}.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
             else %%% Reset value
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
@@ -6772,7 +6843,7 @@ else %%% Update UserValues with new values
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
-                BurstData.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                BurstData{file}.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
             else %%% Reset value
                 h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
             end
@@ -6780,7 +6851,7 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusBGEdit
             if ~isnan(str2double(h.FoersterRadiusBGEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBG = str2double(h.FoersterRadiusBGEdit.String);
-                BurstData.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
+                BurstData{file}.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
             else %%% Reset value
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
@@ -6788,7 +6859,7 @@ else %%% Update UserValues with new values
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
-                BurstData.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
+                BurstData{file}.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
             else %%% Reset value
                 h.LinkerLengthBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBG);
             end
@@ -6796,7 +6867,7 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusBREdit
             if ~isnan(str2double(h.FoersterRadiusBREdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBR = str2double(h.FoersterRadiusBREdit.String);
-                BurstData.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
+                BurstData{file}.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
             else %%% Reset value
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
@@ -6804,7 +6875,7 @@ else %%% Update UserValues with new values
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
-                BurstData.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
+                BurstData{file}.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
             else %%% Reset value
                 h.LinkerLengthBREdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBR);
             end
@@ -6812,21 +6883,21 @@ else %%% Update UserValues with new values
         case h.r0Green_edit
             if ~isnan(str2double(h.r0Green_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_green = str2double(h.r0Green_edit.String);
-                BurstData.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+                BurstData{file}.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
             else %%% Reset value
                 h.r0Green_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_green);
             end
         case h.r0Red_edit
             if ~isnan(str2double(h.r0Red_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_red = str2double(h.r0Red_edit.String);
-                BurstData.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+                BurstData{file}.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
             else %%% Reset value
                 h.r0Red_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_red);
             end
         case h.r0Blue_edit
             if ~isnan(str2double(h.r0Blue_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_blue = str2double(h.r0Blue_edit.String);
-                BurstData.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+                BurstData{file}.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
             else %%% Reset value
                 h.r0Blue_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_blue);
             end
@@ -6838,45 +6909,27 @@ end
 %%%%%%% Does Time Window Analysis of selected species %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Time_Window_Analysis(~,~)
-global BurstData BurstTCSPCData UserValues
+global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-SelectedSpecies = h.SpeciesList.Value;
-SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
 
-%Valid = UpdateCuts(SelectedSpecies);
+file = BurstMeta.SelectedFile;
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-if isempty(BurstTCSPCData)
-    Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-    if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-        %%% load if it exists
-        load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-    else
-        %%% else ask for the file
-        [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-        if FileName == 0
-            return;
-        end
-        load('-mat',fullfile(PathName,FileName));
-        %%% Store the correct Path in BurstData
-        BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-    end
-    BurstTCSPCData.Macrotime = Macrotime;
-    BurstTCSPCData.Microtime = Microtime;
-    BurstTCSPCData.Channel = Channel;
-    clear Macrotime Microtime Channel
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+if isempty(BurstTCSPCData{file})
+    Load_Photons([],[]);
 end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% find selected bursts
-MT = BurstTCSPCData.Macrotime(BurstData.Selected);
-CH = BurstTCSPCData.Channel(BurstData.Selected);
+MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
+CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
 xProx = linspace(0,1,51);
 timebin = {10E-3,5E-3,3E-3,2E-3,1E-3,0.5E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
-    duration = timebin{t}/BurstData.ClockPeriod;
+    duration = timebin{t}/BurstData{file}.ClockPeriod;
     %%% Get the maximum number of bins possible in data set
     max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
     %convert absolute macrotimes to relative macrotimes
@@ -6905,7 +6958,7 @@ for t = 1:numel(timebin)
     end
     
     %%% 2.) Calculate Proximity Ratio Histogram
-    switch BurstData.BAMethod
+    switch BurstData{file}.BAMethod
         case {1,2}
             NGP = cellfun(@(x) sum((x==1)),PDAdata);
             NGS = cellfun(@(x) sum((x==2)),PDAdata);
@@ -6948,8 +7001,8 @@ for i = 1:numel(timebin)
             x = x - diffx*(i-1)/2;
         end
     end
-    h = stairs(x,Hist{i});
-    set(h, 'Linewidth', a)
+    ha = stairs(x,Hist{i});
+    set(ha, 'Linewidth', a)
     a = a-0.33;
 end
 
@@ -6959,26 +7012,27 @@ end
 legend(leg);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_FRET_Hist(~,~)
-global BurstData UserValues
+global BurstData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
-SelectedSpecies = h.SpeciesList.Value;
-SelectedSpeciesName = BurstData.SpeciesNames{SelectedSpecies};
-filename = [BurstData.DisplayName '_' SelectedSpeciesName '.his'];
-switch BurstData.BAMethod
+file = BurstMeta.SelectedFile;
+SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
+filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+switch BurstData{file}.BAMethod
     case {1,2}
-        E = BurstData.DataCut(:,1);
+        E = BurstData{file}.DataCut(:,1);
         %%% Save E array in *.his file
         save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
     case {3,4}
-        EGR = BurstData.DataCut(:,1);
-        EBG = BurstData.DataCut(:,2);
-        EBR = BurstData.DataCut(:,3);
+        EGR = BurstData{file}.DataCut(:,1);
+        EBG = BurstData{file}.DataCut(:,2);
+        EBR = BurstData{file}.DataCut(:,3);
         %%% Save E array in *.his file
         save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
 end
@@ -6987,20 +7041,49 @@ end
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_Analysis_State_Callback(~,~)
-global BurstData BurstTCSPCData
+global BurstData BurstTCSPCData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 Progress(0,h.Progress_Axes,h.Progress_Text,'Saving...');
-if strcmp(BurstData.FileName(end-2:end),'bur') %bur file, normal save
-    save(BurstData.FileName,'BurstData');
-elseif strcmp(BurstData.FileName(end-2:end),'kba') % kba file, convert to bur
-    save([BurstData.FileName(1:end-4) '_kba.bur'],'BurstData');
-    if ~isempty(BurstTCSPCData)
-        %%% also save BurstTCSPCData
-        save([BurstData.FileName(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
+%%% construct filenames
+for i = 1:numel(BurstData)
+    filename{i} = fullfile(BurstData{i}.PathName, BurstData{i}.FileName);
+end
+%%% Store burstdata in temp var
+if all(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'bur')) % all bur file, normal 'fast' save
+    for i = 1:numel(BurstData)
+        Cut = BurstData{i}.Cut;
+        SpeciesNames = BurstData{i}.SpeciesNames;
+        SelectedSpecies = BurstData{i}.SelectedSpecies;
+        Background = BurstData{i}.Background;
+        Corrections = BurstData{i}.Corrections;
+        %%% New: Cuts stored in Additional Variables (first happens when
+        %%% saved in BurstBrowser)
+        save(filename{i},'Cut','SpeciesNames','SelectedSpecies',...
+            'Background','Corrections','-append');
     end
+elseif any(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'kba')) % kba files loaded, convert to bur
+    BurstData_temp = BurstData;
+    BurstTCSPCData_temp = BurstTCSPCData;
+    for i = 1:numel(BurstData_temp)
+        BurstData = BurstData_temp{i};
+        Cut = BurstData.Cut;
+        SpeciesNames = BurstData.SpeciesNames;
+        SelectedSpecies = BurstData.SelectedSpecies;
+        Background = BurstData.Background;
+        Corrections = BurstData.Corrections;
+        save([filename{i}(1:end-4) '_kba.bur'],'BurstData',...
+            'Cut','SpeciesNames','SelectedSpecies','Background','Corrections');
+        if ~isempty(BurstTCSPCData_temp{i})
+            %%% also save BurstTCSPCData
+            BurstTCSPCData = BurstTCSPCData_temp{i};
+            save([filename{i}(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
+        end
+    end
+    BurstData = BurstData_temp;
+    BurstTCSPCData= BurstTCSPCData_temp;
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plots in Left Lifetime Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7013,19 +7096,26 @@ if isempty(BurstData)
     return;
 end
 
+file = BurstMeta.SelectedFile;
+NameArray = BurstData{file}.NameArray;
 %%% Use the current cut Data (of the selected species) for plots
-datatoplot = BurstData.DataCut;
+datatoplot = BurstData{file}.DataCut;
 %%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
-idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
-idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = BurstMeta.posE;
+idx_tauGG = strcmp('Lifetime GG [ns]',NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',NameArray);
+idx_rGG = strcmp('Anisotropy GG',NameArray);
+idx_rRR = strcmp('Anisotropy RR',NameArray);
+switch BurstData{file}.BAMethod
+    case {1,2,5} %2color
+        idxE = find(strcmp(NameArray,'FRET Efficiency'));
+    case {3,4}
+        idxE = find(strcmp(NameArray,'FRET Efficiency GR'));
+end
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 %% Plot E vs. tauGG in first plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.05 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5])], [-0.05 1]);
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -7045,7 +7135,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.05 1]);
+[H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5])], [-0.05 1]);
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -7060,9 +7150,9 @@ BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 axis(h.axes_EvsTauRR,'tight');
 ylim(h.axes_EvsTauRR,[-0.05 1]);
-if BurstData.BAMethod ~= 5 %ensure that polarized detection was used
+if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
     BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -7078,7 +7168,7 @@ if BurstData.BAMethod ~= 5 %ensure that polarized detection was used
     axis(h.axes_rGGvsTauGG,'tight');
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
     BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -7095,13 +7185,13 @@ if BurstData.BAMethod ~= 5 %ensure that polarized detection was used
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 end
 %% 3cMFD
-if any(BurstData.BAMethod == [3,4])
-    idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
-    idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
-    idxE1A = strcmp('FRET Efficiency B->G+R',BurstData.NameArray);
+if any(BurstData{file}.BAMethod == [3,4])
+    idx_tauBB = strcmp('Lifetime BB [ns]',NameArray);
+    idx_rBB = strcmp('Anisotropy BB',NameArray);
+    idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
     %% Plot E1A vs. tauBB
     valid = (datatoplot(:,idx_tauBB) > 0.01);
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [-0.05 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])], [-0.05 1]);
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -7121,7 +7211,7 @@ if any(BurstData.BAMethod == [3,4])
     %         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
     %     end
     %% Plot rBB vs tauBB
-    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
@@ -7148,7 +7238,8 @@ h = guidata(findobj('Tag','BurstBrowser'));
 if isempty(BurstData)
     return;
 end
-switch BurstData.BAMethod
+file = BurstMeta.SelectedFile;
+switch BurstData{file}.BAMethod
     case {1,2,5}
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
@@ -7224,32 +7315,33 @@ set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
 function UpdateLifetimeFits(obj,~)
 global BurstData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
+file = BurstMeta.SelectedFile;
 %%% Use the current cut Data (of the selected species) for plots
-datatoplot = BurstData.DataCut;
+datatoplot = BurstData{file}.DataCut;
 %%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
-idx_rGG = strcmp('Anisotropy GG',BurstData.NameArray);
-idx_rRR = strcmp('Anisotropy RR',BurstData.NameArray);
-idxE = strcmp('FRET Efficiency',BurstData.NameArray);
+idx_tauGG = strcmp('Lifetime GG [ns]',BurstData{file}.NameArray);
+idx_tauRR = strcmp('Lifetime RR [ns]',BurstData{file}.NameArray);
+idx_rGG = strcmp('Anisotropy GG',BurstData{file}.NameArray);
+idx_rRR = strcmp('Anisotropy RR',BurstData{file}.NameArray);
+idxE = strcmp('FRET Efficiency',BurstData{file}.NameArray);
 %% Add Fits
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
     %%% Calculate static FRET line in presence of linker fluctuations
     tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),100);
-    staticFRETline = conversion_tau(BurstData.Corrections.DonorLifetime,...
-        BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+    staticFRETline = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
         tau);
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
     %BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
-    if any(BurstData.BAMethod == [3,4])
+    if any(BurstData{file}.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
         tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
-        staticFRETline = conversion_tau_3C(BurstData.Corrections.DonorLifetimeBlue,...
-            BurstData.Corrections.FoersterRadiusBG,BurstData.Corrections.FoersterRadiusBR,...
-            BurstData.Corrections.LinkerLengthBG,BurstData.Corrections.LinkerLengthBR,...
+        staticFRETline = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+            BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
+            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR,...
             tau);
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
@@ -7263,7 +7355,7 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 %%% Query Effiencies using ginput
                 [x,~,button] = ginput(2);
                 if gca == h.axes_lifetime_ind_2d
-                    switch BurstData.BAMethod
+                    switch BurstData{file}.BAMethod
                         case {1,2}
                             switch h.lifetime_ind_popupmenu.Value
                                 case 1 % E vs tauGG is selected
@@ -7282,8 +7374,8 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     delete(m);
                     return;
                 end
-                y = conversion_tau(BurstData.Corrections.DonorLifetime,...
-                    BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+                y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
                     x);
                 if button(1) == 1 %%% left mouseclick, update first line, reset all others off
                     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
@@ -7315,13 +7407,13 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 if line < 1 || line > 3
                     return;
                 end
-                y = conversion_tau(BurstData.Corrections.DonorLifetime,...
-                    BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+                y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
                     x);
             end
             tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),10000);
-            dynFRETline = dynamicFRETline(BurstData.Corrections.DonorLifetime,...
-                y(1),y(2),BurstData.Corrections.FoersterRadius,BurstData.Corrections.LinkerLength,...
+            dynFRETline = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+                y(1),y(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
                 tau);
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
@@ -7340,7 +7432,7 @@ end
 if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %% GG
-    fPerrin = @(rho,x) BurstData.Corrections.r0_green./(1+x./rho); %%% x = tau
+    fPerrin = @(rho,x) BurstData{file}.Corrections.r0_green./(1+x./rho); %%% x = tau
     tauGG = datatoplot(:,idx_tauGG);
     PerrinFitGG = fit(tauGG(~isnan(tauGG)),datatoplot(~isnan(tauGG),idx_rGG),fPerrin,'StartPoint',1);
     tau = linspace(h.axes_rGGvsTauGG.XLim(1),h.axes_rGGvsTauGG.XLim(2),100);
@@ -7350,10 +7442,10 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
     
-    BurstData.Parameters.rhoGG = coeffvalues(PerrinFitGG);
-    title(h.axes_rGGvsTauGG,['rhoGG = ' sprintf('%2.2f',BurstData.Parameters.rhoGG) ' ns']);
+    BurstData{file}.Parameters.rhoGG = coeffvalues(PerrinFitGG);
+    title(h.axes_rGGvsTauGG,['rhoGG = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoGG) ' ns']);
     %% RR
-    fPerrin = @(rho,x) BurstData.Corrections.r0_red./(1+x./rho); %%% x = tau
+    fPerrin = @(rho,x) BurstData{file}.Corrections.r0_red./(1+x./rho); %%% x = tau
     tauRR = datatoplot(:,idx_tauRR);
     PerrinFitRR = fit(tauRR(~isnan(tauRR)),datatoplot(~isnan(tauRR),idx_rRR),fPerrin,'StartPoint',1);
     tau = linspace(h.axes_rRRvsTauRR.XLim(1),h.axes_rRRvsTauRR.XLim(2),100);
@@ -7362,13 +7454,13 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinRR(1).YData = PerrinFitRR(tau);
     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
-    BurstData.Parameters.rhoRR = coeffvalues(PerrinFitRR);
-    title(h.axes_rRRvsTauRR,['rhoRR = ' sprintf('%2.2f',BurstData.Parameters.rhoRR) ' ns']);
-    if any(BurstData.BAMethod == [3,4])
+    BurstData{file}.Parameters.rhoRR = coeffvalues(PerrinFitRR);
+    title(h.axes_rRRvsTauRR,['rhoRR = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoRR) ' ns']);
+    if any(BurstData{file}.BAMethod == [3,4])
         %% BB
-        idx_tauBB = strcmp('Lifetime BB [ns]',BurstData.NameArray);
-        idx_rBB = strcmp('Anisotropy BB',BurstData.NameArray);
-        fPerrin = @(rho,x) BurstData.Corrections.r0_blue./(1+x./rho); %%% x = tau
+        idx_tauBB = strcmp('Lifetime BB [ns]',BurstData{file}.NameArray);
+        idx_rBB = strcmp('Anisotropy BB',BurstData{file}.NameArray);
+        fPerrin = @(rho,x) BurstData{file}.Corrections.r0_blue./(1+x./rho); %%% x = tau
         valid = (datatoplot(:,idx_tauBB) > 0.01) & (datatoplot(:,idx_tauBB) < 5) &...
             (datatoplot(:,idx_rBB) > -1) & (datatoplot(:,idx_rBB) < 2) &...
             (~isnan(datatoplot(:,idx_tauBB)));
@@ -7380,8 +7472,8 @@ if obj == h.FitAnisotropyButton
         BurstMeta.Plots.Fits.PerrinBB(1).YData = PerrinFitBB(tau);
         BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
         BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
-        BurstData.Parameters.rhoBB = coeffvalues(PerrinFitBB);
-        title(h.axes_rBBvsTauBB,['rhoBB = ' num2str(BurstData.Parameters.rhoBB) ' ns']);
+        BurstData{file}.Parameters.rhoBB = coeffvalues(PerrinFitBB);
+        title(h.axes_rBBvsTauBB,['rhoBB = ' num2str(BurstData{file}.Parameters.rhoBB) ' ns']);
     end
 end
 %% Manual Perrin plots
@@ -7390,7 +7482,7 @@ if obj == h.ManualAnisotropyButton
     %%% Lifetime Ind plot: If it was selected, check what plot is active
     %%% and set gca accordingly
     if gca == h.axes_lifetime_ind_2d
-        switch BurstData.BAMethod
+        switch BurstData{file}.BAMethod
             case {1,2}
                 switch h.lifetime_ind_popupmenu.Value
                     case 3 %%% rGG  vs tauGG
@@ -7425,11 +7517,11 @@ if obj == h.ManualAnisotropyButton
             %%% Determine rho
             switch gca
                 case h.axes_rGGvsTauGG
-                    r0 = BurstData.Corrections.r0_green;
+                    r0 = BurstData{file}.Corrections.r0_green;
                 case h.axes_rRRvsTauRR
-                    r0 = BurstData.Corrections.r0_red;
+                    r0 = BurstData{file}.Corrections.r0_red;
                 case h.axes_rBBvsTauBB
-                    r0 = BurstData.Corrections.r0_blue;
+                    r0 = BurstData{file}.Corrections.r0_blue;
             end
             rho = x/(r0/y - 1);
             fitPerrin = @(x) r0./(1+x./rho);
@@ -7443,7 +7535,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
                     title(['rhoGG = ' sprintf('%2.2f',rho) ' ns']);
-                    BurstData.Parameters.rhoGG = rho;
+                    BurstData{file}.Parameters.rhoGG = rho;
                 case h.axes_rRRvsTauRR
                     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
@@ -7451,7 +7543,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
                     title(['rhoRR = ' sprintf('%2.2f',rho) ' ns']);
-                    BurstData.Parameters.rhoRR = rho;
+                    BurstData{file}.Parameters.rhoRR = rho;
                 case h.axes_rBBvsTauBB
                     BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
                     BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
@@ -7459,7 +7551,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
                     title(['rhoBB = ' sprintf('%2.2f',rho) ' ns']);
-                    BurstData.Parameters.rhoBB = rho;
+                    BurstData{file}.Parameters.rhoBB = rho;
             end
         end
     elseif button == 3 %%% right mouse click, add plot if a Perrin plot already exists
@@ -7472,7 +7564,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = BurstData.Corrections.r0_green;
+                r0 = BurstData{file}.Corrections.r0_green;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
@@ -7486,7 +7578,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
-                BurstData.Parameters.rhoGG(vis+1) = rho;
+                BurstData{file}.Parameters.rhoGG(vis+1) = rho;
             end
         elseif haxes == h.axes_rRRvsTauRR
             %%% Check for visibility of plots
@@ -7496,7 +7588,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = BurstData.Corrections.r0_red;
+                r0 = BurstData{file}.Corrections.r0_red;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
@@ -7510,7 +7602,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
-                BurstData.Parameters.rhoRR(vis+1) = rho;
+                BurstData{file}.Parameters.rhoRR(vis+1) = rho;
             end
         elseif haxes == h.axes_rBBvsTauBB
             %%% Check for visibility of plots
@@ -7520,7 +7612,7 @@ if obj == h.ManualAnisotropyButton
             end
             if vis < 3
                 %%% Determine rho
-                r0 = BurstData.Corrections.r0_blue;
+                r0 = BurstData{file}.Corrections.r0_blue;
                 rho = x/(r0/y - 1);
                 fitPerrin = @(x) r0./(1+x./rho);
                 tau = linspace(haxes.XLim(1),haxes.XLim(2),100);
@@ -7534,7 +7626,7 @@ if obj == h.ManualAnisotropyButton
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
                     title(new_title);
                 end
-                BurstData.Parameters.rhoBB(vis+1) = rho;
+                BurstData{file}.Parameters.rhoBB(vis+1) = rho;
             end
         end
     end
@@ -7562,38 +7654,41 @@ end
 function DonorOnlyLifetimeCallback(obj,~)
 global BurstData UserValues BurstMeta
 h = guidata(obj);
+file = BurstMeta.SelectedFile;
 if obj.Value == 1 %%% Checkbox was clicked on
     LSUserValues(0);
     %%% Determine Donor Only lifetime from data with S > 0.95
-    idx_tauGG = strcmp(BurstData.NameArray,'Lifetime GG [ns]');
-    idxS = BurstMeta.posS;
-    if any(BurstData.BAMethod == [1,2,5])
-        valid = (BurstData.DataArray(:,idxS) > 0.95);
-    elseif any(BurstData.BAMethod == [3,4])
-        idxSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
-        valid = (BurstData.DataArray(:,idxS) > 0.90) & (BurstData.DataArray(:,idxS) < 1.1) &...
-            (BurstData.DataArray(:,idxSBG) > 0) & (BurstData.DataArray(:,idxSBG) < 0.1);
+    idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
+    if any(BurstData{file}.BAMethod == [1,2,5])
+        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
+        valid = (BurstData{file}.DataArray(:,idxS) > 0.95);
+    elseif any(BurstData{file}.BAMethod == [3,4])
+        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
+        idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+        valid = (BurstData{file}.DataArray(:,idxS) > 0.90) & (BurstData{file}.DataArray(:,idxS) < 1.1) &...
+            (BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
     end
     x_axis = 0:0.05:10;
-    htauGG = histc(BurstData.DataArray(valid,idx_tauGG),x_axis);
+    htauGG = histc(BurstData{file}.DataArray(valid,idx_tauGG),x_axis);
     [DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG,1);
     %%% Update GUI
     h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
     h.DonorLifetimeEdit.Enable = 'off';
     UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
-    BurstData.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+    BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
     %%% Determine Acceptor Only Lifetime from data with S < 0.1
-    idx_tauRR = strcmp(BurstData.NameArray,'Lifetime RR [ns]');
-    idxS = BurstMeta.posS;
-    if any(BurstData.BAMethod == [1,2,5])
-        valid = (BurstData.DataArray(:,idxS) < 0.1);
-    elseif any(BurstData.BAMethod == [3,4])
-        idxSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
-        valid = (BurstData.DataArray(:,idxS) < 0.1) & (BurstData.DataArray(:,idxS) > -0.1) &...
-            (BurstData.DataArray(:,idxSBR) < 0.1) & (BurstData.DataArray(:,idxSBR) > -0.1);
+    idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
+    if any(BurstData{file}.BAMethod == [1,2,5])
+        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
+        valid = (BurstData{file}.DataArray(:,idxS) < 0.1);
+    elseif any(BurstData{file}.BAMethod == [3,4])
+        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
+        idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
+        valid = (BurstData{file}.DataArray(:,idxS) < 0.1) & (BurstData{file}.DataArray(:,idxS) > -0.1) &...
+            (BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
     end
     x_axis = 0:0.05:10;
-    htauRR = histc(BurstData.DataArray(valid,idx_tauRR),x_axis);
+    htauRR = histc(BurstData{file}.DataArray(valid,idx_tauRR),x_axis);
     if size(htauRR,2) > size(htauRR,1)
         htauRR = htauRR';
     end
@@ -7602,23 +7697,23 @@ if obj.Value == 1 %%% Checkbox was clicked on
     h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
     h.AcceptorLifetimeEdit.Enable = 'off';
     UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
-    BurstData.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
-    if any(BurstData.BAMethod == [3,4])
+    BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+    if any(BurstData{file}.BAMethod == [3,4])
         %%% Determine Donor Blue Lifetime from Blue dye only species
-        idx_tauBB = strcmp(BurstData.NameArray,'Lifetime BB [ns]');
-        idxSBG = strcmp(BurstData.NameArray,'Stoichiometry BG');
-        idxSBR = strcmp(BurstData.NameArray,'Stoichiometry BR');
+        idx_tauBB = strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]');
+        idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+        idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
         
-        valid = ( (BurstData.DataArray(:,idxSBG) > 0.98) &...
-            (BurstData.DataArray(:,idxSBR) > 0.98) );
+        valid = ( (BurstData{file}.DataArray(:,idxSBG) > 0.98) &...
+            (BurstData{file}.DataArray(:,idxSBR) > 0.98) );
         x_axis = 0:0.05:10;
-        htauBB = histc(BurstData.DataArray(valid,idx_tauBB),x_axis);
+        htauBB = histc(BurstData{file}.DataArray(valid,idx_tauBB),x_axis);
         [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB,1);
-        %DonorBlueLifetime = mean(BurstData.DataArray(valid,idx_tauBB));
+        %DonorBlueLifetime = mean(BurstData{file}.DataArray(valid,idx_tauBB));
         h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
         h.DonorLifetimeBlueEdit.Enable = 'off';
         UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
-        BurstData.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+        BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
     end
     LSUserValues(1);
     UpdateLifetimePlots([],[]);
@@ -7776,19 +7871,19 @@ end
 %%%%%%% Normal Correlation of Burst Photon Streams %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Correlate_Bursts(obj,~)
-global BurstData BurstTCSPCData PhotonStream UserValues
+global BurstData BurstTCSPCData PhotonStream UserValues BurstMeta
 h = guidata(obj);
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 
 %%% Read out the species name
-if (BurstData.SelectedSpecies == 1)
+if (BurstData{file}.SelectedSpecies == 1)
     species = 'global';
 else
-    species = BurstData.SpeciesNames{BurstData.SelectedSpecies};
+    species = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies};
 end
 %%% define channels
-switch BurstData.BAMethod
+switch BurstData{file}.BAMethod
     case {1,2}
         Chan = {    1,    2,    3,    4,    5,    6,[1 2],[3 4],[1 2 3 4],[1 3],[2 4],[5 6]};
     case {3,4}
@@ -7803,31 +7898,15 @@ NCor = sum(sum(CorrMat));
 switch obj
     case h.Correlate_Button
         %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-        if isempty(BurstTCSPCData)
-            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-            if exist([BurstData.FileName(1:end-3) 'bps'],'file') == 2
-                %%% load if it exists
-                load([BurstData.FileName(1:end-3) 'bps'],'-mat');
-            else
-                %%% else ask for the file
-                [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-                if FileName == 0
-                    return;
-                end
-                load('-mat',fullfile(PathName,FileName));
-                %%% Store the correct Path in BurstData
-                BurstData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
-            end
-            BurstTCSPCData.Macrotime = Macrotime;
-            BurstTCSPCData.Microtime = Microtime;
-            BurstTCSPCData.Channel = Channel;
-            clear Macrotime Microtime Channel
-            Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+        if isempty(BurstTCSPCData{file})
+            Load_Photons([],[]);
         end
+        Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
         %%% find selected bursts
-        MT = BurstTCSPCData.Macrotime(BurstData.Selected);
+        MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
         %MT = vertcat(MT{:});
-        CH = BurstTCSPCData.Channel(BurstData.Selected);
+        CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
         %CH = vertcat(CH{:});
         
         for k = 1:numel(MT)
@@ -7856,7 +7935,7 @@ switch obj
         %                     end
         %                     %%% Do Correlation
         %                     [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-        %                     Cor_Times = Cor_Times*BurstData.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
+        %                     Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
         %                     %%% Calculates average and standard error of mean (without tinv_table yet
         %                     if numel(Cor_Array)>1
         %                         Cor_Average=mean(Cor_Array,2);
@@ -7872,7 +7951,7 @@ switch obj
         %                     end
         %                     %%% Save the correlation file
         %                     %%% Generates filename
-        %                     Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+        %                     Current_FileName=[BurstData{file}.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
         %                     %%% Checks, if file already exists
         %                     if  exist(Current_FileName,'file')
         %                         k=1;
@@ -7885,8 +7964,8 @@ switch obj
         %                         end
         %                     end
         %
-        %                     Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-        %                     Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
+        %                     Header = ['Correlation file for: ' strrep(fullfile(BurstData{file}.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+        %                     Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
         %                     Valid = 1:10;
         %                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
         %                     count = count+1;waitbar(count/NCor);
@@ -7899,29 +7978,29 @@ switch obj
             return;
         end
         
-        start = PhotonStream.start(BurstData.Selected);
-        stop = PhotonStream.stop(BurstData.Selected);
+        start = PhotonStream{file}.start(BurstData{file}.Selected);
+        stop = PhotonStream{file}.stop(BurstData{file}.Selected);
         
         use_time = 1; %%% use time or photon window
         if use_time
             %%% histogram the Macrotimes in bins of 10 ms
-            bw = ceil(10E-3./BurstData.ClockPeriod);
-            bins_time = bw.*(0:1:ceil(PhotonStream.Macrotime(end)./bw));
+            bw = ceil(10E-3./BurstData{file}.ClockPeriod);
+            bins_time = bw.*(0:1:ceil(PhotonStream{file}.Macrotime(end)./bw));
             if ~isfield(PhotonStream,'MT_bin')
                 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
-                [~, PhotonStream.MT_bin] = histc(PhotonStream.Macrotime,bins_time);
-                [PhotonStream.unique,PhotonStream.first_idx,~] = unique(PhotonStream.MT_bin);
+                [~, PhotonStream{file}.MT_bin] = histc(PhotonStream{file}.Macrotime,bins_time);
+                [PhotonStream{file}.unique,PhotonStream{file}.first_idx,~] = unique(PhotonStream{file}.MT_bin);
                 used_tw = zeros(numel(bins_time),1);
-                used_tw(PhotonStream.unique) = PhotonStream.first_idx;
+                used_tw(PhotonStream{file}.unique) = PhotonStream{file}.first_idx;
                 while sum(used_tw == 0) > 0
                     used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
                 end
-                PhotonStream.first_idx = used_tw;
+                PhotonStream{file}.first_idx = used_tw;
             end
-            [~, start_bin] = histc(PhotonStream.Macrotime(start),bins_time);
-            [~, stop_bin] = histc(PhotonStream.Macrotime(stop),bins_time);
-            [~, start_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.start),bins_time);
-            [~, stop_all_bin] = histc(PhotonStream.Macrotime(PhotonStream.stop),bins_time);
+            [~, start_bin] = histc(PhotonStream{file}.Macrotime(start),bins_time);
+            [~, stop_bin] = histc(PhotonStream{file}.Macrotime(stop),bins_time);
+            [~, start_all_bin] = histc(PhotonStream{file}.Macrotime(PhotonStream{file}.start),bins_time);
+            [~, stop_all_bin] = histc(PhotonStream{file}.Macrotime(PhotonStream{file}.stop),bins_time);
             
             use = ones(numel(start),1);
             %%% loop over selected bursts
@@ -7936,7 +8015,7 @@ switch obj
                 %%% Check if ANY burst falls into the time window
                 val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
                 %%% Check if they are of the same species
-                inval = val & (~BurstData.Selected);
+                inval = val & (~BurstData{file}.Selected);
                 %%% if there are bursts of another species in the timewindow,
                 %%% --> remove it
                 if sum(inval) > 0
@@ -7952,14 +8031,14 @@ switch obj
             k=1;
             for i = 1:numel(start_tw)
                 if use(i)
-                    range = PhotonStream.first_idx(start_tw(i)):(PhotonStream.first_idx(stop_tw(i)+1)-1);
-                    MT{k} = PhotonStream.Macrotime(range);
+                    range = PhotonStream{file}.first_idx(start_tw(i)):(PhotonStream{file}.first_idx(stop_tw(i)+1)-1);
+                    MT{k} = PhotonStream{file}.Macrotime(range);
                     MT{k} = MT{k}-MT{k}(1) +1;
-                    CH{k} = PhotonStream.Channel(range);
-                    %val = (PhotonStream.MT_bin > start_tw(i)) & (PhotonStream.MT_bin < stop_tw(i) );
-                    %MT{k} = PhotonStream.Macrotime(val);
+                    CH{k} = PhotonStream{file}.Channel(range);
+                    %val = (PhotonStream{file}.MT_bin > start_tw(i)) & (PhotonStream{file}.MT_bin < stop_tw(i) );
+                    %MT{k} = PhotonStream{file}.Macrotime(val);
                     %MT{k} = MT{k}-MT{k}(1) +1;
-                    %CH{k} = PhotonStream.Channel(val);
+                    %CH{k} = PhotonStream{file}.Channel(val);
                     k = k+1;
                 end
                 Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
@@ -7975,9 +8054,9 @@ switch obj
             
             for i = 1:numel(start_tw)
                 %%% Check if ANY burst falls into the time window
-                val = (PhotonStream.start < stop_tw(i)) & (PhotonStream.stop > start_tw(i));
+                val = (PhotonStream{file}.start < stop_tw(i)) & (PhotonStream{file}.stop > start_tw(i));
                 %%% Check if they are of the same species
-                inval = val & (~BurstData.Selected);
+                inval = val & (~BurstData{file}.Selected);
                 %%% if there are bursts of another species in the timewindow,
                 %%% --> remove it
                 if sum(inval) > 0
@@ -7993,8 +8072,8 @@ switch obj
             k=1;
             for i = 1:numel(start_tw)
                 if use(i)
-                    MT{k} = PhotonStream.Macrotime(start_tw(i):stop_tw(i));MT{k} = MT{k}-MT{k}(1) +1;
-                    CH{k} = PhotonStream.Channel(start_tw(i):stop_tw(i));
+                    MT{k} = PhotonStream{file}.Macrotime(start_tw(i):stop_tw(i));MT{k} = MT{k}-MT{k}(1) +1;
+                    CH{k} = PhotonStream{file}.Channel(start_tw(i):stop_tw(i));
                     k = k+1;
                 end
                 Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
@@ -8023,7 +8102,7 @@ for i=1:NumChans
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             %%% Do Correlation
             [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-            Cor_Times = Cor_Times*BurstData.ClockPeriod;
+            Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
             
             %%% Calculates average and standard error of mean (without tinv_table yet
             if size(Cor_Array,2)>1
@@ -8036,7 +8115,8 @@ for i=1:NumChans
             
             %%% Save the correlation file
             %%% Generates filename
-            Current_FileName=[BurstData.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+            filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
             %%% Checks, if file already exists
             if  exist(Current_FileName,'file')
                 k=1;
@@ -8049,8 +8129,8 @@ for i=1:NumChans
                 end
             end
             
-            Header = ['Correlation file for: ' strrep(fullfile(BurstData.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [numel(MT1) numel(MT2)]/(BurstData.ClockPeriod*max([MT1;MT2]))/1000;
+            Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+            %Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
             Counts = [0 ,0];
             Valid = 1:size(Cor_Array,2);
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
@@ -8065,39 +8145,62 @@ UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
 LSUserValues(1);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Photons(obj,~)
-global PhotonStream BurstData UserValues
-h = guidata(obj);
-%%% Set Up Progress Bar
+global PhotonStream BurstData UserValues BurstTCSPCData BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+if isempty(obj)
+    obj = 'bps';
+end
+file = BurstMeta.SelectedFile;
+filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 switch obj
     case h.LoadAllPhotons_Button
-        %%% Load associated .bps file, containing Macrotime, Microtime and Channel
+        %%% Load associated .aps file, containing Macrotime, Microtime and Channel
         if isempty(PhotonStream)
-            Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
-            if exist([BurstData.FileName(1:end-3) 'aps'],'file') == 2
+            if exist([filename(1:end-3) 'aps'],'file') == 2
                 %%% load if it exists
-                load([BurstData.FileName(1:end-3) 'aps'],'-mat');
+                S = load([filename(1:end-3) 'aps'],'-mat');
+                PhotonStream{file} = S;
             else
                 %%% else ask for the file
                 [FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
                 if FileName == 0
                     return;
                 end
-                load('-mat',fullfile(PathName,FileName));
-                
+                S = load('-mat',fullfile(PathName,FileName));
+                PhotonStream{file} = S;
             end
         end
         %%% Enable CorrelateWindow Button
         h.CorrelateWindow_Button.Enable = 'on';
         h.CorrelateWindow_Edit.Enable = 'on';
+    case 'bps'
+        if exist([filename(1:end-3) 'bps'],'file') == 2
+            %%% load if it exists
+            load([filename(1:end-3) 'bps'],'-mat');
+        else
+            %%% else ask for the file
+            [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+            if FileName == 0
+                return;
+            end
+            load('-mat',fullfile(PathName,FileName));
+            %%% Store the correct Path in BurstData
+            BurstData{file}.FileName = [FileName(1:end-3) 'bur'];
+        end
+        BurstTCSPCData{file}.Macrotime = Macrotime;
+        BurstTCSPCData{file}.Microtime = Microtime;
+        BurstTCSPCData{file}.Channel = Channel;
+        clear Macrotime Microtime Channel
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstData.DisplayName;
+h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Change GUI to 2cMFD or 3cMFD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8138,7 +8241,7 @@ if BAMethod == 3
     h.Main_Tab_Lifetime.Parent = h.Main_Tab;
     h.Main_Tab_fFCS.Parent = h.Main_Tab;
     
-    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'on';
+    %h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'on';
     %% Change correction table
     Corrections_Rownames = {'Gamma GR','Gamma BG','Gamma BR','Beta GR','Beta BG','Beta BR',...
         'Crosstalk GR','Crosstalk BG','Crosstalk BR','Direct Exc. GR','Direct Exc. BG','Direct Exc. BR',...
@@ -8215,7 +8318,7 @@ elseif BAMethod == 2
         'BG GG par','BG GG perp','BG GR par','BG GR perp','BG RR par','BG RR perp'};
     Corrections_Data = {1;1;0;0;0;0;0:0;0;0;1;1;0};
     %%% Hide 3cMFD corrections
-    h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'off';
+    %h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'off';
     h.DetermineGammaLifetimeThreeColorButton.Visible = 'off';
     h.DetermineGammaLifetimeThreeColorButton.Parent = h.SecondaryTabCorrectionsPanel;
     h.FoersterRadiusBGEdit.Visible = 'off';
@@ -8271,6 +8374,7 @@ UpdateCorrections([],[])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportGraphs(obj,~,ask_file)
 global BurstData UserValues BurstMeta
+file = BurstMeta.SelectedFile;
 if nargin < 3
     ask_file = 1;
 end
@@ -8315,10 +8419,10 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListX.Value},'FontSize',fontsize);
+        xlabel(BurstData{file}.NameArray{h.ParameterListX.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
         %%% Construct Name
-        FigureName = BurstData.NameArray{h.ParameterListX.Value};
+        FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
         AspectRatio = 0.7;
         pos = [100,100, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
@@ -8354,10 +8458,10 @@ switch obj
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
-        xlabel(BurstData.NameArray{h.ParameterListY.Value},'FontSize',fontsize);
+        xlabel(BurstData{file}.NameArray{h.ParameterListY.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
         %%% Construct Name
-        FigureName = BurstData.NameArray{h.ParameterListY.Value};
+        FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
     case h.Export2D_Menu
         AspectRatio = 1;
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
@@ -8400,18 +8504,22 @@ switch obj
                 case 'Axes_1D_Y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    end
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    end
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
             end
         end
-        FigureName = [BurstData.NameArray{h.ParameterListX.Value} '_' BurstData.NameArray{h.ParameterListY.Value}];
+        FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
         fontsize = 22;
         if ispc
@@ -8432,7 +8540,7 @@ switch obj
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
-        if any(BurstData.BAMethod == [1,2,5])
+        if any(BurstData{file}.BAMethod == [1,2,5])
             for i = 1:numel(panel_copy.Children)
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
@@ -8461,13 +8569,13 @@ switch obj
                     switch i
                         case 1
                             %%%rRR vs TauRR
-                            if isfield(BurstData.Parameters,'rhoRR')
-                                if ~isempty(BurstData.Parameters.rhoRR)
-                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
-                                    if numel(BurstData.Parameters.rhoRR) > 1
+                            if isfield(BurstData{file}.Parameters,'rhoRR')
+                                if ~isempty(BurstData{file}.Parameters.rhoRR)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(1))];
+                                    if numel(BurstData{file}.Parameters.rhoRR) > 1
                                         str = {[str(1:4) '_1' str(5:end)]};
-                                        for j=2:numel(BurstData.Parameters.rhoRR)
-                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                        for j=2:numel(BurstData{file}.Parameters.rhoRR)
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(j))];
                                         end
                                     end
                                 end
@@ -8479,13 +8587,13 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 2
                             %%%rGG vs TauGG
-                            if isfield(BurstData.Parameters,'rhoGG')
-                                if ~isempty(BurstData.Parameters.rhoGG)
-                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
-                                    if numel(BurstData.Parameters.rhoGG) > 1
+                            if isfield(BurstData{file}.Parameters,'rhoGG')
+                                if ~isempty(BurstData{file}.Parameters.rhoGG)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(1))];
+                                    if numel(BurstData{file}.Parameters.rhoGG) > 1
                                         str = {[str(1:4) '_1' str(5:end)]};
-                                        for j=2:numel(BurstData.Parameters.rhoGG)
-                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                        for j=2:numel(BurstData{file}.Parameters.rhoGG)
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(j))];
                                         end
                                     end
                                 end
@@ -8498,7 +8606,7 @@ switch obj
                     end
                 end
             end
-        elseif any(BurstData.BAMethod == [3,4])
+        elseif any(BurstData{file}.BAMethod == [3,4])
             hfig.Position(3) = hfig.Position(3)*1.55;
             %hfig.Position(4) = hfig.Position(3)*1.1;
             
@@ -8531,13 +8639,13 @@ switch obj
                     switch i
                         case 1
                             %%%rBB vs TauBB
-                            if isfield(BurstData.Parameters,'rhoBB')
-                                if ~isempty(BurstData.Parameters.rhoBB)
-                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(1))];
-                                    if numel(BurstData.Parameters.rhoBB) > 1
+                            if isfield(BurstData{file}.Parameters,'rhoBB')
+                                if ~isempty(BurstData{file}.Parameters.rhoBB)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoBB(1))];
+                                    if numel(BurstData{file}.Parameters.rhoBB) > 1
                                         str = {[str(1:4) '_1' str(5:end)]};
-                                        for j=2:numel(BurstData.Parameters.rhoBB)
-                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoBB(j))];
+                                        for j=2:numel(BurstData{file}.Parameters.rhoBB)
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoBB(j))];
                                         end
                                     end
                                 end
@@ -8549,13 +8657,13 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 3
                             %%%rRR vs TauRR
-                            if isfield(BurstData.Parameters,'rhoRR')
-                                if ~isempty(BurstData.Parameters.rhoRR)
-                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(1))];
-                                    if numel(BurstData.Parameters.rhoRR) > 1
+                            if isfield(BurstData{file}.Parameters,'rhoRR')
+                                if ~isempty(BurstData{file}.Parameters.rhoRR)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(1))];
+                                    if numel(BurstData{file}.Parameters.rhoRR) > 1
                                         str = {[str(1:4) '_1' str(5:end)]};
-                                        for j=2:numel(BurstData.Parameters.rhoRR)
-                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoRR(j))];
+                                        for j=2:numel(BurstData{file}.Parameters.rhoRR)
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(j))];
                                         end
                                     end
                                 end
@@ -8567,13 +8675,13 @@ switch obj
                             %'EdgeColor',[0 0 0]);
                         case 4
                             %%%rGG vs TauGG
-                            if isfield(BurstData.Parameters,'rhoGG')
-                                if ~isempty(BurstData.Parameters.rhoGG)
-                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(1))];
-                                    if numel(BurstData.Parameters.rhoGG) > 1
+                            if isfield(BurstData{file}.Parameters,'rhoGG')
+                                if ~isempty(BurstData{file}.Parameters.rhoGG)
+                                    str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(1))];
+                                    if numel(BurstData{file}.Parameters.rhoGG) > 1
                                         str = {[str(1:4) '_1' str(5:end)]};
-                                        for j=2:numel(BurstData.Parameters.rhoGG)
-                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData.Parameters.rhoGG(j))];
+                                        for j=2:numel(BurstData{file}.Parameters.rhoGG)
+                                            str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(j))];
                                         end
                                     end
                                 end
@@ -8688,7 +8796,7 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
-                    switch BurstData.BAMethod
+                    switch BurstData{file}.BAMethod
                         case {1,2}
                             switch h.lifetime_ind_popupmenu.Value
                                 case {3,4} % Ansiotropy plot, adjust y axis label
@@ -8715,11 +8823,11 @@ for i = 1:numel(hfig.Children)
     end
 end
 %%% Combine the Original FileName and the parameter names
-if isfield(BurstData,'FileNameSPC')
-    if strcmp(BurstData.FileNameSPC,'_m1')
-        FileName = BurstData.FileNameSPC(1:end-3);
+if isfield(BurstData{file},'FileNameSPC')
+    if strcmp(BurstData{file}.FileNameSPC,'_m1')
+        FileName = BurstData{file}.FileNameSPC(1:end-3);
     else
-        FileName = BurstData.FileNameSPC;
+        FileName = BurstData{file}.FileNameSPC;
     end
 end
 
@@ -8785,10 +8893,10 @@ end
 %%%%%%% Export All Graphs at once %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportAllGraphs(obj,~)
-global BurstData
+global BurstData BurstMeta
 h = guidata(obj);
-h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData.NameArray));
-h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData.NameArray));
+h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
+h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
 UpdatePlot([],[]);
 ExportGraphs(h.Export2D_Menu,[],0);
 ExportGraphs(h.ExportLifetime_Menu,[],0);
@@ -9161,165 +9269,230 @@ out(1:n, 3) = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Database(~,e,mode)
-global UserValues PamMeta
-h = guidata(findobj('Tag','Pam'));
+function Database(obj,e,mode)
+global UserValues BurstMeta BurstData
+h = guidata(findobj('Tag','BurstBrowser'));
 
 if mode == 0 %%% Checks, which key was pressed
     switch e.Key
         case 'delete'
             mode = 2;
         case 'return'
-            mode =7;
+            mode =5;
     end
 end
 
 switch mode
     case 1 %% Add files to database
-        %%% following code is for remembering the last used FileType
-        LSUserValues(0);
-        %%% Loads all possible file types
-        Filetypes = UserValues.File.SPC_FileTypes;
-        %%% Finds last used file type
-        Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
-        if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1
-            Lastfile = 1;
+        switch obj
+            case h.DatabaseBB.AddFiles %% Open dialog to add files to database
+                if isempty(BurstMeta.Database) %%% no data base loaded
+                    if isempty(BurstData)
+                        Path = UserValues.File.BurstBrowserPath;
+                    else
+                        Path = BurstData{BurstMeta.SelectedFile}.PathName;
+                    end
+                else
+                    Path = BurstMeta.Database{h.DatabaseBB.List.Value,2};
+                end
+                Files = GetMultipleFiles({'*.bur','*.bur files'},'Choose files to add to DataBase',Path);
+            case h.DatabaseBB.AppendLoadedFiles %% Add loaded files to database
+                for i = 1:numel(BurstData) %%% loop over loaded files
+                    Files{i,1} = BurstData{i}.FileName;
+                    Files{i,2} = BurstData{i}.PathName;
+                end
+        end  
+        %%%check for existing files and append new files to database list
+        new = true(size(Files,1),1);
+        if ~isempty(BurstMeta.Database) % ensure database exists
+            for i = 1:size(Files,1)
+                exist_name = find(strcmp(Files{i,1},BurstMeta.Database(:,1)));
+                if ~isempty(exist_name)
+                    if any(strcmp(Files{i,2},BurstMeta.Database(exist_name,2)))
+                        new(i) = false;
+                    end
+                end
+            end
         end
-        %%% Puts last used file type to front
-        Fileorder = 1:size(Filetypes,1);
-        Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
-        Filetypes = Filetypes(Fileorder,:);
-        %%% Choose file to be loaded
-        [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');
-        %%% Determines actually selected file type
-        if Type~=0
-            Type = Fileorder(Type);
-        end
-        
-        %%% Only execues if any file was selected
-        if ~iscell(FileName) && all(FileName==0)
-            return
-        end
-        %%% Save the selected file type
-        UserValues.File.OpenTCSPC_FilterIndex = Type;
-        %%% Transforms FileName into cell, if it is not already
-        %%%(e.g. when only one file was selected)
-        if ~iscell(FileName)
-            FileName = {FileName};
-        end
-        %%% Saves Path
-        UserValues.File.Path = Path;
-        LSUserValues(1);
-        %%% Sorts FileName by alphabetical order
-        FileName=sort(FileName);
+        Files = Files(new,:);
         %% Add files to database
-        if ~isfield(PamMeta, 'Database') 
-            %create database
-            PamMeta.Database = cell(0,3);
-        end
         % add new files to database
-        for i = 1:numel(FileName)
-            PamMeta.Database{end+1,1} = FileName{i};
-            PamMeta.Database{end,2} = Path;
-            PamMeta.Database{end,3} = Type;
-            h.Database.List.String{end+1} = [FileName{i} ' (path:' Path ')'];
+        for i = 1:size(Files,1)
+            BurstMeta.Database{end+1,1} = Files{i,1};
+            BurstMeta.Database{end,2} = Files{i,2};
+            h.DatabaseBB.List.String{end+1} = [Files{i,1} ' (path:' Files{i,2} ')'];
         end
-        h.Database.Correlate.Enable = 'on';
-        h.Database.Burst.Enable = 'on';
-        h.Database.Save.Enable = 'on'; 
-        h.Database.Delete.Enable = 'on';  
+        if size(BurstMeta.Database, 1) > 0
+            % reenable save
+            h.DatabaseBB.Save.Enable = 'on';
+        end
     case 2 %% Delete files from database
         %remove rows from list
-        h.Database.List.String(h.Database.List.Value) = [];
+        h.DatabaseBB.List.String(h.DatabaseBB.List.Value) = [];
         %remove rows from database
-        PamMeta.Database(h.Database.List.Value, :) = [];
-        h.Database.List.Value = 1;
-        if size(PamMeta.Database, 1) < 1
+        BurstMeta.Database(h.DatabaseBB.List.Value, :) = [];
+        h.DatabaseBB.List.Value = 1;
+        if size(BurstMeta.Database, 1) < 1
             % no files are left
-            h.Database.Correlate.Enable = 'off';
-            h.Database.Burst.Enable = 'off';
-            h.Database.Save.Enable = 'off';
-            h.Database.Delete.Enable = 'off';
+            h.DatabaseBB.Save.Enable = 'off';
         end
     case 3 %% Load database
-        [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',UserValues.File.Path,'MultiSelect', 'off');
+        if isfield(BurstMeta,'DatabasePath')
+            Path = BurstMeta.DatabasePath;
+        else
+            Path = UserValues.BurstBrowser.PrintPath;
+        end
+        [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',Path,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
-        PamMeta.Database = s.database;
-        h.Database.List.String = s.str;
+        BurstMeta.Database = s.database;
+        h.DatabaseBB.List.String = s.str;
         clear s;
-        if size(PamMeta.Database, 1) > 0
-            % no files are left
-            h.Database.Correlate.Enable = 'on';
-            h.Database.Burst.Enable = 'on';
-            h.Database.Save.Enable = 'on';
-            h.Database.Delete.Enable = 'on';
+        %%% store path in BurstMeta
+        BurstMeta.DatabasePath = Path;
+        if size(BurstMeta.Database, 1) > 0
+            % reenable save
+            h.DatabaseBB.Save.Enable = 'on';
         end
     case 4 %% Save complete database
-        [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', UserValues.File.Path);
+        if isfield(BurstMeta,'DatabasePath')
+            Path = BurstMeta.DatabasePath;
+        else
+            Path = UserValues.BurstBrowser.PrintPath;
+        end
+        [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', Path);
         s = struct;
-        s.database = PamMeta.Database;
-        s.str = h.Database.List.String;
+        s.database = BurstMeta.Database;
+        s.str = h.DatabaseBB.List.String;
         save(fullfile(Path,File),'s');
-    case 5 %% Correlate active ones in database
-        if h.Database.Correlate.UserData == 0
-            h.Database.Correlate.UserData = 1;
-            h.Database.Correlate.String = 'Stop';
-        elseif h.Database.Correlate.UserData == 1
-            h.Database.Correlate.UserData = 0;
-        end
-        for i = h.Database.List.Value
-            pause(0.01)
-            if h.Database.Correlate.UserData == 0
-               h.Database.Correlate.String = 'Correlate';
-               return 
-            end
-            try
-                % Path is unique per file in the database, so we have to store
-                % it globally in UserValues each time
-                UserValues.File.Path = PamMeta.Database{i,2};
-                LSUserValues(1);
-                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
-                    PamMeta.Database{i,1},...   %file
-                    PamMeta.Database{i,3});     %type
-                Correlate ([],[],1)
-                % set filename color to green
-                h.Database.List.String{i} = ['<HTML><FONT color=00FF00>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
-            catch
-                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')</Font></html>'];
+    case 5 %% Loads selected files into BurstBrowser
+        h.Progress.Text.String='Loading new files';
+        Load_Burst_Data_Callback(obj,[]);
+end
+
+function UpdateSpeciesList()
+global BurstData BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+
+set(h.SpeciesList.Tree,'NodeSelectedCallback',[]);
+
+h.SpeciesList.Root = uitreenode('v0',h.SpeciesList.Tree,'Data Tree',[],false);
+for f = 1:numel(BurstData)
+    % populate uitree
+    h.SpeciesList.File(f) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.FileName, [], false);
+    for i = 1:size(BurstData{f}.SpeciesNames,1)
+        %%% make uitreenode for every subgroup
+        h.SpeciesList.Species{f}(i) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.SpeciesNames{i,1}, [], false);
+        %%% add subnodes for every subspecies
+        for j = 2:size(BurstData{f}.SpeciesNames,2)
+            if ~isempty(BurstData{f}.SpeciesNames{i,j})
+                h.SpeciesList.Nodes{f}{i}(j) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.SpeciesNames{i,j}, [], true);
+                h.SpeciesList.Species{f}(i).add(h.SpeciesList.Nodes{f}{i}(j));
             end
         end
-        h.Database.Correlate.UserData = 0;
-        h.Database.Correlate.String = 'Correlate';
-    case 6 %% Burst analyse active ones in database
-        for i = h.Database.List.Value
-            try
-            % Path is unique per file in the database, so we have to store
-            % it globally in UserValues each time
-            UserValues.File.Path = PamMeta.Database{i,2};
-            LSUserValues(1);
-            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
-                PamMeta.Database{i,1},...   %file
-                PamMeta.Database{i,3});     %type
-            Do_BurstAnalysis
-            % depending on whether the '2CDE' and 'lifetime' checkboxes are
-            % checked on the 'Burst analysis' tab, this might also be performed
-            % set filename color to green
-            h.Database.List.String{i}=['<HTML><FONT color=00FF00>' h.Database.List.String{i} '</Font></html>'];
-            catch exception
-                %set filename color to red
-                h.Database.List.String{i}=['<HTML><FONT color=FF0000>' h.Database.List.String{i} '</Font></html>'];
-                rethrow(exception);
-            end
+        h.SpeciesList.File(f).add(h.SpeciesList.Species{f}(i));
+    end
+    h.SpeciesList.Root.add(h.SpeciesList.File(f));
+end
+h.SpeciesList.Tree.setRoot(h.SpeciesList.Root);
+
+%%% expand all
+h.SpeciesList.Tree.expand(h.SpeciesList.Root);
+for f = 1:numel(BurstData)
+    h.SpeciesList.Tree.expand(h.SpeciesList.File(f));
+    for i = 1:numel(h.SpeciesList.Species{f})
+        h.SpeciesList.Tree.expand(h.SpeciesList.Species{f}(i));
+    end
+end
+guidata(findobj('Tag','BurstBrowser'),h);
+
+set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
+%%% set selected node according to Stored Selection
+if all(BurstData{BurstMeta.SelectedFile}.SelectedSpecies == [0,0])
+    h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.File(BurstMeta.SelectedFile));
+elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) == 1
+    h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
+elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
+    h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+end
+
+function SpeciesListContextMenuCallback(hTree,eventData,jmenu)
+if eventData.isMetaDown  % right-click is like a Meta-button
+  % Get the clicked node
+  clickX = eventData.getX;
+  clickY = eventData.getY;
+  jtree = eventData.getSource;
+  
+  % Display the (possibly-modified) context menu
+  jmenu.show(jtree, clickX, clickY);
+  jmenu.repaint;
+end
+
+function UpdateGUIOptions(obj,~)
+global UserValues
+h = guidata(findobj('Tag','BurstBrowser'));
+if obj == h.NumberOfBinsXEdit
+    nbinsX = str2double(h.NumberOfBinsXEdit.String);
+    if ~isnan(nbinsX)
+        if nbinsX > 0
+            UserValues.BurstBrowser.Display.NumberOfBinsX = nbinsX;
+        else
+            h.NumberOfBinsXEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsX;
         end
-        % here some button to push, to put the colors back to black
-    case 7 %% Loads selected files into Pam
-        %%% Caution! Only works if Path and filetype are the same for all files!        
-        h.Progress.Text.String='Loading new file';
-        % Path is unique per file in the database, so we have to store
-        % it globally in UserValues each time
-        UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
-        LSUserValues(1);
-        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
-            PamMeta.Database(h.Database.List.Value,1),...   %file
-            PamMeta.Database{h.Database.List.Value(1),3});     %type
+    else
+        h.NumberOfBinsXEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsX);
+    end
+    UpdateLifetimePlots(obj,[]);
+end
+if obj == h.NumberOfBinsYEdit
+    nbinsY = str2double(h.NumberOfBinsYEdit.String);
+    if ~isnan(nbinsY)
+        if nbinsY > 0
+            UserValues.BurstBrowser.Display.NumberOfBinsY = nbinsY;
+        else
+            h.NumberOfBinsYEdit.String = UserValues.BurstBrowser.Display.NumberOfBinsY;
+        end
+    else
+        h.NumberOfBinsYEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsY);
+    end
+    UpdateLifetimePlots(obj,[]);
+end
+if obj == h.NumberOfContourLevels_edit
+    nClevels = str2double(h.NumberOfContourLevels_edit.String);
+    if ~isnan(nClevels)
+        if nClevels > 1
+            UserValues.BurstBrowser.Display.NumberOfContourLevels = nClevels;
+        else
+            h.NumberOfContourLevels_edit.String = UserValues.BurstBrowser.Display.NumberOfContourLevels;
+        end
+    else
+        h.NumberOfContourLevels_edit.String = num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    end
+    UpdateLifetimePlots([],[]);
+end
+if obj == h.ContourOffset_edit
+    ContourOffset = str2double(h.ContourOffset_edit.String);
+    if ~isnan(ContourOffset)
+        if ContourOffset >=0 && ContourOffset<=100
+            UserValues.BurstBrowser.Display.ContourOffset = ContourOffset;
+        else
+            h.ContourOffset_edit.String = UserValues.BurstBrowser.Display.ContourOffset;
+        end
+    else
+        h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
+    end
+    UpdateLifetimePlots([],[]);
+end
+if obj == h.ColorMapPopupmenu
+    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
+        UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
+    else %%% custom colormap
+        UserValues.BurstBrowser.Display.ColorMap = jetvar;
+    end
+end
+if obj == h.SmoothKDE
+    UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;
+    UpdateLifetimePlots(obj,[]);
+end
+if obj == h.ColorMapInvert
+    UserValues.BurstBrowser.Display.ColorMapInvert = h.ColorMapInvert.Value;
 end

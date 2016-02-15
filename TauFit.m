@@ -743,8 +743,9 @@ if exist('ph','var')
     end
 end
 if exist('bh','var')
-    if isequal(obj, bh.SendToTauFit)
+    if bh.SendToTauFit.equals(obj)
         TauFitData.Who = 'BurstBrowser';
+        global BurstMeta
         % User clicked Send Species to TauFit in BurstBrowser
         % fit a lifetime to the bulk data from selected bursts
         %%% display which species user transferred to TauFit
@@ -760,7 +761,7 @@ if exist('bh','var')
             'FontSize',12,...
             'String','Select Channel',...
             'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
-        switch BurstData.BAMethod
+        switch BurstData{BurstMeta.SelectedFile}.BAMethod
             case {1,2,5}
                 Channel_String = {'GG','RR'};
             case {3,4}
@@ -781,7 +782,7 @@ if exist('bh','var')
             'Units','normalized',...
             'Position',[0.05 0.65 0.8 0.1],...
             'HorizontalAlignment','left',...
-            'String',['Selected Species: ' BurstData.SpeciesNames{bh.SpeciesList.Value}],...
+            'String',['Selected Species: ' BurstData{BurstMeta.SelectedFile}.SpeciesNames{BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1),BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)}],...
             'BackgroundColor',Look.Back,...
             'ForegroundColor',Look.Fore,...
             'FontSize',12);
@@ -1068,7 +1069,13 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'Callback',@UpdateOptions);
 %% Special case for Burstwise and noMFD
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
-    if BurstData.BAMethod == 5 %noMFD, hide respective GUI elements
+    switch TauFitData.Who
+        case 'Burstwise'
+            BAMethod = BurstData.BAMethod;
+        case 'BurstBrowser'
+            BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
+    end
+    if BAMethod == 5 %noMFD, hide respective GUI elements
         set([h.ShiftPer_Edit,h.ShiftPer_Slider,h.ShiftPer_Text,...
             h.IRFrelShift_Edit,h.IRFrelShift_Slider,h.IRFrelShift_Text,...
             h.ScatrelShift_Edit,h.ScatrelShift_Slider,h.ScatrelShift_Text,...
@@ -1471,82 +1478,83 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
 end
 
 %%% Update Slider Values
-switch obj
-    case {h.StartPar_Slider, h.StartPar_Edit}
-        if obj == h.StartPar_Slider
-            TauFitData.StartPar{chan} = floor(obj.Value);
-        elseif obj == h.StartPar_Edit
-            TauFitData.StartPar{chan} = str2double(obj.String);
-        end
-    case {h.Length_Slider, h.Length_Edit}
-        %%% Update Value
-        if obj == h.Length_Slider
-            TauFitData.Length{chan} = floor(obj.Value);
-        elseif obj == h.Length_Edit
-            TauFitData.Length{chan} = str2double(obj.String);
-        end
-        %%% Correct if IRFLength exceeds the Length
-        if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
-            TauFitData.IRFLength{chan} = TauFitData.Length{chan};
-        end
-    case {h.ShiftPer_Slider, h.ShiftPer_Edit}
-        %%% Update Value
-        if obj == h.ShiftPer_Slider
-            TauFitData.ShiftPer{chan} = floor(obj.Value);
-        elseif obj == h.ShiftPer_Edit
-            TauFitData.ShiftPer{chan} = str2double(obj.String);
-        end
-    case {h.IRFLength_Slider, h.IRFLength_Edit}
-        %%% Update Value
-        if obj == h.IRFLength_Slider
-            TauFitData.IRFLength{chan} = floor(obj.Value);
-        elseif obj == h.IRFLength_Edit
-            TauFitData.IRFLength{chan} = str2double(obj.String);
-        end
-        %%% Correct if IRFLength exceeds the Length
-        if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
-            TauFitData.IRFLength{chan} = TauFitData.Length{chan};
-        end
-    case {h.IRFShift_Slider, h.IRFShift_Edit}
-        %%% Update Value
-        if obj == h.IRFShift_Slider
-            TauFitData.IRFShift{chan} = floor(obj.Value);
-        elseif obj == h.IRFShift_Edit
-            TauFitData.IRFShift{chan} = str2double(obj.String);
-        end
-    case {h.IRFrelShift_Slider, h.IRFrelShift_Edit}
-        %%% Update Value
-        if obj == h.IRFrelShift_Slider
-            TauFitData.IRFrelShift{chan} = floor(obj.Value);
-        elseif obj == h.IRFrelShift_Edit
-            TauFitData.IRFrelShift{chan} = str2double(obj.String);
-        end
-    case {h.ScatShift_Slider, h.ScatShift_Edit}
-        %%% Update Value
-        if obj == h.ScatShift_Slider
-            TauFitData.ScatShift{chan} = floor(obj.Value);
-        elseif obj == h.ScatShift_Edit
-            TauFitData.ScatShift{chan} = str2double(obj.String);
-        end
-    case {h.ScatrelShift_Slider, h.ScatrelShift_Edit}
-        %%% Update Value
-        if obj == h.ScatrelShift_Slider
-            TauFitData.ScatrelShift{chan} = floor(obj.Value);
-        elseif obj == h.ScatrelShift_Edit
-            TauFitData.ScatrelShift{chan} = str2double(obj.String);
-        end
-    case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
-        if obj == h.Ignore_Slider
-            TauFitData.Ignore{chan} = floor(obj.Value);
-        elseif obj == h.Ignore_Edit
-            TauFitData.Ignore{chan} = str2double(obj.String);
-        end
-    case {h.FitPar_Table}
-        TauFitData.IRFShift{chan} = obj.Data{end,1};
-        %%% Update Edit Box and Slider when user changes value in the table
-        h.IRFShift_Edit.String = num2str(TauFitData.IRFShift{chan});
-        h.IRFShift_Slider.Value = TauFitData.IRFShift{chan};
-        
+if isobject(obj) % check if matlab object
+    switch obj
+        case {h.StartPar_Slider, h.StartPar_Edit}
+            if obj == h.StartPar_Slider
+                TauFitData.StartPar{chan} = floor(obj.Value);
+            elseif obj == h.StartPar_Edit
+                TauFitData.StartPar{chan} = str2double(obj.String);
+            end
+        case {h.Length_Slider, h.Length_Edit}
+            %%% Update Value
+            if obj == h.Length_Slider
+                TauFitData.Length{chan} = floor(obj.Value);
+            elseif obj == h.Length_Edit
+                TauFitData.Length{chan} = str2double(obj.String);
+            end
+            %%% Correct if IRFLength exceeds the Length
+            if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
+                TauFitData.IRFLength{chan} = TauFitData.Length{chan};
+            end
+        case {h.ShiftPer_Slider, h.ShiftPer_Edit}
+            %%% Update Value
+            if obj == h.ShiftPer_Slider
+                TauFitData.ShiftPer{chan} = floor(obj.Value);
+            elseif obj == h.ShiftPer_Edit
+                TauFitData.ShiftPer{chan} = str2double(obj.String);
+            end
+        case {h.IRFLength_Slider, h.IRFLength_Edit}
+            %%% Update Value
+            if obj == h.IRFLength_Slider
+                TauFitData.IRFLength{chan} = floor(obj.Value);
+            elseif obj == h.IRFLength_Edit
+                TauFitData.IRFLength{chan} = str2double(obj.String);
+            end
+            %%% Correct if IRFLength exceeds the Length
+            if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
+                TauFitData.IRFLength{chan} = TauFitData.Length{chan};
+            end
+        case {h.IRFShift_Slider, h.IRFShift_Edit}
+            %%% Update Value
+            if obj == h.IRFShift_Slider
+                TauFitData.IRFShift{chan} = floor(obj.Value);
+            elseif obj == h.IRFShift_Edit
+                TauFitData.IRFShift{chan} = str2double(obj.String);
+            end
+        case {h.IRFrelShift_Slider, h.IRFrelShift_Edit}
+            %%% Update Value
+            if obj == h.IRFrelShift_Slider
+                TauFitData.IRFrelShift{chan} = floor(obj.Value);
+            elseif obj == h.IRFrelShift_Edit
+                TauFitData.IRFrelShift{chan} = str2double(obj.String);
+            end
+        case {h.ScatShift_Slider, h.ScatShift_Edit}
+            %%% Update Value
+            if obj == h.ScatShift_Slider
+                TauFitData.ScatShift{chan} = floor(obj.Value);
+            elseif obj == h.ScatShift_Edit
+                TauFitData.ScatShift{chan} = str2double(obj.String);
+            end
+        case {h.ScatrelShift_Slider, h.ScatrelShift_Edit}
+            %%% Update Value
+            if obj == h.ScatrelShift_Slider
+                TauFitData.ScatrelShift{chan} = floor(obj.Value);
+            elseif obj == h.ScatrelShift_Edit
+                TauFitData.ScatrelShift{chan} = str2double(obj.String);
+            end
+        case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
+            if obj == h.Ignore_Slider
+                TauFitData.Ignore{chan} = floor(obj.Value);
+            elseif obj == h.Ignore_Edit
+                TauFitData.Ignore{chan} = str2double(obj.String);
+            end
+        case {h.FitPar_Table}
+            TauFitData.IRFShift{chan} = obj.Data{end,1};
+            %%% Update Edit Box and Slider when user changes value in the table
+            h.IRFShift_Edit.String = num2str(TauFitData.IRFShift{chan});
+            h.IRFShift_Slider.Value = TauFitData.IRFShift{chan}; 
+    end
 end
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
 if isprop(obj,'Style')
