@@ -1,4 +1,4 @@
-function [z] = fitfun_aniso_2exp(param,xdata)
+function [z] = fitfun_2exp_aniso(param,xdata)
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
 Scatter = xdata{3};

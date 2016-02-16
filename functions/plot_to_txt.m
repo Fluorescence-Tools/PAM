@@ -1,5 +1,7 @@
 function plot_to_txt(ax)
-%%% reads relevant data from axes and saves in CSV
+% reads relevant data from axes and saves in CSV
+%
+% :param ax: input axes
 
 plot_name = ax.Title.String;
 %% throw out everything that is not a line plot
