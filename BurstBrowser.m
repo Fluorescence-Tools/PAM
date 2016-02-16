@@ -2404,10 +2404,12 @@ if isempty(hfig)
     end
     %% Store GUI data
     guidata(h.BurstBrowser,h);
-    %%% Initialize Plots
-    Initialize_Plots(1);
     BurstMeta.SelectedFile = 1;
     BurstMeta.Database = cell(0);
+    
+    %%% Initialize Plots
+    Initialize_Plots(1);
+    
     %% set UserValues in GUI
     UpdateCorrections([],[]);
     %%% Update ColorMap
@@ -7242,11 +7244,7 @@ if isempty(BurstData)
     return;
 end
 
-if isfield(BurstMeta,'SelectedFile')
-    file = BurstMeta.SelectedFile;
-else
-    return;
-end
+file = BurstMeta.SelectedFile;
 
 switch BurstData{file}.BAMethod
     case {1,2,5}
