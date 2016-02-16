@@ -7241,7 +7241,13 @@ h = guidata(findobj('Tag','BurstBrowser'));
 if isempty(BurstData)
     return;
 end
-file = BurstMeta.SelectedFile;
+
+if isfield(BurstMeta,'SelectedFile')
+    file = BurstMeta.SelectedFile;
+else
+    return;
+end
+
 switch BurstData{file}.BAMethod
     case {1,2,5}
         switch h.lifetime_ind_popupmenu.Value
