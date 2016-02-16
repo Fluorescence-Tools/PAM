@@ -374,6 +374,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.MetaData.DyeNames was incomplete');
     end
     P.MetaData.DyeNames = S.MetaData.DyeNames;
+    %%% Checks, if ExcitationPower subfield exists
+    if ~isfield (S.MetaData, 'ExcitationPower')
+        S.MetaData.ExcitationPower='100, 100';
+        disp('UserValues.MetaData.ExcitationPower was incomplete');
+    end
+    P.MetaData.ExcitationPower = S.MetaData.ExcitationPower;
     %%% Checks, if BufferName subfield exists
     if ~isfield (S.MetaData, 'BufferName')
         S.MetaData.BufferName='Sample Buffer';

@@ -2506,6 +2506,7 @@ addpath(genpath(['.' filesep 'functions']));
     ToolTipStr = 'For multiple entries, please provide a comma-separated list.';
     ColumnFormat = {'char','char','char','char','char'};
     DefaultData = {'Excitation Wavelenghts [nm]','532, 647';...
+        'Excitation Power [muW]','100, 100';...
         'Dye Names','Atto532, Atto647N';...
         'Buffer Name','Sample Buffer';...
         'Sample Name','Test Sample';...
@@ -3765,7 +3766,7 @@ Update_Display([],[],2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_MetaData(~,e)
 global UserValues
-MetaDataList = {'ExcitationWavelengths';'DyeNames';'BufferName';'SampleName';'User'};
+MetaDataList = {'ExcitationWavelengths';'ExcitationPower';'DyeNames';'BufferName';'SampleName';'User'};
 UserValues.MetaData.(MetaDataList{e.Indices(1),1}) = e.NewData;
 LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4327,7 +4328,8 @@ h.MI.Calib_Det.Value=1;
 
 %%% Updates MetaData List
 h.Profiles.MetaDataTable.Data(:,2) = ...
-    {UserValues.MetaData.ExcitationWavelengths;UserValues.MetaData.DyeNames;UserValues.MetaData.BufferName;...
+    {UserValues.MetaData.ExcitationWavelengths;UserValues.MetaData.ExcitationPower;...
+    UserValues.MetaData.DyeNames;UserValues.MetaData.BufferName;...
     UserValues.MetaData.SampleName;UserValues.MetaData.User};
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
@@ -8746,7 +8748,8 @@ fprintf(fid,'User:\t\t%s\n\n',UserValues.MetaData.User);
 fprintf(fid,'Filename:\t%s\n',FileInfo.FileName{1});
 fprintf(fid,'Sample:\t\t%s\n',UserValues.MetaData.SampleName);
 fprintf(fid,'Buffer:\t\t%s\n',UserValues.MetaData.BufferName);
-fprintf(fid,'Exc. Wav.:\t%s\n',UserValues.MetaData.ExcitationWavelengths);
+fprintf(fid,'Exc.Wav.:\t%s\n',UserValues.MetaData.ExcitationWavelengths);
+fprintf(fid,'Exc.Pow.[muW]:\t%s\n',UserValues.MetaData.ExcitationPower);
 fprintf(fid,'Dyes:\t\t%s\n',UserValues.MetaData.DyeNames);
 fprintf(fid,'Meas. Dur.:\t%.2f s\n\n',FileInfo.MeasurementTime);
 

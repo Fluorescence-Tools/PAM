@@ -2714,8 +2714,8 @@ if ~isempty(findobj('Tag','Pam'))
     if numel(BurstData) == 1
         h_pam = guidata(findobj('Tag','Pam'));
         %%% Update Textbox
-        h_pam.Burst_LoadedFile_Text.String = BurstData{file}.FileName{1};
-        h.Burst_LoadedFile_Text.TooltipString = BurstData{file}.FileName{1};
+        h_pam.Burst_LoadedFile_Text.String = BurstData{1}.FileName;
+        h.Burst_LoadedFile_Text.TooltipString = BurstData{1}.FileName;
         %%% Set Analysis Buttons in Pam
         %%% set the text of the BurstSearch Button to green color to indicate that
         %%% a burst search has been done
@@ -4634,7 +4634,7 @@ if (all(point1(1:2) == point2(1:2)))
     disp('error');
     return;
 end
-
+file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
 
 %%% Check whether the CutParameter already exists or not
