@@ -550,7 +550,8 @@ if isempty(hfig)
         'Tag','CutSelection',...
         'String',{'none'},...
         'FontSize',12,...
-        'Callback',@UpdateCuts);   
+        'Callback',@UpdateCuts,...
+        'Visible','off');   
     %% Secondary tab corrections
     %%% Buttons
     %%% vertical layout for buttons
@@ -8506,12 +8507,28 @@ switch obj
                     panel_copy.Children(i).YTickLabelRotation = 270;
                     if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    else
+                        lim = 0;
+                        for j = 1:numel(panel_copy.Children(i).Children)
+                            if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
+                                lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
+                            end
+                        end
+                        panel_copy.Children(i).YLim = [0, lim];
                     end
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
+                    else
+                        lim = 0;
+                        for j = 1:numel(panel_copy.Children(i).Children)
+                            if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
+                                lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
+                            end
+                        end
+                        panel_copy.Children(i).YLim = [0, lim];
                     end
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
