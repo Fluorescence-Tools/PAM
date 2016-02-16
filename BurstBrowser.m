@@ -2406,7 +2406,11 @@ if isempty(hfig)
     guidata(h.BurstBrowser,h);
     BurstMeta.SelectedFile = 1;
     BurstMeta.Database = cell(0);
-    
+    %%% Clear BurstData if it still exists from editing in PAM
+    global BurstData
+    if isstruct(BurstData)
+        BurstData = [];
+    end
     %%% Initialize Plots
     Initialize_Plots(1);
     
