@@ -2828,8 +2828,9 @@ end
 if nargin < 4
     append = 0;
 end
-
+h = guidata(findobj('Tag','BurstBrowser'));
 for i = 1:numel(FileName)
+    Progress((i-1)/numel(FileName),h.Progress_Axes,h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
     S = load('-mat',fullfile(PathName{i},FileName{i}));
     
     %%% Convert old File Format to new
@@ -3177,6 +3178,7 @@ for i = 1:numel(FileName)
 end
 
 BurstMeta.SelectedFile = 1;
+Progress(1,h.Progress_Axes,h.Progress_Text);
 
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
