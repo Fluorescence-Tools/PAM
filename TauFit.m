@@ -1608,7 +1608,7 @@ end
 %%% Make the Microtime Adjustment Plot Visible, hide Result
 h.Microtime_Plot.Parent = h.TauFit_Panel;
 h.Result_Plot.Parent = h.HidePanel;
-
+h.Result_Plot_Aniso.Parent = h.HidePanel;
 
 %%% Apply the shift to the parallel channel
 % if you change something here, change it too in Start_BurstWise Fit!
@@ -2593,7 +2593,8 @@ switch obj
             h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
             h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
             axis(h.Result_Plot_Aniso,'tight');
-            h.Result_Plot_Aniso.YLim(1) = 1.05*min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
+            h.Result_Plot_Aniso.YLim(1) = min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
+            h.Result_Plot_Aniso.YLim(1) = h.Result_Plot_Aniso.YLim(1) - 0.05*abs(h.Result_Plot_Aniso.YLim(1));
             h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
@@ -2678,7 +2679,7 @@ switch obj
             h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
             h.Plots.FitResult_ignore.YData = FitFun_ignore;
             axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim = [min(Decay) 1.05*max(Decay)];
+            h.Result_Plot.YLim = [min([min(Decay) min(Decay_ignore)]) 1.05*max(Decay)];
             
             h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
             h.Plots.Residuals.YData = wres;
