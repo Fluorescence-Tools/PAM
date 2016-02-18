@@ -2592,9 +2592,9 @@ switch obj
             h.Plots.FitAnisoResult.YData = r_fit(ignore:end);
             h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
             h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
-            
             axis(h.Result_Plot_Aniso,'tight');
-            
+            h.Result_Plot_Aniso.YLim(1) = 1.05*min([min(r_meas(ignore:end)) min(r_fit(ignore:end))]);
+            h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
             
@@ -2848,9 +2848,26 @@ panel_copy.ShadowColor = [1 1 1];
 panel_copy.BackgroundColor = [1 1 1];
 panel_copy.HighlightColor = [1 1 1];
 ax = panel_copy.Children;
+delete(ax(1));ax = ax(2:end);
+
+for i = 1:numel(ax)
+    ax(i).Color = [1 1 1];
+    ax(i).XColor = [0 0 0];
+    ax(i).YColor = [0 0 0];
+    ax(i).LineWidth = 3;
+    ax(i).FontSize = 18;
+    ax(i).XLabel.Color = [0,0,0];
+    ax(i).YLabel.Color = [0,0,0];
+    ax(i).Layer = 'top';
+    for j = 1:numel(ax(i).Children)
+        if strcmp(ax(i).Children(j).Type,'line')
+            ax(i).Children(j).LineWidth = 2;
+        end
+    end
+end
+
 if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)'}))
     %%% no anisotropy fit
-    delete(ax(1));ax = ax(2:end);
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Microtime_Plot'
@@ -2864,13 +2881,12 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
         end
     end
 else
-    delete(ax(1));ax = ax(2:end);
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.1 0.11 0.875 0.15];
+                ax(i).Position = [0.1 0.13 0.875 0.15];
             case 'Microtime_Plot'
-                ax(i).Position = [0.1 0.26 0.875 0.58];
+                ax(i).Position = [0.1 0.28 0.875 0.58];
                 ax(i).XTickLabels = [];
                 ax(i).XLabel.String = '';
                 if ~isequal(obj, h.Microtime_Plot_Export)
@@ -2878,27 +2894,11 @@ else
                     ax(i).Children(end).Position(2) = 0.9;
                 end
             case 'Residuals_Plot'
-                ax(i).Position = [0.1 0.84 0.875 .13];
+                ax(i).Position = [0.1 0.86 0.875 .13];
+                ax(i).YTickLabelMode = 'auto';
         end
     end
 end
-
-for i = 1:numel(ax)
-    ax(i).Color = [1 1 1];
-    ax(i).XColor = [0 0 0];
-    ax(i).YColor = [0 0 0];
-    ax(i).LineWidth = 3;
-    ax(i).FontSize = 20;
-    ax(i).XLabel.Color = [0,0,0];
-    ax(i).YLabel.Color = [0,0,0];
-    for j = 1:numel(ax(i).Children)
-        if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 2;
-        end
-    end
-end
-
-
 
 if strcmp(TauFitData.Who, 'TauFit')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
@@ -2912,7 +2912,7 @@ if isequal(obj,  h.Microtime_Plot_Export)
 else
     b = '_fit.tif';
 end
-print(f, '-dtiff', '-r75', GenerateName([TauFitData.FileName(1:end-4) a b],1))
+print(f, '-dtiff', '-r150', GenerateName([TauFitData.FileName(1:end-4) a b],1))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
