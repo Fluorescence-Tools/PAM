@@ -2811,7 +2811,7 @@ FitFun = Fit_Exp(x,MI);
 %%% Update Plots
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
-
+h.Plots.IRFResult.Visible = 'off';
 %TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 h.Plots.DecayResult.XData = MI;%*TACtoTime;
 h.Plots.DecayResult.YData = Anisotropy;
