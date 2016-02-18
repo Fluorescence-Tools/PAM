@@ -99,10 +99,10 @@ hold on;
 h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5]);
 h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3]);
 h.Plots.Decay_Sum = plot([0 1],[0 0],'-k');
-h.Plots.Decay_Par = plot([0 1],[0 0],'-b');
-h.Plots.Decay_Per = plot([0 1],[0 0],'-r');
-h.Plots.IRF_Par = plot([0 1],[0 0],'.b');
-h.Plots.IRF_Per = plot([0 1],[0 0],'.r');
+h.Plots.Decay_Par = plot([0 1],[0 0],'-r');
+h.Plots.Decay_Per = plot([0 1],[0 0],'-b');
+h.Plots.IRF_Par = plot([0 1],[0 0],'.r');
+h.Plots.IRF_Per = plot([0 1],[0 0],'.b');
 h.Plots.FitPreview = plot([0 1],[0 0],'k');
 h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2);
 h.Microtime_Plot.XLim = [0 1];
@@ -126,7 +126,10 @@ h.Residuals_Plot = axes(...
     'Box','on');
 hold on;
 h.Plots.Residuals = plot([0 1],[0 0],'-k');
-h.Plots.Residuals_ignore = plot([0 1],[0 0],'Color',[0.4 0.4 0.4],'Visible','off');
+h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off');
+h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off');
+h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off');
+
 h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off');
 h.Residuals_Plot.YLabel.Color = Look.Fore;
 h.Residuals_Plot.YLabel.String = 'res_w';
@@ -164,11 +167,15 @@ h.Result_Plot.YGrid = 'on';
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
 h.Plots.DecayResult = plot([0 1],[0 0],'-k');
-h.Plots.DecayResult_ignore = plot([0 1],[0 0],'Color',[0.4 0.4 0.4],'Visible','off');
-h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2);
+h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off');
+h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off');
+h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off');
+h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',1);
 h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off');
+h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',1,'Visible','off');
+h.Plots.FitResult_Perp_ignore = plot([0 1],[0 0],'--b','Visible','off');
 h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6]);
-
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off');
 %%% Result Plot (Replaces Microtime Plot after fit is done)
 h.Result_Plot_Aniso = axes(...
     'Parent',h.TauFit_Panel,...
@@ -190,7 +197,9 @@ h.Result_Plot_Aniso.XGrid = 'on';
 h.Result_Plot_Aniso.YGrid = 'on';
 hold on;
 h.Plots.AnisoResult = plot([0 1],[0 0],'-k');
-h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2);
+h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4]);
+h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',1);
+h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',1);
 
 linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
 
@@ -2529,36 +2538,120 @@ switch obj
             h.Plots.FitResult_ignore.Visible = 'off';
         end
         if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)'}))
-            h.Plots.DecayResult_ignore.Visible = 'off';
-            h.Plots.Residuals_ignore.Visible = 'off';
-            h.Plots.FitResult_ignore.Visible = 'off';
-            h.Plots.IRFResult.Visible = 'off';
-            ignore = 1;
+            % Unhide plots
+            h.Plots.IRFResult_Perp.Visible = 'on';
+            h.Plots.FitResult_Perp.Visible = 'on';
+            h.Plots.FitResult_Perp_ignore.Visible = 'on';
+            h.Plots.DecayResult_Perp.Visible = 'on';
+            h.Plots.DecayResult_Perp_ignore.Visible = 'on';
+            h.Plots.Residuals_Perp.Visible = 'on';
+            h.Plots.Residuals_Perp_ignore.Visible = 'on';
+            
+            % change colors
+            h.Plots.IRFResult.Color = [1 0 0];
+            h.Plots.DecayResult.Color = [0.6000 0.2000 0];
+            h.Plots.Residuals.Color = [1 0 0];
+            h.Plots.Residuals_ignore.Color = [1 0 0];
+            
+            %%% Split Decay_Result in Par and Per
+            Decay_par = Decay(1:numel(Decay)/2);
+            Decay_per = Decay(numel(Decay)/2+1:end);
+            Fit_par = FitFun(1:numel(Decay)/2);
+            Fit_per = FitFun(numel(Decay)/2+1:end);
+            wres_par = wres(1:numel(Decay)/2);
+            wres_per = wres(numel(Decay)/2+1:end);
+            
+            IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
+            IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
+            h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
+            h.Plots.IRFResult.YData = IRFPat_Par;
+            
+            IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
+            IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
+            h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
+            h.Plots.IRFResult_Perp.YData = IRFPat_Perp;
             
             %%% plot anisotropy data also
             % unhide Result Aniso Plot
             h.Result_Plot_Aniso.Parent = h.TauFit_Panel;
             % change axes positions
-            h.Result_Plot.Position = [0.05 0.5 0.9 0.35];
-            h.Result_Plot_Aniso.Position = [0.05 0.075 0.9 0.35];
+            h.Result_Plot.Position = [0.05 0.3 0.9 0.55];
+            h.Result_Plot_Aniso.Position = [0.05 0.075 0.9 0.15];
             
-            Decay_par = Decay(1:numel(Decay)/2);
-            Decay_per = Decay(numel(Decay)/2+1:end);
             r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
-            Fit_par = FitFun(1:numel(Decay)/2);
-            Fit_per = FitFun(numel(Decay)/2+1:end);
             r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
             x = (1:numel(Decay)/2).*TACtoTime;
             % update plots
-            h.Plots.AnisoResult.XData = x;
-            h.Plots.AnisoResult.YData = r_meas;
-            h.Plots.FitAnisoResult.XData = x;
-            h.Plots.FitAnisoResult.YData = r_fit;
+            h.Plots.AnisoResult.XData = x(ignore:end);
+            h.Plots.AnisoResult.YData = r_meas(ignore:end);
+            h.Plots.AnisoResult_ignore.XData = x(1:ignore);
+            h.Plots.AnisoResult_ignore.YData = r_meas(1:ignore);
+            h.Plots.FitAnisoResult.XData = x(ignore:end);
+            h.Plots.FitAnisoResult.YData = r_fit(ignore:end);
+            h.Plots.FitAnisoResult_ignore.XData = x(1:ignore);
+            h.Plots.FitAnisoResult_ignore.YData = r_fit(1:ignore);
+            
             axis(h.Result_Plot_Aniso,'tight');
             
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
+            
+            h.Plots.DecayResult.XData = (ignore:numel(Decay_par))*TACtoTime;
+            h.Plots.DecayResult.YData = Decay_par(ignore:end);
+            h.Plots.FitResult.XData = (ignore:numel(Fit_par))*TACtoTime;
+            h.Plots.FitResult.YData = Fit_par(ignore:end);
+
+            h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.DecayResult_ignore.YData = Decay_par(1:ignore);
+            h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.FitResult_ignore.YData = Fit_par(1:ignore);
+            
+            h.Plots.DecayResult_Perp.XData = (ignore:numel(Decay_per))*TACtoTime;
+            h.Plots.DecayResult_Perp.YData = Decay_per(ignore:end);
+            h.Plots.FitResult_Perp.XData = (ignore:numel(Fit_per))*TACtoTime;
+            h.Plots.FitResult_Perp.YData = Fit_per(ignore:end);
+
+            h.Plots.DecayResult_Perp_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.DecayResult_Perp_ignore.YData = Decay_per(1:ignore);
+            h.Plots.FitResult_Perp_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.FitResult_Perp_ignore.YData = Fit_per(1:ignore);
+            
+            axis(h.Result_Plot,'tight');
+            h.Result_Plot.YLim(1) = min([min(Decay_par) min(Decay_per)]);
+            h.Result_Plot.YLim(2) = 1.05*max([max(Decay_par) max(Decay_per)]);
+            
+            h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
+            h.Plots.Residuals.YData = wres_par(ignore:end);
+            h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.Residuals_ignore.YData = wres_par(1:ignore);
+            
+            h.Plots.Residuals_Perp.XData = (ignore:numel(wres_per))*TACtoTime;
+            h.Plots.Residuals_Perp.YData = wres_per(ignore:end);
+            h.Plots.Residuals_Perp_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.Residuals_Perp_ignore.YData = wres_per(1:ignore);
+            
+            h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
+            h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
+            
+            h.Residuals_Plot.YLim = [min([min(wres_par(ignore:end)) min(wres_per(ignore:end))]) max([max(wres_par(ignore:end)) max(wres_per(ignore:end))])];
         else
+            % hide plots
+            h.Plots.IRFResult_Perp.Visible = 'off';
+            h.Plots.FitResult_Perp.Visible = 'off';
+            h.Plots.FitResult_Perp_ignore.Visible = 'off';
+            h.Plots.DecayResult_Perp.Visible = 'off';
+            h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+            h.Plots.Residuals_Perp.Visible = 'off';
+            h.Plots.Residuals_Perp_ignore.Visible = 'off';
+            
+            % change colors
+            h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+            h.Plots.DecayResult.Color = [0 0 0];
+            h.Plots.Residuals.Color = [0 0 0];
+            h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+            
             %%% hide aniso plots
             h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
             h.Result_Plot_Aniso.Parent = h.HidePanel;
@@ -2574,27 +2667,28 @@ switch obj
             else
                 TauFitData.FitResult = FitFun;
             end
-        end
-        h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
-        h.Plots.DecayResult.YData = Decay;
-        h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
-        h.Plots.FitResult.YData = FitFun;
+            
+            h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
+            h.Plots.DecayResult.YData = Decay;
+            h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
+            h.Plots.FitResult.YData = FitFun;
 
-        h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
-        h.Plots.DecayResult_ignore.YData = Decay_ignore;
-        h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
-        h.Plots.FitResult_ignore.YData = FitFun_ignore;
-        axis(h.Result_Plot,'tight');
-        h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
-        
-        h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
-        h.Plots.Residuals.YData = wres;
-        h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
-        h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
-        h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
-        h.Plots.Residuals_ignore.YData = wres_ignore;
-        h.Residuals_Plot.YLim = [min(wres) max(wres)];
-        
+            h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.DecayResult_ignore.YData = Decay_ignore;
+            h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.FitResult_ignore.YData = FitFun_ignore;
+            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+            h.Result_Plot.YLim(2) = 1.05*max([max(Decay) max(Decay_ignore)]);
+            
+            h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
+            h.Plots.Residuals.YData = wres;
+            h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
+            h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
+            h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
+            h.Plots.Residuals_ignore.YData = wres_ignore;
+            h.Residuals_Plot.YLim = [min(wres) max(wres)];
+        end
+
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp}
@@ -2667,6 +2761,21 @@ switch obj
         %%% hide aniso plots
         h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
         h.Result_Plot_Aniso.Parent = h.HidePanel;
+        
+        % hide plots
+        h.Plots.IRFResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp_ignore.Visible = 'off';
+        h.Plots.DecayResult_Perp.Visible = 'off';
+        h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+        h.Plots.Residuals_Perp.Visible = 'off';
+        h.Plots.Residuals_Perp_ignore.Visible = 'off';
+
+        % change colors
+        h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+        h.Plots.DecayResult.Color = [0 0 0];
+        h.Plots.Residuals.Color = [0 0 0];
+        h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2737,10 +2846,42 @@ panel_copy.Position = [0 0 1 1];
 panel_copy.ShadowColor = [1 1 1];
 %%% set Background Color to white
 panel_copy.BackgroundColor = [1 1 1];
+panel_copy.HighlightColor = [1 1 1];
 ax = panel_copy.Children;
-delete(ax(1));ax = ax(2:end);
-ax(1).Position = [0.125 0.15 0.825 0.7];
-ax(2).Position = [0.125 0.85 0.825 .12];
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)'}))
+    %%% no anisotropy fit
+    delete(ax(1));ax = ax(2:end);
+    for i = 1:numel(ax)
+        switch ax(i).Tag
+            case 'Microtime_Plot'
+                ax(i).Position = [0.1 0.11 0.875 0.74];
+                if ~isequal(obj, h.Microtime_Plot_Export)
+                    ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
+                    ax(i).Children(end).Position(2) = 0.9;
+                end
+            case 'Residuals_Plot'
+                ax(i).Position = [0.1 0.85 0.875 .12];
+        end
+    end
+else
+    delete(ax(1));ax = ax(2:end);
+    for i = 1:numel(ax)
+        switch ax(i).Tag
+            case 'Result_Plot_Aniso'
+                ax(i).Position = [0.1 0.11 0.875 0.15];
+            case 'Microtime_Plot'
+                ax(i).Position = [0.1 0.26 0.875 0.58];
+                ax(i).XTickLabels = [];
+                ax(i).XLabel.String = '';
+                if ~isequal(obj, h.Microtime_Plot_Export)
+                    ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
+                    ax(i).Children(end).Position(2) = 0.9;
+                end
+            case 'Residuals_Plot'
+                ax(i).Position = [0.1 0.84 0.875 .13];
+        end
+    end
+end
 
 for i = 1:numel(ax)
     ax(i).Color = [1 1 1];
@@ -2748,12 +2889,16 @@ for i = 1:numel(ax)
     ax(i).YColor = [0 0 0];
     ax(i).LineWidth = 3;
     ax(i).FontSize = 20;
+    ax(i).XLabel.Color = [0,0,0];
+    ax(i).YLabel.Color = [0,0,0];
+    for j = 1:numel(ax(i).Children)
+        if strcmp(ax(i).Children(j).Type,'line')
+            ax(i).Children(j).LineWidth = 2;
+        end
+    end
 end
 
-if ~isequal(obj, h.Microtime_Plot_Export)
-    ax(1).Children(end).FontSize = 20; %resize the chi^2 thing
-    ax(1).Children(end).Position(2) = 0.9;
-end
+
 
 if strcmp(TauFitData.Who, 'TauFit')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
