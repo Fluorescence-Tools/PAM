@@ -2677,8 +2677,8 @@ switch obj
             h.Plots.DecayResult_ignore.YData = Decay_ignore;
             h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
             h.Plots.FitResult_ignore.YData = FitFun_ignore;
-            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
-            h.Result_Plot.YLim(2) = 1.05*max([max(Decay) max(Decay_ignore)]);
+            axis(h.Result_Plot,'tight');
+            h.Result_Plot.YLim = [min(Decay) 1.05*max(Decay)];
             
             h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
             h.Plots.Residuals.YData = wres;
