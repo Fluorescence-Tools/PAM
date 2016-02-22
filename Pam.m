@@ -2983,6 +2983,11 @@ end
 if any(mode==2)    
     %%% reset plots
     cellfun(@delete,h.Plots.Trace);
+    for k = 1:numel(h.Trace.Axes.Children)
+        if strcmp(h.Trace.Axes.Children(k).Type,'line')
+            delete(h.Trace.Axes.Children(k));
+        end
+    end
     h.Plots.Trace = {};
     for t = h.PIE.List.Value
          %%% create plot
