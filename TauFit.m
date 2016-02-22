@@ -1383,8 +1383,8 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Start Parallel Slider can assume values from 0 (no shift) up to the
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
-    h.StartPar_Slider.Max = TauFitData.MaxLength{chan};
-    if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= TauFitData.MaxLength{chan}
+    h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
+    if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.StartPar{chan};
     else
         tmp = 0;
@@ -1397,10 +1397,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% start point between parallel and perpendicular up to the difference
     %%% between the end point of the parallel channel and the start point
     %%% of the perpendicular channel
-    h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/10);
-    h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
-    if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/10)...
-            && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
+    h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+            && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ShiftPer{chan};
     else
         tmp = 0;
@@ -1422,10 +1422,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.IRFLength_Edit.String = num2str(tmp);
     
     %%% IRF Shift has the same limits as the perp shift property
-    h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/10);
-    h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
-    if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/10)...
-            && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
+    h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+            && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFShift{chan};
     else
         tmp = 0;
@@ -1435,10 +1435,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.IRFShift_Edit.String = num2str(tmp);
     
     %%% IRF rel. Shift has the same limits as the perp shift property
-    h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/10);
-    h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
-    if UserValues.TauFit.IRFrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/10)...
-            && UserValues.TauFit.IRFrelShift{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
+    h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    if UserValues.TauFit.IRFrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+            && UserValues.TauFit.IRFrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFrelShift{chan};
     else
         tmp = 0;
@@ -1448,10 +1448,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.IRFrelShift_Edit.String = num2str(tmp);
     
     %%% Scat Shift has the same limits as the perp shift property
-    h.ScatShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/10);
-    h.ScatShift_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
-    if UserValues.TauFit.ScatShift{chan} >= -floor(TauFitData.MaxLength{chan}/10)...
-            && UserValues.TauFit.ScatShift{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.ScatShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
+    h.ScatShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    if UserValues.TauFit.ScatShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+            && UserValues.TauFit.ScatShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatShift{chan};
     else
         tmp = 0;
@@ -1461,10 +1461,10 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.ScatShift_Edit.String = num2str(tmp);
     
     %%% Scat rel. Shift has the same limits as the perp shift property
-    h.ScatrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/10);
-    h.ScatrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
-    if UserValues.TauFit.ScatrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/10)...
-            && UserValues.TauFit.ScatrelShift{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.ScatrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
+    h.ScatrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    if UserValues.TauFit.ScatrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
+            && UserValues.TauFit.ScatrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatrelShift{chan};
     else
         tmp = 0;
@@ -1475,8 +1475,8 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
-    h.Ignore_Slider.Max = TauFitData.MaxLength{chan};
-    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= TauFitData.MaxLength{chan}
+    h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
+    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.Ignore{chan};
     else
         tmp = 1;
@@ -2198,8 +2198,10 @@ switch obj
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
-                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
+                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
+                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 
                 %%% Convert Lifetimes
                 x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
@@ -2299,8 +2301,10 @@ switch obj
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
-                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
+                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
+                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 
                 %%% Convert Lifetimes
                 x0([1,2,4]) = round(x0([1,2,4])/TauFitData.TACChannelWidth);
@@ -2412,8 +2416,10 @@ switch obj
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
-                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
+                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
+                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                  
                 %%% Convert Lifetimes
                 x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
@@ -2518,8 +2524,10 @@ switch obj
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
-                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
-                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
+                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
+                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                  
                 %%% Convert Lifetimes
                 x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
@@ -2735,8 +2743,8 @@ switch obj
             h.Plots.FitResult_Perp_ignore.YData = Fit_per(1:ignore);
             
             axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim(1) = min([min(Decay_par) min(Decay_per)]);
-            h.Result_Plot.YLim(2) = 1.05*max([max(Decay_par) max(Decay_per)]);
+            h.Result_Plot.YLim(1) = min([min(Decay_par(ignore:end)) min(Decay_per(ignore:end))]);
+            h.Result_Plot.YLim(2) = 1.05*max([max(Decay_par(ignore:end)) max(Decay_per(ignore:end))]);
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
