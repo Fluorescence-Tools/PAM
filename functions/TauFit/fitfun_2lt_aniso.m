@@ -1,4 +1,4 @@
-function [z] = fitfun_2exp_aniso(param,xdata)
+function [z] = fitfun_2lt_aniso(param,xdata)
 ShiftParams = xdata{1};
 IRFPattern = xdata{2};
 Scatter = xdata{3};
@@ -39,20 +39,17 @@ bg_per = param(10);
 
 %%% Calculate the parallel Intensity Decay
 rt = 1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf);
-x_par1 = exp(-(1:n)./tau(1)).*rt;
-x_par2 = exp(-(1:n)./tau(2)).*rt;
+x_par1 = exp(-(1:n)./tau(1));
+x_par2 = exp(-(1:n)./tau(2));
+%%% combine the two components
+x_par = rt.*(A*x_par1 + (1-A)*x_par2);
 switch conv_type
     case 'linear'
-        z_par1 = conv(IRF{1}, x_par1);z_par1 = z_par1(1:n)';
-        z_par2 = conv(IRF{1}, x_par2);z_par2 = z_par2(1:n)';
+        z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
     case 'circular'
-        z_par1 = convol(IRF{1},x_par1(1:n));
-        z_par2 = convol(IRF{1},x_par2(1:n));
+        z_par = convol(IRF{1},x_par(1:n));
 end
-z_par1 = z_par1./sum(z_par1);
-z_par2 = z_par2./sum(z_par2);
-%%% combine the two components
-z_par = A*z_par1 + (1-A)*z_par2;
+z_par = z_par./sum(z_par);
 
 z_par = (1-sc_par).*z_par + sc_par*Scatter{1};
 z_par = z_par./sum(z_par);
@@ -64,20 +61,17 @@ z_par = z_par';
 
 %%% Calculate the perpendicular Intensity Decay
 rt = 1-(1-3*l2).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf);
-x_per1 = exp(-(1:n)./tau(1)).*rt;
-x_per2 = exp(-(1:n)./tau(2)).*rt;
+x_per1 = exp(-(1:n)./tau(1));
+x_per2 = exp(-(1:n)./tau(2));
+%%% combine the two components
+x_per = rt.*(A*x_per1 + (1-A)*x_per2);
 switch conv_type
     case 'linear'
-        z_per1 = conv(IRF{2}, x_per1);z_per1 = z_per1(1:n)';
-        z_per2 = conv(IRF{2}, x_per2);z_per2 = z_per2(1:n)';
+        z_per = conv(IRF{2}, x_per);z_per = z_per(1:n)';
     case 'circular'
-        z_per1 = convol(IRF{2}, x_per1(1:n));
-        z_per2 = convol(IRF{2}, x_per2(1:n));
+        z_per = convol(IRF{2}, x_per(1:n));
 end
-z_per1 = z_per1./sum(z_per1);
-z_per2 = z_per2./sum(z_per2);
-%%% combine the two components
-z_per = A*z_per1 + (1-A)*z_per2;
+z_per = z_per./sum(z_per);
 
 z_per = (1-sc_per).*z_per + sc_per*Scatter{2};
 z_per = z_per./sum(z_per);

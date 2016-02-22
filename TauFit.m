@@ -626,7 +626,9 @@ if exist('ph','var')
                 end
                 %%% Popup Menu for Fit Method Selection
                 h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-                    'Distribution','Distribution plus Donor only','Fit Anisotropy','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)'};
+                'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+                'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+                'Fit Anisotropy (2 exp lifetime, 2 exp rot)'};
                 %%% Button for loading the selected PIE Channels
                 h.LoadData_Button = uicontrol(...
                     'Parent',h.PIEChannel_Panel,...
@@ -799,7 +801,9 @@ if exist('bh','var')
             'FontSize',12);
         %%% Popup Menu for Fit Method Selection
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-            'Distribution','Distribution plus Donor only','Fit Anisotropy','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)'};
+            'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+            'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+            'Fit Anisotropy (2 exp lifetime, 2 exp rot)'};
         %%% Button to start fitting
         h.Fit_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -2322,7 +2326,7 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
                             x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
@@ -2337,7 +2341,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2exp_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -2435,7 +2439,7 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
                             x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
@@ -2450,7 +2454,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_aniso_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -2496,6 +2500,117 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{12};
                 h.l1_edit.String = num2str(FitResult{10});
                 h.l2_edit.String = num2str(FitResult{11});
+            case 'Fit Anisotropy (2 exp lifetime, 2 exp rot)'
+                %%% Parameter
+                %%% Lifetime 1 and 2
+                %%% Fraction 1
+                %%% Rotational Correlation Time 1
+                %%% Rotational Correlation Time 2
+                %%% r0 - Initial Anisotropy
+                %%% r_infinity - Residual Anisotropy
+                %%% Background par
+                %%% Background per
+                
+                %%% Define separate IRF Patterns
+                IRFPattern = cell(2,1);
+                IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                
+                %%% Define separate Scatter Patterns
+                ScatterPattern = cell(2,1);
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                 
+                %%% Convert Lifetimes
+                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
+                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
+                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                
+                %%% Prepare data as vector
+                Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay_stacked));
+                end
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                end
+                
+                %%% remove ignore range from decay
+                Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
+                Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
+                FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay_stacked);
+                end
+                
+                %%% ignore plotting is not implemented here yet!
+                FitFun_ignore = FitFun;
+                wres_ignore = wres;
+                Decay_ignore = Decay;
+                Length = numel(Decay);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
+                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                UserValues.TauFit.FitFix{chan}(2) = fix(2);
+                UserValues.TauFit.FitFix{chan}(4) = fix(3);
+                UserValues.TauFit.FitFix{chan}(15) = fix(4);
+                UserValues.TauFit.FitFix{chan}(16) = fix(5);
+                UserValues.TauFit.FitFix{chan}(17) = fix(6);
+                UserValues.TauFit.FitFix{chan}(18) = fix(7);
+                UserValues.TauFit.FitFix{chan}(6) = fix(8);
+                UserValues.TauFit.FitFix{chan}(7) = fix(9);
+                UserValues.TauFit.FitFix{chan}(8) = fix(10);
+                UserValues.TauFit.FitFix{chan}(9) = fix(11);
+                UserValues.TauFit.FitFix{chan}(13) = fix(12);
+                UserValues.TauFit.FitFix{chan}(14) = fix(13);
+                UserValues.TauFit.FitFix{chan}(10) = fix(14);
+                UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(18) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(7) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{13};
+                UserValues.TauFit.IRFShift{chan} = FitResult{14};
+                h.l1_edit.String = num2str(FitResult{12});
+                h.l2_edit.String = num2str(FitResult{13});
         end
         LSUserValues(1)
         %%% Update IRFShift in Slider and Edit Box
@@ -2537,7 +2652,7 @@ switch obj
             h.Plots.Residuals_ignore.Visible = 'off';
             h.Plots.FitResult_ignore.Visible = 'off';
         end
-        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)'}))
+        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)'}))
             % Unhide plots
             h.Plots.IRFResult_Perp.Visible = 'on';
             h.Plots.FitResult_Perp.Visible = 'on';
@@ -2867,7 +2982,7 @@ for i = 1:numel(ax)
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)'}))
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)'}))
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -3979,7 +4094,7 @@ Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Backgr
 Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-
+Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -4038,6 +4153,8 @@ StartPar{6} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;S
 StartPar{7} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
+StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 
 startpar = StartPar{model};
