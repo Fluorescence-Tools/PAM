@@ -96,14 +96,14 @@ h.Microtime_Plot = axes(...
 
 %%% Create Graphs
 hold on;
-h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5]);
-h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3]);
-h.Plots.Decay_Sum = plot([0 1],[0 0],'-k');
-h.Plots.Decay_Par = plot([0 1],[0 0],'-r');
-h.Plots.Decay_Per = plot([0 1],[0 0],'-b');
-h.Plots.IRF_Par = plot([0 1],[0 0],'.r');
-h.Plots.IRF_Per = plot([0 1],[0 0],'.b');
-h.Plots.FitPreview = plot([0 1],[0 0],'k');
+h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',2);
+h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',2);
+h.Plots.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',2);
+h.Plots.Decay_Par = plot([0 1],[0 0],'-r','LineWidth',2);
+h.Plots.Decay_Per = plot([0 1],[0 0],'-b','LineWidth',2);
+h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',20);
+h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',20);
+h.Plots.FitPreview = plot([0 1],[0 0],'k','LineWidth',2);
 h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2);
 h.Microtime_Plot.XLim = [0 1];
 h.Microtime_Plot.YLim = [0 1];
@@ -125,12 +125,12 @@ h.Residuals_Plot = axes(...
     'XTickLabel',[],...
     'Box','on');
 hold on;
-h.Plots.Residuals = plot([0 1],[0 0],'-k');
-h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off');
-h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off');
-h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off');
+h.Plots.Residuals = plot([0 1],[0 0],'-k','LineWidth',2);
+h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',2);
+h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off','LineWidth',2);
+h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off','LineWidth',2);
 
-h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off');
+h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off','LineWidth',2);
 h.Residuals_Plot.YLabel.Color = Look.Fore;
 h.Residuals_Plot.YLabel.String = 'res_w';
 h.Residuals_Plot.XGrid = 'on';
@@ -166,16 +166,16 @@ h.Result_Plot.XGrid = 'on';
 h.Result_Plot.YGrid = 'on';
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
-h.Plots.DecayResult = plot([0 1],[0 0],'-k');
-h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off');
-h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off');
-h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off');
-h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',1);
-h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off');
-h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',1,'Visible','off');
-h.Plots.FitResult_Perp_ignore = plot([0 1],[0 0],'--b','Visible','off');
-h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6]);
-h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off');
+h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',2);
+h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',2);
+h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',2);
+h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',2);
+h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2);
+h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off','LineWidth',2);
+h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',2,'Visible','off');
+h.Plots.FitResult_Perp_ignore = plot([0 1],[0 0],'--b','Visible','off','LineWidth',2);
+h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',2,'MarkerSize',20);
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',2,'MarkerSize',20);
 %%% Result Plot (Replaces Microtime Plot after fit is done)
 h.Result_Plot_Aniso = axes(...
     'Parent',h.TauFit_Panel,...
@@ -196,10 +196,10 @@ h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
 h.Result_Plot_Aniso.XGrid = 'on';
 h.Result_Plot_Aniso.YGrid = 'on';
 hold on;
-h.Plots.AnisoResult = plot([0 1],[0 0],'-k');
-h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4]);
-h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',1);
-h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',1);
+h.Plots.AnisoResult = plot([0 1],[0 0],'-k','LineWidth',2);
+h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'LineWidth',2);
+h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2);
+h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2);
 
 linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
 
