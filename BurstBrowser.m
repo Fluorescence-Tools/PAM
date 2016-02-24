@@ -16,7 +16,7 @@ if isempty(hfig)
         'Name','BurstBrowser',...
         'NumberTitle','off',...
         'MenuBar','none',...
-        'defaultUicontrolFontName',Look.Font,...A
+        'defaultUicontrolFontName',Look.Font,...
         'defaultAxesFontName',Look.Font,...
         'defaultTextFontName',Look.Font,...
         'OuterPosition',[0.01 0.05 0.98 0.95],...
@@ -2798,10 +2798,11 @@ end
 h.DatabaseBB.AppendLoadedFiles.Enable = 'on';
 %%% Reset Plots
 Initialize_Plots(2);
-%%% Initialize Corrections for every loaded file
+%%% Initialize and apply Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
     UpdateCorrections([],[]);
+    ApplyCorrections();
 end
 BurstMeta.SelectedFile = 1;
 
@@ -6163,7 +6164,7 @@ if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings
     BurstMeta.Plots.fFCS.IRF_par.YData = BurstMeta.fFCS.hScat_par;
     BurstMeta.Plots.fFCS.IRF_perp.XData = BurstMeta.fFCS.TAC_perp;
     BurstMeta.Plots.fFCS.IRF_perp.YData = BurstMeta.fFCS.hScat_perp;
-elseif ~isfield(BurstData,'ScatterPattern') || ~UserValues.BurstBrowser.Settings.fFCS_UseIRF
+elseif ~isfield(BurstData{file},'ScatterPattern') || ~UserValues.BurstBrowser.Settings.fFCS_UseIRF
     %%% Hide IRF plots
     BurstMeta.Plots.fFCS.IRF_par.Visible = 'off';
     BurstMeta.Plots.fFCS.IRF_perp.Visible = 'off';
@@ -6279,7 +6280,7 @@ for chan = 1:size(c,2)
 end
     TauFitData.TACRange = BurstData{file}.FileInfo.TACRange; % in seconds
     TauFitData.MI_Bins = double(BurstData{file}.FileInfo.MI_Bins); %Anders, why double
-    if ~isfield(BurstData,'Resolution')
+    if ~isfield(BurstData{file},'Resolution')
         % in nanoseconds/microtime bin
         TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
     elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
@@ -8592,7 +8593,7 @@ switch obj
                     panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
                 end
                 %%% Add rotational correlation time
-                if isfield(BurstData,'Parameters')
+                if isfield(BurstData{file},'Parameters')
                     switch i
                         case 1
                             %%%rRR vs TauRR
@@ -8662,7 +8663,7 @@ switch obj
                     panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
                 end
                 %%% Add rotational correlation time
-                if isfield(BurstData,'Parameters')
+                if isfield(BurstData{file},'Parameters')
                     switch i
                         case 1
                             %%%rBB vs TauBB
