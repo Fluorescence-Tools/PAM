@@ -2959,7 +2959,7 @@ for i = 1:numel(FileName)
                 S.NameArray{end+1} = 'Anisotropy BB';
                 S.NameArray{end+1} = 'Anisotropy GG';
                 S.NameArray{end+1} = 'Anisotropy RR';
-                if sum(strcmp(NameArray,'Number of Photons (BB par)'))
+                if sum(strcmp(S.NameArray,'Number of Photons (BB par)'))
                     S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB perp)')))./...
                         (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (BB perp)')));
                     S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')))./...
@@ -3037,6 +3037,8 @@ for i = 1:numel(FileName)
             %%% Crosstalk/direct excitation can be determined!
             %%% set flag:
             S.BurstData.APBS = 1;
+        else
+            S.BurstData.APBS = 0;
         end
     end
     
