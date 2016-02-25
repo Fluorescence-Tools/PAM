@@ -6408,7 +6408,9 @@ h = guidata(findobj('Tag','BurstBrowser'));
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
-Name = BurstMeta.fFCS.Names;
+Name = {h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value},...
+        h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value}};
+file = BurstMeta.SelectedFile;
 CorrMat = true(2);
 NumChans = size(CorrMat,1);
 %%% Read out photons and filters from BurstMeta
@@ -8173,12 +8175,14 @@ filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 switch obj
     case h.LoadAllPhotons_Button
-        %%% Load associated .aps file, containing Macrotime, Microtime and Channel
         if isempty(PhotonStream)
+            PhotonStream = cell(numel(BurstData),1);
+        end
+        %%% Load associated .aps file, containing Macrotime, Microtime and Channel
+        if isempty(PhotonStream{file})
             if exist([filename(1:end-3) 'aps'],'file') == 2
                 %%% load if it exists
                 S = load([filename(1:end-3) 'aps'],'-mat');
-                PhotonStream{file} = S;
             else
                 %%% else ask for the file
                 [FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
@@ -8186,8 +8190,13 @@ switch obj
                     return;
                 end
                 S = load('-mat',fullfile(PathName,FileName));
-                PhotonStream{file} = S;
             end
+            % transfer to global array
+            PhotonStream{file}.start = S.PhotonStream.start;
+            PhotonStream{file}.stop = S.PhotonStream.stop;
+            PhotonStream{file}.Macrotime = S.PhotonStream.Macrotime;
+            PhotonStream{file}.Microtime = S.PhotonStream.Microtime;
+            PhotonStream{file}.Channel = S.PhotonStream.Channel;
         end
         %%% Enable CorrelateWindow Button
         h.CorrelateWindow_Button.Enable = 'on';
