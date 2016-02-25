@@ -3311,7 +3311,8 @@ Progress(0.3,h.Progress_Axes,h.Progress_Text,'Merging files...');
 %%% Also Load *.bps files and concatenate
 MergeData = cell(size(Files,1),1);
 for i = 1:size(Files,1)
-    MergeData{i} = load([Files{i,1}(1:end-3) 'bps'],'-mat');
+    file = fullfile(Files{i,2},Files{i,1});
+    MergeData{i} = load([file(1:end-3) 'bps'],'-mat');
 end
 
 Progress(0.4,h.Progress_Axes,h.Progress_Text,'Merging files...');
