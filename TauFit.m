@@ -1383,7 +1383,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Start Parallel Slider can assume values from 0 (no shift) up to the
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
-    h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
+    h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
     if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.StartPar{chan};
     else
@@ -2905,7 +2905,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DetermineGFactor(~,~)
+function DetermineGFactor(obj,~)
 global TauFitData UserValues
 h = guidata(findobj('Tag','TauFit'));
 if ~strcmp(TauFitData.Who, 'TauFit')
@@ -2925,11 +2925,24 @@ Anisotropy = (Decay_Par-Decay_Per)./((1-3*l1).*Decay_Par + (2-3*l2)*Decay_Per);
 %%% Define FitFunction
 Fit_Exp = @(p,x) (p(1)-p(3)).*exp(-x./p(2)) + p(3);
 %%% perform fit
-x0 = [0.4,round(1/TauFitData.TACChannelWidth),0];
-lb = [0,0,-0.4];
-ub = [0.4,Inf,0.4];
+if obj == h.G_factor_edit %user edited the G factor editbox
+    offset=(1-UserValues.TauFit.G{chan})/(2*UserValues.TauFit.G{chan}+1);
+    x0 = [0.4,1,offset];
+    lb = [0,0,0.99*offset];
+    ub = [0.4,Inf,1.01*offset];
+    if ub(3) == 0;
+        ub(3) = 0.01;
+    end
+else %user pressed Get G
+    %x0 = [0.4,round(1/TauFitData.TACChannelWidth),0];
+    x0 = [0.4,1,0];
+    lb = [0,0,-0.4];
+    ub = [0.4,Inf,0.4];
+end
 [x,~,res] = lsqcurvefit(Fit_Exp,x0,MI,Anisotropy,lb,ub);
+
 FitFun = Fit_Exp(x,MI);
+
 
 %%% Update Plots
 h.Microtime_Plot.Parent = h.HidePanel;
@@ -4185,6 +4198,10 @@ UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
 UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
+LSUserValues(1)
+if obj == h.G_factor_edit
+    DetermineGFactor(obj)
+end
 
 function IncludeChannel(obj,~)
 global UserValues
