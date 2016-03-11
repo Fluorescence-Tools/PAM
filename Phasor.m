@@ -456,6 +456,12 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Tag','ExportROIs',...
         'Callback',@List_Callback);
     
+    h.Export_Fraction = uimenu(...
+        'Parent',h.List_Menu,...
+        'Label','Export Fraction',...
+        'Tag','ExportROIs',...
+        'Callback',@List_Callback);
+    
     %%% Listbox of all loaded files
     h.List = uicontrol(...
         'Parent',h.Settings_Panel,...
@@ -1596,8 +1602,6 @@ else
     
 end
 guidata(h.Phasor,h);
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Closes Phasor and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1616,8 +1620,6 @@ if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty
     clear global -regexp UserValues
 end
 delete(Obj);
-
-
 
 
 
@@ -1671,8 +1673,6 @@ if any(FileName{1}~=0)
     %%% Starts plotting; plots phasor and the new images (free)
     Plot_Phasor([],[],1,[free 10]);
 end
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1830,9 +1830,9 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 close(Pam);
             end
             
-            global TcspcData FileInfo %#ok<TLEV>           
+            global TcspcData FileInfo %#ok<TLEV>
             UserValues.File.Path = PhasorData.Data{Sel}.Path;
-            LSUserValues(1);            
+            LSUserValues(1);
             %%% Loads original data
             if isfield(PhasorData.Data{Sel},'Type')
                 LoadTcspc([],[],[],[],[],h.Phasor,PhasorData.Data{Sel}.FileNames,PhasorData.Data{Sel}.Type)
@@ -1857,6 +1857,7 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                         PhasorData.Data{Sel}.s<=(Pos(2)+Pos(4)) &...
                         PhasorData.Data{Sel}.Intensity >= THmin &...
                         PhasorData.Data{Sel}.Intensity <= THmax;
+                    ROI = ROI & ~PhasorData.Selected_Region{Sel};
                     Mask{j} = find(flip(ROI',2));
                 elseif strcmp(h.Phasor_ROI(j,2).Visible,'on')
                     %% Ellipoid ROI
@@ -1868,7 +1869,7 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                     %%% Transforms ROI position into pixelmap
                     Map(sub2ind(size(Map),x,y))=1;
                     %%% Fills ROI pixelmap
-                    Map=mod(cumsum(Map),2);  
+                    Map=mod(cumsum(Map),2);
                     %%% Finds valid pixel
                     G=round((PhasorData.Data{Sel}.g+0.1)*Pixel);
                     G(isnan(G) | G<1)=1;
@@ -1880,7 +1881,7 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                         PhasorData.Data{Sel}.Intensity <= THmax;
                     Mask{j} = find(flip(ROI',2));
                 end
-            end            
+            end
             %%% Calculate pixel times
             Pixeltimes=0;
             for j=1:FileInfo.Lines
@@ -1912,7 +1913,7 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                                 Mask_MI{i,k} = [Mask_MI{i,k}; MI(Valid)];
                             end
                         end
-                    end               
+                    end
                 end
             end
             %%% Saves Files
@@ -1922,12 +1923,58 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                     MI = reshape(Mask_MI(:,i),size(TcspcData.MI));
                     Info = FileInfo;
                     save(fullfile(PhasorData.Files{Sel,2},[PhasorData.Files{Sel,1}(1:end-4) '_ROI' num2str(i) '.ppf']),'MT','MI','Info');
-                end                
-            end     
+                end
+            end
+        case h.Export_Fraction %%% Exports histogram along fraction line
+            if ~strcmp(h.Phasor_Fraction.Visible,'on')
+                return;
+            end
+            Pixel=str2double(h.Phasor_Res.String);
+            THmin=str2double(h.THmin.String);
+            THmax=str2double(h.THmax.String);
+            Sel = h.List.Value;
+            
+            
+            %%% Calculate Map
+            Width=str2double(h.ROI_Size{7}.String);
+            x=h.Phasor_Fraction.XData;
+            y=h.Phasor_Fraction.YData;
+            x=linspace(x(1),x(2),64);
+            y=linspace(y(1),y(2),64);
+            
+            step=1/Pixel;
+            X=-0.1:step:1.2;
+            Y=-0.1:step:1.2;
+            
+            [X1,Y1,Z1]=meshgrid(X,Y,x);
+            [~,~,Z2]=meshgrid(X,Y,y);
+            Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
+            [Min,Ind]=min(Dist,[],3);
+            Map=(Ind.*(Min<=Width))';
+            
+            j=1;
+            for i=Sel
+                %%% Finds valid pixel
+                G=round((PhasorData.Data{i}.g+0.1)*Pixel);
+                G(isnan(G) | G<1)=1;
+                S=round((PhasorData.Data{i}.s+0.1)*Pixel);
+                S(isnan(S) | S<1)=1;
+                %%% Generates ROI map
+                roi=Map(sub2ind(size(Map),G,S));
+                roi = roi.*(~PhasorData.Selected_Region{i} &...
+                    PhasorData.Data{i}.Intensity >= THmin &...
+                    PhasorData.Data{i}.Intensity <= THmax);
+                Fraction.ROI = roi;
+                Fraction.Hist = hist(roi(roi>0),1:64);
+                Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
+                
+                assignin('base',[PhasorData.Files{i,1}(1:end-4) '_Fraction'],Fraction);
+                
+                Fraction_Total(j,:)=Fraction.Hist; j=j+1; %#ok<AGROW>
+            end
+            assignin('base','Fraction_Total',Fraction_Total);
     end
 end
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2272,8 +2319,9 @@ switch mode
     otherwise
         %% Key Release callback
         h.Phasor.KeyReleaseFcn=[];
-        h.Phasor.KeyPressFcn={@Phasor_Key,1};
+        h.Phasor.KeyPressFcn={@Phasor_Key,1};        
         h.Phasor.Pointer='arrow';
+        h.Phasor_Plot.ButtonDownFcn={@Phasor_Plot_Callback,[]};
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Mouse button release callback %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

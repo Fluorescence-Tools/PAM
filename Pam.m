@@ -3699,13 +3699,13 @@ switch e.Key
             Update_Display([],[],0);
         end    
     otherwise
-        e.Key='';
+        e.Key=[];
 end
-h.Progress.Text.String = FileInfo.FileName{1};
-h.Progress.Axes.Color=UserValues.Look.Control;
-Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 %% Only saves user values, if one of the function was used
 if ~isempty(e.Key)
+    h.Progress.Text.String = FileInfo.FileName{1};
+    h.Progress.Axes.Color=UserValues.Look.Control;
+    Update_to_UserValues; %%% Updates CorrTable and BurstGUI
     LSUserValues(1);    
 end
 

@@ -27,7 +27,9 @@ end
 %% Defines start time and deletes old figure
 if isempty(Starttime) || Fraction ==0
     delete(findobj('Tag','Progress_Figure'));
-    delete(Progresspatch);
+    if ~isempty(Progresspatch)
+        delete(Progresspatch);
+    end
     Progresspatch=[];   
     Starttime=clock;
 end
