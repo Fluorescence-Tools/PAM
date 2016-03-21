@@ -2684,7 +2684,7 @@ if ~isempty(PIE)
                 PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
             end
             %% Calculates image
-            if h.MT.Use_Image.Value
+            if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                 %%% Goes back from total microtime to file microtime
                 PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
                 %%% Calculates Pixel vector

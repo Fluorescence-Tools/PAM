@@ -1968,7 +1968,18 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 Fraction.Hist = hist(roi(roi>0),1:64);
                 Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
                 
-                assignin('base',[PhasorData.Files{i,1}(1:end-4) '_Fraction'],Fraction);
+                AVG=0;
+                Name=PhasorData.Files{i,1};                
+                while strcmp(Name((end-5):end),' (Avg)')
+                    AVG=AVG+1;
+                    Name=Name(1:end-6);
+                end
+                
+                if AVG==0
+                    assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
+                else
+                    assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
+                end
                 
                 Fraction_Total(j,:)=Fraction.Hist; j=j+1; %#ok<AGROW>
             end
