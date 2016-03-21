@@ -96,15 +96,15 @@ h.Microtime_Plot = axes(...
 
 %%% Create Graphs
 hold on;
-h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',2);
-h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',2);
-h.Plots.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',2);
-h.Plots.Decay_Par = plot([0 1],[0 0],'-r','LineWidth',2);
-h.Plots.Decay_Per = plot([0 1],[0 0],'-b','LineWidth',2);
-h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',20);
-h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',20);
-h.Plots.FitPreview = plot([0 1],[0 0],'k','LineWidth',2);
-h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',2);
+h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',1);
+h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',1);
+h.Plots.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',1);
+h.Plots.Decay_Par = plot([0 1],[0 0],'-r','LineWidth',1);
+h.Plots.Decay_Per = plot([0 1],[0 0],'-b','LineWidth',1);
+h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5);
+h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5);
+h.Plots.FitPreview = plot([0 1],[0 0],'k','LineWidth',1);
+h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',1);
 h.Microtime_Plot.XLim = [0 1];
 h.Microtime_Plot.YLim = [0 1];
 h.Microtime_Plot.XLabel.Color = Look.Fore;
