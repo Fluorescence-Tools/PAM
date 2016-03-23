@@ -1930,9 +1930,12 @@ switch obj
                 
                 %%% Convert Fraction from Area Fraction to Amplitude Fraction
                 %%% (i.e. correct for brightness)
-                % amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2};
-                % amp1 = amp1./(amp1+amp2);
-                % FitResult{3} = amp1;
+                 amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2}; %now amp is the absolute amplitude fraction, but for the area normalized data.
+                 disp('the amplitude fraction of lifetime 1 is')
+                 amp1 = amp1./(amp1+amp2)
+                 disp('the amplitude fraction of lifetime 2 is')
+                 amp2 = 1-amp1
+                 %FitResult{3} = amp1;
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
@@ -2009,8 +2012,13 @@ switch obj
                 
                 %%% Convert Fraction from Area Fraction to Amplitude Fraction
                 %%% (i.e. correct for brightness)
-                % amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
-                % amp1 = amp1./(amp1+amp2+amp3); amp2 = amp2./(amp1+amp2+amp3);
+                amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
+                disp('the amplitude fraction of lifetime 1 is')
+                amp1 = amp1./(amp1+amp2+amp3)
+                disp('the amplitude fraction of lifetime 2 is')
+                amp2 = amp2./(amp1+amp2+amp3)
+                disp('the amplitude fraction of lifetime 3 is')
+                amp3 = amp3./(amp1+amp2+amp3)
                 % FitResult{4} = amp1;
                 % FitResult{5} = amp2;
                 
@@ -4108,14 +4116,14 @@ function [startpar, names] = GetTableData(model, chan)
 global UserValues
 Parameters = cell(7,1);
 Parameters{1} = {'Tau [ns]','Scatter','Background','IRF Shift'};
-Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Scatter','Background','IRF Shift'};
-Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','Scatter','Background','IRF Shift'};
+Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','F(area) 1','Scatter','Background','IRF Shift'};
+Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','F(area) 1','F(area) 2','Scatter','Background','IRF Shift'};
 Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{5} = {'Center R [A]','Sigma R [A]','F(area) Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','F(area) 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','F(area) 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);

@@ -3077,7 +3077,7 @@ for i = 1:numel(FileName)
         end
     end
 
-    %%% Fix missing "FRET" in Efficiency naming (NameArray)
+    %% Fix missing "FRET" in Efficiency naming (NameArray)
     try
         if any(S.BurstData.BAMethod == [1,2,5])
             S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
@@ -3117,7 +3117,34 @@ for i = 1:numel(FileName)
             end
         end
     end
-
+    
+    %% Add a distance entry
+    if any(S.BurstData.BAMethod == [1,2,5]) % 2-color MFD
+        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency'));
+        R0 = str2num(h.FoersterRadiusEdit.String);
+        S.BurstData.NameArray{end+1} = 'Distance (A)';
+        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        clearvars E R0
+    elseif any(S.BurstData.BAMethod == [3,4]) % 3-color MFD
+        % GR distance
+        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency GR'));
+        S.BurstData.NameArray{end+1} = 'Distance GR (A)';
+        R0 = str2num(h.FoersterRadiusEdit.String);
+        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        % BG distance
+        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency BG'));
+        R0 = str2num(h.FoersterRadiusBGEdit.String);
+        S.BurstData.NameArray{end+1} = 'Distance BG (A)';
+        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        % BR distance
+        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency BR'));
+        R0 = str2num(h.FoersterRadiusBREdit.String);
+        S.BurstData.NameArray{end+1} = 'Distance BR (A)';
+        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        clearvars E R0
+    end
+    
+    %% Fix naming of ClockPeriod/SyncPeriod
     % burst analysis before December 16, 2015
     if ~isfield(S.BurstData, 'ClockPeriod')
         S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;
@@ -3141,6 +3168,7 @@ for i = 1:numel(FileName)
         end
     end
     
+    %%
     S.BurstData.FileName = FileName{i};
     S.BurstData.PathName = PathName{i};
     %%% check for existing Cuts
@@ -3227,6 +3255,7 @@ while FileName ~= 0
         FileName = FileName{end};
     end
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Merge multiple *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6871,6 +6900,18 @@ else %%% Update UserValues with new values
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
             UpdateLifetimePlots([],[]);
+            % Update the Burstwise distances
+            R0 = str2num(h.FoersterRadiusEdit.String);
+            if any(S.BurstData.BAMethod == [1,2,5]) % 2-color MFD
+                E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+                BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (A)')) = ((1./E-1).*R0^6).^(1/6);
+            elseif any(S.BurstData.BAMethod == [3,4]) % 3-color MFD
+                E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
+                BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (A)')) = ((1./E-1).*R0^6).^(1/6);
+            end
+            clearvars E R0
+            UpdateCuts();
+            UpdatePlot([]);
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
@@ -6887,6 +6928,13 @@ else %%% Update UserValues with new values
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
             UpdateLifetimePlots([],[]);
+            % Update the Burstwise distances
+            R0 = str2num(h.FoersterRadiusBGEdit.String);
+            E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency BG'));
+            BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BG (A)')) = ((1./E-1).*R0^6).^(1/6);
+            clearvars E R0
+            UpdateCuts();
+            UpdatePlot([]);
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
@@ -6903,6 +6951,13 @@ else %%% Update UserValues with new values
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
             UpdateLifetimePlots([],[]);
+            % Update the Burstwise distances
+            R0 = str2num(h.FoersterRadiusBREdit.String);
+            E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency BR'));
+            BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BR (A)')) = ((1./E-1).*R0^6).^(1/6);
+            clearvars E R0
+            UpdateCuts();
+            UpdatePlot([]);
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
@@ -6932,7 +6987,7 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.r0Blue_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_blue);
             end
-    end
+    end  
     LSUserValues(1);
 end
 

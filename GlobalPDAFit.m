@@ -1395,6 +1395,7 @@ switch mode
                 % Single tab Gauss Axis x limit
                 xlim(h.SingleTab.Gauss_Axes,[min(fitpar(2:3:end-2)-3*fitpar(3:3:end-1)),...
                     max(fitpar(2:3:end-2)+3*fitpar(3:3:end-1))]);
+                %xlim(h.SingleTab.Gauss_Axes,[20 60]);
             end
         end
         %%% Set All Tab Gauss Axis X limit
@@ -1409,6 +1410,7 @@ switch mode
             end
         end
         xlim(h.AllTab.Gauss_Axes,[min(Mini), max(Maxi)]);
+        %xlim(h.AllTab.Gauss_Axes,[20 60]);
     case 5 %% Live Plot update
         i = PDAMeta.file;
         % PDAMeta.Comp{i} = index of the gaussian component that is used
@@ -1581,11 +1583,16 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
                 epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
                 [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
+                % generates a grid cube:
+                % NF all possible number of FRET photons
+                % N all possible total number of photons
+                % eps all possible FRET efficiencies
                 Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
                 % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
                 pause(0.2)
                 PNF = binopdf(NF, N, eps);
+                % binopdf(X,N,P) returns the binomial probability density function with parameters N and P at the values in X.
             end
             % histogram NF+NG into maxN+1 bins
             PN = histcounts((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i})),1:(maxN+1));
@@ -2658,7 +2665,7 @@ switch mode
         Columns=cell(47,1);
         Columns{1}='Active';
         for i=1:5
-            Columns{9*i-7}=['<HTML><b> Amp' num2str(i) '</b>'];
+            Columns{9*i-7}=['<HTML><b> Area' num2str(i) '</b>'];
             Columns{9*i-6}='F';
             Columns{9*i-5}='G';
             Columns{9*i-4}=['<HTML><b> RDA' num2str(i) ' [A] </b>'];
