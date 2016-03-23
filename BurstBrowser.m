@@ -2819,6 +2819,40 @@ for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
     UpdateCorrections([],[]);
     ApplyCorrections();
+    %% Add a distance entry % here is the correct place Anders?
+    % Values are calculated using the corrected FRET efficiency.
+    if any(BurstData{i}.BAMethod == [1,2,5]) % 2-color MFD
+        E = BurstData{i}.DataArray(:,strcmp(BurstData{i}.NameArray,'FRET Efficiency'));
+        E(E<0 | E>1) = NaN;
+        R0 = BurstData{i}.Corrections.FoersterRadius;
+        BurstData{i}.NameArray{end+1} = 'Distance (A)';
+        BurstData{i}.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+    elseif any(BurstData{i}.BAMethod == [3,4]) % 3-color MFD
+        % GR distance
+        E = BurstData{i}.DataArray(:,strcmp(BurstData{i}.NameArray,'FRET Efficiency GR'));
+        E(E<0 | E>1) = NaN;
+        R0 = BurstData{i}.Corrections.FoersterRadius;
+        BurstData{i}.NameArray{end+1} = 'Distance GR (A)';
+        BurstData{i}.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        % BG distance
+        E = BurstData{i}.DataArray(:,strcmp(BurstData{i}.NameArray,'FRET Efficiency BG'));
+        E(E<0 | E>1) = NaN;
+        R0 = BurstData{i}.Corrections.FoersterRadiusBG;
+        BurstData{i}.NameArray{end+1} = 'Distance BG (A)';
+        BurstData{i}.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+        % BR distance
+        E = BurstData{i}.DataArray(:,strcmp(BurstData{i}.NameArray,'FRET Efficiency BR'));
+        E(E<0 | E>1) = NaN;
+        R0 = BurstData{i}.Corrections.FoersterRadiusBR;
+        BurstData{i}.NameArray{end+1} = 'Distance BR (A)';
+        BurstData{i}.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
+    end
+    %remake list %ANDERS is this ok?
+    set(h.ParameterListX, 'String', BurstData{1}.NameArray);
+    set(h.ParameterListX, 'Value', posE);
+    set(h.ParameterListY, 'String', BurstData{1}.NameArray);
+    set(h.ParameterListY, 'Value', posS);
+    clearvars E R0
 end
 BurstMeta.SelectedFile = 1;
 
@@ -3116,32 +3150,6 @@ for i = 1:numel(FileName)
                 end
             end
         end
-    end
-    
-    %% Add a distance entry
-    if any(S.BurstData.BAMethod == [1,2,5]) % 2-color MFD
-        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency'));
-        R0 = str2num(h.FoersterRadiusEdit.String);
-        S.BurstData.NameArray{end+1} = 'Distance (A)';
-        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
-        clearvars E R0
-    elseif any(S.BurstData.BAMethod == [3,4]) % 3-color MFD
-        % GR distance
-        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency GR'));
-        S.BurstData.NameArray{end+1} = 'Distance GR (A)';
-        R0 = str2num(h.FoersterRadiusEdit.String);
-        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
-        % BG distance
-        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency BG'));
-        R0 = str2num(h.FoersterRadiusBGEdit.String);
-        S.BurstData.NameArray{end+1} = 'Distance BG (A)';
-        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
-        % BR distance
-        E = S.BurstData.DataArray(:,strcmp(S.BurstData.NameArray,'FRET Efficiency BR'));
-        R0 = str2num(h.FoersterRadiusBREdit.String);
-        S.BurstData.NameArray{end+1} = 'Distance BR (A)';
-        S.BurstData.DataArray(:,end+1) = ((1./E-1).*R0^6).^(1/6);
-        clearvars E R0
     end
     
     %% Fix naming of ClockPeriod/SyncPeriod
@@ -3658,8 +3666,7 @@ if strcmpi(clickType,'right')
         end
     end
     UpdateCutTable(h);
-    UpdateCuts();
-    %UpdateCorrections;
+    UpdateCuts();    
 elseif strcmpi(clickType,'left') %%% Update Plot
     %%% Update selected value
     hListbox.Value = clickedIndex;
@@ -6900,12 +6907,12 @@ else %%% Update UserValues with new values
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
             UpdateLifetimePlots([],[]);
-            % Update the Burstwise distances
+            % Update the Burstwise distances %Anders
             R0 = str2num(h.FoersterRadiusEdit.String);
-            if any(S.BurstData.BAMethod == [1,2,5]) % 2-color MFD
+            if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
                 E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
                 BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (A)')) = ((1./E-1).*R0^6).^(1/6);
-            elseif any(S.BurstData.BAMethod == [3,4]) % 3-color MFD
+            elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
                 E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
                 BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (A)')) = ((1./E-1).*R0^6).^(1/6);
             end
