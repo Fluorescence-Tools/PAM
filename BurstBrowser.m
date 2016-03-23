@@ -6783,23 +6783,23 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
             case {1,2}
                 h.DonorLifetimeEdit.String = num2str(BurstData{file}.Corrections.DonorLifetime);
                 h.AcceptorLifetimeEdit.String = num2str(BurstData{file}.Corrections.AcceptorLifetime);
-                h.FoersterRadiusEdit = num2str(BurstData{file}.Corrections.FoersterRadius);
-                h.LinkerLengthEdit = num2str(BurstData{file}.Corrections.LinkerLength);
+                h.FoersterRadiusEdit.String = num2str(BurstData{file}.Corrections.FoersterRadius);
+                h.LinkerLengthEdit.String = num2str(BurstData{file}.Corrections.LinkerLength);
                 h.r0Green_edit.String = num2str(BurstData{file}.Corrections.r0_green);
-                h.r0Red_edit = num2str(BurstData{file}.Corrections.r0_red);
+                h.r0Red_edit.String = num2str(BurstData{file}.Corrections.r0_red);
             case {3,4}
                 h.DonorLifetimeBlueEdit.String = num2str(BurstData{file}.Corrections.DonorLifetimeBlue);
                 h.DonorLifetimeEdit.String = num2str(BurstData{file}.Corrections.DonorLifetime);
                 h.AcceptorLifetimeEdit.String = num2str(BurstData{file}.Corrections.AcceptorLifetime);
-                h.FoersterRadiusEdit = num2str(BurstData{file}.Corrections.FoersterRadius);
-                h.LinkerLengthEdit = num2str(BurstData{file}.Corrections.LinkerLength);
-                h.FoersterRadiusBGEdit = num2str(BurstData{file}.Corrections.FoersterRadiusBG);
-                h.LinkerLengthBGEdit = num2str(BurstData{file}.Corrections.LinkerLengthBG);
-                h.FoersterRadiusBREdit = num2str(BurstData{file}.Corrections.FoersterRadiusBR);
-                h.LinkerLengthBREdit = num2str(BurstData{file}.Corrections.LinkerLengthBR);
+                h.FoersterRadiusEdit.String = num2str(BurstData{file}.Corrections.FoersterRadius);
+                h.LinkerLengthEdit.String = num2str(BurstData{file}.Corrections.LinkerLength);
+                h.FoersterRadiusBGEdit.String = num2str(BurstData{file}.Corrections.FoersterRadiusBG);
+                h.LinkerLengthBGEdit.String = num2str(BurstData{file}.Corrections.LinkerLengthBG);
+                h.FoersterRadiusBREdit.String = num2str(BurstData{file}.Corrections.FoersterRadiusBR);
+                h.LinkerLengthBREdit.String = num2str(BurstData{file}.Corrections.LinkerLengthBR);
                 h.r0Blue_edit.String = num2str(BurstData{file}.Corrections.r0_blue);
                 h.r0Green_edit.String = num2str(BurstData{file}.Corrections.r0_green);
-                h.r0Red_edit = num2str(BurstData{file}.Corrections.r0_red);
+                h.r0Red_edit.String = num2str(BurstData{file}.Corrections.r0_red);
         end
         
         if any(BurstData{file}.BAMethod == [1,2,5]) %%% 2cMFD, same as default
