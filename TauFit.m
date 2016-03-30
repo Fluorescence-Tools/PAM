@@ -47,6 +47,8 @@ h.TauFit.Color=Look.Back;
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
 h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','fitted microtime pattern',...
     'Callback',@Export);
+h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
+    'Callback',@Export);
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
 h.TauFit_Panel = uibuttongroup(...
@@ -4342,4 +4344,12 @@ switch obj
             return
         end
         save(fullfile(Path,File),'MIPattern');
+    case h.Menu.Export_To_Clipboard
+        %%% Copy current plot data to clipboard
+        if strcmp(h.Result_Plot.Visible, 'on')
+            ax = h.Result_Plot;
+        else
+            ax = h.Microtime_Plot;
+        end
+        plot_to_txt(ax,1);
 end
