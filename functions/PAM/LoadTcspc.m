@@ -551,7 +551,7 @@ switch (Type)
             FileInfo.Lines = Header.Lines;
             FileInfo.Pixels = FileInfo.Lines^2;
             FileInfo.ScanFreq = FileInfo.Lines/FileInfo.ImageTime;
-            
+            FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
             for j = 1:4               
                if any(UserValues.Detector.Rout(UserValues.Detector.Det == j) == 1)
