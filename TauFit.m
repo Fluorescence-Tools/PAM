@@ -2205,7 +2205,9 @@ switch obj
                 IRFPattern = cell(2,1);
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
-                
+                for i = 1:2
+                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                end
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
@@ -2308,6 +2310,9 @@ switch obj
                 IRFPattern = cell(2,1);
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                for i = 1:2
+                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                end
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
@@ -2423,6 +2428,9 @@ switch obj
                 IRFPattern = cell(2,1);
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                for i = 1:2
+                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                end
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
@@ -2531,6 +2539,9 @@ switch obj
                 IRFPattern = cell(2,1);
                 IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
                 IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                for i = 1:2
+                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                end
                 
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
