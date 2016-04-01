@@ -1967,18 +1967,100 @@ for i = 1:numel(SimData.Species);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            [Photons,  MI, Channel, Pos] = DifSim(...
-                Frametime, BS,... General Parameters
-                Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
-                D,Pos,... Particle parameters
-                wr,wz,... Focus parameters
-                dX,dY,dZ,... Focus shift parameters
-                ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
-                LT,... %%% Lifetime of the different colors
-                FRET, Cross,... %%% Relative FRET and Crosstalk rates
-                uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
-                Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
-             
+            new = 0;
+            if (new == 0)
+                [Photons,  MI, Channel, Pos] = DifSim(...
+                    Frametime, BS,... General Parameters
+                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
+                    D,Pos,... Particle parameters
+                    wr,wz,... Focus parameters
+                    dX,dY,dZ,... Focus shift parameters
+                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
+                    LT,... %%% Lifetime of the different colors
+                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                    Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+            elseif new == 1;
+                IRFparams = [1000,100];
+                MI_Bins = 2^16;
+                aniso_params = repmat([0.4,0.1, LT(1)/10, 1],1,4)';
+                
+                type = 1;
+                switch type
+                    case 1
+                        %%% Parameters for 2color 2 state dynamic simulation
+                        k12 = 2000/Freq; %2 ms^-1
+                        k21 = 3000/Freq; %3 ms^-1
+                        
+                        DiffStep = 1;
+                        %%% Set dynamic step such that p_max = 0.1
+                        DynamicStep = round(0.1/max([k12 k21]));
+                        p12 = k12*DynamicStep;
+                        p21 = k21*DynamicStep;
+                        
+                        n_states = 2;
+                        k_dyn = [1-p12, p21,...
+                                 p12, 1-p21];
+                        if exist('final_state','var')
+                            initial_state  = final_state;
+                        else
+                            initial_state = 0;
+                        end
+
+                        FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
+                        FRET2 = [1,0,0,0;0,1,0,0;0,0,0,0;0,0,0,0];
+                        FRET = [FRET1(:); FRET2(:)];
+                    case 2
+                        %%% Parameters for 2color 2 state dynamic simulation
+                        k12 = 2000/Freq; %2 ms^-1
+                        k21 = 3000/Freq; %3 ms^-1
+                        
+                        DiffStep = 1;
+                        %%% Set dynamic step such that p_max = 0.1
+                        DynamicStep = round(0.1/max([k12 k21]));
+                        p12 = k12*DynamicStep;
+                        p21 = k21*DynamicStep;
+                        
+                        n_states = 2;
+                        k_dyn = [1-p12, p21,...
+                                 p12, 1-p21];
+                             
+                        if exist('final_state','var')
+                            initial_state  = final_state;
+                        else
+                            initial_state = 0;
+                        end
+                        %EGR = 0.75
+                        %EBG' = 0.25
+                        %EBR' = 0.5;
+                        FRET1 = [1,0,0,0;...
+                                 1,1,0,0;...
+                                 2,3,1,0;...
+                                 0,0,0,0];
+                        %EGR = 0.2
+                        %EBG' = 0.75
+                        %EBR' = 0.125;     
+                        FRET1 = [1,0,0,0;...
+                                 6,1,0,0;...
+                                 1,0.25,1,0;...
+                                 0,0,0,0];
+                        FRET = [FRET1(:); FRET2(:)];
+                end
+                
+                [Photons,  MI, Channel, Pol, Pos, final_state] = DifSim_ani_mac(...
+                    Frametime, BS,... General Parameters
+                    Scan_Type, Step, Pixel, ScanTicks, DiffStep,... Scanning Parameters 
+                    IRFparams, MI_Bins,...
+                    D*sqrt(DiffStep),Pos,... Particle parameters
+                    wr,wz,... Focus parameters
+                    dX,dY,dZ,... Focus shift parameters
+                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
+                    LT,aniso_params,... %%% Lifetime of the different colors
+                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                    n_states, k_dyn, initial_state, DynamicStep,...
+                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                    Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+            end
             %%% Channel is a 8 bit number that defines the exact photon type
             %%% bits 0,1 for exitation laser
             %%% bits 2,3 for exited dye

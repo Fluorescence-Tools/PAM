@@ -13,31 +13,31 @@
 // #include <windows.h>
 
 using namespace std;
-// using namespace tr1;
+using namespace tr1;
 
 void Simulate_Diffusion(
-        __int64_t SimTime,  double *Box,
-        double ScanType, double *Step, double *Pixel, double *ScanTicks, int DiffusionStep,
-        double *IRFparam, int MI_Bins,
+        __int64 SimTime,  double *Box,
+        double ScanType, double *Step, double *Pixel, double *ScanTicks, double DiffusionStep,
+        double *IRFparam, double MI_Bins,
         double D, double *Pos,
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
         double *LT, double *aniso_param,
         double *Rates, double *Cross, 
-        int n_states, double *k_dyn, int initial_state, int DynamicStep,
-        double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64_t *NPhotons, unsigned char *Polarization, int *final_state,
+        double n_states, double *k_dyn, double initial_state, double DynamicStep,
+        double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64 *NPhotons, unsigned char *Polarization,
         unsigned long Time,
-        int Map_Type, double *Map)        
+        double Map_Type, double *Map)        
 {
     /// Counting variable definition
-	__int64_t i = 0;
+	__int64 i = 0;
     unsigned char j = 0;
     unsigned char k = 0;
     unsigned char m = 0;
     unsigned char n = 0;
     unsigned char p = 0;
     unsigned char q = 0;
-    int s = 0;
+    unsigned char s = 0;
     double FRET[4];
     double TRANS[n_states];
     double CROSS[4];
@@ -51,21 +51,18 @@ void Simulate_Diffusion(
     /// Generates uniform distributed random number between 0 and 1
     uniform_real_distribution<double> equal_dist(0.0,1.0);
     /// Generates microtimes from IRF
-    normal_distribution<double> IRF(IRFparam[0],IRFparam[1]);
+    normal_distribution<unsigned short> IRF(IRFparam[0],IRFparam[1]);
     double Ex;
     
-    int state = initial_state;
-    
     /// Generate anisotropy probability distribution based on microtime
-    double p_par[4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
+    double p_par[4][MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
     double r_dummy;
-    /* aniso_param stores the values in order: r0, r_inf, tau_rot, G
-    G must be defined as g_perp/g_par */
+    // aniso_param stores the values in order: r0, r_inf, tau_rot, G
     for (j=0;j<4;j++){
         for (i=0;i<MI_Bins;i++)
         {
             r_dummy = (aniso_param[4*j+0]-aniso_param[4*j+1])*exp(-i/aniso_param[4*j+2])+aniso_param[4*j+1];
-            p_par[MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[4*j+3]*(1-r_dummy));
+            p_par[j][i] = aniso_param[4*j+3]*(1+2*r_dummy)/(aniso_param[4*j+3]*(1+2*r_dummy)+(1-r_dummy));
         }
     }
     
@@ -87,9 +84,12 @@ void Simulate_Diffusion(
     /// Toggle for valid particle position
     bool Invalid_Pos = true;
     
+    /// Set initial state
+    int state = (int) initial_state;
+    
     for (i=0; i<SimTime; i++) 
     {
-        if (i % DiffusionStep == 0) { // Only calculate diffusion at larger time intervals
+        if (SimTime % DiffusionStep == 0) { // Only calculate diffusion at larger time intervals
             Invalid_Pos = true;
             while (Invalid_Pos)
             {
@@ -118,7 +118,7 @@ void Simulate_Diffusion(
                     New_Pos[1] = fmod((New_Pos[1] + Box[1]), Box[1]);
                     if (Box[2] > 0) { New_Pos[2] = fmod((New_Pos[2] + Box[2]), Box[2]) ; }
                 }
-                switch (Map_Type)
+                switch ((int)Map_Type)
                 {
                     case 1: case 2: case 8: /// Free Diffusion
                         Pos[0] = New_Pos[0];
@@ -216,16 +216,20 @@ void Simulate_Diffusion(
         
         /// Dynamic step //////////////////////////////////////////////////
         if (n_states > 1) {
-            if (i % DynamicStep == 0) { // Only calculate dynamic transitions at larger time intervals
+            if (SimTime % DynamicStep == 0) { // Only calculate dynamic transitions at larger time intervals
                 // calculate cumulative probability from outgoing rates of current state
                 for (s=0;s<n_states;s++) {
-                    TRANS[s] = k_dyn[n_states*state+s];
+                    TRANS[s] = k_dyn[n_states*s+state]
                     }
-                for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
+                for (s=0;s<n_states;s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; } /// Extract cummulative Transition rates
+                for (s=0; s<n_states; s++) { TRANS[s] = TRANS[s]/TRANS[n_states]; }  /// Calculates cummulative Transition Probabilites
+
                 prob = equal_dist(mt);
                 for (s=0; s<n_states; s++) /// Determines transition according to rates
-                { if (prob<=TRANS[s]) {break;} } 
-                state = s; // Update State
+                { if (prob<=TRANS[s]) { break; } }
+
+                if  (s == state) { break; } /// No Transition occured
+                else { state = s; } /// Transition occured
             }
         }
         
@@ -264,11 +268,9 @@ void Simulate_Diffusion(
                     if (Ex > 1E-4) /// Only roll if Excitation is larger than 0.01% = 1E-4
                     {
                         /// Create binomial distribution for excitation probability
-                        binomial_distribution<__int64_t> binomial(1, Ex);
+                        binomial_distribution<__int64, double> binomial(1, Ex);
                         if ((double) binomial(mt))/// Generates photons with probability
-                        {   
-                            Microtimes[NPhotons[0]] = (unsigned short)j*16384; /// PIE Laser pulse for microtime
-                            
+                        {                            
                             ///////////////////////////////////////////////
                             //// Emitting dye (FRET) //////////////////////
                             ///////////////////////////////////////////////                            
@@ -284,7 +286,7 @@ void Simulate_Diffusion(
                                 
                                 if (LT[m]>0)
                                 {
-                                    geometric_distribution<unsigned short> exponential(FRET[3]/LT[m]); /// FRET modified exponential distribution for lifetime
+                                    geometric_distribution<unsigned short> exponential(1/(LT[m]*(2-FRET[3])); /// FRET modified exponential distribution for lifetime
                                     Microtimes[NPhotons[0]] += exponential(mt); /// Convolutes with lifetime of current dye
                                 }
                                 
@@ -304,15 +306,16 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             // Evaluate Anisotropy
-                            binomial_distribution<unsigned char> binomial_aniso(1,p_par[MI_Bins*m+(int)Microtimes[NPhotons[0]]]); //define distribution
+                            binomial_distribution<unsigned char> binomial_aniso(1,p_par[m][Microtimes[NPhotons[0]]]); //define distribution
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
+                            
                             // convolute Microtime with IRF
-                            Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
-                            if (Microtimes[NPhotons[0]] < 0) {Microtimes[NPhotons[0]] = 0;};
+                            Microtimes[NPhotons[0]] += IRF(mt); /// PIE Laser pulse for microtime, IRF
+                            if (Microtimes[NPhotons[0]] < 0) {Microtimes[NPhotons[0]] = 0};
                             
                             if (BlP[m] > 0.0) /// If bleaching is enabled
                             {
-                                binomial_distribution<__int64_t> binomial(1, BlP[4*k+m]);
+                                binomial_distribution<__int64, double> binomial(1, BlP[4*k+m]);
                                 if ( ((double) binomial(mt)) ) /// Bleaches particle
                                 { Active[m] = false; }
                                 
@@ -339,7 +342,7 @@ void Simulate_Diffusion(
                                 ///////////////////////////////////////////
                                 if (DetP[4*m+n] > 1E-5)
                                 {
-                                    binomial_distribution<__int64_t> binomial(1, DetP[4*m+n]);
+                                    binomial_distribution<__int64, double> binomial(1, DetP[4*m+n]);
                                     if ( ((double) binomial(mt)) ) /// Detects particle
                                     {
                                         /// Adds photon
@@ -365,32 +368,31 @@ void Simulate_Diffusion(
             }
         }
     }
-    final_state[0] = state;
 }
 ///////////////////////////////////////////////////////////////////////////
 /// Defines input parameter and function to be used ///////////////////////
 /// This function is called by matlab /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
-void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
+void mexFunction(__int64 nlhs, mxArray *plhs[], __int64 nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=30)
+    if(nrhs!=22)
     { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","30 inputs required."); }
-    if (nlhs!=6)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","6 outputs required."); }
+    if (nlhs!=4)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","5 outputs required."); }
     
     
     // General and Scanning parameters
-    __int64_t SimTime = (__int64_t)mxGetScalar(prhs[0]);
+    __int64 SimTime = (__int64)mxGetScalar(prhs[0]);
     double *Box = mxGetPr(prhs[1]);
     double ScanType = mxGetScalar(prhs[2]);
     double *Step = mxGetPr(prhs[3]);
     double *Pixel = mxGetPr(prhs[4]);
     double *ScanTicks = mxGetPr(prhs[5]);
-    int DiffusionStep = mxGetScalar(prhs[6]);
+    double DiffusionStep = mxGetScalar(prhs[6]);
     
     // IRF Parameters
     double *IRFparam = mxGetPr(prhs[7]);
-    int MI_Bins = mxGetScalar(prhs[8]);
+    double MI_Bins = mxGetScalar(prhs[8]);
     
     // Particle Parameters
     double D = mxGetScalar(prhs[9]);  
@@ -411,14 +413,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *Cross = mxGetPr(prhs[22]);
     
     // Dynamic Parameters
-    int n_states = mxGetScalar(prhs[23]);
+    double n_states = mxGetScalar(prhs[23]);
     double *k_dyn = mxGetPr(prhs[24]);
-    int initial_state = mxGetScalar(prhs[25]);
-    int DynamicStep = mxGetScalar(prhs[26]);
+    double initial_state = mxGetScalar(prhs[25]);
+    double DynamicStep = mxGetScalar(prhs[26]);
     
     unsigned long Time = mxGetScalar(prhs[27]);
     
-    int Map_Type = mxGetScalar(prhs[28]); 
+    double Map_Type = mxGetScalar(prhs[28]); 
     double *Map = mxGetPr(prhs[29]);    
     
 
@@ -429,11 +431,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     unsigned char *Channel;
     Channel = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));
     unsigned char *Polarization;
-    Polarization = (unsigned char*) mxCalloc(4*SimTime, sizeof(unsigned char));   
-    __int64_t *NPhotons;
-    NPhotons=(__int64_t*) mxCalloc(1, sizeof(__int64_t));
-    int *final_state;
-    final_state = (int*) mxCalloc(1, sizeof(int));
+    Polarization = (unsigned char*) mxCalloc(2*SimTime, sizeof(unsigned char));   
+    __int64 *NPhotons;
+    NPhotons=(__int64*) mxCalloc(1, sizeof(__int64));
     
     Simulate_Diffusion(
         SimTime, Box, // General parameters
@@ -446,14 +446,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         LT, aniso_param, // Lifetime, Anisotropy
         Rates, Cross, // Parameter containing FRET/Crosstalk rates
         n_states, k_dyn, initial_state, DynamicStep, // Dynamic parameters
-        Macrotimes, Microtimes, Channel, NPhotons, Polarization, final_state,// Output parameters
+        Macrotimes, Microtimes, Channel, NPhotons,// Output parameters
         Time, // Additional random seed value
         Map_Type, Map); // Map for quenching/barriers etc.
         
-    const mwSize NP[]={(int)NPhotons[0],1};
+    const mwSize NP[]={NPhotons[0],1};
     const mwSize SizePos[]={3,1};
-    const mwSize SizeInt[]={1,1};
-    
+     
     double* Final_Pos;
     Final_Pos =(double*) mxCalloc(3, sizeof(double));
     Final_Pos[0] = Pos[0];
@@ -465,13 +464,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     plhs[2] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
     plhs[3] = mxCreateNumericArray(2, NP, mxUINT8_CLASS, mxREAL);
     plhs[4] = mxCreateNumericArray(2, SizePos, mxDOUBLE_CLASS, mxREAL);
-    plhs[5] = mxCreateNumericArray(2, SizeInt, mxUINT8_CLASS, mxREAL);
     
     mxSetData(plhs[0], Macrotimes);
     mxSetData(plhs[1], Microtimes);
     mxSetData(plhs[2], Channel);
     mxSetData(plhs[3], Polarization);
     mxSetData(plhs[4], Final_Pos);
-    mxSetData(plhs[5], final_state);
+
         
 }
