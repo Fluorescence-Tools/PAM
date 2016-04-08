@@ -1629,8 +1629,8 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     P_temp = P_temp(:);
                     bin = bin(validd);
                     P_temp = P_temp(validd);
-                    Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
-                    Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+                    % Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
+                    % Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                     %%% Store bin,valid and P_temp variables for brightness correction
                     PDAMeta.HistLib.bin{i}{j} = bin;
                     PDAMeta.HistLib.P_array{i}{j} = P_temp;
@@ -1678,8 +1678,8 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                             count = count+1;
                         end
                     end
-                    Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
-                    Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
+                    %Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
+                    %Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
             end
             % different files = different rows
@@ -2008,7 +2008,7 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-h.SettingsTab.DynamicModel = 0;
+h.SettingsTab.DynamicModel = 1;
 
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
@@ -2064,23 +2064,44 @@ if h.SettingsTab.DynamicModel %%% dynamic model
     %%% calculate mixtures
     Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}));
     Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
-    
+    Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
     %%% combine mixtures, weighted with PofT (probability to see a certain
     %%% combination)
-    hFit_Ind = cell(numel(PofT),1);
+    hFit_Ind_dyn = cell(numel(PofT),1);
     for t = 1:numel(PofT)
-        hFit_Ind{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        hFit_Ind_dyn{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
         for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
             %%% construct sum of histograms
-            hFit_Ind{t} = hFit_Ind{t} + Peps(k,t).*PDAMeta.P{i,k};
+            hFit_Ind_dyn{t} = hFit_Ind_dyn{t} + Peps(k,t).*PDAMeta.P{i,k};
         end
         %%% weight by probability of occurence
-        hFit_Ind{t} = PofT(t)*hFit_Ind{t};
+        hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
     end
+    hFit_Ind{1} = hFit_Ind_dyn{1};
+    hFit_Ind{2} = hFit_Ind_dyn{end};
+    hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
+    %%% Add static models
+    if numel(PDAMeta.Comp{i}) > 2
+        norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
+        fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
+        for c = PDAMeta.Comp{i}(3:end)
+            [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+            P_eps = fitpar(3*c-2).*Pe;
+            hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+            for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+            end
+        end
+        hFit_Dyn = hFit_Dyn./norm;
+    end
+    hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
+else %%% no dynamic, just combine
+    %%% Combine histograms
+    hFit = sum(horzcat(hFit_Ind{:}),2)';
 end
 
-%%% Combine histograms
-hFit = sum(horzcat(hFit_Ind{:}),2)';
+%%% correct for slight number deviations between hFit and hMeasured
+hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
 
 %%% Calculate Chi2
 error = sqrt(PDAMeta.hProx{i});
