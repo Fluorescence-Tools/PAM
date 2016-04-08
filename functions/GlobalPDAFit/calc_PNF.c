@@ -33,15 +33,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *NF;
     double *N;
     double *eps;
-     
+    
+    double *PNF; 
+    
+    unsigned int size = (unsigned int)mxGetScalar(prhs[3]);
     // Assigns input pointers to initialized pointers
     NF = mxGetPr(prhs[0]);
     N = mxGetPr(prhs[1]);
     eps = mxGetPr(prhs[2]);
     
-    unsigned int size = mxGetScalar(prhs[3]);
+    
     // Initializes output matrix and assigns pointer to it
-    double *PNF; 
+    
     
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)size, mxREAL);
     PNF = mxGetPr(plhs[0]);    

@@ -10,10 +10,10 @@
 void mixPeps(double *eps, double *PE1, double *PE2, double *PofT, unsigned int N_bins_T, unsigned int N_bins_eps,
         double *PEmix)
 {
-    int k;
-    int i;
-    int j;
-    int ix;
+    unsigned int k;
+    unsigned int i;
+    unsigned int j;
+    unsigned int ix;
     double p1;
     double meanEps;
     
@@ -53,17 +53,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *PE2;
     double *PofT;
      
+    // Initializes output matrix and assigns pointer to it
+    double *PEmix; 
+    
+    unsigned int N_bins_T = (unsigned int)mxGetScalar(prhs[4]);
+    unsigned int N_bins_eps = (unsigned int)mxGetScalar(prhs[5]);
+    
     // Assigns input pointers to initialized pointers
     eps = mxGetPr(prhs[0]);
     PE1 = mxGetPr(prhs[1]);
     PE2 = mxGetPr(prhs[2]);
     PofT = mxGetPr(prhs[3]); 
     
-    unsigned int N_bins_T = mxGetScalar(prhs[4]);
-    unsigned int N_bins_eps = mxGetScalar(prhs[5]);
     
-    // Initializes output matrix and assigns pointer to it
-    double *PEmix; 
     
     plhs[0] = mxCreateDoubleMatrix(1,(mwSize)(N_bins_eps*N_bins_T), mxREAL);
     PEmix = mxGetPr(plhs[0]);    
