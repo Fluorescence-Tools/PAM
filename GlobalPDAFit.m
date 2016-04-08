@@ -714,6 +714,19 @@ if isempty(h.GlobalPDAFit)
         'String','Live plot update',...
         'Value',0,...
         'Position',[0.4 0.025 0.1 0.2]);
+     h.SettingsTab.DynamicModel = uicontrol(...
+        'Parent',h.SettingsTab.Panel,...
+        'Tag','DynamicModel',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Style','checkbox',...
+        'String','Dynamic Model',...
+        'Value',0,...
+        'TooltipString',sprintf('Only works for Histogram Library Approach!\nSpecies 3 and onward will be treated as static.'),...
+        'Callback',@Update_GUI,...
+        'Position',[0.65 0.025 0.1 0.2]);
     h.SettingsTab.FixSigmaAtFractionOfR = uicontrol(...
         'Parent',h.SettingsTab.Panel,...
         'Tag','FixSigmaAtFractionOfR',...
@@ -2008,8 +2021,6 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-h.SettingsTab.DynamicModel = 1;
-
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -2017,12 +2028,10 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(3:3:end) = fraction.*fitpar(2:3:end);
 end
 
-if ~h.SettingsTab.DynamicModel
+if ~h.SettingsTab.DynamicModel.Value
     %%% normalize Amplitudes
     fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
 end
-
-
 
 %%% create individual histograms
 hFit_Ind = cell(5,1);
@@ -2039,7 +2048,7 @@ for c = PDAMeta.Comp{i}
         %%% Recalculate the P array of this file
         PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
     end
-    if ~h.SettingsTab.DynamicModel %%% static model
+    if ~h.SettingsTab.DynamicModel.Value %%% static model
         [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
         P_eps = fitpar(3*c-2).*Pe;
         hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -2049,7 +2058,7 @@ for c = PDAMeta.Comp{i}
     end
 end
 
-if h.SettingsTab.DynamicModel %%% dynamic model
+if h.SettingsTab.DynamicModel.Value %%% dynamic model
     %%% calculate PofT
     dT = 1;
     N = 100;
@@ -3317,6 +3326,22 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             h.FitTab.Table.ColumnEditable(8:9:end) = deal(true);
             h.FitTab.Table.ColumnEditable(9:9:end) = deal(true);
             h.FitTab.Table.ColumnEditable(10:9:end) = deal(true);
+    end
+elseif obj == h.SettingsTab.DynamicModel
+    switch h.SettingsTab.DynamicModel.Value
+        case 1 %%% switched to dynamic
+            %%% Change label of Fit Parameter Table
+            h.FitTab.Table.ColumnName{2} = '<HTML><b> k12 [ms^-1]</b>';
+            h.FitTab.Table.ColumnName{11} = '<HTML><b> k21 [ms^-1]</b>';
+            %%% Only enable Histogram Library in PDA Method
+            h.SettingsTab.PDAMethod_Popupmenu.Value = 1;
+            h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
+        case 0 %%% switched back to static
+            %%% Revert Label of Fit Parameter Table
+            h.FitTab.Table.ColumnName{2} = '<HTML><b> Area1</b>';
+            h.FitTab.Table.ColumnName{11} = '<HTML><b> Area2</b>';
+            %%% Revert to all PDA Methods
+            h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
     end
 end
 
