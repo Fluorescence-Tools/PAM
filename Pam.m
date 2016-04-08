@@ -3868,6 +3868,9 @@ if obj == h.MI.Channels_List
         end
     end
 end
+%%% reenable callbacks
+h.MI.Channels_List.CellEditCallback = @MI_Channels_Functions;
+h.MI.Channels_List.CellSelectionCallback = @MI_Channels_Functions;
 %% Update
 LSUserValues(1);
 %%% Updates channels
@@ -3878,9 +3881,6 @@ end
 %%% Updates plots
 Update_Display([],[],4:5);
 
-%%% reenable callbacks
-h.MI.Channels_List.CellEditCallback = @MI_Channels_Functions;
-h.MI.Channels_List.CellSelectionCallback = @MI_Channels_Functions;
 
 function MI_Channels_Functions_old(obj,ed)
 global UserValues PamMeta

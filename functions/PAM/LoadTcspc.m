@@ -534,7 +534,6 @@ switch (Type)
         %%% General FileInfo
         FileInfo.NumberOfFiles=numel(FileName);
         FileInfo.Type=Type;
-        FileInfo.MI_Bins=2^16;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;   
         %%% Initializes microtime and macotime arrays
@@ -552,6 +551,7 @@ switch (Type)
             FileInfo.Pixels = FileInfo.Lines^2;
             FileInfo.ScanFreq = FileInfo.Lines/FileInfo.ImageTime;
             FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
+            FileInfo.MI_Bins = Header.MI_Bins;
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
             for j = 1:4               
                if any(UserValues.Detector.Rout(UserValues.Detector.Det == j) == 1)

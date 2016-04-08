@@ -8,6 +8,7 @@
 #include <fstream>
 #include "time.h"
 #include "matrix.h"
+#include <inttypes.h>
 // #include <omp.h>
 // #include <process.h>
 // #include <windows.h>
@@ -89,7 +90,7 @@ void Simulate_Diffusion(
     
     for (i=0; i<SimTime; i++) 
     {
-        if (i % DiffusionStep == 0) { // Only calculate diffusion at larger time intervals
+        if ( (i % (__int64_t)DiffusionStep) == 0) { // Only calculate diffusion at larger time intervals
             Invalid_Pos = true;
             while (Invalid_Pos)
             {
@@ -216,7 +217,7 @@ void Simulate_Diffusion(
         
         /// Dynamic step //////////////////////////////////////////////////
         if (n_states > 1) {
-            if (i % DynamicStep == 0) { // Only calculate dynamic transitions at larger time intervals
+            if ( (i % (__int64_t)DynamicStep) == 0) { // Only calculate dynamic transitions at larger time intervals
                 // calculate cumulative probability from outgoing rates of current state
                 for (s=0;s<n_states;s++) {
                     TRANS[s] = k_dyn[n_states*state+s];
@@ -224,7 +225,7 @@ void Simulate_Diffusion(
                 for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
                 prob = equal_dist(mt);
                 for (s=0; s<n_states; s++) /// Determines transition according to rates
-                { if (prob<=TRANS[s]) {break;} } 
+                { if (prob<=TRANS[s]) {break;}  } 
                 state = s; // Update State
             }
         }
@@ -267,8 +268,6 @@ void Simulate_Diffusion(
                         binomial_distribution<__int64_t> binomial(1, Ex);
                         if ((double) binomial(mt))/// Generates photons with probability
                         {   
-                            Microtimes[NPhotons[0]] = (unsigned short)j*16384; /// PIE Laser pulse for microtime
-                            
                             ///////////////////////////////////////////////
                             //// Emitting dye (FRET) //////////////////////
                             ///////////////////////////////////////////////                            
@@ -277,7 +276,9 @@ void Simulate_Diffusion(
                             {
                                 for (p=m; p<4; p++) /// Extracts current FRET rates
                                 { 
-                                    if (Active[p]) { FRET[p] = Rates[16*state+4*m+p]; } /// Dye is active
+                                    if (Active[p]) { FRET[p] = Rates[16*state+4*m+p];
+                                    //printf("State: %i, From Dye: %i, To Dye: %i, Rate: %f\n",state,m,p,FRET[p]);
+                                    } /// Dye is active
                                     else { FRET[p] = 0; } /// Dye is not active
                                 } 
                                 for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
@@ -290,7 +291,9 @@ void Simulate_Diffusion(
                                 
                                 if ((FRET[3]-1) > 1E-4) /// FRET is feas?ble
                                 {
-                                    for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; }  /// Calculates cummulative FRET Probabilites
+                                    for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; 
+                                    //printf("State: %i, From Dye: %i, To Dye: %i, Prob: %f\n",state,m,p,FRET[p]);
+                                    }  /// Calculates cummulative FRET Probabilites
 
                                     prob = equal_dist(mt);
                                     for (p=m; p<4; p++) /// Determines em. dye according to rates
@@ -308,7 +311,10 @@ void Simulate_Diffusion(
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
                             // convolute Microtime with IRF
                             Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
+                            Microtimes[NPhotons[0]] += (unsigned short)(j*(int)(MI_Bins/4)); /// PIE Laser pulse for microtime
                             if (Microtimes[NPhotons[0]] < 0) {Microtimes[NPhotons[0]] = 0;};
+                            // Microtime checkup
+                            Microtimes[NPhotons[0]] %= MI_Bins;
                             
                             if (BlP[m] > 0.0) /// If bleaching is enabled
                             {

@@ -1784,6 +1784,8 @@ Freq = str2double(h.Sim_Freq.String)*1000;
 Simtime = int64(str2double(h.Sim_Time.String)*Freq); 
 %%% Frames
 Frames = str2double(h.Sim_Frames.String);
+%%% Microtime bins
+MI_Bins = 2^13;
 
 %%% Pixel/Line info
 Step(1) = str2double(h.Sim_Size{1}.String); 
@@ -1832,7 +1834,7 @@ for i = 1:numel(SimData.Species);
     end
     %%% Lifetime of the colors
     if SimData.Species(i).UseLT
-        LT = SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*2^16;
+        LT = SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*MI_Bins;
     else
         LT = [0 0 0 0];
     end
@@ -1898,8 +1900,7 @@ for i = 1:numel(SimData.Species);
             end
     end
     
-    
-    
+
     %%% Species specific parameters for used colors
     for j = 1:SimData.Species(i).Color
         wr(j) = SimData.Species(i).wr(j);
@@ -1912,6 +1913,80 @@ for i = 1:numel(SimData.Species);
     Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
     Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
     Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
+    
+    new = 0;
+    %%% only used if new is set to 1
+    IRFparams = [100,25];
+    aniso_params = repmat([0.4,0.1, LT(1)/10, 1],1,4)';
+    DiffStep = 1;
+            
+    type = 2;
+    switch type
+        case 1
+            %%% Parameters for 2color 2 state dynamic simulation
+            k12 = 2000/Freq; %2 ms^-1
+            k21 = 3000/Freq; %3 ms^-1
+
+    
+            %%% Set dynamic step such that p_max = 0.1
+            DynamicStep = round(0.1/max([k12 k21]));
+            p12 = k12*DynamicStep;
+            p21 = k21*DynamicStep;
+
+            n_states = 2;
+            k_dyn = [1-p12, p12,...
+                     p21, 1-p21];
+
+            initial_state = 0;
+            if new == 1
+                FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
+                FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
+                FRET = [FRET1(:); FRET2(:)];
+            end
+        case 2
+            %%% Parameters for 3color 2 state dynamic simulation
+            k12 = 100*1E3/Freq; %2 ms^-1
+            k21 = 100*1E3/Freq; %3 ms^-1
+
+            DiffStep = 1;
+            %%% Set dynamic step such that p_max = 0.1
+            DynamicStep = round(0.1/max([k12 k21]));
+            p12 = k12*DynamicStep;
+            p21 = k21*DynamicStep;
+
+            n_states = 2;
+            k_dyn = [1-p12, p12,...
+                     p21, 1-p21];
+
+            initial_state = 0;
+
+            R0 = 50;
+            RGR1 = 55;
+            RGR2 = 70;
+            RBG1 = 45;
+            RBG2 = 70;
+            RBR1 = 65;
+            RBR2 = 45;
+
+            kGR1 = (R0/RGR1)^6;
+            kGR2 = (R0/RGR2)^6;
+            kBG1 = (R0/RBG1)^6;
+            kBG2 = (R0/RBG2)^6;
+            kBR1 = (R0/RBR1)^6;
+            kBR2 = (R0/RBR2)^6;
+            
+            if new == 1
+                FRET1 = [1,0,0,0;...
+                         kBG1,1,0,0;...
+                         kBR1,kGR1,1,0;...
+                         0,0,0,0];   
+                FRET2 = [1,0,0,0;...
+                         kBG2,1,0,0;...
+                         kBR2,kGR2,1,0;...
+                         0,0,0,0];
+                FRET = [FRET1(:); FRET2(:)];
+            end
+    end
     
     fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
     fclose(fid);
@@ -1967,7 +2042,6 @@ for i = 1:numel(SimData.Species);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            new = 0;
             if (new == 0)
                 [Photons,  MI, Channel, Pos] = DifSim(...
                     Frametime, BS,... General Parameters
@@ -1980,73 +2054,7 @@ for i = 1:numel(SimData.Species);
                     FRET, Cross,... %%% Relative FRET and Crosstalk rates
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
-            elseif new == 1;
-                IRFparams = [1000,100];
-                MI_Bins = 2^16;
-                aniso_params = repmat([0.4,0.1, LT(1)/10, 1],1,4)';
-                
-                type = 1;
-                switch type
-                    case 1
-                        %%% Parameters for 2color 2 state dynamic simulation
-                        k12 = 2000/Freq; %2 ms^-1
-                        k21 = 3000/Freq; %3 ms^-1
-                        
-                        DiffStep = 1;
-                        %%% Set dynamic step such that p_max = 0.1
-                        DynamicStep = round(0.1/max([k12 k21]));
-                        p12 = k12*DynamicStep;
-                        p21 = k21*DynamicStep;
-                        
-                        n_states = 2;
-                        k_dyn = [1-p12, p21,...
-                                 p12, 1-p21];
-                        if exist('final_state','var')
-                            initial_state  = final_state;
-                        else
-                            initial_state = 0;
-                        end
-
-                        FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
-                        FRET2 = [1,0,0,0;0,1,0,0;0,0,0,0;0,0,0,0];
-                        FRET = [FRET1(:); FRET2(:)];
-                    case 2
-                        %%% Parameters for 2color 2 state dynamic simulation
-                        k12 = 2000/Freq; %2 ms^-1
-                        k21 = 3000/Freq; %3 ms^-1
-                        
-                        DiffStep = 1;
-                        %%% Set dynamic step such that p_max = 0.1
-                        DynamicStep = round(0.1/max([k12 k21]));
-                        p12 = k12*DynamicStep;
-                        p21 = k21*DynamicStep;
-                        
-                        n_states = 2;
-                        k_dyn = [1-p12, p21,...
-                                 p12, 1-p21];
-                             
-                        if exist('final_state','var')
-                            initial_state  = final_state;
-                        else
-                            initial_state = 0;
-                        end
-                        %EGR = 0.75
-                        %EBG' = 0.25
-                        %EBR' = 0.5;
-                        FRET1 = [1,0,0,0;...
-                                 1,1,0,0;...
-                                 2,3,1,0;...
-                                 0,0,0,0];
-                        %EGR = 0.2
-                        %EBG' = 0.75
-                        %EBR' = 0.125;     
-                        FRET1 = [1,0,0,0;...
-                                 6,1,0,0;...
-                                 1,0.25,1,0;...
-                                 0,0,0,0];
-                        FRET = [FRET1(:); FRET2(:)];
-                end
-                
+            elseif new == 1
                 [Photons,  MI, Channel, Pol, Pos, final_state] = DifSim_ani_mac(...
                     Frametime, BS,... General Parameters
                     Scan_Type, Step, Pixel, ScanTicks, DiffStep,... Scanning Parameters 
@@ -2123,7 +2131,7 @@ if h.Sim_UseNoise.Value
                end
            end
            Noise (Noise>Simtime) = []; %#ok<AGROW>
-           MI_Noise = uint16(2^16*rand(numel(Noise),1));
+           MI_Noise = uint16(MI_Bins*rand(numel(Noise),1));
            
            Sim_Photons{i} = [Sim_Photons{i}; Noise];
            Sim_MI{i} = [Sim_MI{i}; MI_Noise];
@@ -2163,6 +2171,7 @@ switch h.Sim_Save.Value
         Header.FrameTime = double(Simtime/Frames);
         Header.Lines = Pixel(2);
         Header.Freq = Freq;
+        Header.MI_Bins = MI_Bins;
         Header.Info.Species(:) = SimData.Species(:);
         Header.Info.General = SimData.General(h.Sim_File_List.Value);
         for i=1:4
