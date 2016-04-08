@@ -4028,10 +4028,10 @@ switch BurstData{file}.BAMethod
                 PDA.Corrections = BurstData{file}.Corrections;
                 PDA.Background = BurstData{file}.Background;
                 %%% change corrections with values for selected species
-                switch obj
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_GR
+                switch choice
+                    case 2
                         %%% keep as is
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_BG
+                    case 3
                         PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BG;
                         PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BG;
                         PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBG;
@@ -4041,7 +4041,7 @@ switch BurstData{file}.BAMethod
                         PDA.Background.Background_GRperp = PDA.Background.Background_BGperp;
                         PDA.Background.Background_RRpar = PDA.Background.Background_GGpar;
                         PDA.Background.Background_RRperp = PDA.Background.Background_GGperp;
-                    case h.ExportSpeciesToPDA_2C_for3CMFD_BR
+                    case 4
                         PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BR;
                         PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BR;
                         PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBR;

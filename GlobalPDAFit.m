@@ -1524,10 +1524,10 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
     maxN = 0;
     for i  = find(PDAMeta.Active)'
         %%% find valid bins (chosen by thresholds min/max)
-        valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
+        PDAMeta.valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...
             ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String));
         %%% find the maxN of all data
-        maxN = max(maxN, max((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i}))));
+        maxN = max(maxN, max((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}))));
     end
 
     for i  = find(PDAMeta.Active)'
@@ -1591,11 +1591,15 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
                 % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
                 pause(0.2)
-                PNF = binopdf(NF, N, eps);
+                tic;
+                PNF = calc_PNF(NF(:),N(:),eps(:),numel(NF));
+                PNF = reshape(PNF,size(eps,1),size(eps,2),size(eps,3));
+                toc
+                %PNF = binopdf(NF, N, eps);
                 % binopdf(X,N,P) returns the binomial probability density function with parameters N and P at the values in X.
             end
             % histogram NF+NG into maxN+1 bins
-            PN = histcounts((PDAData.Data{i}.NF(valid{i})+PDAData.Data{i}.NG(valid{i})),1:(maxN+1));
+            PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
             % assign current file to global cell
             PDAMeta.E_grid{i} = E_grid;
             PDAMeta.R_grid{i} = R_grid;
@@ -1848,7 +1852,7 @@ if sum(PDAMeta.Global) == 0
              fitpar(end) = [];
         end
         % Convert amplitudes to fractions
-        fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+        % fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
         %%% if sigma is fixed at fraction of, change its value here
         if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
             fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
@@ -2004,6 +2008,8 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
+h.SettingsTab.DynamicModel = 0;
+
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -2011,8 +2017,12 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(3:3:end) = fraction.*fitpar(2:3:end);
 end
 
-%%% normalize Amplitudes
-fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+if ~h.SettingsTab.DynamicModel
+    %%% normalize Amplitudes
+    fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+end
+
+
 
 %%% create individual histograms
 hFit_Ind = cell(5,1);
@@ -2029,13 +2039,47 @@ for c = PDAMeta.Comp{i}
         %%% Recalculate the P array of this file
         PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
     end
-    [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-    P_eps = fitpar(3*c-2).*Pe;
-    hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-    for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-        hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+    if ~h.SettingsTab.DynamicModel %%% static model
+        [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        P_eps = fitpar(3*c-2).*Pe;
+        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+        end
     end
 end
+
+if h.SettingsTab.DynamicModel %%% dynamic model
+    %%% calculate PofT
+    dT = 1;
+    N = 100;
+    k1 = fitpar(3*1-2);
+    k2 = fitpar(3*2-2);
+    PofT = calc_dynamic_distribution(dT,N,k1,k2);
+    %%% generate P(eps) distribution for both components
+    PE = cell(2,1);
+    for c = 1:2
+        PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+    end
+    %%% calculate mixtures
+    Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}));
+    Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
+    
+    %%% combine mixtures, weighted with PofT (probability to see a certain
+    %%% combination)
+    hFit_Ind = cell(numel(PofT),1);
+    for t = 1:numel(PofT)
+        hFit_Ind{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+            %%% construct sum of histograms
+            hFit_Ind{t} = hFit_Ind{t} + Peps(k,t).*PDAMeta.P{i,k};
+        end
+        %%% weight by probability of occurence
+        hFit_Ind{t} = PofT(t)*hFit_Ind{t};
+    end
+end
+
+%%% Combine histograms
 hFit = sum(horzcat(hFit_Ind{:}),2)';
 
 %%% Calculate Chi2
@@ -2242,6 +2286,9 @@ if h.SettingsTab.Use_Brightness_Corr.Value
         end
 end
     
+NG = PDAData.Data{file}.NG(PDAMeta.valid{file});
+NF = PDAData.Data{file}.NF(PDAMeta.valid{file});
+
 steps = 5;
 L = cell(5,1); %%% Likelihood per Gauss
 for j = PDAMeta.Comp{file}
@@ -2254,17 +2301,17 @@ for j = PDAMeta.Comp{file}
     epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
     
     %%% Calculate the vector of likelihood values
-    P = eval_prob_2c_bg(PDAData.Data{file}.NG,PDAData.Data{file}.NF,...
+    P = eval_prob_2c_bg(NG,NF,...
         PDAMeta.NBG{file},PDAMeta.NBR{file},...
         PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
         epsGR');
-    P = log(P) + repmat(log(PR'),numel(PDAData.Data{file}.NG),1);
+    P = log(P) + repmat(log(PR'),numel(NG),1);
     Lmax = max(P,[],2);
     P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
     
     if h.SettingsTab.Use_Brightness_Corr.Value
         %%% Add Brightness Correction Probabilty here
-        P = P + log(PN_scaled{j}(PDAData.Data{file}.NG + PDAData.Data{file}.NF));
+        P = P + log(PN_scaled{j}(NG + NF));
     end
     %%% Treat case when all burst produced zero probability
     P(isnan(P)) = -Inf;
@@ -2277,7 +2324,7 @@ PA = fitpar(PDAMeta.Comp{file},1);
 
 
 L = horzcat(L{:});
-L = L + repmat(log(PA'),numel(PDAData.Data{file}.NG),1);
+L = L + repmat(log(PA'),numel(NG),1);
 Lmax = max(L,[],2);
 L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
 %%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
