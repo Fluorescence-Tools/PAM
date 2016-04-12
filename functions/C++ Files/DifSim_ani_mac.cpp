@@ -8,7 +8,7 @@
 #include <fstream>
 #include "time.h"
 #include "matrix.h"
-#include <inttypes.h>
+
 // #include <omp.h>
 // #include <process.h>
 // #include <windows.h>
