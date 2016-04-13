@@ -2060,7 +2060,7 @@ end
 
 if h.SettingsTab.DynamicModel.Value %%% dynamic model
     %%% calculate PofT
-    dT = PDAData.timebin(file)*1E3; % time bin in milliseconds
+    dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
     N = 100;
     k1 = fitpar(3*1-2);
     k2 = fitpar(3*2-2);
