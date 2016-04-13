@@ -2060,7 +2060,7 @@ end
 
 if h.SettingsTab.DynamicModel.Value %%% dynamic model
     %%% calculate PofT
-    dT = 1;
+    dT = PDAData.timebin(file)*1E3; % time bin in milliseconds
     N = 100;
     k1 = fitpar(3*1-2);
     k2 = fitpar(3*2-2);
@@ -3460,6 +3460,7 @@ PofT = PofT'./sum(PofT);
 function PofT = calcPofT(k1,k2,T1,T2,dt)
 %%% calculates probability for cumulative time spent in state 1(T1) to lie
 %%% in range T1-dt, T1+dt based on formula from Seidel paper
+%%% besseli is the MODIFIED bessel function of first kind
 PofT = (...
        (2*k1*k2/(k1+k2))*besseli(0,2*sqrt(k1*k2*T1*T2)) + ...
        ((k2*T1+k1*T2)/(k1+k2))*(sqrt(k1*k2)/sqrt(T1*T2))*...
