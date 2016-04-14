@@ -1762,8 +1762,13 @@ if sum(PDAMeta.Global) == 0
         if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
             fitpar(end+1) = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
             fixed(end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
-            LB(end+1) = 0;
-            UB(end+1) = 1;
+            if h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value %%% Value should be fixed
+                LB(end+1) = fitpar(end);
+                UB(end+1) = fitpar(end);
+            else
+                LB(end+1) = 0;
+                UB(end+1) = 1;
+            end
         end 
         % Fixed for Patternsearch and fmincon
         if sum(fixed) == 0 %nothing is Fixed
@@ -2081,10 +2086,10 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
     %%% calculate mixtures with brightness correction (always active!)
     Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
     Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
-    %%% for some reason Peps becomes "ripply" at the extremes... Correct by
-    %%% replacing with ideal distributions
+    %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
     Peps(:,end) = PE{1};
     Peps(:,1) = PE{2};
+    %%% normalize
     Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
     %%% combine mixtures, weighted with PofT (probability to see a certain
     %%% combination)
