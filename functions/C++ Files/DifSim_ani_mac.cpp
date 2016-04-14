@@ -324,27 +324,27 @@ void Simulate_Diffusion(
                                 if (LT[m]>0)
                                 {
                                     if (linkerlength == 0)
-                                        {LT_RATE = FRET[3];}
+                                    {LT_RATE = FRET[3];}
                                     else if (linkerlength > 0)// redraw rates according to linker length distribution
-                                        {
+                                    {
                                         for (p=m; p<4; p++) /// Extracts current FRET rates
-                                            { 
-                                                if (Active[p]) {
-                                                    if (R0[16*state+4*m+p] > 0) { // only recalculate for cross-color elements
-                                                        normal_distribution<double> normal_dist(R[16*state+4*m+p], linkerlength); //mu = Dist, sigma = linkerlength
-                                                        double R_LT = normal_dist(mt);
-                                                        //printf("Redrawn distance for linker fluctuations: %f (State %i)\n",R_LT,state);
-                                                        FRET[p] = pow(R0[16*state+4*m+p]/R_LT,6.0);
-                                                        }
-                                                    else {FRET[p] =  Rates[16*state+4*m+p];}  
+                                        {
+                                            if (Active[p]) {
+                                                if (R0[16*state+4*m+p] > 0) { // only recalculate for cross-color elements
+                                                    normal_distribution<double> normal_dist(R[16*state+4*m+p], linkerlength); //mu = Dist, sigma = linkerlength
+                                                    double R_LT = normal_dist(mt);
+                                                    //printf("Redrawn distance for linker fluctuations: %f (State %i)\n",R_LT,state);
+                                                    FRET[p] = pow(R0[16*state+4*m+p]/R_LT,6.0);
                                                 }
-                                                else { FRET[p] = 0; } 
-                                                //printf("State: %i, From Dye: %i, To Dye: %i, Rate: %f\n",state,m,p,FRET[p]);
-                                            } 
-                                            for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
+                                                else {FRET[p] =  Rates[16*state+4*m+p];}
+                                            }
+                                            else { FRET[p] = 0; }
+                                            //printf("State: %i, From Dye: %i, To Dye: %i, Rate: %f\n",state,m,p,FRET[p]);
+                                        }
+                                        for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
                                         LT_RATE = FRET[3];
                                         //printf("State: %i Lifetime Rate: %f\n",state, LT_RATE);
-                                        }   
+                                    }
                                     geometric_distribution<unsigned short> exponential(LT_RATE/LT[m]); /// FRET modified exponential distribution for lifetime
                                     Microtimes[NPhotons[0]] += exponential(mt); /// Convolutes with lifetime of current dye
                                 }

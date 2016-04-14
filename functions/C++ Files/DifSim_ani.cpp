@@ -24,7 +24,7 @@ void Simulate_Diffusion(
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
         double *LT, double *aniso_param,
-        double *Rates, double *Cross, 
+        double *Dist, double *sigmaDist, double linkerlength, double *R0, int heterogeneity_step, double *Cross, 
         const int n_states, double *k_dyn, int initial_state, int DynamicStep,
         double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64 *NPhotons, unsigned char *Polarization, int *final_state,
         unsigned long Time,
@@ -43,6 +43,7 @@ void Simulate_Diffusion(
     double *TRANS = new double [n_states];
     double CROSS[4];
     double prob;
+    double LT_RATE;
     
     /// Random number generator
 	mt19937 mt; // initialize mersenne twister engine
@@ -67,6 +68,26 @@ void Simulate_Diffusion(
         {
             r_dummy = (aniso_param[4*j+0]-aniso_param[4*j+1])*exp(-i/aniso_param[4*j+2])+aniso_param[4*j+1];
             p_par[MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[4*j+3]*(1-r_dummy));
+        }
+    }
+    
+    // Initialize interdye distances to center distances
+    double *R = new double [16*n_states];
+    for (j=0;j<16*n_states;j++) {R[j] = Dist[j];}
+    // initialize rates
+    double *Rates = new double [16*n_states];
+    for (j=0;j<16*n_states;j++) {
+        if (R0[j] > 0) // for no FRET R0 should be 0
+        {
+            Rates[j] = pow(R0[j]/R[j],6.0);
+            //printf("Rate %i: %f , R %f, R0 %f\n",j,Rates[j],R[j],R0[j]);
+        }
+        else {Rates[j] = 0;}
+    }
+    // make identity matrix for FRET rates donor->donor
+    for (s=0;s<n_states;s++) {
+        for (j=0;j<4;j++) {
+            Rates[16*s+4*j+j] = 1;
         }
     }
     
@@ -230,6 +251,25 @@ void Simulate_Diffusion(
             }
         }
         
+        /// Heterogeneity step - Used for simulating conformational heterogeneity (i.e. sigma in PDA) ///
+        if (heterogeneity_step > 0) // only execute if heterogeneity step is enabled
+        {
+            if ( (i % (__int64)heterogeneity_step) == 0) // only evaluate at fixed time interval
+            { 
+                // redraw distances according to distribution
+                for (s=0;s<16*n_states;s++) {
+                    if (sigmaDist[s] > 0) // only calculate for relevant distances
+                    {
+                        normal_distribution<double> normal_dist(Dist[s], sigmaDist[s]); //mu = Dist, sigma = sigmaDist
+                        R[s] = normal_dist(mt);
+                        //printf("State: %i Redrawn distance: %f\n",state,R[s]);
+                        // recalculate rates
+                        Rates[s] = pow((R0[s]/R[s]),6.0);
+                    }
+                }
+            }    
+        }
+        
         ///////////////////////////////////////////////////////////////////
         /// Photon generation /////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////
@@ -285,6 +325,28 @@ void Simulate_Diffusion(
                                 
                                 if (LT[m]>0)
                                 {
+                                    if (linkerlength == 0)
+                                    {LT_RATE = FRET[3];}
+                                    else if (linkerlength > 0)// redraw rates according to linker length distribution
+                                    {
+                                        for (p=m; p<4; p++) /// Extracts current FRET rates
+                                        {
+                                            if (Active[p]) {
+                                                if (R0[16*state+4*m+p] > 0) { // only recalculate for cross-color elements
+                                                    normal_distribution<double> normal_dist(R[16*state+4*m+p], linkerlength); //mu = Dist, sigma = linkerlength
+                                                    double R_LT = normal_dist(mt);
+                                                    //printf("Redrawn distance for linker fluctuations: %f (State %i)\n",R_LT,state);
+                                                    FRET[p] = pow(R0[16*state+4*m+p]/R_LT,6.0);
+                                                }
+                                                else {FRET[p] =  Rates[16*state+4*m+p];}
+                                            }
+                                            else { FRET[p] = 0; }
+                                            //printf("State: %i, From Dye: %i, To Dye: %i, Rate: %f\n",state,m,p,FRET[p]);
+                                        }
+                                        for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
+                                        LT_RATE = FRET[3];
+                                        //printf("State: %i Lifetime Rate: %f\n",state, LT_RATE);
+                                    }
                                     geometric_distribution<unsigned short> exponential(FRET[3]/LT[m]); /// FRET modified exponential distribution for lifetime
                                     Microtimes[NPhotons[0]] += exponential(mt); /// Convolutes with lifetime of current dye
                                 }
@@ -372,7 +434,7 @@ void Simulate_Diffusion(
         }
     }
     final_state[0] = state;
-    delete p_par, TRANS;
+    delete p_par, TRANS, R, Rates;
 }
 ///////////////////////////////////////////////////////////////////////////
 /// Defines input parameter and function to be used ///////////////////////
@@ -380,8 +442,8 @@ void Simulate_Diffusion(
 ///////////////////////////////////////////////////////////////////////////
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {    
-    if(nrhs!=30)
-    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","30 inputs required."); }
+    if(nrhs!=34)
+    { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","34 inputs required."); }
     if (nlhs!=6)
     { mexErrMsgIdAndTxt("tcPDA:eval_prob_3c_bg:nrhs","6 outputs required."); }
     
@@ -414,19 +476,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *BlP = mxGetPr(prhs[18]);
     double *LT = mxGetPr(prhs[19]);
     double *aniso_param = mxGetPr(prhs[20]);
-    double *Rates =  mxGetPr(prhs[21]);
-    double *Cross = mxGetPr(prhs[22]);
+    double *Dist =  mxGetPr(prhs[21]);
+    double *sigmaDist = mxGetPr(prhs[22]);
+    double linkerlength = mxGetScalar(prhs[23]);
+    double *R0 = mxGetPr(prhs[24]);
+    int heterogeneity_step = mxGetScalar(prhs[25]);
+    double *Cross = mxGetPr(prhs[26]);
     
     // Dynamic Parameters
-    const int n_states = mxGetScalar(prhs[23]);
-    double *k_dyn = mxGetPr(prhs[24]);
-    int initial_state = mxGetScalar(prhs[25]);
-    int DynamicStep = mxGetScalar(prhs[26]);
+    const int n_states = mxGetScalar(prhs[27]);
+    double *k_dyn = mxGetPr(prhs[28]);
+    int initial_state = mxGetScalar(prhs[29]);
+    int DynamicStep = mxGetScalar(prhs[30]);
     
-    unsigned long Time = mxGetScalar(prhs[27]);
+    unsigned long Time = mxGetScalar(prhs[31]);
     
-    int Map_Type = mxGetScalar(prhs[28]); 
-    double *Map = mxGetPr(prhs[29]);    
+    int Map_Type = mxGetScalar(prhs[32]); 
+    double *Map = mxGetPr(prhs[33]);    
     
 
     double *Macrotimes;
@@ -451,7 +517,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Wr, Wz, ShiftX, ShiftY, ShiftZ, // Focus parameters
         ExP, DetP, BlP, // Excitation, Detection and Bleching Probabilities
         LT, aniso_param, // Lifetime, Anisotropy
-        Rates, Cross, // Parameter containing FRET/Crosstalk rates
+        Dist, sigmaDist, linkerlength, R0, heterogeneity_step, Cross, // Parameter containing FRET/Crosstalk rates
         n_states, k_dyn, initial_state, DynamicStep, // Dynamic parameters
         Macrotimes, Microtimes, Channel, NPhotons, Polarization, final_state,// Output parameters
         Time, // Additional random seed value
