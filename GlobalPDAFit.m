@@ -2073,14 +2073,18 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
     end
     %%% read out brightnesses of species
     Q = ones(2,1);
-    if h.SettingsTab.Use_Brightness_Corr.Value
+    %if h.SettingsTab.Use_Brightness_Corr.Value
         for c = 1:2
             Q(c) = calc_relative_brightness(fitpar(3*c-1),i);
         end
-    end
-    %%% calculate mixtures
+    %end
+    %%% calculate mixtures with brightness correction (always active!)
     Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
     Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
+    %%% for some reason Peps becomes "ripply" at the extremes... Correct by
+    %%% replacing with ideal distributions
+    Peps(:,end) = PE{1};
+    Peps(:,1) = PE{2};
     Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
     %%% combine mixtures, weighted with PofT (probability to see a certain
     %%% combination)
