@@ -2035,20 +2035,21 @@ end
 
 %%% create individual histograms
 hFit_Ind = cell(5,1);
-for c = PDAMeta.Comp{i}
-    if h.SettingsTab.Use_Brightness_Corr.Value
-        %%% If brightness correction is to be performed, determine the relative
-        %%% brightness based on current distance and correction factors
-        Qr = calc_relative_brightness(fitpar(3*c-1),i);
-        %%% Rescale the PN;
-        PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
-        %%% fit PN_scaled to match PN of file
-        PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
-        PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
-        %%% Recalculate the P array of this file
-        PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
-    end
-    if ~h.SettingsTab.DynamicModel.Value %%% static model
+if ~h.SettingsTab.DynamicModel.Value %%% static model
+    for c = PDAMeta.Comp{i}
+        if h.SettingsTab.Use_Brightness_Corr.Value
+            %%% If brightness correction is to be performed, determine the relative
+            %%% brightness based on current distance and correction factors
+            Qr = calc_relative_brightness(fitpar(3*c-1),i);
+            %%% Rescale the PN;
+            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
+            %%% fit PN_scaled to match PN of file
+            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
+            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
+            %%% Recalculate the P array of this file
+            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
+        end
+
         [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
         P_eps = fitpar(3*c-2).*Pe;
         hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
@@ -2070,8 +2071,15 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
     for c = 1:2
         PE{c} = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
     end
+    %%% read out brightnesses of species
+    Q = ones(2,1);
+    if h.SettingsTab.Use_Brightness_Corr.Value
+        for c = 1:2
+            Q(c) = calc_relative_brightness(fitpar(3*c-1),i);
+        end
+    end
     %%% calculate mixtures
-    Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}));
+    Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
     Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
     Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
     %%% combine mixtures, weighted with PofT (probability to see a certain

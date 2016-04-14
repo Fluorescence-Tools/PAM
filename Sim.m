@@ -1765,10 +1765,10 @@ function Do_PointSim(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
 
-Pool = gcp;
-if isempty(Pool)
-    parpool('local');
-end
+% Pool = gcp;
+% if isempty(Pool)
+%     parpool('local');
+% end
 
 %%% ScanType
 Scan_Type = h.Sim_Scan.Value;
@@ -1918,7 +1918,7 @@ for i = 1:numel(SimData.Species);
     Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
     Photons42 = cell(NoP,1); MI42 = cell(NoP,1);
     
-    new = 0;
+    new = 1;
     %%% only used if new is set to 1
     IRFparams = [100,25];
     aniso_params = repmat([0.4,0.1, LT(1)/10, 1],1,4)';
@@ -1937,11 +1937,29 @@ for i = 1:numel(SimData.Species);
             p12 = k12*DynamicStep;
             p21 = k21*DynamicStep;
 
-            n_states = 2;
+            n_states = 1;
             k_dyn = [1-p12, p12,...
                      p21, 1-p21];
 
-            final_state = randi(2,NoP,1)-1;
+            final_state = randi(n_states,NoP,1)-1;
+            
+            %%% For sigmaDist simulations, we need to provide now:
+            %%% Distances (only nonzero for cross-color elements!!!)
+            %%% sigma Distances (only nonzero for cross-color elements!!!)
+            %%% R0 (only non-zero for cross-color elements!!!)
+            %%% Step for recalculation
+            %%% linkerlength (one value only for now!)
+            Dist = SimData.Species(i).R;
+            R0 = SimData.Species(i).R0;
+            Dist(R0 == 0) = 0;
+            heterogeneity_step = round(10E-3*Freq*1E3);
+            linkerlength = 5;
+            Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
+            Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
+            Dist = [Dist1(:); Dist2(:)];
+            sigmaDist = Dist./10;
+            R0 = [R0(:); R0(:)];
+            R0(Dist == 0) = 0;
             if new == 1
                 FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
                 FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
@@ -2006,7 +2024,7 @@ for i = 1:numel(SimData.Species);
         'ExecutionMode','fixedDelay');
     start(Update)
     
-    parfor j = 1:NoP
+    for j = 1:NoP
         %%% Generates starting position
         Pos = (BS-1).*rand(1,3);    
         
@@ -2068,7 +2086,7 @@ for i = 1:numel(SimData.Species);
                     dX,dY,dZ,... Focus shift parameters
                     ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
                     LT,aniso_params,... %%% Lifetime of the different coloqwdfdsfs
-                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                    Dist, sigmaDist, linkerlength, R0, heterogeneity_step, Cross,... %%% Relative FRET and Crosstalk rates
                     n_states, k_dyn, final_state(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
