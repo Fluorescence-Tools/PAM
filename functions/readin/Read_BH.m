@@ -46,6 +46,12 @@ switch Card
             disp(['Empty file: ', FileName])
             pause(1)
             close(h)
+            MT = {[]};
+            MI = {[]};
+            PLF={[],[],[]};
+            ClockRate = [];
+            SyncRate = [];
+            return;
         else
             %the sync rate is contained in the first 3 bytes of the first byte
             %record in units of 100 ps
