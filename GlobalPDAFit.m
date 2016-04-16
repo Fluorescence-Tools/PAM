@@ -19,6 +19,10 @@ function GlobalPDAFit(~,~)
 %
 %   2015 - FAB Lab Munich - Don C. Lamb
 
+%%% TO DO:
+%%% Fix Brightness correction
+%%% Add Donor-only population (i.e. de = 0!)
+
 global UserValues PDAMeta PDAData
 
 h.GlobalPDAFit=findobj('Tag','GlobalPDAFit');
