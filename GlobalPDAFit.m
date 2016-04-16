@@ -2044,30 +2044,6 @@ end
 
 %%% create individual histograms
 hFit_Ind = cell(5,1);
-if ~h.SettingsTab.DynamicModel.Value %%% static model
-    for c = PDAMeta.Comp{i}
-        if h.SettingsTab.Use_Brightness_Corr.Value
-            %%% If brightness correction is to be performed, determine the relative
-            %%% brightness based on current distance and correction factors
-            Qr = calc_relative_brightness(fitpar(3*c-1),i);
-            %%% Rescale the PN;
-            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
-            %%% fit PN_scaled to match PN of file
-            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
-            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
-            %%% Recalculate the P array of this file
-            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
-        end
-
-        [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-        P_eps = fitpar(3*c-2).*Pe;
-        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-        end
-    end
-end
-
 if h.SettingsTab.DynamicModel.Value %%% dynamic model
     %%% calculate PofT
     dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
@@ -2126,6 +2102,27 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
 else %%% no dynamic, just combine
+    for c = PDAMeta.Comp{i}
+        if h.SettingsTab.Use_Brightness_Corr.Value
+            %%% If brightness correction is to be performed, determine the relative
+            %%% brightness based on current distance and correction factors
+            Qr = calc_relative_brightness(fitpar(3*c-1),i);
+            %%% Rescale the PN;
+            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
+            %%% fit PN_scaled to match PN of file
+            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
+            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
+            %%% Recalculate the P array of this file
+            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
+        end
+
+        [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+        P_eps = fitpar(3*c-2).*Pe;
+        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+        end
+    end
     %%% Combine histograms
     hFit = sum(horzcat(hFit_Ind{:}),2)';
 end
@@ -2163,7 +2160,7 @@ Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % model for normal histogram library fitting (global)
 function [mean_chi2] = PDAHistogramFit_Global(fitpar)
-global PDAMeta
+global PDAMeta PDAData
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% Aborts Fit
@@ -2195,8 +2192,10 @@ for j=1:sum(PDAMeta.Active)
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
     
-    %%% normalize Amplitudes
-    P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
+    if ~h.SettingsTab.DynamicModel.Value
+        %%% normalize Amplitudes
+        P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
+    end
     
     %%% if sigma is fixed at fraction of, change its value here
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -2205,15 +2204,74 @@ for j=1:sum(PDAMeta.Active)
 
     %%% create individual histograms
     hFit_Ind = cell(5,1);
-    for c = PDAMeta.Comp{i}
-        [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
-        P_eps = P(3*c-2).*Pe;
-        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+    if h.SettingsTab.DynamicModel.Value %%% dynamic model
+        %%% calculate PofT
+        dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
+        N = 100;
+        k1 = P(3*1-2);
+        k2 = P(3*2-2);
+        PofT = calc_dynamic_distribution(dT,N,k1,k2);
+        %%% generate P(eps) distribution for both components
+        PE = cell(2,1);
+        for c = 1:2
+            PE{c} = Generate_P_of_eps(P(3*c-1), P(3*c), i);
         end
+        %%% read out brightnesses of species
+        Q = ones(2,1);
+        %if h.SettingsTab.Use_Brightness_Corr.Value
+            for c = 1:2
+                Q(c) = calc_relative_brightness(P(3*c-1),i);
+            end
+        %end
+        %%% calculate mixtures with brightness correction (always active!)
+        Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
+        Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
+        %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
+        Peps(:,end) = PE{1};
+        Peps(:,1) = PE{2};
+        %%% normalize
+        Peps = Peps./repmat(sum(Peps,1),size(Peps,1),1);
+        %%% combine mixtures, weighted with PofT (probability to see a certain
+        %%% combination)
+        hFit_Ind_dyn = cell(numel(PofT),1);
+        for t = 1:numel(PofT)
+            hFit_Ind_dyn{t} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+            for k =1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                %%% construct sum of histograms
+                hFit_Ind_dyn{t} = hFit_Ind_dyn{t} + Peps(k,t).*PDAMeta.P{i,k};
+            end
+            %%% weight by probability of occurence
+            hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
+        end
+        hFit_Ind{1} = hFit_Ind_dyn{1};
+        hFit_Ind{2} = hFit_Ind_dyn{end};
+        hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
+        %%% Add static models
+        if numel(PDAMeta.Comp{i}) > 2
+            norm = (sum(P(3*PDAMeta.Comp{i}(3:end)-2))+1);
+            P(3*PDAMeta.Comp{i}(3:end)-2) = P(3*PDAMeta.Comp{i}(3:end)-2)./norm;
+            for c = PDAMeta.Comp{i}(3:end)
+                [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
+                P_eps = P(3*c-2).*Pe;
+                hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+                for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                    hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+                end
+            end
+            hFit_Dyn = hFit_Dyn./norm;
+        end
+        hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
+    else
+        for c = PDAMeta.Comp{i}
+            [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
+            P_eps = P(3*c-2).*Pe;
+            hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+            for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+            end
+        end
+        hFit = sum(horzcat(hFit_Ind{:}),2)';
     end
-    hFit = sum(horzcat(hFit_Ind{:}),2)';
     
     %%% Calculate Chi2
     error = sqrt(PDAMeta.hProx{i});
