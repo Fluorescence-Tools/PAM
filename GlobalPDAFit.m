@@ -1566,8 +1566,8 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     BGgr(BGgr<1E-2) = [];
                 case 'cdf'
                     %%% evaluate the background probabilities
-                    CDF_BGgg = poisscdf(0:1:maxN,PDAMeta.BGdonor(i))*PDAData.timebin(i)*1E3;
-                    CDF_BGgr = poisscdf(0:1:maxN,PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3;
+                    CDF_BGgg = poisscdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
+                    CDF_BGgr = poisscdf(0:1:maxN,PDAMeta.BGacc(i)*PDAData.timebin(i)*1E3);
                     %determine boundaries for background inclusion
                     threshold = 0.95;
                     BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
@@ -3010,7 +3010,11 @@ switch mode
             % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
             % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
             % corrected double labeled molecule having no FRET at all.
-            tmp(i,2) = 0; %PDAData.Corrections{i}.DirectExcitation_GR;
+            if isfield(PDAData.Corrections{i},'DirectExcitationProb')
+                tmp(i,2) = PDAData.Corrections{i}.DirectExcitationProb;
+            else
+                tmp(i,2) = 0; %PDAData.Corrections{i}.DirectExcitation_GR;
+            end
             tmp(i,3) = PDAData.Corrections{i}.CrossTalk_GR;
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
