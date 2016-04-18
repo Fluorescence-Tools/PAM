@@ -1614,6 +1614,8 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 toc
                 %PNF = binopdf(NF, N, eps);
                 % binopdf(X,N,P) returns the binomial probability density function with parameters N and P at the values in X.
+                %%% Also calculate distribution for donor only
+                PNF_donly = binopdf(NF(:,:,1),N(:,:,1),PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i)));
             end
             % histogram NF+NG into maxN+1 bins
             PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
@@ -1624,6 +1626,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             PDAMeta.epsRgrid{i} = epsRgrid;
             PDAMeta.PN{i} = PN;
             PDAMeta.PNF{i} = PNF;
+            PDAMeta.PNF_donly{i} = PNF_donly;
             PDAMeta.Grid.NF{i} = NF;
             PDAMeta.Grid.N{i} = N;
             PDAMeta.Grid.eps{i} = eps;
@@ -1635,7 +1638,8 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             PDAMeta.HistLib = [];
             P = cell(1,numel(E_grid));
             PN_dummy = PN';
-            %case 1, no background in either channel
+            %% Calculate shot noise limited histogram
+            % case 1, no background in either channel
             if NBG == 0 && NBR == 0
                 for j = 1:numel(E_grid)
                     %for a particular value of E
@@ -1699,9 +1703,56 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     %Progress(j/numel(E_grid),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
                 end
             end
+            %% Caclulate shot noise limited histogram for Donly
+            if NBG == 0 && NBR == 0
+                %for a particular value of E
+                P_temp = PNF_donly;
+                E_temp = NF(:,:,1)./N(:,:,1);
+                [~,~,bin] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                validd = (bin ~= 0);
+                P_temp = P_temp(:);
+                bin = bin(validd);
+                P_temp = P_temp(validd);
+
+                PN_trans = repmat(PN_dummy,1,maxN+1);
+                PN_trans = PN_trans(:);
+                PN_trans = PN_trans(validd);
+                P_donly = accumarray(bin,P_temp.*PN_trans);
+            else
+                bin = cell((NBG+1)*(NBR+1),1);
+                P_array = cell((NBG+1)*(NBR+1),1);
+                validd = cell((NBG+1)*(NBG+1),1);
+                count = 1;
+                for g = 0:NBG
+                    for r = 0:NBR
+                        P_temp = PBG(g+1)*PBR(r+1)*PNF_donly(1:end-g-r,:); %+1 since also zero is included
+                        E_temp = (NF(1:end-g-r,:,1)+r)./(N(1:end-g-r,:,1)+g+r);
+                        [~,~,bin{count}] = histcounts(E_temp(:),linspace(0,1,Nobins+1));
+                        validd{count} = (bin{count} ~= 0);
+                        P_temp = P_temp(:);
+                        bin{count} = bin{count}(validd{count});
+                        P_temp = P_temp(validd{count});
+                        P_array{count} = P_temp;
+                        count = count+1;
+                    end
+                end
+
+                P_donly = zeros(Nobins,1);
+                count = 1;
+                for g = 0:NBG
+                    for r = 0:NBR
+                        PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
+                        PN_trans = PN_trans(:);
+                        PN_trans = PN_trans(validd{count});
+                        P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                        count = count+1;
+                    end
+                end
+            end
             % different files = different rows
             % different Ps = different columns
             PDAMeta.P(i,:) = P;
+            PDAMeta.P_donly{i} = P_donly;
             PDAMeta.PreparationDone = 1;
         end
         counter = counter + 1;
@@ -2127,6 +2178,9 @@ else %%% no dynamic, just combine
     hFit = sum(horzcat(hFit_Ind{:}),2)';
 end
 
+%%% Add donor only species
+hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
+
 %%% correct for slight number deviations between hFit and hMeasured
 hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
 
@@ -2199,7 +2253,10 @@ for j=1:sum(PDAMeta.Active)
     
     %%% if sigma is fixed at fraction of, change its value here
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-        P(3:3:end) = P(end).*P(2:3:end);
+        P(3:3:end) = P(end).*P(2:3:end-1);
+        fraction_Donly = P(end-1);
+    else
+        fraction_Donly = P(end);
     end
 
     %%% create individual histograms
@@ -2272,6 +2329,12 @@ for j=1:sum(PDAMeta.Active)
         end
         hFit = sum(horzcat(hFit_Ind{:}),2)';
     end
+    
+    %%% Add donor only species
+    hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
+    
+    %%% correct for slight number deviations between hFit and hMeasured
+    hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
     
     %%% Calculate Chi2
     error = sqrt(PDAMeta.hProx{i});
@@ -2818,7 +2881,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.FitTab.Table.CellEditCallback=[];
         %%% Column names & widths
-        Columns=cell(47,1);
+        Columns=cell(50,1);
         Columns{1}='Active';
         for i=1:5
             Columns{9*i-7}=['<HTML><b> Area' num2str(i) '</b>'];
@@ -2831,12 +2894,16 @@ switch mode
             Columns{9*i}='F';
             Columns{9*i+1}='G';
         end
+        Columns{47} = '<HTML><b>D only</b>';
+        Columns{48} = 'F';
+        Columns{49} = 'G';
         Columns{end}='chi2';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(2:3:end-3)=70;
         ColumnWidth(3:3:end-2)=20;
         ColumnWidth(4:3:end-1)=20;
         ColumnWidth(1)=40;
+        ColumnWidth(end-1)=20;
         ColumnWidth(end)=60;
         h.FitTab.Table.ColumnName=Columns;
         h.FitTab.Table.ColumnWidth=num2cell(ColumnWidth');
@@ -2858,7 +2925,7 @@ switch mode
         % put in data if it exists
         %Data(1:end-3,9:3:end)=deal(num2cell(PDAData.FitTable)');
         % fill in the all row
-        tmp = [1; 50; 5; 1; 50; 5; 0; 50; 5; 0; 50; 5; 0; 50; 5];
+        tmp = [1; 50; 5; 1; 50; 5; 0; 50; 5; 0; 50; 5; 0; 50; 5; 0];
         Data(end-2,2:3:end-3)=deal(num2cell(tmp)');
         % fill in boundaries
         Data(end-1,2:3:end)=deal({0});
@@ -2897,6 +2964,14 @@ switch mode
         %%% Add FitTable data of new files in between old data and ALL row
         a = size(h.FitTab.Table.Data,1)-2; %if open data had 3 sets, new data has 3+2 sets, then a = 4
         for i = a:(size(Data,1)-3) % i = 4:5
+            %%% Added D only fraction, so check old data for compatibility
+            if (numel(PDAData.FitTable{i}) ~= 50)
+                dummy = cell(50,1);
+                dummy(1:46) = PDAData.FitTable{i}(1:46);
+                dummy(47:49) = {'0',true,false};
+                dummy(50) = PDAData.FitTable{i}(end);
+                PDAData.FitTable{i} = dummy;
+            end
             Data(i,:) = PDAData.FitTable{i};
         end
         for i = 1:15 % all fittable parameters
