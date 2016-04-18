@@ -42,10 +42,10 @@ switch Card
         clear FileID;
         
         if numel(ByteRecord) < 2 % Even empty file will contain sync rate
-            h = msgbox(['Empty file: ', FileName]);
+            %h = msgbox(['Empty file: ', FileName]);
             disp(['Empty file: ', FileName])
-            pause(1)
-            close(h)
+            %pause(1)
+            %close(h)
             MT = {[]};
             MI = {[]};
             PLF={[],[],[]};
