@@ -21,7 +21,6 @@ function GlobalPDAFit(~,~)
 
 %%% TO DO:
 %%% Fix Brightness correction
-%%% Add Donor-only population (i.e. de = 0!)
 
 global UserValues PDAMeta PDAData
 
