@@ -2113,7 +2113,7 @@ else %%% no dynamic, just combine
             PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
             PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
             %%% Recalculate the P array of this file
-            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i);
+            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i,str2double(h.SettingsTab.NumberOfBins_Edit.String),str2double(h.SettingsTab.NumberOfBinsE_Edit.String));
         end
 
         [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
@@ -3483,11 +3483,8 @@ E = 1/(1+(R/PDAMeta.R0(file)).^6);
 Qr = (1-de)*(1-E) + (gamma/(1+ct))*(de+E*(1-de));
 
 %%% Re-calculate the P array based on changed PN (brightness correction)
-function P = recalculate_P(PN_scaled,file)
+function P = recalculate_P(PN_scaled,file, Nobins, NobinsE)
 global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
-Nobins = str2double(h.SettingsTab.NumberOfBins_Edit.String);
-NobinsE = str2double(h.SettingsTab.NumberOfBinsE_Edit.String);
 
 PN  = PN_scaled';
 P = cell(1,NobinsE);
@@ -3507,7 +3504,9 @@ else
                 PN_trans = repmat(PN(1+g+r:end),1,PDAMeta.maxN{file}+1);%the total number of fluorescence photons is reduced
                 PN_trans = PN_trans(:);
                 PN_trans = PN_trans(PDAMeta.HistLib.valid{file}{j}{count});
-                P{1,j} = P{1,j} + accumarray(PDAMeta.HistLib.bin{file}{j}{count},PDAMeta.HistLib.P_array{file}{j}{count}.*PN_trans);
+                %%% Now uses C-code
+                P{1,j} = P{1,j} + accumarray_c(PDAMeta.HistLib.bin{file}{j}{count},PDAMeta.HistLib.P_array{file}{j}{count}.*PN_trans,max(PDAMeta.HistLib.bin{file}{j}{count}),numel(PDAMeta.HistLib.bin{file}{j}{count}))';
+                % P{1,j} = P{1,j} + accumarray(PDAMeta.HistLib.bin{file}{j}{count},PDAMeta.HistLib.P_array{file}{j}{count}.*PN_trans);
                 count = count+1;
             end
         end
