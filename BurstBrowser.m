@@ -3672,7 +3672,6 @@ UpdatePlot([],[],h);
 %%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SpeciesList_ButtonDownFcn(hTree,eventData)
-tic;
 global BurstData BurstMeta
 if isempty(BurstData)
     return;
@@ -3775,7 +3774,6 @@ switch h.Main_Tab.SelectedTab
                 PlotLifetimeInd([],[],h);
         end     
 end
-toc
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
