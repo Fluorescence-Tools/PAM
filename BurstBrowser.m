@@ -101,7 +101,7 @@ if isempty(hfig)
         'Tag','Main_Tab',...
         'Units','normalized',...
         'Position',[0 0 0.65 1],...
-        'SelectionChangedFcn',@MainTabSelectionChange);
+        'SelectionChangedFcn',@TabSelectionChange);
     
     h.Main_Tab_General = uitab(h.Main_Tab,...
         'title','General',...
@@ -171,7 +171,8 @@ if isempty(hfig)
     h.LifetimeTabgroup = uitabgroup(...
         'Parent',h.Main_Tab_Lifetime,...
         'Units','normalized',...
-        'Position',[0 0 1 1]);
+        'Position',[0 0 1 1],...
+        'SelectionChangedFcn',@TabSelectionChange);
     h.LifetimeTabAll = uitab('Parent',h.LifetimeTabgroup,...
         'title','All');
     h.LifetimePanelAll = uibuttongroup(...
@@ -2454,7 +2455,7 @@ if isempty(hfig)
     Initialize_Plots(1);
     
     %% set UserValues in GUI
-    UpdateCorrections([],[]);
+    UpdateCorrections([],[],h);
     %%% Update ColorMap
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -2679,7 +2680,7 @@ delete(gcf);
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Burst_Data_Callback(obj,~)
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 global BurstData UserValues BurstMeta PhotonStream BurstTCSPCData
 
 if obj ~= h.DatabaseBB.List
@@ -2840,8 +2841,8 @@ Initialize_Plots(2);
 %%% Initialize and apply Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
-    UpdateCorrections([],[]);
-    ApplyCorrections();    
+    UpdateCorrections([],[],h);
+    ApplyCorrections([],[],h);    
 end
 BurstMeta.SelectedFile = 1;
 
@@ -2853,14 +2854,17 @@ if isfield(BurstMeta,'Data')
 end
 
 %%% Update Species List
-UpdateSpeciesList();
+UpdateSpeciesList(h);
 
 %%% Switches GUI to 3cMFD or 2cMFD format
 SwitchGUI(BurstData{1}.BAMethod);
 UpdateCutTable(h);
 UpdateCuts();
+
 UpdatePlot([]);
-UpdateLifetimePlots([],[]);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
+
 ChangePlotType(h.PlotTypePopumenu) %to make the display correct at initial
 ChangePlotType(h.PlotContourLines) %to make the display correct at initial
 DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
@@ -3660,7 +3664,7 @@ elseif strcmpi(clickType,'left') %%% Update Plot
     %%% Update selected value
     hListbox.Value = clickedIndex;
 end
-UpdatePlot([],[]);
+UpdatePlot([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Mouse-click Callback for Species List       %%%%%%%%%%%%%%%%%%%%%%%
@@ -3668,6 +3672,7 @@ UpdatePlot([],[]);
 %%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SpeciesList_ButtonDownFcn(hTree,eventData)
+tic;
 global BurstData BurstMeta
 if isempty(BurstData)
     return;
@@ -3748,17 +3753,35 @@ switch clicked.getLevel
         BurstData{file}.SelectedSpecies = [group,subspecies];
 end
 
-UpdateCorrections([],[]);
+
+UpdateCorrections([],[],h);
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot(hTree);
-Update_fFCS_GUI(hTree,[]);
-UpdateLifetimePlots(hTree,[]);
+Update_fFCS_GUI([],[],h);
+
+%%% Update Plots
+%%% To speed up, find out which tab is visible and only update the respective tab
+switch h.Main_Tab.SelectedTab
+    case h.Main_Tab_General
+        %%% we switched to the general tab
+        UpdatePlot([],[],h);
+    case h.Main_Tab_Lifetime
+        %%% we switched to the lifetime tab
+        %%% figure out what subtab is selected
+        UpdateLifetimePlots([],[],h);
+        switch h.LifetimeTabgroup.SelectedTab
+            case h.LifetimeTabAll
+            case h.LifetimeTabInd
+                PlotLifetimeInd([],[],h);
+        end     
+end
+toc
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Add Species to List (Right-click menu item)  %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function AddSpecies(obj,eventData)
+function AddSpecies(~,~)
 global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 
@@ -3794,12 +3817,14 @@ switch level
         end
 end
         
-UpdateSpeciesList();
+UpdateSpeciesList(h);
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
 Update_fFCS_GUI([],[]);
+
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Remove Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
@@ -3840,7 +3865,7 @@ switch level
         BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
 end
 
-UpdateSpeciesList();
+UpdateSpeciesList(h);
 Update_fFCS_GUI([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3856,14 +3881,14 @@ NewName = inputdlg('Specify the new species name','Rename Species',[1 50],{Selec
 
 if ~isempty(NewName)
     BurstData{file}.SpeciesNames{species(1),species(2)} = NewName{1};
-    UpdateSpeciesList;
+    UpdateSpeciesList(h);
 end
 Update_fFCS_GUI([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Photons for PDA analysis %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Export_To_PDA(obj,~)
+function Export_To_PDA(~,~)
 global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
@@ -4182,17 +4207,25 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdatePlot(obj,~)
+function UpdatePlot(obj,~,h)
 %% Preparation
 global BurstData UserValues BurstMeta
 if isempty(BurstData)
     return;
 end
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 
 %%% If a display option was changed, update the UserValues!
-UpdateGUIOptions(obj,[]);
+UpdateGUIOptions(obj,[],h);
 
+
+%% Update Main Plot
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
 
@@ -4200,7 +4233,6 @@ y = get(h.ParameterListY,'Value');
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
-%% Update Plot
 %%% Disable/Enable respective plots
 BurstMeta.Plots.Main_histX.Visible = 'on';
 BurstMeta.Plots.Main_histY.Visible = 'on';
@@ -4326,7 +4358,7 @@ if UserValues.BurstBrowser.Display.ColorMapInvert
 end
 
 % update plot type
-ChangePlotType([],[]);
+% ChangePlotType([],[]);
 % Update no. bursts
 set(h.text_nobursts, 'String', {[num2str(sum(BurstData{file}.Selected)) ' bursts']; [num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total']})
 
@@ -4372,7 +4404,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ChangePlotType(obj,~)
 global UserValues BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 
 if isempty(obj)
     obj = h.PlotTypePopumenu;
@@ -4435,7 +4467,7 @@ LSUserValues(1);
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MultiPlot(obj,~)
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 global BurstData UserValues BurstMeta
 
 %%% find which species were clicked
@@ -4666,9 +4698,9 @@ set(h.axes_1d_y,'YTick',yticks(2:end));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Manual Cut by selecting an area in the current selection  %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ManualCut(~,~)
+function ManualCut(obj,~)
 
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 global BurstData BurstMeta
 set(gcf,'Pointer','cross');
 k = waitforbuttonpress;
@@ -4760,8 +4792,10 @@ end
 
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
+
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Executes on key press on main axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4969,8 +5003,10 @@ end
 %%% Update GUI elements
 UpdateCutTable(h);
 UpdateCuts();
-UpdatePlot([],[]);
-UpdateLifetimePlots(hObject,[]);
+
+UpdatePlot([],[],h);
+UpdateLifetimePlots(hObject,[],h);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Determine Corrections (alpha, beta, gamma from intensity) %%%%%%%%%
@@ -5289,7 +5325,7 @@ end
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
-UpdateCorrections([],[]);
+UpdateCorrections([],[],h);
 %%% Apply Corrections
 ApplyCorrections(gcbo,[]);
 
@@ -5297,10 +5333,14 @@ ApplyCorrections(gcbo,[]);
 %%%%%%% Manual gamma determination by selecting the mid-points %%%%%%%%%%%%
 %%%%%%% of two populations                                     %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DetermineGammaManually(~,~)
+function DetermineGammaManually(obj,~)
 global UserValues BurstMeta BurstData
 file = BurstMeta.SelectedFile;
-h = guidata(findobj('Tag','BurstBrowser'));
+if isempty(obj)
+    h = guidata(findobj('Tag','BurstBrowser'));
+else
+    h = guidata(obj);
+end
 %%% change the plot in axes_gamma to S vs E (instead of default 1/S vs. E)
 [H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
 BurstMeta.Plots.gamma_fit(1).XData = xbins;
@@ -5334,9 +5374,9 @@ BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
-UpdateCorrections([],[]);
+UpdateCorrections([],[],h);
 %%% Apply Corrections
-ApplyCorrections;
+ApplyCorrections([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates the Gamma Factor using the lifetime information %%%%%%%%
@@ -5493,16 +5533,18 @@ end
 %%% Save UserValues
 LSUserValues(1);
 %%% Update Correction Table Data
-UpdateCorrections([],[]);
+UpdateCorrections([],[],h);
 %%% Apply Corrections
 ApplyCorrections(obj,[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Applies Corrections to data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ApplyCorrections(obj,~)
+function ApplyCorrections(obj,~,h)
 global BurstData UserValues BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    h = guidata(obj);
+end
 if nargin > 0
     if obj == h.UseBetaCheckbox
         UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
@@ -5817,8 +5859,10 @@ set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
 %%% Update Display
 UpdateCuts;
-UpdatePlot([],[]);
-UpdateLifetimePlots([],[]);
+
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5881,9 +5925,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates GUI elements in fFCS tab and Lifetime Tab %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_fFCS_GUI(~,~)
+function Update_fFCS_GUI(obj,~,h)
 global BurstData BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
 if all(species == [0,0])
@@ -6557,9 +6607,13 @@ h.Do_fFCS_button.Enable = 'on';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Does fFCS Correlation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_fFCS(~,~)
+function Do_fFCS(obj,~)
 global BurstMeta BurstData UserValues
-h = guidata(findobj('Tag','BurstBrowser'));
+if isempty(obj)
+    h = guidata(findobj('Tag','BurstBrowser'));
+else
+    h = guidata(obj);
+end
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 %%% define channels
@@ -6668,9 +6722,16 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateCorrections(obj,e)
+function UpdateCorrections(obj,e,h)
 global UserValues BurstData BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 
 file = BurstMeta.SelectedFile;
 if isempty(obj) %%% Just change the data to what is stored in UserValues
@@ -6982,8 +7043,9 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
             end
-            UpdateLifetimePlots([],[]);
-            ApplyCorrections([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
+            ApplyCorrections([],[],h);
         case h.AcceptorLifetimeEdit
             if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
@@ -6991,7 +7053,8 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
             end
-            UpdateLifetimePlots([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
         case h.DonorLifetimeBlueEdit
             if ~isnan(str2double(h.DonorLifetimeBlueEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = str2double(h.DonorLifetimeBlueEdit.String);
@@ -6999,8 +7062,9 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.DonorLifetimeBlueEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue);
             end
-            UpdateLifetimePlots([],[]);
-            ApplyCorrections([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
+            ApplyCorrections([],[],h);
         case h.FoersterRadiusEdit
             if ~isnan(str2double(h.FoersterRadiusEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
@@ -7008,8 +7072,9 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
-            UpdateLifetimePlots([],[]);
-            ApplyCorrections([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
+            ApplyCorrections([],[],h);
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
@@ -7017,7 +7082,8 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
             end
-            UpdateLifetimePlots([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
         case h.FoersterRadiusBGEdit
             if ~isnan(str2double(h.FoersterRadiusBGEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBG = str2double(h.FoersterRadiusBGEdit.String);
@@ -7025,8 +7091,9 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
-            UpdateLifetimePlots([],[]);
-            ApplyCorrections([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
+            ApplyCorrections([],[],h);
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
@@ -7034,7 +7101,8 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBG);
             end
-            UpdateLifetimePlots([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
         case h.FoersterRadiusBREdit
             if ~isnan(str2double(h.FoersterRadiusBREdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBR = str2double(h.FoersterRadiusBREdit.String);
@@ -7042,8 +7110,9 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
-            UpdateLifetimePlots([],[]);
-            ApplyCorrections([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
+            ApplyCorrections([],[],h);
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
@@ -7051,7 +7120,8 @@ else %%% Update UserValues with new values
             else %%% Reset value
                 h.LinkerLengthBREdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBR);
             end
-            UpdateLifetimePlots([],[]);
+            UpdateLifetimePlots([],[],h);
+            PlotLifetimeInd([],[],h);
         case h.r0Green_edit
             if ~isnan(str2double(h.r0Green_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_green = str2double(h.r0Green_edit.String);
@@ -7191,7 +7261,7 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Export_FRET_Hist(~,~)
 global BurstData UserValues BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+%h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
 SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
@@ -7212,9 +7282,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves the state of the analysis to the .bur file %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Save_Analysis_State_Callback(~,~)
+function Save_Analysis_State_Callback(obj,~)
 global BurstData BurstTCSPCData BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 Progress(0,h.Progress_Axes,h.Progress_Text,'Saving...');
 %%% construct filenames
 for i = 1:numel(BurstData)
@@ -7260,9 +7330,15 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plots in Left Lifetime Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateLifetimePlots(~,~)
+function UpdateLifetimePlots(obj,~,h)
 global BurstData BurstMeta UserValues
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 
 if isempty(BurstData)
     return;
@@ -7399,14 +7475,19 @@ if any(BurstData{file}.BAMethod == [3,4])
     axis(h.axes_rBBvsTauBB,'tight');
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
 end
-PlotLifetimeInd([],[])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Copies Selected Lifetime Plot to Individual Tab %%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function PlotLifetimeInd(~,~)
+function PlotLifetimeInd(obj,~,h)
 global BurstMeta UserValues BurstData
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 if isempty(BurstData)
     return;
 end
@@ -7488,7 +7569,7 @@ set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function UpdateLifetimeFits(obj,~)
 global BurstData UserValues BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 file = BurstMeta.SelectedFile;
 %%% Use the current cut Data (of the selected species) for plots
 datatoplot = BurstData{file}.DataCut;
@@ -7805,22 +7886,42 @@ if obj == h.ManualAnisotropyButton
         end
     end
 end
-PlotLifetimeInd([],[]);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Executes on Tab-Change in Main Window and updates Plots %%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function MainTabSelectionChange(obj,e)
+function TabSelectionChange(obj,e)
 h = guidata(obj);
 if isempty(h)
     return;
 end
-if e.NewValue == h.Main_Tab_Lifetime
-    if isempty(h.axes_EvsTauGG.Children)
-        %%% Update Lifetime Plots
-        UpdateLifetimePlots(obj,[]);
-    end
+
+switch obj %%% distinguish between maintab change and lifetime subtab change
+    case h.Main_Tab
+        switch e.NewValue
+            case h.Main_Tab_General
+                %%% we switched to the general tab
+                UpdatePlot([],[],h);
+            case h.Main_Tab_Lifetime
+                %%% we switched to the lifetime tab
+                %%% figure out what subtab is selected
+                UpdateLifetimePlots([],[],h);
+                switch h.LifetimeTabgroup.SelectedTab
+                    case h.LifetimeTabAll
+                    case h.LifetimeTabInd
+                        PlotLifetimeInd([],[],h);
+                end     
+        end
+    case h.LifetimeTabgroup %%% we clicked the lifetime subtabgroup
+        UpdateLifetimePlots([],[],h);
+        switch e.NewValue
+            case h.LifetimeTabAll
+            case h.LifetimeTabInd
+                PlotLifetimeInd([],[],h);
+        end
 end
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Reads out the Donor only lifetime from Donor only bursts %%%%%%%%%%
@@ -7890,7 +7991,8 @@ if obj.Value == 1 %%% Checkbox was clicked on
         BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
     end
     LSUserValues(1);
-    UpdateLifetimePlots([],[]);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
 else
     h.DonorLifetimeEdit.Enable = 'on';
     h.DonorLifetimeBlueEdit.Enable = 'on';
@@ -8326,7 +8428,11 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Photons(obj,~)
 global PhotonStream BurstData UserValues BurstTCSPCData BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
+if isempty(obj)
+    h = guidata(findobj('Tag','BurstBrowser')); 
+else
+    h = guidata(obj);
+end
 if isempty(obj)
     obj = 'bps';
 end
@@ -8548,7 +8654,7 @@ end
 h.CorrectionsTable.RowName = Corrections_Rownames;
 h.CorrectionsTable.Data = Corrections_Data;
 %%% Update CorrectionsTable with UserValues-stored Data
-UpdateCorrections([],[])
+UpdateCorrections([],[],h)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9094,7 +9200,7 @@ global BurstData BurstMeta
 h = guidata(obj);
 h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
 h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
-UpdatePlot([],[]);
+UpdatePlot([],[],h);
 ExportGraphs(h.Export2D_Menu,[],0);
 ExportGraphs(h.ExportLifetime_Menu,[],0);
 h.lifetime_ind_popupmenu.Value = 1;
@@ -9405,7 +9511,7 @@ end
 
 function Calculate_Settings(obj,~)
 global UserValues
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 %%% Sets new divider
 if obj == h.Secondary_Tab_Correlation_Divider_Menu
     %%% Opens input dialog and gets value
@@ -9468,7 +9574,7 @@ out(1:n, 3) = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Database(obj,e,mode)
 global UserValues BurstMeta BurstData
-h = guidata(findobj('Tag','BurstBrowser'));
+h = guidata(obj);
 
 if mode == 0 %%% Checks, which key was pressed
     switch e.Key
@@ -9566,12 +9672,8 @@ switch mode
         Load_Burst_Data_Callback(obj,[]);
 end
 
-function UpdateSpeciesList()
+function UpdateSpeciesList(h)
 global BurstData BurstMeta
-h = guidata(findobj('Tag','BurstBrowser'));
-
-set(h.SpeciesList.Tree,'NodeSelectedCallback',[]);
-
 h.SpeciesList.Root = uitreenode('v0',h.SpeciesList.Tree,'Data Tree',[],false);
 for f = 1:numel(BurstData)
     % populate uitree
@@ -9624,9 +9726,15 @@ if eventData.isMetaDown  % right-click is like a Meta-button
   jmenu.repaint;
 end
 
-function UpdateGUIOptions(obj,~)
+function UpdateGUIOptions(obj,~,h)
 global UserValues
-h = guidata(findobj('Tag','BurstBrowser'));
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
 if obj == h.NumberOfBinsXEdit
     nbinsX = str2double(h.NumberOfBinsXEdit.String);
     if ~isnan(nbinsX)
@@ -9664,7 +9772,8 @@ if obj == h.NumberOfContourLevels_edit
     else
         h.NumberOfContourLevels_edit.String = num2str(UserValues.BurstBrowser.Display.NumberOfContourLevels);
     end
-    UpdateLifetimePlots([],[]);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
 end
 if obj == h.ContourOffset_edit
     ContourOffset = str2double(h.ContourOffset_edit.String);
@@ -9677,7 +9786,8 @@ if obj == h.ContourOffset_edit
     else
         h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
     end
-    UpdateLifetimePlots([],[]);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
 end
 if obj == h.ColorMapPopupmenu
     if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
