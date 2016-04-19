@@ -49,8 +49,8 @@ switch Card
             MT = {[]};
             MI = {[]};
             PLF={[],[],[]};
-            ClockRate = [];
-            SyncRate = [];
+            SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
+            ClockRate = SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
             return;
         else
             %the sync rate is contained in the first 3 bytes of the first byte
