@@ -696,7 +696,7 @@ if isempty(hfig)
         'Style','checkbox',...
         'Tag','UseBetaCheckbox',...
         'Value',UserValues.BurstBrowser.Corrections.UseBeta,...
-        'String','<html>&beta Correction of Stoichiometry</html>',...
+        'String','<html>&beta - Correction of Stoichiometry</html>',...
         'TooltipString','<html>Applies &beta correction of Stoichiometry accounting for<br>different excitation efficiencies.</html>',...
         'FontSize',12,...
         'Callback',@ApplyCorrections);
@@ -2893,6 +2893,9 @@ end
 h.DatabaseBB.AppendLoadedFiles.Enable = 'on';
 %%% Reset Plots
 Initialize_Plots(2);
+
+%%% Switches GUI to 3cMFD or 2cMFD format
+SwitchGUI(BurstData{1}.BAMethod);
 %%% Initialize and apply Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
@@ -2911,8 +2914,6 @@ end
 %%% Update Species List
 UpdateSpeciesList(h);
 
-%%% Switches GUI to 3cMFD or 2cMFD format
-SwitchGUI(BurstData{1}.BAMethod);
 UpdateCutTable(h);
 UpdateCuts();
 
@@ -8587,6 +8588,7 @@ h.Progress_Text.String = BurstMeta.DisplayName;
 %%%%%%% Change GUI to 2cMFD or 3cMFD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SwitchGUI(BAMethod,force)
+global UserValues
 h = guidata(findobj('Tag','BurstBrowser'));
 if nargin == 1
     force = 0;
@@ -8678,9 +8680,11 @@ if BAMethod == 3
     h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency GR';
     h.axes_EvsTauGG.XLabel.String = '\tau_{GG} [ns]';
     h.axes_EvsTauGG.Title.String = 'FRET Efficiency GR vs. Lifetime GG';
+    h.axes_EvsTauGG.Title.Color = UserValues.Look.Fore;
     h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency GR';
     h.axes_EvsTauRR.XLabel.String = '\tau_{RR} [ns]';
     h.axes_EvsTauRR.Title.String = 'FRET Efficiency GR vs. Lifetime RR';
+    h.axes_EvsTauRR.Title.Color = UserValues.Look.Fore;
     h.axes_rGGvsTauGG.XLabel.String = '\tau_{GG} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{GG}';
     h.axes_rGGvsTauGG.YLabel.Position= [-0.12, 0.5, 0];
@@ -8740,9 +8744,11 @@ elseif BAMethod == 2
     h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
     h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
     h.axes_EvsTauGG.Title.String = 'FRET Efficiency vs. Lifetime GG';
+    h.axes_EvsTauGG.Title.Color = UserValues.Look.Fore;
     h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
     h.axes_EvsTauGG.XLabel.String = '\tau_{A} [ns]';
     h.axes_EvsTauRR.Title.String = 'FRET Efficiency vs. Lifetime RR';
+    h.axes_EvsTauRR.Title.Color = UserValues.Look.Fore;
     h.axes_rGGvsTauGG.XLabel.String = '\tau_{D} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{D}';
     h.axes_rGGvsTauGG.YLabel.Position= [-0.125, 0.5, 0];
