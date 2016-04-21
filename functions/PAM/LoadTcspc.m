@@ -523,7 +523,7 @@ switch (Type)
             Totaltime=Totaltime + Imagetime;
             
         end
-          
+        FileInfo.ClockPeriod = FileInfo.SyncPeriod;
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
