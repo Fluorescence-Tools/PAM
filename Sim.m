@@ -117,7 +117,10 @@ h.Sim_Save = uicontrol(...
     'Value',3,...
     'String',{'Save to workspace', 'Save as TIFFs', 'Save as .sim'},...
     'Position',[0.12 0.8 0.25 0.15]);
-
+if ismac
+    h.Sim_Save.ForegroundColor = [0 0 0];
+    h.Sim_Save.BackgroundColor = [1 1 1];
+end
 %%% Button to select filepath
 h.Sim_Folder = uicontrol(...
     'Parent',h.Sim_File_Panel,...
@@ -193,7 +196,10 @@ h.Sim_Scan = uicontrol(...
     'String',{'Point','Raster','Line','Circle','Camera'},...
     'Callback',@Sim_Settings,...
     'Position',[0.01 0.8 0.12 0.15]);
-
+if ismac
+    h.Sim_Scan.ForegroundColor = [0 0 0];
+    h.Sim_Scan.BackgroundColor = [1 1 1];
+end
 %%% Text
 h.Text_BS = uicontrol(...
     'Parent',h.Sim_General_Panel,...
@@ -241,7 +247,7 @@ h.Sim_MIRange = uicontrol(...
     'String','80',...
     'Callback',@Sim_Settings,...
     'Position',[0.86 0.62 0.09 0.1]);
-
+           
 %%% Text
 h.Text_SF = uicontrol(...
     'Parent',h.Sim_General_Panel,...
@@ -559,6 +565,10 @@ h.Sim_Color = uicontrol(...
     'String',{'1Color','2Color','3Color','4Color'},...
     'Callback',@Sim_Settings,...
     'Position',[0.21 0.78 0.12 0.1]);
+if ismac
+    h.Sim_Color.ForegroundColor = [0 0 0];
+    h.Sim_Color.BackgroundColor = [1 1 1];
+end
 
 %%% FRET type selection
 h.Sim_FRET = uicontrol(...
@@ -572,7 +582,10 @@ h.Sim_FRET = uicontrol(...
     'String',{'No FRET','Static FRET','Dynamic FRET'},...
     'Callback',@Sim_Settings,...
     'Position',[0.34 0.78 0.2 0.1]);
-
+if ismac
+    h.Sim_FRET.ForegroundColor = [0 0 0];
+    h.Sim_FRET.BackgroundColor = [1 1 1];
+end
 %%% Barrier type selection
 h.Sim_Barrier = uicontrol(...
     'Parent',h.Sim_Species_Panel,...
@@ -585,7 +598,10 @@ h.Sim_Barrier = uicontrol(...
     'String',{'Free Diffusion','Free Diffusion with quenching','Restricted Zones','Diffusion Barriers','Asymmetric Diffusion Barriers','Dynamic Restricted Zones','Dynamic Diffusion Barriers','Different Diffusion Parameters'},...
     'Callback',@Sim_Settings,...
     'Position',[0.55 0.78 0.25 0.1]);
-
+if ismac
+    h.Sim_Barrier.ForegroundColor = [0 0 0];
+    h.Sim_Barrier.BackgroundColor = [1 1 1];
+end
 %%% Text
 h.Text_Brightness = uicontrol(...
     'Parent',h.Sim_Species_Panel,...
@@ -764,7 +780,10 @@ h.Sim_Param_Plot = uicontrol(...
     'String',{'Exitation probability','Crosstalk','Detection probability','Bleaching probability'},...
     'Callback',@Sim_Settings,...
     'Position',[0.02 0.88 0.5 0.1]);
-
+if ismac
+        h.Sim_Param_Plot.ForegroundColor = [0 0 0];
+        h.Sim_Param_Plot.BackgroundColor = [1 1 1];
+end
 %%% Text
 h.Text_FromTo = uicontrol(...
     'Parent',h.Sim_Advanced_Panel,...
@@ -863,7 +882,32 @@ h.Sim_UseLT = uicontrol(...
            'Callback',@Sim_Settings,...
            'Position',[0.5 0.74-0.15*i 0.38 0.08]);             
    end
-   
+%%% IRF parameters
+h.Sim_UseIRF = uicontrol(...
+    'Parent',h.Sim_Lifetime_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'FontSize',12,...
+    'Value', 0,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Include IRF? Width [ps]:',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.04 0.78 0.92 0.1]);
+
+h.Sim_IRF_Width_Edit = uicontrol(...
+    'Parent',h.Sim_Lifetime_Panel,...
+    'Units','normalized',...
+    'Style','edit',...
+    'FontSize',12,...
+    'Value', 1,...
+    'HorizontalAlignment','center',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','250',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.695 0.78 0.195 0.08]);
 %% Noise parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Advanced Sim Settings Panel
@@ -1072,6 +1116,234 @@ for i=1:3
     
 end
 
+%% Distance heterogeneity %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_FRET_Width_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Distance distribution widths',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Visible','off',...
+    'Position',[0.502 0.25 0.246 0.25]);
+%%% Parameter display selection
+h.Use_FRET_Width = uicontrol(...
+    'Parent',h.Sim_FRET_Width_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'Value',0,...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Use distance distribution width [Angstrom]',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.02 0.88 0.96 0.1]);
+
+%%% Text
+h.Text_FRET_Width_Between = uicontrol(...
+    'Parent',h.Sim_FRET_Width_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','text',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Between',...
+    'Position',[0.02 0.74 0.24 0.08]);
+
+for i=1:3
+    %%% Text
+    h.Text_FRET_Width1{i} = uicontrol(...
+        'Parent',h.Sim_FRET_Width_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'HorizontalAlignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String',['Color ' num2str(i) ':'],...
+        'Position',[0.02 0.74-0.15*i 0.2 0.08]);
+    %%% Text
+    h.Text_FRET_Width2{i} = uicontrol(...
+        'Parent',h.Sim_FRET_Width_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String',['Color ' num2str(i+1) ':'],...
+        'Position',[0.05+0.19*i 0.74 0.19 0.08]);
+   for j=1:3
+       if j<=i
+           %%% Dye distances radius
+           h.Sim_sigma{i+1,j} = uicontrol(...
+               'Parent',h.Sim_FRET_Width_Panel,...
+               'Units','normalized',...
+               'FontSize',12,...
+               'Style','edit',...
+               'BackgroundColor', Look.Control,...
+               'ForegroundColor', Look.Fore,...
+               'String','5',...
+               'Callback',@Sim_Settings,...
+               'Position',[0.06+0.19*i 0.74-0.15*j 0.16 0.08]);
+       end
+   end
+   
+end
+%%% Update time for distance heterogeneity
+h.Text_FRET_Width_UpdateTime = uicontrol(...
+    'Parent',h.Sim_FRET_Width_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Style','text',...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Update Time for distance heterogeneity [ms]:',...
+    'Position',[0.02 0.14 0.58 0.08]);
+h.Sim_sigma_update = uicontrol(...
+   'Parent',h.Sim_FRET_Width_Panel,...
+   'Units','normalized',...
+   'FontSize',12,...
+   'Style','edit',...
+   'BackgroundColor', Look.Control,...
+   'ForegroundColor', Look.Fore,...
+   'String','10',...
+   'Callback',@Sim_Settings,...
+   'Position',[0.63 0.14 0.16 0.08]);
+
+h.Use_Linker_Width = uicontrol(...
+    'Parent',h.Sim_FRET_Width_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'Value',0,...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Use linker fluctuations width [Angstrom]',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.02 0.04 0.58 0.08]);
+h.Linker_Width = uicontrol(...
+    'Parent',h.Sim_FRET_Width_Panel,...
+    'Units','normalized',...
+    'Style','edit',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','5',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.63 0.04 0.16 0.08]);
+
+%% Anisotropy parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_Ani_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Lifetime Settings',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.752 0.25 0.246 0.25]);
+%%% Parameter display selection
+h.Sim_UseAni = uicontrol(...
+    'Parent',h.Sim_Ani_Panel,...
+    'Units','normalized',...
+    'Style','checkbox',...
+    'FontSize',12,...
+    'Value', 0,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','<html>Use Anisotropy - &rho [ns]</html>',...
+    'Callback',@Sim_Settings,...
+    'Position',[0.04 0.88 0.92 0.1]);
+   h.Text_Ani_r0 = uicontrol(...
+           'Parent',h.Sim_Ani_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'HorizontalAlignment','center',...
+           'Style','text',...
+           'BackgroundColor', Look.Back,...
+           'ForegroundColor', Look.Fore,...
+           'String','r0',...
+           'Position',[0.25 0.74 0.19 0.08]);
+   h.Text_Ani_rho= uicontrol(...
+       'Parent',h.Sim_Ani_Panel,...
+       'Units','normalized',...
+       'FontSize',12,...
+       'HorizontalAlignment','center',...
+       'Style','text',...
+       'BackgroundColor', Look.Back,...
+       'ForegroundColor', Look.Fore,...
+       'String','rho',...
+       'Position',[0.45 0.74 0.19 0.08]);
+   h.Text_Ani_rinf= uicontrol(...
+       'Parent',h.Sim_Ani_Panel,...
+       'Units','normalized',...
+       'FontSize',12,...
+       'HorizontalAlignment','center',...
+       'Style','text',...
+       'BackgroundColor', Look.Back,...
+       'ForegroundColor', Look.Fore,...
+       'String','r(infinity)',...
+       'Position',[0.65 0.74 0.19 0.08]);
+   values = {'0.4','1','0'};
+   for i=1:4
+       h.Text_Ani{i} = uicontrol(...
+           'Parent',h.Sim_Ani_Panel,...
+           'Units','normalized',...
+           'FontSize',12,...
+           'HorizontalAlignment','left',...
+           'Style','text',...
+           'BackgroundColor', Look.Back,...
+           'ForegroundColor', Look.Fore,...
+           'String',['Color ', num2str(i), ':'],...
+           'Position',[0.02 0.74-0.15*i 0.19 0.08]);
+       for j=1:3
+           h.Sim_Ani{i,j} = uicontrol(...
+               'Parent',h.Sim_Ani_Panel,...
+               'Units','normalized',...
+               'FontSize',12,...
+               'Style','edit',...
+               'BackgroundColor', Look.Control,...
+               'ForegroundColor', Look.Fore,...
+               'String',values{j},...
+               'Callback',@Sim_Settings,...
+               'Position',[0.25+0.2*(j-1) 0.74-0.15*i 0.19 0.08]);
+       end
+   end
+   
+%% Dynamic parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Advanced Sim Settings Panel
+h.Sim_Dyn_Panel = uibuttongroup(...
+    'Parent',h.Sim_Panel,...
+    'Units','normalized',...
+    'Title','Dynamics Settings - Interconversion Rates [ms^(-1)]',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Visible','off',...
+    'Position',[0.002 0 0.246 0.25]);
+
+h.Sim_Dyn_Table = uitable(...
+    'Parent',h.Sim_Dyn_Panel,...
+    'Units','normalized',...
+    'ColumnFormat',{'numeric'},...
+    'ColumnEditable',true,...
+    'ColumnName',{'Species1'},...
+    'RowName',{'Species1'},...
+    'Data',{0},...
+    'ColumnWidth','auto',...
+    'Position',[0.002 0.002 0.996 0.996]);
 %% Global variable initialization
 SimData.General = struct;
 
@@ -1088,6 +1360,9 @@ SimData.General(1).ScanType = 1;
 SimData.General(1).UseNoise = 0;
 SimData.General(1).Noise = [0.2 0.2 0.2 0.2];
 SimData.General(1).MIRange = 80;
+SimData.General(1).IRFWidth = 250;
+SimData.General(1).HeterogeneityUpdate = 10;
+SimData.General(1).LinkerWidth = 5;
 
 SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
@@ -1119,6 +1394,15 @@ SimData.Species(1).R0(4,2) = 50;
 SimData.Species(1).R0(4,3) = 60;
 
 SimData.Species(1).R = 50*ones(4,4);
+
+SimData.Species(1).Aniso = repmat([0.4;1;0;1],4,1); % r0,rho[ns],residual r, G factor
+SimData.Species(1).DistanceWidth = zeros(4,4);
+SimData.Species(1).DistanceWidth(2,1) = 5;
+SimData.Species(1).DistanceWidth(3,1) = 5;
+SimData.Species(1).DistanceWidth(4,1) = 5;
+SimData.Species(1).DistanceWidth(3,2) = 5;
+SimData.Species(1).DistanceWidth(4,2) = 5;
+SimData.Species(1).DistanceWidth(4,3) = 5;
 
 SimData.General(1).Species = SimData.Species(1);
 
@@ -1428,12 +1712,18 @@ switch Obj
             case 1
                 h.Sim_FRET_General_Panel.Visible = 'off';
                 h.Sim_FRET_Static_Panel.Visible = 'off';
+                h.Sim_FRET_Width_Panel.Visible = 'off';
+                h.Sim_Dyn_Panel.Visible = 'off';
             case 2
                 h.Sim_FRET_General_Panel.Visible = 'on';
                 h.Sim_FRET_Static_Panel.Visible = 'on';
+                h.Sim_FRET_Width_Panel.Visible = 'on';
+                h.Sim_Dyn_Panel.Visible = 'off';
             case 3
                 h.Sim_FRET_General_Panel.Visible = 'on';
-                h.Sim_FRET_Static_Panel.Visible = 'off';                
+                h.Sim_FRET_Static_Panel.Visible = 'on';   
+                h.Sim_FRET_Width_Panel.Visible = 'on';
+                h.Sim_Dyn_Panel.Visible = 'on';
         end
     case h.Sim_Barrier %%% Defines type of barrieres to be simulated
         Sel=h.Sim_List.Value(1);
@@ -1574,6 +1864,30 @@ switch Obj
                 end
             end
         end
+    case h.Sim_sigma %%% Changed Dye distance
+        Sel=h.Sim_List.Value(1);
+        for i=1:4
+            for j=1:4   
+                if j<i
+                    SimData.Species(Sel).DistanceWidth(i,j) = str2double(h.Sim_sigma{i,j}.String);
+                end
+            end
+        end
+        
+    case h.Sim_Ani
+        Sel=h.Sim_List.Value(1);
+        for i = 1:4
+            for j = 1:3
+                SimData.Species(Sel).Aniso(j+4*(i-1)) = str2double(h.Sim_Ani{i,j}.String);
+            end
+        end
+        
+    case h.Linker_Width
+        SimData.General.LinkerWidth = str2double(h.Linker_Width.String);
+    case h.Sim_sigma_update
+        SimData.General.HeterogeneityUpdate = str2double(h.Sim_sigma_update.String);
+    case h.Sim_IRF_Width_Edit
+        SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
 end
 
 SimData.General(File).Species = SimData.Species;
@@ -1765,10 +2079,10 @@ function Do_PointSim(~,~)
 global SimData
 h = guidata(findobj('Tag','Sim'));
 
-% Pool = gcp;
-% if isempty(Pool)
-%     parpool('local');
-% end
+Pool = gcp;
+if isempty(Pool)
+    parpool('local');
+end
 
 %%% ScanType
 Scan_Type = h.Sim_Scan.Value;
@@ -1798,16 +2112,297 @@ ScanTicks(2) = str2double(h.Sim_Px_Time{2}.String)*Freq*10^-3;
 Photons_total = cell(numel(SimData.Species),4);
 MI_total = cell(numel(SimData.Species),4);
 
-for i = 1:numel(SimData.Species);
-    if ~SimData.Start %%% Aborts Simulation
-       return; 
+%% Split here between old simulation (basic, best for diffusion/corrlation)
+%% and new additions for single-molecule FRET experiments
+%%% advanced includes any of the parameters that are not in DifSim.mex,
+%%% but only in DifSim_ani.mex
+%%% This includes:
+%%% IRF width
+%%% Anisotropy
+%%% Conformational heterogeneity for PDA (sigma)
+%%% Linker fluctuations for TCSPC fitting
+%%% dynamic interconversion
+advanced = any([...
+    h.Sim_UseIRF.Value,...
+    h.Sim_UseAni.Value,...
+    h.Use_FRET_Width.Value,...
+    h.Use_Linker_Width.Value,...
+    any([SimData.Species.FRET] == 3)...
+    ]);
+%% basic simulation 
+if ~advanced
+    for i = 1:numel(SimData.Species);
+        if ~SimData.Start %%% Aborts Simulation
+           return; 
+        end
+        NoP = SimData.Species(i).N;
+        D = sqrt(2*SimData.Species(i).D*10^6/Freq);
+
+        wr = zeros(4,1); wz = zeros(4,1); 
+        dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
+
+        %%% Detection probability
+        DetP = SimData.Species(i).DetP;
+        %%% Excitation probability (including direct excitation)
+        ExP = SimData.Species(i).ExP;    
+        %%% Crosstalk
+        SimData.Species(i).Cross(1:5:16) = 1;
+        Cross = zeros(4,4);
+        for j=1:4
+            for k=1:4
+                Cross(j,k) =  DetP(k,k)/DetP(j,k)*SimData.Species(i).Cross(j,k);
+            end
+        end
+        %%% Bleaching probability (1/avg(#EmittedPhotons)
+        BlP = SimData.Species(i).BlP;
+        %%% Calculates relative energy transfer rates
+        switch SimData.Species(i).FRET
+            case 1
+                FRET = diag(ones(4,1));
+            case 2
+                FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
+                FRET(1:5:16) = 1;
+            case 3
+                FRET = diag(ones(4,1));
+        end
+        %%% Lifetime of the colors
+        if SimData.Species(i).UseLT
+            LT = SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*MI_Bins;
+        else
+            LT = [0 0 0 0];
+        end
+        for j = SimData.Species(i).Color+1:4
+            ExP(j,:) = 0;
+            FRET(j,:) = 0;
+        end
+
+        %%% Determins barrier type and map (for quenching, barriers, ect.)
+        Map_Type = h.Sim_Barrier.Value;
+        switch Map_Type
+            case 1 %%% Free Diffusion
+                if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                    SimData.Map = {1};
+                end
+            case {2,3,4,5,8} %%% Static Maps
+                if isfield(SimData,'Map') && iscell(SimData.Map)
+                    SimData.Map{1} = double(SimData.Map{1});
+                    if size(SimData.Map{1},1)<BS(1) || size(SimData.Map{1},2)<BS(2)
+                        Map_Type = 1;
+                    else
+                        if size(SimData.Map{1},1)>BS(1)
+                            SimData.Map{1} = SimData.Map{1}(1:BS(1),:);
+                        end
+                        if size(SimData.Map{1},2)>BS(2)
+                            SimData.Map{1} = SimData.Map{1}(:,1:BS(1));
+                        end
+                        SimData.Map{1}(isnan(SimData.Map{1})) = 1;
+                    end
+                else
+                    Map_Type = 1;
+                    if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                        SimData.Map = {1};
+                    end
+                end
+            case {6,7} %%% Diffusing Maps
+                if isfield(SimData,'Map') && iscell(SimData.Map) && numel(SimData.Map) >= Frames
+                    for j=1:Frames
+                        SimData.Map{j} = double(SimData.Map{j});
+                        if size(SimData.Map{j},1)<BS(1) || size(SimData.Map{j},2)<BS(2)
+                            Map_Type = 1;
+                            break;
+                        else
+                            if size(SimData.Map{j},1)>BS(1)
+                                SimData.Map{j} = SimData.Map{j}(1:BS(1),:);
+                            end
+                            if size(SimData.Map{j},2)>BS(2)
+                                SimData.Map{j} = SimData.Map{j}(:,1:BS(1));
+                            end
+                            SimData.Map{j}(isnan(SimData.Map{j})) = 1;
+                        end
+                    end
+                else
+                    Map_Type = 1;
+                    if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                        SimData.Map = {1};
+                    end
+                end
+            otherwise
+                Map_Type = 1;
+                if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
+                    SimData.Map = {1};
+                end
+        end
+
+
+        %%% Species specific parameters for used colors
+        for j = 1:SimData.Species(i).Color
+            wr(j) = SimData.Species(i).wr(j);
+            wz(j) = SimData.Species(i).wz(j);
+            dX(j) = SimData.Species(i).dX(j);
+            dY(j) = SimData.Species(i).dY(j);
+            dZ(j) = SimData.Species(i).dZ(j);
+        end
+        Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
+        Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
+        Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
+        Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
+
+        fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
+        fclose(fid);
+        if fid == -1
+            return;
+        end
+
+        Update = timer(...
+            'StartFcn',{@Update_Progress,1,i,numel(SimData.Species),NoP},...
+            'TimerFcn', {@Update_Progress,2,i,numel(SimData.Species),NoP},...
+            'StopFcn', {@Update_Progress,3,i,numel(SimData.Species),NoP},...
+            'Period',1,...
+            'ExecutionMode','fixedDelay');
+        start(Update)
+
+        for j = 1:NoP
+            %%% Generates starting position
+            Pos = (BS-1).*rand(1,3);    
+
+            %%% Pts particles in allowed areas for restricted area simulations
+            if Map_Type==3
+                while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
+                    Pos = (BS-1).*rand(1,3);
+                end
+            elseif Map_Type == 6
+                while SimData.Map{1}(floor(Pos(1))+1,floor(Pos(2))+1,1) == 0
+                    Pos = (BS-1).*rand(1,3);
+                end            
+            end        
+            Frametime = Simtime/Frames;
+
+            for k=1:Frames 
+                Time = clock;
+
+                %%% Uses new map for dynamic barrier simulations
+                if any(Map_Type == [6,7])
+                    Sel = k;
+                else
+                    Sel = 1;
+                end
+
+                %%% Puts partilces back into their areas, if areas moved
+                if k>1 && any(Map_Type == [6,7])
+                    if SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2))+1) ~= SimData.Map{k}(floor(Pos(1)+1),floor(Pos(2)+1))
+                        [X,Y] = find(SimData.Map{k} == SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2)+1)));
+                        [~,Index] = sort((X-Pos(1)).^2 + (Y-Pos(2)).^2);
+                        Pos(1) = X(Index(1));
+                        Pos(2) = Y(Index(1));
+                    end                
+                end
+
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                [Photons,  MI, Channel, Pos] = DifSim(...
+                    Frametime, BS,... General Parameters
+                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
+                    D,Pos,... Particle parameters
+                    wr,wz,... Focus parameters
+                    dX,dY,dZ,... Focus shift parameters
+                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
+                    LT,... %%% Lifetime of the different colors
+                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
+                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
+                    Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+                
+                %%% Channel is a 8 bit number that defines the exact photon type
+                %%% bits 0,1 for exitation laser
+                %%% bits 2,3 for exited dye
+                %%% bits 4,5 for emitting dye
+                %%% bits 6,7 for detection channel
+                
+                %%% Assigns photons according to detection channel
+                Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
+                Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
+                Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
+                Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
+                if SimData.Species(i).UseLT
+                    MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
+                    MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
+                    MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
+                    MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
+                else
+                    MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
+                    MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
+                    MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
+                    MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
+                end
+            end
+
+            FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
+            fprintf(FID,['Particle' num2str(j) '\n']);
+            fclose(FID);
+        end
+        %%% Combines photons for all particles
+        Photons_total{i,1} = cell2mat(Photons1);
+        MI_total{i,1} = cell2mat(MI1);
+        Photons_total{i,2} = cell2mat(Photons2);
+        MI_total{i,2} = cell2mat(MI2);
+        Photons_total{i,3} = cell2mat(Photons3);
+        MI_total{i,3} = cell2mat(MI3);
+        Photons_total{i,4} = cell2mat(Photons4);
+        MI_total{i,4} = cell2mat(MI4);
+        clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
+
+        stop(Update);
     end
-    NoP = SimData.Species(i).N;
-    D = sqrt(2*SimData.Species(i).D*10^6/Freq);
+
+    Sim_Photons = cell(4,1);
+    Sim_MI = cell(4,1);
+    for i=1:4 %%% Combines photons of all species
+        Sim_Photons{i} = cell2mat(Photons_total(:,i));
+        Sim_MI{i} = cell2mat(MI_total(:,i));
+    end
+
+    if h.Sim_UseNoise.Value
+        for i=1:4
+            if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
+               AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
+               Noise = [];
+               while (isempty(Noise) || Noise(end)<Simtime)
+                   if isempty(Noise)
+                       Noise = cumsum(exprnd(AIPT,[10000 1]));
+                   else
+                       Noise = [Noise; cumsum(exprnd(AIPT,[10000 1]))+Noise(end)]; %#ok<AGROW>
+                   end
+               end
+               Noise (Noise>Simtime) = []; %#ok<AGROW>
+               MI_Noise = uint16(MI_Bins*rand(numel(Noise),1));
+
+               Sim_Photons{i} = [Sim_Photons{i}; Noise];
+               Sim_MI{i} = [Sim_MI{i}; MI_Noise];
+               [Sim_Photons{i}, Index] = sort(Sim_Photons{i});
+               Sim_MI{i} = Sim_MI{i}(Index);
+               clear Noise MI_Noise Index;
+            end
+        end
+    end
+end
+
+%% single-molecule FRET simulation with advanced parameters
+if advanced
+    %% Prepare input values
     
+    %%% IRF values (global for all species)
+    %%% Shift is hard-coded to 1 ns
+    IRFshift = floor(MI_Bins/str2double(h.Sim_MIRange.String));
+    if h.Sim_UseIRF.Value
+        IRFwidth = floor(MI_Bins*str2double(h.Sim_IRF_Width_Edit.String)/1000/str2double(h.Sim_MIRange.String));
+    else
+        IRFwidth = 1; %%% set to minimum
+    end
+    
+    %% General parameters are taken from the first species
     wr = zeros(4,1); wz = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
-   
+
     %%% Detection probability
     DetP = SimData.Species(i).DetP;
     %%% Excitation probability (including direct excitation)
@@ -1842,7 +2437,7 @@ for i = 1:numel(SimData.Species);
         ExP(j,:) = 0;
         FRET(j,:) = 0;
     end
-    
+
     %%% Determins barrier type and map (for quenching, barriers, ect.)
     Map_Type = h.Sim_Barrier.Value;
     switch Map_Type
@@ -1899,7 +2494,7 @@ for i = 1:numel(SimData.Species);
                 SimData.Map = {1};
             end
     end
-    
+
 
     %%% Species specific parameters for used colors
     for j = 1:SimData.Species(i).Color
@@ -1909,174 +2504,178 @@ for i = 1:numel(SimData.Species);
         dY(j) = SimData.Species(i).dY(j);
         dZ(j) = SimData.Species(i).dZ(j);
     end
-    Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
-    Photons12 = cell(NoP,1); MI12 = cell(NoP,1);
-    Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
-    Photons22 = cell(NoP,1); MI22 = cell(NoP,1);
-    Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
-    Photons32 = cell(NoP,1); MI32 = cell(NoP,1);
-    Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
-    Photons42 = cell(NoP,1); MI42 = cell(NoP,1);
+    
+    DiffStep = 1;
+    %%% Now, read out species related parameters
+    %%% and construct input arrays
+    %%% for dynamic simlation, species are assigned based on species number
+    %%% initially, i.e. initial state.
+    %%% This means that static species are just assigned zero switching
+    %%% probability!
+    %%% Parameters are stacked arrays over all species
+    aniso_params = [];
+    for i = 1:numel(SimData.Species);
+        NoP = SimData.Species(i).N;
+        D = sqrt(2*SimData.Species(i).D*10^6/Freq);
+        
+        %% new parameters
+        %%% Anisotropy values
+        aniso_params = [aniso_params;SimData.Species(i).Aniso];
+        
+    end
     
     new = 1;
     %%% only used if new is set to 1
-    IRFparams = [100,25];
-    aniso_params = repmat([0.4,0.1, LT(1)/10, 1],1,4)';
-    DiffStep = 1;
-            
     type = 1;
     switch type
-        case 1
-            %%% Parameters for 2color 2 state dynamic simulation
-            k12 = 1E3/Freq; %1 ms^-1
-            k21 = 0.5*1E3/Freq; %0.5 ms^-1
+    case 1
+        %%% Parameters for 2color 2 state dynamic simulation
+        k12 = 1E3/Freq; %1 ms^-1
+        k21 = 0.5*1E3/Freq; %0.5 ms^-1
 
-    
-            %%% Set dynamic step such that p_max = 0.1
-            DynamicStep = round(0.1/max([k12 k21]));
-            p12 = k12*DynamicStep;
-            p21 = k21*DynamicStep;
 
-            n_states = 1;
-            k_dyn = [1-p12, p12,...
-                     p21, 1-p21];
+        %%% Set dynamic step such that p_max = 0.1
+        DynamicStep = round(0.1/max([k12 k21]));
+        p12 = k12*DynamicStep;
+        p21 = k21*DynamicStep;
 
-            final_state = randi(n_states,NoP,1)-1;
-            
-            %%% For sigmaDist simulations, we need to provide now:
-            %%% Distances (only nonzero for cross-color elements!!!)
-            %%% sigma Distances (only nonzero for cross-color elements!!!)
-            %%% R0 (only non-zero for cross-color elements!!!)
-            %%% Step for recalculation
-            %%% linkerlength (one value only for now!)
-            Dist = SimData.Species(i).R;
-            R0 = SimData.Species(i).R0;
-            Dist(R0 == 0) = 0;
-            heterogeneity_step = round(10E-3*Freq*1E3);
-            linkerlength = 5;
-            Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
-            Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
-            Dist = [Dist1(:); Dist2(:)];
-            sigmaDist = Dist./10;
-            R0 = [R0(:); R0(:)];
-            R0(Dist == 0) = 0;
-            if new == 1
-                FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
-                FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
-                FRET = [FRET1(:); FRET2(:)];
-            end
-        case 2
-            %%% Parameters for 3color 2 state dynamic simulation
-            k12 = 100*1E3/Freq; %2 ms^-1
-            k21 = 100*1E3/Freq; %3 ms^-1
+        n_states = 1;
+        k_dyn = [1-p12, p12,...
+                 p21, 1-p21];
 
-            DiffStep = 1;
-            %%% Set dynamic step such that p_max = 0.1
-            DynamicStep = round(0.1/max([k12 k21]));
-            p12 = k12*DynamicStep;
-            p21 = k21*DynamicStep;
+        final_state = randi(n_states,NoP,1)-1;
 
-            n_states = 2;
-            k_dyn = [1-p12, p12,...
-                     p21, 1-p21];
+        %%% For sigmaDist simulations, we need to provide now:
+        %%% Distances (only nonzero for cross-color elements!!!)
+        %%% sigma Distances (only nonzero for cross-color elements!!!)
+        %%% R0 (only non-zero for cross-color elements!!!)
+        %%% Step for recalculation
+        %%% linkerlength (one value only for now!)
+        Dist = SimData.Species(i).R;
+        R0 = SimData.Species(i).R0;
+        Dist(R0 == 0) = 0;
+        heterogeneity_step = round(10E-3*Freq*1E3);
+        linkerlength = 5;
+        Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
+        Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
+        Dist = [Dist1(:); Dist2(:)];
+        sigmaDist = Dist./10;
+        R0 = [R0(:); R0(:)];
+        R0(Dist == 0) = 0;
+        if new == 1
+            FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
+            FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
+            FRET = [FRET1(:); FRET2(:)];
+        end
+    case 2
+        %%% Parameters for 3color 2 state dynamic simulation
+        k12 = 100*1E3/Freq; %2 ms^-1
+        k21 = 100*1E3/Freq; %3 ms^-1
 
-            final_state = randi(2,NoP,1)-1;
+        DiffStep = 1;
+        %%% Set dynamic step such that p_max = 0.1
+        DynamicStep = round(0.1/max([k12 k21]));
+        p12 = k12*DynamicStep;
+        p21 = k21*DynamicStep;
 
-            R0 = 50;
-            RGR1 = 55;
-            RGR2 = 70;
-            RBG1 = 45;
-            RBG2 = 70;
-            RBR1 = 65;
-            RBR2 = 45;
+        n_states = 2;
+        k_dyn = [1-p12, p12,...
+                 p21, 1-p21];
 
-            kGR1 = (R0/RGR1)^6;
-            kGR2 = (R0/RGR2)^6;
-            kBG1 = (R0/RBG1)^6;
-            kBG2 = (R0/RBG2)^6;
-            kBR1 = (R0/RBR1)^6;
-            kBR2 = (R0/RBR2)^6;
-            
-            if new == 1
-                FRET1 = [1,0,0,0;...
-                         kBG1,1,0,0;...
-                         kBR1,kGR1,1,0;...
-                         0,0,0,0];   
-                FRET2 = [1,0,0,0;...
-                         kBG2,1,0,0;...
-                         kBR2,kGR2,1,0;...
-                         0,0,0,0];
-                FRET = [FRET1(:); FRET2(:)];
-            end
+        final_state = randi(2,NoP,1)-1;
+
+        R0 = 50;
+        RGR1 = 55;
+        RGR2 = 70;
+        RBG1 = 45;
+        RBG2 = 70;
+        RBR1 = 65;
+        RBR2 = 45;
+
+        kGR1 = (R0/RGR1)^6;
+        kGR2 = (R0/RGR2)^6;
+        kBG1 = (R0/RBG1)^6;
+        kBG2 = (R0/RBG2)^6;
+        kBR1 = (R0/RBR1)^6;
+        kBR2 = (R0/RBR2)^6;
+
+        if new == 1
+            FRET1 = [1,0,0,0;...
+                     kBG1,1,0,0;...
+                     kBR1,kGR1,1,0;...
+                     0,0,0,0];   
+            FRET2 = [1,0,0,0;...
+                     kBG2,1,0,0;...
+                     kBR2,kGR2,1,0;...
+                     0,0,0,0];
+            FRET = [FRET1(:); FRET2(:)];
+        end
     end
-    
-    fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
-    fclose(fid);
-    if fid == -1
-        return;
-    end
-    
-    Update = timer(...
-        'StartFcn',{@Update_Progress,1,i,numel(SimData.Species),NoP},...
-        'TimerFcn', {@Update_Progress,2,i,numel(SimData.Species),NoP},...
-        'StopFcn', {@Update_Progress,3,i,numel(SimData.Species),NoP},...
-        'Period',1,...
-        'ExecutionMode','fixedDelay');
-    start(Update)
-    
-    for j = 1:NoP
-        %%% Generates starting position
-        Pos = (BS-1).*rand(1,3);    
+
+    for i = 1:numel(SimData.Species);
+        if ~SimData.Start %%% Aborts Simulation
+           return; 
+        end
         
-        %%% Pts particles in allowed areas for restricted area simulations
-        if Map_Type==3
-            while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
-                Pos = (BS-1).*rand(1,3);
-            end
-        elseif Map_Type == 6
-            while SimData.Map{1}(floor(Pos(1))+1,floor(Pos(2))+1,1) == 0
-                Pos = (BS-1).*rand(1,3);
-            end            
-        end        
-        Frametime = Simtime/Frames;
-        
-        for k=1:Frames 
-            Time = clock;
-            
-            %%% Uses new map for dynamic barrier simulations
-            if any(Map_Type == [6,7])
-                Sel = k;
-            else
-                Sel = 1;
-            end
-            
-            
-            %%% Puts partilces back into their areas, if areas moved
-            if k>1 && any(Map_Type == [6,7])
-                if SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2))+1) ~= SimData.Map{k}(floor(Pos(1)+1),floor(Pos(2)+1))
-                    [X,Y] = find(SimData.Map{k} == SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2)+1)));
-                    [~,Index] = sort((X-Pos(1)).^2 + (Y-Pos(2)).^2);
-                    Pos(1) = X(Index(1));
-                    Pos(2) = Y(Index(1));
-                end                
-            end
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if (new == 0)
-                [Photons,  MI, Channel, Pos] = DifSim(...
-                    Frametime, BS,... General Parameters
-                    Scan_Type, Step, Pixel, ScanTicks,... Scanning Parameters 
-                    D,Pos,... Particle parameters
-                    wr,wz,... Focus parameters
-                    dX,dY,dZ,... Focus shift parameters
-                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
-                    LT,... %%% Lifetime of the different colors
-                    FRET, Cross,... %%% Relative FRET and Crosstalk rates
-                    uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
-                    Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
-            elseif new == 1
+        Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
+        Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
+        Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
+        Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
+
+        fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
+        fclose(fid);
+        if fid == -1
+            return;
+        end
+
+        Update = timer(...
+            'StartFcn',{@Update_Progress,1,i,numel(SimData.Species),NoP},...
+            'TimerFcn', {@Update_Progress,2,i,numel(SimData.Species),NoP},...
+            'StopFcn', {@Update_Progress,3,i,numel(SimData.Species),NoP},...
+            'Period',1,...
+            'ExecutionMode','fixedDelay');
+        start(Update)
+
+        for j = 1:NoP
+            %%% Generates starting position
+            Pos = (BS-1).*rand(1,3);    
+
+            %%% Pts particles in allowed areas for restricted area simulations
+            if Map_Type==3
+                while SimData.Map{1}(floor(Pos(1)+1),floor(Pos(2))+1) == 0
+                    Pos = (BS-1).*rand(1,3);
+                end
+            elseif Map_Type == 6
+                while SimData.Map{1}(floor(Pos(1))+1,floor(Pos(2))+1,1) == 0
+                    Pos = (BS-1).*rand(1,3);
+                end            
+            end        
+            Frametime = Simtime/Frames;
+
+            for k=1:Frames 
+                Time = clock;
+
+                %%% Uses new map for dynamic barrier simulations
+                if any(Map_Type == [6,7])
+                    Sel = k;
+                else
+                    Sel = 1;
+                end
+
+
+                %%% Puts partilces back into their areas, if areas moved
+                if k>1 && any(Map_Type == [6,7])
+                    if SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2))+1) ~= SimData.Map{k}(floor(Pos(1)+1),floor(Pos(2)+1))
+                        [X,Y] = find(SimData.Map{k} == SimData.Map{k-1}(floor(Pos(1)+1),floor(Pos(2)+1)));
+                        [~,Index] = sort((X-Pos(1)).^2 + (Y-Pos(2)).^2);
+                        Pos(1) = X(Index(1));
+                        Pos(2) = Y(Index(1));
+                    end                
+                end
+
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 [Photons,  MI, Channel, Pol, Pos, final_state(j)] = DifSim_ani_mac(...
                     Frametime, BS,... General Parameters
                     Scan_Type, Step, Pixel, ScanTicks, DiffStep,... Scanning Parameters 
@@ -2090,108 +2689,108 @@ for i = 1:numel(SimData.Species);
                     n_states, k_dyn, final_state(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
+                
+                %%% Channel is a 8 bit number that defines the exact photon type
+                %%% bits 0,1 for exitation laser
+                %%% bits 2,3 for exited dye
+                %%% bits 4,5 for emitting dye
+                %%% bits 6,7 for detection channel
+
+    %             if new == 0
+                    %%% Assigns photons according to detection channel
+                    Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
+                    Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
+                    Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
+                    Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
+                    if SimData.Species(i).UseLT
+                        MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
+                        MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
+                        MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
+                        MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
+                    else
+                        MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
+                        MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
+                        MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
+                        MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
+                    end
+    %             elseif new == 1
+    %                 %%% Assigns photons according to detection channel
+    %                 Photons1{j} = [Photons1{j}; Photons((bitand(Channel,3)==0) && (Pol==0))+(k-1)*double(Frametime)];
+    %                 Photons12{j} = [Photons12{j}; Photons((bitand(Channel,3)==0) && (Pol==1))+(k-1)*double(Frametime)];
+    %                 Photons2{j} = [Photons2{j}; Photons((bitand(Channel,3)==1) && (Pol==0))+(k-1)*double(Frametime)];
+    %                 Photons22{j} = [Photons22{j}; Photons((bitand(Channel,3)==1) && (Pol==1))+(k-1)*double(Frametime)];
+    %                 Photons3{j} = [Photons3{j}; Photons((bitand(Channel,3)==2) && (Pol==0))+(k-1)*double(Frametime)];
+    %                 Photons32{j} = [Photons32{j}; Photons((bitand(Channel,3)==2) && (Pol==1))+(k-1)*double(Frametime)];
+    %                 Photons4{j} = [Photons4{j}; Photons((bitand(Channel,3)==3) && (Pol==0))+(k-1)*double(Frametime)];
+    %                 Photons42{j} = [Photons42{j}; Photons((bitand(Channel,3)==3) && (Pol==1))+(k-1)*double(Frametime)];
+    %                 if SimData.Species(i).UseLT
+    %                     MI1{j} = [MI1{j}; MI((bitand(Channel,3)==0) && (Pol==0))];
+    %                     MI12{j} = [MI12{j}; MI((bitand(Channel,3)==0) && (Pol==1))];
+    %                     MI2{j} = [MI2{j}; MI((bitand(Channel,3)==1) && (Pol==0))];
+    %                     MI22{j} = [MI22{j}; MI((bitand(Channel,3)==1) && (Pol==1))];
+    %                     MI3{j} = [MI3{j}; MI((bitand(Channel,3)==2) && (Pol==0))];
+    %                     MI32{j} = [MI32{j}; MI((bitand(Channel,3)==2) && (Pol==1))];
+    %                     MI4{j} = [MI4{j}; MI((bitand(Channel,3)==3) && (Pol==0))];
+    %                     MI42{j} = [MI42{j}; MI((bitand(Channel,3)==3) && (Pol==1))];
+    %                 else
+    %                     MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
+    %                     MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
+    %                     MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
+    %                     MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
+    %                 end
+    %             end
             end
-            %%% Channel is a 8 bit number that defines the exact photon type
-            %%% bits 0,1 for exitation laser
-            %%% bits 2,3 for exited dye
-            %%% bits 4,5 for emitting dye
-            %%% bits 6,7 for detection channel
-            
-%             if new == 0
-                %%% Assigns photons according to detection channel
-                Photons1{j} = [Photons1{j}; Photons(bitand(Channel,3)==0)+(k-1)*double(Frametime)];
-                Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
-                Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
-                Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-                if SimData.Species(i).UseLT
-                    MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
-                    MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
-                    MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
-                    MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
-                else
-                    MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
-                    MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
-                    MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
-                    MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
-                end
-%             elseif new == 1
-%                 %%% Assigns photons according to detection channel
-%                 Photons1{j} = [Photons1{j}; Photons((bitand(Channel,3)==0) && (Pol==0))+(k-1)*double(Frametime)];
-%                 Photons12{j} = [Photons12{j}; Photons((bitand(Channel,3)==0) && (Pol==1))+(k-1)*double(Frametime)];
-%                 Photons2{j} = [Photons2{j}; Photons((bitand(Channel,3)==1) && (Pol==0))+(k-1)*double(Frametime)];
-%                 Photons22{j} = [Photons22{j}; Photons((bitand(Channel,3)==1) && (Pol==1))+(k-1)*double(Frametime)];
-%                 Photons3{j} = [Photons3{j}; Photons((bitand(Channel,3)==2) && (Pol==0))+(k-1)*double(Frametime)];
-%                 Photons32{j} = [Photons32{j}; Photons((bitand(Channel,3)==2) && (Pol==1))+(k-1)*double(Frametime)];
-%                 Photons4{j} = [Photons4{j}; Photons((bitand(Channel,3)==3) && (Pol==0))+(k-1)*double(Frametime)];
-%                 Photons42{j} = [Photons42{j}; Photons((bitand(Channel,3)==3) && (Pol==1))+(k-1)*double(Frametime)];
-%                 if SimData.Species(i).UseLT
-%                     MI1{j} = [MI1{j}; MI((bitand(Channel,3)==0) && (Pol==0))];
-%                     MI12{j} = [MI12{j}; MI((bitand(Channel,3)==0) && (Pol==1))];
-%                     MI2{j} = [MI2{j}; MI((bitand(Channel,3)==1) && (Pol==0))];
-%                     MI22{j} = [MI22{j}; MI((bitand(Channel,3)==1) && (Pol==1))];
-%                     MI3{j} = [MI3{j}; MI((bitand(Channel,3)==2) && (Pol==0))];
-%                     MI32{j} = [MI32{j}; MI((bitand(Channel,3)==2) && (Pol==1))];
-%                     MI4{j} = [MI4{j}; MI((bitand(Channel,3)==3) && (Pol==0))];
-%                     MI42{j} = [MI42{j}; MI((bitand(Channel,3)==3) && (Pol==1))];
-%                 else
-%                     MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
-%                     MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
-%                     MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
-%                     MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
-%                 end
-%             end
+
+            FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
+            fprintf(FID,['Particle' num2str(j) '\n']);
+            fclose(FID);
         end
+        %%% Combines photons for all particles
+        Photons_total{i,1} = cell2mat(Photons1);
+        MI_total{i,1} = cell2mat(MI1);
+        Photons_total{i,2} = cell2mat(Photons2);
+        MI_total{i,2} = cell2mat(MI2);
+        Photons_total{i,3} = cell2mat(Photons3);
+        MI_total{i,3} = cell2mat(MI3);
+        Photons_total{i,4} = cell2mat(Photons4);
+        MI_total{i,4} = cell2mat(MI4);
+        clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
 
-        FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
-        fprintf(FID,['Particle' num2str(j) '\n']);
-        fclose(FID);
+        stop(Update);
     end
-    %%% Combines photons for all particles
-    Photons_total{i,1} = cell2mat(Photons1);
-    MI_total{i,1} = cell2mat(MI1);
-    Photons_total{i,2} = cell2mat(Photons2);
-    MI_total{i,2} = cell2mat(MI2);
-    Photons_total{i,3} = cell2mat(Photons3);
-    MI_total{i,3} = cell2mat(MI3);
-    Photons_total{i,4} = cell2mat(Photons4);
-    MI_total{i,4} = cell2mat(MI4);
-    clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
-    
-    stop(Update);
-end
 
-Sim_Photons = cell(4,1);
-Sim_MI = cell(4,1);
-for i=1:4 %%% Combines photons of all species
-    Sim_Photons{i} = cell2mat(Photons_total(:,i));
-    Sim_MI{i} = cell2mat(MI_total(:,i));
-end
+    Sim_Photons = cell(4,1);
+    Sim_MI = cell(4,1);
+    for i=1:4 %%% Combines photons of all species
+        Sim_Photons{i} = cell2mat(Photons_total(:,i));
+        Sim_MI{i} = cell2mat(MI_total(:,i));
+    end
 
-if h.Sim_UseNoise.Value
-    for i=1:4
-        if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
-           AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
-           Noise = [];
-           while (isempty(Noise) || Noise(end)<Simtime)
-               if isempty(Noise)
-                   Noise = cumsum(exprnd(AIPT,[10000 1]));
-               else
-                   Noise = [Noise; cumsum(exprnd(AIPT,[10000 1]))+Noise(end)]; %#ok<AGROW>
+    if h.Sim_UseNoise.Value
+        for i=1:4
+            if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
+               AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
+               Noise = [];
+               while (isempty(Noise) || Noise(end)<Simtime)
+                   if isempty(Noise)
+                       Noise = cumsum(exprnd(AIPT,[10000 1]));
+                   else
+                       Noise = [Noise; cumsum(exprnd(AIPT,[10000 1]))+Noise(end)]; %#ok<AGROW>
+                   end
                end
-           end
-           Noise (Noise>Simtime) = []; %#ok<AGROW>
-           MI_Noise = uint16(MI_Bins*rand(numel(Noise),1));
-           
-           Sim_Photons{i} = [Sim_Photons{i}; Noise];
-           Sim_MI{i} = [Sim_MI{i}; MI_Noise];
-           [Sim_Photons{i}, Index] = sort(Sim_Photons{i});
-           Sim_MI{i} = Sim_MI{i}(Index);
-           clear Noise MI_Noise Index;
+               Noise (Noise>Simtime) = []; %#ok<AGROW>
+               MI_Noise = uint16(MI_Bins*rand(numel(Noise),1));
+
+               Sim_Photons{i} = [Sim_Photons{i}; Noise];
+               Sim_MI{i} = [Sim_MI{i}; MI_Noise];
+               [Sim_Photons{i}, Index] = sort(Sim_Photons{i});
+               Sim_MI{i} = Sim_MI{i}(Index);
+               clear Noise MI_Noise Index;
+            end
         end
     end
 end
-
-
+%% clean up and save
 clear Photons_total MI_total
 switch h.Sim_Save.Value    
     case 1 %%% Save to workspace

@@ -59,15 +59,18 @@ void Simulate_Diffusion(
     int state = initial_state;
     
     /// Generate anisotropy probability distribution based on microtime
-    double p_par[4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
+    double p_par[n_states*4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
     double r_dummy;
     /* aniso_param stores the values in order: r0, r_inf, tau_rot, G
     G must be defined as g_perp/g_par */
-    for (j=0;j<4;j++){
-        for (i=0;i<MI_Bins;i++)
+    for (s=0;s<n_states;s++)
         {
-            r_dummy = (aniso_param[4*j+0]-aniso_param[4*j+1])*exp(-i/aniso_param[4*j+2])+aniso_param[4*j+1];
-            p_par[MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[4*j+3]*(1-r_dummy));
+        for (j=0;j<4;j++){
+            for (i=0;i<MI_Bins;i++)
+            {
+                r_dummy = (aniso_param[16*s+4*j+0]-aniso_param[16*s+4*j+1])*exp(-i/aniso_param[16*s+4*j+2])+aniso_param[16*s+4*j+1];
+                p_par[MI_Bins*4*s+MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[16*s+4*j+3]*(1-r_dummy));
+            }
         }
     }
     
@@ -367,7 +370,7 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             // Evaluate Anisotropy
-                            binomial_distribution<unsigned char> binomial_aniso(1,p_par[MI_Bins*m+(int)Microtimes[NPhotons[0]]]); //define distribution
+                            binomial_distribution<unsigned char> binomial_aniso(1,p_par[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]]]); //define distribution
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
                             // convolute Microtime with IRF
                             Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
