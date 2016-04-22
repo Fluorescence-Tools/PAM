@@ -59,7 +59,7 @@ void Simulate_Diffusion(
     int state = initial_state;
     
     /// Generate anisotropy probability distribution based on microtime
-    double *p_par = new double [n_state*4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
+    double *p_par = new double [n_states*4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
     double r_dummy;
     /* aniso_param stores the values in order: r0, r_inf, tau_rot, G
     G must be defined as g_perp/g_par */
