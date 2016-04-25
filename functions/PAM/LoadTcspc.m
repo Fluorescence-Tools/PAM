@@ -422,7 +422,7 @@ switch (Type)
             else
                 Rout = 1:10; %%% consider up to 10 routing channels
             end
-            Rout(Rout>numel(MI))=[];
+            Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
             if any(~cellfun(@isempty,MI))
@@ -520,7 +520,7 @@ switch (Type)
             else
                 Rout = 1:10; %%% consider up to 10 routing channels
             end
-            Rout(Rout>numel(MI))=[];
+            Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
             if any(~cellfun(@isempty,MI))
@@ -699,7 +699,7 @@ switch (Type)
             else
                 Rout = 1:10;
             end
-            Rout(Rout>numel(MI))=[];
+            Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
             if any(~cellfun(@isempty,MI))
