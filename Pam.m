@@ -4131,6 +4131,7 @@ if any(mode==2)
             h.MI.Individual{i,2*(1+j)}.String=UserValues.Detector.Name;
         end
     end
+    h.MI.Auto.Checked = UserValues.Detector.Auto;
 end
 %% Saves new tabs in guidata
 guidata(h.Pam,h)
