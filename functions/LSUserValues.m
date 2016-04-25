@@ -129,6 +129,12 @@ if Mode==0 %%% Loads user values
         end
         disp('UserValues.Detector was incomplete');
     end
+    %%% Auto-detect used Detectors and Routing
+    if ~isfield(S.Detector,'Auto')
+        S.Detector.Auto='on';
+        disp('UserValues.Detector.Auto was incomplete');
+    end
+    P.FiDetectorle.Auto = S.Detector.Auto;
     P.Detector = [];
     P.Detector.Det = S.Detector.Det;
     P.Detector.Rout = S.Detector.Rout;
@@ -140,6 +146,7 @@ if Mode==0 %%% Loads user values
     P.Detector.Pol = S.Detector.Pol;
     P.Detector.BS = S.Detector.BS;
     P.Detector.enabled = S.Detector.enabled;
+    P.Detector.Auto = S.Detector.Auto;
     %% Look: Definition of Pam colors and style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     

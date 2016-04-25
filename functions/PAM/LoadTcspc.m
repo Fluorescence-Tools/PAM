@@ -1,7 +1,6 @@
-function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Caller,FileName,Type)
+function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Update_Detector_Channels,Caller,FileName,Type)
 global UserValues TcspcData FileInfo PamMeta
-
-if nargin<7 %%% Opens Dialog box for selecting new files to be loaded
+if nargin<8 %%% Opens Dialog box for selecting new files to be loaded
     %%% following code is for remembering the last used FileType
     LSUserValues(0);    
     %%% Loads all possible file types
@@ -114,8 +113,11 @@ switch (Type)
             Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
             Imagetime=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
             %%% Checks, which cards to load
-            card = unique(UserValues.Detector.Det);
-            
+            if strcmp(UserValues.Detector.Auto,'off')
+                card = unique(UserValues.Detector.Det);
+            else
+                card = 1:10; %%% consider up to 10 cards
+            end
             %%% Checks, which and how many card exist for each file
             for j=card;
                 if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),'file')
@@ -131,7 +133,11 @@ switch (Type)
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
                 [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
-                Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                if strcmp(UserValues.Detector.Auto,'off')
+                    Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                else
+                    Rout = 1:10; %%% consider up to 10 routing channels
+                end
                 Rout(Rout>numel(MI)) = [];
                 %%% Concatenates data to previous files and adds Imagetime
                 %%% to consecutive files
@@ -272,16 +278,24 @@ switch (Type)
         FileInfo.Path = Path;
         
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
         %%% Reads all selected files
         for i=1:numel(FileName)
             %%% there are a number of *_m(i).spc files associated with the
             %%% *_m1.spc file
             
             %%% Checks, which cards to load
-            card = unique(UserValues.Detector.Det);
+            if strcmp(UserValues.Detector.Auto,'off')
+                card = unique(UserValues.Detector.Det);
+            else
+                card = 1:10; %%% consider up to 10 detection channels
+            end
             
             %%% Checks, which and how many card exist for each file
             if Type == 2
@@ -318,7 +332,11 @@ switch (Type)
                     FileInfo.ClockPeriod = 1/ClockRate;
                 end
                 %%% Finds, which routing bits to use
-                Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                if strcmp(UserValues.Detector.Auto,'off')
+                    Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                else
+                    Rout = 1:10; %%% consider up to 10 routing channels
+                end
                 Rout(Rout>numel(MI))=[];
                 %%% Concaternates data to previous files and adds Imagetime
                 %%% to consecutive files
@@ -365,8 +383,13 @@ switch (Type)
         FileInfo.Path=Path;
         
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
         
         %%% Reads all selected files
         for i=1:numel(FileName)
@@ -394,7 +417,11 @@ switch (Type)
                 FileInfo.Resolution = Resolution;
             end
             %%% Finds, which routing bits to use
-            Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+            if strcmp(UserValues.Detector.Auto,'off')
+                Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+            else
+                Rout = 1:10; %%% consider up to 10 routing channels
+            end
             Rout(Rout>numel(MI))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
@@ -451,8 +478,13 @@ switch (Type)
 
         
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
         
         Totaltime=0;
         %%% Reads all selected files
@@ -483,7 +515,11 @@ switch (Type)
                 FileInfo.Resolution = Resolution;
             end
             %%% Finds, which routing bits to use
-            Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+            if strcmp(UserValues.Detector.Auto,'off')
+                Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+            else
+                Rout = 1:10; %%% consider up to 10 routing channels
+            end
             Rout(Rout>numel(MI))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
@@ -537,8 +573,17 @@ switch (Type)
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;   
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            Det = UserValues.Detector.Det;
+            Rout = UserValues.Detector.Rout;
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+            Det = 1:10;
+            Rout = 1:10;
+        end
         FileInfo.LineTimes = [];
         Totaltime=0;
         %%% Reads all selected files
@@ -553,8 +598,8 @@ switch (Type)
             FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
             FileInfo.MI_Bins = Header.MI_Bins;
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
-            for j = 1:4               
-               if any(UserValues.Detector.Rout(UserValues.Detector.Det == j) == 1)
+            for j = 1:size(TcspcData.MT,1)               
+               if any(Rout(Det == j) == 1)
                    TcspcData.MT{j,1} = [TcspcData.MT{j,1} double(Sim_Photons{j,1})];
                    Sim_Photons{j,1} = []; %%% Removes photons to reduce data duplication 
                    TcspcData.MI{j,1} = [TcspcData.MI{j,1} Sim_Photons{j,2}];
@@ -568,8 +613,13 @@ switch (Type)
         end  
         FileInfo.MeasurementTime = Totaltime/Header.Freq;
     case 7 %%% Pam Photon File
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
         Loaded = load(fullfile(Path,FileName{1}),'-mat');
         FileInfo = Loaded.Info;
         if isempty(FileInfo.ClockPeriod)
@@ -610,8 +660,13 @@ switch (Type)
         FileInfo.Path=Path;
         
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
         
         %%% Reads all selected files
         for i=1:numel(FileName)
@@ -639,7 +694,11 @@ switch (Type)
                 FileInfo.Resolution = Resolution;
             end
             %%% Finds, which routing bits to use
-            Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+            if strcmp(UserValues.Detector.Auto,'off')
+                Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+            else
+                Rout = 1:10;
+            end
             Rout(Rout>numel(MI))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
@@ -665,6 +724,34 @@ switch (Type)
 end
 Progress(1,h.Progress.Axes, h.Progress.Text);
 
+if strcmp(UserValues.Detector.Auto,'on')
+    %%% Auto-detection of used Detection and Routing channels
+    %%% Check which ones have been defined already
+    %%% Add missing ones
+    [used_det,used_rout] = find(cellfun(@(x) ~isempty(x),TcspcData.MT));
+    for i = 1:numel(used_det)
+        defined = false;
+        for j = 1:numel(UserValues.Detector.Det)
+            if (UserValues.Detector.Det(j) == used_det(i) && UserValues.Detector.Rout(j) == used_rout(i))
+                defined = true;
+            end
+        end
+        if ~defined
+            %%% add to UserValues.Detector list
+            UserValues.Detector.Det(end+1) = used_det(i);
+            UserValues.Detector.Rout(end+1) = used_rout(i);
+            UserValues.Detector.Color(end+1,:) = [1,0,0];
+            UserValues.Detector.Shift(end+1) = {zeros(400,1)};
+            UserValues.Detector.Name{end+1} = sprintf('Det: %i, Rout: %i',used_det(i),used_rout(i));
+            UserValues.Detector.Filter{end+1} = '500/50';
+            UserValues.Detector.Pol{end+1} = 'none';
+            UserValues.Detector.BS{end+1} = 'none';
+            UserValues.Detector.enabled{end+1} = 'on';
+        end
+    end
+    LSUserValues(1);
+    Update_Detector_Channels([],[],0:2)
+end
 if strcmp(Caller.Tag, 'Pam')
     %%% Applies detector shift immediately after loading data
     Shift_Detector([],[],'load')
@@ -680,6 +767,3 @@ if strcmp(Caller.Tag, 'Pam')
     h.NirFilter_Button.Enable = 'off';
     h.NirFilter_Button.ForegroundColor = [1 1 1];
 end
-
-
-

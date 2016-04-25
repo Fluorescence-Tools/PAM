@@ -324,7 +324,7 @@ void Simulate_Diffusion(
                                 } 
                                 for (p=m+1; p<4; p++) { FRET[p] = FRET[p] + FRET[p-1]; } /// Extract cummulative FRET rates
                                 
-                                if (LT[m]>0)
+                                if (LT[4*state+m]>0)
                                 {
                                     if (linkerlength == 0)
                                     {LT_RATE = FRET[3];}
@@ -348,7 +348,7 @@ void Simulate_Diffusion(
                                         LT_RATE = FRET[3];
                                         //printf("State: %i Lifetime Rate: %f\n",state, LT_RATE);
                                     }
-                                    geometric_distribution<unsigned short> exponential(LT_RATE/LT[m]); /// FRET modified exponential distribution for lifetime
+                                    geometric_distribution<unsigned short> exponential(LT_RATE/LT[4*state+m]); /// FRET modified exponential distribution for lifetime
                                     Microtimes[NPhotons[0]] += exponential(mt); /// Convolutes with lifetime of current dye
                                 }
                                 

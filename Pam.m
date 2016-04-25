@@ -69,7 +69,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Parent', h.Menu.File,...
         'Tag','LoadTcspc',...
         'Label','Load Tcspc Data',...
-        'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Shift_Detector,h.Pam});
+        'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam});
     h.Database.Add = uimenu(...
         'Parent', h.Menu.File,...
         'Tag','Database_Add',...
@@ -2399,6 +2399,14 @@ addpath(genpath(['.' filesep 'functions']));
         'Label','Add new microtime channel',...
         'Tag','MI_Add',...
         'Callback',@MI_Channels_Functions);
+    %%% Automatically detect used Detector and Routing numbers on load
+    h.MI.Auto = uimenu(...
+        'Parent',h.MI.Channels_Menu,...
+        'Label','Auto-detect used detectors and routing',...
+        'Tag','MI_Auto',...
+        'Separator','on',...
+        'Checked',UserValues.Detector.Auto,...
+        'Callback',@MI_Channels_Functions);
     %%% Menu to delete MI channels
 %     h.MI.Delete = uimenu(...
 %         'Parent',h.MI.Channels_Menu,...
@@ -2536,7 +2544,8 @@ addpath(genpath(['.' filesep 'functions']));
         'String','Save metadata',...
         'Callback',@Save_MetaData,...
         'Position',[0.51 0.51 0.13 0.07],...
-        'Tooltipstring', 'Load database from file');
+        'Tooltipstring', 'Saves Metadata to text file');
+
 %% Mac upscaling of Font Sizes
 if ismac
     scale_factor = 1.25;
@@ -3786,6 +3795,16 @@ LSUserValues(1);
 function MI_Channels_Functions(obj,ed)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
+if obj == h.MI.Auto
+    switch obj.Checked
+        case 'off'
+            obj.Checked = 'on';
+        case 'on'
+            obj.Checked = 'off';
+    end
+    UserValues.Detector.Auto = obj.Checked;
+    return;
+end
 %% Check what object called the function
 action = '';
 if obj == h.MI.Add
@@ -4455,7 +4474,7 @@ end
 for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(single file correlation)   
     if mode==2 %%% Loads new file
         h.Progress.Text.String='Loading new file';
-        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,File{m},Type);
+        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,File{m},Type);
     end    
     %%% Finds the right combinations to correlate
     [Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
@@ -7946,7 +7965,7 @@ switch mode
                 % it globally in UserValues each time
                 UserValues.File.Path = PamMeta.Database{i,2};
                 LSUserValues(1);
-                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
                     PamMeta.Database{i,1},...   %file
                     PamMeta.Database{i,3});     %type
                 Correlate ([],[],1)
@@ -7965,7 +7984,7 @@ switch mode
             % it globally in UserValues each time
             UserValues.File.Path = PamMeta.Database{i,2};
             LSUserValues(1);
-            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
                 PamMeta.Database{i,1},...   %file
                 PamMeta.Database{i,3});     %type
             Do_BurstAnalysis
@@ -7987,7 +8006,7 @@ switch mode
         % it globally in UserValues each time
         UserValues.File.Path = PamMeta.Database{h.Database.List.Value(1),2};
         LSUserValues(1);
-        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+        LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
             PamMeta.Database(h.Database.List.Value,1),...   %file
             PamMeta.Database{h.Database.List.Value(1),3});     %type
 end
@@ -8116,7 +8135,7 @@ switch mode
                 % it globally in UserValues each time
                 UserValues.File.Path = PamMeta.Export{i,2};
                 LSUserValues(1);
-                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,h.Pam,...
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
                     PamMeta.Export{i,1},...   %file
                     PamMeta.Export{i,3});     %type
                 Pam_Export([],event,Sel,1)

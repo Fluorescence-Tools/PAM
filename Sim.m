@@ -1343,6 +1343,7 @@ h.Sim_Dyn_Table = uitable(...
     'RowName',{'Species1'},...
     'Data',{0},...
     'ColumnWidth','auto',...
+    'CellEditCallback',@Sim_Settings,...
     'Position',[0.002 0.002 0.996 0.996]);
 %% Global variable initialization
 SimData.General = struct;
@@ -1363,7 +1364,7 @@ SimData.General(1).MIRange = 80;
 SimData.General(1).IRFWidth = 250;
 SimData.General(1).HeterogeneityUpdate = 10;
 SimData.General(1).LinkerWidth = 5;
-
+SimData.General(1).DynamicRate = 0;
 SimData.Species = struct;
 SimData.Species(1).Name = 'Species 1';
 SimData.Species(1).Color = 1;
@@ -1393,7 +1394,13 @@ SimData.Species(1).R0(3,2) = 68;
 SimData.Species(1).R0(4,2) = 50;
 SimData.Species(1).R0(4,3) = 60;
 
-SimData.Species(1).R = 50*ones(4,4);
+SimData.Species(1).R = zeros(4,4);
+SimData.Species(1).R(2,1) = 50;
+SimData.Species(1).R(3,1) = 50;
+SimData.Species(1).R(4,1) = 50;
+SimData.Species(1).R(3,2) = 50;
+SimData.Species(1).R(4,2) = 50;
+SimData.Species(1).R(4,3) = 50;
 
 SimData.Species(1).Aniso = repmat([0.4;1;0;1],4,1); % r0,rho[ns],residual r, G factor
 SimData.Species(1).DistanceWidth = zeros(4,4);
@@ -1888,6 +1895,11 @@ switch Obj
         SimData.General.HeterogeneityUpdate = str2double(h.Sim_sigma_update.String);
     case h.Sim_IRF_Width_Edit
         SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
+    case h.Sim_Dyn_Table
+        DynRates = cell2mat(h.Sim_Dyn_Table.Data);
+        DynRates(logical(eye(size(DynRates,1)))) = 0; %%% Set diagonal elements to zero
+        SimData.General.DynamicRate = DynRates;
+        h.Sim_Dyn_Table.Data = num2cell(DynRates);
 end
 
 SimData.General(File).Species = SimData.Species;
@@ -1981,6 +1993,13 @@ switch mode
         SimData.Species(end+1) = SimData.Species(Sel);
         SimData.Species(end).Name = ['Species ' num2str(numel(SimData.Species))];
         h.Sim_List.String{end+1} = SimData.Species(end).Name;
+        %%% Updates Dynamic Table
+        Data_temp = h.Sim_Dyn_Table.Data;
+        h.Sim_Dyn_Table.RowName = h.Sim_List.String;
+        h.Sim_Dyn_Table.ColumnName = h.Sim_List.String;
+        Data = cell(numel(h.Sim_List.String));Data(:) = deal({0});
+        Data(1:end-1,1:end-1) = Data_temp;
+        h.Sim_Dyn_Table.Data = Data;
     case 2 %%% Deletes current species
         if numel(SimData.Species)>1
             SimData.Species(Sel) = [];
@@ -1988,6 +2007,10 @@ switch mode
             h.Sim_List.Value = 1;
             Species_List_Callback([],e,3);
         end
+        %%% Updates Dynamic Table
+        h.Sim_Dyn_Table.Data = h.Sim_Dyn_Table.Data(1:end-1,1:end-1);
+        h.Sim_Dyn_Table.RowName = h.Sim_List.String;
+        h.Sim_Dyn_Table.ColumnName = h.Sim_List.String;
     case 3 %%% Change selected species
         h.Sim_Name.String = SimData.Species(Sel).Name;
         h.Sim_Color.Value = SimData.Species(Sel).Color;
@@ -2398,11 +2421,21 @@ if advanced
     else
         IRFwidth = 1; %%% set to minimum
     end
-    
+    IRFparams = [IRFshift,IRFwidth];
     %% General parameters are taken from the first species
+    %%% This includes everything that should be independent of species,
+    %%% i,e:
+    %%% Focal volume dimensions and shift
+    %%% Crosstalk, direct excitation and detection/excitation probabilities
+    %%% Bleaching rates
+    %%% Diffusion/Quenching maps
+    %%% Diffusion Coefficient (for now)
+    i = 1;
     wr = zeros(4,1); wz = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
 
+    %%% Diffusion
+    D = sqrt(2*SimData.Species(i).D*10^6/Freq);
     %%% Detection probability
     DetP = SimData.Species(i).DetP;
     %%% Excitation probability (including direct excitation)
@@ -2417,22 +2450,7 @@ if advanced
     end
     %%% Bleaching probability (1/avg(#EmittedPhotons)
     BlP = SimData.Species(i).BlP;
-    %%% Calculates relative energy transfer rates
-    switch SimData.Species(i).FRET
-        case 1
-            FRET = diag(ones(4,1));
-        case 2
-            FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
-            FRET(1:5:16) = 1;
-        case 3
-            FRET = diag(ones(4,1));
-    end
-    %%% Lifetime of the colors
-    if SimData.Species(i).UseLT
-        LT = SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*MI_Bins;
-    else
-        LT = [0 0 0 0];
-    end
+    
     for j = SimData.Species(i).Color+1:4
         ExP(j,:) = 0;
         FRET(j,:) = 0;
@@ -2506,6 +2524,17 @@ if advanced
     end
     
     DiffStep = 1;
+    if h.Use_FRET_Width.Value
+        HeterogeneityStep = SimData.General.HeterogeneityUpdate*1E-3.*Freq;
+    else
+        HeterogeneityStep = 0;
+    end
+    
+    if h.Use_Linker_Width.Value
+        linkerlength = SimData.General.LinkerWidth;
+    else
+        linkerlength = 0;
+    end
     %%% Now, read out species related parameters
     %%% and construct input arrays
     %%% for dynamic simlation, species are assigned based on species number
@@ -2514,104 +2543,149 @@ if advanced
     %%% probability!
     %%% Parameters are stacked arrays over all species
     aniso_params = [];
+    LT = [];
+    Dist = [];
+    R0 = [];
+    sigmaR = [];
+    
     for i = 1:numel(SimData.Species);
+        %%% Concentration
         NoP = SimData.Species(i).N;
-        D = sqrt(2*SimData.Species(i).D*10^6/Freq);
-        
+
+        %%% Lifetime
+        %%% Lifetime of the colors
+        if any([SimData.Species.UseLT] == 1)
+            LT = [LT; SimData.Species(i).LT./str2double(h.Sim_MIRange.String)*MI_Bins];
+        else
+            LT = [LT; [0; 0; 0; 0] ];
+        end
         %% new parameters
         %%% Anisotropy values
         aniso_params = [aniso_params;SimData.Species(i).Aniso];
         
-    end
-    
-    new = 1;
-    %%% only used if new is set to 1
-    type = 1;
-    switch type
-    case 1
-        %%% Parameters for 2color 2 state dynamic simulation
-        k12 = 1E3/Freq; %1 ms^-1
-        k21 = 0.5*1E3/Freq; %0.5 ms^-1
-
-
-        %%% Set dynamic step such that p_max = 0.1
-        DynamicStep = round(0.1/max([k12 k21]));
-        p12 = k12*DynamicStep;
-        p21 = k21*DynamicStep;
-
-        n_states = 1;
-        k_dyn = [1-p12, p12,...
-                 p21, 1-p21];
-
-        final_state = randi(n_states,NoP,1)-1;
-
+        %%% set initital state to species number
+        final_state(i) = i;
+        
         %%% For sigmaDist simulations, we need to provide now:
         %%% Distances (only nonzero for cross-color elements!!!)
         %%% sigma Distances (only nonzero for cross-color elements!!!)
         %%% R0 (only non-zero for cross-color elements!!!)
         %%% Step for recalculation
         %%% linkerlength (one value only for now!)
-        Dist = SimData.Species(i).R;
-        R0 = SimData.Species(i).R0;
-        Dist(R0 == 0) = 0;
-        heterogeneity_step = round(10E-3*Freq*1E3);
-        linkerlength = 5;
-        Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
-        Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
-        Dist = [Dist1(:); Dist2(:)];
-        sigmaDist = Dist./10;
-        R0 = [R0(:); R0(:)];
-        R0(Dist == 0) = 0;
-        if new == 1
-            FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
-            FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
-            FRET = [FRET1(:); FRET2(:)];
-        end
-    case 2
-        %%% Parameters for 3color 2 state dynamic simulation
-        k12 = 100*1E3/Freq; %2 ms^-1
-        k21 = 100*1E3/Freq; %3 ms^-1
-
-        DiffStep = 1;
-        %%% Set dynamic step such that p_max = 0.1
-        DynamicStep = round(0.1/max([k12 k21]));
-        p12 = k12*DynamicStep;
-        p21 = k21*DynamicStep;
-
-        n_states = 2;
-        k_dyn = [1-p12, p12,...
-                 p21, 1-p21];
-
-        final_state = randi(2,NoP,1)-1;
-
-        R0 = 50;
-        RGR1 = 55;
-        RGR2 = 70;
-        RBG1 = 45;
-        RBG2 = 70;
-        RBR1 = 65;
-        RBR2 = 45;
-
-        kGR1 = (R0/RGR1)^6;
-        kGR2 = (R0/RGR2)^6;
-        kBG1 = (R0/RBG1)^6;
-        kBG2 = (R0/RBG2)^6;
-        kBR1 = (R0/RBR1)^6;
-        kBR2 = (R0/RBR2)^6;
-
-        if new == 1
-            FRET1 = [1,0,0,0;...
-                     kBG1,1,0,0;...
-                     kBR1,kGR1,1,0;...
-                     0,0,0,0];   
-            FRET2 = [1,0,0,0;...
-                     kBG2,1,0,0;...
-                     kBR2,kGR2,1,0;...
-                     0,0,0,0];
-            FRET = [FRET1(:); FRET2(:)];
-        end
+        Dist = [Dist;SimData.Species(i).R(:)];
+        R0 = [R0;SimData.Species(i).R0(:)];
+        sigmaR = [sigmaR;SimData.Species(i).DistanceWidth(:)];
     end
-
+    
+    if any([SimData.Species.FRET] == 3) %%% Dynamic
+        %%% Dynamic Rates
+        DynRates = SimData.General.DynamicRate.*1E3./Freq; %%% convert to DiffTime
+        n_states = numel(SimData.Species);
+        DynamicStep = round(0.1/max(DynRates(:))); %%% Set dynamic step such that p_max = 0.1
+        pTrans = DynRates.*DynamicStep;
+        %%% diagonal elements are 1-sum(p_else)
+        for i = 1:size(pTrans,1)
+            pTrans(i,i) = 1-sum(pTrans(i,:));
+        end
+    else
+        pTrans = eye(numel(SimData.Species));
+    end
+    %%% For input, the rates must have the following structure:
+    %%% p = [p11,p12,13,...p21,p22,p23,...p31,p32,p33,...]
+    p=[];
+    for i = 1:size(pTrans,1)
+        p = [p,pTrans(i,:)];
+    end
+    
+    %% old code to access DifSim_ani.mex   
+%     new = 1;
+%     %%% only used if new is set to 1
+%     type = 1;
+%     switch type
+%     case 1
+%         %%% Parameters for 2color 2 state dynamic simulation
+%         k12 = 1E3/Freq; %1 ms^-1
+%         k21 = 0.5*1E3/Freq; %0.5 ms^-1
+% 
+% 
+%         %%% Set dynamic step such that p_max = 0.1
+%         DynamicStep = round(0.1/max([k12 k21]));
+%         p12 = k12*DynamicStep;
+%         p21 = k21*DynamicStep;
+% 
+%         n_states = 1;
+%         k_dyn = [1-p12, p12,...
+%                  p21, 1-p21];
+% 
+%         final_state = randi(n_states,NoP,1)-1;
+% 
+%         %%% For sigmaDist simulations, we need to provide now:
+%         %%% Distances (only nonzero for cross-color elements!!!)
+%         %%% sigma Distances (only nonzero for cross-color elements!!!)
+%         %%% R0 (only non-zero for cross-color elements!!!)
+%         %%% Step for recalculation
+%         %%% linkerlength (one value only for now!)
+%         Dist = SimData.Species(i).R;
+%         R0 = SimData.Species(i).R0;
+%         Dist(R0 == 0) = 0;
+%         heterogeneity_step = round(10E-3*Freq*1E3);
+%         linkerlength = 5;
+%         Dist1 = [0,0,0,0;40,0,0,0;0,0,0,0;0,0,0,0];
+%         Dist2 = [0,0,0,0;60,0,0,0;0,0,0,0;0,0,0,0];
+%         Dist = [Dist1(:); Dist2(:)];
+%         sigmaDist = Dist./10;
+%         R0 = [R0(:); R0(:)];
+%         R0(Dist == 0) = 0;
+%         if new == 1
+%             FRET1 = [1,0,0,0;3,1,0,0;0,0,0,0;0,0,0,0];
+%             FRET2 = [1,0,0,0;1/3,1,0,0;0,0,0,0;0,0,0,0];
+%             FRET = [FRET1(:); FRET2(:)];
+%         end
+%     case 2
+%         %%% Parameters for 3color 2 state dynamic simulation
+%         k12 = 100*1E3/Freq; %2 ms^-1
+%         k21 = 100*1E3/Freq; %3 ms^-1
+% 
+%         DiffStep = 1;
+%         %%% Set dynamic step such that p_max = 0.1
+%         DynamicStep = round(0.1/max([k12 k21]));
+%         p12 = k12*DynamicStep;
+%         p21 = k21*DynamicStep;
+% 
+%         n_states = 2;
+%         k_dyn = [1-p12, p12,...
+%                  p21, 1-p21];
+% 
+%         final_state = randi(2,NoP,1)-1;
+% 
+%         R0 = 50;
+%         RGR1 = 55;
+%         RGR2 = 70;
+%         RBG1 = 45;
+%         RBG2 = 70;
+%         RBR1 = 65;
+%         RBR2 = 45;
+% 
+%         kGR1 = (R0/RGR1)^6;
+%         kGR2 = (R0/RGR2)^6;
+%         kBG1 = (R0/RBG1)^6;
+%         kBG2 = (R0/RBG2)^6;
+%         kBR1 = (R0/RBR1)^6;
+%         kBR2 = (R0/RBR2)^6;
+% 
+%         if new == 1
+%             FRET1 = [1,0,0,0;...
+%                      kBG1,1,0,0;...
+%                      kBR1,kGR1,1,0;...
+%                      0,0,0,0];   
+%             FRET2 = [1,0,0,0;...
+%                      kBG2,1,0,0;...
+%                      kBR2,kGR2,1,0;...
+%                      0,0,0,0];
+%             FRET = [FRET1(:); FRET2(:)];
+%         end
+%     end
+    %% Start simulation
     for i = 1:numel(SimData.Species);
         if ~SimData.Start %%% Aborts Simulation
            return; 
@@ -2621,7 +2695,12 @@ if advanced
         Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
         Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
         Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
-
+        if h.Sim_UseAni.Value %%% Include anisotropy
+            Photons1s = cell(NoP,1); MI1s = cell(NoP,1);
+            Photons2s = cell(NoP,1); MI2s = cell(NoP,1);
+            Photons3s = cell(NoP,1); MI3s = cell(NoP,1);
+            Photons4s = cell(NoP,1); MI4s = cell(NoP,1);
+        end
         fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
         fclose(fid);
         if fid == -1
@@ -2685,8 +2764,8 @@ if advanced
                     dX,dY,dZ,... Focus shift parameters
                     ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
                     LT,aniso_params,... %%% Lifetime of the different coloqwdfdsfs
-                    Dist, sigmaDist, linkerlength, R0, heterogeneity_step, Cross,... %%% Relative FRET and Crosstalk rates
-                    n_states, k_dyn, final_state(j), DynamicStep,...
+                    Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross,... %%% Relative FRET and Crosstalk rates
+                    n_states, p, final_state(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 
