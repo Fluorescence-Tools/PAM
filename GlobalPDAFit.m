@@ -3597,9 +3597,16 @@ function PofT = calc_dynamic_distribution(dT,N,k1,k2)
 %%% k2  -   Rate from state 2 to state 1
 
 % Split in N+1 time bins
-PofT = zeros(N+1,1);
+PofT = zeros(1,N+1);
 dt = dT/N;
 
+%%% catch special case where k1 = k2 = 0
+if (k1 == 0) && (k2 == 0)
+    %%% No dynamics, i.e. equal weights
+    PofT(1) = 0.5;
+    PofT(end) = 0.5;
+    return;
+end
 %%% first and last bin are special cases
 PofT(1) = k1/(k1+k2)*exp(-k2*dT) + calcPofT(k1,k2,dt/2,dT-dt/2,dt/2);
 PofT(end) = k2/(k1+k2)*exp(-k1*dT) + calcPofT(k1,k2,dT-dt/2,dt/2,dt/2);
@@ -3610,7 +3617,7 @@ for i = 1:N-1
     T2 = dT-T1;
     PofT(i+1) = calcPofT(k1,k2,T1,T2,dt); 
 end
-PofT = PofT'./sum(PofT);
+PofT = PofT./sum(PofT);
 
 
 function PofT = calcPofT(k1,k2,T1,T2,dt)
