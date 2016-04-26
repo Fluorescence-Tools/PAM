@@ -1204,6 +1204,13 @@ if Mode==0 %%% Loads user values
     end
     P.BurstBrowser.Display.ColorLine3 = S.BurstBrowser.Display.ColorLine3;
     
+    %%% Checks, if BurstBrowser.Display.ColorLine4 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine4')
+        S.BurstBrowser.Display.ColorLine4=[1 1 0];
+        disp('UserValues.BurstBrowser.Display.ColorLine4 was incomplete');
+    end
+    P.BurstBrowser.Display.ColorLine4 = S.BurstBrowser.Display.ColorLine4;
+    
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
@@ -1272,6 +1279,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.PDATimeBin was incomplete');
     end
     P.BurstBrowser.Settings.PDATimeBin = S.BurstBrowser.Settings.PDATimeBin;
+    %%% Check, if BurstBrowser.Settings.PDATimeBin subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FitGaussPick')
+        S.BurstBrowser.Settings.FitGaussPick=0;
+        disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
+    end
+    P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
