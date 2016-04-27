@@ -3819,7 +3819,10 @@ if strcmpi(clickType,'right')
         case {'Stoichiometry','Stoichiometry GR','Stoichiometry BG','Stoichiometry BR'}
             lower = 0;
             upper = 1;
-        otherwise
+        case {'Anisotropy RR','Anisotropy GG','Anisotropy BB'}
+            lower = -0.2;
+            upper = 0.6;
+        otherwise  
             lower = min(BurstData{file}.DataCut(~isinf(BurstData{file}.DataCut(:,param)),param));
             upper = max(BurstData{file}.DataCut(~isinf(BurstData{file}.DataCut(:,param)),param));
     end
