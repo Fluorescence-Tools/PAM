@@ -1285,12 +1285,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.PDATimeBin was incomplete');
     end
     P.BurstBrowser.Settings.PDATimeBin = S.BurstBrowser.Settings.PDATimeBin;
-    %%% Check, if BurstBrowser.Settings.PDATimeBin subfield exists
+    %%% Check, if BurstBrowser.Settings.FitGaussPick subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'FitGaussPick')
         S.BurstBrowser.Settings.FitGaussPick=0;
         disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
     end
     P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
+    %%% Check, if BurstBrowser.Settings.GaussianFitMethod subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'GaussianFitMethod')
+        S.BurstBrowser.Settings.GaussianFitMethod='MLE';
+        disp('UserValues.BurstBrowser.Settings.GaussianFitMethod was incomplete');
+    end
+    P.BurstBrowser.Settings.GaussianFitMethod = S.BurstBrowser.Settings.GaussianFitMethod;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');

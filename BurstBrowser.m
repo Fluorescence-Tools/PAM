@@ -1250,45 +1250,93 @@ if isempty(hfig)
         'Parent',h.FitGaussian_Panel,...
         'Callback',@UpdatePlot,...
         'Units','normalized',...
-        'Position',[0.1,0.85,0.3,0.08],...
+        'Position',[0.1,0.9,0.3,0.08],...
         'String','Fit Gaussian mixture',...
         'ForegroundColor',Look.Fore,...
         'BackgroundColor',Look.Control,...
         'FontSize',12,...
-        'TooltipString','<html>Fits a Gaussian mixture model to current 2D plot using the gmdistfit function in Matlab.<br>To fit 1D only, select the same parameter for x and y.<br>Set number of Gaussian using the popupmenu.</html>');
+        'TooltipString','<html>Fits a Gaussian mixture model to current 2D plot using the gmdistfit function in Matlab.<br>To fit 1D only, select the same parameter for x and y.<br>Set number of Gaussian using the popupmenu.<br>Start points are guessed unless fixed when using LSQ.</html>');
     h.Fit_NGaussian_Popupmenu = uicontrol('Style','popup',...
         'Units','normalized',...
-        'Callback',[],...
-        'Position',[0.4,0.85,0.2,0.08],...
+        'Callback',@UpdateOptions,...
+        'Position',[0.4,0.9,0.2,0.08],...
         'String',{'1','2','3'},...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
         'TooltipStr','Number of Gaussian components of the model.');
-    TableData = cell(6,6);
-    TableData(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
-    h.Fit_Gaussian_Text = uitable(...
-        'Units','normalized',...
-        'Position',[0,0,1,0.75],...
-        'Parent',h.FitGaussian_Panel,...
-        'FontSize',12,...
-        'ColumnName',{'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'},...
-        'RowName',[],...
-        'ColumnEditable',false(1,7),...
-        'Data',TableData,...
-        'ColumnWidth',{100,100,100,100,100,100,100},...
-        'TooltipString','<html>Result of the Gaussian mixture fit.<br>If "converged" is zero, the fit did not converge. <br>-logL: negative log-likelihood. <br>BIC: Bayesian information criterion. The model with the lowest value is preferred.<br>Distribution widths are given as &sigma=sqrt(&sigma<sup>2</sup>), while the covariance COV(XY) is given as actual variance.</html>');
     h.Fit_Gaussian_Pick = uicontrol('Style','checkbox',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
         'Value',UserValues.BurstBrowser.Settings.FitGaussPick,...
-        'Position',[0.65,0.85,0.35,0.08],...
+        'Position',[0.6,0.9,0.4,0.08],...
         'String','Pick start points manually',...
         'Parent',h.FitGaussian_Panel,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'FontSize',12,...
         'TooltipString','If selected, you are required to manually select the start point for the fit by clicking inside the 2D plot.');
-    
+    h.Fit_GaussianMethod_Popupmenu = uicontrol('Style','popup',...
+        'Units','normalized',...
+        'Callback',@UpdateOptions,...
+        'Position',[0.4,0.8,0.2,0.08],...
+        'String',{'MLE','LSQ'},...
+        'Value',find(strcmp({'MLE','LSQ'},UserValues.BurstBrowser.Settings.GaussianFitMethod)),...
+        'Parent',h.FitGaussian_Panel,...
+        'FontSize',12,...
+        'TooltipStr','Fit Method. LSQ allows fixing of parameters.');
+    h.Fit_GaussianChi2_Text = uicontrol('Style','text',...
+        'Units','normalized',...
+        'Callback',@UpdateOptions,...
+        'Position',[0.6,0.8,0.4,0.08],...
+        'String','',...
+        'HorizontalAlignment','center',...
+        'Parent',h.FitGaussian_Panel,...
+        'FontSize',12,...
+        'BackgroundColor',Look.Back,...
+        'ForegroundColor',Look.Fore,...
+        'TooltipStr','red. Chi2 value');
+    h.GUIData.TableDataMLE = cell(6,6);
+    h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
+    h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
+    h.GUIData.ColumnEditableMLE = false(1,7);
+    h.GUIData.ColumnWidthMLE = {100,100,100,100,100,100,100};
+    h.GUIData.ColumnFormatMLE = repmat({'numeric'},1,7);
+    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0,Inf,false,0.05,0,Inf,false,0,-Inf,Inf,false],[3,1]));
+    for i =1:3
+        h.GUIData.TableDataLSQ(i,4:4:end) = {false,false,false,false,false,false};
+    end
+    h.GUIData.ColumnEditableLSQ = true(1,24);
+    h.GUIData.ColumnNameLSQ = {'<html><b>Fraction</b></html>','LB','UB','F','<html><b>Mean(X)</b></html>','LB','UB','F','<html><b>Mean(Y)</b></html>','LB','UB','F','<html><b>&sigma(XX)</b></html>','LB','UB','F','<html><b>&sigma(YY)</b></html>','LB','UB','F','<html><b>COV(XY)</b></html>','LB','UB','F'};
+    h.GUIData.ColumnWidthLSQ = repmat({60,25,25,20},[1,6]);
+    h.GUIData.ColumnFormatLSQ = repmat({'numeric','numeric','numeric','logical'},[1,6]);
+    switch UserValues.BurstBrowser.Settings.GaussianFitMethod
+        case 'MLE'
+            h.Fit_Gaussian_Text = uitable(...
+                'Units','normalized',...
+                'Position',[0,0,1,0.75],...
+                'Parent',h.FitGaussian_Panel,...
+                'FontSize',12,...
+                'ColumnName',h.GUIData.ColumnNameMLE,...
+                'RowName',[],...
+                'ColumnEditable',h.GUIData.ColumnEditableMLE,...
+                'Data',h.GUIData.TableDataMLE,...
+                'ColumnWidth',h.GUIData.ColumnWidthMLE,...
+                'ColumnFormat',h.GUIData.ColumnFormatMLE,...
+                'TooltipString','<html>Result of the Gaussian mixture fit.<br>If "converged" is zero, the fit did not converge. <br>-logL: negative log-likelihood. <br>BIC: Bayesian information criterion. The model with the lowest value is preferred.<br>Distribution widths are given as &sigma=sqrt(&sigma<sup>2</sup>), while the covariance COV(XY) is given as actual variance.</html>');
+        case 'LSQ'
+            h.Fit_Gaussian_Text = uitable(...
+                'Units','normalized',...
+                'Position',[0,0,1,0.75],...
+                'Parent',h.FitGaussian_Panel,...
+                'FontSize',12,...
+                'ColumnName',h.GUIData.ColumnNameLSQ,...
+                'ColumnFormat',h.GUIData.ColumnFormatLSQ,...
+                'RowName',[],...
+                'ColumnEditable',h.GUIData.ColumnEditableLSQ,...
+                'Data',h.GUIData.TableDataLSQ,...
+                'ColumnWidth',h.GUIData.ColumnWidthLSQ,...
+                'TooltipString','<html>Gaussian fit table</html>');
+    end
     %% Secondary tab options
     
     %%% Display Options Panel
@@ -2608,6 +2656,7 @@ if isempty(hfig)
     end
     %%% Initialize Plots
     Initialize_Plots(1);
+    UpdateOptions(h.Fit_NGaussian_Popupmenu,[],h);
     %% set UserValues in GUI
     UpdateCorrections([],[],h);
     %%% Update ColorMap
@@ -3748,12 +3797,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateOptions(obj,~)
+function UpdateOptions(obj,~,h)
 global UserValues
 if isempty(obj)
     return;
 end
-h = guidata(obj);
+if nargin < 3
+    h = guidata(obj);
+end
 switch obj
     case h.SaveOnClose
         UserValues.BurstBrowser.Settings.SaveOnClose = obj.Value;
@@ -3781,6 +3832,38 @@ switch obj
         UserValues.BurstBrowser.Settings.FitGaussPick = obj.Value;
     case h.ApplyCorrectionsOnLoad
         UserValues.BurstBrowser.Settings.CorrectionOnLoad = obj.Value;
+    case h.Fit_GaussianMethod_Popupmenu
+        switch obj.Value
+            case 1 %%% changed to MLE
+                h.Fit_Gaussian_Text.ColumnName = h.GUIData.ColumnNameMLE;
+                h.Fit_Gaussian_Text.Data = h.GUIData.TableDataMLE;
+                h.Fit_Gaussian_Text.ColumnEditable = h.GUIData.ColumnEditableMLE;
+                h.Fit_Gaussian_Text.ColumnWidth = h.GUIData.ColumnWidthMLE;
+                h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatMLE;
+                UserValues.BurstBrowser.Settings.GaussianFitMethod = 'MLE';
+                h.Fit_GaussianChi2_Text.String = '';
+            case 2 %%% changed to LSQ
+                h.Fit_Gaussian_Text.ColumnName = h.GUIData.ColumnNameLSQ;
+                h.Fit_Gaussian_Text.Data = h.GUIData.TableDataLSQ;
+                h.Fit_Gaussian_Text.ColumnEditable = h.GUIData.ColumnEditableLSQ;
+                h.Fit_Gaussian_Text.ColumnWidth = h.GUIData.ColumnWidthLSQ;
+                h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatLSQ;
+                UserValues.BurstBrowser.Settings.GaussianFitMethod = 'LSQ';
+        end
+        UpdateOptions(h.Fit_NGaussian_Popupmenu,[]);
+    case h.Fit_NGaussian_Popupmenu
+        if strcmp(UserValues.BurstBrowser.Settings.GaussianFitMethod,'LSQ')
+            %%% change fixed values in table
+            nG = obj.Value;
+            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG};
+            for i = 1:nG           
+                h.Fit_Gaussian_Text.Data(i,4:4:end) = {false,false,false,false,false,false};
+            end
+            for i = (nG+1):3           
+                h.Fit_Gaussian_Text.Data(i,4:4:end) = {true,true,true,true,true,true};
+                h.Fit_Gaussian_Text.Data{i,1} = 0;
+            end
+        end
 end
 LSUserValues(1);
 
@@ -4568,9 +4651,9 @@ if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
     % Update average value X histogram
-    x = get(BurstMeta.Plots.Main_histX, 'XData');
-    y = get(BurstMeta.Plots.Main_histX, 'YData');
-    avg = sum(x.*y)/sum(y);
+    xd = get(BurstMeta.Plots.Main_histX, 'XData');
+    yd = get(BurstMeta.Plots.Main_histX, 'YData');
+    avg = sum(xd.*yd)/sum(yd);
     if avg < 1
         rounding = 100;
     elseif avg < 10
@@ -4578,14 +4661,14 @@ if h.DisplayAverage.Value == 1
     else
         rounding = 1;
     end
-    stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
+    stdev = round(sqrt(sum((yd.*(xd-avg).^2))/(sum(yd)-1))*rounding)/rounding;
     avg = round(avg*rounding)/rounding;
     set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
     
     % Update average value Y histogram
-    x = get(BurstMeta.Plots.Main_histY, 'XData');
-    y = get(BurstMeta.Plots.Main_histY, 'YData');
-    avg = sum(x.*y)/sum(y);
+    xd = get(BurstMeta.Plots.Main_histY, 'XData');
+    yd = get(BurstMeta.Plots.Main_histY, 'YData');
+    avg = sum(xd.*yd)/sum(yd);
     if avg < 1
         rounding = 100;
     elseif avg < 10
@@ -4593,7 +4676,7 @@ if h.DisplayAverage.Value == 1
     else
         rounding = 1;
     end
-    stdev = round(sqrt(sum((y.*(x-avg).^2))/(sum(y)-1))*rounding)/rounding;
+    stdev = round(sqrt(sum((yd.*(xd-avg).^2))/(sum(yd)-1))*rounding)/rounding;
     avg = round(avg*rounding)/rounding;
     set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
 else
@@ -4605,96 +4688,293 @@ if obj == h.Fit_Gaussian_Button
     %%% Perform fitting of Gausian Mixture model to currently plotted data
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
-    if x == y %%% same data selected, 1D fitting
-        GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
-        xbins_fit = linspace(xbins(1),xbins(end),1000);
-        p = pdf(GModel,xbins_fit');
-        BurstMeta.Plots.Mixture.plotX(1).Visible = 'on';
-        BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
-        BurstMeta.Plots.Mixture.plotX(1).YData = p./sum(p).*sum(sum(HH))*1000/nbinsX;
-        if nG > 1
-            for i = 1:nG
-                p_ind = normpdf(xbins_fit,GModel.mu(i),sqrt(GModel.Sigma(:,:,i)));
-                p_ind = p_ind./sum(p_ind).*sum(sum(HH)).*GModel.ComponentProportion(i);
-                BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
-                BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
-                BurstMeta.Plots.Mixture.plotX(i+1).YData = p_ind*1000/nbinsX;
+    % Fit mixture to data
+    switch UserValues.BurstBrowser.Settings.GaussianFitMethod
+        case 'MLE'
+            if x == y %%% same data selected, 1D fitting
+                GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
+                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                p = pdf(GModel,xbins_fit');
+                BurstMeta.Plots.Mixture.plotX(1).Visible = 'on';
+                BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.plotX(1).YData = p./sum(p).*sum(sum(HH))*1000/nbinsX;
+                if nG > 1
+                    for i = 1:nG
+                        p_ind = normpdf(xbins_fit,GModel.mu(i),sqrt(GModel.Sigma(:,:,i)));
+                        p_ind = p_ind./sum(p_ind).*sum(sum(HH)).*GModel.ComponentProportion(i);
+                        BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.plotX(i+1).YData = p_ind*1000/nbinsX;
+                    end
+                end
+                h.Fit_Gaussian_Text.Data(1,1:3) = {double(GModel.Converged),GModel.NegativeLogLikelihood,GModel.BIC};
+                for i = 1:nG
+                    h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),'-',sqrt(GModel.Sigma(1,1,i)),'-','-'};
+                end
+                if nG < 3
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
+                end
+            else
+                if h.Fit_Gaussian_Pick.Value
+                    cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
+                    [x_start,y_start] = ginput(nG);
+                    start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
+                    GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
+                else
+                    %[~,ix_max] = max(HH(:));
+                    %[y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
+                    %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
+                    GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
+                end
+                % plot contour plot over image plot
+                % hide contourf plot, make image plot visible
+                BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+                BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+                for i = 1:nG
+                    BurstMeta.Plots.Mixture.Main_Plot(i).Visible = 'on';
+                    BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
+                    BurstMeta.Plots.Mixture.plotY(i).Visible = 'on';
+                end
+                % prepare fit data
+                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                [X,Y] = meshgrid(xbins_fit,ybins_fit);
+                p = reshape(pdf(GModel,[X(:) Y(:)]),[1000,1000]);
+                pX = sum(p,1);pX = pX./sum(pX).*sum(sum(HH))*1000/nbinsX;
+                pY = sum(p,2);pY = pY./sum(pY).*sum(sum(HH))*1000/nbinsY;
+                BurstMeta.Plots.Mixture.Main_Plot(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.Main_Plot(1).YData = ybins_fit;
+                BurstMeta.Plots.Mixture.Main_Plot(1).ZData = p/sum(sum(p)).*sum(sum(HH))*1000^2/nbinsX/nbinsY;
+                BurstMeta.Plots.Mixture.Main_Plot(1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(1).ZData));%linspace(0,max(max(HH)),10);
+                BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.plotX(1).YData = pX;
+                BurstMeta.Plots.Mixture.plotY(1).XData = ybins_fit;
+                BurstMeta.Plots.Mixture.plotY(1).YData = pY;
+
+                %%% Update subplots
+                if nG > 1
+                    for i = 1:nG
+                        p_ind = mvnpdf([X(:) Y(:)],GModel.mu(i,:),GModel.Sigma(:,:,i));
+                        p_ind = reshape(p_ind,[1000,1000]);
+                        p_ind = p_ind./sum(sum(p_ind)).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000^2/nbinsX/nbinsY;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).YData = ybins_fit;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData = p_ind;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData));%linspace(0,max(max(p_ind)),10);
+                        p_ind_x = sum(p_ind,1);
+                        BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.plotX(i+1).YData = p_ind_x./sum(p_ind_x).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000/nbinsX;
+                        p_ind_y = sum(p_ind,2);
+                        BurstMeta.Plots.Mixture.plotY(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotY(i+1).XData = ybins_fit;
+                        BurstMeta.Plots.Mixture.plotY(i+1).YData = p_ind_y./sum(p_ind_y).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000/nbinsY;
+                    end
+                end
+                %%% output result in table
+                h.Fit_Gaussian_Text.Data(1,1:3) = {double(GModel.Converged),GModel.NegativeLogLikelihood,GModel.BIC};
+                for i = 1:nG
+                    h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),GModel.mu(i,2),sqrt(GModel.Sigma(1,1,i)),sqrt(GModel.Sigma(2,2,i)),GModel.Sigma(1,2,i)};
+                end
+                if nG < 3
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
+                end
             end
-        end
-        h.Fit_Gaussian_Text.Data(1,1:3) = {double(GModel.Converged),GModel.NegativeLogLikelihood,GModel.BIC};
-        for i = 1:nG
-            h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),'-',sqrt(GModel.Sigma(1,1,i)),'-','-'};
-        end
-        if nG < 3
-            h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
-        end
-    else
-        % Fit mixture to data
-        if h.Fit_Gaussian_Pick.Value
-            cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
-            [x_start,y_start] = ginput(nG);
-            start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-            GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
-        else
-            %[~,ix_max] = max(HH(:));
-            %[y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
-            %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-            GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
-        end
-        % plot contour plot over image plot
-        % hide contourf plot, make image plot visible
-        BurstMeta.Plots.Main_Plot(1).Visible = 'on';
-        BurstMeta.Plots.Main_Plot(2).Visible = 'off';
-        for i = 1:nG
-            BurstMeta.Plots.Mixture.Main_Plot(i).Visible = 'on';
-            BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
-            BurstMeta.Plots.Mixture.plotY(i).Visible = 'on';
-        end
-        % prepare fit data
-        xbins_fit = linspace(xbins(1),xbins(end),1000);
-        ybins_fit = linspace(ybins(1),ybins(end),1000);
-        [X,Y] = meshgrid(xbins_fit,ybins_fit);
-        p = reshape(pdf(GModel,[X(:) Y(:)]),[1000,1000]);
-        pX = sum(p,1);pX = pX./sum(pX).*sum(sum(HH))*1000/nbinsX;
-        pY = sum(p,2);pY = pY./sum(pY).*sum(sum(HH))*1000/nbinsY;
-        BurstMeta.Plots.Mixture.Main_Plot(1).XData = xbins_fit;
-        BurstMeta.Plots.Mixture.Main_Plot(1).YData = ybins_fit;
-        BurstMeta.Plots.Mixture.Main_Plot(1).ZData = p/sum(sum(p)).*sum(sum(HH))*1000^2/nbinsX/nbinsY;
-        BurstMeta.Plots.Mixture.Main_Plot(1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(1).ZData));%linspace(0,max(max(HH)),10);
-        BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
-        BurstMeta.Plots.Mixture.plotX(1).YData = pX;
-        BurstMeta.Plots.Mixture.plotY(1).XData = ybins_fit;
-        BurstMeta.Plots.Mixture.plotY(1).YData = pY;
-        
-        %%% Update subplots
-        if nG > 1
-            for i = 1:nG
-                p_ind = mvnpdf([X(:) Y(:)],GModel.mu(i,:),GModel.Sigma(:,:,i));
-                p_ind = reshape(p_ind,[1000,1000]);
-                p_ind = p_ind./sum(sum(p_ind)).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000^2/nbinsX/nbinsY;
-                BurstMeta.Plots.Mixture.Main_Plot(i+1).Visible = 'on';
-                BurstMeta.Plots.Mixture.Main_Plot(i+1).XData = xbins_fit;
-                BurstMeta.Plots.Mixture.Main_Plot(i+1).YData = ybins_fit;
-                BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData = p_ind;
-                BurstMeta.Plots.Mixture.Main_Plot(i+1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData));%linspace(0,max(max(p_ind)),10);
-                p_ind_x = sum(p_ind,1);
-                BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
-                BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
-                BurstMeta.Plots.Mixture.plotX(i+1).YData = p_ind_x./sum(p_ind_x).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000/nbinsX;
-                p_ind_y = sum(p_ind,2);
-                BurstMeta.Plots.Mixture.plotY(i+1).Visible = 'on';
-                BurstMeta.Plots.Mixture.plotY(i+1).XData = ybins_fit;
-                BurstMeta.Plots.Mixture.plotY(i+1).YData = p_ind_y./sum(p_ind_y).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000/nbinsY;
+        case 'LSQ'
+            if x == y %%% same data selected, 1D fitting
+                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                x_start = mean(datatoplot(:,x));
+                %%% for non fixed values, take estimate
+                %%% set fixed values to x0
+                x0 = zeros(1,9);
+                lb = zeros(1,9);
+                ub = inf(1,9);
+                fixed = false(1,9);
+                for i = 1:3
+                    x0((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[1,5,13]));
+                    lb((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[2,6,14]));
+                    ub((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[3,7,15]));
+                    fixed((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[4,8,16]));
+                end
+
+                %%% set starting center values to mean values or picked
+                for i = 1:nG
+                    if ~fixed(2+(i-1)*3)
+                        x0(2+(i-1)*3) = x_start;
+                    end
+                end
+                
+                xdata = {xbins,sum(sum(HH)),fixed,nG,0};
+                ydata = sum(HH,1);
+                BurstMeta.GaussianFit.Params = x0;
+                opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
+                [x,~,residuals] = lsqcurvefit(@MultiGaussFit_1D,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
+                
+                chi2 = sum((residuals.^2)./max(1,ydata))./(numel(ydata)-1-sum(fixed));
+                h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
+                
+                Res = zeros(1,numel(fixed));
+                Res(~fixed)=x;
+                %%% Assigns parameters from table to fixed parameters
+                Res(fixed)=BurstMeta.GaussianFit.Params(fixed);
+                Res(1:3:end) = Res(1:3:end)./sum(Res(1:3:end));
+                
+                p = MultiGaussFit_1D(Res,{xbins_fit,sum(sum(HH)),fixed,nG,1});
+                BurstMeta.Plots.Mixture.plotX(1).Visible = 'on';
+                BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.plotX(1).YData = p*1000/nbinsX;
+                if nG > 1
+                    for i = 1:nG
+                        x_ind = Res;
+                        for j = 1:nG %%% set other components to zero
+                            if j ~=i
+                                x_ind(1+(j-1)*3) = 0;
+                            else
+                                x_ind(1+(j-1)*3) = 1;
+                            end
+                        end
+                        p_ind = MultiGaussFit_1D(x_ind,{xbins_fit,sum(sum(HH)),fixed,nG,1});
+                        BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.plotX(i+1).YData = Res(1+(i-1)*3)*p_ind*1000/nbinsX;
+                    end
+                end
+                 %%% output result in table
+                Data = h.Fit_Gaussian_Text.Data;
+                for i = 1:nG
+                    Data(i,[1,5,13]) = num2cell(Res(1+(i-1)*3:3+(i-1)*3));
+                end
+                h.Fit_Gaussian_Text.Data = Data;
+                
+            else
+                if h.Fit_Gaussian_Pick.Value
+                    cov = [std(datatoplot(:,x)),std(datatoplot(:,y)),0];
+                    [x_start,y_start] = ginput(nG);
+                    x0_input = zeros(1,18);
+                    for i = 1:nG
+                        x0_input((1+(i-1)*6):(6+(i-1)*6)) = [1/nG,x_start(i),y_start(i),cov];
+                    end
+                else
+                    cov = [std(datatoplot(:,x)),std(datatoplot(:,y)),0];
+                    [~,ix_max] = max(HH(:));
+                    [y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
+                    x0_input = zeros(1,18);
+                    for i = 1:3
+                        x0_input((1+(i-1)*6):(6+(i-1)*6))= [1/nG,xbins(x_start),ybins(y_start),cov];
+                    end
+                end
+
+                %%% for non fixed values, take estimate
+                %%% set fixed values to x0
+                x0 = zeros(1,18);
+                lb = zeros(1,18);
+                ub = inf(1,18);
+                fixed = false(1,18);
+                for i = 1:3
+                    x0((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,1:4:end));
+                    lb((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,2:4:end));
+                    ub((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,3:4:end));
+                    fixed((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,4:4:end));
+                end
+
+                %%% set starting center values to mean values or picked values
+                for i = 1:nG
+                    if ~fixed(2+(i-1)*6)
+                        x0(2+(i-1)*6) = x0_input(2+(i-1)*6);
+                    end
+                    if ~fixed(3+(i-1)*6)
+                        x0(3+(i-1)*6) = x0_input(3+(i-1)*6);
+                    end
+                end
+
+                xdata = {xbins,ybins,sum(sum(HH)),fixed,nG,0};
+                ydata = HH;
+                BurstMeta.GaussianFit.Params = x0;
+                opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
+                [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
+
+                chi2 = sum(sum((residuals.^2)./max(1,ydata)))./(numel(ydata)-1-sum(fixed));
+                h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
+                
+                Res = zeros(1,numel(fixed));
+                Res(~fixed)=x;
+                %%% Assigns parameters from table to fixed parameters
+                Res(fixed)=BurstMeta.GaussianFit.Params(fixed);
+                for i =1:nG
+                    COV = [Res(4+(i-1)*6),Res(6+(i-1)*6);Res(6+(i-1)*6),Res(5+(i-1)*6)];
+                    [~,f] = chol(COV);
+                    if f~=0 %%% error
+                        COV = fix_covariance_matrix(COV);
+                    end
+                    Res(4+(i-1)*6) = COV(1,1);
+                    Res(6+(i-1)*6) = COV(1,2);
+                    Res(5+(i-1)*6) = COV(2,2);
+                end
+                Res(1:6:end) = Res(1:6:end)./sum(Res(1:6:end));
+
+                % plot contour plot over image plot
+                % hide contourf plot, make image plot visible
+                BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+                BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+                for i = 1:nG
+                    BurstMeta.Plots.Mixture.Main_Plot(i).Visible = 'on';
+                    BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
+                    BurstMeta.Plots.Mixture.plotY(i).Visible = 'on';
+                end
+                % prepare fit data
+                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                p = MultiGaussFit(x,{xbins_fit,ybins_fit,sum(sum(HH)),fixed,nG,0});
+                pX = sum(p,1);
+                pY = sum(p,2);
+                BurstMeta.Plots.Mixture.Main_Plot(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.Main_Plot(1).YData = ybins_fit;
+                BurstMeta.Plots.Mixture.Main_Plot(1).ZData = p*1000^2/nbinsX/nbinsY;
+                BurstMeta.Plots.Mixture.Main_Plot(1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(1).ZData));%linspace(0,max(max(HH)),10);
+                BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
+                BurstMeta.Plots.Mixture.plotX(1).YData = pX*1000/nbinsX;
+                BurstMeta.Plots.Mixture.plotY(1).XData = ybins_fit;
+                BurstMeta.Plots.Mixture.plotY(1).YData = pY*1000/nbinsY;
+
+                %%% Update subplots
+                if nG > 1
+                    for i = 1:nG
+                        x_ind = Res;
+                        for j = 1:nG %%% set other components to zero
+                            if j ~=i
+                                x_ind(1+(j-1)*6) = 0;
+                            else
+                                x_ind(1+(j-1)*6) = 1;
+                            end
+                        end
+                        p_ind = MultiGaussFit(x_ind,{xbins_fit,ybins_fit,sum(sum(HH)),fixed,nG,1});
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).YData = ybins_fit;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData = Res(1+(i-1)*6)*p_ind*1000^2/nbinsX/nbinsY;
+                        BurstMeta.Plots.Mixture.Main_Plot(i+1).LevelList = 0.32*max(max(BurstMeta.Plots.Mixture.Main_Plot(i+1).ZData));%linspace(0,max(max(p_ind)),10);
+                        p_ind_x = sum(p_ind,1);
+                        BurstMeta.Plots.Mixture.plotX(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotX(i+1).XData = xbins_fit;
+                        BurstMeta.Plots.Mixture.plotX(i+1).YData = Res(1+(i-1)*6)*p_ind_x*1000/nbinsX;
+                        p_ind_y = sum(p_ind,2);
+                        BurstMeta.Plots.Mixture.plotY(i+1).Visible = 'on';
+                        BurstMeta.Plots.Mixture.plotY(i+1).XData = ybins_fit;
+                        BurstMeta.Plots.Mixture.plotY(i+1).YData = Res(1+(i-1)*6)*p_ind_y*1000/nbinsY;
+                    end
+                end
+                %%% make variance to sigma
+                for i =1:3
+                    Res([4,5]+(i-1)*6) = sqrt(Res([4,5]+(i-1)*6));
+                end
+                %%% output result in table
+                Data = h.Fit_Gaussian_Text.Data;
+                for i = 1:nG
+                    Data(i,1:4:end) = num2cell(Res(1+(i-1)*6:6+(i-1)*6));
+                end
+                h.Fit_Gaussian_Text.Data = Data;
             end
-        end
-        %%% output result in table
-        h.Fit_Gaussian_Text.Data(1,1:3) = {double(GModel.Converged),GModel.NegativeLogLikelihood,GModel.BIC};
-        for i = 1:nG
-            h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),GModel.mu(i,2),sqrt(GModel.Sigma(1,1,i)),sqrt(GModel.Sigma(2,2,i)),GModel.Sigma(1,2,i)};
-        end
-        if nG < 3
-            h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
-        end
     end
     h.Progress_Text.String = BurstMeta.DisplayName;
 end
@@ -9948,6 +10228,90 @@ n = find(out(:, 3) == 1, 1) - 1;
 out(1:n, 1:2) = repmat((n:-1:1)'/n, [1 2]);
 out(1:n, 3) = 1;
 
+function model = MultiGaussFit_1D(x,xdata)
+global BurstMeta
+xbins = xdata{1};
+N_datapoints = xdata{2};
+fixed = xdata{3};
+nG = xdata{4};
+plot = xdata{5};
+%%% x contains the parameters for fitting in order
+%%% fraction,mu1,mu2,var1,var2,cov12
+%%% i.e. 6*n_species in total
+if ~plot
+    %%% deal with fixed parameters
+    P=zeros(numel(fixed),1);
+    %%% Assigns fitting parameters to unfixed parameters of fit
+    P(~fixed)=x;
+    %%% Assigns parameters from table to fixed parameters
+    P(fixed)=BurstMeta.GaussianFit.Params(fixed);
+else
+    P = x';
+end
+%%% A total of 3 2D gauss are considered
+model = zeros(1,numel(xbins));
+for i = 1:nG
+    pdf = P(1+(i-1)*3)*normpdf(xbins,P(2+(i-1)*3),P(3+(i-1)*3));
+    model = model + pdf;
+end
+model = model./max([1,sum(model)]);
+model = model.*N_datapoints;
+
+function model = MultiGaussFit(x,xdata)
+global BurstMeta
+xbins = xdata{1};
+ybins = xdata{2};
+N_datapoints = xdata{3};
+fixed = xdata{4};
+nG = xdata{5};
+plot = xdata{6};
+%%% x contains the parameters for fitting in order
+%%% fraction,mu1,mu2,var1,var2,cov12
+%%% i.e. 6*n_species in total
+if ~plot
+    %%% deal with fixed parameters
+    P=zeros(numel(fixed),1);
+    %%% Assigns fitting parameters to unfixed parameters of fit
+    P(~fixed)=x;
+    %%% Assigns parameters from table to fixed parameters
+    P(fixed)=BurstMeta.GaussianFit.Params(fixed);
+else
+    P = x';
+end
+%%% A total of 3 2D gauss are considered
+[X,Y] = meshgrid(xbins,ybins);
+model = zeros(numel(xbins),numel(ybins));
+for i = 1:nG
+    COV = [P(4+(i-1)*6),P(6+(i-1)*6);P(6+(i-1)*6),P(5+(i-1)*6)];
+    [~,f] = chol(COV);
+    if f~=0 %%% error
+        COV = fix_covariance_matrix(COV);
+    end
+    pdf = P(1+(i-1)*6)*mvnpdf([X(:) Y(:)],P([2:3]+(i-1)*6)',COV);
+    model = model + reshape(pdf,[numel(xbins),numel(ybins)]);
+end
+model = model./max([1,sum(sum(model))]);
+model = model.*N_datapoints;
+
+function [covNew] = fix_covariance_matrix(cov)
+%find eigenvalue smaller 0
+k = min(eig(cov));
+%add to matrix to make positive semi-definite
+A = cov - k*eye(size(cov))+1E-6; %add small increment because sometimes eigenvalues are still slightly negative (~-1E-17)
+
+%rescale A to match the standard deviations on the diagonal
+
+%convert to correlation matrix
+Acorr = corrcov(A);
+%get standard deviations
+sigma = sqrt(diag(cov));
+
+covNew = zeros(2,2);
+for i = 1:2
+    for j = 1:2
+        covNew(i,j) = Acorr(i,j)*sigma(i)*sigma(j);
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions concerning database of quick access filenames %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
