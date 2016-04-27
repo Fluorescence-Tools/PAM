@@ -1230,6 +1230,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.SaveOnClose was incomplete');
     end
     P.BurstBrowser.Settings.SaveOnClose = S.BurstBrowser.Settings.SaveOnClose;
+    %%% Check, if BurstBrowser.Settings.CorrectionOnLoad subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'CorrectionOnLoad')
+        S.BurstBrowser.Settings.CorrectionOnLoad=1;
+        disp('UserValues.BurstBrowser.Settings.CorrectionOnLoad was incomplete');
+    end
+    P.BurstBrowser.Settings.CorrectionOnLoad = S.BurstBrowser.Settings.CorrectionOnLoad;
     %%% Check, if BurstBrowser.Settings.fFCS_UseIRF subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'fFCS_UseIRF')
         S.BurstBrowser.Settings.fFCS_UseIRF=1;
