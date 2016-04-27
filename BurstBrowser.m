@@ -1260,7 +1260,7 @@ if isempty(hfig)
         'Units','normalized',...
         'Callback',@UpdateOptions,...
         'Position',[0.4,0.9,0.2,0.08],...
-        'String',{'1','2','3'},...
+        'String',{'1','2','3','4'},...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
         'TooltipStr','Number of Gaussian components of the model.');
@@ -1295,14 +1295,14 @@ if isempty(hfig)
         'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore,...
         'TooltipStr','red. Chi2 value');
-    h.GUIData.TableDataMLE = cell(6,6);
+    h.GUIData.TableDataMLE = cell(7,6);
     h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
     h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
-    h.GUIData.ColumnEditableMLE = false(1,7);
+    h.GUIData.ColumnEditableMLE = false(1,6);
     h.GUIData.ColumnWidthMLE = {100,100,100,100,100,100,100};
     h.GUIData.ColumnFormatMLE = repmat({'numeric'},1,7);
-    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0,Inf,false,0.05,0,Inf,false,0,-Inf,Inf,false],[3,1]));
-    for i =1:3
+    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0,Inf,false,0.05,0,Inf,false,0,-Inf,Inf,false],[4,1]));
+    for i =1:4
         h.GUIData.TableDataLSQ(i,4:4:end) = {false,false,false,false,false,false};
     end
     h.GUIData.ColumnEditableLSQ = true(1,24);
@@ -1583,7 +1583,7 @@ if isempty(hfig)
         'String','',...
         'Tag','ColorLine1',...
         'Units','normalized',...
-        'Position',[0.15 0.1 0.07 0.07],...
+        'Position',[0.1 0.1 0.07 0.07],...
         'FontSize',12,...
         'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine1,...
         'ForegroundColor', Look.Fore,...
@@ -1595,7 +1595,7 @@ if isempty(hfig)
         'String','',...
         'Tag','ColorLine2',...
         'Units','normalized',...
-        'Position',[0.35 0.1 0.07 0.07],...
+        'Position',[0.3 0.1 0.07 0.07],...
         'FontSize',12,...
         'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine2,...
         'ForegroundColor', Look.Fore,...
@@ -1607,7 +1607,7 @@ if isempty(hfig)
         'String','',...
         'Tag','ColorLine3',...
         'Units','normalized',...
-        'Position',[0.55 0.1 0.07 0.07],...
+        'Position',[0.5 0.1 0.07 0.07],...
         'FontSize',12,...
         'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine3,...
         'ForegroundColor', Look.Fore,...
@@ -1619,9 +1619,21 @@ if isempty(hfig)
         'String','',...
         'Tag','ColorLine4',...
         'Units','normalized',...
-        'Position',[0.75 0.1 0.07 0.07],...
+        'Position',[0.7 0.1 0.07 0.07],...
         'FontSize',12,...
         'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine4,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine5 = uicontrol('Style','pushbutton',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','',...
+        'Tag','ColorLine5',...
+        'Units','normalized',...
+        'Position',[0.9 0.1 0.07 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine5,...
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateLineColor...
         );
@@ -1631,7 +1643,7 @@ if isempty(hfig)
         'String','Line 1',...
         'Tag','ColorLine1Text',...
         'Units','normalized',...
-        'Position',[0.05 0.1 0.1 0.07],...
+        'Position',[0 0.1 0.05 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -1641,7 +1653,7 @@ if isempty(hfig)
         'String','Line 2',...
         'Tag','ColorLine2Text',...
         'Units','normalized',...
-        'Position',[0.25 0.1 0.1 0.07],...
+        'Position',[0.2 0.1 0.05 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -1651,7 +1663,7 @@ if isempty(hfig)
         'String','Line 3',...
         'Tag','ColorLine3Text',...
         'Units','normalized',...
-        'Position',[0.45 0.1 0.1 0.07],...
+        'Position',[0.4 0.1 0.05 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -1661,7 +1673,17 @@ if isempty(hfig)
         'String','Line 4',...
         'Tag','ColorLine4Text',...
         'Units','normalized',...
-        'Position',[0.65 0.1 0.1 0.07],...
+        'Position',[0.6 0.1 0.05 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    
+    h.ColorLine5Text = uicontrol('Style','text',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Line 5',...
+        'Tag','ColorLine5Text',...
+        'Units','normalized',...
+        'Position',[0.8 0.1 0.05 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
@@ -2720,14 +2742,17 @@ switch mode
         [~,BurstMeta.Plots.Mixture.Main_Plot(2)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(3)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(3).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(4)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine4,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(4).UIContextMenu = h.ExportGraph_Menu;
+        [~,BurstMeta.Plots.Mixture.Main_Plot(5)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine5,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(5).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(1)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine1);BurstMeta.Plots.Mixture.Main_Plot(1).UIContextMenu = h.ExportGraph_Menu;
         BurstMeta.Plots.Mixture.plotX(2) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(3) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(4) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine4,'LineWidth',2,'Visible','off','LineStyle','--');
+        BurstMeta.Plots.Mixture.plotX(5) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine5,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(1) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Visible','off');
         BurstMeta.Plots.Mixture.plotY(2) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(3) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(4) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine4,'LineWidth',2,'Visible','off','LineStyle','--');
+        BurstMeta.Plots.Mixture.plotY(5) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine5,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(1) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Visible','off');
         %%%Corrections Tab
         BurstMeta.Plots.histE_donly = bar(h.Corrections.TwoCMFD.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
@@ -3855,11 +3880,11 @@ switch obj
         if strcmp(UserValues.BurstBrowser.Settings.GaussianFitMethod,'LSQ')
             %%% change fixed values in table
             nG = obj.Value;
-            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG};
+            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG,1/nG};
             for i = 1:nG           
                 h.Fit_Gaussian_Text.Data(i,4:4:end) = {false,false,false,false,false,false};
             end
-            for i = (nG+1):3           
+            for i = (nG+1):4           
                 h.Fit_Gaussian_Text.Data(i,4:4:end) = {true,true,true,true,true,true};
                 h.Fit_Gaussian_Text.Data{i,1} = 0;
             end
@@ -4711,8 +4736,8 @@ if obj == h.Fit_Gaussian_Button
                 for i = 1:nG
                     h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),'-',sqrt(GModel.Sigma(1,1,i)),'-','-'};
                 end
-                if nG < 3
-                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
+                if nG < 4
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
                 end
             else
                 if h.Fit_Gaussian_Pick.Value
@@ -4777,8 +4802,8 @@ if obj == h.Fit_Gaussian_Button
                 for i = 1:nG
                     h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),GModel.mu(i,2),sqrt(GModel.Sigma(1,1,i)),sqrt(GModel.Sigma(2,2,i)),GModel.Sigma(1,2,i)};
                 end
-                if nG < 3
-                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(3-nG,6);
+                if nG < 4
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
                 end
             end
         case 'LSQ'
@@ -4787,11 +4812,11 @@ if obj == h.Fit_Gaussian_Button
                 x_start = mean(datatoplot(:,x));
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
-                x0 = zeros(1,9);
-                lb = zeros(1,9);
-                ub = inf(1,9);
-                fixed = false(1,9);
-                for i = 1:3
+                x0 = zeros(1,12);
+                lb = zeros(1,12);
+                ub = inf(1,12);
+                fixed = false(1,12);
+                for i = 1:4
                     x0((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[1,5,13]));
                     lb((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[2,6,14]));
                     ub((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[3,7,15]));
@@ -4802,6 +4827,9 @@ if obj == h.Fit_Gaussian_Button
                 for i = 1:nG
                     if ~fixed(2+(i-1)*3)
                         x0(2+(i-1)*3) = x_start;
+                    end
+                    if ~fixed(1+(i-1)*3)
+                        x0(1+(i-1)*3) = 1/nG;
                     end
                 end
                 
@@ -4848,43 +4876,54 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
                 
             else
+                cov = [std(datatoplot(:,x)).^2,std(datatoplot(:,y)).^2,0];
                 if h.Fit_Gaussian_Pick.Value
-                    cov = [std(datatoplot(:,x)),std(datatoplot(:,y)),0];
                     [x_start,y_start] = ginput(nG);
                     x0_input = zeros(1,18);
                     for i = 1:nG
                         x0_input((1+(i-1)*6):(6+(i-1)*6)) = [1/nG,x_start(i),y_start(i),cov];
                     end
-                else
-                    cov = [std(datatoplot(:,x)),std(datatoplot(:,y)),0];
-                    [~,ix_max] = max(HH(:));
-                    [y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
-                    x0_input = zeros(1,18);
-                    for i = 1:3
-                        x0_input((1+(i-1)*6):(6+(i-1)*6))= [1/nG,xbins(x_start),ybins(y_start),cov];
-                    end
+                    drawnow;
                 end
 
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
-                x0 = zeros(1,18);
-                lb = zeros(1,18);
-                ub = inf(1,18);
-                fixed = false(1,18);
-                for i = 1:3
+                x0 = zeros(1,24);
+                lb = zeros(1,24);
+                ub = inf(1,24);
+                fixed = false(1,24);
+                lowerx = min(datatoplot(:,x));
+                lowery = min(datatoplot(:,y));
+                upperx = max(datatoplot(:,x));
+                uppery = max(datatoplot(:,y));
+                for i = 1:4
                     x0((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,1:4:end));
                     lb((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,2:4:end));
+                    lb(2+(i-1)*6) = max([lowerx lb(2+(i-1)*6)]);
+                    lb(3+(i-1)*6) = max([lowery lb(3+(i-1)*6)]);
                     ub((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,3:4:end));
+                    ub(2+(i-1)*6) = min([upperx ub(2+(i-1)*6)]);
+                    ub(3+(i-1)*6) = min([uppery ub(3+(i-1)*6)]);
                     fixed((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,4:4:end));
+                    %%% square sigma
+                    x0([4,5]+(i-1)*6) = x0([4,5]+(i-1)*6).^2;
+                    lb([4,5]+(i-1)*6) = lb([4,5]+(i-1)*6).^2;
+                    ub([4,5]+(i-1)*6) = ub([4,5]+(i-1)*6).^2;
                 end
 
                 %%% set starting center values to mean values or picked values
-                for i = 1:nG
-                    if ~fixed(2+(i-1)*6)
-                        x0(2+(i-1)*6) = x0_input(2+(i-1)*6);
-                    end
-                    if ~fixed(3+(i-1)*6)
-                        x0(3+(i-1)*6) = x0_input(3+(i-1)*6);
+                if h.Fit_Gaussian_Pick.Value
+                    for i = 1:nG
+                        if ~fixed(2+(i-1)*6)
+                            x0(2+(i-1)*6) = x0_input(2+(i-1)*6);
+                        end
+                        if ~fixed(3+(i-1)*6)
+                            x0(3+(i-1)*6) = x0_input(3+(i-1)*6);
+                        end
+                        %%% set amplitude to 1/N
+                        if ~fixed(1+(i-1)*6)
+                            x0(1+(i-1)*6) = 1/nG;
+                        end
                     end
                 end
 
@@ -4965,7 +5004,7 @@ if obj == h.Fit_Gaussian_Button
                     end
                 end
                 %%% make variance to sigma
-                for i =1:3
+                for i =1:4
                     Res([4,5]+(i-1)*6) = sqrt(Res([4,5]+(i-1)*6));
                 end
                 %%% output result in table
@@ -9873,6 +9912,10 @@ switch obj
         c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine4);
         UserValues.BurstBrowser.Display.ColorLine4 = c;
         n=4;
+    case h.ColorLine5
+        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
+        UserValues.BurstBrowser.Display.ColorLine5 = c;
+        n=5;
 end
 
 obj.BackgroundColor = c;
@@ -9890,15 +9933,17 @@ BurstMeta.Plots.Mixture.Main_Plot(1).LineColor = UserValues.BurstBrowser.Display
 BurstMeta.Plots.Mixture.Main_Plot(2).LineColor = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.Main_Plot(3).LineColor = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.Main_Plot(4).LineColor = UserValues.BurstBrowser.Display.ColorLine4;
+BurstMeta.Plots.Mixture.Main_Plot(4).LineColor = UserValues.BurstBrowser.Display.ColorLine5;
 BurstMeta.Plots.Mixture.plotX(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotX(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotX(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotX(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
+BurstMeta.Plots.Mixture.plotX(4).Color = UserValues.BurstBrowser.Display.ColorLine5;
 BurstMeta.Plots.Mixture.plotY(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotY(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotY(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotY(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
-
+BurstMeta.Plots.Mixture.plotY(4).Color = UserValues.BurstBrowser.Display.ColorLine5;
 %%% Reset color of correction fits
 BurstMeta.Plots.Fits.histE_donly(1).Color = [1,0,0];
 BurstMeta.Plots.Fits.histS_aonly(1).Color = [1,0,0];

@@ -1203,13 +1203,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorLine3 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine3 = S.BurstBrowser.Display.ColorLine3;
-    
     %%% Checks, if BurstBrowser.Display.ColorLine4 subfield exists
     if ~isfield (S.BurstBrowser.Display,'ColorLine4')
         S.BurstBrowser.Display.ColorLine4=[1 1 0];
         disp('UserValues.BurstBrowser.Display.ColorLine4 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine4 = S.BurstBrowser.Display.ColorLine4;
+    %%% Checks, if BurstBrowser.Display.ColorLine5 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine5')
+        S.BurstBrowser.Display.ColorLine5=[0 1 1];
+        disp('UserValues.BurstBrowser.Display.ColorLine5 was incomplete');
+    end
+    P.BurstBrowser.Display.ColorLine5 = S.BurstBrowser.Display.ColorLine5;
     
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
