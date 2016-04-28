@@ -2043,6 +2043,9 @@ switch mode
                     h.Sim_R{i,j}.String = num2str(SimData.Species(Sel).R(i,j));
                end
             end
+            for j = 1:3
+                h.Sim_Ani{i,j}.String = num2str(SimData.Species(Sel).Aniso(4*(i-1)+j));
+            end
         end
 
         Sim_Settings(h.Sim_Color,[]); 
