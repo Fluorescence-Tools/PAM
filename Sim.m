@@ -2291,7 +2291,7 @@ if ~advanced
             'ExecutionMode','fixedDelay');
         start(Update)
 
-        for j = 1:NoP
+        parfor j = 1:NoP
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2459,8 +2459,8 @@ if advanced
     BlP = SimData.Species(i).BlP;
     
     for j = SimData.Species(i).Color+1:4
-        ExP(j,:) = 0;
-        FRET(j,:) = 0;
+        ExP(j,:) = 0; %%% Set excitation of unused colors to 0
+        %FRET(j,:) = 0;
     end
 
     %%% Determins barrier type and map (for quenching, barriers, ect.)
@@ -2554,7 +2554,8 @@ if advanced
     Dist = [];
     R0 = [];
     sigmaR = [];
-    
+    %%% set state to species
+    final_state = [];
     for i = 1:numel(SimData.Species);
         %%% Concentration
         NoP = SimData.Species(i).N;
@@ -2571,9 +2572,8 @@ if advanced
         %% new parameters
         %%% Anisotropy values
         aniso_params = [aniso_params;SimData.Species(i).Aniso];
-        
         %%% set initital state to species number
-        final_state(i) = i;
+        final_state = [final_state, (i-1)*ones(NoP,1)];
         
         %%% For sigmaDist simulations, we need to provide now:
         %%% Distances (only nonzero for cross-color elements!!!)
@@ -2582,10 +2582,26 @@ if advanced
         %%% Step for recalculation
         %%% linkerlength (one value only for now!)
         Dist = [Dist;SimData.Species(i).R(:)];
-        R0 = [R0;SimData.Species(i).R0(:)];
         sigmaR = [sigmaR;SimData.Species(i).DistanceWidth(:)];
+        %%% Set R0 to zero for unused colors!
+        R0_temp = SimData.Species(i).R0(:);
+        for j = SimData.Species(i).Color+1:4
+            for k = 1:4
+                R0_temp((k-1)*4+j) = 0;
+            end
+        end
+        R0 = [R0;R0_temp];
     end
-    
+    aniso_params(2:4:end) = aniso_params(2:4:end)./str2double(h.Sim_MIRange.String)*MI_Bins;
+    %%% convert aniso to array of probabilities
+    p_aniso = [];
+    for i = 1:numel(SimData.Species)
+        for j = 1:4
+            r = (aniso_params(16*(i-1)+4*(j-1)+1)-aniso_params(16*(i-1)+4*(j-1)+3)).*exp(-[1:MI_Bins]./aniso_params(16*(i-1)+4*(j-1)+2)) + aniso_params(16*(i-1)+4*(j-1)+3);
+            p_aniso = [p_aniso,(1+2*r)./((1+2*r)+aniso_params(16*(i-1)+4*(j-1)+4)*(1-r))];
+        end
+    end
+     
     n_states = numel(SimData.Species);
     if any([SimData.Species.FRET] == 3) %%% Dynamic
         %%% Dynamic Rates
@@ -2598,7 +2614,7 @@ if advanced
         end
     else
         pTrans = eye(numel(SimData.Species));
-        DynamicStep = 1E10; %%% large so it never evaluates
+        DynamicStep = 0; %%% 0 means it does not evaluate
         
     end
     %%% For input, the rates must have the following structure:
@@ -2774,7 +2790,7 @@ if advanced
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
                     ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
-                    LT,aniso_params,... %%% Lifetime of the different coloqwdfdsfs
+                    LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
                     Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross,... %%% Relative FRET and Crosstalk rates
                     n_states, p, final_state(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
@@ -2805,22 +2821,22 @@ if advanced
                     end
                 elseif use_aniso == 1
                     %%% Assigns photons according to detection channel
-                    Photons1{j} = [Photons1{j}; Photons((bitand(Channel,3)==0) && (Pol==0))+(k-1)*double(Frametime)];
-                    Photons1s{j} = [Photons1s{j}; Photons((bitand(Channel,3)==0) && (Pol==1))+(k-1)*double(Frametime)];
-                    Photons2{j} = [Photons2{j}; Photons((bitand(Channel,3)==1) && (Pol==0))+(k-1)*double(Frametime)];
-                    Photons2s{j} = [Photons2s{j}; Photons((bitand(Channel,3)==1) && (Pol==1))+(k-1)*double(Frametime)];
-                    Photons3{j} = [Photons3{j}; Photons((bitand(Channel,3)==2) && (Pol==0))+(k-1)*double(Frametime)];
-                    Photons3s{j} = [Photons3s{j}; Photons((bitand(Channel,3)==2) && (Pol==1))+(k-1)*double(Frametime)];
-                    Photons4{j} = [Photons4{j}; Photons((bitand(Channel,3)==3) && (Pol==0))+(k-1)*double(Frametime)];
-                    Photons4s{j} = [Photons4s{j}; Photons((bitand(Channel,3)==3) && (Pol==1))+(k-1)*double(Frametime)];
-                    MI1{j} = [MI1{j}; MI((bitand(Channel,3)==0) && (Pol==0))];
-                    MI1s{j} = [MI1s{j}; MI((bitand(Channel,3)==0) && (Pol==1))];
-                    MI2{j} = [MI2{j}; MI((bitand(Channel,3)==1) && (Pol==0))];
-                    MI2s{j} = [MI2s{j}; MI((bitand(Channel,3)==1) && (Pol==1))];
-                    MI3{j} = [MI3{j}; MI((bitand(Channel,3)==2) && (Pol==0))];
-                    MI3s{j} = [MI3s{j}; MI((bitand(Channel,3)==2) && (Pol==1))];
-                    MI4{j} = [MI4{j}; MI((bitand(Channel,3)==3) && (Pol==0))];
-                    MI4s{j} = [MI4s{j}; MI((bitand(Channel,3)==3) && (Pol==1))];
+                    Photons1{j} = [Photons1{j}; Photons((bitand(Channel,3)==0) & (Pol==0))+(k-1)*double(Frametime)];
+                    Photons1s{j} = [Photons1s{j}; Photons((bitand(Channel,3)==0) & (Pol==1))+(k-1)*double(Frametime)];
+                    Photons2{j} = [Photons2{j}; Photons((bitand(Channel,3)==1) & (Pol==0))+(k-1)*double(Frametime)];
+                    Photons2s{j} = [Photons2s{j}; Photons((bitand(Channel,3)==1) & (Pol==1))+(k-1)*double(Frametime)];
+                    Photons3{j} = [Photons3{j}; Photons((bitand(Channel,3)==2) & (Pol==0))+(k-1)*double(Frametime)];
+                    Photons3s{j} = [Photons3s{j}; Photons((bitand(Channel,3)==2) & (Pol==1))+(k-1)*double(Frametime)];
+                    Photons4{j} = [Photons4{j}; Photons((bitand(Channel,3)==3) & (Pol==0))+(k-1)*double(Frametime)];
+                    Photons4s{j} = [Photons4s{j}; Photons((bitand(Channel,3)==3) & (Pol==1))+(k-1)*double(Frametime)];
+                    MI1{j} = [MI1{j}; MI((bitand(Channel,3)==0) & (Pol==0))];
+                    MI1s{j} = [MI1s{j}; MI((bitand(Channel,3)==0) & (Pol==1))];
+                    MI2{j} = [MI2{j}; MI((bitand(Channel,3)==1) & (Pol==0))];
+                    MI2s{j} = [MI2s{j}; MI((bitand(Channel,3)==1) & (Pol==1))];
+                    MI3{j} = [MI3{j}; MI((bitand(Channel,3)==2) & (Pol==0))];
+                    MI3s{j} = [MI3s{j}; MI((bitand(Channel,3)==2) & (Pol==1))];
+                    MI4{j} = [MI4{j}; MI((bitand(Channel,3)==3) & (Pol==0))];
+                    MI4s{j} = [MI4s{j}; MI((bitand(Channel,3)==3) & (Pol==1))];
                 end
             end
 
@@ -2860,16 +2876,21 @@ if advanced
         end
         stop(Update);
     end
-
-    Sim_Photons = cell(8,1);
-    Sim_MI = cell(8,1);
-    for i=1:8 %%% Combines photons of all species
+    
+    if use_aniso == 0
+        nChan = 4;
+    elseif use_aniso == 1
+        nChan = 8;
+    end
+    Sim_Photons = cell(nChan,1);
+    Sim_MI = cell(nChan,1);
+    for i=1:nChan %%% Combines photons of all species
         Sim_Photons{i} = cell2mat(Photons_total(:,i));
         Sim_MI{i} = cell2mat(MI_total(:,i));
     end
 
     if h.Sim_UseNoise.Value
-        for i=1:8
+        for i=1:nChan
             ix = mod(i-1,4)+1;
             if str2double(h.Sim_Noise{ix}.String) > 0 && ~isempty(Sim_Photons{ix})
                AIPT = Freq/(str2double(h.Sim_Noise{ix}.String)*1000);
@@ -2891,6 +2912,20 @@ if advanced
                clear Noise MI_Noise Index;
             end
         end
+    end
+    
+    %%% Generate IRF
+    N_IRF = 1E4; %%% number of IRF photons
+    IRF_MT = cell(nChan,1);
+    IRF_MI = cell(nChan,1);
+    for i = 1:nChan
+        for j = 1:4 %%% loop over colors
+            IRF_MT{i} = [IRF_MT{i}; (1:N_IRF)'];
+            IRF_MI{i} = [IRF_MI{i}; normrnd(IRFparams(1)+(j-1)*floor(MI_Bins/4),IRFparams(2),N_IRF,1)];
+            IRF_MI{i} = mod(round(IRF_MI{i}),MI_Bins);
+        end
+       [IRF_MT{i}, Index] = sort(IRF_MT{i});
+       IRF_MI{i} = IRF_MI{i}(Index);
     end
 end
 %% clean up and save
@@ -2930,7 +2965,14 @@ switch h.Sim_Save.Value
             Sim_Photons{i,2} = Sim_MI{i,1}(Index);
         end
         File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_' num2str(h.Sim_File_List.Value) '.sim']);        
-        save(File,'Sim_Photons','Header');      
+        save(File,'Sim_Photons','Header');  
+        %%% also save IRF
+        Sim_Photons = IRF_MT;
+        for i=1:numel(Sim_Photons)
+           Sim_Photons{i,2} = IRF_MI{i};
+        end
+        File = [File(1:end-4) '_irf.sim'];
+        save(File,'Sim_Photons','Header');
 end
 
 clear mex

@@ -66,7 +66,7 @@ if Mode==0 %%% Loads user values
         S.PIE.Name={'Channel1'};
         S.PIE.Detector=1;
         S.PIE.Router=1;
-        S.PIE.From=0;
+        S.PIE.From=1;
         S.PIE.To=4096;
         S.PIE.Color=[1 0 0];
         S.PIE.Combined={[]};

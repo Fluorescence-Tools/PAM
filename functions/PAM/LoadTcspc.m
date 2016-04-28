@@ -582,7 +582,7 @@ switch (Type)
             TcspcData.MT=cell(10,10); %%% default to 10 channels
             TcspcData.MI=cell(10,10); %%% default to 10 channels
             Det = 1:10;
-            Rout = 1:10;
+            Rout = ones(10,1);
         end
         FileInfo.LineTimes = [];
         Totaltime=0;
@@ -598,7 +598,7 @@ switch (Type)
             FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
             FileInfo.MI_Bins = Header.MI_Bins;
             load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
-            for j = 1:size(TcspcData.MT,1)               
+            for j = 1:size(Sim_Photons,1)               
                if any(Rout(Det == j) == 1)
                    TcspcData.MT{j,1} = [TcspcData.MT{j,1} double(Sim_Photons{j,1})];
                    Sim_Photons{j,1} = []; %%% Removes photons to reduce data duplication 

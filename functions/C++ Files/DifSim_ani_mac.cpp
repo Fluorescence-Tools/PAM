@@ -23,7 +23,7 @@ void Simulate_Diffusion(
         double D, double *Pos,
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
-        double *LT, double *aniso_param,
+        double *LT, double *p_aniso,
         double *Dist, double *sigmaDist, double linkerlength, double *R0, int heterogeneity_step, double *Cross, 
         int n_states, double *k_dyn, int initial_state, int DynamicStep,
         double *Macrotimes, unsigned short *Microtimes, unsigned char *Channel, __int64_t *NPhotons, unsigned char *Polarization, int *final_state,
@@ -59,21 +59,20 @@ void Simulate_Diffusion(
     int state = initial_state;
     
     /// Generate anisotropy probability distribution based on microtime
-    double p_par[n_states*4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
-    double r_dummy;
-    /* aniso_param stores the values in order: r0, r_inf, tau_rot, G
-    G must be defined as g_perp/g_par */
-    for (s=0;s<n_states;s++)
-        {
-        for (j=0;j<4;j++){
-            for (i=0;i<MI_Bins;i++)
-            {
-                r_dummy = (aniso_param[16*s+4*j+0]-aniso_param[16*s+4*j+1])*exp(-i/aniso_param[16*s+4*j+2])+aniso_param[16*s+4*j+1];
-                p_par[MI_Bins*4*s+MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[16*s+4*j+3]*(1-r_dummy));
-            }
-        }
-    }
-    
+//     double p_par[n_states*4*MI_Bins]; // probability of photon to be detected in parallel channel, based on microtime
+//     double r_dummy;
+//     /* aniso_param stores the values in order: r0, r_inf, tau_rot, G
+//     G must be defined as g_perp/g_par */
+//     for (s=0;s<n_states;s++)
+//         {
+//         for (j=0;j<4;j++){
+//             for (i=0;i<MI_Bins;i++)
+//             {
+//                 r_dummy = (aniso_param[16*s+4*j+0]-aniso_param[16*s+4*j+1])*exp(-i/aniso_param[16*s+4*j+2])+aniso_param[16*s+4*j+1];
+//                 p_par[MI_Bins*4*s+MI_Bins*j+i] = (1+2*r_dummy)/((1+2*r_dummy)+aniso_param[16*s+4*j+3]*(1-r_dummy));
+//             }
+//         }
+//     }
     // Initialize interdye distances to center distances
     double R[16*n_states];
     for (j=0;j<16*n_states;j++) {R[j] = Dist[j];}
@@ -112,6 +111,7 @@ void Simulate_Diffusion(
     /// Toggle for valid particle position
     bool Invalid_Pos = true;
     
+    //printf("Starting diffusion sim \n");
     for (i=0; i<SimTime; i++) 
     {
         if ( (i % (__int64_t)DiffusionStep) == 0) { // Only calculate diffusion at larger time intervals
@@ -240,20 +240,22 @@ void Simulate_Diffusion(
         }
         
         /// Dynamic step //////////////////////////////////////////////////
-        if (n_states > 1) {
-            if ( (i % (__int64_t)DynamicStep) == 0) { // Only calculate dynamic transitions at larger time intervals
-                // calculate cumulative probability from outgoing rates of current state
-                for (s=0;s<n_states;s++) {
-                    TRANS[s] = k_dyn[n_states*state+s];
-                    }
-                for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
-                prob = equal_dist(mt);
-                for (s=0; s<n_states; s++) /// Determines transition according to rates
-                { if (prob<=TRANS[s]) {break;}  } 
-                state = s; // Update State
+        if (DynamicStep > 0) {
+            if (n_states > 1) {
+                if ( (i % (__int64_t)DynamicStep) == 0) { // Only calculate dynamic transitions at larger time intervals
+                    // calculate cumulative probability from outgoing rates of current state
+                    for (s=0;s<n_states;s++) {
+                        TRANS[s] = k_dyn[n_states*state+s];
+                        }
+                    for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
+                    prob = equal_dist(mt);
+                    for (s=0; s<n_states; s++) /// Determines transition according to rates
+                    { if (prob<=TRANS[s]) {break;}  } 
+                    state = s; // Update State
+                    // printf("State updated: %i\n",state);
+                }
             }
         }
-        
         /// Heterogeneity step - Used for simulating conformational heterogeneity (i.e. sigma in PDA) ///
         if (heterogeneity_step > 0) // only execute if heterogeneity step is enabled
         {
@@ -270,7 +272,8 @@ void Simulate_Diffusion(
                         Rates[s] = pow((R0[s]/R[s]),6.0);
                     }
                 }
-            }    
+            }
+            // printf("Redrawn distances\n");
         }
         ///////////////////////////////////////////////////////////////////
         /// Photon generation /////////////////////////////////////////////
@@ -348,6 +351,7 @@ void Simulate_Diffusion(
                                         LT_RATE = FRET[3];
                                         //printf("State: %i Lifetime Rate: %f\n",state, LT_RATE);
                                     }
+                                    // printf("LT Rate: %f\n",LT_RATE/LT[4*state+m]);
                                     geometric_distribution<unsigned short> exponential(LT_RATE/LT[4*state+m]); /// FRET modified exponential distribution for lifetime
                                     Microtimes[NPhotons[0]] += exponential(mt); /// Convolutes with lifetime of current dye
                                 }
@@ -370,7 +374,8 @@ void Simulate_Diffusion(
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             // Evaluate Anisotropy
-                            binomial_distribution<unsigned char> binomial_aniso(1,p_par[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]]]); //define distribution
+                            //printf("State %i, MI %i, aniso %f\n",state,Microtimes[NPhotons[0]],p_aniso[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]]]);
+                            binomial_distribution<unsigned char> binomial_aniso(1,p_aniso[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]] ]); //define distribution
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
                             // convolute Microtime with IRF
                             Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
@@ -378,7 +383,7 @@ void Simulate_Diffusion(
                             if (Microtimes[NPhotons[0]] < 0) {Microtimes[NPhotons[0]] = 0;};
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
-                            printf("Emitted after excitation: %i Microtime: %i\n",j,Microtimes[NPhotons[0]]);
+                            // printf("Emitted after excitation: %i Microtime: %i, Pol: %i\n",j,Microtimes[NPhotons[0]],Polarization[NPhotons[0]]);
                             if (BlP[m] > 0.0) /// If bleaching is enabled
                             {
                                 binomial_distribution<__int64_t> binomial(1, BlP[4*k+m]);
@@ -475,7 +480,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     double *DetP =  mxGetPr(prhs[17]);
     double *BlP = mxGetPr(prhs[18]);
     double *LT = mxGetPr(prhs[19]);
-    double *aniso_param = mxGetPr(prhs[20]);
+    double *p_aniso = mxGetPr(prhs[20]);
     double *Dist =  mxGetPr(prhs[21]);
     double *sigmaDist = mxGetPr(prhs[22]);
     double linkerlength = mxGetScalar(prhs[23]);
@@ -508,6 +513,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int *final_state;
     final_state = (int*) mxCalloc(1, sizeof(int));
     
+    //printf("Starting main function\n");
+    
     Simulate_Diffusion(
         SimTime, Box, // General parameters
         ScanType, Step, Pixel, ScanTicks, // Scanning parameters
@@ -516,7 +523,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         D, Pos, // Particle parameters
         Wr, Wz, ShiftX, ShiftY, ShiftZ, // Focus parameters
         ExP, DetP, BlP, // Excitation, Detection and Bleching Probabilities
-        LT, aniso_param, // Lifetime, Anisotropy
+        LT, p_aniso, // Lifetime, Anisotropy
         Dist, sigmaDist, linkerlength, R0, heterogeneity_step, Cross, // Parameter containing FRET/Crosstalk rates
         n_states, k_dyn, initial_state, DynamicStep, // Dynamic parameters
         Macrotimes, Microtimes, Channel, NPhotons, Polarization, final_state,// Output parameters
