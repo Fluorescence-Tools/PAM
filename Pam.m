@@ -8544,7 +8544,7 @@ switch obj
         for i = 1:numel(UserValues.PIE.Name)
             if isempty(UserValues.PIE.Combined{i}) %exclude combined channels
                 % map detector/rout to detector plot definition
-                det = find((UserValues.Detector.Det == UserValues.PIE.Detector(j)) & (UserValues.Detector.Rout == UserValues.PIE.Router(j)));
+                det = find((UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)));
                 if ~isempty(PamMeta.MI_Hist{det})
                     % there is data in the corresponding detector/router channel
                     if sum(PamMeta.MI_Hist{det}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
