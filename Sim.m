@@ -2558,7 +2558,6 @@ if advanced
     R0 = [];
     sigmaR = [];
     %%% set state to species
-    final_state = [];
     for i = 1:numel(SimData.Species);
         %%% Concentration
         NoP = SimData.Species(i).N;
@@ -2576,7 +2575,7 @@ if advanced
         %%% Anisotropy values
         aniso_params = [aniso_params;SimData.Species(i).Aniso];
         %%% set initital state to species number
-        final_state = [final_state, (i-1)*ones(NoP,1)];
+        initial_state{i} = (i-1)*ones(NoP,1);
         
         %%% For sigmaDist simulations, we need to provide now:
         %%% Distances (only nonzero for cross-color elements!!!)
@@ -2716,10 +2715,15 @@ if advanced
 %         end
 %     end
     %% Start simulation
+    
+    %%% When looping over species, reassign Number of Particles and start
+    %%% state for every particle
     for i = 1:numel(SimData.Species);
         if ~SimData.Start %%% Aborts Simulation
            return; 
         end
+        NoP = SimData.Species(i).N;
+        final_state_temp = initial_state{i};
         
         Photons1 = cell(NoP,1); MI1 = cell(NoP,1);
         Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
@@ -2785,7 +2789,7 @@ if advanced
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%% Main Simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                [Photons,  MI, Channel, Pol, Pos, final_state(j)] = DifSim_ani_mac(...
+                [Photons,  MI, Channel, Pol, Pos, final_state_temp(j)] = DifSim_ani(...
                     Frametime, BS,... General Parameters
                     Scan_Type, Step, Pixel, ScanTicks, DiffStep,... Scanning Parameters 
                     IRFparams, MI_Bins,...
@@ -2795,7 +2799,7 @@ if advanced
                     ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
                     LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
                     Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross,... %%% Relative FRET and Crosstalk rates
-                    n_states, p, final_state(j), DynamicStep,...
+                    n_states, p, final_state_temp(j), DynamicStep,...
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 
@@ -2889,7 +2893,7 @@ if advanced
     Sim_MI = cell(nChan,1);
     for i=1:nChan %%% Combines photons of all species
         Sim_Photons{i} = cell2mat(Photons_total(:,i));
-        Sim_MI{i} = cell2mat(MI_total(:,i));
+        Sim_MI{i} = uint16(cell2mat(cellfun(@double,MI_total(:,i),'UniformOutPut',false))); %%% conversion to double needed to combine with empty array(empty array is type double..)
     end
 
     if h.Sim_UseNoise.Value
