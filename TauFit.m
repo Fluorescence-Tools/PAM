@@ -848,6 +848,8 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+        
+        set(h.Determine_GFactor_Button,'Visible','off');
     end
 end
 h.FitMethod_Popupmenu = uicontrol(...
@@ -1744,7 +1746,7 @@ h.Result_Plot_Text.Visible = 'off';
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
 
-G = UserValues.TauFit.G{chan};
+G = str2double(h.G_factor_edit.String);%UserValues.TauFit.G{chan};
 l1 = str2double(h.l1_edit.String);
 l2 = str2double(h.l2_edit.String);
 Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
@@ -4216,7 +4218,11 @@ global UserValues TauFitData
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else
+        chan = 4;
+    end
 end
 UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
