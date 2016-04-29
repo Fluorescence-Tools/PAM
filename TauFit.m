@@ -964,8 +964,8 @@ h.G_factor_edit = uicontrol(...
     'Position',[0.35 0.125 0.3 0.03],...
     'String','1',...
     'FontSize',12,...
-    'Tag','G_factor_edit');
-    %'Callback',@UpdateOptions);
+    'Tag','G_factor_edit',...
+    'Callback',@UpdateOptions);
 
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     h.G_factor_edit.String = num2str(UserValues.TauFit.G{1});
@@ -4224,7 +4224,7 @@ UserValues.TauFit.l2 = str2double(h.l2_edit.String);
 UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
 LSUserValues(1)
 if obj == h.G_factor_edit
-    DetermineGFactor(obj)
+    %DetermineGFactor(obj)
 end
 
 function IncludeChannel(obj,~)
