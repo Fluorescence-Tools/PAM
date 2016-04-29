@@ -1302,6 +1302,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.GaussianFitMethod was incomplete');
     end
     P.BurstBrowser.Settings.GaussianFitMethod = S.BurstBrowser.Settings.GaussianFitMethod;
+    %%% Check, if BurstBrowser.Settings.IsoLineGaussFit subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'IsoLineGaussFit')
+        S.BurstBrowser.Settings.IsoLineGaussFit=0.32;
+        disp('UserValues.BurstBrowser.Settings.IsoLineGaussFit was incomplete');
+    end
+    P.BurstBrowser.Settings.IsoLineGaussFit = S.BurstBrowser.Settings.IsoLineGaussFit;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
