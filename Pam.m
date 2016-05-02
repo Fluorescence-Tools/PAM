@@ -3150,7 +3150,9 @@ if any(mode==8)
                 for k = 1:numel(UserValues.PIE.IRF)
                     if ~isempty(UserValues.PIE.IRF{k})
                         % combined channels will either not be in UserValues.PIE.IRF, or will be empty
-                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) numel(UserValues.PIE.IRF{k}) FileInfo.MI_Bins]);
+                        From = max([UserValues.PIE.From(k) 1]);
+                        To = min([UserValues.PIE.To(k) numel(UserValues.PIE.IRF{k}) FileInfo.MI_Bins]);
+                        FromTo = From:To;
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot IRF in PIE Channel range
@@ -3164,7 +3166,7 @@ if any(mode==8)
                                 % there is no data, so just show the IRF
                                 norm = 1;
                             else
-                                norm = max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}(FromTo));
+                                norm = max(PamMeta.MI_Hist{UserValues.Detector.Plots(i,j)}(From:min([To end])));
                             end
                             h.Plots.MI_Ind_IRF{i,j}.YData(FromTo) = UserValues.PIE.IRF{k}(FromTo)./max(UserValues.PIE.IRF{k}(FromTo)).*norm;
                         end
