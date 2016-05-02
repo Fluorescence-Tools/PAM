@@ -341,7 +341,7 @@ switch (Type)
                 %%% Concaternates data to previous files and adds Imagetime
                 %%% to consecutive files
                 if any(~cellfun(@isempty,MI))
-                    for k=Rout'
+                    for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
                         TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
                     end
