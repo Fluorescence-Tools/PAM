@@ -5974,7 +5974,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     if obj == h.FitGammaButton
         %m = msgbox('Using double labeled populations for three-color.');
-        m = msgbox('Not implemented for 3 color. Use 2 color standards to determine gamma factor instead.');
+        m = msgbox('Not implemented for 3 color. Use 2 color standards to determine 3 color gamma factors instead.');
         pause(1);
         delete(m);
         if 0
