@@ -5973,10 +5973,11 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
     end
     if obj == h.FitGammaButton
-        m = msgbox('Not implemented for three-color gamma factors.');
+        %m = msgbox('Using double labeled populations for three-color.');
+        m = msgbox('Not implemented for 3 color. Use 2 color standards to determine gamma factor instead.');
         pause(1);
         delete(m);
-        return;
+        if 0
         %% Gamma factor determination based on double-labeled species
         %%% BG labeled
         S_threshold = ( (data_for_corrections(:,indS) > 0.9) &...
@@ -6065,6 +6066,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
         UserValues.BurstBrowser.Corrections.Beta_BR = b+m-1;
         BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+        end
     end
 end
 %% Save and Update GUI
