@@ -3107,13 +3107,13 @@ SwitchGUI(BurstData{1}.BAMethod);
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
     UpdateCorrections([],[],h);
+    %%% Add Derived Parameters
+    AddDerivedParameters([],[],h);
     if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
         ApplyCorrections([],[],h); 
     else %%% indicate that no corrections are applied
         h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
     end
-    %%% Add Derived Parameters
-    AddDerivedParameters([],[],h);
 end
 BurstMeta.SelectedFile = 1;
 
@@ -5846,7 +5846,7 @@ if obj == h.FitGammaButton
     NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 max(1./S_raw)]);
+    [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
     %[H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [0 1]);
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
@@ -5873,6 +5873,7 @@ if obj == h.FitGammaButton
     BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
     axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
     xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
+    ylim(h.Corrections.TwoCMFD.axes_gamma,[1,10]);
     %%% Determine Gamma and Beta
     coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
     %coeff = coeffvalues(fitGamma); g = coeff(1); b = coeff(2);
