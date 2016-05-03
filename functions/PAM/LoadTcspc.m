@@ -111,6 +111,9 @@ switch (Type)
             %%% Calculates Imagetime in clock ticks for concaternating
             %%% files
             Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
+            if isempty(Info)
+                continue; %%% Skip file
+            end
             Imagetime=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
             %%% Checks, which cards to load
             if strcmp(UserValues.Detector.Auto,'off')
