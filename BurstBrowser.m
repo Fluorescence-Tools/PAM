@@ -3091,12 +3091,6 @@ elseif any(BurstData{1}.BAMethod == [3,4]) %%% Three-Color MFD
     posS = find(strcmp(BurstData{1}.NameArray,'Stoichiometry GR'));
 end
 
-set(h.ParameterListX, 'String', BurstData{1}.NameArray);
-set(h.ParameterListX, 'Value', posE);
-
-set(h.ParameterListY, 'String', BurstData{1}.NameArray);
-set(h.ParameterListY, 'Value', posS);
-
 if BurstData{1}.APBS == 1
     %%% Enable the donor only lifetime checkbox
     h.DonorLifetimeFromDataCheckbox.Enable = 'on';
@@ -3118,8 +3112,16 @@ for i = 1:numel(BurstData)
     else %%% indicate that no corrections are applied
         h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
     end
+    %%% Add Derived Parameters
+    AddDerivedParameters([],[],h);
 end
 BurstMeta.SelectedFile = 1;
+
+set(h.ParameterListX, 'String', BurstData{1}.NameArray);
+set(h.ParameterListX, 'Value', posE);
+
+set(h.ParameterListY, 'String', BurstData{1}.NameArray);
+set(h.ParameterListY, 'Value', posS);
 
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
@@ -3340,6 +3342,24 @@ for i = 1:numel(FileName)
                     S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
                     S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
                     S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                end
+        end
+    end
+    
+    %%% Check if newly loaded file is compatible with currently loaded file
+    if ~isempty(BurstData) %%% make sure the was a file loaded before
+        switch BurstData{1}.BAMethod
+            case {1,2,5} %%% loaded files are 2color
+                if ~any(S.BurstData.BAMethod == [1,2,5]) %%% loaded file is not of same type
+                    fprintf('Error loading file %s\nSkipping file %i because it is not of same type as loaded files.\nLoaded files are 2 color type.\nFile %i is 3 color type.\n',FileName{i},i,i);
+                    Progress(1,h.Progress_Axes,h.Progress_Text);
+                    return; %%% Skip file
+                end
+            case {3,4} %%% loaded files are 2color
+                if ~any(S.BurstData.BAMethod == [3,4]) %%% loaded file is not of same type
+                    fprintf('Error loading file %s\nSkipping file %i because it is not of same type as loaded files.\nLoaded files are 3 color type.\nFile %i is 2 color type.\n',FileName{i},i,i);
+                    Progress(1,h.Progress_Axes,h.Progress_Text);
+                    return; %%% Skip file
                 end
         end
     end
@@ -4082,7 +4102,6 @@ switch clicked.getLevel
         BurstMeta.SelectedFile = file;
         BurstData{file}.SelectedSpecies = [group,subspecies];
 end
-
 
 UpdateCorrections([],[],h);
 UpdateCutTable(h);
@@ -5655,6 +5674,87 @@ UpdatePlot([],[],h);
 UpdateLifetimePlots(hObject,[],h);
 PlotLifetimeInd([],[],h);
 
+function AddDerivedParameters(~,~,h)
+global BurstData BurstMeta
+file = BurstMeta.SelectedFile;
+
+%% Add/Update distance (from intensity), E (from lifetime) and distance (from lifetime) entries
+if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
+    % distance (from intensity)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance (from intensity) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance (from intensity) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+    E(E<0 | E>1) = NaN;
+    R0 = BurstData{file}.Corrections.FoersterRadius;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from intensity) [A]')) = ((1./E-1).*R0^6).^(1/6);
+    % E (from lifetime)
+    if ~sum(strcmp(BurstData{file}.NameArray,'FRET efficiency (from lifetime)'))
+        BurstData{file}.NameArray{end+1} = 'FRET efficiency (from lifetime)';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauD = BurstData{file}.Corrections.DonorLifetime;
+    El = 1-tauDA./tauD;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (from lifetime)')) = El;
+    
+    % distance (from lifetime)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance (from lifetime) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance (from lifetime) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    El(El<0 | El>1) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
+elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
+    % GR distance (from intensity)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance GR (from intensity) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance GR (from intensity) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end 
+    EGR = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
+    EGR(EGR<0 | EGR>1) = NaN;
+    R0 = BurstData{file}.Corrections.FoersterRadius;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (from intensity) [A]')) = ((1./EGR-1).*R0^6).^(1/6);
+    
+    % E GR (from lifetime)
+    if ~sum(strcmp(BurstData{file}.NameArray,'FRET efficiency GR (from lifetime)'))
+        BurstData{file}.NameArray{end+1} = 'FRET efficiency GR (from lifetime)';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauD = BurstData{file}.Corrections.DonorLifetime;
+    El = 1-tauDA./tauD;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency GR (from lifetime)')) = El;
+
+    % distance GR (from lifetime)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance GR (from lifetime) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance GR (from lifetime) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    El(El<0 | El>1) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
+    
+    % BG distance (from intensity)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance BG (from intensity) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance BG (from intensity) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    EBG= BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency BG'));
+    EBG(EBG<0 | EBG>1) = NaN;
+    R0 = BurstData{file}.Corrections.FoersterRadiusBG;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BG (from intensity) [A]')) = ((1./EBG-1).*R0^6).^(1/6);
+    % BR distance (from intensity)
+    if ~sum(strcmp(BurstData{file}.NameArray,'Distance BR (from intensity) [A]'))
+        BurstData{file}.NameArray{end+1} = 'Distance BR (from intensity) [A]';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    EBR = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency BR'));
+    EBR(EBR<0 | EBR>1) = NaN;
+    R0 = BurstData{file}.Corrections.FoersterRadiusBR;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BR (from intensity) [A]')) = ((1./EBR-1).*R0^6).^(1/6);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Determine Corrections (alpha, beta, gamma from intensity) %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5746,7 +5846,7 @@ if obj == h.FitGammaButton
     NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
+    [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 max(1./S_raw)]);
     %[H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [0 1]);
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
@@ -5772,7 +5872,6 @@ if obj == h.FitGammaButton
     BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
     BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
     axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
-    ylim(h.Corrections.TwoCMFD.axes_gamma,[1,10]);
     xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
     %%% Determine Gamma and Beta
     coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
@@ -6014,7 +6113,7 @@ NRR = BurstData{file}.DataArray(S_threshold,indNRR) - Background_RR.*BurstData{f
 NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
 E_raw = NGR./(NGR+NGG);
 S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-[H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [1 10]);
+[H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
 %[H, xbins, ybins] = calc2dhist(BurstMeta.Data.E_raw,BurstMeta.Data.S_raw,[51 51], [0 1], [0 1]);
 BurstMeta.Plots.gamma_fit(1).XData = xbins;
 BurstMeta.Plots.gamma_fit(1).YData = ybins;
@@ -6043,6 +6142,8 @@ b = s(2) - m.*e(2);
 UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
 BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
 
+UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
 
 %%% Save UserValues
 LSUserValues(1);
@@ -6418,116 +6519,43 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstData{file}.DataArray(:,ind_rBB) = rBB;
 end
 
-%% Add/Update distance (from intensity), E (from lifetime) and distance (from lifetime) entries
+%% Update to derived distances from intensity and lifetime
 if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
-    % distance (from intensity)
-    if ~sum(strcmp(BurstData{1}.NameArray,'Distance (from intensity) [A]'))
-        BurstData{file}.NameArray{end+1} = 'Distance (from intensity) [A]';
-        BurstData{file}.DataArray(:,end+1) = 0;
-    end
+    %%% Distance from intensity
     E(E<0 | E>1) = NaN;
     R0 = BurstData{file}.Corrections.FoersterRadius;
-    BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance (from intensity) [A]')) = ((1./E-1).*R0^6).^(1/6);
-    try
-        % E (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'FRET efficiency (from lifetime)'))
-            BurstData{file}.NameArray{end+1} = 'FRET efficiency (from lifetime)';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
-        tauD = BurstData{file}.Corrections.DonorLifetime;
-        El = 1-tauDA./tauD;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'FRET efficiency (from lifetime)')) = El;
-        % distance (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'Distance (from lifetime) [A]'))
-            BurstData{file}.NameArray{end+1} = 'Distance (from lifetime) [A]';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        El(El<0 | El>1) = NaN;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
-    end
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from intensity) [A]')) = ((1./E-1).*R0^6).^(1/6);
+    %%% Efficiency from lifetime
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauD = BurstData{file}.Corrections.DonorLifetime;
+    El = 1-tauDA./tauD;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (from lifetime)')) = El;
+    %%% Distance from efficiency from lifetime
+    El(El<0 | El>1) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
 elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
-    % GR distance (from intensity)
-    if ~sum(strcmp(BurstData{1}.NameArray,'Distance GR (from intensity) [A]'))
-        BurstData{file}.NameArray{end+1} = 'Distance GR (from intensity) [A]';
-        BurstData{file}.DataArray(:,end+1) = 0;
-    end 
+    %%% Distance from intensity GR
     EGR(EGR<0 | EGR>1) = NaN;
     R0 = BurstData{file}.Corrections.FoersterRadius;
-    BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance GR (from intensity) [A]')) = ((1./EGR-1).*R0^6).^(1/6);
-    try
-        % E GR (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'FRET efficiency GR (from lifetime)'))
-            BurstData{file}.NameArray{end+1} = 'FRET efficiency GR (from lifetime)';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
-        tauD = BurstData{file}.Corrections.DonorLifetime;
-        El = 1-tauDA./tauD;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'FRET efficiency GR (from lifetime)')) = El;
-        % distance GR (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'Distance GR (from lifetime) [A]'))
-            BurstData{file}.NameArray{end+1} = 'Distance GR (from lifetime) [A]';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        El(El<0 | El>1) = NaN;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance GR (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
-    end
-    % BG distance (from intensity)
-    if ~sum(strcmp(BurstData{1}.NameArray,'Distance BG (from intensity) [A]'))
-        BurstData{file}.NameArray{end+1} = 'Distance BG (from intensity) [A]';
-        BurstData{file}.DataArray(:,end+1) = 0;
-    end
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (from intensity) [A]')) = ((1./EGR-1).*R0^6).^(1/6);
+    %%% Efficiency from lifetime GR
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauD = BurstData{file}.Corrections.DonorLifetime;
+    El = 1-tauDA./tauD;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency GR (from lifetime)')) = El;
+    %%% Distance from efficiency from lifetime
+    El(El<0 | El>1) = NaN;
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance GR (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
+    %%% Distance from intensity BG
     EBG(EBG<0 | EBG>1) = NaN;
     R0 = BurstData{file}.Corrections.FoersterRadiusBG;
-    BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance GR (from intensity) [A]')) = ((1./EBG-1).*R0^6).^(1/6);
-    try
-        % E BG (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'FRET efficiency BG (from lifetime)'))
-            BurstData{file}.NameArray{end+1} = 'FRET efficiency BG (from lifetime)';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
-        tauD = BurstData{file}.Corrections.DonorLifetimeBlue;
-        El = 1-tauDA./tauD;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'FRET efficiency BG (from lifetime)')) = El;
-        % distance BG (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'Distance BG (from lifetime) [A]'))
-            BurstData{file}.NameArray{end+1} = 'Distance BG (from lifetime) [A]';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        El(El<0 | El>1) = NaN;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance BG (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
-    end
-    % GR distance (from intensity)
-    if ~sum(strcmp(BurstData{1}.NameArray,'Distance BR (from intensity) [A]'))
-        BurstData{file}.NameArray{end+1} = 'Distance BR (from intensity) [A]';
-        BurstData{file}.DataArray(:,end+1) = 0;
-    end
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BG (from intensity) [A]')) = ((1./EBG-1).*R0^6).^(1/6);
+     %%% Distance from intensity BG
     EBR(EBR<0 | EBR>1) = NaN;
     R0 = BurstData{file}.Corrections.FoersterRadiusBR;
-    BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance BR (from intensity) [A]')) = ((1./EBR-1).*R0^6).^(1/6);
-    try
-        % E BR (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'FRET efficiency BR (from lifetime)'))
-            BurstData{file}.NameArray{end+1} = 'FRET efficiency BR (from lifetime)';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
-        tauD = BurstData{file}.Corrections.DonorLifetimeBlue;
-        El = 1-tauDA./tauD;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'FRET efficiency BR (from lifetime)')) = El;
-        % distance BR (from lifetime)
-        if ~sum(strcmp(BurstData{1}.NameArray,'Distance BR (from lifetime) [A]'))
-            BurstData{file}.NameArray{end+1} = 'Distance BR (from lifetime) [A]';
-            BurstData{file}.DataArray(:,end+1) = 0;
-        end
-        El(El<0 | El>1) = NaN;
-        BurstData{file}.DataArray(:,strcmp(BurstData{1}.NameArray,'Distance BR (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
-    end
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BR (from intensity) [A]')) = ((1./EBR-1).*R0^6).^(1/6);
+    %%% Lifetime-Efficiency relation does not hold true for 3 color!
 end
-set(h.ParameterListX, 'String', BurstData{1}.NameArray);
-set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
 %%% Update Display
