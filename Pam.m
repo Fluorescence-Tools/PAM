@@ -1,8 +1,9 @@
 function Output = Pam (SubFunction)
 global UserValues FileInfo PamMeta TcspcData
 h.Pam=findobj('Tag','Pam');
-
-Output = [];
+if nargout > 0
+    Output = [];
+end
 if nargin>0 %%% Used to extract subfunctions from Pam
     if ischar(SubFunction) && (exist(SubFunction)==2) %#ok<EXIST>
         Output = str2func(SubFunction);
