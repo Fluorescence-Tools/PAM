@@ -10494,11 +10494,7 @@ switch mode
             h.DatabaseBB.Save.Enable = 'off';
         end
     case 3 %% Load database
-        if isfield(BurstMeta,'DatabasePath')
-            Path = BurstMeta.DatabasePath;
-        else
-            Path = UserValues.BurstBrowser.PrintPath;
-        end
+        Path = UserValues.File.BurstBrowserPath;
         [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',Path,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         BurstMeta.Database = s.database;

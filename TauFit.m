@@ -106,7 +106,7 @@ h.Plots.Decay_Per = plot([0 1],[0 0],'-b','LineWidth',1);
 h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5);
 h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5);
 h.Plots.FitPreview = plot([0 1],[0 0],'k','LineWidth',1);
-h.Ignore_Plot = plot([0 0],[0 1],'Color','k','Visible','off','LineWidth',1);
+h.Ignore_Plot = plot([0 0],[1e-6 1],'Color','k','Visible','off','LineWidth',1);
 h.Microtime_Plot.XLim = [0 1];
 h.Microtime_Plot.YLim = [0 1];
 h.Microtime_Plot.XLabel.Color = Look.Fore;
@@ -1688,7 +1688,7 @@ if TauFitData.Ignore{chan} > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
     h.Ignore_Plot.XData = [TauFitData.Ignore{chan}*TACtoTime TauFitData.Ignore{chan}*TACtoTime];
-    h.Ignore_Plot.YData = h.Microtime_Plot.YLim;
+    h.Ignore_Plot.YData = [1e-6,h.Microtime_Plot.YLim(2)];
 elseif TauFitData.Ignore{chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
