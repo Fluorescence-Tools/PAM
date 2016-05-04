@@ -3104,24 +3104,13 @@ Initialize_Plots(2);
 %%% Switches GUI to 3cMFD or 2cMFD format
 SwitchGUI(BurstData{1}.BAMethod);
 
-%%% Set Parameter list
-set(h.ParameterListX, 'String', BurstData{1}.NameArray);
-set(h.ParameterListX, 'Value', posE);
-
-set(h.ParameterListY, 'String', BurstData{1}.NameArray);
-set(h.ParameterListY, 'Value', posS);
-
-%%% Initialize and apply Corrections for every loaded file
+%%% Initialize Parameters and Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
+    %%% Initialize Correction Structure
     UpdateCorrections([],[],h);
     %%% Add Derived Parameters
     AddDerivedParameters([],[],h);
-    if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
-        ApplyCorrections([],[],h); 
-    else %%% indicate that no corrections are applied
-        h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
-    end
 end
 BurstMeta.SelectedFile = 1;
 
@@ -3131,6 +3120,16 @@ set(h.ParameterListX, 'Value', posE);
 
 set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 set(h.ParameterListY, 'Value', posS);
+
+%%% Apply correction on load
+if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
+    for i = 1:numel(BurstData)
+        BurstMeta.SelectedFile = i;
+        ApplyCorrections([],[],h);
+    end
+else %%% indicate that no corrections are applied
+    h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
+end
 
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
