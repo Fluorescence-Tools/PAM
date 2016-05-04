@@ -3103,25 +3103,20 @@ Initialize_Plots(2);
 
 %%% Switches GUI to 3cMFD or 2cMFD format
 SwitchGUI(BurstData{1}.BAMethod);
-%%% Add derived parameters
-for i = 1:numel(BurstData)
-    BurstMeta.SelectedFile = i;
-    AddDerivedParameters([],[],h);
-end
 
-%%% Set Parameter list after all parameters are defined
+%%% Set Parameter list
 set(h.ParameterListX, 'String', BurstData{1}.NameArray);
 set(h.ParameterListX, 'Value', posE);
 
 set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 set(h.ParameterListY, 'Value', posS);
 
-
 %%% Initialize and apply Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
     UpdateCorrections([],[],h);
     %%% Add Derived Parameters
+    AddDerivedParameters([],[],h);
     if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
         ApplyCorrections([],[],h); 
     else %%% indicate that no corrections are applied
@@ -3129,6 +3124,13 @@ for i = 1:numel(BurstData)
     end
 end
 BurstMeta.SelectedFile = 1;
+
+%%% Set Parameter list AGAIN after all parameters are defined
+set(h.ParameterListX, 'String', BurstData{1}.NameArray);
+set(h.ParameterListX, 'Value', posE);
+
+set(h.ParameterListY, 'String', BurstData{1}.NameArray);
+set(h.ParameterListY, 'Value', posS);
 
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
