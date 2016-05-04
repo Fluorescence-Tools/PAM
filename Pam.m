@@ -7837,7 +7837,7 @@ h=guidata(findobj('Tag','Pam'));
 if isfield(PamMeta.Det_Calib, 'Shift')
     UserValues.Detector.Shift{h.MI.Calib_Det.Value}=PamMeta.Det_Calib.Shift;
     Shift_Detector([],[],'save');
-    m = msgbox('Load data again');
+    m = msgbox('Load data again. Store IRFs or scatters only after loading data again!');
     pause(1)
     delete(m)
 else
