@@ -1,11 +1,14 @@
-function TauFit(obj,~)
+function TauFit(~,~)
 h.TauFit = findobj('Tag','TauFit');
 %%% If called from command line, close
-if nargin < 1
+if nargin < 1 && isempty(gcbo)
     Close_TauFit
     disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     return;
 end
+
+obj = gcbo;
+
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit

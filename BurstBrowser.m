@@ -7221,7 +7221,7 @@ elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData{file}.Resolution/1000;
     %Anders, does BurstData{file}.Resolution ever exist?
 end
-TauFit(obj)
+TauFit &; %%% launch in separate process
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10507,11 +10507,7 @@ switch mode
             h.DatabaseBB.Save.Enable = 'on';
         end
     case 4 %% Save complete database
-        if isfield(BurstMeta,'DatabasePath')
-            Path = BurstMeta.DatabasePath;
-        else
-            Path = UserValues.BurstBrowser.PrintPath;
-        end
+        Path = UserValues.File.BurstBrowserPath;
         [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', Path);
         s = struct;
         s.database = BurstMeta.Database;

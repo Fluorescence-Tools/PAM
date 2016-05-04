@@ -3085,7 +3085,7 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1 %%% Fix Sigma at Fraction of R
         %%% Fix all sigmas
         Data(i,9:9:end) = deal({true});
         %%% set to fraction times distance
-        Data(i,8:9:end) = cellfun(@(x) num2str(fraction.*str2double(x)),Data(i,5:9:end),'UniformOutput',false);
+        Data(i,8:9:end) = cellfun(@(x) num2str(fraction.*str2double(x)),Data(i,5:9:end-1),'UniformOutput',false);
     end
     %%% Set Table Data
     h.FitTab.Table.Data = Data;
