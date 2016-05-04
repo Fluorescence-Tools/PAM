@@ -3114,7 +3114,7 @@ for i = 1:numel(BurstData)
 end
 BurstMeta.SelectedFile = 1;
 
-%%% Set Parameter list AGAIN after all parameters are defined
+%%% Set Parameter list after all parameters are defined
 set(h.ParameterListX, 'String', BurstData{1}.NameArray);
 set(h.ParameterListX, 'Value', posE);
 
