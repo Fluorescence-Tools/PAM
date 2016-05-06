@@ -5842,9 +5842,7 @@ if obj == h.DetermineCorrectionsButton
 end
 if obj == h.FitGammaButton
     %% plot gamma plot for two populations (or lifetime versus E)
-    %%% get E-S values between 0.3 and 0.8;
-    %S_threshold = ( (data_for_corrections(:,indS) > 0.2) & (data_for_corrections(:,indS) < 0.8) );
-    % instead, use the user selected species
+    % use the user selected species
     S_threshold = UpdateCuts();
     %%% Calculate "raw" E and S with gamma = 1, but still apply direct
     %%% excitation,crosstalk, and background corrections!
@@ -5986,6 +5984,53 @@ if any(BurstData{file}.BAMethod == [3,4])
         m = msgbox('Not implemented for 3 color. Use 2 color standards to determine 3 color gamma factors instead.');
         pause(1);
         delete(m);
+        if 0
+            %%% Gamma factor determination based on triple labeled population
+            %%% using currently selected bursts
+            S_threshold = UpdateCuts();
+            %%% Read out corrections
+            ct_gr = BurstData{file}.Corrections.CrossTalk_GR;
+            de_gr = BurstData{file}.Corrections.DirectExcitation_GR;
+            ct_bg = BurstData{file}.Corrections.CrossTalk_BG;
+            de_bg = BurstData{file}.Corrections.DirectExcitation_BG;
+            ct_br = BurstData{file}.Corrections.CrossTalk_BR;
+            de_br = BurstData{file}.Corrections.DirectExcitation_BR;
+            gamma_gr = BurstData{file}.Corrections.Gamma_GR;
+            %%% Calculate correct EGR
+            %%% excitation,crosstalk, and background corrections!
+            NGR = BurstData{file}.DataArray(S_threshold,indNGR) - Background_GR.*BurstData{file}.DataArray(S_threshold,indDur);
+            NGG = BurstData{file}.DataArray(S_threshold,indNGG) - Background_GG.*BurstData{file}.DataArray(S_threshold,indDur);
+            NRR = BurstData{file}.DataArray(S_threshold,indNRR) - Background_RR.*BurstData{file}.DataArray(S_threshold,indDur);
+            NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
+            EGR = NGR./(NGR+gamma_gr*NGG);
+            %%% correct three-color photon counts for background
+            NBB = BurstData{file}.DataArray(S_threshold,indNBB) - Background_BB.*BurstData{file}.DataArray(S_threshold,indDur);
+            NBG = BurstData{file}.DataArray(S_threshold,indNBG) - Background_BG.*BurstData{file}.DataArray(S_threshold,indDur);
+            NBR = BurstData{file}.DataArray(S_threshold,indNBR) - Background_BR.*BurstData{file}.DataArray(S_threshold,indDur);
+            %%% Apply CrossTalk and DirectExcitation Corrections
+            NBR = NBR - de_br.*NRR - ct_br.*NBB - ct_gr.*(NBG-ct_bg.*NBB) - de_bg*(EGR./(1-EGR)).*NGG;
+            NBG = NBG - de_bg.*NGG - ct_bg.*NBB;
+            %%% calculate corrected photon counts by adding FRET photons back
+            NBGcor = NBG./(1-EGR);
+            NBRcor = NBR-(EGR./(1-EGR)).*gamma_gr.*NBG;
+            %%% Calculate FRET efficiencies for gamma_br = 1 and sub-stoichiometries (see Equations 3.19-22 in
+            %%% Anders' master thesis)
+            gamma_br = 1; gamma_bg = 1;
+            EBG = NBGcor./(gamma_bg.*NBB+NBGcor);
+            EBR = NBRcor./(gamma_br.*NBB+NBRcor);
+            subSBG = (gamma_bg.*NBB+NBGcor)./(gamma_bg.*NBB+NBGcor+NGG+(NGR./gamma_gr));
+            subSBR = (gamma_br.*NBB+NBRcor)./(gamma_br.*NBB+NBRcor+NRR);
+
+            fitGamma = fit(EBG,1./subSBG,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
+            coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
+            gamma_bg = (b - 1)/(b + m - 1);
+            beta_bg = b+m-1;
+            
+            fitGamma = fit(EBR,1./subSBR,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
+            coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
+            gamma_br = (b - 1)/(b + m - 1);
+            beta_br = b+m-1;
+        end
         if 0
         %% Gamma factor determination based on double-labeled species
         %%% BG labeled
@@ -7705,10 +7750,13 @@ else %%% Update UserValues with new values
                         %%% hold gamma BR constant, but change gamma BG
                         %%% (gamma BG is not really used directly in the code)
                         Data{2} = Data{3}/Data{1};
+                        obj.Data{2,2} = Data{2};
                     case 2 %%% gamma BG was changed, update gamma BR
                         Data{3} = Data{2}*Data{1};
+                        obj.Data{3,2} = Data{3};
                     case 3 %%% gamma BR was changed, update gamma BG
                         Data{2} = Data{3}/Data{1};
+                        obj.Data{2,2} = Data{2};
                 end
                 UserValues.BurstBrowser.Corrections.Gamma_GR = Data{1};
                 BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
