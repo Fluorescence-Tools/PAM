@@ -4697,7 +4697,6 @@ if ~colorbyparam
     h.colorbar.TickLabels = [];
     h.colorbar.TickLabelsMode = 'auto';
     h.colorbar.TicksMode = 'auto'; 
-    drawnow;
 else
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     Mask = zeros(size(H,1),size(H,2));
@@ -5138,6 +5137,7 @@ if obj == h.Fit_Gaussian_Button
     end
     h.Progress_Text.String = BurstMeta.DisplayName;
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
