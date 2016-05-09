@@ -426,11 +426,11 @@ if isempty(hfig)
     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
     %define the cut table
-    cname = {'min','max','active','delete'};
-    cformat = {'numeric','numeric','logical','logical'};
-    ceditable = [true true true true];
-    table_dat = {'','',false,false};
-    cwidth = {'auto','auto',50,50};
+    cname = {'min','max','active','delete','ZScale'};
+    cformat = {'numeric','numeric','logical','logical','logical'};
+    ceditable = [true true true true true];
+    table_dat = {'','',false,false,false};
+    cwidth = {'auto','auto',50,50,50};
     
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -1930,7 +1930,7 @@ if isempty(hfig)
         'HorizontalAlignment','left',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.83 0.81 0.16 0.07]);
+        'Position',[0.88 0.93 0.12 0.07]);
     
     %define 1d axes
     h.axes_1d_x =  axes(...
@@ -1960,6 +1960,10 @@ if isempty(hfig)
         'Color', 'r',...
         'Position',[0.025 0.8],...
         'Visible','off');
+    
+    %%% Colorbar
+    h.colorbar = colorbar(h.axes_general,'Position',[0.79,0.805,0.02,0.135],'Color',Look.Fore,'FontSize',12); 
+    h.colorbar.Label.String = 'Occurrence';
     
     h.axes_1d_y =  axes(...
         'Parent',h.MainTabGeneralPanel,...
@@ -1994,6 +1998,7 @@ if isempty(hfig)
         'Color', 'r',...
         'Position',[0.1 0.95],...
         'Visible','off');
+
     %% Define axes in Corrections tab
     %% Corrections - 2ColorMFD
     h.Corrections.TwoCMFD.axes_crosstalk =  axes(...
@@ -4664,28 +4669,84 @@ if size(CutState,2) > 0
         ylimits = [0 1];
     end
 end
-
-[H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
-
-if(get(h.Hist_log10, 'Value'))
-    HH = log10(H);
+%%% check what plot type to use
+colorbyparam = any(cell2mat(h.CutTable.Data(:,5)));
+if ~colorbyparam
+    [H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
+    if(get(h.Hist_log10, 'Value'))
+        HH = log10(H);
+    else
+        HH = H;
+    end
+    %%% Update Image Plot and Contour Plot
+    BurstMeta.Plots.Main_Plot(1).XData = xbins;
+    BurstMeta.Plots.Main_Plot(1).YData = ybins;
+    BurstMeta.Plots.Main_Plot(1).CData = HH;
+    if ~UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
+    elseif UserValues.BurstBrowser.Display.KDE
+        BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
+    end
+    BurstMeta.Plots.Main_Plot(2).XData = xbins;
+    BurstMeta.Plots.Main_Plot(2).YData = ybins;
+    BurstMeta.Plots.Main_Plot(2).ZData = HH/max(max(HH));
+    BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    %%% Update Colorbar
+    h.colorbar.Label.String = 'Occurrence';
+    h.colorbar.Ticks = [];
+    h.colorbar.TickLabels = [];
+    h.colorbar.TickLabelsMode = 'auto';
+    h.colorbar.TicksMode = 'auto'; 
+    drawnow;
 else
-    HH = H;
+    [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
+    Mask = zeros(size(H,1),size(H,2));
+    counter = zeros(size(H,1),size(H,2));
+    z = find(strcmp(h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5))),BurstData{file}.NameArray)); %%% parameter to scale by
+    z = datatoplot(:,z);
+    for i = 1:size(bin,1)
+        if ~isnan(z(i))
+            Mask(bin(i,1),bin(i,2)) = Mask(bin(i,1),bin(i,2)) + z(i);
+            counter(bin(i,1),bin(i,2)) = counter(bin(i,1),bin(i,2)) + 1;
+        end
+    end
+    Mask(counter > 0) = Mask(counter > 0)./counter(counter > 0);
+    zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
+    Mask(Mask < zlim(1)) = zlim(1);
+    Mask(Mask > zlim(2)) = zlim(2);
+    Mask = floor(63*(Mask-zlim(1))./(zlim(2)-zlim(1)))+1;
+    if ischar(UserValues.BurstBrowser.Display.ColorMap)
+        eval(['cmap =' UserValues.BurstBrowser.Display.ColorMap '(64);']);
+    else
+        cmap=UserValues.BurstBrowser.Display.ColorMap;
+    end
+    if UserValues.BurstBrowser.Display.ColorMapInvert
+        cmap=flipud(cmap);
+    end
+    Color = reshape(cmap(Mask,:),size(Mask,1),size(Mask,2),3);
+    %%% rescale intensity
+    ImageColor=gray(128);
+    %%% brighten image color map by beta = 25%
+    beta = 0.25;
+    ImageColor = ImageColor.^(1-beta);
+    offset = 0;
+    Image=round((127-offset)*(H-min(min(H)))/(max(max(H))-min(min(H))))+1+offset;
+    Image=reshape(ImageColor(Image(:),:),size(Image,1),size(Image,2),3);
+    BurstMeta.Plots.Main_Plot(1).XData = xbins;
+    BurstMeta.Plots.Main_Plot(1).YData = ybins;
+    BurstMeta.Plots.Main_Plot(1).CData = Image.*Color;
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);
+    %     AlphaData = H./max(max(H));
+    %     offset = 0.25;
+    %     AlphaData = (AlphaData*(1-offset)+offset);
+    %     AlphaData(AlphaData < (offset+0.01)) = 0;
+    %     BurstMeta.Plots.Main_Plot(1).AlphaData = AlphaData;
+    
+    %%% Update Colorbar
+    h.colorbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
+    h.colorbar.Ticks = [0,1/2,1];
+    h.colorbar.TickLabels = {sprintf('%.2f',(zlim(1)));sprintf('%.2f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.2f',zlim(2))};
 end
-
-%%% Update Image Plot and Contour Plot
-BurstMeta.Plots.Main_Plot(1).XData = xbins;
-BurstMeta.Plots.Main_Plot(1).YData = ybins;
-BurstMeta.Plots.Main_Plot(1).CData = HH;
-if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
-elseif UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
-end
-BurstMeta.Plots.Main_Plot(2).XData = xbins;
-BurstMeta.Plots.Main_Plot(2).YData = ybins;
-BurstMeta.Plots.Main_Plot(2).ZData = HH/max(max(HH));
-BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 
 axis(h.axes_general,'tight');
 %%% Update Labels
@@ -4707,10 +4768,15 @@ yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 
 %%% set limits of axes
-xlim(h.axes_general,xlimits);
-ylim(h.axes_general,ylimits);
-xlim(h.axes_1d_x,xlimits);
-xlim(h.axes_1d_y,ylimits);
+if ~(xlimits(1) == xlimits(2))
+    xlim(h.axes_general,xlimits);
+    xlim(h.axes_1d_x,xlimits);
+    xlim(h.axes_1d_y,ylimits);
+end
+if ~(ylimits(1) == ylimits(2))
+    ylim(h.axes_general,ylimits);
+end
+
 
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
@@ -5519,7 +5585,14 @@ else
         rownames = {''};
     end
 end
-set(h.CutTable,'Data',data,'RowName',rownames);
+if size(data,1) == size(h.CutTable.Data,1)
+    h.CutTable.Data(:,1:4) = data;
+elseif size(data,1) < size(h.CutTable.Data,1) 
+    h.CutTable.Data = [data, h.CutTable.Data(1:size(data,1),5)];
+elseif size(data,1) > size(h.CutTable.Data,1)
+    h.CutTable.Data = [data, vertcat(h.CutTable.Data(:,5),num2cell(false(size(data,1)-size(h.CutTable.Data,1),1)))];
+end
+h.CutTable.RowName = rownames;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Applies Cuts to Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5617,10 +5690,16 @@ switch index(2)
         end
     case {3} %active/inactive change
         % unchanged
-        %NewData = NewData;
+    case {5} % ZScale was changed
+        %%% disable all other active components
+        for i = 1:size(hObject.Data)
+            if i ~= index(1)
+                hObject.Data{i,5} = false;
+            end
+        end
 end
 
-if index(2) ~= 4
+if index(2) < 4
     BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1}=NewData;
 elseif index(2) == 4 %delete this entry
     BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
@@ -5984,7 +6063,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         m = msgbox('Not implemented for 3 color. Use 2 color standards to determine 3 color gamma factors instead.');
         pause(1);
         delete(m);
-        if 0
+        if 1
             %%% Gamma factor determination based on triple labeled population
             %%% using currently selected bursts
             S_threshold = UpdateCuts();
@@ -6013,20 +6092,19 @@ if any(BurstData{file}.BAMethod == [3,4])
             %%% calculate corrected photon counts by adding FRET photons back
             NBGcor = NBG./(1-EGR);
             NBRcor = NBR-(EGR./(1-EGR)).*gamma_gr.*NBG;
-            %%% Calculate FRET efficiencies for gamma_br = 1 and sub-stoichiometries (see Equations 3.19-22 in
-            %%% Anders' master thesis)
+            %%% Calculate FRET efficiencies for gamma_br = 1 and stoichiometries
             gamma_br = 1; gamma_bg = 1;
             EBG = NBGcor./(gamma_bg.*NBB+NBGcor);
             EBR = NBRcor./(gamma_br.*NBB+NBRcor);
-            subSBG = (gamma_bg.*NBB+NBGcor)./(gamma_bg.*NBB+NBGcor+NGG+(NGR./gamma_gr));
-            subSBR = (gamma_br.*NBB+NBRcor)./(gamma_br.*NBB+NBRcor+NRR);
+            SBG = (gamma_bg.*NBB+NBG+NBR)./(gamma_bg.*NBB+NBG+NBR+NGG+(NGR./gamma_gr));
+            SBR = (gamma_br.*NBB+NBR+gamma_gr.*NBG)./(gamma_br.*NBB+NBR+gamma_gr.*NBG+NRR);
 
-            fitGamma = fit(EBG,1./subSBG,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
+            fitGamma = fit(EBG,1./SBG,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
             coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
             gamma_bg = (b - 1)/(b + m - 1);
             beta_bg = b+m-1;
             
-            fitGamma = fit(EBR,1./subSBR,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
+            fitGamma = fit(EBR,1./SBR,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
             coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
             gamma_br = (b - 1)/(b + m - 1);
             beta_br = b+m-1;
@@ -9618,6 +9696,16 @@ switch obj
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
             end
         end
+        %%% Update Colorbar by plotting it anew
+        cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',2); 
+        cbar.Position = [0.8,0.85,0.18,0.025];
+        cbar.Label.String = 'Occurrence';
+        if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
+            cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
+            cbar.Ticks = [0,1/2,1];
+            zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
+            cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
+        end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
         fontsize = 22;
@@ -10073,7 +10161,7 @@ PlotLifetimeInd([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [H,xbins,ybins,xbins_hist,ybins_hist] = calc2dhist(x,y,nbins,limx,limy)
+function [H,xbins,ybins,xbins_hist,ybins_hist, bin] = calc2dhist(x,y,nbins,limx,limy)
 %%% ouput arguments:
 %%% H:                      Image Data
 %%% xbins/ybins:            corrected xbins for image plot
@@ -10096,236 +10184,44 @@ end
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
 y = y(valid);
-if ~UserValues.BurstBrowser.Display.KDE %%% no smoothing
-    [H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
+if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no smoothing
+    %%% prepare bins
+    Xn = nbins(1)+1;
+    Yn = nbins(2)+1;
+    xbins_hist = linspace(limx(1),limx(2),Xn);
+    ybins_hist = linspace(limy(1),limy(2),Yn);
+    Zbins = linspace(1, Xn+(1-1/(Yn+1)), Xn*Yn);
+    % convert data
+    x = floor((x-limx(1))/(limx(2)-limx(1))*(Xn-1))+1;
+    y = floor((y-limy(1))/(limy(2)-limy(1))*(Yn-1))+1;
+    z = x + y/(Yn) ;
+
+    % calculate histogram
+    if nargout < 6 % Bin assignment is not requested
+        h = histc(z, Zbins);
+    elseif nargout == 6
+        [h, bin]  = histc(z, Zbins);
+        [biny,binx] = ind2sub([Yn,Xn],bin);
+        binx(binx == Xn) = Xn -1;
+        biny(biny == Yn) = Yn -1;
+        binx(binx == 0) = 1;
+        biny(biny == 0) = 1;
+        bin = [biny,binx];
+    end
+    H = reshape(h, Yn, Xn);
+    %[H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
     H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
-    if sum(x) == 0 || sum(y) == 0 %%% KDE fails if this is the case
-        [H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
-    else
-        [~,H, xbins_hist, ybins_hist] = kde2d([x y],nbins(1),[limx(1) limy(1)],[limx(2), limy(2)]);
-        xbins_hist = xbins_hist(1,:);
-        ybins_hist = ybins_hist(:,1);
-    end
+    [~,H, xbins_hist, ybins_hist] = kde2d([x y],nbins(1),[limx(1) limy(1)],[limx(2), limy(2)]);
+    xbins_hist = xbins_hist(1,:);
+    ybins_hist = ybins_hist(:,1);
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
     H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
-end
-
-function [Hout, Xbins, Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
-%HIST2D 2D histogram
-%
-% [H XBINS YBINS] = HIST2D(D, XN, YN, [XLO XHI], [YLO YHI])
-% [H XBINS YBINS] = HIST2D(D, 'display' ...)
-%
-% HIST2D calculates a 2-dimensional histogram and returns the histogram
-% array and (optionally) the bins used to calculate the histogram.
-%
-% Inputs:
-%     D:         N x 2 real array containing N data points or N x 1 array
-%                 of N complex values
-%     XN:        number of bins in the x dimension (defaults to 200)
-%     YN:        number of bins in the y dimension (defaults to 200)
-%     [XLO XHI]: range for the bins in the x dimension (defaults to the
-%                 minimum and maximum of the data points)
-%     [YLO YHI]: range for the bins in the y dimension (defaults to the
-%                 minimum and maximum of the data points)
-%     'display': displays the 2D histogram as a surf plot in the current
-%                 axes
-%
-% Outputs:
-%     H:         2D histogram array (rows represent X, columns represent Y)
-%     XBINS:     the X bin edges (see below)
-%     YBINS:     the Y bin edges (see below)
-%
-% As with histc, h(i,j) is the number of data points (dx,dy) where
-% x(i) <= dx < x(i+1) and y(j) <= dx < y(j+1). The last x bin counts
-% values where dx exactly equals the last x bin value, and the last y bin
-% counts values where dy exactly equals the last y bin value.
-%
-% If D is a complex array, HIST2D splits the complex numbers into real (x)
-% and imaginary (y) components.
-%
-% Created by Amanda Ng on 5 December 2008
-
-% Modification history
-%   25 March 2009 - fixed error when min and max of ranges are equal.
-%   22 November 2009 - added display option; modified code to handle 1 bin
-
-% PROCESS INPUT D
-if nargin < 1 %check D is specified
-    error 'Input D not specified'
-end
-
-Dcomplex = false;
-if ~isreal(D) %if D is complex ...
-    if isvector(D) %if D is a vector, split into real and imaginary
-        D=[real(D(:)) imag(D(:))];
-    else %throw error
-        error 'D must be either a complex vector or nx2 real array'
-    end
-    Dcomplex = true;
-end
-
-if (size(D,1)<size(D,2) && size(D,1)>1)
-    D=D';
-end
-
-if size(D,2)~=2;
-    error('The input data matrix must have 2 rows or 2 columns');
-end
-
-% PROCESS OTHER INPUTS
-var = varargin;
-
-% check if DISPLAY is specified
-index = find(strcmpi(var,'display'));
-if ~isempty(index)
-    display = true;
-    var(index) = [];
-else
-    display = false;
-end
-
-% process number of bins
-Xn = 200; %default
-Xndefault = true;
-if numel(var)>=1 && ~isempty(var{1}) % Xn is specified
-    if ~isscalar(var{1})
-        error 'Xn must be scalar'
-    elseif var{1}<1 || mod(var{1},1)
-        error 'Xn must be an integer greater than or equal to 1'
-    else
-        Xn = var{1};
-        Xndefault = false;
-    end
-end
-
-Yn = 200; %default
-Yndefault = true;
-if numel(var)>=2 && ~isempty(var{2}) % Yn is specified
-    if ~isscalar(var{2})
-        error 'Yn must be scalar'
-    elseif var{2}<1 || mod(var{2},1)
-        error 'Xn must be an integer greater than or equal to 1'
-    else
-        Yn = var{2};
-        Yndefault = false;
-    end
-end
-
-% process ranges
-if numel(var) < 3 || isempty(var{3}) %if XRange not specified
-    Xrange=[min(D(:,1)),max(D(:,1))]; %default
-else
-    if nnz(size(var{3})==[1 2]) ~= 2 %check is 1x2 array
-        error 'XRange must be 1x2 array'
-    end
-    Xrange = var{3};
-end
-if Xrange(1)==Xrange(2) %handle case where XLO==XHI
-    if Xndefault
-        Xn = 1;
-    else
-        Xrange(1) = Xrange(1) - floor(Xn/2);
-        Xrange(2) = Xrange(2) + floor((Xn-1)/2);
-    end
-end
-
-if numel(var) < 4 || isempty(var{4}) %if XRange not specified
-    Yrange=[min(D(:,2)),max(D(:,2))]; %default
-else
-    if nnz(size(var{4})==[1 2]) ~= 2 %check is 1x2 array
-        error 'YRange must be 1x2 array'
-    end
-    Yrange = var{4};
-end
-if Yrange(1)==Yrange(2) %handle case where YLO==YHI
-    if Yndefault
-        Yn = 1;
-    else
-        Yrange(1) = Yrange(1) - floor(Yn/2);
-        Yrange(2) = Yrange(2) + floor((Yn-1)/2);
-    end
-end
-
-% SET UP BINS
-Xlo = Xrange(1) ; Xhi = Xrange(2) ;
-Ylo = Yrange(1) ; Yhi = Yrange(2) ;
-if Xn == 1
-    XnIs1 = true;
-    Xbins = [Xlo Inf];
-    Xn = 2;
-else
-    XnIs1 = false;
-    Xbins = linspace(Xlo,Xhi,Xn) ;
-end
-if Yn == 1
-    YnIs1 = true;
-    Ybins = [Ylo Inf];
-    Yn = 2;
-else
-    YnIs1 = false;
-    Ybins = linspace(Ylo,Yhi,Yn) ;
-end
-
-Z = linspace(1, Xn+(1-1/(Yn+1)), Xn*Yn);
-
-% split data
-Dx = floor((D(:,1)-Xlo)/(Xhi-Xlo)*(Xn-1))+1;
-Dy = floor((D(:,2)-Ylo)/(Yhi-Ylo)*(Yn-1))+1;
-Dz = Dx + Dy/(Yn) ;
-
-% calculate histogram
-h = reshape(histc(Dz, Z), Yn, Xn);
-
-if nargout >=1
-    Hout = h;
-end
-
-if XnIs1
-    Xn = 1;
-    Xbins = Xbins(1);
-    h = sum(h,1);
-end
-if YnIs1
-    Yn = 1;
-    Ybins = Ybins(1);
-    h = sum(h,2);
-end
-
-% DISPLAY IF REQUESTED
-if ~display
-    return
-end
-
-[x y] = meshgrid(Xbins,Ybins);
-dispH = h;
-
-% handle cases when Xn or Yn
-if Xn==1
-    dispH = padarray(dispH,[1 0], 'pre');
-    x = [x x];
-    y = [y y];
-end
-if Yn==1
-    dispH = padarray(dispH, [0 1], 'pre');
-    x = [x;x];
-    y = [y;y];
-end
-
-surf(x,y,dispH);
-colormap(jet);
-if Dcomplex
-    xlabel real;
-    ylabel imaginary;
-else
-    xlabel x;
-    ylabel y;
 end
 
 function Calculate_Settings(obj,~)
