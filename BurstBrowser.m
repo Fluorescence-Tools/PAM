@@ -1537,6 +1537,19 @@ if isempty(hfig)
         'Callback',@ChangePlotType...
         );
     
+    h.ZScale_Intensity = uicontrol('Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Grayscale Intensity for ZScale',...
+        'Tag','DisplayAverage',...
+        'Value', UserValues.BurstBrowser.Display.ZScale_Intensity,...
+        'Units','normalized',...
+        'Position',[0.6 0.38 0.4 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdatePlot...
+        );
+    
     %%% Option to take log10 of 2D histogram
     h.Hist_log10 = uicontrol('Style','checkbox',...
         'Parent',h.DisplayOptionsPanel,...
@@ -1925,12 +1938,12 @@ if isempty(hfig)
         'Parent',h.MainTabGeneralPanel,...
         'Tag','Text_Burst',...
         'Units','normalized',...
-        'FontSize',14,...
+        'FontSize',11,...
         'String','no bursts',...
         'HorizontalAlignment','left',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.88 0.93 0.12 0.07]);
+        'Position',[0 0.97 0.5 0.03]);
     
     %define 1d axes
     h.axes_1d_x =  axes(...
@@ -1945,6 +1958,7 @@ if isempty(hfig)
         'View',[0 90],...
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
+        'Color',Look.Axes,...
         'UIContextMenu',h.ExportGraph_Menu);
     ylabel(h.axes_1d_x, 'counts','Color',Look.Fore);
     
@@ -1962,8 +1976,14 @@ if isempty(hfig)
         'Visible','off');
     
     %%% Colorbar
-    h.colorbar = colorbar(h.axes_general,'Position',[0.79,0.805,0.02,0.135],'Color',Look.Fore,'FontSize',12); 
+    h.colorbar = colorbar(h.axes_general,'Location','north','Color',Look.Fore,'FontSize',12);
+    h.colorbar.Position = [0.78,0.92,0.15,0.02];
+    h.colorbar.Label.Color = Look.Fore;
     h.colorbar.Label.String = 'Occurrence';
+    h.colorbar.Label.FontWeight = 'bold'; 
+    h.colorbar.Label.Position(1) = 0.5;
+    h.colorbar.Label.Position(2) = 2.5;
+    h.colorbar.Label.Units = 'normalized';
     
     h.axes_1d_y =  axes(...
         'Parent',h.MainTabGeneralPanel,...
@@ -1978,6 +1998,7 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'View',[90 90],...
+        'Color',Look.Axes,...
         'XDir','reverse',...
         'UIContextMenu',h.ExportGraph_Menu);
     ylabel(h.axes_1d_y, 'counts','Color',Look.Fore);
@@ -1998,7 +2019,25 @@ if isempty(hfig)
         'Color', 'r',...
         'Position',[0.1 0.95],...
         'Visible','off');
-
+    %%% Axis for ZScale parameter, shows histogram of average values
+    h.axes_ZScale =  axes(...
+        'Parent',h.MainTabGeneralPanel,...
+        'Units','normalized',...
+        'Position',[0.78 0.79 0.15, 0.13],...
+        'Tag','Main_Tab_General_Plot',...
+        'Box','on',...
+        'Tag','axes_ZScale',...
+        'FontSize',12,...
+        'nextplot','add',...
+        'XColor',Look.Fore,...
+        'YColor',Look.Fore,...
+        'XTick',[],...
+        'YTick',[],...
+        'UIContextMenu',h.ExportGraph_Menu,...
+        'Color',Look.Axes,...
+        'Visible','off');
+    ylabel(h.axes_ZScale, [],'Color',Look.Fore);
+    xlabel(h.axes_ZScale, [],'Color',Look.Fore);
     %% Define axes in Corrections tab
     %% Corrections - 2ColorMFD
     h.Corrections.TwoCMFD.axes_crosstalk =  axes(...
@@ -2756,6 +2795,7 @@ switch mode
         %%% Main Tab
         BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
         BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
+        BurstMeta.Plots.ZScale_hist= bar(h.axes_ZScale,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu,'Visible','off');
         %%% Initialize both image AND contour plots in array
         BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general,'UIContextMenu',h.ExportGraph_Menu);axis(h.axes_general,'tight');
         [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');BurstMeta.Plots.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
@@ -4691,6 +4731,9 @@ if ~colorbyparam
     BurstMeta.Plots.Main_Plot(2).YData = ybins;
     BurstMeta.Plots.Main_Plot(2).ZData = HH/max(max(HH));
     BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    %%% Disable ZScale Axis
+    h.axes_ZScale.Visible = 'off';
+    BurstMeta.Plots.ZScale_hist.Visible = 'off';
     %%% Update Colorbar
     h.colorbar.Label.String = 'Occurrence';
     h.colorbar.Ticks = [];
@@ -4710,6 +4753,7 @@ else
         end
     end
     Mask(counter > 0) = Mask(counter > 0)./counter(counter > 0);
+    zParam = Mask(:);
     zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
     Mask(Mask < zlim(1)) = zlim(1);
     Mask(Mask > zlim(2)) = zlim(2);
@@ -4723,17 +4767,23 @@ else
         cmap=flipud(cmap);
     end
     Color = reshape(cmap(Mask,:),size(Mask,1),size(Mask,2),3);
-    %%% rescale intensity
-    ImageColor=gray(128);
-    %%% brighten image color map by beta = 25%
-    beta = 0.25;
-    ImageColor = ImageColor.^(1-beta);
-    offset = 0;
-    Image=round((127-offset)*(H-min(min(H)))/(max(max(H))-min(min(H))))+1+offset;
-    Image=reshape(ImageColor(Image(:),:),size(Image,1),size(Image,2),3);
+    
+    if UserValues.BurstBrowser.Display.ZScale_Intensity
+        %%% rescale intensity
+        ImageColor=gray(128);
+        %%% brighten image color map by beta = 25%
+        beta = 0.25;
+        ImageColor = ImageColor.^(1-beta);
+        offset = 0;
+        Image=round((127-offset)*(H-min(min(H)))/(max(max(H))-min(min(H))))+1+offset;
+        Image=reshape(ImageColor(Image(:),:),size(Image,1),size(Image,2),3);
+        Image = Image.*Color;
+    else
+        Image = Color;
+    end
     BurstMeta.Plots.Main_Plot(1).XData = xbins;
     BurstMeta.Plots.Main_Plot(1).YData = ybins;
-    BurstMeta.Plots.Main_Plot(1).CData = Image.*Color;
+    BurstMeta.Plots.Main_Plot(1).CData = Image;
     BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);
     %     AlphaData = H./max(max(H));
     %     offset = 0.25;
@@ -4741,10 +4791,20 @@ else
     %     AlphaData(AlphaData < (offset+0.01)) = 0;
     %     BurstMeta.Plots.Main_Plot(1).AlphaData = AlphaData;
     
+    %%% Enable ZScale Axis
+    h.axes_ZScale.Visible = 'on';
+    BurstMeta.Plots.ZScale_hist.Visible = 'on';
+    %%% Plot histogram of average Z paramter
+    [Z,xZ] = histcounts(zParam(zParam>0),linspace(zlim(1),zlim(2),65));
+    Z(end-1) = Z(end-1)+Z(end); Z(end) = [];
+    BurstMeta.Plots.ZScale_hist.XData = xZ;
+    BurstMeta.Plots.ZScale_hist.YData = Z;
+    xlim(h.axes_ZScale,zlim);
     %%% Update Colorbar
     h.colorbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
     h.colorbar.Ticks = [0,1/2,1];
     h.colorbar.TickLabels = {sprintf('%.2f',(zlim(1)));sprintf('%.2f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.2f',zlim(2))};
+    h.colorbar.AxisLocation='out';
 end
 
 axis(h.axes_general,'tight');
@@ -4790,8 +4850,7 @@ end
 % update plot type
 % ChangePlotType([],[]);
 % Update no. bursts
-set(h.text_nobursts, 'String', {[num2str(sum(BurstData{file}.Selected)) ' bursts']; [num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total']})
-
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts (' num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
 if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
@@ -9643,12 +9702,10 @@ switch obj
             colormap(h.BurstBrowser,flipud(colormap));
         end
         %%% Remove non-axes object
-        for i = 1:numel(panel_copy.Children)
-            if ~strcmp(panel_copy.Children(i),'axes')
-                del(i) = 1;
-            end
-        end
-        delete(panel_copy.Children(del));
+        del = zeros(numel(panel_copy.Children),1);
+        del(1) = 1;
+        del(5) = 1; %%% remove colorbar
+        delete(panel_copy.Children(logical(del)));
         for i = 1:numel(panel_copy.Children)
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
@@ -9694,17 +9751,29 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
+                case 'axes_ZScale'
+                    if strcmp(panel_copy.Children(i).Visible,'on')
+                        panel_copy.Children(i).Position = [0.77,0.785,0.15,0.13];
+                    end
             end
         end
         %%% Update Colorbar by plotting it anew
-        cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',2); 
-        cbar.Position = [0.8,0.85,0.18,0.025];
-        cbar.Label.String = 'Occurrence';
         if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
+            cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8,'LineWidth',3); 
+            panel_copy.Children(3).XTickLabel(end) = {' '};
+            cbar.Position = [0.77,0.915,0.15,0.02];
+            cbar.AxisLocation = 'out';
+            cbar.Label.String = 'Occurrence';
+            cbar.Label.Units = 'normalized';
+            cbar.Label.Position = [0.5,2.85,0];
             cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
             cbar.Ticks = [0,1/2,1];
             zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
             cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
+        else %%% only occurence
+            cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
+            cbar.Position = [0.8,0.85,0.18,0.025];
+            cbar.Label.String = 'Occurrence';
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -10566,6 +10635,9 @@ if obj == h.NumberOfContourLevels_edit
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
 end
+if obj == h.ZScale_Intensity
+    UserValues.BurstBrowser.Display.ZScale_Intensity = obj.Value;
+end
 if obj == h.ContourOffset_edit
     ContourOffset = str2double(h.ContourOffset_edit.String);
     if ~isnan(ContourOffset)
@@ -10594,3 +10666,4 @@ end
 if obj == h.ColorMapInvert
     UserValues.BurstBrowser.Display.ColorMapInvert = h.ColorMapInvert.Value;
 end
+LSUserValues(1);

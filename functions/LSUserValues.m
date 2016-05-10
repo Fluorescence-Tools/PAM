@@ -1173,6 +1173,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');
     end
     P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
+     %%% Checks, if BurstBrowser.Display.ZScale_Intensity subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ZScale_Intensity')
+        S.BurstBrowser.Display.ZScale_Intensity=1;
+        disp('UserValues.BurstBrowser.Display.ZScale_Intensity was incomplete');
+    end
+    P.BurstBrowser.Display.ZScale_Intensity = S.BurstBrowser.Display.ZScale_Intensity;
     %%% Checks, if BurstBrowser.Display.KDE subfield exists
     if ~isfield (S.BurstBrowser.Display,'KDE')
         S.BurstBrowser.Display.KDE=0;
