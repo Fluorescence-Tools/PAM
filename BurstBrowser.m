@@ -2212,7 +2212,7 @@ if isempty(hfig)
     %%% Make Tabs for all plots and one for selecting individual plots for
     %%% inspection in detail
     % context menu for All tab lifetimes
-        h.LifeTime_Menu = uicontextmenu;
+    h.LifeTime_Menu = uicontextmenu;
     h.ExportLifetime_Menu = uimenu(...
         'Parent',h.LifeTime_Menu,...
         'Label','Export Lifetime Plots',...
@@ -2229,6 +2229,8 @@ if isempty(hfig)
 %         'Tag','ExportEvsTauBB_Menu',...
 %         'Callback',@ExportGraphs,...
 %         'Visible','off');
+    h.LifetimePanelAll.UIContextMenu = h.LifeTime_Menu;
+    
     h.axes_EvsTauGG =  axes(...
         'Parent',h.LifetimePanelAll,...
         'Units','normalized',...
@@ -2336,6 +2338,7 @@ if isempty(hfig)
         'Label','Export Graph',...
         'Tag','Export2DLifetime_Menu',...
         'Callback',@ExportGraphs);
+    h.LifetimePanelInd.UIContextMenu = h.ExportGraphLifetime_Menu;
     
     %define 2d axis
     h.axes_lifetime_ind_2d =  axes(...
@@ -2844,21 +2847,25 @@ switch mode
         %%% Lifetime Tab
         BurstMeta.Plots.EvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauGG);axis(h.axes_EvsTauGG,'tight');
         [~,BurstMeta.Plots.EvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauGG,'Visible','off');
+        BurstMeta.Plots.EvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','--','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','--','LineWidth',3,'Visible','off');
         BurstMeta.Plots.EvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauRR);axis(h.axes_EvsTauRR,'tight');
         [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
+        BurstMeta.Plots.EvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rGGvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_rGGvsTauGG);axis(h.axes_rGGvsTauGG,'tight');
         [~,BurstMeta.Plots.rGGvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
+        BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinGG(3) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rRRvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_rRRvsTauRR);axis(h.axes_rRRvsTauRR,'tight');
         [~,BurstMeta.Plots.rRRvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_rRRvsTauRR,'Visible','off');axis(h.axes_rRRvsTauRR,'tight');
+        BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -2866,16 +2873,18 @@ switch mode
         %%% Lifetime Tab 3C
         BurstMeta.Plots.E_BtoGRvsTauBB(1) = imagesc(zeros(2),'Parent',h.axes_E_BtoGRvsTauBB);axis(h.axes_E_BtoGRvsTauBB,'tight');
         [~,BurstMeta.Plots.E_BtoGRvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_E_BtoGRvsTauBB,'Visible','off');
+        BurstMeta.Plots.E_BtoGRvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.E_BtoGRvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rBBvsTauBB(1) = imagesc(zeros(2),'Parent',h.axes_rBBvsTauBB);axis(h.axes_rBBvsTauBB,'tight');
         [~,BurstMeta.Plots.rBBvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_rBBvsTauBB,'Visible','off');
+        BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinBB(1) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinBB(2) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinBB(3) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','-','LineWidth',3,'Visible','off');
         %%% Individual Lifetime Tab
-        BurstMeta.Plots.LifetimeInd_histX = bar(h.axes_lifetime_ind_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
-        BurstMeta.Plots.LifetimeInd_histY = bar(h.axes_lifetime_ind_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
+        BurstMeta.Plots.LifetimeInd_histX = bar(h.axes_lifetime_ind_1d_x,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);BurstMeta.Plots.LifetimeInd_histX.UIContextMenu = h.ExportGraphLifetime_Menu;
+        BurstMeta.Plots.LifetimeInd_histY = bar(h.axes_lifetime_ind_1d_y,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);BurstMeta.Plots.LifetimeInd_histY.UIContextMenu = h.ExportGraphLifetime_Menu;
         %%% fFCS Tab
         BurstMeta.Plots.fFCS.IRF_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Microtime_Species1_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
@@ -8451,8 +8460,9 @@ end
 cla(h.axes_lifetime_ind_2d);
 plots =origin.Children;
 for i = numel(plots):-1:1
-    copyobj(plots(i),h.axes_lifetime_ind_2d);
+    handle_temp = copyobj(plots(i),h.axes_lifetime_ind_2d);
     type{i} = plots(i).Type;
+    handle_temp.UIContextMenu = h.ExportGraphLifetime_Menu;
 end
 
 h.axes_lifetime_ind_2d.XLim = origin.XLim;
@@ -9777,7 +9787,7 @@ switch obj
             cbar.Label.Units = 'normalized';
             cbar.Label.Position = [0.5,2.85,0];
             cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
-            cbar.Ticks = [0,1/2,1];
+            cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
             zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
             cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
         else %%% only occurence
