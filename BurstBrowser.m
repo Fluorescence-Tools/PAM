@@ -9702,10 +9702,15 @@ switch obj
             colormap(h.BurstBrowser,flipud(colormap));
         end
         %%% Remove non-axes object
-        del = zeros(numel(panel_copy.Children),1);
-        del(1) = 1;
-        del(5) = 1; %%% remove colorbar
-        delete(panel_copy.Children(logical(del)));
+        if numel(panel_copy.Children) == 5
+            delete(panel_copy.Children(1));
+        elseif numel(panel_copy.Children) == 6
+            del = zeros(numel(panel_copy.Children),1);
+            del(1) = 1;
+            del(5) = 1; %%% remove colorbar
+            delete(panel_copy.Children(logical(del)));
+        end
+        
         for i = 1:numel(panel_copy.Children)
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
