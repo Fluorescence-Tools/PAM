@@ -33,7 +33,7 @@ if isempty(hfig)
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.BurstBrowser,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:3 6:7 13:17]))
+    delete(toolbar_items([2:7 13:17]))
     %%% define menu items
     h.File_Menu = uimenu(...
         'Parent',h.BurstBrowser,...
@@ -4818,7 +4818,11 @@ else
     HH = H;
 end
 
+h.colorbar.Visible = 'on';
+legend(h.axes_1d_x,'off');
+
 axis(h.axes_general,'tight');
+
 %%% Update Labels
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
@@ -5507,7 +5511,23 @@ for i = 2:num_species
 end
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
+%%% add legend
+str = cell(num_species,1);
+for i = 1:num_species
+    %%% extract name
+    name = BurstData{file_n(i)}.FileName;
+    if (species_n(i) ~= 0)
+        if (subspecies_n(i) ~= 0) %%% we have a subspecies selected
+            name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
+        else %%% we have a species selected 
+            name = [name,'/', char(sel(i).getName)];
+        end
+    end
+    str{i} = name;  
+end
 
+legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+h.colorbar.Visible = 'off';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Manual Cut by selecting an area in the current selection  %%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9724,11 +9744,16 @@ switch obj
         elseif numel(panel_copy.Children) == 6
             del = zeros(numel(panel_copy.Children),1);
             del(1) = 1;
-            del(5) = 1; %%% remove colorbar
+            if ~strcmp(panel_copy.Children(5).Type,'legend')
+                del(5) = 1; %%% remove colorbar
+            end
             delete(panel_copy.Children(logical(del)));
         end
         
         for i = 1:numel(panel_copy.Children)
+            if strcmp(panel_copy.Children(i).Type,'legend')
+                continue;
+            end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
             %%% change X/YColor Color Color
