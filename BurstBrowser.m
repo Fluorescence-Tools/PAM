@@ -6401,10 +6401,8 @@ NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{fil
 
 if obj == h.DetermineGammaLifetimeTwoColorButton
     %%% Calculate static FRET line in presence of linker fluctuations
-    tau = linspace(0,5,100);
-    [~, statFRETfun] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-        tau);
+    [FRETline, statFRETfun,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
     %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
@@ -6425,11 +6423,8 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     BurstMeta.Plots.gamma_lifetime(2).ZData= H/max(max(H));
     BurstMeta.Plots.gamma_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% add static FRET line
-    tau = linspace(h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(1),h.Corrections.TwoCMFD.axes_gamma_lifetime.XLim(2),100);
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
-    FRETline = statFRETfun(tau);
-    FRETline(find(FRETline < 0,1,'first')+10:end) = NaN;
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
     ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
     %%% Update UserValues
@@ -6474,11 +6469,9 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
             BurstData{file}.Corrections.DirectExcitation_BG*(EGR./(1-EGR)).*NGG;
         NBG = NBG - BurstData{file}.Corrections.DirectExcitation_BG.*NGG - BurstData{file}.Corrections.CrossTalk_BG.*NBB;
         %%% Calculate static FRET line in presence of linker fluctuations
-        tau = linspace(0,5,100);
-        [~, statFRETfun] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+        [statFRETline, statFRETfun,tau] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
             BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
-            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR,...
-            tau);
+            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
         %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetimeBlue;
         tauBB = data_for_corrections(S_threshold,indTauBB);
         valid = (tauBB < BurstData{file}.Corrections.DonorLifetimeBlue) & (tauBB > 0.01) & ~isnan(tauBB);
@@ -6499,10 +6492,9 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         BurstMeta.Plots.gamma_threecolor_lifetime(2).ZData= H/max(max(H));
         BurstMeta.Plots.gamma_threecolor_lifetime(2).LevelList= linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
         %%% add static FRET line
-        tau = linspace(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(1),h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime.XLim(2),100);
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
-        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETfun(tau);
+        BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETline;%statFRETfun(tau);
         ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
@@ -8518,21 +8510,17 @@ idxE = strcmp('FRET Efficiency',BurstData{file}.NameArray);
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
     %%% Calculate static FRET line in presence of linker fluctuations
-    tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),100);
-    staticFRETline = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-        tau);
+    [staticFRETline, ~,tau] = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+        BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_EvsTauGG.YData = staticFRETline;
     %BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG.Visible = 'off';
     if any(BurstData{file}.BAMethod == [3,4])
         %%% Calculate static FRET line in presence of linker fluctuations
-        tau = linspace(h.axes_E_BtoGRvsTauBB.XLim(1),h.axes_E_BtoGRvsTauBB.XLim(2),100);
-        staticFRETline = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
+        [staticFRETline,~,tau] = conversion_tau_3C(BurstData{file}.Corrections.DonorLifetimeBlue,...
             BurstData{file}.Corrections.FoersterRadiusBG,BurstData{file}.Corrections.FoersterRadiusBR,...
-            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR,...
-            tau);
+            BurstData{file}.Corrections.LinkerLengthBG,BurstData{file}.Corrections.LinkerLengthBR);
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.XData = tau;
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.YData = staticFRETline;
@@ -8601,10 +8589,8 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
                     x);
             end
-            tau = linspace(h.axes_EvsTauGG.XLim(1),h.axes_EvsTauGG.XLim(2),10000);
-            dynFRETline = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
-                y(1),y(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                tau);
+            [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
+                y(1),y(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
@@ -8937,9 +8923,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [out, func] = conversion_tau(tauD,R0,s,xval)
+function [out, func, xval] = conversion_tau(tauD,R0,s,xval_in)
 % s = 6;
 res = 1000;
+if nargin < 4
+    xval = linspace(0,tauD,100); %%% general static FRET line requested
+else
+    %%% only evaluation at specific points requested
+    xval = xval_in;
+end
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
 R = linspace(0*R0,5*R0,res);
 
@@ -8976,12 +8968,16 @@ end
 %coefficients = polyfit(tauf,taux,3);
 
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
-out = 1-interp1(tauf,taux,xval)./tauD;
+out = 1-interp1(tauf,taux,xval)./tauD; 
+%%% set tau=0 to E=1
+out(xval == 0) = 1;
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
-function [out, func] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR,xval)
+
+function [out, func, xval] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR)
 res = 100;
+xval = linspace(0,tauD,100);
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
 RBG = linspace(0*R0BG,4*R0BG,res);
 RBR = linspace(0*R0BR,4*R0BR,res);
@@ -9029,6 +9025,7 @@ end
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 
 out = 1-interp1(tauf,taux,xval)./tauD;
+out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)=
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
@@ -9036,8 +9033,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates dynamic FRET line between two states  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [out, func] = dynamicFRETline(tauD,E1,E2,R0,s,xval)
+function [out, func, xval] = dynamicFRETline(tauD,E1,E2,R0,s)
 res = 1000;
+if E1 > E2
+    xval  = linspace((1-E1)*tauD,(1-E2)*tauD,100);
+else
+    xval  = linspace((1-E2)*tauD,(1-E1)*tauD,100);
+end
 %%% Calculate two distance distribution for two states
 %RDA1 = R0*((tauD/tau1)-1)^(-1/6);
 %RDA2 = R0*((tauD/tau2)-1)^(-1/6);
@@ -10088,6 +10090,9 @@ switch obj
                     end
             end
         end
+        cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
+        cbar.Position = [0.8,0.85,0.18,0.025];
+        cbar.Label.String = 'Occurrence';
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
 end
 
