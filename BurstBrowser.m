@@ -9780,22 +9780,24 @@ switch obj
             end
         end
         %%% Update Colorbar by plotting it anew
-        if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
-            cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8,'LineWidth',3); 
-            %panel_copy.Children(3).XTickLabel(end) = {' '};
-            cbar.Position = [0.77,0.915,0.15,0.02];
-            cbar.AxisLocation = 'out';
-            cbar.Label.String = 'Occurrence';
-            cbar.Label.Units = 'normalized';
-            cbar.Label.Position = [0.5,2.85,0];
-            cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
-            cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
-            zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
-            cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
-        else %%% only occurence
-            cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
-            cbar.Position = [0.8,0.85,0.18,0.025];
-            cbar.Label.String = 'Occurrence';
+        if ~strcmp(panel_copy.Children(3).Children(8).Visible,'on') %%% multi plot is used, first stair plot is visible
+            if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
+                cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8,'LineWidth',3); 
+                %panel_copy.Children(3).XTickLabel(end) = {' '};
+                cbar.Position = [0.77,0.915,0.15,0.02];
+                cbar.AxisLocation = 'out';
+                cbar.Label.String = 'Occurrence';
+                cbar.Label.Units = 'normalized';
+                cbar.Label.Position = [0.5,2.85,0];
+                cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
+                cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
+                zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
+                cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
+            else %%% only occurence
+                cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
+                cbar.Position = [0.8,0.85,0.18,0.025];
+                cbar.Label.String = 'Occurrence';
+            end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
