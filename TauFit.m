@@ -3125,9 +3125,21 @@ if isequal(obj,  h.Microtime_Plot_Export)
 else
     b = '_fit.tif';
 end
+if strcmp(TauFitData.Who,'BurstBrowser')
+    Species = strsplit(h.SpeciesSelect_Text.String,': ');
+    c  =  ['_' strjoin(strsplit(Species{2},' '),'')];
+else
+    c = '';
+end
 f.PaperPositionMode = 'auto';
-print(f, '-dtiff', '-r200', GenerateName([TauFitData.FileName(1:end-4) a b],1))
+print(f, '-dtiff', '-r150', GenerateName([TauFitData.FileName(1:end-4) a c b],1))
 
+if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
+    %%% get name of file
+    %%% Make table from fittable and save as txt
+    tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
+    writetable(tab,GenerateName([TauFitData.FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

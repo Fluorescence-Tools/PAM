@@ -4237,7 +4237,7 @@ PlotLifetimeInd([],[],h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Remove Selected Species (Right-click menu item)  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function RemoveSpecies(~,~)
+function RemoveSpecies(obj,eventData)
 global BurstData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 
@@ -10617,7 +10617,11 @@ if all(BurstData{BurstMeta.SelectedFile}.SelectedSpecies == [0,0])
 elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) == 1
     h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
 elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
-    h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+    try
+        h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+    catch % by going to parent species
+        h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
+    end
 end
 
 function SpeciesListContextMenuCallback(hTree,eventData,jmenu)
