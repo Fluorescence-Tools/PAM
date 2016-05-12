@@ -165,7 +165,7 @@ if Mode==0 %%% Loads user values
         S.Look.Table1=[0.9 0.9 0.9];
         S.Look.Table2=[0.8 0.8 0.8];
         S.Look.TableFore=[0 0 0];
-        S.Look.Font = 'Times';
+        S.Look.Font = 'Helvetica Neue';
         disp('UserValues.Look was incomplete');
     end
     P.Look = [];

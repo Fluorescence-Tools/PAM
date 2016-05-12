@@ -1766,6 +1766,7 @@ else
     chan = TauFitData.chan;
 end
 h.Result_Plot_Text.Visible = 'off';
+h.Output_Text.String = '';
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -3124,7 +3125,8 @@ if isequal(obj,  h.Microtime_Plot_Export)
 else
     b = '_fit.tif';
 end
-print(f, '-dtiff', '-r150', GenerateName([TauFitData.FileName(1:end-4) a b],1))
+f.PaperPositionMode = 'auto';
+print(f, '-dtiff', '-r200', GenerateName([TauFitData.FileName(1:end-4) a b],1))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%

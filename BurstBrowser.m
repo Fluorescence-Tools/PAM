@@ -3073,9 +3073,7 @@ end
 BurstMeta.SelectedFile = 1;
 %%% Update Figure Name
 BurstMeta.DisplayName = BurstData{1}.FileName;
-h.BurstBrowser.Name = ['BurstBrowser - ' BurstMeta.DisplayName];
 
-h.Progress_Text.String = BurstMeta.DisplayName;
 %%% If Pam is open, indicate that a file is loaded
 if ~isempty(findobj('Tag','Pam'))
     %%% only do if only one file is loaded, otherwise it won't work
@@ -4522,7 +4520,6 @@ switch BurstData{file}.BAMethod
 end
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
 
@@ -4612,7 +4609,6 @@ end
 save(fullfile(Path,File),'MIPattern');
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plot in the Main Axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5209,7 +5205,7 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
-    h.Progress_Text.String = BurstMeta.DisplayName;
+    
     if colorbyparam
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
@@ -5517,7 +5513,7 @@ for i = 1:num_species
     %%% extract name
     name = BurstData{file_n(i)}.FileName;
     if (species_n(i) ~= 0)
-        if (subspecies_n(i) ~= 0) %%% we have a subspecies selected
+        if (subspecies_n(i) ~= 1) %%% we have a subspecies selected
             name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
         else %%% we have a species selected 
             name = [name,'/', char(sel(i).getName)];
@@ -6925,12 +6921,6 @@ end
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
     if isempty(PhotonStream{file})
         Load_Photons('aps');
-        % Progress(1,h.Progress_Axes,h.Progress_Text);
-        % h.Progress_Text.String = BurstMeta.DisplayName;
-        % m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab, or unselect time window for fFCS!');
-        % pause(5)
-        % delete(m)
-        % return;
     end
     start = PhotonStream{file}.start(valid_total);
     stop = PhotonStream{file}.stop(valid_total);
@@ -7058,12 +7048,6 @@ elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4])
     %%% later (automatically)
     if isempty(PhotonStream{file})
         Load_Photons('aps');
-        % Progress(1,h.Progress_Axes,h.Progress_Text);
-        % h.Progress_Text.String = BurstMeta.DisplayName;
-        % m = msgbox('Load Total Photon Stream (*.aps) file first using Correlation Tab!');
-        % pause(5)
-        % delete(m)
-        % return;
     end
     MT_total = PhotonStream{file}.Macrotime;
     MI_total = PhotonStream{file}.Microtime;
@@ -7348,7 +7332,6 @@ h.Calc_fFCS_Filter_button.Enable = 'on';
 axis(h.axes_fFCS_DecayPar,'tight');
 axis(h.axes_fFCS_DecayPerp,'tight');
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Prepare data for subensemble TCSPC fitting %%%%%%%%%%%%%%%%%%%%%%%%
@@ -7655,7 +7638,6 @@ for i=1:NumChans
     end
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
@@ -8196,7 +8178,6 @@ end
 legend(leg);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8271,7 +8252,6 @@ elseif any(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'kba
     BurstTCSPCData= BurstTCSPCData_temp;
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Plots in Left Lifetime Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9378,7 +9358,6 @@ UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
 LSUserValues(1);
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9440,7 +9419,6 @@ switch mode
         clear Macrotime Microtime Channel
 end
 Progress(1,h.Progress_Axes,h.Progress_Text);
-h.Progress_Text.String = BurstMeta.DisplayName;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Change GUI to 2cMFD or 3cMFD %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9805,7 +9783,7 @@ switch obj
             end
         end
         %%% Update Colorbar by plotting it anew
-        if ~strcmp(panel_copy.Children(3).Children(8).Visible,'on') %%% multi plot is used, first stair plot is visible
+        if ~strcmp(panel_copy.Children(3).Children(8).Visible,'on') %%% check that multiplot is NOT used (if multi plot is used, first stair plot is visible)
             if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
                 cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8,'LineWidth',3); 
                 %panel_copy.Children(3).XTickLabel(end) = {' '};
@@ -9823,6 +9801,22 @@ switch obj
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
             end
+        else %%% if multiplot, extend figure and shift legend upstairs
+            %%% Set all units to pixels for easy editing without resizing
+            hfig.Units = 'pixels';
+            for i = 1:numel(hfig.Children)
+                if isprop(hfig.Children(i),'Units');
+                    hfig.Children(i).Units = 'pixels';
+                end
+            end
+            for i = 1:numel(hfig.Children(5).Children)
+                if isprop(hfig.Children(5).Children(i),'Units');
+                    hfig.Children(5).Children(i).Units = 'pixels';
+                end
+            end
+            hfig.Position(4) = 650;
+            hfig.Children(5).Position(4) = 650;
+            hfig.Children(5).Children(4).Position(2) = 600;
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
