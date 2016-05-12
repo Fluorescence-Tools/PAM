@@ -2629,17 +2629,25 @@ if advanced
     n_states = numel(SimData.Species);
     if any([SimData.Species.FRET] == 3) %%% Dynamic
         %%% Dynamic Rates
-        DynRates = SimData.General.DynamicRate.*1E3./Freq; %%% convert to DiffTime
-        DynamicStep = round(0.1/max(DynRates(:))); %%% Set dynamic step such that p_max = 0.1
-        pTrans = DynRates.*DynamicStep;
-        %%% diagonal elements are 1-sum(p_else)
-        for i = 1:size(pTrans,1)
-            pTrans(i,i) = 1-sum(pTrans(i,:));
+        % reread from table
+        DynRates = cell2mat(h.Sim_Dyn_Table.Data);
+        DynRates(logical(eye(size(DynRates,1)))) = 0; %%% Set diagonal elements to zero
+        if all(DynRates(:) == 0) %%% user clicked dynamic, but has not actually specified anything
+            pTrans = eye(numel(SimData.Species));
+            DynamicStep = Simtime/Frames; %%% 0 means it does not evaluate
+        else
+            DynRates = DynRates.*1E3./Freq; %%% convert to DiffTime
+            DynamicStep = round(0.1/max(DynRates(:))); %%% Set dynamic step such that p_max = 0.1
+            pTrans = DynRates.*DynamicStep;
+            pTrans(isnan(pTrans)) = 0;
+            %%% diagonal elements are 1-sum(p_else)
+            for i = 1:size(pTrans,1)
+                pTrans(i,i) = 1-sum(pTrans(i,:));
+            end
         end
     else
         pTrans = eye(numel(SimData.Species));
-        DynamicStep = 0; %%% 0 means it does not evaluate
-        
+        DynamicStep = Simtime/Frames; %%% 0 means it does not evaluate
     end
     %%% For input, the rates must have the following structure:
     %%% p = [p11,p12,13,...p21,p22,p23,...p31,p32,p33,...]
@@ -2751,7 +2759,7 @@ if advanced
         Photons2 = cell(NoP,1); MI2 = cell(NoP,1);
         Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
         Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
-        if use_aniso%%% Include anisotropy
+        if 1%%% Include anisotropy (we need to initialize this also for no aniso determination)
             Photons1s = cell(NoP,1); MI1s = cell(NoP,1);
             Photons2s = cell(NoP,1); MI2s = cell(NoP,1);
             Photons3s = cell(NoP,1); MI3s = cell(NoP,1);
