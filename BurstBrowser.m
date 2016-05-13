@@ -4817,14 +4817,14 @@ end
 h.colorbar.Visible = 'on';
 legend(h.axes_1d_x,'off');
 
-axis(h.axes_general,'tight');
-
 %%% Update Labels
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
 xlabel(h.axes_1d_x,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
+%xlabel(h.axes_1d_y,h.ParameterListX.String{y},'Color',UserValues.Look.Fore,'Rotation',270,'Units','normalized','Position',[1.35,0.5]);
 
 %plot 1D hists
+h.axes_1d_x.XTickLabelMode = 'auto';
 BurstMeta.Plots.Main_histX.XData = xbins;
 BurstMeta.Plots.Main_histX.YData = sum(H,1);
 h.axes_1d_x.YTickMode = 'auto';
@@ -4841,14 +4841,17 @@ set(h.axes_1d_y,'YTick',yticks(2:end));
 if ~(xlimits(1) == xlimits(2))
     xlim(h.axes_general,xlimits);
     xlim(h.axes_1d_x,xlimits);
-    xlim(h.axes_1d_y,ylimits);
 end
 if ~(ylimits(1) == ylimits(2))
     ylim(h.axes_general,ylimits);
+    xlim(h.axes_1d_y,ylimits);
 end
 
-if (h.axes_1d_x.XLim(2) == h.axes_1d_x.XTick(end)) %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
-    h.axes_1d_x.XTickLabel{end} = ' ';
+if (h.axes_1d_x.XLim(2) - h.axes_1d_x.XTick(end))/(h.axes_1d_x.XLim(2)-h.axes_1d_x.XLim(1)) < 0.02
+    %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
+    h.axes_1d_x.XTickLabel{end} = '';
+else
+    h.axes_1d_x.XTickLabel = h.axes_general.XTickLabel;
 end
 
 %%% Update ColorMap
@@ -9617,7 +9620,7 @@ if nargin < 3
     ask_file = 1;
 end
 h = guidata(obj);
-fontsize = 24;
+fontsize = 22;
 if ispc
     fontsize = fontsize/1.2;
 end
@@ -9775,9 +9778,7 @@ switch obj
                         end
                         panel_copy.Children(i).YLim = [0, lim];
                     %end
-                    if (panel_copy.Children(i).XLim(2) == panel_copy.Children(i).XTick(end)) %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
-                        panel_copy.Children(i).XTickLabel{end} = ' ';
-                    end
+                     panel_copy.Children(i).XTickLabelMode = 'auto';
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -9802,10 +9803,14 @@ switch obj
                 cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
                 zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
                 cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
+                if (panel_copy.Children(3).XLim(2) - panel_copy.Children(3).XTick(end))/(panel_copy.Children(3).XLim(2)-panel_copy.Children(3).XLim(1)) < 0.05 %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
+                    panel_copy.Children(3).XTickLabel{end} = '';
+                end
             else %%% only occurence
                 cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
+                panel_copy.Children(3).XTickLabel = panel_copy.Children(5).XTickLabel;
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% Set all units to pixels for easy editing without resizing
