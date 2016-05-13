@@ -4847,6 +4847,9 @@ if ~(ylimits(1) == ylimits(2))
     ylim(h.axes_general,ylimits);
 end
 
+if (h.axes_1d_x.XLim(2) == h.axes_1d_x.XTick(end)) %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
+    h.axes_1d_x.XTickLabel{end} = ' ';
+end
 
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
@@ -9772,6 +9775,9 @@ switch obj
                         end
                         panel_copy.Children(i).YLim = [0, lim];
                     %end
+                    if (panel_copy.Children(i).XLim(2) == panel_copy.Children(i).XTick(end)) %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
+                        panel_copy.Children(i).XTickLabel{end} = ' ';
+                    end
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
