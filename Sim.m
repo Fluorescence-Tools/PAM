@@ -791,7 +791,7 @@ h.Sim_Param_Plot = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Exitation probability','Crosstalk','Detection probability','Bleaching probability'},...
+    'String',{'Excitation probability','Crosstalk','Detection probability','Bleaching probability'},...
     'Callback',@Sim_Settings,...
     'Position',[0.02 0.88 0.5 0.1]);
 if ismac
@@ -1103,7 +1103,7 @@ for i=1:3
         'String',['Color ' num2str(i) ':'],...
         'Position',[0.02 0.74-0.15*i 0.2 0.08]);
     %%% Text
-    h.Text_FERT_Static2{i} = uicontrol(...
+    h.Text_FRET_Static2{i} = uicontrol(...
         'Parent',h.Sim_FRET_Static_Panel,...
         'Units','normalized',...
         'FontSize',12,...
@@ -1259,7 +1259,7 @@ h.Linker_Width = uicontrol(...
 h.Sim_Ani_Panel = uibuttongroup(...
     'Parent',h.Sim_Panel,...
     'Units','normalized',...
-    'Title','Lifetime Settings',...
+    'Title','Anisotropy Settings',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
@@ -1398,6 +1398,7 @@ SimData.Species(1).Cross = diag(ones(4,1));
 SimData.Species(1).DetP = ones(4,4);
 SimData.Species(1).BlP = zeros(4,4);
 SimData.Species(1).UseLT = 1;
+SimData.Species(1).UseIRF = 0;
 SimData.Species(1).LT = 4*ones(4,1);
 
 SimData.Species(1).R0 = zeros(4,4);
@@ -1416,7 +1417,7 @@ SimData.Species(1).R(3,2) = 50;
 SimData.Species(1).R(4,2) = 50;
 SimData.Species(1).R(4,3) = 50;
 
-SimData.Species(1).Aniso = repmat([0.4;1;0;1],4,1); % r0,rho[ns],residual r, G factor
+SimData.Species(1).Aniso = repmat([0.4 1 0 1],4,1); % r0,rho[ns],residual r, G factor
 SimData.Species(1).DistanceWidth = zeros(4,4);
 SimData.Species(1).DistanceWidth(2,1) = 5;
 SimData.Species(1).DistanceWidth(3,1) = 5;
@@ -1433,7 +1434,6 @@ SimData.Stat = 0;
 guidata(h.Sim,h); 
 
 File_List_Callback([],[],3);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions that executes upon closing of Sim window %%%%%%%%%%%%%%%%%%%%
@@ -1462,9 +1462,9 @@ global SimData UserValues
 h = guidata(findobj('Tag','Sim'));
 
 File = h.Sim_File_List.Value;
+Sel=h.Sim_List.Value(1); %species
 
-switch Obj
-    
+switch Obj   
     case h.Sim_Folder %%% Select filepath callback     
         try
             Path = uigetdir(h.Sim_Path.String,'Select path for saving');
@@ -1602,9 +1602,9 @@ switch Obj
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
+        
     case h.Sim_Freq %%% Simulation Frequency changed
-        SimData.General(File).Freq =  str2double(h.Sim_Freq.String);
-        Sel=h.Sim_List.Value(1);
+        SimData.General(File).Freq =  str2double(h.Sim_Freq.String);        
         for i=1:numel(h.Sim_List.String)
             for j=1:4
                 SimData.Species(i).Brightness(j) = SimData.General(File).Freq...
@@ -1626,12 +1626,14 @@ switch Obj
         h.Sim_Frames.String=num2str(str2double(h.Sim_Frames.String)*Factor);
         SimData.General(File).SimTime = str2double(h.Sim_Time.String);
         SimData.General(File).Frames = str2double(h.Sim_Frames.String);
+    
     case h.Sim_Frames %%% Number of Frames
         %%% Updates simulation time
         Factor=str2double(h.Sim_Frames.String)/SimData.General(File).Frames;
         h.Sim_Time.String=num2str(str2double(h.Sim_Time.String)*Factor);
         SimData.General(File).SimTime = str2double(h.Sim_Time.String);
         SimData.General(File).Frames = str2double(h.Sim_Frames.String);
+    
     case h.Sim_Px %%% Number of Pixels\Lines
         %%% X
         Factor1=str2double(h.Sim_Px{1}.String)/SimData.General(File).Px(1);
@@ -1657,6 +1659,7 @@ switch Obj
         SimData.General(File).Px(2) = str2double(h.Sim_Px{2}.String);
         SimData.General(File).Size(2) = str2double(h.Sim_Size{2}.String);
         SimData.General(File).Time(3) = str2double(h.Sim_Px_Time{3}.String);                
+    
     case h.Sim_Size %%% Pixel\Line Size
         %%% Updates Dimension in X\Y
         Factor1=str2double(h.Sim_Size{1}.String)/SimData.General(File).Size(1);
@@ -1668,6 +1671,7 @@ switch Obj
         SimData.General(File).Size(2) = str2double(h.Sim_Size{2}.String);
         SimData.General(File).Dim(1) = str2double(h.Sim_Dim{1}.String);
         SimData.General(File).Dim(2) = str2double(h.Sim_Dim{2}.String);        
+    
     case h.Sim_Dim %%% Extension in X\Y
         %%% Updates Pixel\Line size
         Factor1=str2double(h.Sim_Dim{1}.String)/SimData.General(File).Dim(1);
@@ -1679,6 +1683,7 @@ switch Obj
         SimData.General(File).Size(2) = str2double(h.Sim_Size{2}.String);
         SimData.General(File).Dim(1) = str2double(h.Sim_Dim{1}.String);
         SimData.General(File).Dim(2) = str2double(h.Sim_Dim{2}.String);        
+    
     case h.Sim_Px_Time %%% Pixel\Line\Frame Time
         %%% Updates Pixel\Line\Frame\Simulation Time
         Factor1=str2double(h.Sim_Px_Time{1}.String)/SimData.General(File).Time(1);
@@ -1696,13 +1701,13 @@ switch Obj
            
     case h.Sim_UseNoise %%% Toggles, if noise is applied
         SimData.General(File).UseNoise = h.Sim_UseNoise.Value;
+    
     case h.Sim_Noise %%% Noise values changed
         for i=1:4
             SimData.General(File).Noise(i) = str2double(h.Sim_Noise{i}.String);
         end
        
     case h.Sim_Color %%% Defines number of colors
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).Color = h.Sim_Color.Value;
         %%% Turns settings for selected color on
         for i=1:h.Sim_Color.Value
@@ -1727,7 +1732,6 @@ switch Obj
             h.Text_Color{i}.Visible = 'off';
         end        
     case h.Sim_FRET %%% Defines type of FRET to be simulated
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).FRET = h.Sim_FRET.Value;
         switch h.Sim_FRET.Value
             case 1
@@ -1747,15 +1751,11 @@ switch Obj
                 h.Sim_Dyn_Panel.Visible = 'on';
         end
     case h.Sim_Barrier %%% Defines type of barrieres to be simulated
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).Barrier = h.Sim_Barrier.Value;
-        
     case h.Sim_Name %%% Changed species name
-        Sel=h.Sim_List.Value(1);
         h.Sim_List.String{Sel}=h.Sim_Name.String;
         SimData.Species(Sel).Name=h.Sim_Name.String;
     case h.Sim_Brightness %%% Changed brightness
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).Brightness(i)=str2double(h.Sim_Brightness{i}.String);
             ExP_Old = SimData.Species(Sel).ExP(i,i);
@@ -1774,52 +1774,45 @@ switch Obj
                                     
         end
     case h.Sim_D %%% Changed Diffusion coefficient
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).D=str2double(h.Sim_D.String);
     case h.Sim_N %%% Changed number of particles
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).N=str2double(h.Sim_N.String);
     case h.Sim_wr %%% Changed lateral focus size
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).wr(i)=str2double(h.Sim_wr{i}.String);
         end
     case h.Sim_wz %%% Changed axial focus size
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).wz(i)=str2double(h.Sim_wz{i}.String);
         end
     case h.Sim_dX %%% Changed focus shift in X
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).dX(i)=str2double(h.Sim_dX{i}.String);
         end
     case h.Sim_dY %%% Changed focus shift in Y
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).dY(i)=str2double(h.Sim_dY{i}.String);
         end
     case h.Sim_dZ %%% Changed focus shift in Z
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).dZ(i)=str2double(h.Sim_dZ{i}.String);
         end
         
     case h.Sim_UseLT %%% Toggles, if lifetime is used
-        Sel=h.Sim_List.Value(1);
         SimData.Species(Sel).UseLT = h.Sim_UseLT.Value; 
     case h.Sim_LT %%% Lifetime was changed
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             SimData.Species(Sel).LT(i) = str2double(h.Sim_LT{i}.String); 
         end
-        
-    case h.Sim_Param_Plot %%% Changed ptotted advanced parameters
-        Sel=h.Sim_List.Value(1);
+    case h.Sim_UseIRF %%% Toggles, if IRF is used
+        SimData.Species(Sel).UseIRF = h.Sim_UseIRF.Value;
+    case h.Sim_IRF_Width_Edit
+        SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
+    case h.Sim_Param_Plot %%% Changed plotted advanced parameters
         for i=1:4
             for j=1:4
                 switch h.Sim_Param_Plot.Value
-                    case 1 %%% Exitation probability
+                    case 1 %%% Excitation probability
                         h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).ExP(i,j));
                     case 2 %%% Crosstalk
                         h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).Cross(i,j));
@@ -1831,11 +1824,10 @@ switch Obj
             end
         end
     case h.Sim_Param %%% Changed advanced parameter
-        Sel=h.Sim_List.Value(1);
         for i=1:4
             for j=1:4
                 switch h.Sim_Param_Plot.Value
-                    case 1 %%% Exitation probability
+                    case 1 %%% Excitation probability
                         SimData.Species(Sel).ExP(i,j) = str2double(h.Sim_Param{i,j}.String);
                     case 2 %%% Crosstalk
                         Cross = str2double(h.Sim_Param{i,j}.String);
@@ -1866,49 +1858,42 @@ switch Obj
                 /(sum(SimData.Species(Sel).Cross(:,i)));            
             h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
         end
-        
-    case h.Sim_R0 %%% Changed F?rster radius
-        Sel=h.Sim_List.Value(1);
-        for i=1:4
-            for j=1:4   
-                if j<i
-                    SimData.Species(Sel).R0(i,j) = str2double(h.Sim_R0{i,j}.String);
+    case h.Sim_R0 %%% Changed Förster radius
+        for i=1:3
+            for j=1:3   
+                if j<=i
+                    SimData.Species(Sel).R0(i+1,j) = str2double(h.Sim_R0{i+1,j}.String);
                 end
             end
         end
     case h.Sim_R %%% Changed Dye distance
-        Sel=h.Sim_List.Value(1);
-        for i=1:4
-            for j=1:4   
-                if j<i
-                    SimData.Species(Sel).R(i,j) = str2double(h.Sim_R{i,j}.String);
+        for i=1:3
+            for j=1:3   
+                if j<=i
+                    SimData.Species(Sel).R(i+1,j) = str2double(h.Sim_R{i+1,j}.String);
                 end
             end
         end
     case h.Sim_sigma %%% Changed Dye distance
-        Sel=h.Sim_List.Value(1);
-        for i=1:4
-            for j=1:4   
-                if j<i
-                    SimData.Species(Sel).DistanceWidth(i,j) = str2double(h.Sim_sigma{i,j}.String);
+        for i=1:3
+            for j=1:3   
+                if j<=i
+                    SimData.Species(Sel).DistanceWidth(i+1,j) = str2double(h.Sim_sigma{i+1,j}.String);
                 end
             end
         end
         
     case h.Sim_Ani
-        Sel=h.Sim_List.Value(1);
-        for i = 1:4
-            for j = 1:3
-                SimData.Species(Sel).Aniso(j+4*(i-1)) = str2double(h.Sim_Ani{i,j}.String);
+        for i = 1:4 % 4 colors
+            for j = 1:3 % 3 shown parameters
+                SimData.Species(Sel).Aniso(i,j) = str2double(h.Sim_Ani{i,j}.String);
             end
         end
         
     case h.Linker_Width
         SimData.General.LinkerWidth = str2double(h.Linker_Width.String);
-    case h.Sim_sigma_update
+    case h.Sim_sigma_update %%% Changed the update time
         SimData.General.HeterogeneityUpdate = str2double(h.Sim_sigma_update.String);
-    case h.Sim_IRF_Width_Edit
-        SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
     case h.Sim_Dyn_Table
         DynRates = cell2mat(h.Sim_Dyn_Table.Data);
         DynRates(logical(eye(size(DynRates,1)))) = 0; %%% Set diagonal elements to zero
@@ -1937,15 +1922,17 @@ if mode == 0 %%% Key Press Function
     
 end
 
-Sel = h.Sim_File_List.Value;
+File = h.Sim_File_List.Value;
+Sel = h.Sim_List.Value(1); %species
+
 switch mode
     case 1 %%% Duplicates current file
-        SimData.General(end+1) = SimData.General(Sel);
+        SimData.General(end+1) = SimData.General(File);
         h.Sim_File_List.String{end+1} = SimData.General(end).Name;
     case 2 %%% Deletes current file
         if numel(SimData.General)>1
-            SimData.General(Sel) = [];
-            h.Sim_File_List.String(Sel) = [];
+            SimData.General(File) = [];
+            h.Sim_File_List.String(File) = [];
             h.Sim_File_List.Value = h.Sim_File_List.Value-1;
             if h.Sim_File_List.Value<1
                 h.Sim_File_List.Value = 1;
@@ -1953,28 +1940,28 @@ switch mode
             File_List_Callback([],e,3);
         end
     case 3 %%% Change selected file
-        h.Sim_FileName.String = SimData.General(Sel).Name;
+        h.Sim_FileName.String = SimData.General(File).Name;
         
-        SimData.Species = SimData.General(Sel).Species;
+        SimData.Species = SimData.General(File).Species;
         
-        h.Sim_Scan.Value = SimData.General(Sel).ScanType;        
-        h.Sim_Freq.String = num2str(SimData.General(Sel).Freq);
-        h.Sim_Time.String = num2str(SimData.General(Sel).SimTime);
-        h.Sim_Frames.String =  num2str(SimData.General(Sel).Frames);
+        h.Sim_Scan.Value = SimData.General(File).ScanType;        
+        h.Sim_Freq.String = num2str(SimData.General(File).Freq);
+        h.Sim_Time.String = num2str(SimData.General(File).SimTime);
+        h.Sim_Frames.String =  num2str(SimData.General(File).Frames);
         for i=1:3
-           h.Sim_BS{i}.String = num2str(SimData.General(Sel).BS(i));
-           h.Sim_Px_Time{i}.String = num2str(SimData.General(Sel).Time(i));
+           h.Sim_BS{i}.String = num2str(SimData.General(File).BS(i));
+           h.Sim_Px_Time{i}.String = num2str(SimData.General(File).Time(i));
         end
         for i=1:2
-            h.Sim_Px{i}.String = num2str(SimData.General(Sel).Px(i));
-            h.Sim_Size{i}.String = num2str(SimData.General(Sel).Size(i));
-            h.Sim_Dim{i}.String = num2str(SimData.General(Sel).Dim(i));
+            h.Sim_Px{i}.String = num2str(SimData.General(File).Px(i));
+            h.Sim_Size{i}.String = num2str(SimData.General(File).Size(i));
+            h.Sim_Dim{i}.String = num2str(SimData.General(File).Dim(i));
         end
-        h.Sim_UseNoise.Value = SimData.General(Sel).UseNoise;
+        h.Sim_UseNoise.Value = SimData.General(File).UseNoise;
         for i=1:4
-            h.Sim_Noise{i}.String = num2str(SimData.General(Sel).Noise(i));
+            h.Sim_Noise{i}.String = num2str(SimData.General(File).Noise(i));
          end
-        h.Sim_MIRange.String = num2str(SimData.General(Sel).MIRange);
+        h.Sim_MIRange.String = num2str(SimData.General(File).MIRange);
         
         Species = cell(numel(SimData.Species),1);
         for i=1:numel(SimData.Species)
@@ -1982,6 +1969,63 @@ switch mode
         end
         h.Sim_List.String = Species;
         h.Sim_List.Value = 1;
+        
+        % advanced settings
+        % for i=1:4
+        %    for j=1:4
+        %        h.Sim_Param{i,j}.String = ?
+        %    end
+        % end
+
+          % lifetime settings
+          h.Sim_UseIRF.Value = SimData.General(File).Species(Sel).UseIRF;
+        % h.Sim_IRF_Width_Edit = ?
+        % for i=1:4
+        %     h.Sim_LT{i} = ?
+        % end
+
+        % R0
+        for i=1:3
+            for j=1:3
+                if j<=i
+                    h.Sim_R0{i+1,j}.String = num2str(SimData.General(File).Species(Sel).R0(i+1,j));
+                end
+            end
+        end
+
+        % static FRET
+        for i = 1:3
+            for j=1:3
+                if j<=i
+                    h.Sim_R{i+1,j}.String = num2str(SimData.General(File).Species(Sel).R(i+1,j));
+                end
+            end
+        end
+        
+        % distance distribution widths
+        % h.Use_FRET_Width = ?
+        for i = 1:3
+            for j=1:3
+                if j<=i
+                    h.Sim_sigma{i+1,j}.String = num2str(SimData.General(File).Species(Sel).DistanceWidth(i+1,j));
+                end
+            end
+        end
+        
+        h.Sim_sigma_update.String = num2str(SimData.General(File).HeterogeneityUpdate); %update time
+        %h.Use_Linker_Width = ?
+        h.Linker_Width.String = num2str(SimData.General(File).LinkerWidth);
+        
+        % Lifetime settings
+        % h.Sim_UseAni = ?
+        for i = 1:4 % 4 colors
+            for j = 1:3 % 3 parameters, although there are 4
+                h.Sim_Ani{i,j}.String = num2str(SimData.Species(Sel).Aniso(i,j));
+            end
+        end
+        
+        % dynamic FRET
+        % h.Sim_Dyn_Table = ?
         
         Sim_Settings(h.Sim_Scan,[]);
         Species_List_Callback([],e,3);
@@ -2045,7 +2089,7 @@ switch mode
             h.Sim_LT{i}.String = num2str(SimData.Species(Sel).LT(i));
             for j=1:4
                switch h.Sim_Param_Plot.Value
-                    case 1 %%% Exitation probability
+                    case 1 %%% Excitation probability
                         h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).ExP(i,j));
                     case 2 %%% Crosstalk
                         h.Sim_Param{i,j}.String = num2str(SimData.Species(Sel).Cross(i,j));
@@ -2060,7 +2104,7 @@ switch mode
                end
             end
             for j = 1:3
-                h.Sim_Ani{i,j}.String = num2str(SimData.Species(Sel).Aniso(4*(i-1)+j));
+                h.Sim_Ani{i,j}.String = num2str(SimData.Species(Sel).Aniso(i,j));
             end
         end
 
@@ -2361,15 +2405,15 @@ if ~advanced
                     D,Pos,... Particle parameters
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
-                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
+                    ExP,DetP,BlP,... %%% Probability parameters (Excitation, Detection and Bleaching)
                     LT,... %%% Lifetime of the different colors
                     FRET, Cross,... %%% Relative FRET and Crosstalk rates
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 
                 %%% Channel is a 8 bit number that defines the exact photon type
-                %%% bits 0,1 for exitation laser
-                %%% bits 2,3 for exited dye
+                %%% bits 0,1 for excitation laser
+                %%% bits 2,3 for excited dye
                 %%% bits 4,5 for emitting dye
                 %%% bits 6,7 for detection channel
                 
@@ -2556,14 +2600,15 @@ if advanced
     end
     
     DiffStep = 1;
+
     if h.Use_FRET_Width.Value
-        HeterogeneityStep = SimData.General.HeterogeneityUpdate*1E-3.*Freq;
+        HeterogeneityStep = SimData.General(h.Sim_File_List.Value).HeterogeneityUpdate*1E-3.*Freq;
     else
         HeterogeneityStep = 0;
     end
     
     if h.Use_Linker_Width.Value
-        linkerlength = SimData.General.LinkerWidth;
+        linkerlength = SimData.General(h.Sim_File_List.Value).LinkerWidth;
     else
         linkerlength = 0;
     end
@@ -2595,7 +2640,11 @@ if advanced
         end
         %% new parameters
         %%% Anisotropy values
-        aniso_params = [aniso_params;SimData.Species(i).Aniso];
+        a = SimData.Species(i).Aniso;
+        b = size(a,1);
+        c = size(a,2);
+        d = reshape(a,b*c,1);
+        aniso_params = [aniso_params; d];
         %%% set initital state to species number
         initial_state{i} = (i-1)*ones(NoP,1);
         
@@ -2618,6 +2667,7 @@ if advanced
     end
     aniso_params(2:4:end) = aniso_params(2:4:end)./str2double(h.Sim_MIRange.String)*MI_Bins;
     %%% convert aniso to array of probabilities
+
     p_aniso = [];
     for i = 1:numel(SimData.Species)
         for j = 1:4
@@ -2826,7 +2876,7 @@ if advanced
                     D*sqrt(DiffStep),Pos,... Particle parameters
                     wr,wz,... Focus parameters
                     dX,dY,dZ,... Focus shift parameters
-                    ExP,DetP,BlP,... %%% Probability parameters (Exitation, Detection and Bleaching)
+                    ExP,DetP,BlP,... %%% Probability parameters (excitation, Detection and Bleaching)
                     LT,p_aniso,... %%% Lifetime of the different coloqwdfdsfs
                     Dist, sigmaR, linkerlength, R0, HeterogeneityStep, Cross,... %%% Relative FRET and Crosstalk rates
                     n_states, p, final_state_temp(j), DynamicStep,...
@@ -2834,8 +2884,8 @@ if advanced
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
                 
                 %%% Channel is a 8 bit number that defines the exact photon type
-                %%% bits 0,1 for exitation laser
-                %%% bits 2,3 for exited dye
+                %%% bits 0,1 for excitation laser
+                %%% bits 2,3 for excited dye
                 %%% bits 4,5 for emitting dye
                 %%% bits 6,7 for detection channel
 
@@ -3195,7 +3245,7 @@ for i = 1:numel(SimData.Species)
                 
                 Prob = zeros(SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color);
                 for j = 1:SimData.Species(i).Color %%% Laser
-                    for n = 1:SimData.Species(i).Color %%% Exited dye
+                    for n = 1:SimData.Species(i).Color %%% excited dye
                         for o = 1:SimData.Species(i).Color %%% Emmiting dye
                             for p = 1:SimData.Species(i).Color %%% Detected channel
                                 switch (o-n) %%% How many FRET ways are possible
@@ -3363,8 +3413,8 @@ for i = 1:numel(SimData.Species)
                 %%% Calculates Photon probabilities
                 Prob = zeros(SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color,SimData.Species(i).Color);
                 for j = 1:SimData.Species(i).Color %%% Laser
-                    for n = 1:SimData.Species(i).Color %%% Exited dye
-                        for o = 1:SimData.Species(i).Color %%% Emmiting dye
+                    for n = 1:SimData.Species(i).Color %%% excited dye
+                        for o = 1:SimData.Species(i).Color %%% emiting dye
                             for p = 1:SimData.Species(i).Color %%% Detected channel
                                 switch (o-n) %%% How many FRET ways are possible
                                     case 0 %%% No FRET
