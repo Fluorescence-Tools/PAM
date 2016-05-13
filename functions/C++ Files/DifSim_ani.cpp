@@ -240,17 +240,19 @@ void Simulate_Diffusion(
         }
         
         /// Dynamic step //////////////////////////////////////////////////
-        if (n_states > 1) {
-            if ( (i % (__int64)DynamicStep) == 0) { // Only calculate dynamic transitions at larger time intervals
-                // calculate cumulative probability from outgoing rates of current state
-                for (s=0;s<n_states;s++) {
-                    TRANS[s] = k_dyn[n_states*state+s];
-                    }
-                for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
-                prob = equal_dist(mt);
-                for (s=0; s<n_states; s++) /// Determines transition according to rates
-                { if (prob<=TRANS[s]) {break;}  } 
-                state = s; // Update State
+        if (DynamicStep > 0) {
+            if (n_states > 1) {
+                if ( (i % (__int64)DynamicStep) == 0) { // Only calculate dynamic transitions at larger time intervals
+                    // calculate cumulative probability from outgoing rates of current state
+                    for (s=0;s<n_states;s++) {
+                        TRANS[s] = k_dyn[n_states*state+s];
+                        }
+                    for (s=1; s<n_states; s++) { TRANS[s] = TRANS[s] + TRANS[s-1]; }  /// Calculates cummulative Transition Probabilites
+                    prob = equal_dist(mt);
+                    for (s=0; s<n_states; s++) /// Determines transition according to rates
+                    { if (prob<=TRANS[s]) {break;}  } 
+                    state = s; // Update State
+                }
             }
         }
         

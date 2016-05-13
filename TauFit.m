@@ -1964,13 +1964,13 @@ switch obj
                 %%% (i.e. correct for brightness)
                 amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2}; %now amp is the absolute amplitude fraction, but for the area normalized data.
                 disp('the amplitude fraction of lifetime 1 is')
-                amp1 = amp1./(amp1+amp2)
+                f1 = amp1./(amp1+amp2)
                 disp('the amplitude fraction of lifetime 2 is')
-                amp2 = 1-amp1
+                f2 = 1-f1
                 %FitResult{3} = amp1;
                 % Also update status text
-                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*amp1) '%.'],...
-                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*amp2) ' %.']};
+                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*f1) '%.'],...
+                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
@@ -2049,16 +2049,16 @@ switch obj
                 %%% (i.e. correct for brightness)
                 amp1 = FitResult{4}./FitResult{1}; amp2 = FitResult{5}./FitResult{2}; amp3 = (1-FitResult{4}-FitResult{5})./FitResult{3};
                 disp('the amplitude fraction of lifetime 1 is')
-                amp1 = amp1./(amp1+amp2+amp3)
+                f1 = amp1./(amp1+amp2+amp3)
                 disp('the amplitude fraction of lifetime 2 is')
-                amp2 = amp2./(amp1+amp2+amp3)
+                f2 = amp2./(amp1+amp2+amp3)
                 disp('the amplitude fraction of lifetime 3 is')
-                amp3 = amp3./(amp1+amp2+amp3)
+                f3 = amp3./(amp1+amp2+amp3)
                 % FitResult{4} = amp1;
                 % FitResult{5} = amp2;
-                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*amp1) '%.'], ...
-                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*amp2) ' %.'],...
-                    ['Species fraction of Tau3 is ' sprintf('%2.2f',100*amp3) ' %.']};
+                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*f1) '%.'], ...
+                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*f2) ' %.'],...
+                    ['Species fraction of Tau3 is ' sprintf('%2.2f',100*f3) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
@@ -2418,13 +2418,13 @@ switch obj
                 %%% (i.e. correct for brightness)
                 amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2}; %now amp is the absolute amplitude fraction, but for the area normalized data.
                 disp('the amplitude fraction of lifetime 1 is')
-                amp1 = amp1./(amp1+amp2)
+                f1 = amp1./(amp1+amp2)
                 disp('the amplitude fraction of lifetime 2 is')
-                amp2 = 1-amp1
+                f2 = 1-f1
                 %FitResult{3} = amp1;
                 % Also update status text
-                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*amp1) '%.'],...
-                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*amp2) ' %.']};
+                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*f1) '%.'],...
+                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
@@ -2655,13 +2655,13 @@ switch obj
                 %%% (i.e. correct for brightness)
                 amp1 = FitResult{3}./FitResult{1}; amp2 = (1-FitResult{3})./FitResult{2}; %now amp is the absolute amplitude fraction, but for the area normalized data.
                 disp('the amplitude fraction of lifetime 1 is')
-                amp1 = amp1./(amp1+amp2)
+                f1 = amp1./(amp1+amp2)
                 disp('the amplitude fraction of lifetime 2 is')
-                amp2 = 1-amp1
+                f2 = 1-f1
                 %FitResult{3} = amp1;
                 % Also update status text
-                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*amp1) '%.'],...
-                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*amp2) ' %.']};
+                h.Output_Text.String = {['Species fraction of Tau1 is ' sprintf('%2.2f',100*f1) '%.'],...
+                    ['Species fraction of Tau2 is ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));

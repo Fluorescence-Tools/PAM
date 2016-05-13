@@ -2634,7 +2634,7 @@ if advanced
         DynRates(logical(eye(size(DynRates,1)))) = 0; %%% Set diagonal elements to zero
         if all(DynRates(:) == 0) %%% user clicked dynamic, but has not actually specified anything
             pTrans = eye(numel(SimData.Species));
-            DynamicStep = Simtime/Frames; %%% 0 means it does not evaluate
+            DynamicStep = 0; %%% 0 means it does not evaluate
         else
             DynRates = DynRates.*1E3./Freq; %%% convert to DiffTime
             DynamicStep = round(0.1/max(DynRates(:))); %%% Set dynamic step such that p_max = 0.1
@@ -2647,7 +2647,7 @@ if advanced
         end
     else
         pTrans = eye(numel(SimData.Species));
-        DynamicStep = Simtime/Frames; %%% 0 means it does not evaluate
+        DynamicStep = 0; %%% 0 means it does not evaluate
     end
     %%% For input, the rates must have the following structure:
     %%% p = [p11,p12,13,...p21,p22,p23,...p31,p32,p33,...]
