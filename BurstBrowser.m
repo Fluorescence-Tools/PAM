@@ -9755,7 +9755,11 @@ switch obj
         %%% Remove non-axes object
         del = zeros(numel(panel_copy.Children),1);
         for i = 1:numel(panel_copy.Children)
-            del(i) = ~strcmp(panel_copy.Children(i).Type,'axes');
+            if ~strcmp(panel_copy.Children(i).Type,'axes')
+                if ~strcmp(panel_copy.Children(i).Type,'legend')
+                    del(i) = 1;
+                end
+            end
         end
         delete(panel_copy.Children(logical(del)));
         
@@ -9845,14 +9849,15 @@ switch obj
                     hfig.Children(i).Units = 'pixels';
                 end
             end
-            for i = 1:numel(hfig.Children(5).Children)
-                if isprop(hfig.Children(5).Children(i),'Units');
-                    hfig.Children(5).Children(i).Units = 'pixels';
+            for i = 1:numel(hfig.Children(1).Children)
+                if isprop(hfig.Children(1).Children(i),'Units');
+                    hfig.Children(1).Children(i).Units = 'pixels';
                 end
             end
             hfig.Position(4) = 650;
-            hfig.Children(5).Position(4) = 650;
-            hfig.Children(5).Children(4).Position(2) = 600;
+            hfig.Children(1).Position(4) = 650;
+            hfig.Children(1).Children(4).Position(1) = 100;
+            hfig.Children(1).Children(4).Position(2) = 550;
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
