@@ -1221,7 +1221,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorLine5 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine5 = S.BurstBrowser.Display.ColorLine5;
-    
+    %%% Checks, if BurstBrowser.Display.BrightenColorMap subfield exists
+    if ~isfield (S.BurstBrowser.Display,'BrightenColorMap')
+        S.BurstBrowser.Display.BrightenColorMap=0;
+        disp('UserValues.BurstBrowser.Display.BrightenColorMap was incomplete');
+    end
+    P.BurstBrowser.Display.BrightenColorMap = S.BurstBrowser.Display.BrightenColorMap;
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
