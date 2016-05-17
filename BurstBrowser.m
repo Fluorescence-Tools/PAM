@@ -9872,8 +9872,8 @@ switch obj
             end
             hfig.Position(4) = 650;
             hfig.Children(end).Position(4) = 650;
-            hfig.Children(end).Children(leg).Position(1) = 80;
-            hfig.Children(end).Children(leg).Position(2) = 595;
+            hfig.Children(end).Children(leg).Position(1) = 10;
+            hfig.Children(end).Children(leg).Position(2) = 590;
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
