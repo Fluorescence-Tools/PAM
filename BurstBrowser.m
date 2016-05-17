@@ -9753,16 +9753,11 @@ switch obj
             colormap(h.BurstBrowser,flipud(colormap));
         end
         %%% Remove non-axes object
-        if numel(panel_copy.Children) == 5
-            delete(panel_copy.Children(1));
-        elseif numel(panel_copy.Children) == 6
-            del = zeros(numel(panel_copy.Children),1);
-            del(1) = 1;
-            if ~strcmp(panel_copy.Children(5).Type,'legend')
-                del(5) = 1; %%% remove colorbar
-            end
-            delete(panel_copy.Children(logical(del)));
+        del = zeros(numel(panel_copy.Children),1);
+        for i = 1:numel(panel_copy.Children)
+            del(i) = ~strcmp(panel_copy.Children(i).Type,'axes');
         end
+        delete(panel_copy.Children(logical(del)));
         
         for i = 1:numel(panel_copy.Children)
             if strcmp(panel_copy.Children(i).Type,'legend')
