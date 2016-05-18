@@ -1575,12 +1575,15 @@ switch mode
         assignin('base','FCS',FCS);
     case 4 %%% Exports Fit Result to Clipboard
         FitResult = cell(numel(FCSData.FileName),1);
+        active = cell2mat(h.Fit_Table.Data(1:end-2,1));
         for i = 1:numel(FCSData.FileName)
-            FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
-            FitResult{i}{1} = FCSData.FileName{i};
-            FitResult{i}{2} = str2double(h.Fit_Table.Data{i,end});
-            for j = 3:(size(FCSMeta.Params,1)+2)
-                FitResult{i}{j} = FCSMeta.Params(j-2,i);
+            if active(i)
+                FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
+                FitResult{i}{1} = FCSData.FileName{i};
+                FitResult{i}{2} = str2double(h.Fit_Table.Data{i,end});
+                for j = 3:(size(FCSMeta.Params,1)+2)
+                    FitResult{i}{j} = FCSMeta.Params(j-2,i);
+                end
             end
         end
         [~,ModelName,~] = fileparts(FCSMeta.Model.Name);
@@ -1588,7 +1591,9 @@ switch mode
         if h.Conf_Interval.Value
             if isfield(FCSMeta,'Confidence_Intervals')
                 for i = 1:numel(FCSData.FileName)
-                    FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                    if active(i)
+                        FitResult{i} = horzcat(FitResult{i},vertcat({'lower','upper';'',''},num2cell([FCSMeta.Confidence_Intervals{i}])));
+                    end
                 end
             end
         end
