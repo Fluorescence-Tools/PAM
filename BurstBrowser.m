@@ -9854,26 +9854,22 @@ switch obj
             delete(hfig.Children(end).Children(del));
             %%% Set all units to pixels for easy editing without resizing
             hfig.Units = 'pixels';
-            for i = 1:numel(hfig.Children)
-                if isprop(hfig.Children(i),'Units');
-                    hfig.Children(i).Units = 'pixels';
-                end
-            end
-            for i = 1:numel(hfig.Children(end).Children)
-                if isprop(hfig.Children(end).Children(i),'Units');
-                    hfig.Children(end).Children(i).Units = 'pixels';
+            panel_copy.Units = 'pixels';
+            for i = 1:numel(panel_copy.Children)
+                if isprop(panel_copy.Children(i),'Units');
+                    panel_copy.Children(i).Units = 'pixels';
                 end
             end
             %%% refind legend item
-            for i = 1:numel(hfig.Children(end).Children)
-                if strcmp(hfig.Children(end).Children(i).Type,'legend')
+            for i = 1:numel(panel_copy.Children)
+                if strcmp(panel_copy.Children(i).Type,'legend')
                     leg = i;
                 end
             end
             hfig.Position(4) = 650;
-            hfig.Children(end).Position(4) = 650;
-            hfig.Children(end).Children(leg).Position(1) = 10;
-            hfig.Children(end).Children(leg).Position(2) = 590;
+            panel_copy.Position(4) = 650;
+            panel_copy.Children(leg).Position(1) = 10;
+            panel_copy.Children(leg).Position(2) = 590;
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
