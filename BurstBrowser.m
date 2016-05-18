@@ -5245,6 +5245,7 @@ if obj == h.Fit_Gaussian_Button
     if colorbyparam
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
+    h.Progress_Text.String = 'Done';
 end
 
 
