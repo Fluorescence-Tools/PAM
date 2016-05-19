@@ -9728,8 +9728,8 @@ switch obj
         %%% increase LineWidth of Axes
         axes_copy.LineWidth = 3;
         %%% Change FaceColor of BarPlot
-        axes_copy.Children(4).FaceColor = [0.5 0.5 0.5];
-        axes_copy.Children(4).LineWidth = 3;
+        %axes_copy.Children(4).FaceColor = [0.5 0.5 0.5];
+        %axes_copy.Children(4).LineWidth = 3;
         %%% Redo YAxis Label
         axes_copy.YTickMode = 'auto';
         %%% Set XLabel
