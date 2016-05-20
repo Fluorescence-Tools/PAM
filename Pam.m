@@ -3019,6 +3019,7 @@ if any(mode==2)
          h.Plots.Trace{end+1} = plot(PamMeta.TimeBins,PamMeta.Trace{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
     end
     guidata(h.Pam,h);
+    h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
 end
 
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
