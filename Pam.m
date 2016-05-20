@@ -3819,6 +3819,7 @@ if obj == h.MI.Auto
             obj.Checked = 'off';
     end
     UserValues.Detector.Auto = obj.Checked;
+    LSUserValues(1);
     return;
 end
 %% Check what object called the function
