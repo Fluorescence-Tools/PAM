@@ -8139,6 +8139,8 @@ switch mode
         Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
+        elseif size(Sel,1)>1
+            Sel=Sel';
         end
         event.Key = 'Export_Image_Tiff';
         for i = h.Export.List.Value
