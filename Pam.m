@@ -8640,6 +8640,11 @@ switch obj
             delete(h.Plots.fFCS.Filter_Plots2{i});
         end
         h.Plots.fFCS.Filter_Plots2={};
+        delete(h.Cor_fFCS.MIPattern_Axis.Children);
+        delete(h.Cor_fFCS.Filter_Axis.Children);
+        delete(h.Cor_fFCS.MIPattern_Axis2.Children);
+        delete(h.Cor_fFCS.Filter_Axis2.Children);
+        
         %%% hide/unhide plots as needed
         if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0 %%% only use main plot
             h.Cor_fFCS.MIPattern_Axis2.Visible = 'off';
@@ -8667,12 +8672,22 @@ switch obj
         % read active PIE channels and map back to original PIE channel list
         % A
         sel_name = h.Cor_fFCS.PIEchan_Table.Data(cell2mat(h.Cor_fFCS.PIEchan_Table.Data(:,2)),1);
+        if isempty(sel_name)
+            %%% check that at least one population is selected!
+            errordlg('Select PIE channels first!','PIE channel selection empty');
+            return;
+        end
         for i = 1:numel(sel_name)
             sel{1}(i) = find(strcmp(UserValues.PIE.Name,sel_name{i}));
         end
         % B
         if h.Cor_fFCS.CrossCorr_Checkbox.Value == 1
             sel_name = h.Cor_fFCS.PIEchan_Table.Data(cell2mat(h.Cor_fFCS.PIEchan_Table.Data(:,3)),1);
+            if isempty(sel_name)
+                %%% check that at least one population is selected!
+                errordlg('Select PIE channels for second channel first!','PIE channel selection empty for second channel');
+                return;
+            end
             for i = 1:numel(sel_name)
                 sel{2}(i) = find(strcmp(UserValues.PIE.Name,sel_name{i}));
             end
@@ -8684,7 +8699,7 @@ switch obj
         
         % read out avtive species
         active = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)))';
-
+        
         %%% rational: 
         %%% 1.) read out mi patterns
         %%% 2.) do checkup (length of loaded patterns need to be adjusted
