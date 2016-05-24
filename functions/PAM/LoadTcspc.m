@@ -145,7 +145,7 @@ switch (Type)
                 Rout(Rout>numel(MI)) = [];
                 %%% Concatenates data to previous files and adds Imagetime
                 %%% to consecutive files
-                if any(~cellfun(@isempty,MI))
+                if any(~cellfun(@isempty,MI(:)))
                     for k = Rout
                         %%% Removes photons detected after "official"
                         %%% end of file are discarded
@@ -317,7 +317,7 @@ switch (Type)
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
             MaxMT = 0;
-            if any(~cellfun(@isempty,TcspcData.MT))
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
                 MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
             end
             %%% Reads data for each tcspc card
@@ -344,7 +344,7 @@ switch (Type)
                 Rout(Rout>numel(MI))=[];
                 %%% Concaternates data to previous files and adds Imagetime
                 %%% to consecutive files
-                if any(~cellfun(@isempty,MI))
+                if any(~cellfun(@isempty,MI(:)))
                     for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
                         TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
@@ -402,7 +402,7 @@ switch (Type)
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
             MaxMT = 0;
-            if any(~cellfun(@isempty,TcspcData.MT))
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
                 MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
             end
             
@@ -429,7 +429,7 @@ switch (Type)
             Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
-            if any(~cellfun(@isempty,MI))
+            if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
                     for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
@@ -503,7 +503,7 @@ switch (Type)
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
             MaxMT = 0;
-            if any(~cellfun(@isempty,TcspcData.MT))
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
                 MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
             end
             
@@ -527,7 +527,7 @@ switch (Type)
             Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
-            if any(~cellfun(@isempty,MI))
+            if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
                     for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
@@ -679,7 +679,7 @@ switch (Type)
             %%% if multiple files are loaded, consecutive files need to
             %%% be offset in time with respect to the previous file
             MaxMT = 0;
-            if any(~cellfun(@isempty,TcspcData.MT))
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
                 MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
             end
             
@@ -706,7 +706,7 @@ switch (Type)
             Rout(Rout>size(MI,2))=[];
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
-            if any(~cellfun(@isempty,MI))
+            if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
                     for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
