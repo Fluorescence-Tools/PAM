@@ -9696,6 +9696,7 @@ switch obj
         %%% Set XLabel
         xlabel(BurstData{file}.NameArray{h.ParameterListX.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
+        axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
     case h.Export1DY_Menu
@@ -9735,6 +9736,7 @@ switch obj
         %%% Set XLabel
         xlabel(BurstData{file}.NameArray{h.ParameterListY.Value},'FontSize',fontsize);
         ylabel('Frequency','FontSize',fontsize);
+        axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
     case h.Export2D_Menu
