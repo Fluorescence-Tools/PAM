@@ -330,10 +330,10 @@ switch (Type)
                 end
                 [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], Card);
                 if isempty(FileInfo.SyncPeriod)
-                    FileInfo.SyncPeriod = 1/SyncRate;
+                    FileInfo.SyncPeriod = SyncRate^-1;
                 end
                 if isempty(FileInfo.ClockPeriod)
-                    FileInfo.ClockPeriod = 1/ClockRate;
+                    FileInfo.ClockPeriod = ClockRate^-1;
                 end
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')

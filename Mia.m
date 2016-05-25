@@ -2750,6 +2750,9 @@ switch mode
             [FileName2,Path2] = uigetfile({'*.tif'}, 'Load TIFFs for channel 2', Path1, 'MultiSelect', 'on');
         end
         UserValues.File.MIAPath = Path1;
+        if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
+            mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
+        end
         LSUserValues(1);
         %%% Transforms FileName into cell array
         if ~iscell(FileName1)
@@ -2812,7 +2815,7 @@ switch mode
         h.Plots.NB(4).XData=0;
         h.Plots.NB(5).CData=zeros(1,1);        
         %% Loads all frames for channel 1
-        MIAData.Data{1,1}=single.empty(0,0,0);        
+        MIAData.Data{1,1}=uint16.empty(0,0,0);        
         for i=1:numel(FileName1)  
             MIAData.FileName{1}{i}=FileName1{i};
             Info=imfinfo(fullfile(Path1,FileName1{i}));
@@ -2885,7 +2888,7 @@ switch mode
             return
         end
         %% Loads all frames for channel 2
-        MIAData.Data{2,1}=single.empty(0,0,0);
+        MIAData.Data{2,1}=uint16.empty(0,0,0);
         for i=1:numel(FileName2)
             MIAData.FileName{2}{i}=FileName2{i};
             Info=imfinfo(fullfile(Path2,FileName2{i}));
@@ -3129,7 +3132,6 @@ end
 %%% Updates mia plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Plots(~,~,mode,channel)
-
 global MIAData UserValues
 Fig = gcf;
 %%% This speeds display up
@@ -3282,7 +3284,11 @@ if any(mode==1)
                 %%% Also sets AlphaData to right size
                 h.Plots.Image(i,2).AlphaData = ~isnan(Image);
                 if Frame>0 %%% For one frame, use manual selection and arbitrary region
-                    h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                    if ~isempty(MIAData.AR)
+                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                    else
+                        h.Plots.Image(i,2).AlphaData = 1;
+                    end
                 else %%% For all frames, only use manual selection
                     h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
                 end
@@ -3618,14 +3624,18 @@ if any(mode==4)
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1);
             
             Data = MIAData.Data{1,2};
-            Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
-            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1);
+            if ~isempty(MIAData.AR)
+                Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+            end
+            h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1);
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
         else
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{1,2};
-            Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
-            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            if ~isempty(MIAData.AR)
+                Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+            end
+            h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
         end
         
@@ -3750,13 +3760,17 @@ if any(mode==4)
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1);
             Data = MIAData.Data{2,2};
-            Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3)))) = NaN;
-            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1);
+            if ~isempty(MIAData.AR)
+                Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2}(1,:,:),3)))) = NaN;
+            end
+            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{2,2};
-            Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3)))) = NaN;
-            h.Plots.Int(2,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            if ~isempty(MIAData.AR)
+                Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2}(1,:,:),3)))) = NaN;
+            end
+            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             
         end
         
@@ -4130,23 +4144,22 @@ h.Mia_Image.Settings.Correction_Add_Frames.Visible='off';
 h.Mia_Image.Settings.Correction_Add_Frames_Text.Visible='off';
 
 %%% Actually performs correction
-MIAData.AR=[];
 for i=1:2
     if size(MIAData.Data,1)>=i  
         MIAData.Data{i,2}=[];
         %% Adds to image
         switch h.Mia_Image.Settings.Correction_Add.Value
             case 1 %%% Do nothing
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
-                                 +(mean2(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)));
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
+                                 +(mean2(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))));
             case 3 %%% Frame ROI mean
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
-                                 +(repmat(mean(mean((MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
+                                 +(repmat(mean(mean((single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 4 %%% Pixel mean
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)...
-                                 +(repmat(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:),3),[1,1,size(MIAData.Data{i,1},3)]));
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
+                                 +(repmat(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3),[1,1,size(MIAData.Data{i,1},3)]));
             case 5 %%% Moving average
                 h.Mia_Image.Settings.Correction_Add_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Pixel_Text.Visible='on';
@@ -4154,7 +4167,7 @@ for i=1:2
                 h.Mia_Image.Settings.Correction_Add_Frames_Text.Visible='on';                
                 Box=[str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String), str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
                 
-                MIAData.Data{i,2}=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);                 
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));                 
                 %%% Forces averaging sizes into bounds
                 if any(Box<1) || any(Box>size(MIAData.Data{i,2}))
                     Box(Box<1)=1;
@@ -4179,10 +4192,10 @@ for i=1:2
             case 1 %%% Do nothing
             case 2 %%% Frame ROI mean
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                                 -(repmat(mean(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 3 %%% Pixel mean
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:),3),[1,1,size(MIAData.Data{i,1},3)]));
+                                 -(repmat(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3),[1,1,size(MIAData.Data{i,1},3)]));
             case 4 %%% Moving average
                 h.Mia_Image.Settings.Correction_Subtract_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Pixel_Text.Visible='on';
@@ -4209,10 +4222,11 @@ for i=1:2
                 end 
                 %%% Calculates Filter
                 Filter=ones(Box)/prod(Box);
-                MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:),Filter,'replicate');    
+                MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
-        
-        MIAData.AR{i}=true(size(MIAData.Data{i,2}));
+if h.Mia_Image.Settings.ROI_FramesUse.Value == 3       
+    MIAData.AR{i}=true(size(MIAData.Data{i,2}));
+end
     end
     
 end
@@ -4268,7 +4282,7 @@ for i=Channel
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Thresholding operates on summed up, uncorrected data
-    Data=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3);
+    Data=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3);
     %%% Logical array to determin which pixels to use
     Use=true(size(Data));
     
@@ -4289,7 +4303,7 @@ for i=Channel
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Thresholding operates on uncorrected data
-    Data=MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:);
+    Data=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
     %%% Exdents array to determine which pixels to use, because now
     %%% every frame is calculated individually
     Use=repmat(Use,[1 1 size(Data,3)]);
@@ -4429,7 +4443,7 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+        Update_Plots([],[],1,1:size(MIAData.Data,1));
         
     %%% TICS manual selection 
     case 4 %%% Select Region for TICS manual seletion
@@ -4739,7 +4753,7 @@ end
 %%% Performs crosscorrelation
 if Cross
     MIAData.Cor{2}=zeros(size(MIAData.Data{1,2},1),size(MIAData.Data{1,2},2),numel(Frames));
-    for j=1:numel(Frames)
+    for j=i:numel(Frames)
         Image{1}=double(MIAData.Data{1,2}(:,:,Frames(j)));
         Image{2}=double(MIAData.Data{2,2}(:,:,Frames(j)));
         Size = [2*size(Image{1},1)-1, 2*size(Image{1},2)-1];
@@ -4922,22 +4936,25 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
             %%% Generates filename
-            Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.miacor']);
-            Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.miacor']);
-            Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.miacor']);
+            Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.miacor']);
+            Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.miacor']);
+            Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.miacor']);
+            Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
             %%% Checks, if file already exists and create new filename
-            if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+            if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
                 k=1;
                 %%% Adds 1 to filename
                 Current_FileName1=[Current_FileName1(1:end-7) '_' num2str(k) '.miacor'];
                 Current_FileName2=[Current_FileName2(1:end-7) '_' num2str(k) '.miacor'];
                 Current_FileName3=[Current_FileName3(1:end-7) '_' num2str(k) '.miacor'];
+                Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
                 %%% Increases counter, until no file is found
-                while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+                while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
                     k=k+1;
                     Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
                     Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
                     Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                    Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
                 end
             end
             %%% Saves Auto correlations
@@ -4955,7 +4972,64 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                 Info = InfoAll(3); %#ok<NASGU>
                 Data = DataAll(3,:); %#ok<NASGU>
                 save(Current_FileName3,'Info','Data');
+            end 
+            
+            %% Saves info file
+            FID = fopen(Current_FileName4,'w');
+            if Cross
+                Info = InfoAll(3);
+            else
+                Info = InfoAll(Auto);
+            end
+            fprintf(FID,'%s\n','Image Correlation info file');
+            %%% Pixel\Line\Frame times
+            fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+            fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+            fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+            %%% Pixel size
+            fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+            %%% Region of interest
+            fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+            %%% Counts per pixel
+            fprintf(FID,'%s\t%f\n', 'Mean counts per pixel:',Info.Counts);
+            %%% Frames used
+            fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+            %%% Subtraction used
+            switch h.Mia_Image.Settings.Correction_Subtract.Value
+                case 1
+                    fprintf(FID,'%s\n','Nothing subtracted');
+                case 2
+                    fprintf(FID,'%s\n','Frame mean subtracted');
+                case 3
+                    fprintf(FID,'%s\n','Pixel mean subtracted');
+                case 4
+                    fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+            end
+            %%% Addition used
+            switch h.Mia_Image.Settings.Correction_Subtract.Value
+                case 1
+                    fprintf(FID,'%s\n','Nothing added');
+                case 2
+                    fprintf(FID,'%s\n','Total mean added');
+                case 3
+                    fprintf(FID,'%s\n','Frame mean added');
+                case 4
+                    fprintf(FID,'%s\n','Pixel mean added');
+                case 5
+                    fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+            end
+            %%% Arbitrary region
+            if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+                fprintf(FID,'%s\n','Arbitrary region used:');
+                fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min);
+                fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max);
+                fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
+                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
+                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
+
             end            
+            fclose(FID);     
+            
         case 3 %%% .tif + .txt files
             %% Creates new filename
             %%% Removes file extension
@@ -4964,10 +5038,10 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
             %%% Generates filename
-            Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.tif']);
-            Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.tif']);
-            Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.tif']);
-            Current_FileName4=fullfile(UserValues.File.MIAPath,[FileName '_Info.txt']);
+            Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.tif']);
+            Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.tif']);
+            Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.tif']);
+            Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
             %%% Checks, if file already exists and create new filename
             if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
                 k=1;
@@ -5237,39 +5311,44 @@ for i=1:3 %%%
         
         %%% Calculate normalization, acounting for arbitrary region and
         %%% missing frames
-        Norm = single(fft(Norm,2*size(Norm,3)-1,3));
-        Norm = fftshift(real(ifft(Norm.*conj(Norm),[],3)),3);
-        %%% Averages forward and backward correlation
-        if mod(size(Norm,3),2) == 0
-            Norm = Norm(:,:,(size(Norm,3)/2):-1:2)+Norm(:,:,(size(Norm,3)/2)+2:end);
-        else
-            Norm = Norm(:,:,(floor(size(Norm,3)/2):-1:1))+Norm(:,:,(ceil(size(Norm,3)/2)+1:end));
+        Normt = Norm; clear Norm;
+        for l = 1:size(Normt,1)
+            Norm = Normt(l,:,:);
+            Norm = single(fft(Norm,2*size(Norm,3)-1,3));
+            Norm = fftshift(real(ifft(Norm.*conj(Norm),[],3)),3);
+            %%% Averages forward and backward correlation
+            if mod(size(Norm,3),2) == 0
+                Norm = Norm(:,:,(size(Norm,3)/2):-1:2)+Norm(:,:,(size(Norm,3)/2)+2:end);
+            else
+                Norm = Norm(:,:,(floor(size(Norm,3)/2):-1:1))+Norm(:,:,(ceil(size(Norm,3)/2)+1:end));
+            end
+            %%% Removes very long lag times (1/10th of frames)
+            Norm = Norm(:,:,1:ceil((Frames(end)-Frames(1))/10));
+
+            %%% FFT based time correlation 
+            TICSl{1} = fft(TICS{1}(l,:,:),2*size(TICS{1},3)-1,3);
+            if i<3 %%% Saves time for autocorrelation
+                TICSl{2}=TICSl{1};
+            else
+                TICSl{2} = fft(TICS{2}(l,:,:),2*size(TICS{2},3)-1,3);
+            end
+            TICSresult = fftshift(real(ifft(TICSl{1}.*conj(TICSl{2}),[],3)),3);
+            % clear TICS;
+            %%% Averages forward and backward correlation
+            if mod(size(TICSresult,3),2) == 0
+                TICSresult = TICSresult(:,:,(size(TICSresult,3)/2):-1:2)+TICSresult(:,:,(size(TICSresult,3)/2)+2:end);
+            else
+                TICSresult = TICSresult(:,:,(floor(size(TICSresult,3)/2):-1:1))+TICSresult(:,:,(ceil(size(TICSresult,3)/2)+1:end));
+            end
+            %%% Removes very long lag times (1/10th of frames)
+            TICSresult = TICSresult(:,:,1:ceil((Frames(end)-Frames(1))/10));
+            %%% Normalizes to different lag occurrence
+            TICSresult = TICSresult./Norm;
+            clear Norm;
+            %%% Normalizes to pixel intensity
+            MIAData.TICS{i}(l,:,:) = TICSresult./repmat(Int{1}(l,:).*Int{2}(l,:),1,1,size(TICSresult,3));
         end
-        %%% Removes very long lag times (1/10th of frames)
-        Norm = Norm(:,:,1:ceil((Frames(end)-Frames(1))/10));
-        
-        %%% FFT based time correlation 
-        TICS{1} = fft(TICS{1},2*size(TICS{1},3)-1,3);
-        if i<3 %%% Saves time for autocorrelation
-            TICS{2}=TICS{1};
-        else
-            TICS{2} = fft(TICS{2},2*size(TICS{2},3)-1,3);
-        end
-        TICSresult = fftshift(real(ifft(TICS{1}.*conj(TICS{2}),[],3)),3);
-        clear TICS;
-        %%% Averages forward and backward correlation
-        if mod(size(TICSresult,3),2) == 0
-            TICSresult = TICSresult(:,:,(size(TICSresult,3)/2):-1:2)+TICSresult(:,:,(size(TICSresult,3)/2)+2:end);
-        else
-            TICSresult = TICSresult(:,:,(floor(size(TICSresult,3)/2):-1:1))+TICSresult(:,:,(ceil(size(TICSresult,3)/2)+1:end));
-        end
-        %%% Removes very long lag times (1/10th of frames)
-        TICSresult = TICSresult(:,:,1:ceil((Frames(end)-Frames(1))/10));
-        %%% Normalizes to different lag occurrence
-        TICSresult = TICSresult./Norm;
-        clear Norm;
-        %%% Normalizes to pixel intensity
-        MIAData.TICS{i} = TICSresult./repmat(Int{1}.*Int{2},1,1,size(TICSresult,3));
+        clear Normt;
         MIAData.TICS_Int{i,1} = Int{1};
         MIAData.TICS_Int{i,2} = Int{2};
         clear TICSresult;
@@ -5281,10 +5360,10 @@ for i=1:3 %%%
             %%% Generates filename
             if i<3
                 FileName = MIAData.FileName{i}{1}(1:end-4);
-                Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF' num2str(i) '.mcor']);
+                Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF' num2str(i) '.mcor']);
             else
                 FileName = MIAData.FileName{1}{1}(1:end-4);
-                Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_CCF.mcor']);
+                Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
             end
             
             %%% Checks, if file already exists
@@ -5520,9 +5599,9 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [2 4])
             FileName = MIAData.FileName{1}{1}(1:end-4);
     end
     %%% Generates filename
-    Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_iMSD1.mcor']);
-    Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_cciMSD.mcor']);
-    Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_iMSD2.mcor']);
+    Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_iMSD1.mcor']);
+    Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_cciMSD.mcor']);
+    Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_iMSD2.mcor']);
     %%% Checks, if file already exists and create new filename
     if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
         k=1;
@@ -5666,9 +5745,9 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
             FileName = MIAData.FileName{1}{1}(1:end-4);
     end
     %%% Generates filename
-    Current_FileName1=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.stcor']);
-    Current_FileName2=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.stcor']);
-    Current_FileName3=fullfile(UserValues.File.MIAPath,[FileName '_CCF.stcor']);
+    Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.stcor']);
+    Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.stcor']);
+    Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.stcor']);
     %%% Checks, if file already exists and create new filename
     if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
         k=1;
@@ -5722,6 +5801,7 @@ NotFixed=find(~cell2mat(h.Mia_ICS.Fit_Table.Data(2:2:end,mode)));
 Params=cellfun(@str2double,h.Mia_ICS.Fit_Table.Data(1:2:end,mode));
 Fit_Params=Params(NotFixed);
 YData=h.Plots.Cor(mode,2).ZData;
+YData(round(size(YData,1)/2),:) = YData(round(size(YData,1)/2)+1,:);
 Size=str2double(h.Mia_ICS.Size.String);  
 if str2double(h.Mia_ICS.Frame.String)==0
     %%% Extracts, what frames to use
@@ -6117,6 +6197,7 @@ for i=mode
         case 3 %%% Hide\Show Arbitrary region controls
             switch h.Mia_Image.Settings.ROI_FramesUse.Value
                 case {1,2} %%% Hide arbitrary region controls
+                    MIAData.AR = [];
                     h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Int_Max.Visible = 'off';
@@ -6130,12 +6211,12 @@ for i=mode
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
                         h.Mia_Image.Settings.ROI_AR_Text{j}.Visible = 'off';
                     end
-                    if size(MIAData.Data,1)>0
-                        MIAData.AR{1} = true(size(MIAData.Data{1,2}));
-                    end
-                    if size(MIAData.Data,1)>1
-                        MIAData.AR{2} = true(size(MIAData.Data{2,2}));
-                    end
+%                     if size(MIAData.Data,1)>0
+%                         MIAData.AR{1} = true(size(MIAData.Data{1,2}));
+%                     end
+%                     if size(MIAData.Data,1)>1
+%                         MIAData.AR{2} = true(size(MIAData.Data{2,2}));
+%                     end
                     h.Plots.Image(1,2).UIContextMenu = [];
                     h.Plots.Image(2,2).UIContextMenu = [];
                     Update_Plots([],[],1,1:size(MIAData.Data,1));
@@ -6162,17 +6243,17 @@ for i=mode
             switch(gca)
                 case h.Mia_TICS.Image(1,1)
                     FileName = MIAData.FileName{1}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF1.mcor']);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
                     TICS = MIAData.TICS{1};
                     Counts = [nanmean(nanmean(MIAData.TICS_Int{1,1},2),1) nanmean(nanmean(MIAData.TICS_Int{1,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 case h.Mia_TICS.Image(2,1)
                     FileName = MIAData.FileName{1}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_CCF.mcor']);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
                     TICS = MIAData.TICS{2};
                     Counts = [nanmean(nanmean(MIAData.TICS_Int{2,1},2),1) nanmean(nanmean(MIAData.TICS_Int{2,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 case h.Mia_TICS.Image(3,1)
                     FileName = MIAData.FileName{2}{1}(1:end-4);
-                    Current_FileName=fullfile(UserValues.File.MIAPath,[FileName '_ACF2.mcor']);
+                    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
                     TICS = MIAData.TICS{3};
                     Counts = [nanmean(nanmean(MIAData.TICS_Int{3,1},2),1) nanmean(nanmean(MIAData.TICS_Int{3,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             end
