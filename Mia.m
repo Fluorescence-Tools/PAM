@@ -3159,7 +3159,7 @@ else
 end
 
 %% Plots intensity images
-if any(mode==1)    
+if any(mode==1)   
     for i=channel
         %% Selects colormap
         switch h.Mia_Image.Settings.Channel_Colormap(i).Value
@@ -3298,7 +3298,7 @@ if any(mode==1)
             end
         end
         drawnow
-    end
+    end   
 end
 
 %% Plots ICS data
@@ -3628,6 +3628,7 @@ if any(mode==4)
                 Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
             end
             h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1);
+            
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
         else
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
@@ -4023,6 +4024,9 @@ if size(MIAData.Data,1)>0
             end
             h.Mia_Image.Settings.Channel_Frame_Slider(channel).Value=Frame;
         case 2 %%% Image frames slider changed
+            
+            h.Mia_Image.Settings.Channel_Frame_Listener(1).Enabled=0;
+            h.Mia_Image.Settings.Channel_Frame_Listener(2).Enabled=0;
             Frame=h.Mia_Image.Settings.Channel_Frame_Slider(channel).Value;
 
             if mod(Frame,1)~=0
@@ -4041,6 +4045,8 @@ if size(MIAData.Data,1)>0
             else
                 Update_Plots([],[],1,channel);
             end
+            h.Mia_Image.Settings.Channel_Frame_Listener(1).Enabled=1;
+            h.Mia_Image.Settings.Channel_Frame_Listener(2).Enabled=1;
         case 3 %%% Cor frames editbox changed
             Frame = round(str2double(h.Mia_ICS.Frame.String));
             i = find(~cellfun(@isempty,MIAData.Cor),1,'first');
