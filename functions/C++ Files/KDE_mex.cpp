@@ -23,7 +23,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 
     unsigned int tau_lim = 5*tau;
     double t;
-    int ipos, ineg;
+    int ipos = 0;
+    int ineg = 0;
+
     for (int i = 0; i<N_timeval; i++) {
         t = timeval[i];        
         while (( (timestamps[ipos]-t) < tau_lim) && (ipos < N_timestamps))
@@ -35,6 +37,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         {
             ineg += 1;
         }
+        
         
         for (int j = ineg; j<ipos; j++)
         {
