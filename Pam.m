@@ -7624,6 +7624,7 @@ end
 KDE = (1+2/numel(B)).*KDE;
 
 function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
+
 switch BAMethod
     case {1,2} %MFD
         T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
@@ -7674,8 +7675,6 @@ BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
 ALEX_2CDE = 100-50*(BR_D+BR_A);
 
 function [FRET_2CDE, ALEX_2CDE] = KDE_3C(Trace,Chan_Trace,tau)
-%if numel(Trace) < 10000  %necessary to prevent memory overrun in matlab 64bit which occured in a test sample for a burst with 400000 photons to maintain usability on systems with only 12 GB Ram the threshold is set to 10000 but might be changed if necessary   
-
 %Trace(i) and Chan_Trace(i) are referring to the burstsearc
 %internal sorting and not related to the channel mapping in the
 %pam and Burstsearch GUI, they originate from the row th data is
@@ -7787,10 +7786,6 @@ BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
 %Brightness ration Aex
 BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
 ALEX_2CDE(1,3) = 100-50*(BR_D+BR_A);
-% else
-%     FRET_2CDE(1,1:3) = NaN;
-%     ALEX_2CDE(1,1:3) = NaN;
-% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
