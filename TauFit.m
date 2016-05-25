@@ -1255,6 +1255,20 @@ elseif strcmp(obj.Checked,'on')
     h.Result_Plot.YScale = 'lin';
 end
 
+if strcmp(h.Microtime_Plot.YScale,'log')
+    ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+        h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+        h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+    ydat = ydat(ydat > 0);
+    h.Ignore_Plot.YData = [...
+        min(ydat),...
+        h.Microtime_Plot.YLim(2)];
+else
+    h.Ignore_Plot.YData = [...
+        0,...
+        h.Microtime_Plot.YLim(2)];
+end
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1725,7 +1739,19 @@ if TauFitData.Ignore{chan} > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
     h.Ignore_Plot.XData = [TauFitData.Ignore{chan}*TACtoTime TauFitData.Ignore{chan}*TACtoTime];
-    h.Ignore_Plot.YData = [1e-6,h.Microtime_Plot.YLim(2)];
+    if strcmp(h.Microtime_Plot.YScale,'log')
+        ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+            h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+            h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+        ydat = ydat(ydat > 0);
+        h.Ignore_Plot.YData = [...
+            min(ydat),...
+            h.Microtime_Plot.YLim(2)];
+    else
+        h.Ignore_Plot.YData = [...
+            0,...
+            h.Microtime_Plot.YLim(2)];
+    end
 elseif TauFitData.Ignore{chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
