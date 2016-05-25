@@ -6388,7 +6388,7 @@ for t=1:numel(tau_2CDE)
         parts = (floor(linspace(1,numel(Macrotime),11)));
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            for i = parts(j):parts(j+1)
+            parfor i = parts(j):parts(j+1)
                 [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
             end
         end
