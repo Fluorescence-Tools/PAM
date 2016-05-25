@@ -7624,8 +7624,6 @@ end
 KDE = (1+2/numel(B)).*KDE;
 
 function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
-
-if numel(Trace) < 10000
 switch BAMethod
     case {1,2} %MFD
         T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
@@ -7674,128 +7672,125 @@ BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
 %Brightness ration Aex
 BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
 ALEX_2CDE = 100-50*(BR_D+BR_A);
-else 
-    FRET_2CDE = NaN;
-    ALEX_2CDE = NaN;
-end
+
 function [FRET_2CDE, ALEX_2CDE] = KDE_3C(Trace,Chan_Trace,tau)
-if numel(Trace) < 10000  %necessary to prevent memory overrun in matlab 64bit which occured in a test sample for a burst with 400000 photons to maintain usability on systems with only 12 GB Ram the threshold is set to 10000 but might be changed if necessary
-    
-    %Trace(i) and Chan_Trace(i) are referring to the burstsearc
-    %internal sorting and not related to the channel mapping in the
-    %pam and Burstsearch GUI, they originate from the row th data is
-    %imported at hte begining of this function
-    
-    T_BB = Trace(Chan_Trace == 1 | Chan_Trace == 2);
-    T_BG = Trace(Chan_Trace == 3 | Chan_Trace == 4);
-    T_BR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
-    T_GG = Trace(Chan_Trace == 7 | Chan_Trace == 8);
-    T_GR = Trace(Chan_Trace == 9 | Chan_Trace == 10);
-    T_RR = Trace(Chan_Trace == 11 | Chan_Trace == 12);
-    T_BX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4 | Chan_Trace == 5 | Chan_Trace == 6);
-    T_GX = Trace(Chan_Trace == 7 | Chan_Trace == 8 | Chan_Trace == 9 | Chan_Trace == 10);
-    
-    %tau = 100E-6; fallback value
-    
-    %KDE calculation for FRET_2CDE
-    
-    %KDE of BB around BB
-    KDE_BB_BB = nb_kernel_density_estimate(T_BB,tau);
-    %KDE of BG around BG
-    KDE_BG_BG = nb_kernel_density_estimate(T_BG,tau);
-    %KDE of BR around BR
-    KDE_BR_BR = nb_kernel_density_estimate(T_BR,tau);
-    %KDE of BG around BB
-    KDE_BG_BB = kernel_density_estimate(T_BB,T_BG,tau);
-    %KDE of BR around BB
-    KDE_BR_BB = kernel_density_estimate(T_BB,T_BR,tau);
-    %KDE of BB around BG
-    KDE_BB_BG = kernel_density_estimate(T_BG,T_BB,tau);
-    %KDE of BB around BR
-    KDE_BB_BR = kernel_density_estimate(T_BR,T_BB,tau);
-    %KDE of A(GR) around D (GG)
-    KDE_GR_GG = kernel_density_estimate(T_GG,T_GR,tau);
-    %KDE of D(GG) around D (GG)
-    KDE_GG_GG = nb_kernel_density_estimate(T_GG,tau);
-    %KDE of A(GR) around A (GR)
-    KDE_GR_GR = nb_kernel_density_estimate(T_GR,tau);
-    %KDE of D(GG) around A(GR)
-    KDE_GG_GR = kernel_density_estimate(T_GR,T_GG,tau);
-    
-    %KDE for ALEX_2CDE
-    
-    %KDE of BX around BX
-    KDE_BX_BX = kernel_density_estimate(T_BX,tau);
-    %KDE of GX around BX
-    KDE_GX_BX = kernel_density_estimate(T_BX,T_GX,tau);
-    %KDE of BX around GX
-    KDE_BX_GX = kernel_density_estimate(T_GX,T_BX,tau);
-    %KDE of A(RR) around D (BX)
-    KDE_RR_BX = kernel_density_estimate(T_BX,T_RR,tau);
-    %KDE of BX around RR
-    KDE_BX_RR = kernel_density_estimate(T_RR,T_BX,tau);
-    %KDE of D(GX) around D (GX)
-    KDE_GX_GX = kernel_density_estimate(T_GX,tau);
-    %KDE of A(RR) around A(RR)
-    KDE_RR_RR = kernel_density_estimate(T_RR,tau);
-    %KDE of A(RR) around D (GX)
-    KDE_RR_GX = kernel_density_estimate(T_GX,T_RR,tau);
-    %KDE of D(GX) around A (RR)
-    KDE_GX_RR = kernel_density_estimate(T_RR,T_GX,tau);
-    
-    %calculate FRET-2CDE based on proximity ratio for BG,BR
-    
-    %BG
-    %(E)_D
-    %check for case of denominator == 0!
-    valid = (KDE_BG_BB+KDE_BB_BB) ~= 0;
-    E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BG_BB(valid)./(KDE_BG_BB(valid)+KDE_BB_BB(valid)));
-    %(1-E)_A
-    valid = (KDE_BB_BG+KDE_BG_BG) ~= 0;
-    E_A = (1/(numel(T_BG)-sum(~valid))).*sum(KDE_BB_BG(valid)./(KDE_BB_BG(valid)+KDE_BG_BG(valid)));
-    FRET_2CDE(1,1) = 110 - 100*(E_D+E_A);
-    %BR
-    valid = (KDE_BR_BB+KDE_BB_BB) ~= 0;
-    E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BR_BB(valid)./(KDE_BR_BB(valid)+KDE_BB_BB(valid)));
-    %(1-E)_A
-    valid = (KDE_BB_BR+KDE_BR_BR) ~= 0;
-    E_A = (1/(numel(T_BR)-sum(~valid))).*sum(KDE_BB_BR(valid)./(KDE_BB_BR(valid)+KDE_BR_BR(valid)));
-    FRET_2CDE(1,2) = 110 - 100*(E_D+E_A);
-    %GR
-    %(E)_D
-    valid = (KDE_GR_GG+KDE_GG_GG) ~= 0;
-    E_D = (1/(numel(T_GG)-sum(~valid))).*sum(KDE_GR_GG(valid)./(KDE_GR_GG(valid)+KDE_GG_GG(valid)));
-    %(1-E)_A
-    valid = (KDE_GG_GR+KDE_GR_GR) ~= 0;
-    E_A = (1/(numel(T_GR)-sum(~valid))).*sum(KDE_GG_GR(valid)./(KDE_GG_GR(valid)+KDE_GR_GR(valid)));
-    FRET_2CDE(1,3) = 110 - 100*(E_D+E_A);
-    
-    %calculate ALEX / PIE 2CDE
-    
-    %BG
-    %Brightness ratio Dex
-    BR_D = (1/numel(T_GX)).*sum(KDE_GX_BX./KDE_BX_BX);
-    %Brightness ration Aex
-    BR_A =(1/numel(T_BX)).*sum(KDE_BX_GX./KDE_GX_GX);
-    ALEX_2CDE(1,1) = 100-50*(BR_D+BR_A);
-    
-    %BR
-    %Brightness ratio Dex
-    BR_D = (1/numel(T_RR)).*sum(KDE_RR_BX./KDE_BX_BX);
-    %Brightness ration Aex
-    BR_A =(1/numel(T_BX)).*sum(KDE_BX_RR./KDE_RR_RR);
-    ALEX_2CDE(1,2) = 100-50*(BR_D+BR_A);
-    
-    %GR
-    %Brightness ratio Dex
-    BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
-    %Brightness ration Aex
-    BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
-    ALEX_2CDE(1,3) = 100-50*(BR_D+BR_A);
-else
-    FRET_2CDE(1,1:3) = NaN;
-    ALEX_2CDE(1,1:3) = NaN;
-end
+%if numel(Trace) < 10000  %necessary to prevent memory overrun in matlab 64bit which occured in a test sample for a burst with 400000 photons to maintain usability on systems with only 12 GB Ram the threshold is set to 10000 but might be changed if necessary   
+
+%Trace(i) and Chan_Trace(i) are referring to the burstsearc
+%internal sorting and not related to the channel mapping in the
+%pam and Burstsearch GUI, they originate from the row th data is
+%imported at hte begining of this function
+
+T_BB = Trace(Chan_Trace == 1 | Chan_Trace == 2);
+T_BG = Trace(Chan_Trace == 3 | Chan_Trace == 4);
+T_BR = Trace(Chan_Trace == 5 | Chan_Trace == 6);
+T_GG = Trace(Chan_Trace == 7 | Chan_Trace == 8);
+T_GR = Trace(Chan_Trace == 9 | Chan_Trace == 10);
+T_RR = Trace(Chan_Trace == 11 | Chan_Trace == 12);
+T_BX = Trace(Chan_Trace == 1 | Chan_Trace == 2 | Chan_Trace == 3 | Chan_Trace == 4 | Chan_Trace == 5 | Chan_Trace == 6);
+T_GX = Trace(Chan_Trace == 7 | Chan_Trace == 8 | Chan_Trace == 9 | Chan_Trace == 10);
+
+%tau = 100E-6; fallback value
+
+%KDE calculation for FRET_2CDE
+
+%KDE of BB around BB
+KDE_BB_BB = nb_kernel_density_estimate(T_BB,tau);
+%KDE of BG around BG
+KDE_BG_BG = nb_kernel_density_estimate(T_BG,tau);
+%KDE of BR around BR
+KDE_BR_BR = nb_kernel_density_estimate(T_BR,tau);
+%KDE of BG around BB
+KDE_BG_BB = kernel_density_estimate(T_BB,T_BG,tau);
+%KDE of BR around BB
+KDE_BR_BB = kernel_density_estimate(T_BB,T_BR,tau);
+%KDE of BB around BG
+KDE_BB_BG = kernel_density_estimate(T_BG,T_BB,tau);
+%KDE of BB around BR
+KDE_BB_BR = kernel_density_estimate(T_BR,T_BB,tau);
+%KDE of A(GR) around D (GG)
+KDE_GR_GG = kernel_density_estimate(T_GG,T_GR,tau);
+%KDE of D(GG) around D (GG)
+KDE_GG_GG = nb_kernel_density_estimate(T_GG,tau);
+%KDE of A(GR) around A (GR)
+KDE_GR_GR = nb_kernel_density_estimate(T_GR,tau);
+%KDE of D(GG) around A(GR)
+KDE_GG_GR = kernel_density_estimate(T_GR,T_GG,tau);
+
+%KDE for ALEX_2CDE
+
+%KDE of BX around BX
+KDE_BX_BX = kernel_density_estimate(T_BX,tau);
+%KDE of GX around BX
+KDE_GX_BX = kernel_density_estimate(T_BX,T_GX,tau);
+%KDE of BX around GX
+KDE_BX_GX = kernel_density_estimate(T_GX,T_BX,tau);
+%KDE of A(RR) around D (BX)
+KDE_RR_BX = kernel_density_estimate(T_BX,T_RR,tau);
+%KDE of BX around RR
+KDE_BX_RR = kernel_density_estimate(T_RR,T_BX,tau);
+%KDE of D(GX) around D (GX)
+KDE_GX_GX = kernel_density_estimate(T_GX,tau);
+%KDE of A(RR) around A(RR)
+KDE_RR_RR = kernel_density_estimate(T_RR,tau);
+%KDE of A(RR) around D (GX)
+KDE_RR_GX = kernel_density_estimate(T_GX,T_RR,tau);
+%KDE of D(GX) around A (RR)
+KDE_GX_RR = kernel_density_estimate(T_RR,T_GX,tau);
+
+%calculate FRET-2CDE based on proximity ratio for BG,BR
+
+%BG
+%(E)_D
+%check for case of denominator == 0!
+valid = (KDE_BG_BB+KDE_BB_BB) ~= 0;
+E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BG_BB(valid)./(KDE_BG_BB(valid)+KDE_BB_BB(valid)));
+%(1-E)_A
+valid = (KDE_BB_BG+KDE_BG_BG) ~= 0;
+E_A = (1/(numel(T_BG)-sum(~valid))).*sum(KDE_BB_BG(valid)./(KDE_BB_BG(valid)+KDE_BG_BG(valid)));
+FRET_2CDE(1,1) = 110 - 100*(E_D+E_A);
+%BR
+valid = (KDE_BR_BB+KDE_BB_BB) ~= 0;
+E_D = (1/(numel(T_BB)-sum(~valid))).*sum(KDE_BR_BB(valid)./(KDE_BR_BB(valid)+KDE_BB_BB(valid)));
+%(1-E)_A
+valid = (KDE_BB_BR+KDE_BR_BR) ~= 0;
+E_A = (1/(numel(T_BR)-sum(~valid))).*sum(KDE_BB_BR(valid)./(KDE_BB_BR(valid)+KDE_BR_BR(valid)));
+FRET_2CDE(1,2) = 110 - 100*(E_D+E_A);
+%GR
+%(E)_D
+valid = (KDE_GR_GG+KDE_GG_GG) ~= 0;
+E_D = (1/(numel(T_GG)-sum(~valid))).*sum(KDE_GR_GG(valid)./(KDE_GR_GG(valid)+KDE_GG_GG(valid)));
+%(1-E)_A
+valid = (KDE_GG_GR+KDE_GR_GR) ~= 0;
+E_A = (1/(numel(T_GR)-sum(~valid))).*sum(KDE_GG_GR(valid)./(KDE_GG_GR(valid)+KDE_GR_GR(valid)));
+FRET_2CDE(1,3) = 110 - 100*(E_D+E_A);
+
+%calculate ALEX / PIE 2CDE
+
+%BG
+%Brightness ratio Dex
+BR_D = (1/numel(T_GX)).*sum(KDE_GX_BX./KDE_BX_BX);
+%Brightness ration Aex
+BR_A =(1/numel(T_BX)).*sum(KDE_BX_GX./KDE_GX_GX);
+ALEX_2CDE(1,1) = 100-50*(BR_D+BR_A);
+
+%BR
+%Brightness ratio Dex
+BR_D = (1/numel(T_RR)).*sum(KDE_RR_BX./KDE_BX_BX);
+%Brightness ration Aex
+BR_A =(1/numel(T_BX)).*sum(KDE_BX_RR./KDE_RR_RR);
+ALEX_2CDE(1,2) = 100-50*(BR_D+BR_A);
+
+%GR
+%Brightness ratio Dex
+BR_D = (1/numel(T_RR)).*sum(KDE_RR_GX./KDE_GX_GX);
+%Brightness ration Aex
+BR_A =(1/numel(T_GX)).*sum(KDE_GX_RR./KDE_RR_RR);
+ALEX_2CDE(1,3) = 100-50*(BR_D+BR_A);
+% else
+%     FRET_2CDE(1,1:3) = NaN;
+%     ALEX_2CDE(1,1:3) = NaN;
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to apply microtime shift for detector correction %%%%%%%%%%%%%
