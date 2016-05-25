@@ -6388,7 +6388,7 @@ for t=1:numel(tau_2CDE)
         parts = (floor(linspace(1,numel(Macrotime),11)));
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            parfor i = parts(j):parts(j+1)
+            for i = parts(j):parts(j+1)
                 [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
             end
         end
@@ -7584,27 +7584,45 @@ end
 %%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [KDE]= kernel_density_estimate(A,B,tau) %KDE of B around A
-if nargin == 3
-    M = abs(ones(numel(B),1)*A - B'*ones(1,numel(A)));
+mex = true;
+if mex
+    if nargin == 3
+        KDE = KDE_mex(A,B,tau,numel(A),numel(B));
+    elseif nargin == 2
+        KDE = KDE_mex(A,A,B,numel(A),numel(A));
+    end
+    KDE = KDE';
+else
+    if nargin == 3
+        M = abs(ones(numel(B),1)*A - B'*ones(1,numel(A)));
+        M(M>5*tau) = 0;
+        E = exp(-M./tau);
+        E(M==0) = 0;
+        KDE = sum(E,1)';
+    %    KDE = KDE_mex(B,A,tau,numel(B),numel(A));
+    elseif nargin == 2
+        tau = B;
+        M = abs(ones(numel(A),1)*A - A'*ones(1,numel(A)));
+        M(M>5*tau) = 0;
+        E = exp(-M./tau);
+        E(M==0) = 0;
+        KDE = sum(E,1)'+1;
+    end
+end
+function [KDE]= nb_kernel_density_estimate(B,tau) %non biased KDE of B around B
+mex = true;
+if mex
+    KDE = KDE_mex(B,B,tau,numel(B),numel(B));
+    KDE = KDE'-1; %%% need to subtract one because zero lag is counter here
+else
+    M = abs(ones(numel(B),1)*B - B'*ones(1,numel(B)));
     M(M>5*tau) = 0;
     E = exp(-M./tau);
     E(M==0) = 0;
     KDE = sum(E,1)';
-elseif nargin == 2
-    tau = B;
-    M = abs(ones(numel(A),1)*A - A'*ones(1,numel(A)));
-    M(M>5*tau) = 0;
-    E = exp(-M./tau);
-    E(M==0) = 0;
-    KDE = sum(E,1)'+1;
 end
-function [KDE]= nb_kernel_density_estimate(B,tau) %non biased KDE of B around B
-M = abs(ones(numel(B),1)*B - B'*ones(1,numel(B)));
-M(M>5*tau) = 0;
-E = exp(-M./tau);
-E(M==0) = 0;
-KDE = sum(E,1)';
 KDE = (1+2/numel(B)).*KDE;
+
 function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
 
 if numel(Trace) < 10000
