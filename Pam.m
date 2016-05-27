@@ -6388,7 +6388,7 @@ for t=1:numel(tau_2CDE)
         parts = (floor(linspace(1,numel(Macrotime),11)));
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            parfor i = parts(j):parts(j+1)
+            for i = parts(j):parts(j+1)
                 [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
             end
         end
@@ -7584,6 +7584,21 @@ end
 %%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [KDE]= kernel_density_estimate(A,B,tau) %KDE of B around A
+%%% error checkup to catch empty arrays
+if nargin == 2
+    if isempty(A)
+        KDE = [];
+        return;
+    end
+elseif nargin == 3
+    if isempty(A)
+        KDE = [];
+        return;
+    elseif isempty(B)
+        KDE = zeros(numel(A),1);
+        return;
+    end
+end
 mex = true;
 if mex
     if nargin == 3
@@ -7609,7 +7624,13 @@ else
         KDE = sum(E,1)'+1;
     end
 end
+
 function [KDE]= nb_kernel_density_estimate(B,tau) %non biased KDE of B around B
+%%% error checkup to catch empty arrays
+if isempty(B)
+    KDE = 0;
+    return;
+end
 mex = true;
 if mex
     KDE = KDE_mex(B,B,tau,numel(B),numel(B));
