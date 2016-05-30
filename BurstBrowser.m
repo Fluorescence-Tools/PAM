@@ -6832,7 +6832,9 @@ function [mean,GaussFun,Gauss1,Gauss2] = GaussianFit(x_data,y_data,N_gauss)
 %%% mean            : Determined Mean Value
 %%% GaussFun        : The Values of the FitFunction at xdata
 %%% Gauss1/2        : The Values of Gauss1/2 at xdata for multi-Gauss fit
-
+if any(size(x_data) ~= size(y_data))
+    y_data = y_data';
+end
 %% fit with 1 Gaussian
 Gauss = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
 if nargin <5 %no start parameters specified
@@ -6844,6 +6846,12 @@ if nargin <5 %no start parameters specified
     end
     b=0;%assume zero background
     param = [A,m,s,b];
+end
+if sum(y_data) <= 10 %%% low amount of data, take mean and std instead
+    mean = m;
+    GaussFun = Gauss(A,m,s,0,x_data);
+    GaussFun = (GaussFun./max(GaussFun)).*max(y_data);
+    return;
 end
 [gauss, gof] = fit(x_data,y_data,Gauss,'StartPoint',param,'Lower',[0,0,0,0]);
 coefficients = coeffvalues(gauss);

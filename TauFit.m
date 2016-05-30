@@ -41,6 +41,7 @@ h.TauFit = figure(...
     'BusyAction','cancel',...
     'OuterPosition',[0.075 0.05 0.85 0.85],...
     'CloseRequestFcn',@Close_TauFit,...
+    'KeyPressFcn',@TauFit_KeyPress,...
     'Visible','on');
 %%% Sets background of axes and other things
 whitebg(Look.Axes);
@@ -3196,6 +3197,43 @@ h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2)*TACtoTime 0.9*h.Result_
 h.G_factor_edit.String = num2str(G);
 UserValues.TauFit.G{chan} = G;
 LSUserValues(1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Executes on key press on main axis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function TauFit_KeyPress(obj,eventdata)
+global TauFitData
+h = guidata(obj);
+
+if strcmp(eventdata.Key,'f')
+    %%% Start reconvolution fit
+    Start_Fit(h.Fit_Button,[]);
+end
+if ~strcmp(TauFitData.Who, 'Burstwise') %%% for burstwise, only start fit is relevant
+    if isempty(eventdata.Modifier)
+        if strcmp(eventdata.Key,'a')
+            %%% fit anisotropy
+            Start_Fit(h.Fit_Aniso_Button,[])
+        elseif strcmp(eventdata.Key,'t')
+            %%% tailfit
+            Start_Fit(h.Fit_Tail_Button,[]);
+        end
+    elseif strcmp(eventdata.Modifier,'shift')
+        if strcmp(eventdata.Key,'a')
+            %%% fit anisotropy
+            Start_Fit(h.Fit_Aniso_2exp,[])
+        elseif strcmp(eventdata.Key,'t')
+            %%% tailfit
+            Start_Fit(h.Fit_Tail_2exp,[]);
+        end
+    end
+end
+if strcmp(TauFitData.Who,'TauFit')
+    if strcmp(eventdata.Key,'g')
+    %%% determine the g factor
+    Start_Fit(h.Determine_GFactor_Button,[])
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Export Graph to figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
