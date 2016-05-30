@@ -701,7 +701,7 @@ if exist('ph','var')
                     'Checked','off',...
                     'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
-            case {ph.Burst.BurstLifetime_Button, ph.Database.Burst}
+            case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}%{ph.Burst.BurstLifetime_Button, ph.Database.Burst}
                 TauFitData.Who = 'Burstwise';
                 %%%?User Clicks Burstwise Lifetime button in Pam or clicks
                 %%%Burst Analysis on database tab in Pam
