@@ -8980,6 +8980,7 @@ for i = 1:numel(UserValues.PIE.Name)
         UserValues.PIE.To(i),...
         UserValues.PIE.Background(i));
 end
+fclose(fid);
 
 function separate_process(obj,eventdata,func)
 %%% executes subfunction in separate process

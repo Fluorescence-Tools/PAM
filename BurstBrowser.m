@@ -8952,9 +8952,9 @@ if obj.Value == 1 %%% Checkbox was clicked on
         valid = (BurstData{file}.DataArray(:,idxS) > 0.95);
     elseif any(BurstData{file}.BAMethod == [3,4])
         idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
-        idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
-        valid = (BurstData{file}.DataArray(:,idxS) > 0.90) & (BurstData{file}.DataArray(:,idxS) < 1.1) &...
-            (BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
+        %idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+        valid = (BurstData{file}.DataArray(:,idxS) > 0.90) & (BurstData{file}.DataArray(:,idxS) < 1.1);% &...
+            %(BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
     end
     x_axis = 0:0.05:10;
     htauGG = histc(BurstData{file}.DataArray(valid,idx_tauGG),x_axis);
@@ -8971,9 +8971,9 @@ if obj.Value == 1 %%% Checkbox was clicked on
         valid = (BurstData{file}.DataArray(:,idxS) < 0.1);
     elseif any(BurstData{file}.BAMethod == [3,4])
         idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
-        idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
-        valid = (BurstData{file}.DataArray(:,idxS) < 0.1) & (BurstData{file}.DataArray(:,idxS) > -0.1) &...
-            (BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
+        %idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
+        valid = (BurstData{file}.DataArray(:,idxS) < 0.1) & (BurstData{file}.DataArray(:,idxS) > -0.1);% &...
+            %(BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
     end
     x_axis = 0:0.05:10;
     htauRR = histc(BurstData{file}.DataArray(valid,idx_tauRR),x_axis);
