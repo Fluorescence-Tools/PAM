@@ -1279,8 +1279,12 @@ global UserValues TauFitData FileInfo TcspcData
 h = guidata(findobj('Tag','TauFit'));
 % Load Data button was pressed
 % User called TauFit from Pam
-
+try
 TauFitData.TACRange = FileInfo.TACRange; % in seconds
+catch %%% This occurs when user loads Fabsurf file from Waldi
+   % ask for TACrange, default is 40
+   TauFitData.TACRange = str2double(inputdlg({'TAC Range in ns:'},'Please provide the TAC Range',1,{'40'}));
+end
 TauFitData.MI_Bins = FileInfo.MI_Bins;
 if ~isfield(FileInfo,'Resolution')
     % in nanoseconds/microtime bin
