@@ -7202,22 +7202,24 @@ switch obj
             return
         end
         load('-mat',fullfile(Path,FileName));
-        mess = 'Shift of Detector number ';
-        err = 0;
+        if size(UserValues.Detector.Name,2) ~= numel(s.data);
+            disp('The number of detectors in the shift file is not the same as in your current profile!')
+            disp(' ')
+        end
+        disp('Check whether everything is assigned correctly:')
+        disp(' ')
         for i = 1:numel(s.data)
-            if strcmp(UserValues.Detector.Name{i}, s.name{i})
+            % just loop through the number of detectors in the shift file
+            if i <= size(UserValues.Detector.Name,2)
                 UserValues.Detector.Shift{i} = s.data{i};
-            else 
-                err = 1;
-                mess = [mess num2str(i) ', '];
+                disp(['Shift of detector "' s.name{i} '" from file copied to detector "' UserValues.Detector.Name{i} '" in your current profile!'])
             end
         end
-        if err
-            msgbox([mess(1:end-2) ' not loaded because its name differed between current profile and loaded file.'])
-        end
+        disp(' ')
+        disp('Load data again to apply changes!')
+        msgbox('See the MATLAB command prompt!')
         clear s;
         LSUserValues(1);
-        msgbox('load data again')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
