@@ -1223,7 +1223,7 @@ end
 
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
 if exist('ph','var')
-    if isequal(obj, ph.Database.Burst)
+    if isequal(obj, ph.Database.Burst) || isequal(obj, ph.Burst.Button)
         for j = 1:numel(Channel_String) 
             % Save images of the individual plots
             h.ChannelSelect_Popupmenu.Value = j;
@@ -1236,6 +1236,7 @@ if exist('ph','var')
         end
         BurstWise_Fit(h.BurstWiseFit_Button)
     end
+    close(h.TauFit);
 end
 
 function ChangeYScale(obj,~)
