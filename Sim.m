@@ -1807,6 +1807,7 @@ switch Obj
     case h.Sim_UseIRF %%% Toggles, if IRF is used
         SimData.Species(Sel).UseIRF = h.Sim_UseIRF.Value;
     case h.Sim_IRF_Width_Edit
+        % why is this data stored in SimData?
         SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
     case h.Sim_Param_Plot %%% Changed plotted advanced parameters
         for i=1:4
