@@ -1235,8 +1235,8 @@ if exist('ph','var')
             close(f)
         end
         BurstWise_Fit(h.BurstWiseFit_Button)
+        close(h.TauFit);
     end
-    close(h.TauFit);
 end
 
 function ChangeYScale(obj,~)
