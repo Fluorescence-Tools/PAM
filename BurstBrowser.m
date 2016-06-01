@@ -10305,6 +10305,11 @@ end
 function ExportAllGraphs(obj,~)
 global BurstData BurstMeta
 h = guidata(obj);
+file = BurstMeta.SelectedFile;
+if any(BurstData{file}.BAMethod == [3,4])
+    disp('Not implemented for three color.');
+    return;
+end
 h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
 h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
 UpdatePlot([],[],h);
