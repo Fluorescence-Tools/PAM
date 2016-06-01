@@ -592,7 +592,7 @@ switch (Type)
         Totaltime=0;
         %%% Reads all selected files
         for i=1:numel(FileName)
-            load(fullfile(Path,FileName{1}),'-mat','Header');
+            load(fullfile(Path,FileName{i}),'-mat','Header');
             FileInfo.SyncPeriod = 1/Header.Freq;
             FileInfo.ClockPeriod = 1/Header.Freq;
             FileInfo.ImageTime = Header.FrameTime/Header.Freq;
@@ -601,13 +601,23 @@ switch (Type)
             FileInfo.ScanFreq = FileInfo.Lines/FileInfo.ImageTime;
             FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
             FileInfo.MI_Bins = Header.MI_Bins;
-            load(fullfile(Path,FileName{1}),'-mat','Sim_Photons');
+            load(fullfile(Path,FileName{i}),'-mat','Sim_Photons');
+            
+            %%% if multiple files are loaded, consecutive files need to
+            %%% be offset in time with respect to the previous file
+            MaxMT = 0;
+            if any(sum(~cellfun(@isempty,TcspcData.MT),2))
+                MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+            end
+            
             for j = 1:size(Sim_Photons,1)               
-               if any(Rout(Det == j) == 1)
-                   TcspcData.MT{j,1} = [TcspcData.MT{j,1} double(Sim_Photons{j,1})];
-                   Sim_Photons{j,1} = []; %%% Removes photons to reduce data duplication 
-                   TcspcData.MI{j,1} = [TcspcData.MI{j,1} Sim_Photons{j,2}];
-                   Sim_Photons{j,2} = []; %%% Removes photons to reduce data duplication 
+                if any(Rout(Det == j) == 1)
+                    %if (i == 1 && j == 5) || (i == 2 && j == 1) % this option can be used to load file 1 in the parallel channel and file 2 in the perpendicular channel, for when you simulated data with 2 IRF widths.
+                        TcspcData.MT{j,1} = [TcspcData.MT{j,1}; MaxMT + double(Sim_Photons{j,1})];
+                        Sim_Photons{j,1} = []; %%% Removes photons to reduce data duplication
+                        TcspcData.MI{j,1} = [TcspcData.MI{j,1}; Sim_Photons{j,2}];
+                        Sim_Photons{j,2} = []; %%% Removes photons to reduce data duplication
+                    %end
                end
             end            
             for j = 1:Header.Frames
