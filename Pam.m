@@ -1091,12 +1091,13 @@ addpath(genpath(['.' filesep 'functions']));
     h.Cor_fFCS.CrossCorr_Checkbox  = uicontrol(...
         'Style','checkbox',...
         'Parent',h.Cor_fFCS.Panel,...
-        'String','Enable cross-correlation',...
+        'String','Enable independent channels',...
         'Callback',@Update_fFCS_GUI,...
         'Units','normalized',...
         'Position',[0.01, 0.5, 0.28,0.08],...
         'Tag','CrossCorr_Checkbox',...
         'FontSize',12,...
+        'TooltipString',sprintf('Enables cross-correlation between independent channels \n with separate filter generation'),...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     %%% table of loaded microtime patterns
@@ -1165,7 +1166,13 @@ addpath(genpath(['.' filesep 'functions']));
         'ColumnEditable',ColumnEditable,...      
         'ColumnFormat',ColumnFormat...
         );
-    
+    h.Cor_fFCS.MIPattern_Axis_Menu = uicontextmenu(...
+        'Tag','MIPattern_Axis_Menu');
+    h.Cor_fFCS.MIPattern_Axis_Log = uimenu(h.Cor_fFCS.MIPattern_Axis_Menu,...
+        'Callback',@Update_fFCS_GUI,...
+        'Label','YScale log',...
+        'Checked','off');
+   
     %%% plot for microtime patterns
     h.Cor_fFCS.MIPattern_Axis = axes(...
         'Parent',h.Cor_fFCS.Tab,...
@@ -1175,6 +1182,7 @@ addpath(genpath(['.' filesep 'functions']));
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'Position',[0.06 0.275 0.925 0.22],...
+        'UIContextMenu',h.Cor_fFCS.MIPattern_Axis_Menu,...
         'Box','on');
     h.Cor_fFCS.MIPattern_Axis.XLabel.String='';
     h.Cor_fFCS.MIPattern_Axis.XLabel.Color=Look.Fore;
@@ -8675,7 +8683,7 @@ switch obj
         delete(h.Cor_fFCS.Filter_Axis.Children);
         delete(h.Cor_fFCS.MIPattern_Axis2.Children);
         delete(h.Cor_fFCS.Filter_Axis2.Children);
-        
+
         %%% hide/unhide plots as needed
         if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0 %%% only use main plot
             h.Cor_fFCS.MIPattern_Axis2.Visible = 'off';
@@ -8731,6 +8739,8 @@ switch obj
         % read out avtive species
         active = find(cell2mat(h.Cor_fFCS.MIPattern_Table.Data(:,2)))';
         
+        %%% define colors
+        colors = lines(numel(active));
         %%% rational: 
         %%% 1.) read out mi patterns
         %%% 2.) do checkup (length of loaded patterns need to be adjusted
@@ -8796,7 +8806,7 @@ switch obj
             end
             if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0 %%% only use main plot
                 for i = active
-                    h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--');
+                    h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--','Color',colors(i,:));
                 end
                 h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist{u}(plotrange)./sum(PamMeta.fFCS.Decay_Hist{u}),'k');
                 h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
@@ -8804,13 +8814,13 @@ switch obj
                 switch u
                     case 1
                         for i = active
-                            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--');
+                            h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--','Color',colors(i,:));
                         end
                         h.Plots.fFCS.MI_Plots{end+1} = plot(h.Cor_fFCS.MIPattern_Axis,PamMeta.fFCS.Decay_Hist{u}(plotrange)./sum(PamMeta.fFCS.Decay_Hist{u}),'k');
                         h.Cor_fFCS.MIPattern_Axis.XLim = [1,numel(plotrange)];
                     case 2
                         for i = active
-                            h.Plots.fFCS.MI_Plots2{end+1} = plot(h.Cor_fFCS.MIPattern_Axis2,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--');
+                            h.Plots.fFCS.MI_Plots2{end+1} = plot(h.Cor_fFCS.MIPattern_Axis2,PamMeta.fFCS.MI_Hist{u}{i}(plotrange),'--','Color',colors(i,:));
                         end
                         h.Plots.fFCS.MI_Plots2{end+1} = plot(h.Cor_fFCS.MIPattern_Axis2,PamMeta.fFCS.Decay_Hist{u}(plotrange)./sum(PamMeta.fFCS.Decay_Hist{u}),'k');
                         h.Cor_fFCS.MIPattern_Axis2.XLim = [1,numel(plotrange)];
@@ -8848,19 +8858,19 @@ switch obj
             %%% plot new filters
             if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0 %%% only use main plot
                 for i = 1:numel(active)
-                    h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange));
+                    h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange),'Color',colors(i,:));
                 end
                 h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
             else
                 switch u
                     case 1
                         for i = 1:numel(active)
-                            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange));
+                            h.Plots.fFCS.Filter_Plots{end+1} = plot(h.Cor_fFCS.Filter_Axis,PamMeta.fFCS.filters{u}{i}(plotrange),'Color',colors(i,:));
                         end
                         h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
                     case 2
                         for i = 1:numel(active)
-                            h.Plots.fFCS.Filter_Plots2{end+1} = plot(h.Cor_fFCS.Filter_Axis2,PamMeta.fFCS.filters{u}{i}(plotrange));
+                            h.Plots.fFCS.Filter_Plots2{end+1} = plot(h.Cor_fFCS.Filter_Axis2,PamMeta.fFCS.filters{u}{i}(plotrange),'Color',colors(i,:));
                         end
                         h.Cor_fFCS.Filter_Axis2.XLim = [1,numel(plotrange)];
                 end
@@ -8875,6 +8885,15 @@ switch obj
         h.Cor_fFCS.Filter_Axis.XLim = [1,numel(plotrange)];
         h.Cor_fFCS.Filter_Axis.YLimMode = 'auto';
         
+        %%% add legends
+        names = [PamMeta.fFCS.MIPattern_Name, {'Scatter'}];
+        names = names(active); names{end+1} = 'total';
+        if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0
+            legend(h.Cor_fFCS.MIPattern_Axis,names);
+        else
+            legend(h.Cor_fFCS.MIPattern_Axis,'off');
+            legend(h.Cor_fFCS.MIPattern_Axis2,names);
+        end
         %%% save new plots in guidata
         guidata(findobj('Tag','Pam'),h)
     case h.Cor_fFCS.Do_fFCS_Button
@@ -8916,6 +8935,18 @@ switch obj
             h.Cor_fFCS.PIEchan_Table.ColumnWidth = {0.8*x,0.18*x};
             h.Cor_fFCS.PIEchan_Table.ColumnName = {'Channel','Use'};
             h.Cor_fFCS.PIEchan_Table.Units = 'normalized';
+        end
+    case h.Cor_fFCS.MIPattern_Axis_Log
+        %%% set YScale to log
+        switch obj.Checked
+            case 'off'
+                obj.Checked = 'on';
+                h.Cor_fFCS.MIPattern_Axis.YScale = 'log';
+                h.Cor_fFCS.MIPattern_Axis2.YScale = 'log';
+            case 'on'
+                obj.Checked = 'off';
+                h.Cor_fFCS.MIPattern_Axis.YScale = 'lin';
+                h.Cor_fFCS.MIPattern_Axis2.YScale = 'lin';
         end
 end
 
