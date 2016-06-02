@@ -8889,6 +8889,7 @@ switch obj
         names = [PamMeta.fFCS.MIPattern_Name, {'Scatter'}];
         names = names(active); names{end+1} = 'total';
         if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0
+            legend(h.Cor_fFCS.MIPattern_Axis,'off');
             legend(h.Cor_fFCS.MIPattern_Axis,names);
         else
             legend(h.Cor_fFCS.MIPattern_Axis,'off');
