@@ -3109,6 +3109,7 @@ switch mode
         Columns{4}='<HTML> BGD [kHz]';
         Columns{5}='<HTML> BGA [kHz]';
         Columns{6}='<HTML> R0 [A]';
+        Columns{7}='<HTML> Bin [ms]';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(:) = 80;
         h.ParametersTab.Table.ColumnName=Columns;
@@ -3121,7 +3122,7 @@ switch mode
         h.ParametersTab.Table.RowName=Rows;
         %%% Create table data:
         % fill in the all row
-        tmp = [1; 0; 0.02; 0; 0; 50];
+        tmp = [1; 0; 0.02; 0; 0; 50; 1];
         Data=deal(num2cell(tmp)');
         %Data=cellfun(@num2str,Data,'UniformOutput',false);
         h.ParametersTab.Table.Data=Data;
@@ -3155,6 +3156,7 @@ switch mode
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
             tmp(i,6) = PDAData.Corrections{i}.FoersterRadius;
+            tmp(i,7) = round(PDAData.timebin(i)*10000)/10;
         end
         Data(size(h.ParametersTab.Table.Data,1):(end-1),:) = num2cell(tmp(size(h.ParametersTab.Table.Data,1):end,:));
         % put the ALL row to the mean of the loaded data 
@@ -3175,6 +3177,7 @@ switch mode
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
             tmp(i,6) = PDAData.Corrections{i}.FoersterRadius;
+            tmp(i,7) = round(PDAData.timebin(i)*10000)/10;
         end
         h.ParametersTab.Table.Data(1:end-1,:) = num2cell(tmp);
         PDAMeta.PreparationDone = 0;
@@ -3183,14 +3186,19 @@ switch mode
         % touching a ALL value cell applies that value everywhere
         h.ParametersTab.Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(1)~=size(h.ParametersTab.Table.Data,1) && e.Indices(2)~=1)
+            if isempty(e.Indices) || (e.Indices(1)~=size(h.ParametersTab.Table.Data,1) && e.Indices(2)~=1)                                                                                             
                 h.ParametersTab.Table.CellEditCallback={@Update_ParamTable,3};
                 return;
             end
             NewData = h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)};
         end
         if isprop(e,'NewData')
-            NewData = e.NewData;
+            if e.Indices(2) ~= 7
+                NewData = e.NewData;
+            else
+                NewData = e.PreviousData; %used in the all row
+                h.ParametersTab.Table.Data{e.Indices(1),e.Indices(2)} = e.PreviousData; % the bin column was touched
+            end
         end
         if e.Indices(1)==size(h.ParametersTab.Table.Data,1)
             %% ALL row was used => Applies to all files
@@ -3342,7 +3350,6 @@ msgbox({...
     'add a legend in the plots';...
     'sigma cannot be zero or a very small number';...
     'possibility to plot the actual E instead of Epr';...
-    'dynamic PDA fit';...
     'brightness corrected PDA';...
     'put the optimplotfval into the gauss plot, so fitting can be evaluated per iteration, rather than per function sampling';...
     'fix the ignore outer limits for MLE fitting';...
