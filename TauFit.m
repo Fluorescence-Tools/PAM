@@ -701,7 +701,7 @@ if exist('ph','var')
                     'Checked','off',...
                     'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
-            case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}%{ph.Burst.BurstLifetime_Button, ph.Database.Burst}
+            case {ph.Burst.BurstLifetime_Button, ph.Database.Burst, ph.Burst.Button}%{ph.Burst.BurstLifetime_Button, ph.Database.Burst}
                 TauFitData.Who = 'Burstwise';
                 %%%?User Clicks Burstwise Lifetime button in Pam or clicks
                 %%%Burst Analysis on database tab in Pam
@@ -1223,19 +1223,20 @@ end
 
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
 if exist('ph','var')
-    if isequal(obj, ph.Database.Burst) || isequal(obj, ph.Burst.Button)
-        for j = 1:numel(Channel_String) 
-            % Save images of the individual plots
-            h.ChannelSelect_Popupmenu.Value = j;
-            Update_Plots(obj)
-            f = ExportGraph(h.Microtime_Plot_Export);
-            close(f)
-            Start_Fit(h.Fit_Button)
-            f = ExportGraph(h.Export_Result);
-            close(f)
-        end
-        BurstWise_Fit(h.BurstWiseFit_Button)
-        close(h.TauFit);
+    switch obj
+        case {ph.Database.Burst, ph.Burst.Button}
+            for j = 1:numel(Channel_String)
+                % Save images of the individual plots
+                h.ChannelSelect_Popupmenu.Value = j;
+                Update_Plots(obj)
+                f = ExportGraph(h.Microtime_Plot_Export);
+                close(f)
+                Start_Fit(h.Fit_Button)
+                f = ExportGraph(h.Export_Result);
+                close(f)
+            end
+            BurstWise_Fit(h.BurstWiseFit_Button)
+            close(h.TauFit);
     end
 end
 
