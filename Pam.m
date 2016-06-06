@@ -3316,7 +3316,7 @@ if any(mode==6)
         UserValues.Phasor.Reference(end,To) = 0;
     end
     %%% Plots Reference histogram 
-    Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 Shift]);Ref=Ref(From:To);
+    Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
     h.Plots.PhasorRef.YData=(Ref-min(Ref))/(max(Ref)-min(Ref));
     %%% Plots Phasor microtime    
@@ -5273,11 +5273,12 @@ Update_Display([],[],6);
 %%% Function to assign histogram as Phasor reference %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_UseRef(~,~)
-global UserValues PamMeta
+global UserValues PamMeta FileInfo
 h=guidata(findobj('Tag','Pam'));
 Det=h.MI.Phasor_Det.Value;
 %%% Sets reference to 0 in case of shorter MI length
 UserValues.Phasor.Reference(Det,:)=0;
+UserValues.Phasor.Reference(:,FileInfo.MI_Bins+1:end)=[];
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
@@ -5316,7 +5317,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         M_ref  = 1/sqrt(1+(2*pi*Ref_LT/TAC)^2);
         
         %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)/sum(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)),[0 Shift]);
+        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)/sum(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)),[0 round(Shift)]);
+        Ref = Ref(1:Bins);
         if From>1
             Ref(1:(From-1))=0;
         end
@@ -5324,6 +5326,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             Ref(To+1:Bins)=0;
         end
         Ref_Mean=sum(Ref.*(1:Bins))/sum(Ref)*TAC/Bins-Ref_LT;       
+        Ref = Ref./sum(Ref);
         
         %%% Calculates phase and modulation of the instrument
         G_inst(1:Bins)=cos((2*pi./Bins)*(1:Bins)-Fi_ref)/M_ref;
@@ -5332,7 +5335,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         s_inst=sum(Ref(1:Bins).*S_inst);
         Fi_inst=atan(s_inst/g_inst);
         M_inst=sqrt(s_inst^2+g_inst^2);
-        if (g_inst<0 && s_inst<0)
+        if (g_inst<0 || s_inst<0)
             Fi_inst=Fi_inst+pi;
         end
         
@@ -5341,6 +5344,11 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         
+        if numel(FileInfo.Lines) == 1 
+            %%% Point measurement, split up according to bins set for FCS analyis
+            FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
+            FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
+        end
         %%% Calculates Pixel vector
         Pixeltimes=0;
         for j=1:FileInfo.Lines
@@ -5348,7 +5356,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         
         %%% Calculates, which Photons belong to which pixel
-        Intensity=histc(Photons,Pixeltimes(1:end-1).*FileInfo.ClockPeriod);        
+        Intensity=histc(Photons,Pixeltimes.*FileInfo.ClockPeriod);
+        Intensity = Intensity(1:end-1);
         clear Photons
         Pixel=[1;cumsum(Intensity)];
         Pixel(Pixel==0)=1;
