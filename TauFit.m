@@ -53,6 +53,8 @@ h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','fitted microtime pa
     'Callback',@Export);
 h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
     'Callback',@Export);
+h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
+    'Callback',@Export);
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
 h.TauFit_Panel = uibuttongroup(...
@@ -4630,4 +4632,49 @@ switch obj
             ax = h.Microtime_Plot;
         end
         plot_to_txt(ax,1);
+    case h.Menu.Save_To_Txt
+        %%% Saves data to txt file (csv), containing:
+        %%%
+        %%% time axis
+        %%% data
+        %%% fit function
+        %%%
+        %%% Considers only the valid region outside of ignore
+        
+        if h.Result_Plot.Parent == h.HidePanel % no fit has been performed
+            disp('Fit the data first');
+            return;
+        end
+       
+        if (h.Result_Plot_Aniso.Parent == h.HidePanel) %%% no anistropy reconvolution fit
+            time = h.Plots.DecayResult.XData; time = time-time(1);
+            data = h.Plots.DecayResult.YData;
+            fit =  h.Plots.FitResult.YData;
+            res = h.Plots.Residuals.YData;
+            if strcmp(h.Result_Plot.YLabel.String,'Anisotropy')
+                names = {'time_ns','anisotropy','fit','wres'};
+            else
+                names = {'time_ns','intensity','fit','wres'};
+            end
+            tab = table(time',data',fit',res','VariableNames',names);
+        else
+            %%% anisotropy reconvolution fit
+            time = h.Plots.DecayResult.XData; time = time-time(1);
+            data_par = h.Plots.DecayResult.YData;
+            data_per = h.Plots.DecayResult_Perp.YData;
+            fit_par =  h.Plots.FitResult.YData;
+            fit_per =  h.Plots.FitResult_Perp.YData;
+            res_par = h.Plots.Residuals.YData;
+            res_per = h.Plots.Residuals_Perp.YData;
+            aniso_data = h.Plots.AnisoResult.YData;
+            aniso_fit = h.Plots.FitAnisoResult.YData;
+            names = {'time_ns','intensity_par','intensity_per','fit_par','fit_per','wres_par','wres_per','anisotropy','anisotropy_fit'};
+            tab= table(time',data_par',data_per',fit_par',fit_per',res_par',res_per',aniso_data',aniso_fit','VariableNames',names);
+        end
+        %%% get path
+        [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file');
+        if FilterIndex == 0
+            return;
+        end
+        writetable(tab,fullfile(pathname,filename));
 end
