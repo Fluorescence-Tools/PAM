@@ -327,11 +327,17 @@ if Mode==0 %%% Loads user values
     end
     P.Settings.Pam.MT_Number_Section = S.Settings.Pam.MT_Number_Section;
     %%% Checks, if Pam.Multi_Cor subfield exists
-    if ~isfield (S.Settings.Pam, 'Multi_Core')
-        S.Settings.Pam.Multi_Core='on';
-        disp('UserValues.Settings.Pam.Multi_Cor was incomplete');
+    if ~isfield (S.Settings.Pam, 'ParallelProcessing')
+        S.Settings.Pam.ParallelProcessing=0;
+        disp('UserValues.Settings.Pam.ParallelProcessing was incomplete');
     end
-    P.Settings.Pam.Multi_Core = S.Settings.Pam.Multi_Core;
+    P.Settings.Pam.ParallelProcessing = S.Settings.Pam.ParallelProcessing;
+    %%% Checks, if Pam.Multi_Cor subfield exists
+    if ~isfield (S.Settings.Pam, 'NumberOfCores')
+        S.Settings.Pam.NumberOfCores=2;
+        disp('UserValues.Settings.Pam.NumberOfCores was incomplete');
+    end
+    P.Settings.Pam.NumberOfCores = S.Settings.Pam.NumberOfCores;
     %%% Checks, if Pam.Cor_Divider subfield exists
     if ~isfield (S.Settings.Pam, 'Cor_Divider')
         S.Settings.Pam.Cor_Divider=1;

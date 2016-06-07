@@ -138,64 +138,83 @@ addpath(genpath(['.' filesep 'functions']));
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenFCSFit',...
         'Label','FCSFit',...
-        'Callback',{@separate_process,@FCSFit});
+        'Callback',@FCSFit);
     
     h.Menu.OpenMIAFit = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenMIAFit',...
         'Label','MIAFit',...
-        'Callback',{@separate_process,@MIAFit});
+        'Callback',@MIAFit);
     h.Menu.OpenTauFit = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenTauFit',...
         'Label','TauFit',...
-        'Callback',{@separate_process,@TauFit});
+        'Callback',@TauFit);
     h.Menu.OpenBurstBrowser = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Separator','on',...
         'Tag','OpenBurstBrowser',...
         'Label','BurstBrowser',...
-        'Callback',{@separate_process,@BurstBrowser});
+        'Callback',@BurstBrowser);
     h.Menu.OpenPDA = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenPDA',...
         'Label','PDAFit',...
-        'Callback',{@separate_process,@GlobalPDAFit});
+        'Callback',@GlobalPDAFit);
     h.Menu.OpenMia = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenMia',...
         'Label','MIA',...
-        'Callback',{@separate_process,@Mia});
+        'Callback',@Mia);
     h.Menu.OpenPhasor = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenPhasor',...
         'Label','Phasor',...
-        'Callback',{@separate_process,@Phasor});
+        'Callback',@Phasor);
     h.Menu.OpenPhasorTIFF = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenPhasorTIFF',...
         'Label','PhasorTIFF',...
-        'Callback',{@separate_process,@PhasorTIFF});
+        'Callback',@PhasorTIFF);
     h.Menu.OpenPCF = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenPCF',...
         'Label','PCF Analysis',...
-        'Callback',{@separate_process,@PCFAnalysis});
+        'Callback',@PCFAnalysis);
    h.Menu.OpenTCPDA = uimenu(...
         'Parent', h.Menu.AdvancedAnalysis,...
         'Tag','OpenTCPDA',...
         'Label','tcPDA',...
-        'Callback',{@separate_process,@tcPDA});
+        'Callback',@tcPDA);
     
     h.Menu.Extras = uimenu(...
         'Parent',h.Pam,...
         'Tag','Extras',...
         'Label','Extras');
+    h.Menu.ParallelProcessing = uimenu(...
+        'Parent',h.Menu.Extras,...
+        'Tag','ParallelProcessing',...
+        'Label','Parallel Processing');
+    h.Menu.UseParfor = uimenu(...
+        'Parent',h.Menu.ParallelProcessing,...
+        'Tag','UseParfor',...
+        'Label','Enable Multicore',...
+        'Callback',@Calculate_Settings);
+    if UserValues.Settings.Pam.ParallelProcessing == 0
+        h.Menu.UseParfor.Checked = 'off';
+    else
+        h.Menu.UseParfor.Checked = 'on';
+    end
+    h.Menu.NumberOfCores = uimenu(...
+        'Parent',h.Menu.ParallelProcessing,...
+        'Tag','UseParfor',...
+        'Label',['Number of Cores: ' num2str(UserValues.Settings.Pam.NumberOfCores)],...
+        'Callback',@Calculate_Settings);
     h.Menu.Sim = uimenu(...
         'Parent', h.Menu.Extras,...
         'Tag','Sim_Menu',...
         'Label','Simulate photon data',...
-        'Callback',{@separate_process,@Sim});
+        'Callback',@Sim);
     h.Menu.Look = uimenu(...
         'Parent', h.Menu.Extras,...
         'Tag','Look_Menu',...
@@ -345,12 +364,6 @@ addpath(genpath(['.' filesep 'functions']));
         'Position',[0 0.52 1 0.48]);
     %%% Contexmenu for correlation table
     h.Cor.Menu = uicontextmenu;
-    %%% multicorsupport
-    h.Cor.Multi_Menu = uimenu(...
-        'Parent',h.Cor.Menu,...
-        'Label','Use Multi-core',...
-        'Tag','Cor_Multi_Menu',...
-        'Callback',@Calculate_Settings);
     %%% Sets a divider for correlation
     h.Cor.Divider_Menu = uimenu(...
         'Parent',h.Cor.Menu,...
@@ -2872,10 +2885,6 @@ elseif obj == h.MT.Time_Section
 elseif obj == h.MT.Number_Section
     UserValues.Settings.Pam.MT_Number_Section=str2double(h.MT.Number_Section.String);
     Update_Display([],[],2);
-%%% Turns usa of multiple cores on/off 
-elseif obj == h.Cor.Multi_Menu
-    h.Cor.Multi_Menu.Checked=cell2mat(setxor(h.Cor.Multi_Menu.Checked,{'on','off'}));
-    UserValues.Settings.Pam.Multi_Core=h.Cor.Multi_Menu.Checked;
 %%% Sets new divider
 elseif obj == h.Cor.Divider_Menu
     %%% Opens input dialog and gets value 
@@ -2919,6 +2928,30 @@ elseif obj == h.MI.ScatterPattern
     Update_Display([],[],8);
 elseif obj ==  h.Burst.SaveTotalPhotonStream_Checkbox
         UserValues.BurstSearch.SaveTotalPhotonStream = obj.Value;
+elseif obj == h.Menu.UseParfor
+    %%% Sets number of workers used for parpool to 0 or Inf
+    if strcmp(obj.Checked,'on')
+        obj.Checked = 'off';
+        UserValues.Settings.Pam.ParallelProcessing = 0;
+    else
+        obj.Checked = 'on';
+        UserValues.Settings.Pam.ParallelProcessing = Inf;
+    end
+elseif obj == h.Menu.NumberOfCores
+     %%% Opens input dialog and gets value 
+    NumberOfCores=inputdlg('New number of cores to use:','Specify the number of cores',1,{num2str(UserValues.Settings.Pam.NumberOfCores)});
+    if ~isempty(NumberOfCores)
+        NumberOfCores = round(str2double(cell2mat(NumberOfCores)));
+        %%% compare with available cores
+        maxCores = feature('numCores');
+        NumberOfCores = min([maxCores,NumberOfCores]);
+        %%% make minimum of 2
+        if NumberOfCores < 2
+            NumberOfCores = 2;
+        end
+        h.Menu.NumberOfCores.Label=['Number of Cores: ' num2str(NumberOfCores)];
+        UserValues.Settings.Pam.NumberOfCores=NumberOfCores;
+    end
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -4406,7 +4439,6 @@ ColumnWidth=cellfun(@length,UserValues.PIE.Name).*6+16;
 ColumnWidth(end+1)=37; %%% Row = 3*8+16;
 h.Cor.Table.ColumnWidth=num2cell(ColumnWidth);
 h.Cor.Table.Data = UserValues.Settings.Pam.Cor_Selection;
-h.Cor.Multi_Menu.Checked=UserValues.Settings.Pam.Multi_Core;
 h.Cor.Divider_Menu.Label=['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)];
 
 %%% Updates Detector calibration and Phasor channel lists
@@ -4481,6 +4513,9 @@ function Correlate (~,~,mode)
 h=guidata(findobj('Tag','Pam'));
 global UserValues TcspcData FileInfo PamMeta
 
+h.Progress.Text.String = 'Opening Parallel Pool ...';
+StartParPool();
+
 h.Progress.Text.String = 'Starting Correlation';
 h.Progress.Axes.Color=[1 0 0];
 
@@ -4524,15 +4559,6 @@ if ~isempty(NCors)
     %%% Save path
     UserValues.File.Path=Path;
     LSUserValues(1);
-    %%% Initializes matlabpool for paralell computation
-    if strcmp(h.Cor.Multi_Menu.Checked,'on')
-        Pool=gcp;
-        if isempty(Pool)
-            h.Progress.Text.String='Opening matlabpool';
-            drawnow;
-            parpool('local');
-        end        
-    end
 end
 
 for m=NCors %%% Goes through every File selected (multiple correlation) or just the one already loaded(single file correlation)   
@@ -5020,19 +5046,11 @@ function Correlate_fFCS(~,~)
 h=guidata(findobj('Tag','Pam'));
 global UserValues FileInfo PamMeta
 
+h.Progress.Text.String = 'Opening Parallel Pool ...';
+StartParPool();
+
 h.Progress.Text.String = 'Starting Correlation';
 h.Progress.Axes.Color=[1 0 0];
-
-%%% Initializes matlabpool for paralell computation
-if strcmp(h.Cor.Multi_Menu.Checked,'on')
-    Pool=gcp;
-    if isempty(Pool)
-        h.Progress.Text.String='Opening matlabpool';
-        drawnow;
-        parpool('local');
-    end        
-end
-
 
 %%% Calculates the maximum inter-photon time in clock ticks
 Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.ClockPeriod)/UserValues.Settings.Pam.Cor_Divider;
@@ -6370,9 +6388,12 @@ end
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function NirFilter(~,~)
-global BurstData
+global BurstData UserValues
 h = guidata(findobj('Tag','Pam'));
 
+%%% Open Parpool
+h.Progress.Text.String = 'Opening Parallel Pool...';
+StartParPool();
 % possibilites for tau_2CDE
 % number eg. 100
 % some numbers eg. 100;200
@@ -6405,7 +6426,7 @@ for t=1:numel(tau_2CDE)
         parts = (floor(linspace(1,numel(Macrotime),11)));
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            for i = parts(j):parts(j+1)
+            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
                 [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
             end
         end
@@ -6420,7 +6441,7 @@ for t=1:numel(tau_2CDE)
         parts = (floor(linspace(1,numel(Macrotime),11)));
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            parfor i = parts(j):parts(j+1)
+            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
                 [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
             end
         end    
@@ -9024,11 +9045,3 @@ for i = 1:numel(UserValues.PIE.Name)
         UserValues.PIE.Background(i));
 end
 fclose(fid);
-
-function separate_process(obj,eventdata,func)
-%%% executes subfunction in separate process
-%%% Set as callback using {@separate_process,@func}
-%%% This will pass handle and eventdata as first two arguments, and the
-%%% function as third
-%%% Only works if func does not need any inputs passed!
-eval([func2str(func) ' &;']);

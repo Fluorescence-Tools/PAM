@@ -1859,7 +1859,7 @@ switch Obj
                 /(sum(SimData.Species(Sel).Cross(:,i)));            
             h.Sim_Brightness{i}.String = num2str(SimData.Species(Sel).Brightness(i));
         end
-    case h.Sim_R0 %%% Changed Förster radius
+    case h.Sim_R0 %%% Changed F?rster radius
         for i=1:3
             for j=1:3   
                 if j<=i
@@ -2163,20 +2163,10 @@ File_List_Callback([],[],3);
 %%% Peforms actual simulation procedure for point detector observation %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_PointSim(~,~)
-global SimData
+global SimData UserValues
 h = guidata(findobj('Tag','Sim'));
 
-% Pool = gcp;
-% if isempty(Pool)
-%     parpool('local');
-% end
-if h.Sim_MultiCore.Value
-    Pool=gcp;
-    if isempty(Pool)
-        parpool('local');
-    end
-end
-
+StartParPool();
 %%% ScanType
 Scan_Type = h.Sim_Scan.Value;
 %%% Box Size
@@ -2361,7 +2351,7 @@ if ~advanced
             'ExecutionMode','fixedDelay');
         start(Update)
 
-        parfor j = 1:NoP
+        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 
@@ -2830,7 +2820,7 @@ if advanced
             'ExecutionMode','fixedDelay');
         start(Update)
 
-        parfor j = 1:NoP
+        parfor (j = 1:NoP,UserValues.Settings.Pam.ParallelProcessing)
             %%% Generates starting position
             Pos = (BS-1).*rand(1,3);    
 

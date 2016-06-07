@@ -3829,6 +3829,9 @@ function BurstWise_Fit(obj,~)
 global BurstData UserValues TauFitData
 h = guidata(findobj('Tag','TauFit'));
 
+h.Progress_Text.String = 'Opening Parallel Pool ...';
+StartParPool();
+
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
 
@@ -3932,14 +3935,14 @@ switch TauFitData.BAMethod
                     case {1,2}
                         Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
                         Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-                        parfor i = 1:numel(MI)
+                        parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                             Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
                             Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
                         end                
                     case 5
                         Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
                         Per1 = Par1;
-                        parfor i = 1:numel(MI)
+                        parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                             Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
                             Per1(i,:) = Par1(i,:);
                         end                
@@ -3954,7 +3957,7 @@ switch TauFitData.BAMethod
                 
                 %%% Rebin to improve speed
                 Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
                 end
                 Mic{1} = Mic1'; clear Mic1;
@@ -3965,14 +3968,14 @@ switch TauFitData.BAMethod
                     case {1,2}
                         Par2 = zeros(numel(MI),numel(BurstData.PIE.From(5):BurstData.PIE.To(5)));
                         Per2 = zeros(numel(MI),numel(BurstData.PIE.From(6):BurstData.PIE.To(6)));
-                        parfor i = 1:numel(MI)
+                        parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                             Par2(i,:) = histc(MI{i}(CH{i} == 5),(BurstData.PIE.From(5):BurstData.PIE.To(5)))';
                             Per2(i,:) = histc(MI{i}(CH{i} == 6),(BurstData.PIE.From(6):BurstData.PIE.To(6)))';
                         end
                     case 5
                         Par2 = zeros(numel(MI),numel(BurstData.PIE.From(3):BurstData.PIE.To(3)));
                         Per2 = Par2;
-                        parfor i = 1:numel(MI)
+                        parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                             Par2(i,:) = histc(MI{i}(CH{i} == 3),(BurstData.PIE.From(3):BurstData.PIE.To(3)))';
                             Per2(i,:) = Par2(i,:);
                         end
@@ -3989,7 +3992,7 @@ switch TauFitData.BAMethod
                 %%% Rebin to improve speed
                 Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
                 
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
                 end
                 Mic{2} = Mic2'; clear Mic2;
@@ -4014,7 +4017,7 @@ switch TauFitData.BAMethod
                     
                     scat = SCATTER{chan};
                     model = MODEL{chan};
-                    parfor i = 1:size(Mic{chan},2)
+                    parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
                         if fraction_bg(i) == 1
                             lt(i,chan) = NaN;
                         else
@@ -4144,7 +4147,7 @@ switch TauFitData.BAMethod
                 %%% Create array of histogrammed microtimes
                 Par1 = zeros(numel(MI),numel(BurstData.PIE.From(1):BurstData.PIE.To(1)));
                 Per1 = zeros(numel(MI),numel(BurstData.PIE.From(2):BurstData.PIE.To(2)));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Par1(i,:) = histc(MI{i}(CH{i} == 1),(BurstData.PIE.From(1):BurstData.PIE.To(1)))';
                     Per1(i,:) = histc(MI{i}(CH{i} == 2),(BurstData.PIE.From(2):BurstData.PIE.To(2)))';
                 end
@@ -4159,7 +4162,7 @@ switch TauFitData.BAMethod
                 
                 %%% Rebin to improve speed
                 Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
                 end
                 Mic{1} = Mic1'; clear Mic1;
@@ -4168,7 +4171,7 @@ switch TauFitData.BAMethod
                 %%% Create array of histogrammed microtimes
                 Par2 = zeros(numel(MI),numel(BurstData.PIE.From(7):BurstData.PIE.To(7)));
                 Per2 = zeros(numel(MI),numel(BurstData.PIE.From(8):BurstData.PIE.To(8)));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Par2(i,:) = histc(MI{i}(CH{i} == 7),(BurstData.PIE.From(7):BurstData.PIE.To(7)))';
                     Per2(i,:) = histc(MI{i}(CH{i} == 8),(BurstData.PIE.From(8):BurstData.PIE.To(8)))';
                 end
@@ -4182,7 +4185,7 @@ switch TauFitData.BAMethod
                 clear Par2 Per2
                 %%% Rebin to improve speed
                 Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
                 end
                 Mic{2} = Mic2'; clear Mic2;
@@ -4191,7 +4194,7 @@ switch TauFitData.BAMethod
                 %%% Create array of histogrammed microtimes
                 Par3 = zeros(numel(MI),numel(BurstData.PIE.From(11):BurstData.PIE.To(11)));
                 Per3 = zeros(numel(MI),numel(BurstData.PIE.From(12):BurstData.PIE.To(12)));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Par3(i,:) = histc(MI{i}(CH{i} == 11),(BurstData.PIE.From(11):BurstData.PIE.To(11)))';
                     Per3(i,:) = histc(MI{i}(CH{i} == 12),(BurstData.PIE.From(12):BurstData.PIE.To(12)))';
                 end
@@ -4208,7 +4211,7 @@ switch TauFitData.BAMethod
                 %%% Rebin to improve speed
                 
                 Mic3 = zeros(numel(MI),floor(size(Mic{3},2)/new_bin_width));
-                parfor i = 1:numel(MI)
+                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
                     Mic3(i,:) = downsamplebin(Mic{3}(i,:),new_bin_width);
                 end
                 Mic{3} = Mic3'; clear Mic3;
@@ -4231,7 +4234,7 @@ switch TauFitData.BAMethod
                     
                     scat = SCATTER{chan};
                     model = MODEL{chan};
-                    parfor i = 1:size(Mic{chan},2)
+                    parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
                         if fraction_bg(i) == 1
                             lt(i,chan) = NaN;
                         else

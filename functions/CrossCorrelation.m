@@ -7,6 +7,7 @@ function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,We
 %%% ProgressStruct.Test: handles to progress text field
 %%% ProgressStruct.Max: total number of correlation bins
 %%% ProgressStruct.Current: number of correlation bins previously completed
+global UserValues
 
 %%% If no weights are specified, set to 1
 if (nargin < 4) || isempty(Weights1)
@@ -39,7 +40,7 @@ Timeaxis=cumsum([1;Timeaxis]);
 
 
 Cor_Array=repmat({[]},numel(Data1),1);
-parfor i=1:numel(Data1)
+parfor (i=1:numel(Data1),UserValues.Settings.Pam.ParallelProcessing)
     if ~isempty(Data1{i}) && ~isempty(Data2{i})
         %%% Does the crosscorrelation        
         %Cor_Array{i}=Do_CCF(Data1{i},Data2{i},Weights1{i},Weights2{i},10,Timeaxis_Exponent,numel(Data1{i}),numel(Data2{i}),Timeaxis);
@@ -118,7 +119,7 @@ elseif mode == 2
     Norm = cell(numel(Cor_Array),1);
     Countrate1 = cell(numel(Cor_Array),1); 
     Countrate2 = cell(numel(Cor_Array),1);
-    parfor i=1:numel(Cor_Array)
+    parfor (i=1:numel(Cor_Array),UserValues.Settings.Pam.ParallelProcessing)
         Norm{i} = Maxtime(i)-Timeaxis+1;
         Norm{i}(Norm{i}<0) = 0;
         Weights1_Sum = cumsum(Weights1{i});
