@@ -3909,7 +3909,7 @@ switch numel(fieldnames(dummy))
             H{i} = [H{i} H{i}(end)];
         end
         H = vertcat(H{:});
-        figure('Color',[1 1 1],'Position',[100 100 600 450]);
+        figure('Color',[1 1 1],'Position',[700 100 600 400]);
         contourf(xE(1:end),1:1:size(H,1),H);
         colormap(jet);
         ax = gca;
