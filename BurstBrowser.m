@@ -58,7 +58,11 @@ if isempty(hfig)
         'Label','Add Burst File to Database',...
         'enable', 'off',...
         'Callback',{@Database,1});
-    
+    h.Load_Bursts_From_Folder = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','Load New Burst Files from Subfolders',...
+        'Callback',@Load_Burst_Data_Callback,...
+        'Tag','Load_Bursts_From_Folder');
     %%% Save Analysis State
     h.Save_Bursts = uimenu(...
         'Parent',h.File_Menu,...
@@ -79,6 +83,13 @@ if isempty(hfig)
         'Label','More...',...
         'Tag','More_Menu',...
         'Enable','on');
+    %%% Export FRET histograms for all loaded measurements
+    h.FRET_Export_Menu = uimenu(...
+        'Parent',h.More_Menu,...
+        'Label','Export FRET Histograms for all loaded files',...
+        'Callback',@Export_FRET_Hist,...
+        'Tag','FRET_Export_Menu',...
+        'Separator','off');
     %%% FRET Comparions plot from *.his files
     h.FRET_comp_Menu = uimenu(...
         'Parent',h.More_Menu,...
@@ -313,7 +324,7 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Tag','Secondary_Tab',...
         'Units','normalized',...
-        'Position',[0.65 0.205 0.35 0.795]);
+        'Position',[0.65 0.25 0.35 0.75]);
     
     h.Secondary_Tab_Selection = uitab(h.Secondary_Tab,...
         'title','Selection',...
@@ -420,7 +431,7 @@ if isempty(hfig)
     set(h.SpeciesList.container,...% 'Parent', h.SecondaryTabSelectionPanel,...
         'Parent',h.BurstBrowser,...
         'Units','normalize',...
-        'Position',[0.65 0.03 0.35 0.175]);  % fix the uitree Parent
+        'Position',[0.65 0.03 0.35 0.22]);  % fix the uitree Parent
     set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
     
     % Set the tree mouse-click callback
@@ -675,7 +686,13 @@ if isempty(hfig)
         'TooltipString','Apply corrections to selected data',...
         'FontSize',12,...
         'Callback',@ApplyCorrections);
-    
+    h.ApplyCorrection_Menu = uicontextmenu;
+    h.ApplyCorrectionsAll_Menu = uimenu(...
+        'Parent',h.ApplyCorrection_Menu,...
+        'Tag','ApplyCorrectionsAll_Menu',...
+        'Label','Replace corrections of all files with current one',...
+        'Callback',@ApplyCorrections);
+    set(h.ApplyCorrectionsButton,'UIContextMenu',h.ApplyCorrection_Menu);
     %%% Checkbox to enabel/disable beta factor Stoichiometry corrections
     %%% (Corrects S to be 0.5 for double labeled)
     h.UseBetaCheckbox = uicontrol(...
@@ -1225,7 +1242,7 @@ if isempty(hfig)
         'Style','text',...
         'Parent',h.Correlation_Panel,...
         'Units','normalized',...
-        'Position',[0.6 0.015 0.265 0.08],...
+        'Position',[0.6 0.035 0.265 0.08],...
         'Tag','CorrelateWindow_Text',...
         'String','Time window [x10 ms]',...
         'Callback',@UpdateOptions,...
@@ -3053,24 +3070,55 @@ if obj ~= h.DatabaseBB.List
     end
 
     LSUserValues(0);
-    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'on');
-
-    if FilterIndex == 0
-        return;
-    end
-    %%% make pathname to cell array
-    for i = 1:numel(FileName)
-        PathName{i} = pathname;
+    switch obj
+        case h.Load_Bursts
+            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'on');
+            if FilterIndex == 0
+                return;
+            end
+            %%% make pathname to cell array
+            for i = 1:numel(FileName)
+                PathName{i} = pathname;
+            end
+        case h.Load_Bursts_From_Folder
+            %%% Choose a folder and load files from all subfolders
+            %%% only consider one level downwards
+            FileName = cell(0);
+            PathName = cell(0);
+            pathname = uigetdir(UserValues.File.BurstBrowserPath,'Choose a folder. All *.bur files from direct subfolders will be loaded.');
+            subdir = dir(pathname);
+            subdir = subdir([subdir.isdir]);
+            subdir = subdir(3:end); %%% remove '.' and '..' folders
+            if isempty(subdir) %%% no subfolders
+                return;
+            end
+            for i = 1:numel(subdir)
+                files = dir([pathname filesep subdir(i).name]);
+                files = files(3:end);
+                if ~isempty(files) %%% ensure that there are files in this subfolder
+                    for j = 1:numel(files)
+                        if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
+                            FileName{end+1} = files(j).name;
+                            PathName{end+1} = [pathname filesep subdir(i).name];
+                        end
+                    end
+                end
+            end
+            if isempty(FileName)
+                %%% no files have been found
+                return;
+            end
+            FilterIndex = 1; %%% Only bur files supported
     end
 elseif obj == h.DatabaseBB.List
     %%% get Filelist from Database
     PathName = BurstMeta.Database(h.DatabaseBB.List.Value,2);
     FileName = BurstMeta.Database(h.DatabaseBB.List.Value,1);
     FilterIndex = 1;
+    pathname = PathName{1};
 end
 
-LSUserValues(0);
-UserValues.File.BurstBrowserPath=PathName{1};
+UserValues.File.BurstBrowserPath=pathname;
 LSUserValues(1);
 
 %%% Reset Pam Burst GUI
@@ -3094,7 +3142,7 @@ end
 %h.CorrelateWindow_Edit.Enable = 'off';
 %%% Load data
 switch obj
-    case {h.Load_Bursts, h.DatabaseBB.List}
+    case {h.Load_Bursts, h.DatabaseBB.List,h.Load_Bursts_From_Folder}
         %%% clear global variable
         BurstData = [];
         BurstTCSPCData = [];
@@ -6618,16 +6666,38 @@ ApplyCorrections(obj,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Applies Corrections to data  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ApplyCorrections(obj,~,h)
+function ApplyCorrections(obj,~,h,display_update)
 global BurstData UserValues BurstMeta
 if nargin == 2
     h = guidata(obj);
+end
+if nargin < 4
+    display_update = 1; %%% default to true
 end
 if nargin > 0
     if obj == h.UseBetaCheckbox
         UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
         LSUserValues(1);
     end
+end
+if obj == h.ApplyCorrectionsAll_Menu
+    %%% Set all files Corrections to values for current file
+    BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
+    Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
+    for i = 1:numel(BurstData)
+        if BurstData{i}.BAMethod == BAMethod
+            BurstData{i}.Corrections = Corrections;
+        end
+    end
+    %%% Apply Corrections
+    sel_file = BurstMeta.SelectedFile;
+    for i = 1:numel(BurstData)
+        BurstMeta.SelectedFile = i;
+        ApplyCorrections([],[],h,0); %%% Apply without display update
+    end
+    BurstMeta.SelectedFile = sel_file;
+    %%% Apply with display update
+    ApplyCorrections([],[],h);
 end
 file = BurstMeta.SelectedFile;
 %% 2colorMFD
@@ -6862,12 +6932,15 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
 end
 
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
-%%% Update Display
-UpdateCuts;
 
-UpdatePlot([],[],h);
-UpdateLifetimePlots([],[],h);
-PlotLifetimeInd([],[],h);
+if display_update
+    %%% Update Display
+    UpdateCuts;
+
+    UpdatePlot([],[],h);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8279,24 +8352,35 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Export_FRET_Hist(~,~)
+function Export_FRET_Hist(obj,~)
 global BurstData UserValues BurstMeta
-%h = guidata(findobj('Tag','BurstBrowser'));
-file = BurstMeta.SelectedFile;
-SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
-SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
-filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
-switch BurstData{file}.BAMethod
-    case {1,2}
-        E = BurstData{file}.DataCut(:,1);
-        %%% Save E array in *.his file
-        save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
-    case {3,4}
-        EGR = BurstData{file}.DataCut(:,1);
-        EBG = BurstData{file}.DataCut(:,2);
-        EBR = BurstData{file}.DataCut(:,3);
-        %%% Save E array in *.his file
-        save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+if ~isempty(obj)
+    %%% called from menu, loop over all files
+    sel_file = BurstMeta.SelectedFile;
+    for i = 1:numel(BurstData);
+        BurstMeta.SelectedFile = i;
+        %%% Make sure to apply corrections
+        ApplyCorrections(obj,[]);
+        Export_FRET_Hist([],[]);
+    end
+    BurstMeta.SelectedFile = sel_file;
+else
+    file = BurstMeta.SelectedFile;
+    SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+    SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
+    filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            E = BurstData{file}.DataCut(:,1);
+            %%% Save E array in *.his file
+            save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
+        case {3,4}
+            EGR = BurstData{file}.DataCut(:,1);
+            EBG = BurstData{file}.DataCut(:,2);
+            EBR = BurstData{file}.DataCut(:,3);
+            %%% Save E array in *.his file
+            save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10722,10 +10806,11 @@ h.SpeciesList.Tree.setRoot(h.SpeciesList.Root);
 h.SpeciesList.Tree.expand(h.SpeciesList.Root);
 for f = 1:numel(BurstData)
     h.SpeciesList.Tree.expand(h.SpeciesList.File(f));
-    for i = 1:numel(h.SpeciesList.Species{f})
-        h.SpeciesList.Tree.expand(h.SpeciesList.Species{f}(i));
-    end
+    %for i = 1:numel(h.SpeciesList.Species{f})
+    %    h.SpeciesList.Tree.expand(h.SpeciesList.Species{f}(i));
+    %end
 end
+
 guidata(findobj('Tag','BurstBrowser'),h);
 
 set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
