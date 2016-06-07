@@ -251,4 +251,5 @@ end
 
 Progress(1/NumFiles,ProgressAxes,ProgressText, ['File ' num2str(FileNumber) ' of ' num2str(NumFiles) ' loaded']);
 
+fclose(fid);
 end
