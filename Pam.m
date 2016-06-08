@@ -1134,7 +1134,7 @@ addpath(genpath(['.' filesep 'functions']));
     % format
     h.Cor_fFCS.MIPattern_Table.Units = 'pixels';
     x = h.Cor_fFCS.MIPattern_Table.Position(3);
-    h.Cor_fFCS.MIPattern_Table.ColumnWidth = {0.8*x,0.18*x};
+    h.Cor_fFCS.MIPattern_Table.ColumnWidth = {0.75*x,0.18*x};
     h.Cor_fFCS.MIPattern_Table.Units = 'normalized';
     
     %%% table of available PIE channels (determined from available
@@ -1159,7 +1159,7 @@ addpath(genpath(['.' filesep 'functions']));
     % format
     h.Cor_fFCS.PIEchan_Table.Units = 'pixels';
     x = h.Cor_fFCS.PIEchan_Table.Position(3);
-    h.Cor_fFCS.PIEchan_Table.ColumnWidth = {0.8*x,0.18*x};
+    h.Cor_fFCS.PIEchan_Table.ColumnWidth = {0.75*x,0.18*x};
     h.Cor_fFCS.PIEchan_Table.Units = 'normalized';
     
     %%% cross-correlation table of loaded species
@@ -8583,17 +8583,27 @@ switch obj
         
         MIPattern = cell(0);
         for i = 1:numel(UserValues.Detector.Det);
-            MIPattern{UserValues.Detector.Det(i),UserValues.Detector.Rout(i)} = PamMeta.MI_Hist{i};
+            MIPattern{end+1} = PamMeta.MI_Hist{i};
         end
         [~, FileName, ~] = fileparts(FileInfo.FileName{1});
         [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(FileInfo.Path,FileName));
         if all(File==0)
             return
         end
-        save(fullfile(Path,File),'MIPattern');
+        %save(fullfile(Path,File),'MIPattern');
+        %%% Save as *.txt file instead
+        %%% write header
+        fid = fopen(fullfile(Path,File),'w');
+        fprintf(fid,'Microtime patterns of measurement: %s\n',FileInfo.FileName{1});
+        %%% write detector - routing assigment
+        for i = 1:numel(MIPattern)
+            fprintf(fid,'Channel %i: Detector %i and Routing %i\n',i,UserValues.Detector.Det(i),UserValues.Detector.Rout(i));
+        end
+        fclose(fid);
+        dlmwrite(fullfile(Path,File),horzcat(MIPattern{:}),'-append','delimiter',',');
     case h.Cor_fFCS.Load_MIPattern_Button 
         %%% Load MI Pattern from *.mi file
-        [File,Path,FilterIndex] = uigetfile({'*.mi','PAM microtime pattern file (*.mi)'},...
+        [File,Path,FilterIndex] = uigetfile({'*.mi','PAM microtime pattern file (*_mi.dat)'},...
             'Choose microtime patterns to load...',UserValues.File.Path,'Multiselect','on');
         if FilterIndex == 0
             return;
@@ -8607,10 +8617,37 @@ switch obj
         PamMeta.fFCS.MIPattern = cell(0);
         PamMeta.fFCS.MIPattern_Name = cell(0);
         for i = 1:numel(File)
-            dummy = load(fullfile(Path,File{i}),'-mat');
-            [~, FileName, ~] = fileparts(File{i});
-            PamMeta.fFCS.MIPattern_Name{i} = FileName;
-            PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
+            header_lines = 0;
+            while 1
+                try
+                    data = dlmread(fullfile(Path,File{i}),',',header_lines,0);
+                    break;
+                catch
+                    %%% read text as stringvbnm
+                    header_lines = header_lines + 1;
+                end
+            end
+            %%% process header information
+            fid = fopen(fullfile(Path,File{i}),'r');
+            line = fgetl(fid);
+            filename = textscan(line,'Microtime patterns of measurement: %s\n');
+            for j = 1:(header_lines-1)
+                line = fgetl(fid);
+                temp = textscan(line,['Channel ' num2str(j) ': Detector %d and Routing %d\n']);
+                Det(j) = temp{1};
+                Rout(j) = temp{2};
+            end
+            fclose(fid);
+            MIPattern = cell(0);
+            for j = 1:numel(Det)
+                MIPattern{Det(j),Rout(j)} = data(:,j);
+            end
+            PamMeta.fFCS.MIPattern_Name{i} = filename{1}{1};
+            PamMeta.fFCS.MIPattern{i} = MIPattern;
+            %dummy = load(fullfile(Path,File{i}),'-mat');
+            %[~, FileName, ~] = fileparts(File{i});
+            %PamMeta.fFCS.MIPattern_Name{i} = FileName;
+            %PamMeta.fFCS.MIPattern{i} = dummy.MIPattern;
         end
         Update_fFCS_GUI(obj,[]);
 end
