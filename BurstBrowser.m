@@ -91,11 +91,18 @@ if isempty(hfig)
         'Tag','FRET_Export_Menu',...
         'Separator','off');
     %%% FRET Comparions plot from *.his files
-    h.FRET_comp_Menu = uimenu(...
+    h.FRET_comp_File_Menu = uimenu(...
         'Parent',h.More_Menu,...
-        'Label','Compare FRET Histograms',...
+        'Label','Compare FRET Histograms from *.his files',...
         'Callback',@Compare_FRET_Hist,...
-        'Tag','FRET_comp_Menu',...
+        'Tag','FRET_comp_File_Menu',...
+        'Separator','off');
+    %%% FRET Comparions plot from loaded files
+    h.FRET_comp_Loaded_Menu = uimenu(...
+        'Parent',h.More_Menu,...
+        'Label','Compare FRET Histograms from loaded files',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_Loaded_Menu',...
         'Separator','off');
     %%% FRET Comparions plot from *.his files
     h.Choose_PrintPath_Menu = uimenu(...
@@ -437,6 +444,13 @@ if isempty(hfig)
     % Set the tree mouse-click callback
     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
+    h.CutTable_Menu = uicontextmenu;
+    h.ApplyCutsToLoaded_Menu = uimenu(...
+        'Parent',h.CutTable_Menu,...
+        'Tag','ApplyCutsToLoaded_Menu',...
+        'Label','Apply current cuts to all loaded files',...
+        'Callback',@ApplyCutsToLoaded);
+    
     %define the cut table
     cname = {'min','max','active','delete','ZScale'};
     cformat = {'numeric','numeric','logical','logical','logical'};
@@ -457,7 +471,8 @@ if isempty(hfig)
         'ColumnEditable',ceditable,...
         'Data',table_dat,...
         'ColumnWidth',cwidth,...
-        'CellEditCallback',@CutTableChange);
+        'CellEditCallback',@CutTableChange,...
+        'UIContextMenu',h.CutTable_Menu);
     
     %define the parameter selection listboxes
     h.ParameterListX = uicontrol(...
@@ -3853,32 +3868,71 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Compare exported FRET histograms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Compare_FRET_Hist(~,~)
-global UserValues
-
-%%% Load *.his files (assume they are in one folder)
-try
-    [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
-catch
-    Choose_PrintPath_Menu([],[]);
-    [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
-end
-if ~iscell(FileNames)
-    return;
-end
-
-%%% Check how many FRET efficiencies are saved (1 = 2ColorMFD, 3 =
-%%% 3ColorMFD)
-dummy = load(fullfile(PathName,FileNames{1}),'-mat');
-switch numel(fieldnames(dummy))
-    case 1 % 2ColorMFD
-        N_bins = 51;
-        %%% Load FRET arrays
+function Compare_FRET_Hist(obj,~)
+global UserValues BurstMeta BurstData
+h = guidata(obj);
+if obj == h.FRET_comp_File_Menu
+    %%% Load *.his files (assume they are in one folder)
+    try
+        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+    catch
+        Choose_PrintPath_Menu([],[]);
+        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+    end
+    if ~iscell(FileNames)
+        return;
+    end
+    dummy = load(fullfile(PathName,FileNames{1}),'-mat');
+    mode = numel(fieldnames(dummy))+1; % 2is 2color, 3 is 3color
+    switch mode
+        case 2 
+            %%% Load FRET arrays
+            for i = 1:numel(FileNames)
+                data = load(fullfile(PathName,FileNames{i}),'-mat');
+                E{i} = data.E;
+            end
+        case 3
+            %%% Load FRET arrays
         for i = 1:numel(FileNames)
-            dummy = load(fullfile(PathName,FileNames{i}),'-mat');
-            E{i} = dummy.E;
+            data = load(fullfile(PathName,FileNames{i}),'-mat');
+            EGR{i} = data.EGR;
+            EBG{i} = data.EBG;
+            EBR{i} = data.EBR;
         end
-        
+    end
+elseif any(obj == h.FRET_comp_Loaded_Menu)
+    file = BurstMeta.SelectedFile;
+    switch BurstData{file}.BAMethod
+        case {1,2,5}
+            mode = 2;
+        case {3,4}
+            mode = 3;
+    end
+    
+    sel_file = BurstMeta.SelectedFile;
+    for i = 1:numel(BurstData);
+        BurstMeta.SelectedFile = i;
+        %%% Make sure to apply corrections
+        ApplyCorrections(obj,[]);
+        %%% read fret values
+        file = i;
+        SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+        FileNames{i} = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+        switch mode
+            case 2
+                E{i} = BurstData{file}.DataCut(:,1);
+            case 3
+                EGR{i} = BurstData{file}.DataCut(:,1);
+                EBG{i} = BurstData{file}.DataCut(:,2);
+                EBR{i} = BurstData{file}.DataCut(:,3);
+        end
+    end
+    BurstMeta.SelectedFile = sel_file;
+end
+
+switch mode
+    case 2 % 2ColorMFD
+        N_bins = 51;
         xE = linspace(0,1,N_bins);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
@@ -3898,40 +3952,36 @@ switch numel(fieldnames(dummy))
         ax.LineWidth = 2;
         ax.Layer = 'top';
         ax.XLim = [0,1];
+        ax.Units = 'pixels';
         xlabel('FRET efficiency');
         ylabel('probability density');
         legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
         legend(legend_entries,'fontsize',14);
         
-        %%% waterfall or image/contour plot
-        %%% constuct time series histogram
-        for i = 1:numel(H);
-            H{i} = [H{i} H{i}(end)];
+        if 0
+            %%% waterfall or image/contour plot
+            %%% constuct time series histogram
+            for i = 1:numel(H);
+                H{i} = [H{i} H{i}(end)];
+            end
+            H = vertcat(H{:});
+            figure('Color',[1 1 1],'Position',[700 100 600 400]);
+            contourf(xE(1:end),1:1:size(H,1),H);
+            colormap(jet);
+            ax = gca;
+            ax.Color = [1 1 1];
+            ax.FontSize = 20;
+            ax.LineWidth = 2;
+            ax.Layer = 'top';
+            ax.XLim = [0,1];
+            ax.Units = 'normalized';
+            ax.Position(3) = 0.6;
+            ax.Units = 'pixels';
+            xlabel('FRET efficiency');
+            ylabel('File Number');
+            text(1.02,ax.YLim(2),legend_entries);
         end
-        H = vertcat(H{:});
-        figure('Color',[1 1 1],'Position',[700 100 600 400]);
-        contourf(xE(1:end),1:1:size(H,1),H);
-        colormap(jet);
-        ax = gca;
-        ax.Color = [1 1 1];
-        ax.FontSize = 20;
-        ax.LineWidth = 2;
-        ax.Layer = 'top';
-        ax.XLim = [0,1];
-        ax.Units = 'normalized';
-        ax.Position(3) = 0.6;
-        xlabel('FRET efficiency');
-        ylabel('File Number');
-        text(1.02,ax.YLim(2),legend_entries);
     case 3
-        %%% Load FRET arrays
-        for i = 1:numel(FileNames)
-            dummy = load(fullfile(PathName,FileNames{i}),'-mat');
-            EGR{i} = dummy.EGR;
-            EBG{i} = dummy.EBG;
-            EBR{i} = dummy.EBR;
-        end
-        
         xE = linspace(-0.1,1,56);
         xEBR = linspace(-0.2,1,61);
         for i = 1:numel(EGR)
@@ -3966,43 +4016,47 @@ switch numel(fieldnames(dummy))
             if j == 3
                 ax.XLim = [-0.2 1];
             end
+            ax.Units = 'pixels';
             xlabel(xlb{j});
             ylabel('probability density');
             legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
             legend(legend_entries,'fontsize',14);
         end
         
-        %%% waterfall or image/contour plot
-        %%% constuct time series histogram
-        for i = 1:numel(EGR);
-            HGR{i} = [HGR{i} HGR{i}(end)];
-            HBG{i} = [HBG{i} HBG{i}(end)];
-            HBR{i} = [HBR{i} HBR{i}(end)];
-        end
-        HGR = vertcat(HGR{:});
-        HBG = vertcat(HBG{:});
-        HBR = vertcat(HBR{:});
-        H_all = {HGR,HBG,HBR};
-        xE = linspace(-0.1,1,56);
-        for j = 1:3
-            if j == 3
-                xE = xEBR;
+        if 0
+            %%% waterfall or image/contour plot
+            %%% constuct time series histogram
+            for i = 1:numel(EGR);
+                HGR{i} = [HGR{i} HGR{i}(end)];
+                HBG{i} = [HBG{i} HBG{i}(end)];
+                HBR{i} = [HBR{i} HBR{i}(end)];
             end
-            H = H_all{j};
-            figure('Color',[1 1 1],'Position',[100+600*(j-1) 500 600 400]);
-            contourf(xE(1:end),1:1:size(H,1),H);
-            colormap(jet);
-            ax = gca;
-            ax.Color = [1 1 1];
-            ax.FontSize = 20;
-            ax.LineWidth = 2;
-            ax.Layer = 'top';
-            ax.XLim = [0,1];
-            ax.Units = 'normalized';
-            ax.Position(3) = 0.6;
-            xlabel(xlb{j});
-            ylabel('File Number');
-            text(1.02,ax.YLim(2),legend_entries);
+            HGR = vertcat(HGR{:});
+            HBG = vertcat(HBG{:});
+            HBR = vertcat(HBR{:});
+            H_all = {HGR,HBG,HBR};
+            xE = linspace(-0.1,1,56);
+            for j = 1:3
+                if j == 3
+                    xE = xEBR;
+                end
+                H = H_all{j};
+                figure('Color',[1 1 1],'Position',[100+600*(j-1) 500 600 400]);
+                contourf(xE(1:end),1:1:size(H,1),H);
+                colormap(jet);
+                ax = gca;
+                ax.Color = [1 1 1];
+                ax.FontSize = 20;
+                ax.LineWidth = 2;
+                ax.Layer = 'top';
+                ax.XLim = [0,1];
+                ax.Units = 'normalized';
+                ax.Position(3) = 0.6;
+                ax.Units = 'pixels';
+                xlabel(xlb{j});
+                ylabel('File Number');
+                text(1.02,ax.YLim(2),legend_entries);
+            end
         end
 end
 
@@ -5809,6 +5863,39 @@ Data = BurstData{file}.DataArray(Valid,:);
 if nargout == 0 %%% Only update global Variable if no output is requested!
     BurstData{file}.Selected = Valid;
     BurstData{file}.DataCut = Data;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Applies Cuts to all Loaded files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ApplyCutsToLoaded(obj,~)
+global BurstMeta BurstData
+h = guidata(obj);
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+%%% read out cuts of currently selected species
+currentCuts = BurstData{file}.Cut{species(1),species(2)};
+%%% Synchronize all other top-level species
+for i = 1:numel(BurstData)
+    for j = 1:numel(currentCuts)
+        for k = 1:size(BurstData{i}.Cut,1)
+            %%% Check if the parameter already exists in the species j
+            ParamList = vertcat(BurstData{i}.Cut{k,1}{:});
+            if ~isempty(ParamList)
+                ParamList = ParamList(:,1);
+                CheckParam = strcmp(ParamList,currentCuts{j}{1});
+                if any(CheckParam) %%% parameter exists
+                    %%% overwrite limits and active state
+                    BurstData{i}.Cut{k,1}{CheckParam}(2:4) = currentCuts{j}(2:4);
+                else
+                    %%% parameter is new
+                    BurstData{i}.Cut{k,1}(end+1) = currentCuts(j);
+                end
+            else %%% parameter is new
+                BurstData{i}.Cut{k,1}(end+1) = currentCuts(j);
+            end
+        end
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9983,10 +10070,17 @@ switch obj
                     panel_copy.Children(3).XTickLabel{end} = '';
                 end
             else %%% only occurence
-                cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
+                for n = 1:numel(panel_copy.Children)
+                    if strcmp(panel_copy.Children(n).Tag,'Axes_General')
+                        ax2d = n;
+                    elseif strcmp(panel_copy.Children(n).Tag,'Axes_1D_X')
+                        ax1dx = n;
+                    end
+                end
+                cbar = colorbar(panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
-                panel_copy.Children(3).XTickLabel = panel_copy.Children(5).XTickLabel;
+                panel_copy.Children(ax1dx).XTickLabel = panel_copy.Children(ax2d).XTickLabel;
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
