@@ -1278,7 +1278,7 @@ end
 %%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(obj,~)
-global UserValues TauFitData FileInfo TcspcData
+global UserValues TauFitData FileInfo TcspcData PamMeta
 h = guidata(findobj('Tag','TauFit'));
 % Load Data button was pressed
 % User called TauFit from Pam
@@ -1355,21 +1355,22 @@ if isempty(obj) || obj == h.LoadData_Button
 %     end
     TauFitData.chan = chan;
     %%% Read out Photons and Histogram
-    MI_Par = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)},...
-        0:(TauFitData.MI_Bins-1));
-    MI_Per = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)},...
-        0:(TauFitData.MI_Bins-1));
-    %%% Compute the Microtime Histograms
-    % the data will be assigned to the appropriate channel, such that the
-    % slider values are universal between TauFit, Burstwise Taufit and Bulk Burst Taufit
-    TauFitData.hMI_Par{chan} = MI_Par(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-    TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+%     MI_Par = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)},...
+%         0:(TauFitData.MI_Bins-1));
+%     MI_Per = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)},...
+%         0:(TauFitData.MI_Bins-1));
+%     %%% Compute the Microtime Histograms
+%     % the data will be assigned to the appropriate channel, such that the
+%     % slider values are universal between TauFit, Burstwise Taufit and Bulk Burst Taufit
+%     TauFitData.hMI_Par{chan} = MI_Par(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+%     TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+
     %%% Microtime Histogram of Parallel Channel
-    %     TauFitData.hMI_Par = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
-    %         UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
-    %     %%% Microtime Histogram of Perpendicular Channel
-    %     TauFitData.hMI_Per = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
-    %         UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
+    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
+        UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
+    %%% Microtime Histogram of Perpendicular Channel
+    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
+        UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
     
     %%% Read out the Microtime Histograms of the IRF for the two channels
     TauFitData.hIRF_Par{chan} = UserValues.PIE.IRF{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
