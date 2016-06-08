@@ -3933,7 +3933,7 @@ end
 switch mode
     case 2 % 2ColorMFD
         N_bins = 51;
-        xE = linspace(0,1,N_bins);
+        xE = linspace(-0.05,1,N_bins);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
             H{i} = H{i}./sum(H{i});
@@ -3951,7 +3951,7 @@ switch mode
         ax.FontSize = 20;
         ax.LineWidth = 2;
         ax.Layer = 'top';
-        ax.XLim = [0,1];
+        ax.XLim = [-0.05,1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
         ylabel('probability density');
