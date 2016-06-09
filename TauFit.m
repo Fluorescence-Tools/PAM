@@ -55,6 +55,9 @@ h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Cli
     'Callback',@Export);
 h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
     'Callback',@Export);
+h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
+    'Separator','on',...
+    'Callback',@Export);
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
 h.TauFit_Panel = uibuttongroup(...
@@ -91,6 +94,7 @@ h.Export_Result = uimenu(...
     'Label','Export Plot',...
     'Tag','Export_Result',...
     'Callback',@ExportGraph);
+
 %%% Main Microtime Plot
 h.Microtime_Plot = axes(...
     'Parent',h.TauFit_Panel,...
@@ -4657,8 +4661,10 @@ switch obj
             res = h.Plots.Residuals.YData;
             if strcmp(h.Result_Plot.YLabel.String,'Anisotropy')
                 names = {'time_ns','anisotropy','fit','wres'};
+                ext = '_aniso';
             else
                 names = {'time_ns','intensity','fit','wres'};
+                ext = '_tau';
             end
             tab = table(time',data',fit',res','VariableNames',names);
         else
@@ -4674,11 +4680,117 @@ switch obj
             aniso_fit = h.Plots.FitAnisoResult.YData;
             names = {'time_ns','intensity_par','intensity_per','fit_par','fit_per','wres_par','wres_per','anisotropy','anisotropy_fit'};
             tab= table(time',data_par',data_per',fit_par',fit_per',res_par',res_per',aniso_data',aniso_fit','VariableNames',names);
+            ext = '_tau_aniso';
         end
         %%% get path
-        [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file');
+        [path,filename,~] = fileparts(TauFitData.FileName);
+        [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file',[path filesep filename ext '.txt']);
         if FilterIndex == 0
             return;
         end
+        %%% check that the extension has not been deleted by the user!
+        %%% if it has, readd
+        if isempty(strfind(ext,filename))
+            filename = [filename(1:end-4) ext '.txt'];
+        end
         writetable(tab,fullfile(pathname,filename));
+    case h.Compare_Result
+        %%% load data and make comparison plot
+        try
+            [pathname,~,~] = fileparts(TauFitData.FileName);
+        catch
+            pathname = UserValues.File.Path;
+        end
+        [filename, pathname, FilterIndex] = uigetfile('*.txt','Load lifetime data...',pathname,...
+            'MultiSelect','on');
+        if FilterIndex == 0
+            return;
+        end
+        
+        if ~iscell(filename)
+            filename = {filename};
+        end
+        %%% ensure that same type of data is loaded, remove the rest
+        %%% type defined by first selected file
+        % anisotropy reconvolution fit is not supported, check for it
+        if ~isempty(strfind(filename{1},'tau_aniso'))
+            disp('Anisotropy reconvolution data not supported.');
+            return;
+        end
+        if iscell(filename)
+            valid = ones(numel(filename),1);
+            type = strfind(filename{1},'tau');
+            if isempty(type)
+                type = 'aniso';
+            else
+                type = 'tau';
+            end
+            for i = 1:numel(filename)
+                if isempty(strfind(filename{i},type))
+                    valid(i) = 0;
+                end
+            end
+            filename = filename(logical(valid));
+        end
+        
+        %%% load data
+        %%% raw data is saved in second column
+        data = {};
+        for i = 1:numel(filename)
+            dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
+            data{i} = dummy(:,2);
+        end
+        dT = mean(diff(dummy(:,1)));  
+        %%% if different lengths have been loaded, truncate to shortest
+        minLength = min(cellfun(@numel,data));
+        for i = 1:numel(data)
+            data{i} = data{i}(1:minLength);
+        end
+        t = (1:minLength)*dT;
+        %%% normalize and shift if tau data
+        if strcmp(type,'tau')
+            for i = 1:numel(data)
+                data{i} = data{i}./max(smooth(data{i}));
+            end
+            
+            %%% for shift, take first measurement as reference
+            [~,peakPosition] = max(smooth(data{1}));
+            shift_left = 0;
+            shift_right = 0;
+            for i = 2:numel(data)
+                [~,peakPos] = max(smooth(data{i},10));
+                shift_left = min([shift_left, peakPosition-peakPos]);
+                shift_right = max([shift_right, peakPosition-peakPos]);
+                data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+            end
+            %%% adjust range
+            range = (shift_right+1):(minLength+shift_left);
+            t = (1:numel(range))*dT;
+            for i = 1:numel(data)
+                data{i} = data{i}(range);
+            end
+        end
+        
+        %%% find max and min data
+        minV = min(cellfun(@min,data));
+        maxV = max(cellfun(@max,data));
+        
+        %%% plot data
+        hfig = figure('Units','pixels','Position',[100,100,600,400],'Color',[1,1,1]);
+        ax = axes('Color',[1,1,1],'LineWidth',2,'Box','on','XGrid','on','YGrid','on','FontSize',20);
+        hold on;
+        for i = 1:numel(data)
+            plot(t,data{i},'LineWidth',2);
+        end 
+        ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
+        ax.XLim = [t(1) t(end)];
+        xlabel('Time [ns]');
+        if strcmp(type,'tau')
+            ylabel('Intensity [a.u.]');
+            ax.YScale = 'log';
+        else
+            ylabel('Anisotropy');
+        end
+        legend(filename);
+        ax.Layer = 'top';
 end
