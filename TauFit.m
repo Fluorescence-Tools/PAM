@@ -4690,7 +4690,7 @@ switch obj
         end
         %%% check that the extension has not been deleted by the user!
         %%% if it has, readd
-        if isempty(strfind(ext,filename))
+        if isempty(strfind(filename,ext))
             filename = [filename(1:end-4) ext '.txt'];
         end
         writetable(tab,fullfile(pathname,filename));
@@ -4747,8 +4747,8 @@ switch obj
             data{i} = data{i}(1:minLength);
         end
         t = (1:minLength)*dT;
-        %%% normalize and shift if tau data
-        if strcmp(type,'tau')
+        
+        if strcmp(type,'tau') %%% normalize and shift if tau data
             for i = 1:numel(data)
                 data{i} = data{i}./max(smooth(data{i}));
             end
@@ -4769,7 +4769,17 @@ switch obj
             for i = 1:numel(data)
                 data{i} = data{i}(range);
             end
+        elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
+            for i = 1:numel(data)
+                [~,peakPos(i)] = max(smooth(data{i},10));
+            end
+            range = min(peakPos):minLength;
+            t = (1:numel(range))*dT;
+            for i = 1:numel(data)
+                data{i} = data{i}(range);
+            end
         end
+        
         
         %%% find max and min data
         minV = min(cellfun(@min,data));
@@ -4791,6 +4801,14 @@ switch obj
         else
             ylabel('Anisotropy');
         end
-        legend(filename);
+        for i = 1:numel(filename)
+            % remove extension
+            filename{i} = filename{i}(1:end-4);
+            % replace underscore with space
+            filename{i} = strrep(filename{i},'_',' ');
+        end
+        l = legend(filename);
         ax.Layer = 'top';
+        ax.Units = 'pixels';
+        l.Units = 'pixels';
 end
