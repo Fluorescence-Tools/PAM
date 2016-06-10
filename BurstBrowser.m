@@ -4151,6 +4151,7 @@ species = BurstData{file}.SelectedSpecies;
 if strcmpi(clickType,'right')
     %%% check if master species is selected
     if all(species == [0,0])
+        disp('Cuts can not be applied to total data set. Select a species first.');
         return;
     end
     %%%add to cut list if right-clicked
@@ -4386,10 +4387,20 @@ if species(2) == 1
     level = 1;
 elseif species(2) > 1
     level = 2;
-else
-    return;
+elseif species(2) == 0
+    level = 0;
 end
 switch level
+    case 0
+        %%% remove file
+        BurstData{file} = [];
+        for i = file:(numel(BurstData)-1);
+            BurstData{i} = BurstData{i+1};
+        end
+        BurstData(end) = [];
+        BurstMeta.SelectedFile = 1;
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
     case 1
         %%% remove entire species group
         BurstData{file}.SpeciesNames(species(1),:) = [];
