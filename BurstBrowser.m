@@ -3093,7 +3093,7 @@ if obj ~= h.DatabaseBB.List
 
     LSUserValues(0);
     switch obj
-        case h.Load_Bursts
+        case {h.Load_Bursts, h.Append_File}
             [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'on');
             if FilterIndex == 0
                 return;
@@ -3138,6 +3138,8 @@ elseif obj == h.DatabaseBB.List
     FileName = BurstMeta.Database(h.DatabaseBB.List.Value,1);
     FilterIndex = 1;
     pathname = PathName{1};
+else
+    pathname = UserValues.File.BurstBrowserPath;
 end
 
 UserValues.File.BurstBrowserPath=pathname;
