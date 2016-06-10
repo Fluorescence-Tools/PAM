@@ -104,7 +104,14 @@ if isempty(hfig)
         'Callback',@Compare_FRET_Hist,...
         'Tag','FRET_comp_Loaded_Menu',...
         'Separator','off');
-    %%% FRET Comparions plot from *.his files
+    %%% Parameter Comparions plot from loaded files
+    h.Param_comp_Loaded_Menu = uimenu(...
+        'Parent',h.More_Menu,...
+        'Label','Compare current parameter for loaded files',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','Param_comp_Loaded_Menu',...
+        'Separator','off');
+    %%% Choose print path
     h.Choose_PrintPath_Menu = uimenu(...
         'Parent',h.More_Menu,...
         'Label','Choose Export Path',...
@@ -3900,7 +3907,7 @@ if obj == h.FRET_comp_File_Menu
             EBR{i} = data.EBR;
         end
     end
-elseif any(obj == h.FRET_comp_Loaded_Menu)
+elseif obj == h.FRET_comp_Loaded_Menu
     file = BurstMeta.SelectedFile;
     switch BurstData{file}.BAMethod
         case {1,2,5}
@@ -3926,6 +3933,26 @@ elseif any(obj == h.FRET_comp_Loaded_Menu)
                 EBG{i} = BurstData{file}.DataCut(:,2);
                 EBR{i} = BurstData{file}.DataCut(:,3);
         end
+    end
+    BurstMeta.SelectedFile = sel_file;
+elseif  obj == h.Param_comp_Loaded_Menu
+    file = BurstMeta.SelectedFile;
+    mode = 0;
+    param = h.ParameterListX.Value;
+    sel_file = BurstMeta.SelectedFile;
+    for i = 1:numel(BurstData);
+        BurstMeta.SelectedFile = i;
+        %%% Make sure to apply corrections
+        ApplyCorrections(obj,[]);
+        %%% read fret values
+        file = i;
+        try
+            SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+            FileNames{i} = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+        catch
+            FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
+        end
+        P{i} = BurstData{file}.DataCut(:,param);
     end
     BurstMeta.SelectedFile = sel_file;
 end
@@ -4058,6 +4085,34 @@ switch mode
                 text(1.02,ax.YLim(2),legend_entries);
             end
         end
+    case 0 % no FRET, other parameter
+        %%% take X hist limits
+        xlim = h.axes_1d_x.XLim;
+        N_bins = 51;
+        xP = linspace(xlim(1),xlim(2),N_bins);
+        for i = 1:numel(P)
+            H{i} = histcounts(P{i},xP);
+            H{i} = H{i}./sum(H{i});
+        end
+        
+        color = lines(numel(H));
+        figure('Color',[1 1 1],'Position',[100 100 600 400]);
+        stairs(xP(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
+        hold on
+        for i = 2:numel(H)
+            stairs(xP(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+        end
+        ax = gca;
+        ax.Color = [1 1 1];
+        ax.FontSize = 20;
+        ax.LineWidth = 2;
+        ax.Layer = 'top';
+        ax.XLim = xlim;
+        ax.Units = 'pixels';
+        xlabel(BurstData{file}.NameArray{param});
+        ylabel('probability density');
+        legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+        legend(legend_entries,'fontsize',14);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5884,30 +5939,46 @@ global BurstMeta BurstData
 h = guidata(obj);
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
+if species(2) > 1
+    disp('Only implemented for top level species');
+    return;
+end
+speciesname = BurstData{file}.SpeciesNames{species(1),species(2)};
 %%% read out cuts of currently selected species
 currentCuts = BurstData{file}.Cut{species(1),species(2)};
 %%% Synchronize all other top-level species
 for i = 1:numel(BurstData)
-    for j = 1:numel(currentCuts)
-        for k = 1:size(BurstData{i}.Cut,1)
+    if i == file
+        continue;
+    end
+    %%% Check if species with same name exists
+    if any(strcmp(BurstData{i}.SpeciesNames(:,1),speciesname))
+        targetSpecies = strcmp(BurstData{i}.SpeciesNames(:,1),speciesname);
+        for j = 1:numel(currentCuts)
             %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData{i}.Cut{k,1}{:});
+            ParamList = vertcat(BurstData{i}.Cut{targetSpecies,1}{:});
             if ~isempty(ParamList)
                 ParamList = ParamList(:,1);
                 CheckParam = strcmp(ParamList,currentCuts{j}{1});
                 if any(CheckParam) %%% parameter exists
                     %%% overwrite limits and active state
-                    BurstData{i}.Cut{k,1}{CheckParam}(2:4) = currentCuts{j}(2:4);
+                    BurstData{i}.Cut{targetSpecies,1}{CheckParam}(2:4) = currentCuts{j}(2:4);
                 else
                     %%% parameter is new
-                    BurstData{i}.Cut{k,1}(end+1) = currentCuts(j);
+                    BurstData{i}.Cut{targetSpecies,1}(end+1) = currentCuts(j);
                 end
             else %%% parameter is new
-                BurstData{i}.Cut{k,1}(end+1) = currentCuts(j);
+                BurstData{i}.Cut{targetSpecies,1}(end+1) = currentCuts(j);
             end
         end
+    else %%% add a species with this name
+        BurstData{i}.Cut{end+1,1} = currentCuts;
+        BurstData{i}.SpeciesNames{end+1,1} = speciesname;
+        BurstData{i}.SelectedSpecies = [size(BurstData{i}.SpeciesNames,1),1];
     end
 end
+
+UpdateSpeciesList(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Executes on change in the Cut Table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
