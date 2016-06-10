@@ -5396,6 +5396,99 @@ for i=1:3 %%%
         end     
     end
 end
+%% Get Info structure
+Info = struct;
+%%% Pixel [?s], Line [ms] and Frametime [s]
+Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
+%%% Pixel size
+Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+%%% ROI and TOI
+Info.Frames = Frames;
+From = h.Plots.ROI(1).Position(1:2)+0.5;
+To = From+h.Plots.ROI(1).Position(3:4)-1;
+Info.ROI = [From To];
+%%% Countrate
+Info.Counts = Counts;
+%%% Correction information
+Info.Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
+if h.Mia_Image.Settings.Correction_Subtract.Value == 4
+    Info.Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+end
+Info.Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
+if h.Mia_Image.Settings.Correction_Add.Value == 5
+    Info.Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+end
+%%% Correlation Type (Arbitrary region == 3)
+Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
+switch h.Mia_Image.Settings.ROI_FramesUse.Value
+    case [1 2] %%% All/Selected frames
+        %%% Mean intensity [counts]
+        Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+        Info.AR = [];
+    case 3 %%% Arbitrary region
+        %%% Mean intensity of selected pixels [counts]
+        Image = double(MIAData.Data{i,2}(:,:,Frames));
+        Info.Mean = mean(Image(Use{i}));
+        %%% Arbitrary region information
+        Info.AR.Int_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
+        Info.AR.Int_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
+        Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+        Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+        Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+        Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+        Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
+        Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+end
+%% Saves info file
+Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(i) '.txt']);
+FID = fopen(Current_FileName,'w');
+fprintf(FID,'%s\n','Image Correlation info file');
+%%% Pixel\Line\Frame times
+fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+%%% Pixel size
+fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+%%% Region of interest
+fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+%%% Counts per pixel
+fprintf(FID,'%s\t%f\t%f\n', 'Mean counts per pixel:',Info.Counts(1),Info.Counts(2));
+%%% Frames used
+fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+%%% Subtraction used
+switch h.Mia_Image.Settings.Correction_Subtract.Value
+    case 1
+        fprintf(FID,'%s\n','Nothing subtracted');
+    case 2
+        fprintf(FID,'%s\n','Frame mean subtracted');
+    case 3
+        fprintf(FID,'%s\n','Pixel mean subtracted');
+    case 4
+        fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+end
+%%% Addition used
+switch h.Mia_Image.Settings.Correction_Subtract.Value
+    case 1
+        fprintf(FID,'%s\n','Nothing added');
+    case 2
+        fprintf(FID,'%s\n','Total mean added');
+    case 3
+        fprintf(FID,'%s\n','Frame mean added');
+    case 4
+        fprintf(FID,'%s\n','Pixel mean added');
+    case 5
+        fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+end
+%%% Arbitrary region
+if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+    fprintf(FID,'%s\n','Arbitrary region used:');
+    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min);
+    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max);
+    fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
+    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
+    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
+end    
+fclose(FID);   
 
 %%% Switches 2nd and 3rd entry to make it conform with ICS
 %%% Cross is 2nd entry
