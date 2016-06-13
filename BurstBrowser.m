@@ -6014,6 +6014,10 @@ species = BurstData{file}.SelectedSpecies;
 ChangedParameterName = BurstData{file}.Cut{species(1),species(2)}{index(1)}{1};
 %change value in structure
 NewData = eventdata.NewData;
+if isnan(NewData)
+    hObject.Data{eventdata.Indices(1),eventdata.Indices(2)} = eventdata.PreviousData;
+    return;
+end
 switch index(2)
     case {1} %min boundary was changed
         %%% if upper boundary is lower than new min boundary -> reject
