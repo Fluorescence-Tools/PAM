@@ -832,13 +832,24 @@ if exist('bh','var')
             'String',Channel_String,...
             'Value', 1,...
             'Callback',@Update_Plots);
+        
+        str = ['Selected File: ' BurstData{BurstMeta.SelectedFile}.FileName(1:end-4)];
+        if BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1) ~= 0
+            TauFitData.SpeciesName = BurstData{BurstMeta.SelectedFile}.SpeciesNames{BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1),1};
+            if BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1 %%% subspecies selected
+                TauFitData.SpeciesName = [TauFitData.SpeciesName ' - ' BurstData{BurstMeta.SelectedFile}.SpeciesNames{BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1),BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)}];
+            end
+            str = [str, '\nSelected Species: ' TauFitData.SpeciesName];
+        else
+            TauFitData.SpeciesName = BurstData{BurstMeta.SelectedFile}.FileName(1:end-4);
+        end
         h.SpeciesSelect_Text = uicontrol('Style','text',...
             'Tag','TauFit_SpeciesSelect_text',...
             'Parent',h.PIEChannel_Panel,...
             'Units','normalized',...
-            'Position',[0.05 0.65 0.8 0.1],...
+            'Position',[0.05 0.6 0.8 0.2],...
             'HorizontalAlignment','left',...
-            'String',['Selected Species: ' BurstData{BurstMeta.SelectedFile}.SpeciesNames{BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1),BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)}],...
+            'String',sprintf(str),...
             'BackgroundColor',Look.Back,...
             'ForegroundColor',Look.Fore,...
             'FontSize',12);
@@ -1229,20 +1240,22 @@ end
 
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
 if exist('ph','var')
-    switch obj
-        case {ph.Database.Burst, ph.Burst.Button}
-            for j = 1:numel(Channel_String)
-                % Save images of the individual plots
-                h.ChannelSelect_Popupmenu.Value = j;
-                Update_Plots(obj)
-                f = ExportGraph(h.Microtime_Plot_Export);
-                close(f)
-                Start_Fit(h.Fit_Button)
-                f = ExportGraph(h.Export_Result);
-                close(f)
-            end
-            BurstWise_Fit(h.BurstWiseFit_Button)
-            close(h.TauFit);
+    if isobject(obj)
+        switch obj
+            case {ph.Database.Burst, ph.Burst.Button}
+                for j = 1:numel(Channel_String)
+                    % Save images of the individual plots
+                    h.ChannelSelect_Popupmenu.Value = j;
+                    Update_Plots(obj)
+                    f = ExportGraph(h.Microtime_Plot_Export);
+                    close(f)
+                    Start_Fit(h.Fit_Button)
+                    f = ExportGraph(h.Export_Result);
+                    close(f)
+                end
+                BurstWise_Fit(h.BurstWiseFit_Button)
+                close(h.TauFit);
+        end
     end
 end
 
@@ -3017,9 +3030,9 @@ switch obj
         axis(h.Result_Plot,'tight');
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
-            str = sprintf('rho = %1.2f ns\nr_0 = %2.2f\nr_{inf} = %3.2f',param(1)*TACtoTime,param(2),param(3));
+            str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
         elseif number_of_exponentials == 2
-            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.2f\nr_1 = %3.2f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.4f\nr_1 = %3.4f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
         end
         h.Result_Plot_Text.String = str;
         h.Result_Plot_Text.Position = [0.8 0.9];
@@ -4684,6 +4697,11 @@ switch obj
         end
         %%% get path
         [path,filename,~] = fileparts(TauFitData.FileName);
+        if isfield(TauFitData,'SpeciesName')
+            filename = [filename '_' TauFitData.SpeciesName];
+        end
+        filename = strrep(filename,' - ','-');
+        filename = strrep(filename,' ','_');
         [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file',[path filesep filename ext '.txt']);
         if FilterIndex == 0
             return;

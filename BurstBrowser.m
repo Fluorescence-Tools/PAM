@@ -7774,7 +7774,7 @@ elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData{file}.Resolution/1000;
     %Anders, does BurstData{file}.Resolution ever exist?
 end
-TauFit &; %%% launch in separate process
+TauFit;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10528,7 +10528,15 @@ if isfield(BurstData{file},'FileNameSPC')
     end
 end
 
-FigureName = [FileName '_' FigureName];
+if BurstData{file}.SelectedSpecies(1) ~= 0
+    SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+    if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+        SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    end
+else
+    SpeciesName = '';
+end
+FigureName = [FileName SpeciesName '_' FigureName];
 %%% remove spaces
 FigureName = strrep(FigureName,' ','_');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
