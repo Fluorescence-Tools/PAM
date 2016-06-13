@@ -7775,6 +7775,7 @@ elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     %Anders, does BurstData{file}.Resolution ever exist?
 end
 TauFit;
+Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates fFCS filter and updates plots %%%%%%%%%%%%%%%%%%%%%%%%%%
