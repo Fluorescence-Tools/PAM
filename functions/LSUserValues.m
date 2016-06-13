@@ -1325,6 +1325,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.IsoLineGaussFit was incomplete');
     end
     P.BurstBrowser.Settings.IsoLineGaussFit = S.BurstBrowser.Settings.IsoLineGaussFit;
+    %%% Check, if BurstBrowser.Settings.CompareFRETHist_Waterfall subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'CompareFRETHist_Waterfall')
+        S.BurstBrowser.Settings.CompareFRETHist_Waterfall=0;
+        disp('UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall was incomplete');
+    end
+    P.BurstBrowser.Settings.CompareFRETHist_Waterfall = S.BurstBrowser.Settings.CompareFRETHist_Waterfall;
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
