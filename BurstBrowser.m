@@ -5675,7 +5675,7 @@ elseif num_species == 3
         zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
         zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
         zz(:,:,1) = zz(:,:,1) - H{3}./max(max(H{3})); %%% green
-        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% greenrt?f?
+        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% green
     end
 else
     return;
@@ -10126,6 +10126,10 @@ switch obj
                     %else
                         lim = 0;
                         for j = 1:numel(panel_copy.Children(i).Children)
+                            if strcmp(panel_copy.Children(i).Children(j).Type,'text')
+                                delete(panel_copy.Children(i).Children(j));
+                                continue;
+                            end
                             if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
                                 lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                             end
@@ -10140,6 +10144,10 @@ switch obj
                     %else
                         lim = 0;
                         for j = 1:numel(panel_copy.Children(i).Children)
+                            if strcmp(panel_copy.Children(i).Children(j).Type,'text')
+                                delete(panel_copy.Children(i).Children(j));
+                                continue;
+                            end
                             if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
                                 lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                             end
