@@ -6876,9 +6876,15 @@ end
 if obj == h.ApplyCorrectionsAll_Menu
     %%% Set all files Corrections to values for current file
     BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
+    switch BAMethod
+        case {1,2,5}
+            validBAMethods = [1,2,5];
+        case {3,4}
+            validBAMethods = [3,4];
+    end
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
     for i = 1:numel(BurstData)
-        if BurstData{i}.BAMethod == BAMethod
+        if any(BurstData{i}.BAMethod == validBAMethods)
             BurstData{i}.Corrections = Corrections;
         end
     end
