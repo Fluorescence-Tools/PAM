@@ -3093,14 +3093,16 @@ h = guidata(obj);
 global BurstData UserValues BurstMeta PhotonStream BurstTCSPCData
 
 if obj ~= h.DatabaseBB.List
-    if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
-        %%% Ask for saving
-        choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
-        switch choice
-            case 'Yes'
-                Save_Analysis_State_Callback([],[]);
-            case 'Cancel'
-                return;
+    if obj ~= h.Append_File
+        if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
+            %%% Ask for saving
+            choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
+            switch choice
+                case 'Yes'
+                    Save_Analysis_State_Callback([],[]);
+                case 'Cancel'
+                    return;
+            end
         end
     end
 
@@ -8547,6 +8549,9 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 function Export_FRET_Hist(obj,~)
 global BurstData UserValues BurstMeta
 if ~isempty(obj)
+    if ~isobject(obj)
+        obj = findobj('Tag','BurstBrowser');
+    end
     %%% called from menu, loop over all files
     sel_file = BurstMeta.SelectedFile;
     for i = 1:numel(BurstData);
@@ -8558,7 +8563,15 @@ if ~isempty(obj)
     BurstMeta.SelectedFile = sel_file;
 else
     file = BurstMeta.SelectedFile;
-    SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+    if BurstData{file}.SelectedSpecies(2) == 0 %%% total measurement is selected
+        SelectedSpeciesName = 'total';
+    else
+        %%% top level species is selected
+        SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1};
+        if BurstData{file}.SelectedSpecies(2) > 1 %%% subpspecies is selected
+            SelectedSpeciesName = [SelectedSpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+        end
+    end
     SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
     filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
     switch BurstData{file}.BAMethod
@@ -8602,6 +8615,7 @@ if all(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'bur')) 
         %%% saved in BurstBrowser)
         save(filename{i},'Cut','SpeciesNames','SelectedSpecies',...
             'Background','Corrections','-append');
+        Progress(i/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Saving...');
     end
 elseif any(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'kba')) % kba files loaded, convert to bur
     BurstData_temp = BurstData;
@@ -8620,6 +8634,7 @@ elseif any(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'kba
             BurstTCSPCData = BurstTCSPCData_temp{i};
             save([filename{i}(1:end-4) '_kba.bps'],'-struct','BurstTCSPCData');
         end
+        Progress(i/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Saving...');
     end
     BurstData = BurstData_temp;
     BurstTCSPCData= BurstTCSPCData_temp;
