@@ -5094,35 +5094,9 @@ set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts 
 if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
-    % Update average value X histogram
-    xd = get(BurstMeta.Plots.Main_histX, 'XData');
-    yd = get(BurstMeta.Plots.Main_histX, 'YData');
-    avg = sum(xd.*yd)/sum(yd);
-    if avg < 1
-        rounding = 100;
-    elseif avg < 10
-        rounding = 10;
-    else
-        rounding = 1;
-    end
-    stdev = round(sqrt(sum((yd.*(xd-avg).^2))/(sum(yd)-1))*rounding)/rounding;
-    avg = round(avg*rounding)/rounding;
-    set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
-    
-    % Update average value Y histogram
-    xd = get(BurstMeta.Plots.Main_histY, 'XData');
-    yd = get(BurstMeta.Plots.Main_histY, 'YData');
-    avg = sum(xd.*yd)/sum(yd);
-    if avg < 1
-        rounding = 100;
-    elseif avg < 10
-        rounding = 10;
-    else
-        rounding = 1;
-    end
-    stdev = round(sqrt(sum((yd.*(xd-avg).^2))/(sum(yd)-1))*rounding)/rounding;
-    avg = round(avg*rounding)/rounding;
-    set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',avg,char(177),stdev))
+
+    set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',mean(BurstData{file}.DataCut(:,x)),char(177),std(BurstData{file}.DataCut(:,x))));
+    set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',mean(BurstData{file}.DataCut(:,y)),char(177),std(BurstData{file}.DataCut(:,y))));
 else
     h.axes_1d_x_text.Visible = 'off';
     h.axes_1d_y_text.Visible = 'off';
