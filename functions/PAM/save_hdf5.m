@@ -153,22 +153,6 @@ dye_names = UserValues.MetaData.DyeNames;   % Comma separates names of fluoropho
 filename = fullfile(FileInfo.Path, FileInfo.FileName{1});
 software = FileInfo.FileType;
 
-%% make a matlab structure equivalent to the hdf5 specifications
-% data = struct;
-% 
-% data.photon_data.timestamps = timestamps;
-% data.photon_data.detectors = detectors;
-% data.photon_data.nanotimes = nanotimes;
-% data.photon_data.measurement_specs.measurement_type = measurement_type;
-% data.photon_data.measurement_specs.laser_repetition_rate = laser_repetition_rate;
-% data.photon_data.measurement_specs.alex_excitation_period1 = alex_excitation_period1;
-% data.photon_data.measurement_specs.alex_excitation_period2 = alex_excitation_period2;
-% 
-% data.photon_data.measurement_specs.detectors_specs.spectral_ch1 = spectral_ch1;
-% data.photon_data.measurement_specs.detectors_specs.spectral_ch2 = spectral_ch2;
-% data.photon_data.measurement_specs.detectors_specs.polarization_ch1 = polarization_ch1;
-% data.photon_data.measurement_specs.detectors_specs.polarization_ch2 = polarization_ch2;
-
 %% create Photon-HDF5 data structure using python dicts
 
 % setup group

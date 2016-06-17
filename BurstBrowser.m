@@ -8578,6 +8578,10 @@ if isempty(obj)
 else
     h = guidata(obj);
 end
+if isempty(BurstData)
+    disp('No data loaded.');
+    return;
+end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Saving...');
 %%% construct filenames
 for i = 1:numel(BurstData)
