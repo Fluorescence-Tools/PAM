@@ -7712,6 +7712,7 @@ switch BurstData{file}.BAMethod
         %%% 2color MFD
         c{1} = [1,2]; %% GG
         c{2} = [5,6]; %% RR
+        c{3} = [3,4];
     case {3,4}
         %%% 3color MFD
         c{1} = [1,2]; %% BB

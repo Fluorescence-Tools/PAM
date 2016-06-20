@@ -1,6 +1,6 @@
-function [success] = save_hdf5(TcspcData, FileInfo, UserValues)
-%%% function to save our data structure as photon-hdf5
-
+function [success] = save_hdf5()
+% function to save our data structure as photon-hdf5
+global TcspcData FileInfo UserValues %% we need to use global since MATLAB duplicates the data otherwise...
 %% input validation
 if ~isstruct(TcspcData) || ~isstruct(FileInfo)
     success = 0;

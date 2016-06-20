@@ -819,7 +819,7 @@ if exist('bh','var')
             'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
         switch BurstData{BurstMeta.SelectedFile}.BAMethod
             case {1,2,5}
-                Channel_String = {'GG','RR'};
+                Channel_String = {'GG','RR','GR'};
             case {3,4}
                 Channel_String = {'BB','GG','RR'};
         end
