@@ -179,6 +179,8 @@ h.Result_Plot.XGrid = 'on';
 h.Result_Plot.YGrid = 'on';
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
+h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',2,'MarkerSize',10);
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',2,'MarkerSize',10);
 h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',2);
 h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',2);
 h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',2);
@@ -187,8 +189,7 @@ h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2);
 h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off','LineWidth',2);
 h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',2,'Visible','off');
 h.Plots.FitResult_Perp_ignore = plot([0 1],[0 0],'--b','Visible','off','LineWidth',2);
-h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',2,'MarkerSize',20);
-h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',2,'MarkerSize',20);
+
 %%% Result Plot (Replaces Microtime Plot after fit is done)
 h.Result_Plot_Aniso = axes(...
     'Parent',h.TauFit_Panel,...
@@ -2918,7 +2919,7 @@ switch obj
             
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(ignore:end)) min(Decay_per(ignore:end))]);
-            h.Result_Plot.YLim(2) = 1.05*max([max(Decay_par(ignore:end)) max(Decay_per(ignore:end))]);
+            h.Result_Plot.YLim(2) = 1.1*max([max(Decay_par(ignore:end)) max(Decay_per(ignore:end))]);
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -3130,12 +3131,12 @@ switch obj
         axis(h.Result_Plot,'tight');
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
-            str = sprintf('I_0 = %1.2f \ntau = %2.2f ns\noffset = %3.2f',param(1),param(2)*TACtoTime,param(3));
+            str = sprintf('I_0 = %1.2f \n\\tau = %2.2f ns\noffset = %3.2f',param(1),param(2)*TACtoTime,param(3));
         elseif number_of_exponentials == 2
-            str = sprintf('I_0 = %1.2f \ntau_1 = %1.2f ns\ntau_2 = %2.2f ns\nfraction 1 = %3.2f\noffset = %3.2f',param(1),param(3)*TACtoTime,param(2)*TACtoTime,param(4),param(5));
+            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\nfraction 1 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4),param(5),TACtoTime*(param(4)*param(2)+(1-param(4))*param(3)));
         end
         h.Result_Plot_Text.String = str;
-        h.Result_Plot_Text.Position = [0.8 0.9];
+        h.Result_Plot_Text.Position = [0.8 0.85];
         
         x = 1:numel(Decay);
         h.Plots.Residuals.XData = x_fitres*TACtoTime;
@@ -3352,7 +3353,7 @@ else
     b = '_fit.tif';
 end
 if strcmp(TauFitData.Who,'BurstBrowser')
-    Species = strsplit(h.SpeciesSelect_Text.String,': ');
+    Species = strsplit(h.SpeciesSelect_Text.String(2,:),': ');
     c  =  ['_' strjoin(strsplit(Species{2},' '),'')];
 else
     c = '';
