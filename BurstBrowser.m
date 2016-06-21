@@ -1847,8 +1847,9 @@ if isempty(hfig)
         'Position',[0.6 0.68 0.2 0.07],...
         'FontSize',12,...
         'Tag','TimeBinPDAEdit',...
-        'String',num2str(UserValues.BurstBrowser.Settings.PDATimeBin),...
-        'Callback',@UpdateOptions...
+        'String',UserValues.BurstBrowser.Settings.PDATimeBin,...
+        'Callback',@UpdateOptions,...
+        'TooltipString', 'e.g. "1" or "0.2, 0.5, 0.75, 1"'...
         );
     
     h.ApplyCorrectionsOnLoad = uicontrol('Style','checkbox',...
@@ -4211,7 +4212,8 @@ switch obj
     case h.IsoLineGaussFit_Edit
         UserValues.BurstBrowser.Settings.IsoLineGaussFit = str2double(obj.String);
     case h.TimeBinPDAEdit
-        UserValues.BurstBrowser.Settings.PDATimeBin = str2double(obj.String);
+        % store it as a string cause it might not be a number but a range
+        UserValues.BurstBrowser.Settings.PDATimeBin = obj.String;
     case h.CompareFRETHist_Waterfall
         UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall = obj.Value;
 end
@@ -4542,209 +4544,215 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Exporting...');
 %%% find selected bursts
 MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
-%%% Hard-Code 1ms here
-timebin = str2num(h.TimeBinPDAEdit.String)*1E-3;
-duration = timebin/BurstData{file}.ClockPeriod;
 
-PDAdata = Bursts_to_Timebins(MT,CH,duration);
+% Timebin can be a single number or a range e.g. "0.2,0.5,1", without the " "
+Timebin = str2num(h.TimeBinPDAEdit.String).*1E-3;
 
-Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
-
-%%% Save Brightness Reference?
-save_brightness_reference = 1;
-%now save channel wise photon numbers
-total = numel(PDAdata);
-filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-newfilename = GenerateName([filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
-switch BurstData{file}.BAMethod
-    case {1,2}
-        PDA.NGP = zeros(total,1);
-        PDA.NGS = zeros(total,1);
-        PDA.NFP = zeros(total,1);
-        PDA.NFS = zeros(total,1);
-        PDA.NRP = zeros(total,1);
-        PDA.NRS = zeros(total,1);
-        
-        PDA.NG = zeros(total,1);
-        PDA.NF = zeros(total,1);
-        PDA.NR = zeros(total,1);
-        
-        PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata);
-        PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata);
-        PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata);
-        PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata);
-        PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata);
-        PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata);
-        
-        PDA.NG = PDA.NGP + PDA.NGS;
-        PDA.NF = PDA.NFP + PDA.NFS;
-        PDA.NR = PDA.NRP + PDA.NRS;
-        
-        PDA.Corrections = BurstData{file}.Corrections;
-        PDA.Background = BurstData{file}.Background;
-        if save_brightness_reference
-            posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
-            donly = (BurstData{file}.DataArray(:,posS) > 0.95);
-            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
-            NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
-            NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
-            PDA.BrightnessReference.N = NGP + NGS;
-        end
-        save(newfilename, 'PDA', 'timebin')
-    case 5 %noMFD
-        PDA.NG = zeros(total,1);
-        PDA.NF = zeros(total,1);
-        PDA.NR = zeros(total,1);
-        
-        PDA.NG = cellfun(@(x) sum((x==1)),PDAdata);
-        PDA.NF = cellfun(@(x) sum((x==2)),PDAdata);
-        PDA.NR = cellfun(@(x) sum((x==3)),PDAdata);
-        
-        PDA.Corrections = BurstData{file}.Corrections;
-        PDA.Background = BurstData{file}.Background;
-        for i = fieldnames(PDA.Background)'
-            PDA.Background.(i{1}) = PDA.Background.(i{1})/2;
-        end
-        if save_brightness_reference
-            posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
-            donly = (BurstData{file}.DataArray(:,posS) > 0.95);
-            DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
-            NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
-            PDA.BrightnessReference.N = NG;
-        end
-        save(newfilename, 'PDA', 'timebin')
-    case {3,4}
-        %%% ask user for either 3CPDA or two color subpopulation
-        [choice, ok] = listdlg('PromptString','Select Export Mode:',...
-            'SelectionMode','single',...
-            'ListString',{'3CPDA','GR','BG','BR'});
-        if ~ok
-            return;
-        end
-        switch choice
-            case 1
-                NBBP = cellfun(@(x) sum((x==1)),PDAdata);
-                NBBS = cellfun(@(x) sum((x==2)),PDAdata);
-                NBGP = cellfun(@(x) sum((x==3)),PDAdata);
-                NBGS = cellfun(@(x) sum((x==4)),PDAdata);
-                NBRP = cellfun(@(x) sum((x==5)),PDAdata);
-                NBRS = cellfun(@(x) sum((x==6)),PDAdata);
-                NGGP = cellfun(@(x) sum((x==7)),PDAdata);
-                NGGS = cellfun(@(x) sum((x==8)),PDAdata);
-                NGRP = cellfun(@(x) sum((x==9)),PDAdata);
-                NGRS = cellfun(@(x) sum((x==10)),PDAdata);
-                NRRP = cellfun(@(x) sum((x==11)),PDAdata);
-                NRRS = cellfun(@(x) sum((x==12)),PDAdata);
-                
-                tcPDAstruct.NBB = NBBP + NBBS;
-                tcPDAstruct.NBG = NBGP + NBGS;
-                tcPDAstruct.NBR = NBRP + NBRS;
-                tcPDAstruct.NGG = NGGP + NGGS;
-                tcPDAstruct.NGR = NGRP + NGRS;
-                tcPDAstruct.NRR = NRRP + NRRS;
-                tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
-                tcPDAstruct.timebin = timebin*1000;
-                tcPDAstruct.corrections = BurstData{file}.Corrections;
-                tcPDAstruct.background = BurstData{file}.Background;
-                
-                if save_brightness_reference
-                    posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
-                    posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
-                    posSBR = (strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
-                    gonly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
-                    GOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(gonly),BurstTCSPCData{file}.Channel(gonly),duration);
-                    NGP = cellfun(@(x) sum((x==7)),GOnly_PDA);
-                    NGS = cellfun(@(x) sum((x==8)),GOnly_PDA);
-                    tcPDAstruct.BrightnessReference.NG = NGP + NGS;
-                    bonly = (BurstData{file}.DataArray(:,posSBR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) > 0.95);
-                    BOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(bonly),BurstTCSPCData{file}.Channel(bonly),duration);
-                    NBP = cellfun(@(x) sum((x==1)),BOnly_PDA);
-                    NBS = cellfun(@(x) sum((x==2)),BOnly_PDA);
-                    tcPDAstruct.BrightnessReference.NB = NBP + NBS;
-                end
-                filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-                newfilename = [filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
-                save(newfilename, 'tcPDAstruct', 'timebin')
-            case {2,3,4}
-                PDA.NGP = zeros(total,1);
-                PDA.NGS = zeros(total,1);
-                PDA.NFP = zeros(total,1);
-                PDA.NFS = zeros(total,1);
-                PDA.NRP = zeros(total,1);
-                PDA.NRS = zeros(total,1);
-                
-                PDA.NG = zeros(total,1);
-                PDA.NF = zeros(total,1);
-                PDA.NR = zeros(total,1);
-                
-                %chan gives the photon counts in format
-                %[Donor_par/perp,FRET_par/perp,Acc_par/perp]
-                switch choice
-                    case 2
-                        chan = [7,8,9,10,11,12];
-                        newfilename = [newfilename(1:end-4) '_GR.pda'];
-                    case 3
-                        chan = [1, 2, 3, 4, 7, 8];
-                        newfilename = [newfilename(1:end-4) '_BG.pda'];
-                    case 4
-                        chan = [1, 2, 5, 6, 11, 12];
-                        newfilename = [newfilename(1:end-4) '_BR.pda'];
-                end
-                
-                PDA.NGP = cellfun(@(x) sum((x==chan(1))),PDAdata);
-                PDA.NGS = cellfun(@(x) sum((x==chan(2))),PDAdata);
-                PDA.NFP = cellfun(@(x) sum((x==chan(3))),PDAdata);
-                PDA.NFS = cellfun(@(x) sum((x==chan(4))),PDAdata);
-                PDA.NRP = cellfun(@(x) sum((x==chan(5))),PDAdata);
-                PDA.NRS = cellfun(@(x) sum((x==chan(6))),PDAdata);
-                
-                %PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
-                %PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);
-                %PDA.NFP = cellfun(@(x) sum((x==9)),PDAdata);
-                %PDA.NFS = cellfun(@(x) sum((x==10)),PDAdata);
-                %PDA.NRP = cellfun(@(x) sum((x==11)),PDAdata);
-                %PDA.NRS = cellfun(@(x) sum((x==12)),PDAdata);
-                
-                PDA.NG = PDA.NGP + PDA.NGS;
-                PDA.NF = PDA.NFP + PDA.NFS;
-                PDA.NR = PDA.NRP + PDA.NRS;
-                
-                PDA.Corrections = BurstData{file}.Corrections;
-                PDA.Background = BurstData{file}.Background;
-                %%% change corrections with values for selected species
-                switch choice
-                    case 2
-                        %%% keep as is
-                    case 3
-                        PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BG;
-                        PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BG;
-                        PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBG;
-                        PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
-                        PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
-                        PDA.Background.Background_GRpar = PDA.Background.Background_BGpar;
-                        PDA.Background.Background_GRperp = PDA.Background.Background_BGperp;
-                        PDA.Background.Background_RRpar = PDA.Background.Background_GGpar;
-                        PDA.Background.Background_RRperp = PDA.Background.Background_GGperp;
-                    case 4
-                        PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BR;
-                        PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BR;
-                        PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBR;
-                        PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
-                        PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
-                        PDA.Background.Background_GRpar = PDA.Background.Background_BRpar;
-                        PDA.Background.Background_GRperp = PDA.Background.Background_BRperp;
-                end
-                if save_brightness_reference
-                    posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
-                    posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
-                    donly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
-                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
-                    NGP = cellfun(@(x) sum((x==7)),DOnly_PDA);
-                    NGS = cellfun(@(x) sum((x==8)),DOnly_PDA);
-                    PDA.BrightnessReference.N = NGP + NGS;
-                end
-                save(newfilename, 'PDA', 'timebin')
-        end
+for i = 1:numel(Timebin)
+    timebin = Timebin(i);
+    duration = timebin./BurstData{file}.ClockPeriod;
+    
+    PDAdata = Bursts_to_Timebins(MT,CH,duration);
+    
+    Progress(0.5,h.Progress_Axes,h.Progress_Text,'Exporting...');
+    
+    %%% Save Brightness Reference?
+    save_brightness_reference = 1;
+    %now save channel wise photon numbers
+    total = numel(PDAdata);
+    filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+    
+    newfilename = GenerateName([filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.pda'], 1);
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            PDA.NGP = zeros(total,1);
+            PDA.NGS = zeros(total,1);
+            PDA.NFP = zeros(total,1);
+            PDA.NFS = zeros(total,1);
+            PDA.NRP = zeros(total,1);
+            PDA.NRS = zeros(total,1);
+            
+            PDA.NG = zeros(total,1);
+            PDA.NF = zeros(total,1);
+            PDA.NR = zeros(total,1);
+            
+            PDA.NGP = cellfun(@(x) sum((x==1)),PDAdata);
+            PDA.NGS = cellfun(@(x) sum((x==2)),PDAdata);
+            PDA.NFP = cellfun(@(x) sum((x==3)),PDAdata);
+            PDA.NFS = cellfun(@(x) sum((x==4)),PDAdata);
+            PDA.NRP = cellfun(@(x) sum((x==5)),PDAdata);
+            PDA.NRS = cellfun(@(x) sum((x==6)),PDAdata);
+            
+            PDA.NG = PDA.NGP + PDA.NGS;
+            PDA.NF = PDA.NFP + PDA.NFS;
+            PDA.NR = PDA.NRP + PDA.NRS;
+            
+            PDA.Corrections = BurstData{file}.Corrections;
+            PDA.Background = BurstData{file}.Background;
+            if save_brightness_reference
+                posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+                donly = (BurstData{file}.DataArray(:,posS) > 0.95);
+                DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
+                NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
+                PDA.BrightnessReference.N = NGP + NGS;
+            end
+            save(newfilename, 'PDA', 'timebin')
+        case 5 %noMFD
+            PDA.NG = zeros(total,1);
+            PDA.NF = zeros(total,1);
+            PDA.NR = zeros(total,1);
+            
+            PDA.NG = cellfun(@(x) sum((x==1)),PDAdata);
+            PDA.NF = cellfun(@(x) sum((x==2)),PDAdata);
+            PDA.NR = cellfun(@(x) sum((x==3)),PDAdata);
+            
+            PDA.Corrections = BurstData{file}.Corrections;
+            PDA.Background = BurstData{file}.Background;
+            for i = fieldnames(PDA.Background)'
+                PDA.Background.(i{1}) = PDA.Background.(i{1})/2;
+            end
+            if save_brightness_reference
+                posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+                donly = (BurstData{file}.DataArray(:,posS) > 0.95);
+                DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                NG = cellfun(@(x) sum((x==1)),DOnly_PDA);
+                PDA.BrightnessReference.N = NG;
+            end
+            save(newfilename, 'PDA', 'timebin')
+        case {3,4}
+            %%% ask user for either 3CPDA or two color subpopulation
+            [choice, ok] = listdlg('PromptString','Select Export Mode:',...
+                'SelectionMode','single',...
+                'ListString',{'3CPDA','GR','BG','BR'});
+            if ~ok
+                return;
+            end
+            switch choice
+                case 1
+                    NBBP = cellfun(@(x) sum((x==1)),PDAdata);
+                    NBBS = cellfun(@(x) sum((x==2)),PDAdata);
+                    NBGP = cellfun(@(x) sum((x==3)),PDAdata);
+                    NBGS = cellfun(@(x) sum((x==4)),PDAdata);
+                    NBRP = cellfun(@(x) sum((x==5)),PDAdata);
+                    NBRS = cellfun(@(x) sum((x==6)),PDAdata);
+                    NGGP = cellfun(@(x) sum((x==7)),PDAdata);
+                    NGGS = cellfun(@(x) sum((x==8)),PDAdata);
+                    NGRP = cellfun(@(x) sum((x==9)),PDAdata);
+                    NGRS = cellfun(@(x) sum((x==10)),PDAdata);
+                    NRRP = cellfun(@(x) sum((x==11)),PDAdata);
+                    NRRS = cellfun(@(x) sum((x==12)),PDAdata);
+                    
+                    tcPDAstruct.NBB = NBBP + NBBS;
+                    tcPDAstruct.NBG = NBGP + NBGS;
+                    tcPDAstruct.NBR = NBRP + NBRS;
+                    tcPDAstruct.NGG = NGGP + NGGS;
+                    tcPDAstruct.NGR = NGRP + NGRS;
+                    tcPDAstruct.NRR = NRRP + NRRS;
+                    tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
+                    tcPDAstruct.timebin = timebin*1000;
+                    tcPDAstruct.corrections = BurstData{file}.Corrections;
+                    tcPDAstruct.background = BurstData{file}.Background;
+                    
+                    if save_brightness_reference
+                        posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
+                        posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+                        posSBR = (strcmp(BurstData{file}.NameArray,'Stoichiometry BR'));
+                        gonly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
+                        GOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(gonly),BurstTCSPCData{file}.Channel(gonly),duration);
+                        NGP = cellfun(@(x) sum((x==7)),GOnly_PDA);
+                        NGS = cellfun(@(x) sum((x==8)),GOnly_PDA);
+                        tcPDAstruct.BrightnessReference.NG = NGP + NGS;
+                        bonly = (BurstData{file}.DataArray(:,posSBR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) > 0.95);
+                        BOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(bonly),BurstTCSPCData{file}.Channel(bonly),duration);
+                        NBP = cellfun(@(x) sum((x==1)),BOnly_PDA);
+                        NBS = cellfun(@(x) sum((x==2)),BOnly_PDA);
+                        tcPDAstruct.BrightnessReference.NB = NBP + NBS;
+                    end
+                    filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+                    newfilename = [filename(1:end-4) '_' SelectedSpeciesName '_' num2str(timebin*1000) 'ms.tcpda'];
+                    save(newfilename, 'tcPDAstruct', 'timebin')
+                case {2,3,4}
+                    PDA.NGP = zeros(total,1);
+                    PDA.NGS = zeros(total,1);
+                    PDA.NFP = zeros(total,1);
+                    PDA.NFS = zeros(total,1);
+                    PDA.NRP = zeros(total,1);
+                    PDA.NRS = zeros(total,1);
+                    
+                    PDA.NG = zeros(total,1);
+                    PDA.NF = zeros(total,1);
+                    PDA.NR = zeros(total,1);
+                    
+                    %chan gives the photon counts in format
+                    %[Donor_par/perp,FRET_par/perp,Acc_par/perp]
+                    switch choice
+                        case 2
+                            chan = [7,8,9,10,11,12];
+                            newfilename = [newfilename(1:end-4) '_GR.pda'];
+                        case 3
+                            chan = [1, 2, 3, 4, 7, 8];
+                            newfilename = [newfilename(1:end-4) '_BG.pda'];
+                        case 4
+                            chan = [1, 2, 5, 6, 11, 12];
+                            newfilename = [newfilename(1:end-4) '_BR.pda'];
+                    end
+                    
+                    PDA.NGP = cellfun(@(x) sum((x==chan(1))),PDAdata);
+                    PDA.NGS = cellfun(@(x) sum((x==chan(2))),PDAdata);
+                    PDA.NFP = cellfun(@(x) sum((x==chan(3))),PDAdata);
+                    PDA.NFS = cellfun(@(x) sum((x==chan(4))),PDAdata);
+                    PDA.NRP = cellfun(@(x) sum((x==chan(5))),PDAdata);
+                    PDA.NRS = cellfun(@(x) sum((x==chan(6))),PDAdata);
+                    
+                    %PDA.NGP = cellfun(@(x) sum((x==7)),PDAdata);
+                    %PDA.NGS = cellfun(@(x) sum((x==8)),PDAdata);
+                    %PDA.NFP = cellfun(@(x) sum((x==9)),PDAdata);
+                    %PDA.NFS = cellfun(@(x) sum((x==10)),PDAdata);
+                    %PDA.NRP = cellfun(@(x) sum((x==11)),PDAdata);
+                    %PDA.NRS = cellfun(@(x) sum((x==12)),PDAdata);
+                    
+                    PDA.NG = PDA.NGP + PDA.NGS;
+                    PDA.NF = PDA.NFP + PDA.NFS;
+                    PDA.NR = PDA.NRP + PDA.NRS;
+                    
+                    PDA.Corrections = BurstData{file}.Corrections;
+                    PDA.Background = BurstData{file}.Background;
+                    %%% change corrections with values for selected species
+                    switch choice
+                        case 2
+                            %%% keep as is
+                        case 3
+                            PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BG;
+                            PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BG;
+                            PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBG;
+                            PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
+                            PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
+                            PDA.Background.Background_GRpar = PDA.Background.Background_BGpar;
+                            PDA.Background.Background_GRperp = PDA.Background.Background_BGperp;
+                            PDA.Background.Background_RRpar = PDA.Background.Background_GGpar;
+                            PDA.Background.Background_RRperp = PDA.Background.Background_GGperp;
+                        case 4
+                            PDA.Corrections.Gamma_GR = PDA.Corrections.Gamma_BR;
+                            PDA.Corrections.CrossTalk_GR = PDA.Corrections.CrossTalk_BR;
+                            PDA.Corrections.FoersterRadius = PDA.Corrections.FoersterRadiusBR;
+                            PDA.Background.Background_GGpar = PDA.Background.Background_BBpar;
+                            PDA.Background.Background_GGperp = PDA.Background.Background_BBperp;
+                            PDA.Background.Background_GRpar = PDA.Background.Background_BRpar;
+                            PDA.Background.Background_GRperp = PDA.Background.Background_BRperp;
+                    end
+                    if save_brightness_reference
+                        posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
+                        posSBG = (strcmp(BurstData{file}.NameArray,'Stoichiometry BG'));
+                        donly = (BurstData{file}.DataArray(:,posSGR) > 0.95) & (BurstData{file}.DataArray(:,posSBG) < 0.05);
+                        DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                        NGP = cellfun(@(x) sum((x==7)),DOnly_PDA);
+                        NGS = cellfun(@(x) sum((x==8)),DOnly_PDA);
+                        PDA.BrightnessReference.N = NGP + NGS;
+                    end
+                    save(newfilename, 'PDA', 'timebin')
+            end
+    end
 end
 
 Progress(1,h.Progress_Axes,h.Progress_Text);
@@ -4974,31 +4982,43 @@ if ~colorbyparam
     h.colorbar.TickLabelsMode = 'auto';
     h.colorbar.TicksMode = 'auto'; 
 else
+    % histogram X vs Y parameter
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
+    % create Mask of size H
     Mask = zeros(size(H,1),size(H,2));
     counter = zeros(size(H,1),size(H,2));
-    z = find(strcmp(h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5))),BurstData{file}.NameArray)); %%% parameter to scale by
+    % which parameter in the list defines the Mask
+    z = find(strcmp(h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5))),BurstData{file}.NameArray)); 
     z = datatoplot(:,z);
-    for i = 1:size(bin,1)
+    % sort all selected bursts into the Mask
+    for i = 1:size(bin,1) %bin in a list of X and Y bins of all selected bursts
         if ~isnan(z(i))
             Mask(bin(i,1),bin(i,2)) = Mask(bin(i,1),bin(i,2)) + z(i);
             counter(bin(i,1),bin(i,2)) = counter(bin(i,1),bin(i,2)) + 1;
         end
     end
-    Mask(counter > 0) = Mask(counter > 0)./counter(counter > 0);
+    % make the average of all entries in Mask depending on the number of bursts in the pixel
+    Mask(counter > 0) = Mask(counter > 0)./counter(counter > 0); 
     zParam = Mask(:);
+    % go in between the limits defined in the cut table 
     zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
     Mask(Mask < zlim(1)) = zlim(1);
     Mask(Mask > zlim(2)) = zlim(2);
     Mask = floor(63*(Mask-zlim(1))./(zlim(2)-zlim(1)))+1;
+    % get the colormap user wants
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         eval(['cmap =' UserValues.BurstBrowser.Display.ColorMap '(64);']);
     else
         cmap=UserValues.BurstBrowser.Display.ColorMap;
     end
+    % invert colormap
     if UserValues.BurstBrowser.Display.ColorMapInvert
         cmap=flipud(cmap);
     end
+    % a = cmap(Mask,:)
+    %    if Mask(1) = n, then a(1) is the nth element of cmap
+    % reshape(a, size(Mask,1),size(Mask,2),3))
+    %   converts a back to the size of Mask, but now the color in the 3rd dimension
     Color = reshape(cmap(Mask,:),size(Mask,1),size(Mask,2),3);
     
     if UserValues.BurstBrowser.Display.ZScale_Intensity
@@ -5990,7 +6010,7 @@ global BurstData BurstMeta
 %check which cell was changed
 index = eventdata.Indices;
 file = BurstMeta.SelectedFile;
-species = BurstData{file}.SelectedSpecies;
+species = BurstData{file}.SelectedSpecies; % in the DataTree
 %read out the parameter name
 ChangedParameterName = BurstData{file}.Cut{species(1),species(2)}{index(1)}{1};
 %change value in structure
@@ -6015,8 +6035,8 @@ switch index(2)
                     exist(l) = strcmp(BurstData{file}.Cut{species(1),1}{l}{1},BurstData{file}.Cut{species(1),species(2)}{index(1)}{1});
                 end
                 if any(exist == 1)
-                    if NewData < BurstData{file}.Cut{1}{index(1)}{index(2)+1}
-                        NewData = BurstData{file}.Cut{1}{index(1)}{index(2)+1};
+                    if NewData <= BurstData{file}.Cut{species(1)}{exist}{index(2)+1}
+                        NewData = BurstData{file}.Cut{species(1)}{exist}{index(2)+1};
                     end
                 end
             end
@@ -6036,8 +6056,8 @@ switch index(2)
                     exist(l) = strcmp(BurstData{file}.Cut{species(1),1}{l}{1},BurstData{file}.Cut{species(1),species(2)}{index(1)}{1});
                 end
                 if any(exist == 1)
-                    if NewData > BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1}
-                        NewData = BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1};
+                    if NewData >= BurstData{file}.Cut{species(1),1}{exist}{index(2)+1}
+                        NewData = BurstData{file}.Cut{species(1),1}{exist}{index(2)+1};
                     end
                 end
             end
@@ -6054,6 +6074,7 @@ switch index(2)
 end
 
 if index(2) < 4
+    % assign the new value
     BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1}=NewData;
 elseif index(2) == 4 %delete this entry
     BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
@@ -6073,7 +6094,7 @@ if species(2) == 1
                 ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
                 CheckParam = strcmp(ParamList,ChangedParameterName);
                 if any(CheckParam)
-                    %%% Check wheter do delete or change the parameter
+                    %%% Check whether to delete or change the parameter
                     if index(2) ~= 4 %%% Parameter added or changed
                         %%% Override the parameter with GlobalCut
                         %%% But only if it affects the boundaries of the
@@ -10556,13 +10577,14 @@ FigureName = strrep(FigureName,' ','_');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
-global UserValues
+global UserValues BurstData
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 if directly_save
     if ask_file
         %%% Get Path to save File
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(BurstData{1,1}.PathName,FigureName));
+        %[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
         if FileName == 0
             delete(hfig);
             return;
@@ -10703,6 +10725,7 @@ function [H,xbins,ybins,xbins_hist,ybins_hist, bin] = calc2dhist(x,y,nbins,limx,
 %%% H:                      Image Data
 %%% xbins/ybins:            corrected xbins for image plot
 %%% xbins_hist/ybins_hist:  use these x/y values for 1d-bar plots
+%%% bin:                    a list of the x and y bins of all selected bursts
 global UserValues
 if nargin <2
     return;
