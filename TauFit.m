@@ -58,6 +58,7 @@ h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
 h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
     'Separator','on',...
     'Callback',@Export);
+
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
 h.TauFit_Panel = uibuttongroup(...
@@ -905,6 +906,12 @@ if exist('bh','var')
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
         
         set(h.Determine_GFactor_Button,'Visible','off');
+        
+        if any(TauFitData.BAMethod == [1,2])
+            %%% Add menu for Kappa2 simulation
+            h.Menu.Extra_Menu = uimenu(h.TauFit,'Label','Extra...');
+            h.Menu.Sim_Kappa2_Menu = uimenu(h.Menu.Extra_Menu,'Label','Simulated Kappa2 distribution','Callback',@Kappa2_Sim);
+        end
     end
 end
 h.FitMethod_Popupmenu = uicontrol(...
@@ -3359,6 +3366,88 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
     writetable(tab,GenerateName([TauFitData.FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Simulate Kappa2 distribution based on residual anisotropies %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Kappa2_Sim(obj,~)
+global UserValues TauFitData
+val = inputdlg({'r0(Donor)','residual donor anisotropy','r0(Acceptor)','residual acceptor anisotropy','residual transfer anisotropy'},...
+    'Please specify the anisotropy values',1,{num2str(UserValues.BurstBrowser.Corrections.r0_green),'0.1',num2str(UserValues.BurstBrowser.Corrections.r0_red),'0.1','0'});
+
+r0d = str2double(val{1});
+rinfd = str2double(val{2});
+r0a = str2double(val{3});
+rinfa = str2double(val{4});
+rinfad = str2double(val{5});
+%% kappa2 calculation
+
+%%%
+% Calculation is based on the following papers:
+% 1. Ivanov, V., Li, M. & Mizuuchi, K. Impact of emission anisotropy on fluorescence spectroscopy and FRET distance measurements. Biophys J 97, 922?929 (2009).
+% 2. Sindbert, S. et al. Accurate Distance Determination of Nucleic Acids via F?rster Resonance Energy Transfer: Implications of Dye Linker Length and Rigidity. J. Am. Chem. Soc. 133, 2463?2480 (2011).
+%%%
+%%% calculate depolarizations
+SD = sqrt(rinfd/r0d);
+SA = sqrt(rinfa/r0a);
+
+%%% estimate the mean angle between the dipoles
+% Equation 20 from (1)
+try
+    cos_thetaDA = sqrt((1+2*(rinfad/SA/SD/r0a))/3);
+   
+catch
+    % division by zero occured, default to 1/3
+    cos_thetaDA= sqrt(1/3);
+end
+thetaDA = acos(cos_thetaDA);
+
+%%% draw angles uniformly
+%sampling = 1E6;
+%thetaD = pi/2*(rand(sampling,1));
+%thetaA = pi/2*(rand(sampling,1));
+
+%%% systematic sampling of the space
+% requires linear sampling because of how the angles are defined
+% see Figure 3 from (1)
+[thetaD,thetaA] = meshgrid(linspace(0,pi/2,1000),linspace(0,pi/2,1000));
+thetaD = thetaD(:);
+thetaA = thetaA(:);
+
+%%% remove invalid angle combinations
+% Equation 17 from (1)
+valid = (cos(thetaD+thetaA) <= cos_thetaDA) & (cos(thetaD-thetaA) >= cos_thetaDA);
+
+%%% calculation of kappa2
+% Equation 21-22 from (1)
+kappa2_0 = (3*cos(thetaA).*cos(thetaD)-cos(thetaDA)).^2;
+kappa2 = SD*SA*kappa2_0+(1-SA).*(SD.*(cos(thetaD)).^2+1/3)+(1-SD).*(SA*(cos(thetaA)).^2+1/3);
+kappa2 = kappa2(valid);
+
+%%% we can define accuracy and prediction values of distances determined
+%%% with the "wrong" kappa2 assumption of 2/3 based on the information
+% Equation S17A-B in (2)
+accuracy = (mean((kappa2/(2/3)).^(-1/6))-1)*100;
+precision = (sqrt(var((kappa2/(2/3)).^(-1/6))))*100;
+
+%%% These are absolute worst case boundaries for when NO transfer
+%%% anisotropy is known
+kappa2_min = (2/3)*(1-(sqrt(rinfd/r0d)+sqrt(rinfa/r0a))/2);
+kappa2_max = (2/3)*(1+sqrt(rinfd/r0d)+sqrt(rinfa/r0a)+3*sqrt(rinfd/r0d)*sqrt(rinfa/r0a));
+
+
+%%% Make a nice figure to show the results
+hfig = figure('Color',[1,1,1]);hhist = histogram(kappa2,'Normalization','probability');
+hhist.EdgeColor = 'none';
+ax = gca;
+ax.XLim(1) = 0;
+ax.Color = [1,1,1];
+ax.FontSize = 24;
+xlabel('\kappa^2');
+ylabel('probability');
+ax.Units = 'Pixels';
+ht = text(ax.XLim(2)*0.55,ax.YLim(2)*0.85,sprintf(['\\kappa^2 =  %.2f' char(177) '%.2f\nAccuracy: %.1f%%\nPrecision: %.1f%%'],mean(kappa2),std(kappa2),accuracy,precision));
+ht.FontSize = 24;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
