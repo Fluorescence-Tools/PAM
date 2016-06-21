@@ -923,9 +923,7 @@ h.FitMethod_Popupmenu = uicontrol(...
     'Position',[0.3 0.4 0.6 0.095],...
     'String',h.FitMethods,...
     'Callback',@Method_Selection);
-if ~strcmp(TauFitData.Who,'Burstwise')
-    h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
-end
+
 h.FitMethod_Text = uicontrol(...
     'Parent',h.PIEChannel_Panel,...
     'Style','Text',...
@@ -1267,6 +1265,12 @@ if exist('ph','var')
                 close(h.TauFit);
         end
     end
+end
+
+% set method to stored method
+if ~strcmp(TauFitData.Who,'Burstwise')
+    h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
+    Method_Selection(h.FitMethod_Popupmenu,[]);
 end
 
 function ChangeYScale(obj,~)
@@ -1841,7 +1845,7 @@ function Method_Selection(obj,~)
 global TauFitData UserValues
 TauFitData.FitType = obj.String{obj.Value};
 %%% Update FitTable
-h = guidata(findobj('Tag','TauFit'));
+h = guidata(obj);
 if ~strcmp(TauFitData.Who, 'TauFit')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
