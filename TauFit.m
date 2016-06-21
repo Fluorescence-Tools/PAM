@@ -1397,10 +1397,10 @@ if isempty(obj) || obj == h.LoadData_Button
 %     TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
 
     %%% Microtime Histogram of Parallel Channel
-    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)}(...
+    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{UserValues.PIE.Router(PIEChannel_Par),UserValues.PIE.Detector(PIEChannel_Par)}(...
         UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
     %%% Microtime Histogram of Perpendicular Channel
-    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)}(...
+    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{UserValues.PIE.Router(PIEChannel_Per),UserValues.PIE.Detector(PIEChannel_Per)}(...
         UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
     
     %%% Read out the Microtime Histograms of the IRF for the two channels
@@ -1504,7 +1504,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
     h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
-    if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.StartPar{chan};
     else
         tmp = 0;

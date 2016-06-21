@@ -3156,7 +3156,7 @@ switch mode
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
             tmp(i,6) = PDAData.Corrections{i}.FoersterRadius;
-            tmp(i,7) = round(PDAData.timebin(i)*10000)/10;
+            tmp(i,7) = PDAData.timebin(i)*1000;
         end
         Data(size(h.ParametersTab.Table.Data,1):(end-1),:) = num2cell(tmp(size(h.ParametersTab.Table.Data,1):end,:));
         % put the ALL row to the mean of the loaded data 
@@ -3177,7 +3177,7 @@ switch mode
             tmp(i,4) = PDAData.Background{i}.Background_GGpar + PDAData.Background{i}.Background_GGperp;
             tmp(i,5) = PDAData.Background{i}.Background_GRpar + PDAData.Background{i}.Background_GRperp;
             tmp(i,6) = PDAData.Corrections{i}.FoersterRadius;
-            tmp(i,7) = round(PDAData.timebin(i)*10000)/10;
+            tmp(i,7) = PDAData.timebin(i)*1000;
         end
         h.ParametersTab.Table.Data(1:end-1,:) = num2cell(tmp);
         PDAMeta.PreparationDone = 0;
@@ -3201,8 +3201,10 @@ switch mode
             end
         end
         if e.Indices(1)==size(h.ParametersTab.Table.Data,1)
-            %% ALL row was used => Applies to all files
-            h.ParametersTab.Table.Data(:,e.Indices(2))=deal({NewData});
+            if e.Indices(2) ~= 7 % do not do for the Bin column
+                %% ALL row was used => Applies to all files
+                h.ParametersTab.Table.Data(:,e.Indices(2))=deal({NewData});
+            end 
         end
         PDAMeta.PreparationDone = 0;
         
