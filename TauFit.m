@@ -923,7 +923,9 @@ h.FitMethod_Popupmenu = uicontrol(...
     'Position',[0.3 0.4 0.6 0.095],...
     'String',h.FitMethods,...
     'Callback',@Method_Selection);
-
+if ~strcmp(TauFitData.Who,'Burstwise')
+    h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
+end
 h.FitMethod_Text = uicontrol(...
     'Parent',h.PIEChannel_Panel,...
     'Style','Text',...
@@ -1836,7 +1838,7 @@ delete(findobj('Tag','TauFit'));
 %%% Executes on Method selection change %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Method_Selection(obj,~)
-global TauFitData
+global TauFitData UserValues
 TauFitData.FitType = obj.String{obj.Value};
 %%% Update FitTable
 h = guidata(findobj('Tag','TauFit'));
@@ -1848,6 +1850,10 @@ else
 end
 [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(obj.Value, chan);
 
+%%% Update UserValues
+if ~strcmp(TauFitData.Who,'Burstwise')
+    UserValues.TauFit.FitMethod = obj.Value;
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Fit the PIE Channel data or Subensemble (Burst) TCSPC %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

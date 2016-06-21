@@ -799,6 +799,12 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.IncludeChannel = S.TauFit.IncludeChannel;
     
+    %%% Checks, if TauFit.FitMethod exists
+    if ~isfield (S.TauFit,'FitMethod')
+        S.TauFit.FitMethod=1;
+        disp('UserValues.TauFit.FitMethod was incomplete');
+    end
+    P.TauFit.FitMethod = S.TauFit.FitMethod;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
