@@ -10216,10 +10216,11 @@ switch obj
                         ax1dx = n;
                     end
                 end
-                cbar = colorbar(panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
+                panel_copy.Children(ax1dx).XTickLabel = panel_copy.Children(ax2d).XTickLabel; 
+                % for some strange reason, the below colorbar will be part of panel_copy.Children, before the Axes_General 
+                cbar = colorbar('peer', panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
-                panel_copy.Children(ax1dx).XTickLabel = panel_copy.Children(ax2d).XTickLabel;
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
