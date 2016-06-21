@@ -3447,7 +3447,7 @@ ax.FontSize = 24;
 xlabel('\kappa^2');
 ylabel('probability');
 ax.Units = 'Pixels';
-ht = text(ax.XLim(2)*0.55,ax.YLim(2)*0.85,sprintf(['\\kappa^2 =  %.2f' char(177) '%.2f\nAccuracy: %.1f%%\nPrecision: %.1f%%'],mean(kappa2),std(kappa2),accuracy,precision));
+ht = text(ax.XLim(2)*0.55,ax.YLim(2)*0.85,sprintf(['\\langle\\kappa^2\\rangle =  %.2f' char(177) '%.2f\nAccuracy: %.1f%%\nPrecision: %.1f%%'],mean(kappa2),std(kappa2),accuracy,precision));
 ht.FontSize = 24;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Below here, functions used for the fits start %%%%%%%%%%%%%%%%%%%%%%%%
