@@ -1,6 +1,6 @@
 function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Update_Detector_Channels,Caller,FileName,Type)
 global UserValues TcspcData FileInfo PamMeta
-if nargin<8 %%% Opens Dialog box for selecting new files to be loaded
+if nargin<9 %%% Opens Dialog box for selecting new files to be loaded
     %%% following code is for remembering the last used FileType
     LSUserValues(0);    
     %%% Loads all possible file types

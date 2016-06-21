@@ -1835,9 +1835,9 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             LSUserValues(1);
             %%% Loads original data
             if isfield(PhasorData.Data{Sel},'Type')
-                LoadTcspc([],[],[],[],[],h.Phasor,PhasorData.Data{Sel}.FileNames,PhasorData.Data{Sel}.Type)
+                LoadTcspc([],[],[],[],[],0,h.Phasor,PhasorData.Data{Sel}.FileNames,PhasorData.Data{Sel}.Type)
             else
-                LoadTcspc([],[],[],[],[],h.Phasor)
+                LoadTcspc([],[],[],[],[],0,h.Phasor)
             end
             
             

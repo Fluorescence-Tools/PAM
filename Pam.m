@@ -5362,7 +5362,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         
-        if numel(FileInfo.Lines) == 1 
+        if numel(FileInfo.LineTimes) == 1 
             %%% Point measurement, split up according to bins set for FCS analyis
             FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
             FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
