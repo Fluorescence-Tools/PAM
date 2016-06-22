@@ -415,6 +415,7 @@ if isempty(hfig)
     h.AddSpeciesMenuItem = javax.swing.JMenuItem('Add Species');
     h.RemoveSpeciesMenuItem = javax.swing.JMenuItem('Remove Species');
     h.RenameSpeciesMenuItem = javax.swing.JMenuItem('Rename Species');
+    h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
@@ -435,12 +436,12 @@ if isempty(hfig)
     h.SpeciesListMenu.add(h.RemoveSpeciesMenuItem);
     h.SpeciesListMenu.add(h.RenameSpeciesMenuItem);
     h.SpeciesListMenu.addSeparator;
-    h.SpeciesListMenu.add(h.ExportSpeciesToPDAMenuItem);
-    h.SpeciesListMenu.add(h.ExportMicrotimePattern);
-    h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
-    h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
-    h.SpeciesListMenu.add(h.Export_FRET_Hist_Menu);
     h.SpeciesListMenu.add(h.SendToTauFit);
+    h.ExportMenuItem.add(h.Export_FRET_Hist_Menu);
+    h.ExportMenuItem.add(h.ExportSpeciesToPDAMenuItem);
+    h.ExportMenuItem.add(h.ExportMicrotimePattern);
+    h.SpeciesListMenu.add(h.ExportMenuItem);
+    h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
 
     %%% Define Species List
     % new: use uitreenode
@@ -9059,6 +9060,11 @@ if obj == h.FitAnisotropyButton
 end
 %% Manual Perrin plots
 if obj == h.ManualAnisotropyButton
+    %%% disable right-click callbacks
+    BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu =[];BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = [];
+    BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu =[];BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = [];
+    BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =[];BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = [];
+    
     [x,y,button] = ginput(1);
     %%% Lifetime Ind plot: If it was selected, check what plot is active
     %%% and set gca accordingly
@@ -9211,6 +9217,11 @@ if obj == h.ManualAnisotropyButton
             end
         end
     end
+    %%% reenable right-click callbacks
+    %%% disable right-click callbacks
+    BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
+    BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu =h.LifeTime_Menu;BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
+    BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =h.LifeTime_Menu;BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
 end
 PlotLifetimeInd([],[],h);
 

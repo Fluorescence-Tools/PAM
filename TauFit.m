@@ -2811,9 +2811,6 @@ switch obj
         h.IRFShift_Edit.String = num2str(shift_range(best_fit));
         TauFitData.IRFShift{chan} = shift_range(best_fit);
         
-        %%% Reset Progressbar
-        Progress(1,h.Progress_Axes,h.Progress_Text,'Fit done');
-        %h.Progress_Text.String = 'Fit done';
         %%% Update Plot
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
@@ -3178,6 +3175,9 @@ switch obj
         
 end
 
+%%% Reset Progressbar
+Progress(1,h.Progress_Axes,h.Progress_Text,'Fit done');
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Plots Anisotropy and Fit Single Exponential %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
