@@ -4242,8 +4242,12 @@ LSUserValues(1);
 %%%%%%% Right-click adds parameter to CutList                    %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ParameterList_ButtonDownFcn(jListbox,eventData,hListbox)
-h = guidata(hListbox);
 global BurstData BurstMeta
+if isempty(BurstData)
+    return;
+end
+
+h = guidata(hListbox);
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
 
