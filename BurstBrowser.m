@@ -1012,14 +1012,13 @@ if isempty(hfig)
     h.DonorLifetimeFromDataCheckbox = uicontrol(....
         'Parent',h.FitLifetimeRelatedPanel,...
         'Units','normalized',...
-        'BackgroundColor', Look.Back,...
+        'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.02 0.05 0.45 0.07],...
-        'Style','checkbox',...
+        'Position',[0.05 0.05 0.4 0.07],...
+        'Style','pushbutton',...
         'Tag','DonorLifetimeFromDataCheckbox',...
         'String','Get dye lifetimes from data',...
         'TooltipString','Extract dye lifetimes from single-labeled subpopulations using stoichiometry threshold.',...
-        'Value',0,...
         'enable','off',...
         'FontSize',12,...
         'Callback',@DonorOnlyLifetimeCallback);
@@ -9257,74 +9256,69 @@ function DonorOnlyLifetimeCallback(obj,~)
 global BurstData UserValues BurstMeta
 h = guidata(obj);
 file = BurstMeta.SelectedFile;
-if obj.Value == 1 %%% Checkbox was clicked on
-    LSUserValues(0);
-    %%% Determine Donor Only lifetime from data with S > 0.95
-    idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
-    if any(BurstData{file}.BAMethod == [1,2,5])
-        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
-        valid = (BurstData{file}.DataArray(:,idxS) > 0.95);
-    elseif any(BurstData{file}.BAMethod == [3,4])
-        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
-        %idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
-        valid = (BurstData{file}.DataArray(:,idxS) > 0.90) & (BurstData{file}.DataArray(:,idxS) < 1.1);% &...
-            %(BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
-    end
-    x_axis = 0:0.05:10;
-    htauGG = histc(BurstData{file}.DataArray(valid,idx_tauGG),x_axis);
-    [DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG,1);
-    %%% Update GUI
-    h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
-    h.DonorLifetimeEdit.Enable = 'off';
-    UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
-    BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
-    %%% Determine Acceptor Only Lifetime from data with S < 0.1
-    idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
-    if any(BurstData{file}.BAMethod == [1,2,5])
-        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
-        valid = (BurstData{file}.DataArray(:,idxS) < 0.1);
-    elseif any(BurstData{file}.BAMethod == [3,4])
-        idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
-        %idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
-        valid = (BurstData{file}.DataArray(:,idxS) < 0.1) & (BurstData{file}.DataArray(:,idxS) > -0.1);% &...
-            %(BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
-    end
-    x_axis = 0:0.05:10;
-    htauRR = histc(BurstData{file}.DataArray(valid,idx_tauRR),x_axis);
-    if size(htauRR,2) > size(htauRR,1)
-        htauRR = htauRR';
-    end
-    [AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR,1);
-    %%% Update GUI
-    h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
-    h.AcceptorLifetimeEdit.Enable = 'off';
-    UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
-    BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
-    if any(BurstData{file}.BAMethod == [3,4])
-        %%% Determine Donor Blue Lifetime from Blue dye only species
-        idx_tauBB = strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]');
-        idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
-        idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
-        
-        valid = ( (BurstData{file}.DataArray(:,idxSBG) > 0.98) &...
-            (BurstData{file}.DataArray(:,idxSBR) > 0.98) );
-        x_axis = 0:0.05:10;
-        htauBB = histc(BurstData{file}.DataArray(valid,idx_tauBB),x_axis);
-        [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB,1);
-        %DonorBlueLifetime = mean(BurstData{file}.DataArray(valid,idx_tauBB));
-        h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
-        h.DonorLifetimeBlueEdit.Enable = 'off';
-        UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
-        BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
-    end
-    LSUserValues(1);
-    UpdateLifetimePlots([],[],h);
-    PlotLifetimeInd([],[],h);
-else
-    h.DonorLifetimeEdit.Enable = 'on';
-    h.DonorLifetimeBlueEdit.Enable = 'on';
-    h.AcceptorLifetimeEdit.Enable = 'on';
+
+LSUserValues(0);
+%%% Determine Donor Only lifetime from data with S > 0.95
+idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
+if any(BurstData{file}.BAMethod == [1,2,5])
+    idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
+    valid = (BurstData{file}.DataArray(:,idxS) > 0.95);
+elseif any(BurstData{file}.BAMethod == [3,4])
+    idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
+    %idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+    valid = (BurstData{file}.DataArray(:,idxS) > 0.90) & (BurstData{file}.DataArray(:,idxS) < 1.1);% &...
+        %(BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
 end
+x_axis = 0:0.05:10;
+htauGG = histc(BurstData{file}.DataArray(valid,idx_tauGG),x_axis);
+[DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG,1);
+%%% Update GUI
+h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
+
+UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
+BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+%%% Determine Acceptor Only Lifetime from data with S < 0.1
+idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
+if any(BurstData{file}.BAMethod == [1,2,5])
+    idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
+    valid = (BurstData{file}.DataArray(:,idxS) < 0.1);
+elseif any(BurstData{file}.BAMethod == [3,4])
+    idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
+    %idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
+    valid = (BurstData{file}.DataArray(:,idxS) < 0.1) & (BurstData{file}.DataArray(:,idxS) > -0.1);% &...
+        %(BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
+end
+x_axis = 0:0.05:10;
+htauRR = histc(BurstData{file}.DataArray(valid,idx_tauRR),x_axis);
+if size(htauRR,2) > size(htauRR,1)
+    htauRR = htauRR';
+end
+[AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR,1);
+%%% Update GUI
+h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
+
+UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
+BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+if any(BurstData{file}.BAMethod == [3,4])
+    %%% Determine Donor Blue Lifetime from Blue dye only species
+    idx_tauBB = strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]');
+    idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
+    idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
+
+    valid = ( (BurstData{file}.DataArray(:,idxSBG) > 0.98) &...
+        (BurstData{file}.DataArray(:,idxSBR) > 0.98) );
+    x_axis = 0:0.05:10;
+    htauBB = histc(BurstData{file}.DataArray(valid,idx_tauBB),x_axis);
+    [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB,1);
+    %DonorBlueLifetime = mean(BurstData{file}.DataArray(valid,idx_tauBB));
+    h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
+
+    UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
+    BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+end
+LSUserValues(1);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%

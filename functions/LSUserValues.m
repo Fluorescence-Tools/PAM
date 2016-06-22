@@ -134,7 +134,7 @@ if Mode==0 %%% Loads user values
         S.Detector.Auto='on';
         disp('UserValues.Detector.Auto was incomplete');
     end
-    P.FiDetectorle.Auto = S.Detector.Auto;
+    P.Detector.Auto = S.Detector.Auto;
     P.Detector = [];
     P.Detector.Det = S.Detector.Det;
     P.Detector.Rout = S.Detector.Rout;
