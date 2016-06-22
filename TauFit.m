@@ -1850,7 +1850,11 @@ if ~strcmp(TauFitData.Who, 'TauFit')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else %default to 1
+        chan = 1;
+    end 
 end
 [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(obj.Value, chan);
 
