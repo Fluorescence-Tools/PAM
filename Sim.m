@@ -2993,12 +2993,22 @@ if advanced
     end
     
     %%% Generate IRF
-    N_IRF = 1E4; %%% number of IRF photons
+    IRFTime = 600; %%% 600 second irf measurement
+    IRFTimeMT = IRFTime*Freq; %%% Time in MT bins
+    %%% read out the noise in kHz
+    if h.Sim_UseNoise.Value == 0
+        noise = 1*ones(1,4);
+    else
+        for ix =1:4
+            noise(ix) = str2double(h.Sim_Noise{ix}.String);
+        end
+    end
     IRF_MT = cell(nChan,1);
     IRF_MI = cell(nChan,1);
     for i = 1:nChan
+        N_IRF = floor(IRFTime*1000*noise(mod(i-1,4)+1)/4); %%% number of IRF photons
         for j = 1:4 %%% loop over colors
-            IRF_MT{i} = [IRF_MT{i}; (1:N_IRF)'];
+            IRF_MT{i} = [IRF_MT{i}; floor(linspace(1,IRFTimeMT,N_IRF))'];
             IRF_MI{i} = [IRF_MI{i}; normrnd(IRFparams(1)+(j-1)*floor(MI_Bins/4),IRFparams(2),N_IRF,1)];
             IRF_MI{i} = mod(round(IRF_MI{i}),MI_Bins);
         end
@@ -3044,17 +3054,17 @@ switch h.Sim_Save.Value
         end
         File=fullfile(h.Sim_Path.String,[h.Sim_FileName.String '_' num2str(h.Sim_File_List.Value) '.sim']);        
         save(File,'Sim_Photons','Header');  
-        %%% also save IRF
-        Sim_Photons = IRF_MT;
-        for i=1:numel(Sim_Photons)
-           Sim_Photons{i,2} = IRF_MI{i};
+        if exist('IRF_MT','var')
+            %%% also save IRF
+            Header.FrameTime = double(IRFTime*Freq/Frames);
+            Sim_Photons = IRF_MT;
+            for i=1:numel(Sim_Photons)
+               Sim_Photons{i,2} = IRF_MI{i};
+            end
+            File = [File(1:end-4) '_irf.sim'];
+            save(File,'Sim_Photons','Header');
         end
-        File = [File(1:end-4) '_irf.sim'];
-        save(File,'Sim_Photons','Header');
 end
-
-clear mex
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Peforms actual simulation procedure for camera observation %%%%%%%%%%%%
