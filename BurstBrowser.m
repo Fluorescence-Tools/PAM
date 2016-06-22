@@ -6885,7 +6885,14 @@ if obj == h.ApplyCorrectionsAll_Menu
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
     for i = 1:numel(BurstData)
         if any(BurstData{i}.BAMethod == validBAMethods)
+            %%% don't replace donor-only lifetimes
+            DonorLifetime = BurstData{i}.Corrections.DonorLifetime;
+            AcceptorLifetime = BurstData{i}.Corrections.AcceptorLifetime;
+            
             BurstData{i}.Corrections = Corrections;
+            
+            BurstData{i}.Corrections.DonorLifetime = DonorLifetime;
+            BurstData{i}.Corrections.AcceptorLifetime = AcceptorLifetime;
         end
     end
     %%% Apply Corrections
