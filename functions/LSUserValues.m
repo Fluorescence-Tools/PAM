@@ -1239,12 +1239,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.BrightenColorMap was incomplete');
     end
     P.BurstBrowser.Display.BrightenColorMap = S.BurstBrowser.Display.BrightenColorMap;
+    %%% Checks, if BurstBrowser.Display.MultiPlotMode subfield exists
+    if ~isfield (S.BurstBrowser.Display,'MultiPlotMode')
+        S.BurstBrowser.Display.MultiPlotMode=0;
+        disp('UserValues.BurstBrowser.Display.MultiPlotMode was incomplete');
+    end
+    P.BurstBrowser.Display.MultiPlotMode = S.BurstBrowser.Display.MultiPlotMode;
+    
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
         disp('UserValues.BurstBrowser.Settings was incomplete');
     end
-    
     P.BurstBrowser.Settings = [];
     %%% Check, if BurstBrowser.Settings.PrintPath subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'PrintPath')

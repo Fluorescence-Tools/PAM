@@ -1628,7 +1628,7 @@ if isempty(hfig)
         'Tag','SaveFileExportFigure_Checkbox',...
         'Value', UserValues.BurstBrowser.Settings.SaveFileExportFigure,...
         'Units','normalized',...
-        'Position',[0.52 0.25 0.48 0.07],...
+        'Position',[0.02 0.25 0.48 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
@@ -1640,6 +1640,7 @@ if isempty(hfig)
     h.ZScale_Intensity = uicontrol('Style','checkbox',...
         'Parent',h.DisplayOptionsPanel,...
         'String','Grayscale Intensity for ZScale',...
+        'TooltipString','<html>Enable grayscale colormap for encoding frequency when using Z-Scale parameter to define colormap.</br>Affected by colormap brightening.</html>',...
         'Tag','ZScale_Intensity',...
         'Value', UserValues.BurstBrowser.Display.ZScale_Intensity,...
         'Units','normalized',...
@@ -1672,12 +1673,27 @@ if isempty(hfig)
         'Position',[0.88 0.36 0.1 0.07],...
         'FontSize',12,...
         'Tag','BrightenColorMap_edit',...
+        'TooltipString','Brightens the colormap. Affects z-scaling and multiplot.',...
         'String',num2str(UserValues.BurstBrowser.Display.BrightenColorMap),...
         'Callback',@UpdatePlot...
         );
-    if ~UserValues.BurstBrowser.Display.ZScale_Intensity
-        set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','off');
-    end
+    %if ~UserValues.BurstBrowser.Display.ZScale_Intensity
+    %    set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','off');
+    %end
+    
+    h.MultiPlot_PlotType = uicontrol('Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'String','Use black-to-white for multi plot',...
+        'TooltipString','<html>Uses black-to-white color scaling for plotting multiple species,</br> instead of white-to-black RGB plot mode. </br> Affected by colormap brightening.</html>',...
+        'Tag','SaveFileExportFigure_Checkbox',...
+        'Value', UserValues.BurstBrowser.Display.MultiPlotMode,...
+        'Units','normalized',...
+        'Position',[0.52 0.25 0.48 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateOptions...
+        );
     
     h.ColorLine1 = uicontrol('Style','pushbutton',...
         'Parent',h.DisplayOptionsPanel,...
@@ -4216,6 +4232,8 @@ switch obj
         UserValues.BurstBrowser.Settings.PDATimeBin = obj.String;
     case h.CompareFRETHist_Waterfall
         UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall = obj.Value;
+    case h.MultiPlot_PlotType
+        UserValues.BurstBrowser.Display.MultiPlotMode = obj.Value;
 end
 LSUserValues(1);
 
@@ -5026,7 +5044,11 @@ else
         ImageColor=gray(128);
         %%% brighten image color map by beta = 25%
         beta = UserValues.BurstBrowser.Display.BrightenColorMap;
-        ImageColor = ImageColor.^(1-beta);
+        if beta > 0
+            ImageColor = ImageColor.^(1-beta);
+        elseif beta <= 0
+            ImageColor = ImageColor.^(1/(1+beta));
+        end
         offset = 0;
         Image=round((127-offset)*(H-min(min(H)))/(max(max(H))-min(min(H))))+1+offset;
         Image=reshape(ImageColor(Image(:),:),size(Image,1),size(Image,2),3);
@@ -5644,16 +5666,21 @@ end
 
 
 %%% prepare image plot
-white = 1;
+white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
 axes(h.axes_general);
+color = zeros(3,1,3);
+color(1,1,:) = [0    0.4471    0.7412];
+color(2,1,:) = [0.8510    0.3255    0.0980];
+color(3,1,:) = [0.4667    0.6745    0.1882];
 if num_species == 2
     H{1}(isnan(H{1})) = 0;
     H{2}(isnan(H{2})) = 0;
     if white == 0
         zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,3) = H{1}/max(max(H{1})); %%% blue
-        zz(:,:,1) = H{2}/max(max(H{2})); %%% red
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
     elseif white == 1
+        %%% sub
         zz = ones(size(H{1},1),size(H{1},2),3);
         zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
         zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
@@ -5666,9 +5693,9 @@ elseif num_species == 3
     H{3}(isnan(H{3})) = 0;
     if white == 0
         zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,3) = H{1}/max(max(H{1})); %%% blue
-        zz(:,:,1) = H{2}/max(max(H{2})); %%% red
-        zz(:,:,2) = H{3}/max(max(H{3})); %%% green
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
+        zz(:,:,:) = zz(:,:,:) + repmat(H{3}/max(max(H{3})),1,1,3).*repmat(color(3,1,:),size(H{3},1),size(H{3},2),1); %%% color3
     elseif white == 1
         zz = ones(size(H{1},1),size(H{1},2),3);
         zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
@@ -5681,17 +5708,46 @@ elseif num_species == 3
 else
     return;
 end
-
+if white == 0
+    beta = UserValues.BurstBrowser.Display.BrightenColorMap;
+    if beta > 0
+        zz = zz.^(1-beta);
+    elseif beta <= 0
+        zz = zz.^(1/(1+beta));
+    end
+end
 
 %%% plot
 set(BurstMeta.Plots.Main_Plot,'Visible','off');
 BurstMeta.Plots.Main_histX.Visible = 'off';
 BurstMeta.Plots.Main_histY.Visible = 'off';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'on';
-
+for i = 1:3
+    BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'off';
+    BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'off';
+end
+    
 BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
+
+if white == 0
+    %%% set alpha property
+    BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = sum(zz,3)>0;
+    %%% change color of 1d hists
+    for i = 1:num_species
+        BurstMeta.Plots.Multi.Multi_histX(i).Color = color(i,1,:);
+        BurstMeta.Plots.Multi.Multi_histY(i).Color = color(i,1,:);
+    end
+else
+    %%% set alpha property
+    BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = 1-(sum(zz,3)==3);
+    color = [0,0,1;1,0,0;0,1,0];
+    for i = 1:num_species
+        BurstMeta.Plots.Multi.Multi_histX(i).Color = color(i,:);
+        BurstMeta.Plots.Multi.Multi_histY(i).Color = color(i,:);
+    end
+end
 
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
@@ -11146,11 +11202,11 @@ if obj == h.NumberOfContourLevels_edit
 end
 if obj == h.ZScale_Intensity
     UserValues.BurstBrowser.Display.ZScale_Intensity = obj.Value;
-    if ~UserValues.BurstBrowser.Display.ZScale_Intensity
-        set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','off');
-    else
-        set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','on');
-    end
+%     if ~UserValues.BurstBrowser.Display.ZScale_Intensity
+%         set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','off');
+%     else
+%         set([h.BrightenColorMap_text,h.BrightenColorMap_edit],'Visible','on');
+%     end
 end
 if obj == h.ContourOffset_edit
     ContourOffset = str2double(h.ContourOffset_edit.String);
@@ -11183,10 +11239,14 @@ end
 if obj == h.BrightenColorMap_edit
     beta = str2double(h.BrightenColorMap_edit.String);
     if ~isnan(beta)
-        if abs(beta) <= 1
-            UserValues.BurstBrowser.Display.BrightenColorMap = beta;
+        if beta > 1
+            h.BrightenColorMap_edit.String = 1;
+            UserValues.BurstBrowser.Display.BrightenColorMap = 1;
+        elseif beta < -1
+            h.BrightenColorMap_edit.String = -1;
+            UserValues.BurstBrowser.Display.BrightenColorMap = -1;
         else
-            h.BrightenColorMap_edit.String = UserValues.BurstBrowser.Display.BrightenColorMap;
+            UserValues.BurstBrowser.Display.BrightenColorMap = beta;
         end
     else
         h.BrightenColorMap_edit.String = num2str(UserValues.BurstBrowser.Display.BrightenColorMap);
