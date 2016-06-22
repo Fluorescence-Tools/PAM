@@ -496,9 +496,9 @@ if isempty(hfig)
         'Position',[0 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListX',...
-        'Enable','on',...
-        'Callback',{@ParameterList_ButtonDownFcn,'left'},...
-        'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
+        'Enable','on');%,...
+        %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
+        %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
     h.ParameterListY = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -509,22 +509,22 @@ if isempty(hfig)
         'Position',[0.5 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListY',...
-        'Enable','on',...
-        'Callback',{@ParameterList_ButtonDownFcn,'left'},...
-        'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
+        'Enable','on');%,...
+        %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
+        %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
     % for right click selection to work, we need to access the underlying
     % java object
     %see: http://undocumentedmatlab.com/blog/setting-listbox-mouse-actions
-    %     drawnow;
-    %     jScrollPaneX = findjobj(h.ParameterListX);
-    %     jScrollPaneY = findjobj(h.ParameterListY);
-    %     jParameterListX = jScrollPaneX.getViewport.getComponent(0);
-    %     jParameterListY = jScrollPaneY.getViewport.getComponent(0);
-    %     jParameterListX = handle(jParameterListX, 'CallbackProperties');
-    %     jParameterListY = handle(jParameterListY, 'CallbackProperties');
-    %     set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
-    %     set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
+    drawnow;
+    jScrollPaneX = findjobj(h.ParameterListX);
+    jScrollPaneY = findjobj(h.ParameterListY);
+    jParameterListX = jScrollPaneX.getViewport.getComponent(0);
+    jParameterListY = jScrollPaneY.getViewport.getComponent(0);
+    jParameterListX = handle(jParameterListX, 'CallbackProperties');
+    jParameterListY = handle(jParameterListY, 'CallbackProperties');
+    set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
+    set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
     
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
@@ -4241,13 +4241,22 @@ LSUserValues(1);
 %%%%%%% Callback for Parameter List: Left-click updates plot,    %%%%%%%%%%
 %%%%%%% Right-click adds parameter to CutList                    %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ParameterList_ButtonDownFcn(hListbox,~,clickType)
-clickedIndex = hListbox.Value;
+function ParameterList_ButtonDownFcn(jListbox,eventData,hListbox)
 h = guidata(hListbox);
 global BurstData BurstMeta
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
 
+if eventData.isMetaDown % right-click is like a Meta-button
+    clickType = 'right';
+else
+    clickType = 'left';
+end
+
+% Determine the current listbox index
+% Remember: Java index starts at 0, Matlab at 1
+mousePos = java.awt.Point(eventData.getX, eventData.getY);
+clickedIndex = jListbox.locationToIndex(mousePos) + 1;
 if strcmpi(clickType,'right')
     %%% check if master species is selected
     if all(species == [0,0])
