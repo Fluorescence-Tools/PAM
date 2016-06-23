@@ -88,7 +88,7 @@ photon_data = py.dict(pyargs('timestamps',timestamps,'detectors',detectors,'nano
 'nanotimes_specs',py.dict(pyargs('tcspc_unit',tcspc_unit,'tcspc_num_bins',tcspc_num_bins,'tcspc_range',tcspc_range)),...
 'measurement_specs',measurement_specs...
 ));
-clear timestamps detectors nanotimes
+clear timestamps detectors nanotimes measurement_specs detectors_specs
 
 %% setup group - information about the setup
 
@@ -188,8 +188,9 @@ data = py.dict(pyargs(...
     'identity',identity,...
     'provenance',provenance...
 ));
-clear photon_data
+clear description photon_data setup identity provenance
 % save
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
 filename_hdf5 = fullfile(FileInfo.Path, [name_old '.h5']);
 py.phconvert.hdf5.save_photon_hdf5(data,pyargs('h5_fname',filename_hdf5));
+clear data
