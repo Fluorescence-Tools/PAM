@@ -16,14 +16,16 @@ if isempty(strfind(pypath,'anaconda')) %%% requires anaconda installation for ph
         conda_path = [home '/anaconda/bin/python'];
     end
     if isloaded %%% python is loaded and can not be changed
-        fprintf('Python is loaded.\nRestart Matlab and run script again!')
+        installed = 0;
+        fprintf('Python is loaded.\nRestart Matlab and run script again!\n')
     else
         try
             pyversion(conda_path)
-            fprintf('Default python version in Matlab has been changed to anaconda')
+            installed = 1;
+            fprintf('Default python version in Matlab has been changed to anaconda\n')           
         catch
-            fprintf('Anaconda is not installed. Install suitable anaconda distribution for your system from https://www.continuum.io/downloads.');
             installed = 0;
+            fprintf('Anaconda is not installed. Install suitable anaconda distribution for your system from https://www.continuum.io/downloads.\n');
         end
     end
     return
@@ -34,7 +36,7 @@ if ~phconvert_installed
     installed = 0;
 else
     %%% if we got here, everything is fine
-    fprintf('Everything is installed!')
+    fprintf('Everything is installed!\n')
     installed = 1;
 end
 

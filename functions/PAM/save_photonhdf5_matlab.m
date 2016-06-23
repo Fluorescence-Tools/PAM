@@ -190,5 +190,5 @@ data = struct(...
 
 % save
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
-filename_hdf5 = [FileInfo.Path filesep name_old '.h5'];
+filename_hdf5 = fullfile(FileInfo.Path, [name_old '.h5']);
 hdf5save_recursion(filename_hdf5,'',1,{'/',data}); % new set to 1 for first save

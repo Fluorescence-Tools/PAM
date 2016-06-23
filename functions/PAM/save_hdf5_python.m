@@ -1,13 +1,22 @@
-function [success] = save_hdf5_python(TcspcData, FileInfo, UserValues)
+function [success] = save_hdf5_python()
+global TcspcData FileInfo UserValues
 %%% function to save our data structure as photon-hdf5
-
 %% input validation
 if ~isstruct(TcspcData) || ~isstruct(FileInfo)
     success = 0;
     disp('Input must be PAM data structures!');
     return;
 end
-
+%% validate python installation
+condaPython = assert_condapython();
+if ~condaPython
+    disp('Conda Python not set.');
+    return;
+end
+pythonInstalled = check_python_hdf5();
+if ~pythonInstalled
+    return;
+end
 %% measurement specs group
 %%% check what kind of data is to be saved
 switch UserValues.BurstSearch.Method
@@ -33,16 +42,16 @@ polarization_ch1 = UserValues.PIE.Detector([1,5]);
 polarization_ch2 = UserValues.PIE.Detector([2,6]);
 
 detectors_specs = py.dict(pyargs(...
-    'spectral_ch1',py.numpy.array(py.list(num2cell(spectral_ch1))),...
-    'spectral_ch2',py.numpy.array(py.list(num2cell(spectral_ch2))),...
-    'polarization_ch1',py.numpy.array(py.list(num2cell(polarization_ch1))),...
-    'polarization_ch2',py.numpy.array(py.list(num2cell(polarization_ch2)))...
+    'spectral_ch1',py.numpy.array(py.list(spectral_ch1)),...
+    'spectral_ch2',py.numpy.array(py.list(spectral_ch2)),...
+    'polarization_ch1',py.numpy.array(py.list(polarization_ch1)),...
+    'polarization_ch2',py.numpy.array(py.list(polarization_ch2))...
     ));
 measurement_specs = py.dict(pyargs(...
     'measurement_type',measurement_type,...
     'laser_repetition_rate',laser_repetition_rate,...
-    'alex_excitation_period1',py.numpy.array(py.list(num2cell(alex_excitation_period1))),....
-    'alex_excitation_period2',py.numpy.array(py.list(num2cell(alex_excitation_period2))),...
+    'alex_excitation_period1',py.numpy.array(py.list(alex_excitation_period1)),....
+    'alex_excitation_period2',py.numpy.array(py.list(alex_excitation_period2)),...
     'detectors_specs',detectors_specs...
     ));
 
@@ -58,20 +67,20 @@ for i = 1:numel(TcspcData.MT)
     detectors = [detectors, (i-1)*ones(1,numel(TcspcData.MT{i}))];
     nanotimes = [nanotimes, TcspcData.MI{i}'];
 end
+
 % sort the timestamps and detectors stamps
 [timestamps, idx] = sort(timestamps);
 detectors = detectors(idx);
 nanotimes = nanotimes(idx);
-timestamps = uint64(timestamps);
 timestamps_unit = FileInfo.ClockPeriod; % ClockPeriod
 tcspc_unit = FileInfo.SyncPeriod/FileInfo.MI_Bins;
 tcspc_num_bins = FileInfo.MI_Bins;
 tcspc_range = FileInfo.SyncPeriod;
 
 % convert photon data to numpy arrays
-timestamps = py.numpy.array(py.list(num2cell(timestamps)));
-detectors = py.numpy.array(py.list(num2cell(detectors)));
-nanotimes = py.numpy.array(py.list(num2cell(nanotimes)));
+timestamps = py.numpy.array(py.list(timestamps));
+detectors = py.numpy.array(py.list(detectors));
+nanotimes = py.numpy.array(py.list(nanotimes));
 
 % make photon_data python dict
 photon_data = py.dict(pyargs('timestamps',timestamps,'detectors',detectors,'nanotimes',nanotimes,...
@@ -79,6 +88,7 @@ photon_data = py.dict(pyargs('timestamps',timestamps,'detectors',detectors,'nano
 'nanotimes_specs',py.dict(pyargs('tcspc_unit',tcspc_unit,'tcspc_num_bins',tcspc_num_bins,'tcspc_range',tcspc_range)),...
 'measurement_specs',measurement_specs...
 ));
+clear timestamps detectors nanotimes
 
 %% setup group - information about the setup
 
@@ -123,7 +133,7 @@ dye_names = 'Donor, Acceptor';   % Comma separates names of fluorophores
 
 
 % file information
-filename = FileInfo.FileName{1};
+filename = fullfile(FileInfo.Path,FileInfo.FileName{1});
 software = FileInfo.FileType;
 
 %% make a matlab structure equivalent to the hdf5 specifications
@@ -178,6 +188,8 @@ data = py.dict(pyargs(...
     'identity',identity,...
     'provenance',provenance...
 ));
-
+clear photon_data
 % save
-py.phconvert.hdf5.save_photon_hdf5(data,pyargs('h5_fname','dummy_dataset_barebone_3.h5'));
+[~, name_old, ~] = fileparts(FileInfo.FileName{1});
+filename_hdf5 = fullfile(FileInfo.Path, [name_old '.h5']);
+py.phconvert.hdf5.save_photon_hdf5(data,pyargs('h5_fname',filename_hdf5));
