@@ -219,6 +219,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Parent', h.Menu.Extras,...
         'Tag','Look_Menu',...
         'Label','Adjust Pam Look',...
+        'Seperator','on',...
         'Callback',@LookSetup);
     h.Menu.Manual = uimenu(...
         'Parent', h.Menu.Extras,...
@@ -7229,34 +7230,54 @@ switch obj
         if all(File==0)
             return
         end
-        s = struct;
-        s.data = UserValues.Detector.Shift;
-        s.name = UserValues.Detector.Name;
-        save(fullfile(Path,File),'s');
+        
+        shifts = cell(numel(UserValues.Detector.Det),1);
+        shifts(1:numel(UserValues.Detector.Shift)) = UserValues.Detector.Shift;
+        det = UserValues.Detector.Det;
+        rout = UserValues.Detector.Rout;
+        name = UserValues.Detector.Name;
+        save(fullfile(Path,File),'shifts','det','rout','name');
+        % old
+        %s = struct;
+        %s.data = UserValues.Detector.Shift;
+        %s.name = UserValues.Detector.Name;
+        %save(fullfile(Path,File),'s');
     case h.Menu.LoadShift
         % Load detector shifts from .sh file
         [FileName, Path] = uigetfile('*.sh', 'Choose Detector Shift file',UserValues.File.Path,'MultiSelect', 'off');
         if all(FileName==0)
             return
         end
-        load('-mat',fullfile(Path,FileName));
-        if size(UserValues.Detector.Name,2) ~= numel(s.data);
-            disp('The number of detectors in the shift file is not the same as in your current profile!')
+        data = load('-mat',fullfile(Path,FileName));
+        if isfield(data,'s') % legacy mode
+            s = data.s;
+            if size(UserValues.Detector.Name,2) ~= numel(s.data);
+                disp('The number of detectors in the shift file is not the same as in your current profile!')
+                disp(' ')
+            end
+            disp('Check whether everything is assigned correctly:')
             disp(' ')
-        end
-        disp('Check whether everything is assigned correctly:')
-        disp(' ')
-        for i = 1:numel(s.data)
-            % just loop through the number of detectors in the shift file
-            if i <= size(UserValues.Detector.Name,2)
-                UserValues.Detector.Shift{i} = s.data{i};
-                disp(['Shift of detector "' s.name{i} '" from file copied to detector "' UserValues.Detector.Name{i} '" in your current profile!'])
+            for i = 1:numel(s.data)
+                % just loop through the number of detectors in the shift file
+                if i <= size(UserValues.Detector.Name,2)
+                    UserValues.Detector.Shift{i} = s.data{i};
+                    disp(['Shift of detector "' s.name{i} '" from file copied to detector "' UserValues.Detector.Name{i} '" in your current profile!'])
+                end
+            end
+        else
+            for i = 1:numel(data.shifts)
+                if ~isempty(data.shifts{i})
+                    for j = 1:numel(UserValues.Detector.Det)
+                        if (data.det(i) == UserValues.Detector.Det(j)) && (data.rout(i) == UserValues.Detector.Rout(j))
+                            UserValues.Detector.Shift(j) = data.shifts(i);
+                            disp(['Shift of detector "' data.name{i} '" from file copied to detector "' UserValues.Detector.Name{j} '" in your current profile!'])
+                        end  
+                    end
+                end
             end
         end
         disp(' ')
         disp('Load data again to apply changes!')
-        msgbox('See the MATLAB command prompt!')
-        clear s;
         LSUserValues(1);
 end
 

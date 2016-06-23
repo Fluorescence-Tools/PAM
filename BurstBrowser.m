@@ -9399,6 +9399,7 @@ end
 LSUserValues(1);
 UpdateLifetimePlots([],[],h);
 PlotLifetimeInd([],[],h);
+ApplyCorrections([],[],h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
