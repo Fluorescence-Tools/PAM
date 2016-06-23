@@ -2631,11 +2631,8 @@ if advanced
         end
         %% new parameters
         %%% Anisotropy values
-        a = SimData.Species(i).Aniso;
-        b = size(a,1);
-        c = size(a,2);
-        d = reshape(a,b*c,1);
-        aniso_params = [aniso_params; d];
+        a = SimData.Species(i).Aniso';
+        aniso_params = [aniso_params; a(:)];
         %%% set initital state to species number
         initial_state{i} = (i-1)*ones(NoP,1);
         

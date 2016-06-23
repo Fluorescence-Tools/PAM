@@ -1394,11 +1394,14 @@ if isempty(obj) || obj == h.LoadData_Button
 %     TauFitData.hMI_Par{chan} = MI_Par(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
 %     TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
 
+    %%% find the detector of the parallel PIE channel (PamMeta.MI_Hist is defined using the "detectors" defined in PAM, so we need to map back)
+    detPar = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Par)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Par)));
+    detPer = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Per)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Per)));
     %%% Microtime Histogram of Parallel Channel
-    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{UserValues.PIE.Router(PIEChannel_Par),UserValues.PIE.Detector(PIEChannel_Par)}(...
+    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{detPar(1)}(...
         UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
     %%% Microtime Histogram of Perpendicular Channel
-    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{UserValues.PIE.Router(PIEChannel_Per),UserValues.PIE.Detector(PIEChannel_Per)}(...
+    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{detPer(1)}(...
         UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
     
     %%% Read out the Microtime Histograms of the IRF for the two channels
