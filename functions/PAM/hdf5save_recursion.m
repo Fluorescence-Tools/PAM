@@ -12,21 +12,21 @@
 
 function hdf5save_recursion(filename,prefix,new,varcell)
 
-if ~strcmp(class(filename),'char') ;
+if ~ischar(filename)
     error('first argument should be a string giving the path to the hdf5 file to save') ;
 end
 
-if ~strcmp(class(prefix),'char') ;
+if ~ischar(prefix)
     error('second argument should be a string giving the name of the groupe to save the data in') ;
 end
 
-if new~=1 && new~=0 ;
+if new~=1 && new~=0
     error('third argument should be 0 or 1: 0 to append data, and 1 to create a new file')
 end
 
 nvars=size(varcell,2)/2;
 
-if nvars~=floor(nvars) ;
+if nvars~=floor(nvars)
     error('expecting a name for each variable') ;
 end
 
@@ -40,23 +40,22 @@ for i=[1:nvars]
     %disp(['variable name in workspace : ',str]);
     %disp(['variable name to put : ',name]);
     switch type
-    case 'struct'
-	names=fieldnames(var);
-	for j=1:size(names,1) ;
-	    if (j~=1 || i~=1)
-		new=0 ;
-	    end
-	    varname=strcat(name,'.',names{j});
-	    hdf5save_recursion(filename,strcat(name,'/'),new,{names{j},varname});
-	end
-    otherwise
-	location=strcat('/',prefix,name);
-	if new==1 && i==1 ;
-	    hdf5write(filename,location,var);
-	else
-	    %disp(['location : ',location]);
-	    hdf5write(filename,location,var,'WriteMode', 'append');
-	end
+        case 'struct'
+            names=fieldnames(var);
+            for j=1:size(names,1)
+                if (j~=1 || i~=1)
+                new=0 ;
+                end
+                varname=strcat(name,'.',names{j}); %disp(['Saving ' varname '\n']);
+                hdf5save_recursion(filename,strcat(location,'/'),new,{names{j},[var.(names{j})]});
+            end
+        otherwise
+            if new==1 && i==1
+                hdf5write(filename,location,var);
+            else
+                %disp(['location : ',location]);
+                hdf5write(filename,location,var,'WriteMode', 'append');
+            end
     end
 end
 

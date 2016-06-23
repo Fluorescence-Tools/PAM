@@ -77,7 +77,7 @@ nanotimes = [];
 for i = 1:size(det_rout,1) % loop over detectors
     timestamps = [timestamps, TcspcData.MT{det_rout(i,1), det_rout(i,2)}'];
     nanotimes = [nanotimes, TcspcData.MI{det_rout(i,1), det_rout(i,2)}'];
-    detectors = [detectors, (i-1)*ones(1,numel(TcspcData.MT{det_rout(i,1), det_rout(i,2)}))];
+    detectors = [detectors, uint8((i-1)*ones(1,numel(TcspcData.MT{det_rout(i,1), det_rout(i,2)})))];
 end
 % sort the timestamps and detectors stamps
 [timestamps, idx] = sort(timestamps);
@@ -111,9 +111,9 @@ num_spectral_ch = 2;
 % number of channels split by 50:50 beamsplitters
 num_split_ch = 1;
 % modulated excitation, i.e. PIE or ALEX
-modulated_excitation = true;
+modulated_excitation = 1;
 % lifetime information, i.e. PIE
-lifetime = true;
+lifetime = 1;
 
 %%% query the rest of the parameters from meta data
 
@@ -125,7 +125,7 @@ if numel(excitation_wavelengths) ~= 2
 end
 excitation_wavelengths = num2cell(1e-9*excitation_wavelengths);
 % excitation type (i.e. cw or not = pulsed)
-excitation_cw = {false,false};
+excitation_cw = {0,0};
 % detection wavelengths
 detection_wavelengths = [sscanf(UserValues.Detector.Filter{spectral_ch1(1)},'%f'), sscanf(UserValues.Detector.Filter{spectral_ch2(1)},'%f')];
 detection_wavelengths = num2cell(1e-9*detection_wavelengths);
@@ -188,10 +188,7 @@ data = struct(...
     'sample',sample...
 );
 
-% put it together
-data = struct();
-
 % save
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
 filename_hdf5 = [FileInfo.Path filesep name_old '.h5'];
-hdf5save_recursion(filename_hdf5,'/measurement_specs/',1,measurement_specs); % new set to 1 for first save
+hdf5save_recursion(filename_hdf5,'',1,{'/',data}); % new set to 1 for first save
