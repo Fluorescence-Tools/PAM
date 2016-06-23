@@ -1,4 +1,4 @@
-function [success] = save_hdf5_python()
+function [success] = save_hdf5_python(~,~)
 global TcspcData FileInfo UserValues
 %%% function to save our data structure as photon-hdf5
 %% input validation
@@ -29,6 +29,8 @@ switch UserValues.BurstSearch.Method
         disp('No-MFD data is currently not supported.');
         return;
 end
+
+disp('Saving data to PhotonHDF5 file...');
 laser_repetition_rate = FileInfo.TACRange;
 %%% PIE channel boundaries
 %%% no separate definition for the FRET channel is present in hdf5 file format
@@ -194,3 +196,4 @@ clear description photon_data setup identity provenance
 filename_hdf5 = fullfile(FileInfo.Path, [name_old '.h5']);
 py.phconvert.hdf5.save_photon_hdf5(data,pyargs('h5_fname',filename_hdf5));
 clear data
+disp('Done!');
