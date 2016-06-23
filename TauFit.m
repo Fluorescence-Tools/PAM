@@ -1244,6 +1244,10 @@ end
 % If burstwise fitting is performed, we don't need the export menu
 if strcmp(TauFitData.Who,'Burstwise')
     h.Menu.Export_Menu.Visible = 'off';
+else
+    % set method to stored method
+    h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
+    Method_Selection(h.FitMethod_Popupmenu,[]);
 end
 
 % if user does batch burst analysis in Pam (database tab), do the fitting immediately
@@ -1265,12 +1269,6 @@ if exist('ph','var')
                 close(h.TauFit);
         end
     end
-end
-
-% set method to stored method
-if ~strcmp(TauFitData.Who,'Burstwise')
-    h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;
-    Method_Selection(h.FitMethod_Popupmenu,[]);
 end
 
 function ChangeYScale(obj,~)
