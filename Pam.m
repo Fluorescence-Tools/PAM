@@ -7497,7 +7497,7 @@ Update_Display([],[],1);
 %%% Store loaded IRF/Scatter Measurment in performed BurstSearch %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Store_IRF_Scat_inBur(obj,~,mode)
-global BurstData UserValues
+global BurstData UserValues FileInfo
 LSUserValues(0);
 h = guidata(findobj('Tag','Pam'));
 if isempty(BurstData)
@@ -7658,6 +7658,7 @@ if ~strcmp(obj,'nothing')
     % function is called from right clicking the Burstwise lifetime button
     save(BurstData.FileName,'BurstData');
     Progress(1,h.Progress.Axes,h.Progress.Text);
+    h.Progress.Text.String = FileInfo.FileName{1};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

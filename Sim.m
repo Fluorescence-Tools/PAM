@@ -3069,16 +3069,16 @@ switch h.Sim_Save.Value
             for i=1:numel(Sim_Photons)
                Sim_Photons{i,2} = IRF_MI{i};
             end
-            File = [File(1:end-4) '_irf.sim'];
-            save(File,'Sim_Photons','Header');
+            FileIRF = [File(1:end-4) '_irf.sim'];
+            save(FileIRF,'Sim_Photons','Header');
             %%% and scatter pattern/background
             Header.FrameTime = double(ScatTime*Freq/Frames);
             Sim_Photons = Scat_MT;
             for i=1:numel(Sim_Photons)
                Sim_Photons{i,2} = Scat_MI{i};
             end
-            File = [File(1:end-4) '_scat.sim'];
-            save(File,'Sim_Photons','Header');
+            FileScat = [File(1:end-4) '_scat.sim'];
+            save(FileScat,'Sim_Photons','Header');
         end
 end
 
