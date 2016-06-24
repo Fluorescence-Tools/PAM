@@ -2992,18 +2992,10 @@ if advanced
     %%% Generate IRF
     IRFTime = 600; %%% 600 second irf measurement
     IRFTimeMT = IRFTime*Freq; %%% Time in MT bins
-    %%% read out the noise in kHz
-    if h.Sim_UseNoise.Value == 0
-        noise = 1*ones(1,4);
-    else
-        for ix =1:4
-            noise(ix) = str2double(h.Sim_Noise{ix}.String);
-        end
-    end
+    N_IRF = 1E5;%floor(IRFTime*1000*noise(mod(i-1,4)+1)/4); %%% number of IRF photons
     IRF_MT = cell(nChan,1);
     IRF_MI = cell(nChan,1);
     for i = 1:nChan
-        N_IRF = floor(IRFTime*1000*noise(mod(i-1,4)+1)/4); %%% number of IRF photons
         for j = 1:4 %%% loop over colors
             IRF_MT{i} = [IRF_MT{i}; floor(linspace(1,IRFTimeMT,N_IRF))'];
             IRF_MI{i} = [IRF_MI{i}; normrnd(IRFparams(1)+(j-1)*floor(MI_Bins/4),IRFparams(2),N_IRF,1)];
@@ -3011,6 +3003,25 @@ if advanced
         end
        [IRF_MT{i}, Index] = sort(IRF_MT{i});
        IRF_MI{i} = IRF_MI{i}(Index);
+    end
+    
+    %%% Generate uniform scatter pattern
+    ScatTime = 600; %%% 600 second scatter measurement
+    ScatTimeMT = IRFTime*Freq; %%% Time in MT bins
+    %%% read out the noise in kHz
+    if h.Sim_UseNoise.Value == 0
+        noise = 1e-6*ones(1,4); 
+    else
+        for ix =1:4
+            noise(ix) = str2double(h.Sim_Noise{ix}.String);
+        end
+    end
+    Scat_MT = cell(nChan,1);
+    Scat_MI = cell(nChan,1);
+    for i = 1:nChan
+        N_Scat = floor(ScatTime*1000*noise(mod(i-1,4)+1)); %%% number of scatter photons
+        Scat_MT{i} = floor(linspace(1,ScatTimeMT,N_Scat))';
+        Scat_MI{i} = randi([1,MI_Bins],N_Scat,1);
     end
 end
 %% clean up and save
@@ -3059,6 +3070,14 @@ switch h.Sim_Save.Value
                Sim_Photons{i,2} = IRF_MI{i};
             end
             File = [File(1:end-4) '_irf.sim'];
+            save(File,'Sim_Photons','Header');
+            %%% and scatter pattern/background
+            Header.FrameTime = double(ScatTime*Freq/Frames);
+            Sim_Photons = Scat_MT;
+            for i=1:numel(Sim_Photons)
+               Sim_Photons{i,2} = Scat_MI{i};
+            end
+            File = [File(1:end-4) '_scat.sim'];
             save(File,'Sim_Photons','Header');
         end
 end

@@ -7091,11 +7091,12 @@ switch obj
         end
         h.Progress.Text.String = 'Saving IRF';
         h.Progress.Axes.Color=[1 0 0];
-        pause(0.5)
         %%% Update the IRF for ALL PIE channel
         for i=1:numel(UserValues.PIE.Name)
             if isempty(UserValues.PIE.Combined{i})
-                UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)) );
+                UserValues.PIE.IRF{i} = PamMeta.MI_Hist{det(1)}';
+                %UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
             end
         end
         h.MI.IRF.Checked = 'on';
@@ -7112,12 +7113,13 @@ switch obj
         end
         h.Progress.Text.String = 'Saving IRF';
         h.Progress.Axes.Color=[1 0 0];
-        pause(0.5)
         %%% Find selected channels
         Sel=h.PIE.List.Value;
         if isempty(UserValues.PIE.Combined{Sel})
             %%% Update IRF of selected channel
-            UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
+            det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)) );
+            UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{det(1)}';
+            %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
         else
             uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
             return
@@ -7136,10 +7138,11 @@ switch obj
         %%% Saves the current measurement as Scatter pattern %%%%%%%%%%%%%%%%%%%%%%
         h.Progress.Text.String = 'Saving Scatter/Background';
         h.Progress.Axes.Color=[1 0 0];
-        pause(0.5)
         for i=1:numel(UserValues.PIE.Name)
             if isempty(UserValues.PIE.Combined{i})
-                UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)) );
+                UserValues.PIE.ScatterPattern{i} = PamMeta.MI_Hist{det(1)}';
+                %UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
             end
         end
         

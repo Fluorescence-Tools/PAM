@@ -2422,7 +2422,8 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
 end
-
+%%% remove donor only fraction, not implemented here
+fitpar= fitpar(1:end-1);
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 
 %%% if sigma is fixed at fraction of, change its value here
@@ -2579,6 +2580,8 @@ file = PDAMeta.file;
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
 end
+%%% remove donor only fraction, not implemented here
+fitpar= fitpar(1:end-1);
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 
