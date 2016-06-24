@@ -1,4 +1,4 @@
-function write_photonHDF5()
+function write_photonHDF5(~,~)
 global FileInfo UserValues TcspcData
 
 % check if phforge is installed
