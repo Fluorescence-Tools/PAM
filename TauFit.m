@@ -3262,7 +3262,7 @@ if strcmp(eventdata.Key,'f')
     %%% Start reconvolution fit
     Start_Fit(h.Fit_Button,[]);
 end
-if ~strcmp(TauFitData.Who, 'Burstwise') %%% for burstwise, only start fit is relevant
+if ~isempty(TauFitData) %~strcmp(TauFitData.Who, 'Burstwise') %%% for burstwise, only start fit is relevant
     if isempty(eventdata.Modifier)
         if strcmp(eventdata.Key,'a')
             %%% fit anisotropy
