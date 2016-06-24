@@ -46,7 +46,10 @@ end
 disp('Saving data to PhotonHDF5 file...');
 
 %% Write YAML file with Mandatory Metadata
-filename = 'metadata.yaml';
+if ~isdir('temp')
+    mkdir('temp');
+end
+filename = 'temp/metadata.yaml';
 %Mandatory Fields
 description =          'Photon data from PAM';
 num_pixels =           4;
@@ -233,20 +236,21 @@ detectors = detectors(idx);
 nanotimes = nanotimes(idx);
 clear idx
 %% write photon data using temporary saving of h5 files
-h5create('photon_data.h5', '/timestamps', size(timestamps), 'Datatype', 'int64')
-h5write('photon_data.h5', '/timestamps', timestamps)
-h5create('photon_data.h5', '/detectors', size(detectors), 'Datatype', 'uint8')
-h5write('photon_data.h5', '/detectors', detectors)
-h5create('photon_data.h5', '/nanotimes', size(nanotimes), 'Datatype', 'uint16')
-h5write('photon_data.h5', '/nanotimes', nanotimes)
+h5create('temp/photon_data.h5', '/timestamps', size(timestamps), 'Datatype', 'int64')
+h5write('temp/photon_data.h5', '/timestamps', timestamps)
+h5create('temp/photon_data.h5', '/detectors', size(detectors), 'Datatype', 'uint8')
+h5write('temp/photon_data.h5', '/detectors', detectors)
+h5create('temp/photon_data.h5', '/nanotimes', size(nanotimes), 'Datatype', 'uint16')
+h5write('temp/photon_data.h5', '/nanotimes', nanotimes)
 
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
 filename = fullfile(FileInfo.Path, [name_old '.h5']);
 
-[status,cmdout] = system(['phforge metadata.yaml photon_data.h5 ' filename],'-echo');
+[status,cmdout] = system(['phforge temp/metadata.yaml temp/photon_data.h5 ' filename],'-echo');
 if status ~= 0
     disp('Something went wrong while saving the Photon-HDF5 file...');
     disp(cmdout);
 end
 
-delete('metadata.yaml','photon_data.h5');
+delete('temp/metadata.yaml','temp/photon_data.h5');
+rmdir('temp');
