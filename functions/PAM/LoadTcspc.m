@@ -626,6 +626,7 @@ switch (Type)
             end            
         end  
         FileInfo.MeasurementTime = Totaltime/Header.Freq;
+        FileInfo.HeaderSim = Header;
     case 7 %%% Pam Photon File
         if strcmp(UserValues.Detector.Auto,'off')
             TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
