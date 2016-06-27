@@ -735,6 +735,90 @@ switch (Type)
         FileInfo.ImageTime =  FileInfo.MeasurementTime;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
+    case 9 %%% .h5 files in PhotonHDF5 file format
+        FileInfo.FileType = 'PhotonHDF5';
+        %%% General FileInfo
+        FileInfo.NumberOfFiles=numel(FileName);
+        FileInfo.Type=Type;
+        FileInfo.MI_Bins=[];
+        FileInfo.MeasurementTime=[];
+        FileInfo.ImageTime = [];
+        FileInfo.SyncPeriod= [];
+        FileInfo.ClockPeriod= [];
+        FileInfo.Resolution = [];
+        FileInfo.TACRange = [];
+        FileInfo.Lines=1;
+        FileInfo.LineTimes=[];
+        FileInfo.Pixels=1;
+        FileInfo.ScanFreq=1000;
+        FileInfo.FileName=FileName;
+        FileInfo.Path=Path;
+        
+        %%% Initializes microtime and macotime arrays
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
+        
+        %%% Reads all selected files
+        for i=1:numel(FileName)
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
+            
+            %%% if multiple files are loaded, consecutive files need to
+            %%% be offset in time with respect to the previous file
+            MaxMT = 0;
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
+                MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+            end
+            
+            %%% read out information from the PhotonHDF5 file
+            
+            %%% Update Progress
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .h5 file
+            [MT,MI, PhotonHDF5_Data] = Read_PhotonHDF5(fullfile(Path,FileName{i}));
+            
+            FileInfo.PhotonHDF5_Data = PhotonHDF5_Data;
+            if isempty(FileInfo.SyncPeriod)
+                FileInfo.SyncPeriod = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
+            end
+            if isempty(FileInfo.ClockPeriod)
+                FileInfo.ClockPeriod = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
+            end
+            if isempty(FileInfo.Resolution)
+                FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit;
+            end
+            %%% Finds, which routing bits to use
+            if strcmp(UserValues.Detector.Auto,'off')
+                Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+            else
+                Rout = 1:10; %%% consider up to 10 routing channels
+            end
+            Rout(Rout>size(MI,2))=[];
+            %%% Concaternates data to previous files and adds Imagetime
+            %%% to consecutive files
+            if any(~cellfun(@isempty,MI(:)))
+                for j = 1:size(MT,1)
+                    for k=Rout
+                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
+                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
+                    end
+                end
+            end
+            %%% Determines last photon for each file
+            for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+                FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+            end
+            
+        end
+        FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+        FileInfo.ImageTime =  FileInfo.MeasurementTime;
+        FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
 end
 Progress(1,h.Progress.Axes, h.Progress.Text);
 

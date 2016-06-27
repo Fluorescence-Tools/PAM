@@ -178,8 +178,8 @@ tcspc_num_bins =          FileInfo.MI_Bins;
 tcspc_range =             FileInfo.SyncPeriod;
 
 laser_repetition_rate =   1/FileInfo.TACRange;
-alex_excitation_period1 = [UserValues.PIE.From(1) UserValues.PIE.To(1)]; % take only the donor period
-alex_excitation_period2 = [UserValues.PIE.From(3) UserValues.PIE.To(3)];
+alex_excitation_period1 = [UserValues.PIE.From(PIEa) UserValues.PIE.To(PIEa)]; % take only the donor period
+alex_excitation_period2 = [UserValues.PIE.From(PIEb) UserValues.PIE.To(PIEb)];
 
 spectral_ch1 =            [0,1];
 spectral_ch2 =            [2,3];
