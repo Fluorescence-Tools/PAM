@@ -2143,6 +2143,14 @@ if isempty(hfig)
     ylabel(h.axes_ZScale, [],'Color',Look.Fore);
     xlabel(h.axes_ZScale, [],'Color',Look.Fore);
     %% Define axes in Corrections tab
+    % defined context menu for corrections tab
+    h.Corrections_Menu = uicontextmenu;
+    h.ExportCorrections_Menu = uimenu(...
+        'Parent',h.Corrections_Menu,...
+        'Label','Export Correction Plots',...
+        'Tag','ExportCorrections_Menu',...
+        'Callback',@ExportGraphs);
+    h.MainTabCorrectionsPanel.UIContextMenu = h.Corrections_Menu;
     %% Corrections - 2ColorMFD
     h.Corrections.TwoCMFD.axes_crosstalk =  axes(...
         'Parent',h.MainTabCorrectionsPanel,...
@@ -2154,7 +2162,8 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_crosstalk,'#','Color',UserValues.Look.Fore);
     title(h.Corrections.TwoCMFD.axes_crosstalk,'Proximity Ratio of Donor only','Color',UserValues.Look.Fore);
@@ -2169,7 +2178,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.TwoCMFD.axes_direct_excitation,'Stoichiometry (raw)','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_direct_excitation,'#');
     title(h.Corrections.TwoCMFD.axes_direct_excitation,'Raw Stoichiometry of Acceptor only','Color',UserValues.Look.Fore);
@@ -2184,7 +2194,8 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
     title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
@@ -2199,10 +2210,12 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET Efficiency','Color',UserValues.Look.Fore);
     title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
+
     %% Corrections - 3ColorMFD
     h.Corrections.ThreeCMFD.axes_crosstalk_BG =  axes(...
         'Parent',h.MainTabCorrectionsThreeCMFDPanel,...
@@ -2214,7 +2227,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Proximity Ratio BG','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'#','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'Blue dye only','Color',UserValues.Look.Fore);
@@ -2229,7 +2243,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Proximity Ratio BR','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'#','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'Blue dye only','Color',UserValues.Look.Fore);
@@ -2244,7 +2259,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Stoichiometry BG (raw)','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'#','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'Green dye only','Color',UserValues.Look.Fore);
@@ -2259,7 +2275,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Stoichiometry BR (raw)','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'#','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'Red dye only','Color',UserValues.Look.Fore);
@@ -2274,7 +2291,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'FRET Efficiency* BG','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_gammaBG_threecolor,'1/Stoichiometry* BG vs. FRET Efficiency* BG for gammaBG = 1','Color',UserValues.Look.Fore);
@@ -2289,7 +2307,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'FRET Efficiency* BR','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_gammaBR_threecolor,'1/Stoichiometry* BR vs. FRET Efficiency* BR for gammaBR = 1','Color',UserValues.Look.Fore);
@@ -2308,7 +2327,8 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'FontSize',12,...
         'nextplot','add',...
-        'View',[0 90]);
+        'View',[0 90],...
+        'UIContextMenu', h.Corrections_Menu);
     xlabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Lifetime BB [ns]','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
@@ -10628,6 +10648,166 @@ switch obj
         cbar.Position = [0.8,0.85,0.18,0.025];
         cbar.Label.String = 'Occurrence';
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
+    case h.ExportCorrections_Menu
+        fontsize = 22;
+        if ispc
+            fontsize = fontsize/1.3;
+        end
+        AspectRatio = 1;
+        pos = [100,100, round(1.6*size_pixels),round(1.6*size_pixels*AspectRatio)];
+        hfig = figure('Position',pos,'Color',[1 1 1]);
+        %%% Copy axes to figure
+        panel_copy = copyobj(h.MainTabCorrectionsPanel,hfig);
+        panel_copy.ShadowColor = [1 1 1];
+        panel_copy.HighlightColor = [1 1 1];
+        %%% set Background Color to white
+        panel_copy.BackgroundColor = [1 1 1];
+        %%% Update ColorMap
+        if ischar(UserValues.BurstBrowser.Display.ColorMap)
+            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        else
+            colormap(UserValues.BurstBrowser.Display.ColorMap);
+        end
+        if any(BurstData{file}.BAMethod == [1,2,5])
+            for i = 1:numel(panel_copy.Children)
+                %%% Set the Color of Axes to white
+                panel_copy.Children(i).Color = [1 1 1];
+                %%% change X/YColor Color Color
+                panel_copy.Children(i).XColor = [0,0,0];
+                panel_copy.Children(i).YColor = [0,0,0];
+                panel_copy.Children(i).XLabel.Color = [0,0,0];
+                panel_copy.Children(i).YLabel.Color = [0,0,0];
+                %%% increase LineWidth of Axes
+                panel_copy.Children(i).LineWidth =2;
+                %%% Increase FontSize
+                panel_copy.Children(i).FontSize = fontsize;
+                %%% Make Bold
+                %panel_copy.Children(i).FontWeight = 'bold';
+                %%% disable titles
+                title(panel_copy.Children(i),'');
+                panel_copy.Children(i).Layer = 'top';
+                %%% move axes up and left
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
+                if any(i==[1,2])
+                    panel_copy.Children(i).YLabel.Units = 'normalized';
+                    panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                end
+                %%% Add parameters on plot
+                if isfield(BurstData{file},'Corrections')
+                    switch i
+                        case 4
+                            %%% crosstalk
+                            str = ['crosstalk = ' sprintf('%1.3f',BurstData{file}.Corrections.CrossTalk_GR)];
+                            text(0.35*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',fontsize);
+                        case 3
+                            %%%direct excitation
+                            str = ['direct exc. = ' sprintf('%1.3f',BurstData{file}.Corrections.DirectExcitation_GR)];
+                            text(0.35*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',fontsize);
+                        case 2
+                            %%% gamma
+                            str = ['gamma = ' sprintf('%1.3f',BurstData{file}.Corrections.Gamma_GR)];
+
+                            text(0.35*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+                                'Parent',panel_copy.Children(i),...
+                                'FontSize',fontsize);
+                    end
+                end
+            end
+        elseif any(BurstData{file}.BAMethod == [3,4])
+            hfig.Position(3) = hfig.Position(3)*1.55;
+            %hfig.Position(4) = hfig.Position(3)*1.1;
+            
+            for i = 1:numel(panel_copy.Children)
+                %%% Set the Color of Axes to white
+                panel_copy.Children(i).Color = [1 1 1];
+                %%% Move axis to top of stack
+                panel_copy.Children(i).Layer = 'top';
+                %%% change X/YColor Color Color
+                panel_copy.Children(i).XColor = [0,0,0];
+                panel_copy.Children(i).YColor = [0,0,0];
+                panel_copy.Children(i).XLabel.Color = [0,0,0];
+                panel_copy.Children(i).YLabel.Color = [0,0,0];
+                %%% increase LineWidth of Axes
+                panel_copy.Children(i).LineWidth = 2;
+                %%% Increase FontSize
+                panel_copy.Children(i).FontSize = fontsize;
+                %%% Make Bold
+                %panel_copy.Children(i).FontWeight = 'bold';
+                %%% disable titles
+                title(panel_copy.Children(i),'');
+                %%% move axes up and left
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
+                if any(i==[1,3,4])
+                    panel_copy.Children(i).YLabel.Units = 'normalized';
+                    panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
+                end
+                msgbox('anders, see the 2 color code')
+%                 %%% Add rotational correlation time
+%                 if isfield(BurstData{file},'Parameters')
+%                     switch i
+%                         case 1
+%                             %%%rBB vs TauBB
+%                             if isfield(BurstData{file}.Parameters,'rhoBB')
+%                                 if ~isempty(BurstData{file}.Parameters.rhoBB)
+%                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoBB(1))];
+%                                     if numel(BurstData{file}.Parameters.rhoBB) > 1
+%                                         str = {[str(1:4) '_1' str(5:end)]};
+%                                         for j=2:numel(BurstData{file}.Parameters.rhoBB)
+%                                             str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoBB(j))];
+%                                         end
+%                                     end
+%                                 end
+%                             end
+%                             text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+%                                 'Parent',panel_copy.Children(i),...
+%                                 'FontSize',fontsize);
+%                             %'BackgroundColor',[1 1 1],...
+%                             %'EdgeColor',[0 0 0]);
+%                         case 3
+%                             %%%rRR vs TauRR
+%                             if isfield(BurstData{file}.Parameters,'rhoRR')
+%                                 if ~isempty(BurstData{file}.Parameters.rhoRR)
+%                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(1))];
+%                                     if numel(BurstData{file}.Parameters.rhoRR) > 1
+%                                         str = {[str(1:4) '_1' str(5:end)]};
+%                                         for j=2:numel(BurstData{file}.Parameters.rhoRR)
+%                                             str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoRR(j))];
+%                                         end
+%                                     end
+%                                 end
+%                             end
+%                             text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+%                                 'Parent',panel_copy.Children(i),...
+%                                 'FontSize',fontsize);
+%                             %'BackgroundColor',[1 1 1],...
+%                             %'EdgeColor',[0 0 0]);
+%                         case 4
+%                             %%%rGG vs TauGG
+%                             if isfield(BurstData{file}.Parameters,'rhoGG')
+%                                 if ~isempty(BurstData{file}.Parameters.rhoGG)
+%                                     str = ['\rho = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(1))];
+%                                     if numel(BurstData{file}.Parameters.rhoGG) > 1
+%                                         str = {[str(1:4) '_1' str(5:end)]};
+%                                         for j=2:numel(BurstData{file}.Parameters.rhoGG)
+%                                             str{j} = ['\rho_' num2str(j) ' = ' sprintf('%1.1f ns',BurstData{file}.Parameters.rhoGG(j))];
+%                                         end
+%                                     end
+%                                 end
+%                             end
+%                             text(0.05*panel_copy.Children(i).XLim(2),0.87*panel_copy.Children(i).YLim(2),str,...
+%                                 'Parent',panel_copy.Children(i),...
+%                                 'FontSize',fontsize);
+%                             %'BackgroundColor',[1 1 1],...
+%                             %'EdgeColor',[0 0 0]);
+%                     end
+%                 end
+             end
+        end
+        FigureName = 'CorrectionPlots';
 end
 
 %%% Set all units to pixels for easy editing without resizing
