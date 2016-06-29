@@ -10692,11 +10692,7 @@ switch obj
                 title(panel_copy.Children(i),'');
                 panel_copy.Children(i).Layer = 'top';
                 %%% move axes up and left
-                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
-                if any(i==[1,2])
-                    panel_copy.Children(i).YLabel.Units = 'normalized';
-                    panel_copy.Children(i).YLabel.Position = [-0.16 0.5 0];
-                end
+                panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.03 0.04 0 0];
                 %%% Add parameters on plot
                 if isfield(BurstData{file},'Corrections')
                     switch i
