@@ -10912,6 +10912,7 @@ ExportGraphs(h.ExportLifetime_Menu,[],0);
 h.lifetime_ind_popupmenu.Value = 1;
 PlotLifetimeInd([],[]);
 ExportGraphs(h.lifetime_ind_export_button,[],0);
+ExportGraphs(h.ExportCorrections_Menu,[],0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
