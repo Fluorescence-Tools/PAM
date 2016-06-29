@@ -9360,6 +9360,11 @@ file = BurstMeta.SelectedFile;
 LSUserValues(0);
 %%% Determine Donor Only lifetime from data with S > 0.95
 idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
+%%% catch case where no lifetime was determined
+
+if all(BurstData{file}.DataArray(:,idx_tauGG) == 0)
+    return;
+end
 if any(BurstData{file}.BAMethod == [1,2,5])
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
     valid = (BurstData{file}.DataArray(:,idxS) > 0.95);
