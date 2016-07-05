@@ -3326,7 +3326,7 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Microtime_Plot'
-                ax(i).Position = [0.1 0.11 0.875 0.74];
+                ax(i).Position = [0.1 0.15 0.875 0.70];
                 if ~isequal(obj, h.Microtime_Plot_Export)
                     ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
