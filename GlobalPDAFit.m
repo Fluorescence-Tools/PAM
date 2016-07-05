@@ -1329,6 +1329,18 @@ switch mode
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
         for i = Active
             fitpar = FitTable(i,2:3:end-1);
+            if h.SettingsTab.DynamicModel.Value
+                tmp = fitpar(4)/(fitpar(1)+fitpar(4));
+                tmp2 = fitpar(1)/(fitpar(1)+fitpar(4));
+                fitpar(1) = tmp;
+                fitpar(4) = tmp2;
+                tmp = fitpar(1)/sum(fitpar(1:3:end));
+                tmp2 = fitpar(4)/sum(fitpar(1:3:end));
+                fitpar(1) = tmp;
+                fitpar(4) = tmp2;
+                % fitpar(1:3:end) is related to the percentage of
+                % molecules in that state
+            end
             %%% Calculate Gaussian Distance Distributions
             for c = PDAMeta.Comp{i}
                 Gauss{c} = fitpar(3*c-2).*...
@@ -1923,8 +1935,7 @@ if sum(PDAMeta.Global) == 0
              h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fitpar(end));
              fitpar(end) = [];
         end
-        % Convert amplitudes to fractions
-        % fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+        
         %%% if sigma is fixed at fraction of, change its value here
         if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
             fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
@@ -1936,10 +1947,22 @@ if sum(PDAMeta.Global) == 0
 else
     %% Global fitting
     %%% Sets initial value and bounds for global parameters
-    % PDAMeta.Global    = 1     x 15 logical
-    % PDAMeta.Fixed     = files x 15 logical
-    % PDAMeta.FitParams = files x 15 double
-    % PDAMeta.UB/LB     = 1     x 15 double
+    % PDAMeta.Global    = 1     x 16 logical
+    % PDAMeta.Fixed     = files x 16 logical
+    % PDAMeta.FitParams = files x 16 double
+    % PDAMeta.UB/LB     = 1     x 16 double
+    
+    PDAMeta.DoHalfGlobal = 0;
+    % put PDAMeta.DoHalfGlobal to 1 if you want to globally link a parameter between
+    % the first part of the files, and globally link the same parameter for the
+    % last part of the files. Do not F that parameter but G it in the UI.
+    if PDAMeta.DoHalfGlobal
+        PDAMeta.SecondHalf = 5; %index of the first file of the second part of the dataset
+        %define which parameters are partly global
+        PDAMeta.HalfGlobal = false(1,16); 
+        PDAMeta.HalfGlobal(1) = true; %half globally link k12
+        PDAMeta.HalfGlobal(4) = true; %half globally link k21
+    end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -1954,6 +1977,12 @@ else
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
     LB = PDAMeta.LB(PDAMeta.Global);
     UB = PDAMeta.UB(PDAMeta.Global);
+    if PDAMeta.DoHalfGlobal
+        % put the half-globally linked parameter after the global ones
+        fitpar = [fitpar PDAMeta.FitParams(PDAMeta.SecondHalf, PDAMeta.HalfGlobal)];
+        LB = [LB PDAMeta.LB(PDAMeta.HalfGlobal)];
+        UB = [UB PDAMeta.UB(PDAMeta.HalfGlobal)];
+    end
     PDAMeta.hProxGlobal = [];
     for i=find(PDAMeta.Active)'
         %%% Concatenates y data of all active datasets
@@ -2026,6 +2055,11 @@ else
         %%% Sort optimized fit parameters back into table
         PDAMeta.FitParams(:,PDAMeta.Global)=repmat(fitpar(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
         fitpar(1:sum(PDAMeta.Global))=[];
+        if PDAMeta.DoHalfGlobal
+            PDAMeta.FitParams(PDAMeta.SecondHalf:end,PDAMeta.HalfGlobal)=repmat(fitpar(1:sum(PDAMeta.HalfGlobal)),[(size(PDAMeta.FitParams,1)-PDAMeta.SecondHalf+1) 1]) ;
+            fitpar(1:sum(PDAMeta.HalfGlobal))=[];
+        end
+        
         for i=find(PDAMeta.Active)'
             PDAMeta.FitParams(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = fitpar(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
             fitpar(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
@@ -2047,8 +2081,6 @@ else
             if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
                 PDAMeta.FitParams(i,3:3:end) = fraction.*PDAMeta.FitParams(i,2:3:end);
             end
-            % Convert amplitudes to fractions
-            PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2) = PDAMeta.FitParams(i,3*PDAMeta.Comp{i}-2)./sum(PDAMeta.FitParams(i,1:3:end));
             h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str,num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'UniformOutput',false);
         end
     end
@@ -2087,14 +2119,41 @@ if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(3:3:end) = fraction.*fitpar(2:3:end);
 end
 
-if ~h.SettingsTab.DynamicModel.Value
-    %%% normalize Amplitudes
-    fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
-end
-
 %%% create individual histograms
 hFit_Ind = cell(5,1);
-if h.SettingsTab.DynamicModel.Value %%% dynamic model
+if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+    %%% normalize Amplitudes
+    % the sum of the amplitudes should naturally be 1, since this corresponds
+    % to 100% of molecules (We fit the area-normalized data to a sum of
+    % area-normalized individual histograms).
+    % In practice, sum ? 1 so we demand here that it is 1. Then, the fitting
+    % optimized areas that have a sum of 1.
+    fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+    
+    for c = PDAMeta.Comp{i}
+        if h.SettingsTab.Use_Brightness_Corr.Value
+            %%% If brightness correction is to be performed, determine the relative
+            %%% brightness based on current distance and correction factors
+            Qr = calc_relative_brightness(fitpar(3*c-1),i);
+            %%% Rescale the PN;
+            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);
+            %%% fit PN_scaled to match PN of file
+            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
+            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
+            %%% Recalculate the P array of this file
+            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i,str2double(h.SettingsTab.NumberOfBins_Edit.String),str2double(h.SettingsTab.NumberOfBinsE_Edit.String));
+        end
+        
+        [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i); %Pe is area-normalized
+        P_eps = fitpar(3*c-2).*Pe;
+        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+        end
+    end
+    %%% Combine histograms
+    hFit = sum(horzcat(hFit_Ind{:}),2)';
+else %%% dynamic model
     %%% calculate PofT
     dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
     N = 100;
@@ -2138,8 +2197,14 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
     hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
     %%% Add static models
     if numel(PDAMeta.Comp{i}) > 2
+        %%% normalize Amplitudes
+        % amplitudes of the static components are normalized to the total area 
+        % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
+        % the k12 and k21 parameters are left untouched here so they will 
+        % appear in the table. The area fractions are calculated in Update_Plots
         norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
         fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
+        
         for c = PDAMeta.Comp{i}(3:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
             P_eps = fitpar(3*c-2).*Pe;
@@ -2151,33 +2216,11 @@ if h.SettingsTab.DynamicModel.Value %%% dynamic model
         hFit_Dyn = hFit_Dyn./norm;
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
-else %%% no dynamic, just combine
-    for c = PDAMeta.Comp{i}
-        if h.SettingsTab.Use_Brightness_Corr.Value
-            %%% If brightness correction is to be performed, determine the relative
-            %%% brightness based on current distance and correction factors
-            Qr = calc_relative_brightness(fitpar(3*c-1),i);
-            %%% Rescale the PN;
-            PN_scaled = scalePN(PDAData.BrightnessReference.PN,Qr);  
-            %%% fit PN_scaled to match PN of file
-            PN_scaled = PN_scaled(1:numel(PDAMeta.PN{i}));
-            PN_scaled = PN_scaled./sum(PN_scaled).*sum(PDAMeta.PN{i});
-            %%% Recalculate the P array of this file
-            PDAMeta.P(i,:) = recalculate_P(PN_scaled,i,str2double(h.SettingsTab.NumberOfBins_Edit.String),str2double(h.SettingsTab.NumberOfBinsE_Edit.String));
-        end
 
-        [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-        P_eps = fitpar(3*c-2).*Pe;
-        hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-        for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-            hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-        end
-    end
-    %%% Combine histograms
-    hFit = sum(horzcat(hFit_Ind{:}),2)';
 end
 
 %%% Add donor only species
+% the sum of areas will > 1 this way?
 hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
 
 %%% correct for slight number deviations between hFit and hMeasured
@@ -2223,7 +2266,6 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-
 FitParams = PDAMeta.FitParams;
 Global = PDAMeta.Global;
 Fixed = PDAMeta.Fixed;
@@ -2238,17 +2280,18 @@ for j=1:sum(PDAMeta.Active)
     Active = find(PDAMeta.Active)';
     i = Active(j);
     PDAMeta.file = i;
+    if PDAMeta.DoHalfGlobal
+        if j == PDAMeta.SecondHalf
+            P(PDAMeta.HalfGlobal)=fitpar(1:sum(PDAMeta.HalfGlobal));
+            fitpar(1:sum(PDAMeta.HalfGlobal))=[];
+        end
+    end
     %%% Sets non-fixed parameters
     P(~Fixed(i,:) & ~Global)=fitpar(1:sum(~Fixed(i,:) & ~Global));
     fitpar(1:sum(~Fixed(i,:)& ~Global))=[];
     %%% Sets fixed parameters
     P(Fixed(i,:) & ~Global) = FitParams(i, (Fixed(i,:) & ~Global));
     %%% Calculates function for current file
-    
-    if ~h.SettingsTab.DynamicModel.Value
-        %%% normalize Amplitudes
-        P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
-    end
     
     %%% if sigma is fixed at fraction of, change its value here
     if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -2260,7 +2303,25 @@ for j=1:sum(PDAMeta.Active)
 
     %%% create individual histograms
     hFit_Ind = cell(5,1);
-    if h.SettingsTab.DynamicModel.Value %%% dynamic model
+    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+        %%% normalize Amplitudes
+        % the sum of the amplitudes should naturally be 1, since this corresponds
+        % to 100% of molecules (We fit the area-normalized data to a sum of
+        % area-normalized individual histograms).
+        % In practice, sum ? 1 so we demand here that it is 1. Then, the fitting
+        % optimized areas that have a sum of 1.
+        P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
+        
+        for c = PDAMeta.Comp{i}
+            [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
+            P_eps = P(3*c-2).*Pe;
+            hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+            for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+                hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+            end
+        end
+        hFit = sum(horzcat(hFit_Ind{:}),2)';
+    else % dynamic model
         %%% calculate PofT
         dT = PDAData.timebin(i)*1E3; % time bin in milliseconds
         N = 100;
@@ -2304,10 +2365,15 @@ for j=1:sum(PDAMeta.Active)
         hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
         %%% Add static models
         if numel(PDAMeta.Comp{i}) > 2
+            %%% normalize Amplitudes
+            % amplitudes of the static components are normalized to the total area
+            % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21)
+            % the k12 and k21 parameters are left untouched here so they will
+            % appear in the table. The area fractions are calculated in Update_Plots
             norm = (sum(P(3*PDAMeta.Comp{i}(3:end)-2))+1);
             P(3*PDAMeta.Comp{i}(3:end)-2) = P(3*PDAMeta.Comp{i}(3:end)-2)./norm;
             for c = PDAMeta.Comp{i}(3:end)
-                [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
+                [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i); %Pe is area-normalized
                 P_eps = P(3*c-2).*Pe;
                 hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
                 for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
@@ -2317,16 +2383,6 @@ for j=1:sum(PDAMeta.Active)
             hFit_Dyn = hFit_Dyn./norm;
         end
         hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
-    else
-        for c = PDAMeta.Comp{i}
-            [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
-            P_eps = P(3*c-2).*Pe;
-            hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
-            for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
-                hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
-            end
-        end
-        hFit = sum(horzcat(hFit_Ind{:}),2)';
     end
     
     %%% Add donor only species
@@ -2403,7 +2459,7 @@ elseif PDAMeta.directexc(i) ~= 0
     Pe = dRdeps.*P_Rofeps;
 end
 Pe(~isfinite(Pe)) = 0;
-Pe = Pe./sum(Pe);
+Pe = Pe./sum(Pe); %area-normalized Pe
 
 % model for MLE fitting (not global)
 function logL = PDA_MLE_Fit_Single(fitpar)
