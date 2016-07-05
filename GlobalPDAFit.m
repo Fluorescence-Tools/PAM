@@ -1051,7 +1051,7 @@ switch mode
         cla(h.AllTab.Gauss_Axes)
         PDAMeta.Chi2_All = text('Parent',h.AllTab.Main_Axes,...
             'Units','normalized',...
-            'Position',[0.87,0.95],...
+            'Position',[0.77,0.95],...
             'String',['avg. \chi^2_{red.} = ' sprintf('%1.2f',randn(1))],...
             'FontWeight','bold',...
             'FontSize',18,...
@@ -1213,7 +1213,7 @@ switch mode
             cla(h.SingleTab.BSD_Axes)
             cla(h.SingleTab.Gauss_Axes)
             PDAMeta.Chi2_Single = copyobj(PDAMeta.Chi2_All, h.SingleTab.Main_Axes);
-            PDAMeta.Chi2_Single.Position = [0.9,0.95];
+            PDAMeta.Chi2_Single.Position = [0.8,0.95];
             try
                 % if fit is performed, this will work
                 PDAMeta.Chi2_Single.String = ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))];
@@ -2123,10 +2123,10 @@ end
 hFit_Ind = cell(5,1);
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
     %%% normalize Amplitudes
-    % the sum of the amplitudes should naturally be 1, since this corresponds
+    % the sum of the amplitudes should be 1, since this corresponds
     % to 100% of molecules (We fit the area-normalized data to a sum of
     % area-normalized individual histograms).
-    % In practice, sum ? 1 so we demand here that it is 1. Then, the fitting
+    % In practice, sum is not equal 1 so we demand here that it is 1. Then, the fitting
     % optimized areas that have a sum of 1.
     fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
     
@@ -3183,6 +3183,7 @@ switch mode
         % fill in the all row
         tmp = [1; 0; 0.02; 0; 0; 50; 1];
         Data=deal(num2cell(tmp)');
+        Data{end} = [];
         %Data=cellfun(@num2str,Data,'UniformOutput',false);
         h.ParametersTab.Table.Data=Data;
         h.ParametersTab.Table.ColumnEditable = true(1,numel(Columns));
@@ -3219,7 +3220,7 @@ switch mode
         end
         Data(size(h.ParametersTab.Table.Data,1):(end-1),:) = num2cell(tmp(size(h.ParametersTab.Table.Data,1):end,:));
         % put the ALL row to the mean of the loaded data 
-        Data(end,:) = num2cell(mean(cell2mat(Data(1:end-1,:)),1));
+        Data(end,1:end-1) = num2cell(mean(cell2mat(Data(1:end-1,1:end-1)),1));
         %%% Adds new files
         h.ParametersTab.Table.Data = Data;
         PDAMeta.PreparationDone = 0;
