@@ -1550,26 +1550,29 @@ if Mode==0 %%% Loads user values
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
 else
     Current=[];
-    if strcmp(FileInfo.FileName{1},'Nothing loaded')
-        return;
-    else
-        if strcmp(UserValues.Settings.Pam.AutoSaveProfile, 'on')
-            % Copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
-            for i = 1:FileInfo.NumberOfFiles
-                [~,FileName,~] = fileparts(FileInfo.FileName{i});
-                FullFileName = [FileInfo.Path filesep FileName '.pro'];
-                if ~strcmp(FullFileName, GenerateName(FullFileName,1));
-                    %%% filename already existed
-                    tmp = dir(FullFileName);
-                    if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
-                        %%% if date is the same, overwrite old file
-                        FullFileName = [FileInfo.Path filesep FileName '.pro'];
+    %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
+    if findobj('Tag','Pam') == get(groot,'CurrentFigure');
+        %%% if Pam is not the active figure, don't go in here
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            return;
+        else
+            if strcmp(UserValues.Settings.Pam.AutoSaveProfile, 'on')
+                for i = 1:FileInfo.NumberOfFiles
+                    [~,FileName,~] = fileparts(FileInfo.FileName{i});
+                    FullFileName = [FileInfo.Path filesep FileName '.pro'];
+                    if ~strcmp(FullFileName, GenerateName(FullFileName,1));
+                        %%% filename already existed
+                        tmp = dir(FullFileName);
+                        if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
+                            %%% if date is the same, overwrite old file
+                            FullFileName = [FileInfo.Path filesep FileName '.pro'];
+                        end
+                    else
+                        %%% generate index to the filename
+                        FullFileName = GenerateName(FullFileName,1);
                     end
-                else
-                    %%% generate index to the filename
-                    FullFileName = GenerateName(FullFileName,1);
+                    save(FullFileName,'-struct','UserValues');
                 end
-                save(FullFileName,'-struct','UserValues');
             end
         end
     end
