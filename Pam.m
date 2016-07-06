@@ -9192,13 +9192,13 @@ switch obj
             if ~strcmp(FullFileName, GenerateName(FullFileName,1));
                 %%% filename already existed
                 tmp = dir(FullFileName);
-                if strcmp(date, tmp.date(1:find(isspace(tmp.date))-1))
+                if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
                     %%% if date is the same, overwrite old file
                     FullFileName = [FileInfo.Path filesep FileName '.pro'];
                 end
             else
                 %%% generate index to the filename
-                FullFileName = GenerateName(FileName,1);
+                FullFileName = GenerateName(FullFileName,1);
             end
             save(FullFileName,'-struct','UserValues');
         end
