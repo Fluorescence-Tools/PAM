@@ -1,5 +1,5 @@
 function  [Profiles,Current] = LSUserValues(Mode)
-global UserValues
+global UserValues FileInfo
 
 
 if Mode==0 %%% Loads user values
@@ -369,6 +369,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
+    %%% Checksm if Pam.AutoSaveProfile subfield exists
+    if ~isfield (S.Settings.Pam, 'AutoSaveProfile')
+        S.Settings.Pam.AutoSaveProfile='off';
+        disp('UserValues.Settings.Pam.AutoSaveProfile was incomplete');
+    end
+    P.Settings.Pam.AutoSaveProfile = S.Settings.Pam.AutoSaveProfile;
     %% MetaData: User-dependend meta data
      %%% Checks, if MetaData field exists
     if ~isfield (S, 'MetaData')
@@ -1544,6 +1550,29 @@ if Mode==0 %%% Loads user values
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
 else
     Current=[];
+    if strcmp(FileInfo.FileName{1},'Nothing loaded')
+        return;
+    else
+        if strcmp(UserValues.Settings.Pam.AutoSaveProfile, 'on')
+            % Copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
+            for i = 1:FileInfo.NumberOfFiles
+                [~,FileName,~] = fileparts(FileInfo.FileName{i});
+                FullFileName = [FileInfo.Path filesep FileName '.pro'];
+                if ~strcmp(FullFileName, GenerateName(FullFileName,1));
+                    %%% filename already existed
+                    tmp = dir(FullFileName);
+                    if strcmp(date, tmp.date(1:find(isspace(tmp.date))-1))
+                        %%% if date is the same, overwrite old file
+                        FullFileName = [FileInfo.Path filesep FileName '.pro'];
+                    end
+                else
+                    %%% generate index to the filename
+                    FullFileName = GenerateName(FullFileName,1);
+                end
+                save(FullFileName,'-struct','UserValues');
+            end
+        end
+    end
 end
 
 %%% Saves user values
@@ -1556,7 +1585,3 @@ else
     load([Profiledir filesep 'Profile.mat']); %% Saves current profile
     save(fullfile(Profiledir,Profile),'-struct','UserValues');
 end
-
-
-
-
