@@ -6402,7 +6402,7 @@ if obj == h.DetermineCorrectionsButton
     axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
     
     %fit single gaussian
-    [mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly,1);
+    [mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly);
     BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
@@ -6421,7 +6421,7 @@ if obj == h.DetermineCorrectionsButton
     BurstMeta.Plots.histS_aonly.YData = histS_aonly;
     axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
     %fit single gaussian
-    [mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly,1);
+    [mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly);
     BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
     UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
@@ -6509,7 +6509,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.histEBG_blueonly.YData = histEBG_blueonly;
         axis(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'tight');
         %fit single gaussian
-        [mean_ct, GaussFit] = GaussianFit(x_axis',histEBG_blueonly,1);
+        [mean_ct, GaussFit] = GaussianFit(x_axis',histEBG_blueonly);
         BurstMeta.Plots.Fits.histEBG_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBG_blueonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.CrossTalk_BG = mean_ct./(1-mean_ct);
@@ -6522,7 +6522,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.histEBR_blueonly.YData = histEBR_blueonly;
         axis(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'tight');
         %fit single gaussian
-        [mean_ct, GaussFit] = GaussianFit(x_axis',histEBR_blueonly,1);
+        [mean_ct, GaussFit] = GaussianFit(x_axis',histEBR_blueonly);
         BurstMeta.Plots.Fits.histEBR_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBR_blueonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.CrossTalk_BR = mean_ct./(1-mean_ct);
@@ -6541,7 +6541,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.histSBG_greenonly.YData = histSBG_greenonly;
         axis(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'tight');
         %fit single gaussian
-        [mean_de, GaussFit] = GaussianFit(x_axis',histSBG_greenonly,1);
+        [mean_de, GaussFit] = GaussianFit(x_axis',histSBG_greenonly);
         BurstMeta.Plots.Fits.histSBG_greenonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBG_greenonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.DirectExcitation_BG = mean_de./(1-mean_de);
@@ -6560,7 +6560,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.histSBR_redonly.YData = histSBR_redonly;
         axis(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'tight');
         %fit single gaussian
-        [mean_de, GaussFit] = GaussianFit(x_axis',histSBR_redonly,1);
+        [mean_de, GaussFit] = GaussianFit(x_axis',histSBR_redonly);
         BurstMeta.Plots.Fits.histSBR_redonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBR_redonly(1).YData = GaussFit;
         UserValues.BurstBrowser.Corrections.DirectExcitation_BR = mean_de./(1-mean_de);
@@ -7240,10 +7240,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General 1D-Gauss Fit Function  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [mean,GaussFun,Gauss1,Gauss2] = GaussianFit(x_data,y_data,N_gauss)
+function [mean,GaussFun,Gauss1,Gauss2] = GaussianFit(x_data,y_data,mean_new)
 %%% Inputs:
-%%% xdata/ydata     :   Data to Fit
-%%% N_gauss         :   Number of Gauss Funktions (1 or 2)
+%%% xdata/ydata     : Data to Fit
+%%% mean_new        : User-defined mean value
 %%%
 %%% Outputs:
 %%% mean            : Determined Mean Value
@@ -7254,7 +7254,7 @@ if any(size(x_data) ~= size(y_data))
 end
 %% fit with 1 Gaussian
 Gauss = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
-if nargin <5 %no start parameters specified
+if nargin < 5 %no start parameters specified
     A = max(y_data);%set amplitude as max value
     m = sum(y_data.*x_data)./sum(y_data);%mean as center value
     s = sqrt(sum(y_data.*(x_data-m).^2)./sum(y_data));%std as sigma
@@ -7275,9 +7275,13 @@ coefficients = coeffvalues(gauss);
 mean = coefficients(2);
 GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
 
+if nargin == 3 %%% output the Gauss with new mean value
+    GaussFun = Gauss(coefficients(1),mean_new,coefficients(3),coefficients(4),x_data);
+end
+
 if gof.adjrsquare < 0.9 %%% fit was bad
     %%% fit with 2 Gaussians
-    Gauss2 = @(A1,m1,s1,A2,m2,s2,b,x) A1*exp(-(x-m1).^2./s1^2)+A2*exp(-(x-m2).^2./s2^2)+b;
+    Gauss2fun = @(A1,m1,s1,A2,m2,s2,b,x) A1*exp(-(x-m1).^2./s1^2)+A2*exp(-(x-m2).^2./s2^2)+b;
     if nargin <5 %no start parameters specified
         A1 = max(y_data);%set amplitude as max value
         A2 = A1;
@@ -7288,7 +7292,7 @@ if gof.adjrsquare < 0.9 %%% fit was bad
         b=0;%assume zero background
         param = [A1,m1,s1,A2,m2,s2,b];
     end
-    [gauss,~] = fit(x_data,y_data,Gauss2,'StartPoint',param,'Lower',zeros(1,numel(param)));
+    [gauss,~] = fit(x_data,y_data,Gauss2fun,'StartPoint',param,'Lower',zeros(1,numel(param)));
     coefficients = coeffvalues(gauss);
     %get maximum amplitude
     [~,Amax] = max([coefficients(1) coefficients(4)]);
@@ -7297,10 +7301,18 @@ if gof.adjrsquare < 0.9 %%% fit was bad
     elseif Amax == 2
         mean = coefficients(5);
     end
-    GaussFun = Gauss2(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
+    GaussFun = Gauss2fun(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
     G1 = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
     Gauss1 = G1(coefficients(1),coefficients(2),coefficients(3),coefficients(7)/2,x_data);
     Gauss2 = G1(coefficients(4),coefficients(5),coefficients(6),coefficients(7)/2,x_data);
+    if nargin == 3 %%% output the Gauss with new mean value
+        if Amax == 1
+            coefficients(2) = mean_new;
+        elseif Amax == 2
+            coefficients(5) = mean_new;
+        end
+        GaussFun = Gauss2fun(coefficients(1),coefficients(2),coefficients(3),coefficients(4),coefficients(5),coefficients(6),coefficients(7),x_data);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8354,6 +8366,36 @@ else %%% Update UserValues with new values
                 BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= Data{14};
                 BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                switch e.Indices(1)
+                    case 3 %%% crosstalk was changed, update the Gauss fit plot
+                        crosstalk_new = e.NewData;
+                        mean_new = crosstalk_new/(crosstalk_new+1);
+                        if BurstMeta.Plots.histE_donly.YData == 1
+                            % correction histograms don't exist yet
+                            DetermineCorrections(h.DetermineCorrectionsButton,[]); 
+                        end
+                        obj.Data{e.Indices(1),2} = crosstalk_new; %update the value in the table
+                        [~, GaussFun] = GaussianFit(BurstMeta.Plots.histE_donly.XData',...
+                                                    BurstMeta.Plots.histE_donly.YData',...
+                                                    mean_new); %create the new red line
+                        BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFun;
+                        UserValues.BurstBrowser.Corrections.CrossTalk_GR = crosstalk_new;
+                        BurstData{file}.Corrections.CrossTalk_GR = crosstalk_new;
+                    case 4 %%% direct exc. was changed, update the Gauss fit plot
+                        directexc_new = e.NewData;
+                        mean_new = directexc_new/(directexc_new+1);
+                        if BurstMeta.Plots.histS_aonly.YData == 1
+                            % correction histograms don't exist yet
+                            DetermineCorrections(h.DetermineCorrectionsButton,[]); %generate the directexc histogram if it isn't there already
+                        end
+                        obj.Data{e.Indices(1),2} = directexc_new; %update the value in the table
+                        [~, GaussFun] = GaussianFit(BurstMeta.Plots.histS_aonly.XData',...
+                                                    BurstMeta.Plots.histS_aonly.YData',...
+                                                    mean_new); %create the new red line
+                        BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFun;
+                        UserValues.BurstBrowser.Corrections.DirectExcitation_GR = directexc_new;
+                        BurstData{file}.Corrections.DirectExcitation_GR = directexc_new;
+                end
             elseif any(BurstData{file}.BAMethod == [3,4]) %%% 3cMFD
                 %%% first update the gamma values!
                 %%% gamma_br = gamma_bg*gamma_gr
@@ -8426,6 +8468,10 @@ else %%% Update UserValues with new values
                 BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= Data{29};
                 BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                switch e.Indices(1)
+                    case {7:12} 
+                        msgbox('anders, if you"re interested in having the red plots being updated when you change this value, see the two color code or let me know! xxx Jelle')
+                end
             end
         case h.DonorLifetimeEdit
             if ~isnan(str2double(h.DonorLifetimeEdit.String))
@@ -9376,7 +9422,7 @@ elseif any(BurstData{file}.BAMethod == [3,4])
 end
 x_axis = 0:0.05:10;
 htauGG = histc(BurstData{file}.DataArray(valid,idx_tauGG),x_axis);
-[DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG,1);
+[DonorOnlyLifetime, ~] = GaussianFit(x_axis',htauGG);
 %%% Update GUI
 h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
 
@@ -9398,7 +9444,7 @@ htauRR = histc(BurstData{file}.DataArray(valid,idx_tauRR),x_axis);
 if size(htauRR,2) > size(htauRR,1)
     htauRR = htauRR';
 end
-[AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR,1);
+[AcceptorOnlyLifetime, ~] = GaussianFit(x_axis',htauRR);
 %%% Update GUI
 h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
 
@@ -9414,7 +9460,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         (BurstData{file}.DataArray(:,idxSBR) > 0.98) );
     x_axis = 0:0.05:10;
     htauBB = histc(BurstData{file}.DataArray(valid,idx_tauBB),x_axis);
-    [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB,1);
+    [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB);
     %DonorBlueLifetime = mean(BurstData{file}.DataArray(valid,idx_tauBB));
     h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
 
