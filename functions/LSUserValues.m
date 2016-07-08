@@ -1569,9 +1569,7 @@ else
     %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
     if findobj('Tag','Pam') == get(groot,'CurrentFigure');
         %%% if Pam is not the active figure, don't go in here
-        if strcmp(FileInfo.FileName{1},'Nothing loaded')
-            return;
-        else
+        if ~strcmp(FileInfo.FileName{1},'Nothing loaded')
             if strcmp(UserValues.Settings.Pam.AutoSaveProfile, 'on')
                 for i = 1:FileInfo.NumberOfFiles
                     [~,FileName,~] = fileparts(FileInfo.FileName{i});
