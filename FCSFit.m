@@ -1000,9 +1000,16 @@ switch mode
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 1 %%% Updates tables when new data is loaded
         h.Fit_Table.CellEditCallback=[];
-        %%% Sets row names to file names 
+        %%% Sets row names to file names
         Rows=cell(numel(FCSData.Data)+3,1);
-        Rows(1:numel(FCSData.Data))=deal(FCSData.FileName);
+        tmp = FCSData.FileName;
+        %%% Cuts the filename up if too long
+        for i = 1:numel(tmp)
+            try
+                tmp{i} = [tmp{i}(1:20) '...' tmp{i}(end-20:end)];
+            end
+        end
+        Rows(1:numel(tmp))=deal(tmp);
         Rows{end-2}='ALL';
         Rows{end-1}='Lower bound';
         Rows{end}='Upper bound';

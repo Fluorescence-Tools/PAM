@@ -3009,7 +3009,14 @@ switch mode
         h.FitTab.Table.CellEditCallback=[];
         %%% Sets row names to file names
         Rows=cell(numel(PDAData.Data)+3,1);
-        Rows(1:numel(PDAData.Data))=deal(PDAData.FileName);
+        tmp = PDAData.FileName;
+        %%% Cuts the filename up if too long
+        for i = 1:numel(tmp)
+           try 
+               tmp{i} = [tmp{i}(1:10) '...' tmp{i}(end-10:end)];
+           end
+        end
+        Rows(1:numel(tmp))=deal(tmp);
         Rows{end-2}='ALL';
         Rows{end-1}='Lower bound';
         Rows{end}='Upper bound';
@@ -3191,7 +3198,14 @@ switch mode
         h.ParametersTab.Table.CellEditCallback=[];
         %%% Sets row names to file names
         Rows=cell(numel(PDAData.Data)+1,1);
-        Rows(1:numel(PDAData.Data))=deal(PDAData.FileName);
+        tmp = PDAData.FileName;
+        %%% Cuts the filename up if too long
+        for i = 1:numel(tmp)
+           try 
+               tmp{i} = [tmp{i}(1:10) '...' tmp{i}(end-10:end)];
+           end
+        end
+        Rows(1:numel(tmp))=deal(tmp);
         Rows{end}='ALL';
         h.ParametersTab.Table.RowName=Rows;
         Data = cell(numel(Rows),size(h.ParametersTab.Table.Data,2));
