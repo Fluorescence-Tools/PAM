@@ -7891,7 +7891,7 @@ elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData{file}.Resolution/1000;
     %Anders, does BurstData{file}.Resolution ever exist?
 end
-TauFit;
+TauFit(obj,[]);
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

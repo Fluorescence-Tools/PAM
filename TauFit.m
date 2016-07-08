@@ -1,4 +1,4 @@
-function TauFit(~,~)
+function TauFit(obj,~)
 h.TauFit = findobj('Tag','TauFit');
 %%% If called from command line, close
 if nargin < 1 && isempty(gcbo)
@@ -7,7 +7,7 @@ if nargin < 1 && isempty(gcbo)
     return;
 end
 
-obj = gcbo;
+%obj = gcbo;
 
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
@@ -1252,12 +1252,13 @@ else
     Method_Selection(h.FitMethod_Popupmenu,[]);
 end
 
-% if user does batch burst analysis in Pam (database tab), do the fitting immediately
+%%% User clicked 'Burst Analysis' button on the Burst or Batch analysis tab 
+%%% when 'Fit Lifetime' checkbox was checked.
 if exist('ph','var')
     if isobject(obj)
         switch obj
-            case ph.Burst.Button %also when batch analysis is done
-                BurstWise_Fit(h.BurstWiseFit_Button)
+            case ph.Burst.Button 
+                BurstWise_Fit(ph.Burst.Button,[])
                 close(h.TauFit);
         end
     end
@@ -3948,6 +3949,10 @@ function BurstWise_Fit(obj,~)
 global BurstData UserValues TauFitData
 h = guidata(findobj('Tag','TauFit'));
 
+if ~isempty(findobj('Tag','Pam'))
+    ph = guidata(findobj('Tag','Pam'));
+end
+
 h.Progress_Text.String = 'Opening Parallel Pool ...';
 StartParPool();
 
@@ -3992,12 +3997,28 @@ switch TauFitData.BAMethod
             if UserValues.TauFit.IncludeChannel(chan)
                 h.ChannelSelect_Popupmenu.Value = chan;
                 Update_Plots(obj)
-                % Save images of the individual plots
+                %%% User clicked 'Burst Analysis' button on the Burst or
+                %%% Batch analysis tab in Pam when 'Fit Lifetime' checkbox was checked.
+                if obj == ph.Burst.Button
+                    %%% User right-clicked the 'Fit Lifetime' checkbox in
+                    %%% Pam and enabled 'automatic IRF shift'.
+                    if strcmp(UserValues.BurstSearch.AutoIRFShift,'on')
+                        h.FitPar_Table.Data{end,4} = false; %free the IRFshift
+                        h.FitPar_Table.Data{end,2} = -20; %LB
+                        h.FitPar_Table.Data{end,3} = 20; %UB
+                        Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
+                    end
+                end
+                %%% Save image of the individual decays
+                Update_Plots(obj)
                 f = ExportGraph(h.Microtime_Plot_Export);
                 close(f)
-                Start_Fit(h.Fit_Button)
+                %%% Save image of the fit
+                h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
+                Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
                 f = ExportGraph(h.Export_Result);
                 close(f)
+                
                 % I just read the data from the plots to avoid confusion.
                 %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
                 %%% Changed this back so a better correction of the IRF can be
@@ -4217,6 +4238,28 @@ switch TauFitData.BAMethod
                 % call Update_plots to get the correctly shifted Scatter and IRF directly from the plot
                 h.ChannelSelect_Popupmenu.Value = chan;
                 Update_Plots(obj)
+                %%% User clicked 'Burst Analysis' button on the Burst or
+                %%% Batch analysis tab in Pam when 'Fit Lifetime' checkbox was checked.
+                if obj == ph.Burst.Button
+                    %%% User right-clicked the 'Fit Lifetime' checkbox in
+                    %%% Pam and enabled 'automatic IRF shift'.
+                    if strcmp(UserValues.BurstSearch.AutoIRFShift,'on')
+                        h.FitPar_Table.Data{end,4} = false; %free the IRFshift
+                        h.FitPar_Table.Data{end,2} = -20; %LB
+                        h.FitPar_Table.Data{end,3} = 20; %UB
+                        Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
+                    end
+                end
+                %%% Save image of the individual decays
+                Update_Plots(obj)
+                f = ExportGraph(h.Microtime_Plot_Export);
+                close(f)
+                %%% Save image of the fit
+                h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
+                Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
+                f = ExportGraph(h.Export_Result);
+                close(f)
+                
                 %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
@@ -4267,6 +4310,9 @@ switch TauFitData.BAMethod
                 SCATTER{chan} = downsamplebin(SCATTER{chan},new_bin_width);SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
             end
         end
+        % put channel back to 1
+        h.ChannelSelect_Popupmenu.Value = 1;
+        Update_Plots(obj)
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));

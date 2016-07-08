@@ -369,12 +369,6 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
-    %%% Checks if Pam.AutoIRFShift subfield exists
-    if ~isfield (S.Settings.Pam, 'AutoIRFShift')
-        S.Settings.Pam.AutoIRFShift='off';
-        disp('UserValues.Settings.Pam.AutoIRFShift was incomplete');
-    end
-    P.Settings.Pam.AutoIRFShift = S.Settings.Pam.AutoIRFShift;
     %%% Checksm if Pam.AutoSaveProfile subfield exists
     if ~isfield (S.Settings.Pam, 'AutoSaveProfile')
         S.Settings.Pam.AutoSaveProfile='off';
@@ -637,8 +631,24 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.SaveTotalPhotonStream was incomplete');
     end
     P.BurstSearch.SaveTotalPhotonStream = S.BurstSearch.SaveTotalPhotonStream;
-    
-    
+    %%% Checks, if BurstSearch.NirFilter exists
+    if ~isfield (S.BurstSearch,'NirFilter')
+        S.BurstSearch.NirFilter=0;
+        disp('UserValues.BurstSearch.NirFilter was incomplete');
+    end
+    P.BurstSearch.NirFilter = S.BurstSearch.NirFilter;
+    %%% Checks, if BurstSearch.FitLifetime exists
+    if ~isfield (S.BurstSearch,'FitLifetime')
+        S.BurstSearch.FitLifetime=0;
+        disp('UserValues.BurstSearch.FitLifetime was incomplete');
+    end
+    P.BurstSearch.FitLifetime = S.BurstSearch.FitLifetime;
+    %%% Checks if BurstSearch.AutoIRFShift subfield exists
+    if ~isfield (S.BurstSearch, 'AutoIRFShift')
+        S.BurstSearch.AutoIRFShift='off';
+        disp('UserValues.BurstSearch.AutoIRFShift was incomplete');
+    end
+    P.BurstSearch.AutoIRFShift = S.BurstSearch.AutoIRFShift;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')
