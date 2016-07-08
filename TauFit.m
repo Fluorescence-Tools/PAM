@@ -1255,16 +1255,6 @@ if exist('ph','var')
     if isobject(obj)
         switch obj
             case {ph.Database.Burst, ph.Burst.Button}
-                for j = 1:numel(Channel_String)
-                    % Save images of the individual plots
-                    h.ChannelSelect_Popupmenu.Value = j;
-                    Update_Plots(obj)
-                    f = ExportGraph(h.Microtime_Plot_Export);
-                    close(f)
-                    Start_Fit(h.Fit_Button)
-                    f = ExportGraph(h.Export_Result);
-                    close(f)
-                end
                 BurstWise_Fit(h.BurstWiseFit_Button)
                 close(h.TauFit);
         end
@@ -3998,9 +3988,15 @@ switch TauFitData.BAMethod
         %% Prepare the data
         for chan = 1:2
             if UserValues.TauFit.IncludeChannel(chan)
-                % Anders, I just read the data from the plots to avoid confusion.
                 h.ChannelSelect_Popupmenu.Value = chan;
                 Update_Plots(obj)
+                % Save images of the individual plots
+                f = ExportGraph(h.Microtime_Plot_Export);
+                close(f)
+                Start_Fit(h.Fit_Button)
+                f = ExportGraph(h.Export_Result);
+                close(f)
+                % I just read the data from the plots to avoid confusion.
                 %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
@@ -4052,6 +4048,9 @@ switch TauFitData.BAMethod
                 SCATTER{chan} = SCATTER{chan}./sum(SCATTER{chan});
             end
         end
+        % put channel back to 1
+        h.ChannelSelect_Popupmenu.Value = 1;
+        Update_Plots(obj)
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));
