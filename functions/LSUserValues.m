@@ -369,6 +369,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.PlotLog was incomplete');
     end
     P.Settings.Pam.PlotLog = S.Settings.Pam.PlotLog;
+    %%% Checks if Pam.AutoIRFShift subfield exists
+    if ~isfield (S.Settings.Pam, 'AutoIRFShift')
+        S.Settings.Pam.AutoIRFShift='off';
+        disp('UserValues.Settings.Pam.AutoIRFShift was incomplete');
+    end
+    P.Settings.Pam.AutoIRFShift = S.Settings.Pam.AutoIRFShift;
     %%% Checksm if Pam.AutoSaveProfile subfield exists
     if ~isfield (S.Settings.Pam, 'AutoSaveProfile')
         S.Settings.Pam.AutoSaveProfile='off';

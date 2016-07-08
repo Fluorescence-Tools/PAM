@@ -741,8 +741,13 @@ addpath(genpath(['.' filesep 'functions']));
         'ForegroundColor', Look.Fore,...
         'String','Calculate 2CDE',...
         'Position',[0.05 0.8 0.9 0.08],...
-        'TooltipString',sprintf('Calculate 2CDE Filter when doing Burst Search'));  
-            %%% Checkbox to calculate 2CDE filter
+        'TooltipString',sprintf('Calculate 2CDE Filter when doing Burst Search')); 
+    %%% Contextmenu to optimize the IRF shift automatically
+    h.Burst.BurstLifetime_Checkbox_Menu = uicontextmenu;
+    h.Burst.BurstLifetime_Checkbox_Menu_IRFshift = uimenu(h.Burst.BurstLifetime_Checkbox_Menu,...
+            'Label','Automatically optimize IRF shift',...
+            'Callback', @Calculate_Settings);
+    %%% Checkbox to calculate lifetime automatically
     h.Burst.BurstLifetime_Checkbox = uicontrol(...
         'Parent',h.Burst.SubPanel_Settings,...
         'Tag','BurstLifetime_Button',...
@@ -750,6 +755,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Units','normalized',...
         'FontSize',14,...
         'Value',0,...
+        'UIContextMenu',h.Burst.BurstLifetime_Checkbox_Menu,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'String','Fit lifetime',...
@@ -3006,6 +3012,16 @@ elseif obj == h.Menu.NumberOfCores
         end
         h.Menu.NumberOfCores.Label=['Number of Cores: ' num2str(NumberOfCores)];
         UserValues.Settings.Pam.NumberOfCores=NumberOfCores;
+    end
+elseif obj == h.Burst.BurstLifetime_Checkbox_Menu_IRFshift
+    %%% function for the 'automatically optimize IRFshift checkbox'
+    %%% (right-click on Fit Lifetime button to change the setting)
+    if strcmp(h.Burst.BurstLifetime_Checkbox_Menu_IRFshift.Checked,'off')
+        UserValues.Settings.Pam.AutoIRFShift = 'on';
+        h.Burst.BurstLifetime_Checkbox_Menu_IRFshift.Checked='on';
+    else
+        UserValues.Settings.Pam.AutoIRFShift = 'off';
+        h.Burst.BurstLifetime_Checkbox_Menu_IRFshift.Checked='off';
     end
 end
 %%% Saves UserValues
@@ -5635,7 +5651,7 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Do_BurstAnalysis(~,~)
+function Do_BurstAnalysis(obj,~)
 global FileInfo UserValues
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
@@ -6436,7 +6452,7 @@ end
 
 % Perform burstwise lifetime fitting directly after burst search
 if h.Burst.BurstLifetime_Checkbox.Value
-    BurstLifetime(h.Database.Burst,[])
+    BurstLifetime(obj,[])
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8191,7 +8207,7 @@ switch mode
             LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
                 PamMeta.Database{i,1},...   %file
                 PamMeta.Database{i,3});     %type
-            Do_BurstAnalysis
+            Do_BurstAnalysis(h.Burst.Button,[])
             % depending on whether the '2CDE' and 'lifetime' checkboxes are
             % checked on the 'Burst analysis' tab, this might also be performed
             % set filename color to green
@@ -9160,6 +9176,8 @@ for i = 1:numel(UserValues.PIE.Name)
         UserValues.PIE.To(i),...
         UserValues.PIE.Background(i));
 end
+<<<<<<< .mine
+fclose(fid);=======
 fclose(fid);
 
 function SaveLoadProfile(obj, ~)
@@ -9207,4 +9225,4 @@ switch obj
         %%% Button for Loading the profile from the folder of the
         %%% currently opened TCSPC file
         %'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
-end
+end>>>>>>> .r1046
