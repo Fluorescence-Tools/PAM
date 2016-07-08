@@ -709,10 +709,12 @@ if exist('ph','var')
                     'Checked','off',...
                     'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
-            case {ph.Burst.BurstLifetime_Button, ph.Database.Burst, ph.Burst.Button}%{ph.Burst.BurstLifetime_Button, ph.Database.Burst}
+            case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}
                 TauFitData.Who = 'Burstwise';
-                %%%?User Clicks Burstwise Lifetime button in Pam or clicks
-                %%%Burst Analysis on database tab in Pam
+                %%% User Clicks Burstwise Lifetime button in Pam, Burst 
+                %%% Analysis button in Pam with lifetime checkbox checked or 
+                %%% Burst Analysis on database tab in Pam, with lifetime
+                %%% checkbox checked
                 h.ChannelSelect_Text = uicontrol(...
                     'Parent',h.PIEChannel_Panel,...
                     'Style','Text',...
@@ -1254,7 +1256,7 @@ end
 if exist('ph','var')
     if isobject(obj)
         switch obj
-            case {ph.Database.Burst, ph.Burst.Button}
+            case ph.Burst.Button %also when batch analysis is done
                 BurstWise_Fit(h.BurstWiseFit_Button)
                 close(h.TauFit);
         end
