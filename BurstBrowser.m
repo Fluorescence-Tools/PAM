@@ -6841,7 +6841,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     %staticFRETline = @(x) 1 - (coeff(1).*x.^3 + coeff(2).*x.^2 + coeff(3).*x + coeff(4))./BurstData{file}.Corrections.DonorLifetime;
     %%% minimize deviation from static FRET line as a function of gamma
     tauGG = data_for_corrections(S_threshold,indTauGG);
-    valid = (tauGG < BurstData{file}.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG);
+    valid = (tauGG < BurstData{file}.Corrections.DonorLifetime) & (tauGG > 0.01) & ~isnan(tauGG) & ~isnan(statFRETfun(tauGG));
     %dev = @(gamma) sum( ( ( NGR(valid)./(gamma.*NGG(valid)+NGR(valid)) ) - statFRETfun( tauGG(valid) ) ).^2 );
     %gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
     gamma_fit = fit([NGR(valid),NGG(valid)],statFRETfun(tauGG(valid)), @(gamma,x,y) (x./(gamma.*y+x) ),'StartPoint',1,'Robust','bisquare');
