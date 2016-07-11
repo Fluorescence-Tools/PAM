@@ -3592,21 +3592,21 @@ function Load_Brightness_Reference(obj,~,mode)
 global PDAData UserValues PDAMeta
 
 load_file = 0;
-
-switch mode
-    case 1
-        if obj.Value == 1
-            if isempty(PDAData.BrightnessReference)
-                load_file = 1;
+if ~isempty(PDAData)
+    switch mode
+        case 1
+            if obj.Value == 1
+                if isempty(PDAData.BrightnessReference)
+                    load_file = 1;
+                end
+                PDAMeta.Plots.BSD_Reference.Visible = 'on';
+            else
+                PDAMeta.Plots.BSD_Reference.Visible = 'off';
             end
-            PDAMeta.Plots.BSD_Reference.Visible = 'on';
-        else
-            PDAMeta.Plots.BSD_Reference.Visible = 'off';
-        end
-    case 2
-        load_file = 1;
-end
-            
+        case 2
+            load_file = 1;
+    end
+end         
             
 if load_file
     %%% Load data
