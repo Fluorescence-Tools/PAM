@@ -3,6 +3,10 @@ function dark_mode(handle)
 % white->black and setting the background transparent.
 % Call this function by passing the figure handle.
 
+if nargin == 0 % no input specified
+    handle = gcf;
+end
+
 if any(strcmp(handle.Type,'figure')) %%% top level figure, change background to transparent
     handle.Color = 'none';
 end

@@ -212,16 +212,16 @@ addpath(genpath(['.' filesep 'functions']));
         'Tag','ParallelProcessing',...
         'Label','Parallel Processing');
     if UserValues.Settings.Pam.ParallelProcessing == 0
-        UserValues.Settings.Pam.ParallelProcessing = 'off';
+        checked = 'off';
     end
     if UserValues.Settings.Pam.ParallelProcessing == Inf
-        UserValues.Settings.Pam.ParallelProcessing = 'on';
+        checked = 'on';
     end
     h.Menu.UseParfor = uimenu(...
         'Parent',h.Menu.ParallelProcessing,...
         'Tag','UseParfor',...
         'Label','Enable Multicore',...
-        'Checked', UserValues.Settings.Pam.ParallelProcessing,...
+        'Checked', checked,...
         'Callback',@Calculate_Settings);
     h.Menu.NumberOfCores = uimenu(...
         'Parent',h.Menu.ParallelProcessing,...
@@ -2990,10 +2990,10 @@ elseif obj == h.Menu.UseParfor
     %%% Sets number of workers used for parpool to 0 or Inf
     if strcmp(obj.Checked,'on')
         obj.Checked = 'off';
-        UserValues.Settings.Pam.ParallelProcessing = 'off';
+        UserValues.Settings.Pam.ParallelProcessing = 0;
     else
         obj.Checked = 'on';
-        UserValues.Settings.Pam.ParallelProcessing = 'on';
+        UserValues.Settings.Pam.ParallelProcessing = Inf;
     end
 elseif obj == h.Menu.NumberOfCores
      %%% Opens input dialog and gets value 
