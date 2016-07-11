@@ -50,8 +50,10 @@ if ~isdir('temp')
     mkdir('temp');
 end
 filename = 'temp/metadata.yaml';
-%Mandatory Fields
+
+%% Mandatory Fields
 description =          'Photon data from PAM';
+%% Setup description
 num_pixels =           4;
 num_spots =            1;
 num_polarization_ch =  2;
@@ -89,7 +91,7 @@ fprintf(fileID,formatSpec,description,num_pixels,num_spots,num_spectral_ch,...
         num_polarization_ch,num_split_ch,modulated_excitation,lifetime);
 
 
-%% Optional fields (Comment out if not used!)
+%% Optional fields
 %assumes two wavelengths
 
 excitation_wavelengths = str2num(UserValues.MetaData.ExcitationWavelengths);
@@ -114,7 +116,7 @@ wavelength_a = strsplit(UserValues.Detector.Filter{deta(1)},'/');
 wavelength_b = strsplit(UserValues.Detector.Filter{detb(1)},'/');
 detection_wavelengths = [str2num(wavelength_a{1}), str2num(wavelength_b{1})];
 
-%% Format/Write Optional fields to YAML file (Comment out if not used!)
+%% Format/Write Optional fields to YAML file
 formatSpec = [...
 '    excitation_wavelengths: [%g,%g]  # List of excitation wavelenghts \n'...
 '    excitation_cw: [%s,%s]               # List of booleans, True if wavelength is CW \n'...
@@ -130,7 +132,7 @@ fprintf(fileID,formatSpec,excitation_wavelengths(1),excitation_wavelengths(1),..
 sample_name = UserValues.MetaData.SampleName;
 buffer_name = UserValues.MetaData.SampleName;
 dye_names =   UserValues.MetaData.DyeNames;
-
+m
 %% Write Sample Metadata to YAML file
 
 formatSpec = ['sample: \n'...
