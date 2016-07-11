@@ -329,7 +329,7 @@ if Mode==0 %%% Loads user values
     P.Settings.Pam.MT_Number_Section = S.Settings.Pam.MT_Number_Section;
     %%% Checks, if Pam.Multi_Cor subfield exists
     if ~isfield (S.Settings.Pam, 'ParallelProcessing')
-        S.Settings.Pam.ParallelProcessing=0;
+        S.Settings.Pam.ParallelProcessing='off';
         disp('UserValues.Settings.Pam.ParallelProcessing was incomplete');
     end
     P.Settings.Pam.ParallelProcessing = S.Settings.Pam.ParallelProcessing;

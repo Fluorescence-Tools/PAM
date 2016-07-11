@@ -211,6 +211,12 @@ addpath(genpath(['.' filesep 'functions']));
         'Parent',h.Menu.Extras,...
         'Tag','ParallelProcessing',...
         'Label','Parallel Processing');
+    if UserValues.Settings.Pam.ParallelProcessing == 0
+        UserValues.Settings.Pam.ParallelProcessing = 'off';
+    end
+    if UserValues.Settings.Pam.ParallelProcessing == Inf
+        UserValues.Settings.Pam.ParallelProcessing = 'on';
+    end
     h.Menu.UseParfor = uimenu(...
         'Parent',h.Menu.ParallelProcessing,...
         'Tag','UseParfor',...
@@ -2984,10 +2990,10 @@ elseif obj == h.Menu.UseParfor
     %%% Sets number of workers used for parpool to 0 or Inf
     if strcmp(obj.Checked,'on')
         obj.Checked = 'off';
-        UserValues.Settings.Pam.ParallelProcessing = 0;
+        UserValues.Settings.Pam.ParallelProcessing = 'off';
     else
         obj.Checked = 'on';
-        UserValues.Settings.Pam.ParallelProcessing = Inf;
+        UserValues.Settings.Pam.ParallelProcessing = 'on';
     end
 elseif obj == h.Menu.NumberOfCores
      %%% Opens input dialog and gets value 
