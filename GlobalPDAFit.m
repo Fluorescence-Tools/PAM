@@ -1962,6 +1962,7 @@ else
         PDAMeta.HalfGlobal = false(1,16); 
         PDAMeta.HalfGlobal(1) = true; %half globally link k12
         PDAMeta.HalfGlobal(4) = true; %half globally link k21
+        PDAMeta.HalfGlobal(7) = true; %half globally link Area3
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
@@ -3214,6 +3215,7 @@ switch mode
         %%% Set last row to ALL
         Data(end,:) = h.ParametersTab.Table.Data(end,:);
         %%% Add parameters of new files in between old data and ALL row
+        tmp = zeros(numel(PDAData.FileName),7);
         for i = 1:numel(PDAData.FileName)
             tmp(i,1) = PDAData.Corrections{i}.Gamma_GR;
             % direct excitation correction in Burst analysis is NOT the
