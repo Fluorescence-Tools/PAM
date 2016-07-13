@@ -1328,19 +1328,17 @@ switch mode
         %% Update plots post fitting
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
         for i = Active
-            fitpar = FitTable(i,2:3:end-1);
+            fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
+                % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
                 tmp = fitpar(4)/(fitpar(1)+fitpar(4));
                 tmp2 = fitpar(1)/(fitpar(1)+fitpar(4));
                 fitpar(1) = tmp;
                 fitpar(4) = tmp2;
-                tmp = fitpar(1)/sum(fitpar(1:3:end));
-                tmp2 = fitpar(4)/sum(fitpar(1:3:end));
-                fitpar(1) = tmp;
-                fitpar(4) = tmp2;
-                % fitpar(1:3:end) is related to the percentage of
-                % molecules in that state
             end
+            % normalize the amplitudes to get a total area of 1
+            fitpar(1:3:end) = fitpar(1:3:end)/sum(fitpar(1:3:end));
+
             %%% Calculate Gaussian Distance Distributions
             for c = PDAMeta.Comp{i}
                 Gauss{c} = fitpar(3*c-2).*...
@@ -1421,23 +1419,25 @@ switch mode
                         'YData', Gauss{c});
                 end
                 % Single tab Gauss Axis x limit
-                xlim(h.SingleTab.Gauss_Axes,[min(fitpar(2:3:end-2)-3*fitpar(3:3:end-1)),...
-                    max(fitpar(2:3:end-2)+3*fitpar(3:3:end-1))]);
+%                 xlim(h.SingleTab.Gauss_Axes,[min(fitpar(2:3:end-2)-3*fitpar(3:3:end-1)),...
+%                     max(fitpar(2:3:end-2)+3*fitpar(3:3:end-1))]);
                 %xlim(h.SingleTab.Gauss_Axes,[20 60]);
             end
+            clear Gauss
         end
         %%% Set All Tab Gauss Axis X limit
         % get fit parameters
         FitTable = FitTable(1:end-3,2:3:end-1);
         % get all active files and components
-        Mini = []; Maxi = [];
+        Mini = 40; Maxi = 60;
         for i = Active
             for c = PDAMeta.Comp{i}
-                Mini = [Mini FitTable(i,3*c-1)-3*FitTable(i,3*c)];
-                Maxi = [Maxi FitTable(i,3*c-1)+3*FitTable(i,3*c)];
+                Mini = min(Mini, FitTable(i,3*c-1)-3*FitTable(i,3*c));
+                Maxi = max(Maxi, FitTable(i,3*c-1)+3*FitTable(i,3*c));
             end
         end
-        xlim(h.AllTab.Gauss_Axes,[min(Mini), max(Maxi)]);
+        xlim(h.AllTab.Gauss_Axes,[Mini, Maxi]);
+        xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
         %xlim(h.AllTab.Gauss_Axes,[20 60]);
     case 5 %% Live Plot update
         i = PDAMeta.file;
@@ -1514,7 +1514,9 @@ calc = 1;
 for i = 1:numel(PDAData.FileName)
     % if all files have the same parameters as the ALL row some things will only be calculated once
     if ~isequal(cell2mat(h.ParametersTab.Table.Data(i,:)),cell2mat(h.ParametersTab.Table.Data(end,:)))
-        allsame = 0;
+        if ~isequal(cell2mat(h.ParametersTab.Table.Data(i,1:end-1)),cell2mat(h.ParametersTab.Table.Data(end,1:end-1)))
+            allsame = 0;
+        end
     end
     PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
     PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
