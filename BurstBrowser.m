@@ -5548,6 +5548,7 @@ switch obj
                     end
                 end
             end
+            UpdatePlot([],[],h);
         end
     case h.PlotContourLines
         UserValues.BurstBrowser.Display.PlotContourLines = h.PlotContourLines.Value;
@@ -10385,6 +10386,18 @@ switch obj
                 cbar = colorbar('peer', panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',3); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
+                if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+                    labels = cellfun(@str2double,cbar.TickLabels);
+                    %%% find maximum number of bursts
+                    for k=1:numel(BurstMeta.Plots.Main_Plot)
+                        if strcmp(BurstMeta.Plots.Main_Plot(k).Type,'image')
+                            maxZ = max(BurstMeta.Plots.Main_Plot(k).CData(:));
+                        end
+                    end
+                    for i = 1:numel(labels)
+                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                    end
+                end
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
