@@ -5031,7 +5031,14 @@ if ~colorbyparam
     h.colorbar.Ticks = [];
     h.colorbar.TickLabels = [];
     h.colorbar.TickLabelsMode = 'auto';
-    h.colorbar.TicksMode = 'auto'; 
+    h.colorbar.TicksMode = 'auto';
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+        labels = cellfun(@str2double,h.colorbar.TickLabels);
+        maxZ = max(H(:));
+        for i = 1:numel(labels)
+            h.colorbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+        end
+    end
 else
     % histogram X vs Y parameter
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
