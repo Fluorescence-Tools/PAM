@@ -2911,8 +2911,12 @@ else
     tmp.path = PDAData.PathName;
     tmp.active = Active;
     h = guidata(findobj('Tag','GlobalPDAFit'));
-    tmp.fittable = h.FitTab.Table.Data;
-    tmp.parameterstable = h.ParametersTab.Table.Data;
+    tmp.fittable = cell(size(h.FitTab.Table.Data, 1)-2, size(h.FitTab.Table.Data(1,2:3:end), 2));
+    tmp.fittable(1,:) = h.FitTab.Table.ColumnName(2:3:end);
+    tmp.fittable(2:end,:) = h.FitTab.Table.Data(1:end-3,2:3:end);
+    tmp.parameterstable = cell(size(h.ParametersTab.Table.Data));
+    tmp.parameterstable(1,:) = h.ParametersTab.Table.ColumnName;
+    tmp.parameterstable(2:end,:) = h.ParametersTab.Table.Data(1:end-1,:);
     
     gausx = size(PDAMeta.Plots.Gauss_All{1,1}.XData,2);
     tmp.gauss = [];
@@ -3186,13 +3190,13 @@ switch mode
         h.ParametersTab.Table.CellEditCallback=[];
         %%% Column names & widths
         Columns=cell(6,1);
-        Columns{1}='<HTML> Gamma';
-        Columns{2}='<HTML> Direct Exc';
-        Columns{3}='<HTML> Crosstalk';
-        Columns{4}='<HTML> BGD [kHz]';
-        Columns{5}='<HTML> BGA [kHz]';
-        Columns{6}='<HTML> R0 [A]';
-        Columns{7}='<HTML> Bin [ms]';
+        Columns{1}='Gamma';
+        Columns{2}='Direct Exc';
+        Columns{3}='Crosstalk';
+        Columns{4}='BGD [kHz]';
+        Columns{5}='BGA [kHz]';
+        Columns{6}='R0 [A]';
+        Columns{7}='Bin [ms]';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(:) = 80;
         h.ParametersTab.Table.ColumnName=Columns;
