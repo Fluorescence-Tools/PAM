@@ -1677,9 +1677,20 @@ if sum(Global)==0
             %%% calculate confidence intervals
             if h.Conf_Interval.Value
                 ConfInt = zeros(size(FCSMeta.Params,1),2);
-                ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+                method = '';
+                if ~strcmp(method,'sampling')
+                    ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+                else
+                    confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
+                    proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+                    %%% define log-likelihood function, which is just the negative of the chi2!
+                    loglikelihood = @(x) (-1)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
+                    %%% Sample
+                    nsamples = 1E5;
+                    [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+                    ConfInt(~Fixed(i,:),:) = [(mean(samples(1:1000:end,:))-std(samples(1:1000:end,:)))', (mean(samples(1:1000:end,:))+std(samples(1:1000:end,:)))'];
+                end
                 FCSMeta.Confidence_Intervals{i} = ConfInt;
-                %FCSMeta.Confidence_Intervals{i} = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
             end
             %%% Updates parameters
             FCSMeta.Params(~Fixed(i,:),i)=Fitted_Params;
@@ -1724,7 +1735,19 @@ else
     [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Global,Fit_Params,{XData,EData,Points,Fixed,Global,Active},YData./EData,Lb,Ub,opts);
     %%% calculate confidence intervals
     if h.Conf_Interval.Value
-        ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+        method = '';
+        if ~strcmp(method,'sampling')
+            ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+        else
+            confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
+            proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+            %%% define log-likelihood function, which is just the negative of the chi2!
+            loglikelihood = @(x) (-1)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
+            %%% Sample
+            nsamples = 1E5;
+            [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+            ConfInt = [(mean(samples(1:1000:end,:))-std(samples(1:1000:end,:)))', (mean(samples(1:1000:end,:))+std(samples(1:1000:end,:)))'];
+        end
         GlobConfInt = ConfInt(1:sum(Global),:);
         ConfInt(1:sum(Global),:) = [];
         for i = find(Active)'
@@ -1733,7 +1756,6 @@ else
             FCSMeta.Confidence_Intervals{i}(~Fixed(i,:) & ~Global,:) = ConfInt(1:sum(~Fixed(i,:) & ~Global),:);
             ConfInt(1:sum(~Fixed(i,:)& ~Global),:)=[]; 
         end
-        %FCSMeta.Confidence_Intervals = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
     end
     %%% Updates parameters
     FCSMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(FCSMeta.Params,2)]) ;
