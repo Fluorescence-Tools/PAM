@@ -458,7 +458,7 @@ addpath(genpath(['.' filesep 'functions']));
         'FontWeight','bold',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'String',{'Point';'Pair';'Microtime'},... 
+        'String',{'Point';'Pair';'Microtime';'Microtime (linear)'},... 
         'Position',[0.49 0 0.1 0.09],...
         'Style','popupmenu',...
         'TooltipString',sprintf('Choose between point and pair correlation'));
@@ -4644,7 +4644,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     [Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
     %%% Calculates the maximum inter-photon time in clock ticks
     Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.ClockPeriod)/UserValues.Settings.Pam.Cor_Divider;
-    if h.Cor.Type.Value == 3 %%% Microtime Correlation
+    if any(h.Cor.Type.Value == [3,4]) %%% Microtime Correlation
         Maxtime = Maxtime.*FileInfo.MI_Bins;
     end
     %%% Calculates the photon start times in clock ticks
@@ -4712,7 +4712,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
         
         Cor_Type = h.Cor.Type.Value;
         switch Cor_Type %%% Assigns photons and does correlation
-            case {1,3} %%% Point correlation
+            case {1,3,4} %%% Point correlation
                 %%% Initializes data cells
                 Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
                 Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
@@ -4732,7 +4732,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
-                            elseif Cor_Type == 3 %%% Microtime Correlation, add microtimes
+                            elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
@@ -4765,7 +4765,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
-                                elseif Cor_Type == 3 %%% Microtime Correlation, add microtimes
+                                elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
@@ -4804,12 +4804,19 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 for j=1:numel(Data1)
                     Data1{j}=floor(Data1{j}/UserValues.Settings.Pam.Cor_Divider);
                     Data2{j}=floor(Data2{j}/UserValues.Settings.Pam.Cor_Divider);
-                end               
+                end
+                
                 %%% Actually calculates the crosscorrelation
-                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                if ~(Cor_Type == 4)
+                    [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                else
+                    limit = 1E-6/(FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider); %%% only calculate from -1?s to 1?s
+                    resolution = ceil(10E-12/FileInfo.Resolution); %%% set to 10 ps
+                    [~,Cor_Array,Cor_Times]=nanosecond_correlation(Data1,Data2,limit,resolution);
+                end
                 if h.Cor.Type.Value == 1
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
-                elseif h.Cor.Type.Value == 3
+                elseif any(h.Cor.Type.Value == [3,4])
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
                 %%% Calculates average and standard error of mean (without tinv_table yet
@@ -5114,7 +5121,38 @@ UserValues.File.FCSPath = FileInfo.Path;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function for lifetime correlation  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for linear nanosecond correlation (Schuler type) %%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [G_raw, G_norm, G_timeaxis] = nanosecond_correlation(t1,t2, limit)
+maxtime = max(max([t1,t2]));
+
+channel = [ones(1,numel(t1)) 2*ones(1,numel(t2))];
+ArrivalTime = [t1 t2];
+
+[ArrivalTime, idx] = sort(ArrivalTime);
+channel = channel(idx);
+
+dc = diff(channel);
+dt = diff(ArrivalTime);
+dt = dt.*dc;
+dt = dt(dt ~= 0);
+bins = -limit:resolution:limit;
+G_raw = histc(dt,bins);
+%normalization
+Nav = numel(dt)^2*resolution/maxtime;
+hnorm = G_raw/Nav;
+
+%pileup correction
+fun = @(A,B,t_offset,t_pileup,t_lifetime,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime)));
+fit1 = fit(bins',hnorm',fun,'StartPoint',[1 1 0 10000 100 ],'Lower',[0 0 -Inf 0 0]);
+coeff = coeffvalues(fit1);
+fun_pileup = @(tau,t_offset,x) exp(-(abs(x-t_offset)/tau));
+pileup = fun_pileup(coeff(4),coeff(3),bins);
+G_norm = hnorm./pileup;
+G_timeaxis = bins;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for lifetime correlation  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Correlate_fFCS(~,~)
 h=guidata(findobj('Tag','Pam'));
