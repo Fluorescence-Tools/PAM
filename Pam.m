@@ -4810,9 +4810,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if ~(Cor_Type == 4)
                     [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                 else
-                    limit = 1E-6/(FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider); %%% only calculate from -1?s to 1?s
-                    resolution = ceil(10E-12/FileInfo.Resolution); %%% set to 10 ps
-                    [~,Cor_Array,Cor_Times]=nanosecond_correlation(Data1,Data2,limit,resolution);
+                    time_unit = FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
+                    limit = round(10E-6/time_unit); %%% only calculate from -10mus to 10mus
+                    resolution = ceil(100E-12/time_unit); %%% set to 100 ps
+                    [~,Cor_Array,Cor_Times]=nanosecond_correlation(Data1,Data2,limit,resolution,time_unit);
                 end
                 if h.Cor.Type.Value == 1
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
@@ -4845,6 +4846,9 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if any(h.Cor.Format.Value == [1 3])
                     %%% Generates filename
                     Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
+                    if Cor_Type == 4 %%% linear microtime correlation
+                        Current_FileName = [Current_FileName(1:end-5) '_nsFCS.mcor'];
+                    end
                     %%% Checks, if file already exists
                     if  exist(Current_FileName,'file')
                         k=1;
@@ -5123,34 +5127,46 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for linear nanosecond correlation (Schuler type) %%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [G_raw, G_norm, G_timeaxis] = nanosecond_correlation(t1,t2, limit)
-maxtime = max(max([t1,t2]));
-
-channel = [ones(1,numel(t1)) 2*ones(1,numel(t2))];
-ArrivalTime = [t1 t2];
-
-[ArrivalTime, idx] = sort(ArrivalTime);
-channel = channel(idx);
-
-dc = diff(channel);
-dt = diff(ArrivalTime);
-dt = dt.*dc;
-dt = dt(dt ~= 0);
-bins = -limit:resolution:limit;
-G_raw = histc(dt,bins);
-%normalization
-Nav = numel(dt)^2*resolution/maxtime;
-hnorm = G_raw/Nav;
-
-%pileup correction
-fun = @(A,B,t_offset,t_pileup,t_lifetime,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime)));
-fit1 = fit(bins',hnorm',fun,'StartPoint',[1 1 0 10000 100 ],'Lower',[0 0 -Inf 0 0]);
-coeff = coeffvalues(fit1);
+function [G_raw, G_norm, G_timeaxis] = nanosecond_correlation(t1,t2,limit,resolution,time_unit)
+global UserValues
+bins = (-limit:resolution:limit)';
+G_norm = cell(1,numel(t1));
+G_raw = cell(1,numel(t1));
+% function for fitting of pileup, including one antibunching term and one
+% bunching term
+fun = @(A,B,C,t_offset,t_pileup,t_lifetime,t_bunching,x) A.*exp(-(abs(x-t_offset)/t_pileup)).*(1-B*exp(-(abs(x-t_offset)/t_lifetime))).*(1+C*exp(-(abs(x-t_offset)/t_bunching)));
 fun_pileup = @(tau,t_offset,x) exp(-(abs(x-t_offset)/tau));
-pileup = fun_pileup(coeff(4),coeff(3),bins);
-G_norm = hnorm./pileup;
-G_timeaxis = bins;
+start_point = [1 1 1 0 round(10E-6/time_unit) round(1e-9/time_unit) round(100e-9/time_unit)];
+lb = [0 0 0 -Inf round(1E-6/time_unit) 0 round(10E-9/time_unit)];
+ub = [Inf Inf Inf Inf Inf round(10E-9/time_unit) round(1E-6/time_unit)];
+parfor (i = 1:numel(t1),UserValues.Settings.Pam.ParallelProcessing)
+    maxtime = max(max([t1{i};t2{i}]));
 
+    channel = [ones(numel(t1{i}),1); 2*ones(numel(t2{i}),1)];
+    ArrivalTime = [t1{i}; t2{i}];
+
+    [ArrivalTime, idx] = sort(ArrivalTime);
+    channel = channel(idx);
+
+    dc = diff(channel);
+    dt = diff(ArrivalTime);
+    dt = dt.*dc;
+    dt = dt(dt ~= 0);
+
+    G_raw{i} = histc(dt,bins);
+    %normalization
+    Nav = numel(dt)^2*resolution/maxtime;
+    hnorm = G_raw{i}/Nav;
+
+    %pileup correction
+    fit1 = fit(bins,hnorm,fun,'StartPoint',start_point,'Lower',lb,'Upper',ub);
+    coeff = coeffvalues(fit1);
+    pileup = fun_pileup(coeff(5),coeff(4),bins);
+    G_norm{i} = hnorm./pileup-1;
+end
+G_timeaxis = bins;
+G_norm = cell2mat(G_norm);
+G_raw = cell2mat(G_raw);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for lifetime correlation  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
