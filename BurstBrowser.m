@@ -10911,13 +10911,14 @@ FigureName = strrep(FigureName,' ','_');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
-global UserValues BurstData
+global UserValues BurstData BurstMeta
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
+file = BurstMeta.SelectedFile;
 if directly_save
     if ask_file
         %%% Get Path to save File
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(BurstData{1,1}.PathName,FigureName));
+        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(BurstData{file}.PathName,FigureName));
         %[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
         if FileName == 0
             delete(hfig);
@@ -10957,6 +10958,7 @@ if directly_save
     end
     
     hfig.CloseRequestFcn = @(x,y) delete(x);
+    pause(0.5)
     delete(hfig);
     LSUserValues(1);
 else
