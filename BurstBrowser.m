@@ -2033,7 +2033,7 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'nextplot','add',...
-                        'XGrid','on',...
+        'XGrid','on',...
         'YGrid','on',...
         'GridAlpha',0.5,...
         'Color',Look.Axes,...
@@ -10815,6 +10815,22 @@ switch obj
         cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6,'LineWidth',1); 
         cbar.Position = [0.8,0.85,0.18,0.025];
         cbar.Label.String = 'Occurrence';
+        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            labels = cellfun(@str2double,cbar.TickLabels);
+            %%% find maximum number of bursts
+            for j = 1:numel(panel_copy.Children)
+                if strcmp(panel_copy.Children(j).Tag,'axes_lifetime_ind_2d')
+                    for k=1:numel(panel_copy.Children(j).Children)
+                        if strcmp(panel_copy.Children(j).Children(k).Type,'image')
+                            maxZ = max(panel_copy.Children(j).Children(k).CData(:));
+                        end
+                    end
+                end
+            end
+            for i = 1:numel(labels)
+                cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+            end
+        end      
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
     case h.ExportCorrections_Menu
         fontsize = 22;
