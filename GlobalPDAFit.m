@@ -1351,6 +1351,7 @@ switch mode
                 fitpar(4) = tmp2;
             end
             % normalize the amplitudes to get a total area of 1
+            % this is just for the normpdf plots
             fitpar(1:3:end) = fitpar(1:3:end)/sum(fitpar(1:3:end));
 
             %%% Calculate Gaussian Distance Distributions
@@ -1451,8 +1452,8 @@ switch mode
         end
         xlim(h.AllTab.Gauss_Axes,[Mini, Maxi]);
         xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
-        %xlim(h.AllTab.Gauss_Axes,[25 70]);
-        %xlim(h.SingleTab.Gauss_Axes,[25 70]);
+        xlim(h.AllTab.Gauss_Axes,[25 70]);
+        xlim(h.SingleTab.Gauss_Axes,[25 70]);
     case 5 %% Live Plot update
         i = PDAMeta.file;
         % PDAMeta.Comp{i} = index of the gaussian component that is used
@@ -1820,7 +1821,7 @@ for i = find(PDAMeta.Active)'
 end
 PDAMeta.Comp = Comp;
 
-
+PDAMeta.chi2 = [];
 %%
 % In general, 3 ways can used for fixing parameters
 % passing them into the fit function, but fixing them again to their initial value in the fit function (least elegant)
@@ -1948,12 +1949,9 @@ if sum(PDAMeta.Global) == 0
         %%% remove from fitpar array
         %%% if sigma is fixed at fraction of, read value here before reshape
         if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
-             h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fitpar(end));
-             fitpar(end) = [];
-        end
-        
-        %%% if sigma is fixed at fraction of, change its value here
-        if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+            h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(fitpar(end));
+            fitpar(end) = [];
+            %%% if sigma is fixed at fraction of, change its value here
             fraction = str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String);
             fitpar(3:3:end) = fraction.*fitpar(2:3:end);
         end
@@ -1968,7 +1966,7 @@ else
     % PDAMeta.FitParams = files x 16 double
     % PDAMeta.UB/LB     = 1     x 16 double
     
-    PDAMeta.DoHalfGlobal = 1;
+    PDAMeta.DoHalfGlobal = 0;
     % put PDAMeta.DoHalfGlobal to 1 if you want to globally link a parameter between
     % the first part of the files, and globally link the same parameter for the
     % last part of the files. Do not F that parameter but G it in the UI.
@@ -2139,13 +2137,8 @@ end
 %%% create individual histograms
 hFit_Ind = cell(5,1);
 if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-    %%% normalize Amplitudes
-    % the sum of the amplitudes should be 1, since this corresponds
-    % to 100% of molecules (We fit the area-normalized data to a sum of
-    % area-normalized individual histograms).
-    % In practice, sum is not equal 1 so we demand here that it is 1. Then, the fitting
-    % optimized areas that have a sum of 1.
-    fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
+    %%% do not normalize Amplitudes; user can do this himself if he wants
+    % fitpar(3*PDAMeta.Comp{i}-2) = fitpar(3*PDAMeta.Comp{i}-2)./sum(fitpar(3*PDAMeta.Comp{i}-2));
     
     for c = PDAMeta.Comp{i}
         if h.SettingsTab.Use_Brightness_Corr.Value
@@ -2241,7 +2234,7 @@ end
 hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
 
 %%% correct for slight number deviations between hFit and hMeasured
-hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
+%hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
 
 %%% Calculate Chi2
 error = sqrt(PDAMeta.hProx{i});
@@ -2321,13 +2314,9 @@ for j=1:sum(PDAMeta.Active)
     %%% create individual histograms
     hFit_Ind = cell(5,1);
     if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
-        %%% normalize Amplitudes
-        % the sum of the amplitudes should naturally be 1, since this corresponds
-        % to 100% of molecules (We fit the area-normalized data to a sum of
-        % area-normalized individual histograms).
-        % In practice, sum ? 1 so we demand here that it is 1. Then, the fitting
-        % optimized areas that have a sum of 1.
-        P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
+        %%% do not normalize Amplitudes, user can do this himself if he
+        %%% wants
+        %P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(3*PDAMeta.Comp{i}-2));
         
         for c = PDAMeta.Comp{i}
             [Pe] = Generate_P_of_eps(P(3*c-1), P(3*c), i);
@@ -2406,7 +2395,11 @@ for j=1:sum(PDAMeta.Active)
     hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
     
     %%% correct for slight number deviations between hFit and hMeasured
-    hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
+%     for c = PDAMeta.Comp{i}
+%         hFit_Ind{c} = hFit_Ind{c}./sum(hFit).*sum(PDAMeta.hProx{i});
+%     end
+%     hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
+    
     
     %%% Calculate Chi2
     error = sqrt(PDAMeta.hProx{i});
