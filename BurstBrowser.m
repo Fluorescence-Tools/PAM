@@ -11092,28 +11092,16 @@ for i = 1:numel(BurstData) %loop through all files
     BurstMeta.SelectedFile = i;
     % select the same species for all files as for the currently selected file
     BurstData{i}.SelectedSpecies = species;
-    
+   
     UpdateCorrections([],[],h);
     UpdateCutTable(h);
     UpdateCuts();
     %Update_fFCS_GUI([],[],h);
+    %update all plots, cause that's what we'll be copying
+    UpdatePlot([],[],h);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
     
-    %%% Update Plots
-    %%% To speed up, find out which tab is visible and only update the respective tab
-    switch h.Main_Tab.SelectedTab
-        case h.Main_Tab_General
-            %%% we switched to the general tab
-            UpdatePlot([],[],h);
-        case h.Main_Tab_Lifetime
-            %%% we switched to the lifetime tab
-            %%% figure out what subtab is selected
-            UpdateLifetimePlots([],[],h);
-            switch h.LifetimeTabgroup.SelectedTab
-                case h.LifetimeTabAll
-                case h.LifetimeTabInd
-                    PlotLifetimeInd([],[],h);
-            end
-    end
     if any(BurstData{i}.BAMethod == [3,4])
         disp('Not implemented for three color.');
         return;

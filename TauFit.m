@@ -108,11 +108,6 @@ h.Microtime_Plot = axes(...
     'Box','on',...
     'UIContextMenu',h.Microtime_Plot_Menu_MIPlot);
 
-if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
-    h.Microtime_Plot.YScale = 'log';
-    h.Result_Plot.YScale = 'log';
-end
-
 %%% Create Graphs
 hold on;
 h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',1);
@@ -232,6 +227,12 @@ h.HidePanel = uibuttongroup(...
 %%% Hide Result Plot and Result Aniso Plot
 h.Result_Plot.Parent = h.HidePanel;
 h.Result_Plot_Aniso.Parent = h.HidePanel;
+
+if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.YScale = 'log';
+    h.Result_Plot.YScale = 'log';
+    h.Result_Plot_Aniso.YScale = 'log';
+end
 %% Sliders
 %%% Define the container
 h.Slider_Panel = uibuttongroup(...
