@@ -11083,24 +11083,62 @@ end
 function ExportAllGraphs(obj,~)
 global BurstData BurstMeta
 h = guidata(obj);
+
+% file and species that is currently selected
 file = BurstMeta.SelectedFile;
-if any(BurstData{file}.BAMethod == [3,4])
-    disp('Not implemented for three color.');
-    return;
+species = BurstData{file}.SelectedSpecies;
+
+for i = 1:numel(BurstData) %loop through all files
+    BurstMeta.SelectedFile = i;
+    % select the same species for all files as for the currently selected file
+    BurstData{i}.SelectedSpecies = species;
+    
+    UpdateCorrections([],[],h);
+    UpdateCutTable(h);
+    UpdateCuts();
+    %Update_fFCS_GUI([],[],h);
+    
+    %%% Update Plots
+    %%% To speed up, find out which tab is visible and only update the respective tab
+    switch h.Main_Tab.SelectedTab
+        case h.Main_Tab_General
+            %%% we switched to the general tab
+            UpdatePlot([],[],h);
+        case h.Main_Tab_Lifetime
+            %%% we switched to the lifetime tab
+            %%% figure out what subtab is selected
+            UpdateLifetimePlots([],[],h);
+            switch h.LifetimeTabgroup.SelectedTab
+                case h.LifetimeTabAll
+                case h.LifetimeTabInd
+                    PlotLifetimeInd([],[],h);
+            end
+    end
+    if any(BurstData{i}.BAMethod == [3,4])
+        disp('Not implemented for three color.');
+        return;
+    end
+    % 2D E-S 
+    h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{i}.NameArray));
+    h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{i}.NameArray));
+    UpdatePlot([],[],h);
+    [hfig, FigureName] = ExportGraphs(h.Export2D_Menu,[],0);
+    ExportGraph_CloseFunction(hfig,[],0,FigureName)
+    % 1D E
+    [hfig, FigureName] = ExportGraphs(h.Export1DX_Menu,[],0);
+    ExportGraph_CloseFunction(hfig,[],0,FigureName) 
+    % all lifetime & anisotropy plots
+    [hfig, FigureName] = ExportGraphs(h.ExportLifetime_Menu,[],0);
+    ExportGraph_CloseFunction(hfig,[],0,FigureName)
+    % 2D E-tau
+    h.lifetime_ind_popupmenu.Value = 1;
+    PlotLifetimeInd([],[]);
+    [hfig, FigureName] = ExportGraphs(h.Export2DLifetime_Menu,[],0);
+    ExportGraph_CloseFunction(hfig,[],0,FigureName)
+    % Corrections
+    [hfig, FigureName] = ExportGraphs(h.ExportCorrections_Menu,[],0);
+    ExportGraph_CloseFunction(hfig,[],0,FigureName)
 end
-h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
-h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
-UpdatePlot([],[],h);
-[hfig, FigureName] = ExportGraphs(h.Export2D_Menu,[],0);
-ExportGraph_CloseFunction(hfig,[],0,FigureName)
-[hfig, FigureName] = ExportGraphs(h.ExportLifetime_Menu,[],0);
-ExportGraph_CloseFunction(hfig,[],0,FigureName)
-h.lifetime_ind_popupmenu.Value = 1;
-PlotLifetimeInd([],[]);
-[hfig, FigureName] = ExportGraphs(h.Export2DLifetime_Menu,[],0);
-ExportGraph_CloseFunction(hfig,[],0,FigureName)
-[hfig, FigureName] = ExportGraphs(h.ExportCorrections_Menu,[],0);
-ExportGraph_CloseFunction(hfig,[],0,FigureName)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
