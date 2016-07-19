@@ -9623,7 +9623,8 @@ end
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 out = 1-interp1(tauf,taux,xval)./tauD; 
 %%% set tau=0 to E=1
-out(xval == 0) = 1;
+out(xval == 0) = 1; % lifetime zero is E = 1
+out(end) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
