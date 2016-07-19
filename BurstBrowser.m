@@ -9745,7 +9745,7 @@ file = BurstMeta.SelectedFile;
 %%% Read out the species name
 if (BurstData{file}.SelectedSpecies(1) == 0)
     species = 'total';
-elseif (BurstData{file}.SelectedSpecies(1) == 1)
+elseif (BurstData{file}.SelectedSpecies(1) >= 1)
     species = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1};
     if (BurstData{file}.SelectedSpecies(2) > 1)
         species = [species '-' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
