@@ -828,6 +828,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.FitMethod was incomplete');
     end
     P.TauFit.FitMethod = S.TauFit.FitMethod;
+    %%% Checks, if TauFit.YScaleLog exists
+    if ~isfield (S.TauFit,'YScaleLog')
+        S.TauFit.YScaleLog='off';
+        disp('UserValues.TauFit.YScaleLog was incomplete');
+    end
+    P.TauFit.YScaleLog = S.TauFit.YScaleLog;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2

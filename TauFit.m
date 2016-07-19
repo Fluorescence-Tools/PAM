@@ -76,6 +76,7 @@ h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
     h.Microtime_Plot_Menu_MIPlot,...
     'Label','Logscale',...
+    'Checked', UserValues.TauFit.YScaleLog,...
     'Tag','Plot_Logscale_MIPlot',...
     'Callback',@ChangeYScale);
 h.Microtime_Plot_Export = uimenu(...
@@ -106,6 +107,11 @@ h.Microtime_Plot = axes(...
     'YColor',Look.Fore,...
     'Box','on',...
     'UIContextMenu',h.Microtime_Plot_Menu_MIPlot);
+
+if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.YScale = 'log';
+    h.Result_Plot.YScale = 'log';
+end
 
 %%% Create Graphs
 hold on;
@@ -1265,6 +1271,7 @@ if exist('ph','var')
 end
 
 function ChangeYScale(obj,~)
+global UserValues
 h = guidata(obj);
 if strcmp(obj.Checked,'off')
     %%% Set Checked
@@ -1273,6 +1280,7 @@ if strcmp(obj.Checked,'off')
     %%% Change Scale to Log
     h.Microtime_Plot.YScale = 'log';
     h.Result_Plot.YScale = 'log';
+    UserValues.TauFit.YScaleLog = 'on';
 elseif strcmp(obj.Checked,'on')
     %%% Set Unchecked
     h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
@@ -1280,6 +1288,7 @@ elseif strcmp(obj.Checked,'on')
     %%% Change Scale to Lin
     h.Microtime_Plot.YScale = 'lin';
     h.Result_Plot.YScale = 'lin';
+    UserValues.TauFit.YScaleLog = 'off';
 end
 
 if strcmp(h.Microtime_Plot.YScale,'log')
@@ -1295,7 +1304,8 @@ else
         0,...
         h.Microtime_Plot.YLim(2)];
 end
-    
+LSUserValues(1)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Load Data Button (TauFit raw PIE channel data) %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
