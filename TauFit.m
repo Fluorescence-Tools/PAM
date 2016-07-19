@@ -3324,6 +3324,9 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
                     ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
                 end
+                if strcmp(h.Microtime_Plot.YScale,'log')
+                    ax(i).YScale = 'log';
+                end
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.85 0.875 .12];
         end
@@ -3333,6 +3336,9 @@ else
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
                 ax(i).Position = [0.1 0.13 0.875 0.15];
+                if strcmp(h.Microtime_Plot.YScale,'log')
+                    ax(i).YScale = 'log';
+                end
             case 'Microtime_Plot'
                 ax(i).Position = [0.1 0.28 0.875 0.58];
                 ax(i).XTickLabels = [];
@@ -3340,6 +3346,9 @@ else
                 if ~isequal(obj, h.Microtime_Plot_Export)
                     ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
+                end
+                if strcmp(h.Microtime_Plot.YScale,'log')
+                    ax(i).YScale = 'log';
                 end
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.86 0.875 .13];
