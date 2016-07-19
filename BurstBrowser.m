@@ -7378,6 +7378,7 @@ GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4)
 
 if nargin == 3 %%% output the Gauss with new mean value
     GaussFun = Gauss(coefficients(1),mean_new,coefficients(3),coefficients(4),x_data);
+    return;
 end
 
 if gof.adjrsquare < 0.9 %%% fit was bad
