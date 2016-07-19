@@ -10264,7 +10264,7 @@ UpdateCorrections([],[],h)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export Graphs to PNG %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ExportGraphs(obj,~,ask_file)
+function [hfig, FigureName] = ExportGraphs(obj,~,ask_file)
 global BurstData UserValues BurstMeta
 file = BurstMeta.SelectedFile;
 if nargin < 3
@@ -11038,7 +11038,7 @@ if directly_save
     else
         FilterIndex = 1; %%% Save as png
         FileName = [FigureName '.png'];
-        PathName = UserValues.BurstBrowser.PrintPath;
+        PathName = BurstData{file}.PathName;
     end
     
     %%% print figure
@@ -11089,12 +11089,16 @@ end
 h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
 h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
 UpdatePlot([],[],h);
-ExportGraphs(h.Export2D_Menu,[],0);
-ExportGraphs(h.ExportLifetime_Menu,[],0);
+[hfig, FigureName] = ExportGraphs(h.Export2D_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
+[hfig, FigureName] = ExportGraphs(h.ExportLifetime_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
 h.lifetime_ind_popupmenu.Value = 1;
 PlotLifetimeInd([],[]);
-ExportGraphs(h.lifetime_ind_export_button,[],0);
-ExportGraphs(h.ExportCorrections_Menu,[],0);
+[hfig, FigureName] = ExportGraphs(h.Export2DLifetime_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
+[hfig, FigureName] = ExportGraphs(h.ExportCorrections_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
