@@ -1441,7 +1441,21 @@ if isempty(hfig)
         'String',UserValues.BurstBrowser.Display.NumberOfBinsY,...
         'Callback',@UpdatePlot...
         );
-    
+    %%% Plot grid lines above data
+    h.PlotGridAboveDataCheckbox = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.65 0.92 0.34 0.07],...
+        'FontSize',12,...
+        'Tag','PlotGridAboveDataCheckbox',...
+        'Value',UserValues.BurstBrowser.Display.PlotGridAboveData,...
+        'String','Plot grid on top of data',...
+        'TooltipStr','Choose to overlay grid lines on data, or to plot grid lines behind data.',...
+        'Callback',@UpdateGUIOptions...
+        );
     %%% Specify the Plot Type
     h.PlotTypeText = uicontrol('Style','text',...
         'Parent',h.DisplayOptionsPanel,...
@@ -2967,6 +2981,7 @@ if isempty(hfig)
     %%% Initialize Plots
     Initialize_Plots(1);
     UpdateOptions(h.Fit_NGaussian_Popupmenu,[],h);
+    UpdateGUIOptions(h.PlotGridAboveDataCheckbox,[],h);
     %% set UserValues in GUI
     UpdateCorrections([],[],h);
     %%% Update ColorMap
@@ -10403,7 +10418,7 @@ switch obj
             panel_copy.Children(i).LineWidth = 1;
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
-            panel_copy.Children(i).Layer = 'bottom'; %put the grid lines (axis) below the plot
+            %panel_copy.Children(i).Layer = 'bottom'; %put the grid lines (axis) below the plot
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'Axes_1D_Y'
@@ -10561,7 +10576,7 @@ switch obj
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
                 title(panel_copy.Children(i),'');
-                panel_copy.Children(i).Layer = 'bottom';
+                %panel_copy.Children(i).Layer = 'bottom';
                 %%% move axes up and left
                 panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.01 0.02 0 0];
                 if any(i==[1,2])
@@ -10618,7 +10633,7 @@ switch obj
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
                 %%% Move axis to top of stack
-                panel_copy.Children(i).Layer = 'bottom';
+                %panel_copy.Children(i).Layer = 'bottom';
                 %%% change X/YColor Color Color
                 panel_copy.Children(i).XColor = [0,0,0];
                 panel_copy.Children(i).YColor = [0,0,0];
@@ -10785,7 +10800,7 @@ switch obj
             panel_copy.Children(i).LineWidth = 1;
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
-            panel_copy.Children(i).Layer = 'bottom';
+            %panel_copy.Children(i).Layer = 'bottom';
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
@@ -10873,7 +10888,7 @@ switch obj
                 %panel_copy.Children(i).FontWeight = 'bold';
                 %%% disable titles
                 title(panel_copy.Children(i),'');
-                panel_copy.Children(i).Layer = 'bottom';
+                %panel_copy.Children(i).Layer = 'bottom';
                 %%% move axes up and left
                 panel_copy.Children(i).Position = panel_copy.Children(i).Position + [0.03 0.04 0 0];
                 %%% Add parameters on plot
@@ -10909,7 +10924,7 @@ switch obj
                 %%% Set the Color of Axes to white
                 panel_copy.Children(i).Color = [1 1 1];
                 %%% Move axis to top of stack
-                panel_copy.Children(i).Layer = 'bottom';
+                %panel_copy.Children(i).Layer = 'bottom';
                 %%% change X/YColor Color Color
                 panel_copy.Children(i).XColor = [0,0,0];
                 panel_copy.Children(i).YColor = [0,0,0];
@@ -11662,5 +11677,17 @@ if obj == h.BrightenColorMap_edit
     else
         h.BrightenColorMap_edit.String = num2str(UserValues.BurstBrowser.Display.BrightenColorMap);
     end
+end
+if obj == h.PlotGridAboveDataCheckbox
+    %%% change layer property of 2d axes to "top" or "bottom"
+    UserValues.BurstBrowser.Display.PlotGridAboveData = obj.Value;
+    switch obj.Value
+        case 0
+            layer = 'bottom';
+        case 1
+            layer = 'top';
+    end
+    set([h.axes_general,h.axes_EvsTauGG,h.axes_EvsTauRR,h.axes_rGGvsTauGG,h.axes_rRRvsTauRR,...
+        h.axes_E_BtoGRvsTauBB,h.axes_rBBvsTauBB,h.axes_lifetime_ind_2d],'Layer',layer);
 end
 LSUserValues(1);

@@ -1274,6 +1274,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.MultiPlotMode was incomplete');
     end
     P.BurstBrowser.Display.MultiPlotMode = S.BurstBrowser.Display.MultiPlotMode;
+    %%% Checks, if BurstBrowser.Display.PlotGridAboveData subfield exists
+    if ~isfield (S.BurstBrowser.Display,'PlotGridAboveData')
+        S.BurstBrowser.Display.PlotGridAboveData=0;
+        disp('UserValues.BurstBrowser.Display.PlotGridAboveData was incomplete');
+    end
+    P.BurstBrowser.Display.PlotGridAboveData = S.BurstBrowser.Display.PlotGridAboveData;
     
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
