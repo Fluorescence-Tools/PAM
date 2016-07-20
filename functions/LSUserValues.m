@@ -151,7 +151,7 @@ if Mode==0 %%% Loads user values
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Checks, if fields exist
-    if ~isfield (S, 'Look') || any(~isfield(S.Look, {'Back';'Fore';'Control';'Axes';'Disabled';'Shadow';'AxesFore';'List';'ListFore';'Table1';'Table2';'TableFore';'Font'}));
+    if ~isfield (S, 'Look') || any(~isfield(S.Look, {'Back';'Fore';'Control';'Axes';'Disabled';'Shadow';'AxesFore';'List';'ListFore';'Table1';'Table2';'TableFore';'Font';'AxWidth'}));
         S.Look=[];
         S.Look.Back=[0.2 0.2 0.2];
         S.Look.Fore=[1 1 1];
@@ -166,6 +166,7 @@ if Mode==0 %%% Loads user values
         S.Look.Table2=[0.8 0.8 0.8];
         S.Look.TableFore=[0 0 0];
         S.Look.Font = 'Helvetica Neue';
+        S.Look.AxWidth = 1;
         disp('UserValues.Look was incomplete');
     end
     P.Look = [];
@@ -182,6 +183,7 @@ if Mode==0 %%% Loads user values
     P.Look.Table2=S.Look.Table2;
     P.Look.TableFore=S.Look.TableFore;
     P.Look.Font = S.Look.Font;
+    P.Look.AxWidth = S.Look.AxWidth;
     %% File: Last used Paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     %%% Checks, if fields exist
