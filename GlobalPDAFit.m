@@ -1302,6 +1302,8 @@ switch mode
                 PDAMeta.Plots.Gauss_Single{1,j} = copyobj(PDAMeta.Plots.Gauss_All{i,j}, h.SingleTab.Gauss_Axes);
                 PDAMeta.Plots.Gauss_Single{1,j}.Color = [0.4 0.4 0.4]; %only define those properties that are different to the all tab
             end
+            % set Ylim of the single plot Gauss
+            ylim(h.SingleTab.Gauss_Axes,[min(PDAMeta.Plots.Gauss_Single{1,1}.YData), max(PDAMeta.Plots.Gauss_Single{1,1}.YData)*1.05]);
             PDAMeta.Plots.Gauss_Single{1,1}.Color = 'k';
         end
     case 4
@@ -1348,6 +1350,8 @@ switch mode
     case 1
         %% Update plots post fitting
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
+        minGaussSum = 0;
+        maxGaussSum = 0;
         for i = Active
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
@@ -1402,9 +1406,12 @@ switch mode
             set(PDAMeta.Chi2_All,...
                 'Visible','on',...
                 'String', ['\chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
+            GaussSum = sum(vertcat(Gauss{:}),1);
+            minGaussSum = min([minGaussSum, min(GaussSum)]);
+            maxGaussSum = max([maxGaussSum, max(GaussSum)]);
             set(PDAMeta.Plots.Gauss_All{i,1},...
                 'Visible', 'on',...
-                'YData', sum(vertcat(Gauss{:}),1));
+                'YData', GaussSum);
             for c = PDAMeta.Comp{i}
                 set(PDAMeta.Plots.Gauss_All{i,c+1},...
                     'Visible', 'on',...
@@ -1443,7 +1450,10 @@ switch mode
                         'Visible', 'on',...
                         'YData', Gauss{c});
                 end
+                % set Ylim of the single plot Gauss
+                ylim(h.SingleTab.Gauss_Axes,[min(GaussSum), max(GaussSum)*1.05]);
             end
+            
             clear Gauss
         end
         %%% Set Gauss Axis X limit
@@ -1461,6 +1471,9 @@ switch mode
         xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
         xlim(h.AllTab.Gauss_Axes,[25 70]);
         xlim(h.SingleTab.Gauss_Axes,[25 70]);
+        
+        %%% Set Gauss Axis Y limit
+        ylim(h.AllTab.Gauss_Axes,[minGaussSum, maxGaussSum*1.05]);
     case 5 %% Live Plot update
         i = PDAMeta.file;
         % PDAMeta.Comp{i} = index of the gaussian component that is used
