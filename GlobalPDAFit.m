@@ -857,7 +857,7 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 if mode ~= 3
     %% Load or Add data
     [FileName,p] = uigetfile({'*.pda','*.pda file'},'Select *.pda file',...
-        UserValues.File.BurstBrowserPath,'Multiselect','on');
+        UserValues.File.PDAPath,'Multiselect','on');
     %%% Transforms to cell array, if only one file was selected
     if ~iscell(FileName)
         FileName = {FileName};
@@ -874,7 +874,7 @@ else
     PathName = PDAData.PathName;
 end
 
-UserValues.File.BurstBrowserPath = PathName{1};
+UserValues.File.PDAPath = PathName{1};
 
 LSUserValues(1);
 
@@ -2825,7 +2825,7 @@ function Export_Figure(~,~)
 global PDAData UserValues PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
-Path = uigetdir(fullfile(UserValues.File.BurstBrowserPath),...
+Path = uigetdir(fullfile(UserValues.File.PDAPath),...
     'Specify directory name');
 
 if Path == 0
@@ -3545,7 +3545,7 @@ switch mode
         end
     case 2 
         %% Load database
-        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.BurstBrowserPath,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.PDAPath,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         if FileName ~= 0
             PDAData.FileName = s.file;
@@ -3562,7 +3562,7 @@ switch mode
         end
     case 3 
         %% Save complete database
-        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.BurstBrowserPath);
+        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.PDAPath);
         s = struct;
         s.file = PDAData.FileName;
         s.path = PDAData.PathName;
@@ -3644,7 +3644,7 @@ end
 if load_file
     %%% Load data
     [FileName,p] = uigetfile({'*.pda','*.pda file'},'Select *.pda file containing a Donor only measurement',...
-        UserValues.File.BurstBrowserPath,'Multiselect','off');
+        UserValues.File.PDAPath,'Multiselect','off');
     
     if all(FileName==0)
         return
