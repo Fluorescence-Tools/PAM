@@ -2190,7 +2190,7 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'LineWidth', Look.AxWidth,...
         'nextplot','add',...
-                           'XGrid','on',...
+        'XGrid','on',...
         'YGrid','on',...
         'GridAlpha',0.5,...
         'View',[0 90],...
@@ -9627,6 +9627,7 @@ ApplyCorrections([],[],h);
 %%%%%%% Calculates static FRET line with Linker Dynamics %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [out, func, xval] = conversion_tau(tauD,R0,s,xval_in)
+global BurstData BurstMeta
 % s = 6;
 res = 1000;
 if nargin < 4
@@ -9634,6 +9635,7 @@ if nargin < 4
 else
     %%% only evaluation at specific points requested
     xval = xval_in;
+    xval(xval > BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
 end
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
 R = linspace(0*R0,5*R0,res);
@@ -9674,12 +9676,13 @@ end
 out = 1-interp1(tauf,taux,xval)./tauD; 
 %%% set tau=0 to E=1
 out(xval == 0) = 1; % lifetime zero is E = 1
-out(end) = 0; % lifetime = tauD is E = 0
+out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
 
 function [out, func, xval] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR)
+global BurstData BurstMeta
 res = 100;
 xval = linspace(0,tauD,100);
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
@@ -9729,7 +9732,8 @@ end
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 
 out = 1-interp1(tauf,taux,xval)./tauD;
-out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)=
+out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
+out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
@@ -9740,15 +9744,15 @@ end
 function [out, func, xval] = dynamicFRETline(tauD,E1,E2,R0,s)
 res = 1000;
 if E1 > E2
-    xval  = linspace((1-E1)*tauD,(1-E2)*tauD,100);
+    xval  = linspace((1-E1)*tauD,(1-E2)*tauD,1000);
 else
-    xval  = linspace((1-E2)*tauD,(1-E1)*tauD,100);
+    xval  = linspace((1-E2)*tauD,(1-E1)*tauD,1000);
 end
 %%% Calculate two distance distribution for two states
 %RDA1 = R0*((tauD/tau1)-1)^(-1/6);
 %RDA2 = R0*((tauD/tau2)-1)^(-1/6);
-RDA1 = R0.*(1/E1-1)^(1/6);
-RDA2 = R0.*(1/E2-1)^(1/6);
+RDA1 = R0.*(1/E1-1)^(1/6);if E1 == 0;RDA1 = 5*R0-2*s;end;
+RDA2 = R0.*(1/E2-1)^(1/6);if E2 == 0;RDA2 = 5*R0-2*s;end;
 r = linspace(0*R0,5*R0,res);
 p1 = exp(-((r-RDA1).^2)./(2*s^2));p1 = p1./sum(p1);
 p2 = exp(-((r-RDA2).^2)./(2*s^2));p2 = p2./sum(p2);
