@@ -4119,11 +4119,11 @@ elseif obj == h.FRET_comp_Loaded_Menu
     for i = 1:numel(BurstData);
         BurstMeta.SelectedFile = i;
         %%% Make sure to apply corrections
-        ApplyCorrections(obj,[]);
+        ApplyCorrections(obj,[],h,0);
         %%% read fret values
         file = i;
         SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
-        FileNames{i} = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+        FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
         switch mode
             case 2
                 E{i} = BurstData{file}.DataCut(:,1);
@@ -4137,21 +4137,25 @@ elseif obj == h.FRET_comp_Loaded_Menu
 elseif  obj == h.Param_comp_Loaded_Menu
     file = BurstMeta.SelectedFile;
     mode = 0;
-    param = h.ParameterListX.Value;
+    param = h.ParameterListX.String{h.ParameterListX.Value};
     sel_file = BurstMeta.SelectedFile;
+    P = cell(numel(BurstData),1);
     for i = 1:numel(BurstData);
         BurstMeta.SelectedFile = i;
         %%% Make sure to apply corrections
-        ApplyCorrections(obj,[]);
+        ApplyCorrections(obj,[],h,0);
         %%% read fret values
         file = i;
         try
             SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
-            FileNames{i} = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+            FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
         catch
             FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
         end
-        P{i} = BurstData{file}.DataCut(:,param);
+        p = find(strcmp(BurstData{file}.NameArray,param));
+        if ~isempty(p)
+            P{i} = BurstData{file}.DataCut(:,p);
+        end
     end
     BurstMeta.SelectedFile = sel_file;
 end
@@ -4286,21 +4290,25 @@ switch mode
             end
         end
     case 0 % no FRET, other parameter
+        valid = ~(cellfun(@isempty,P));
         %%% take X hist limits
         xlim = h.axes_1d_x.XLim;
         N_bins = 51;
         xP = linspace(xlim(1),xlim(2),N_bins);
         for i = 1:numel(P)
-            H{i} = histcounts(P{i},xP);
-            H{i} = H{i}./sum(H{i});
+            if valid(i)
+                H{i} = histcounts(P{i},xP);
+                H{i} = H{i}./sum(H{i});
+            end
         end
         
         color = lines(numel(H));
         figure('Color',[1 1 1],'Position',[100 100 600 400]);
-        stairs(xP(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
         hold on
-        for i = 2:numel(H)
-            stairs(xP(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+        for i = 1:numel(H)
+            if valid(i)
+                stairs(xP(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+            end
         end
         ax = gca;
         ax.Color = [1 1 1];
@@ -4309,9 +4317,10 @@ switch mode
         ax.Layer = 'top';
         ax.XLim = xlim;
         ax.Units = 'pixels';
-        xlabel(BurstData{file}.NameArray{param});
+        xlabel(param);
         ylabel('probability');
         legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
+        legend_entries = legend_entries(valid);
         legend(legend_entries,'fontsize',14);
 end
 
@@ -4578,6 +4587,7 @@ UpdateCorrections([],[],h);
 UpdateCutTable(h);
 UpdateCuts();
 Update_fFCS_GUI([],[],h);
+Update_ParameterList([],[],h);
 
 %%% Update Plots
 %%% To speed up, find out which tab is visible and only update the respective tab
@@ -11711,3 +11721,39 @@ if obj == h.PlotGridAboveDataCheckbox
         h.axes_E_BtoGRvsTauBB,h.axes_rBBvsTauBB,h.axes_lifetime_ind_2d],'Layer',layer);
 end
 LSUserValues(1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Updates the Parameter List after change of data %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_ParameterList(obj,~,h)
+global BurstData BurstMeta
+if nargin == 2
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+    else
+        h = guidata(obj);
+    end
+end
+
+file = BurstMeta.SelectedFile;
+if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
+    paramX = h.ParameterListX.String{h.ParameterListX.Value};
+    h.ParameterListX.String = BurstData{file}.NameArray;
+    val = find(strcmp(BurstData{file}.NameArray,paramX));
+    if ~isempty(val)
+        h.ParameterListX.Value = val;
+    else
+        h.ParameterListX.Value = 1;
+    end
+end
+
+if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
+    paramY = h.ParameterListY.String{h.ParameterListY.Value};
+    h.ParameterListY.String = BurstData{file}.NameArray;
+    val = find(strcmp(BurstData{file}.NameArray,paramY));
+    if ~isempty(val)
+        h.ParameterListY.Value = val;
+    else
+        h.ParameterListY.Value = 1;
+    end
+end
