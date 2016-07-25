@@ -4180,8 +4180,8 @@ switch mode
         ax.XLim = [-0.05,1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
-        ylabel('probability density');
-        legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+        ylabel('probability');
+        legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
         legend(legend_entries,'fontsize',14);
         
         if UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall
@@ -4245,8 +4245,8 @@ switch mode
             end
             ax.Units = 'pixels';
             xlabel(xlb{j});
-            ylabel('probability density');
-            legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+            ylabel('probability');
+            legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
             legend(legend_entries,'fontsize',14);
         end
         
@@ -4310,8 +4310,8 @@ switch mode
         ax.XLim = xlim;
         ax.Units = 'pixels';
         xlabel(BurstData{file}.NameArray{param});
-        ylabel('probability density');
-        legend_entries = cellfun(@(x) x(1:end-4),FileNames,'UniformOutput',false);
+        ylabel('probability');
+        legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
         legend(legend_entries,'fontsize',14);
 end
 
@@ -5987,7 +5987,7 @@ for i = 1:num_species
             name = [name,'/', char(sel(i).getName)];
         end
     end
-    str{i} = name;  
+    str{i} = strrep(name,'_',' ');  
 end
 
 legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
