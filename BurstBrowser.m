@@ -536,7 +536,7 @@ if isempty(hfig)
         'Style','pushbutton',...
         'Tag','MutliPlotButton',...
         'String','Plot multiple species',...
-        'TooltipString','Plot multiple species',...
+        'TooltipString','<html>1. Push button once. Multiselect is enabled for file/species list.<br>2. Select up to three species to be compared.<br>3. Push button again.</html>',...
         'FontSize',12,...
         'Callback',@MultiPlot);
     
@@ -5819,9 +5819,16 @@ end
 
 num_species = numel(file_n);
 
-x = get(h.ParameterListX,'Value');
-y = get(h.ParameterListY,'Value');
-
+paramX = h.ParameterListX.String{h.ParameterListX.Value};
+paramY = h.ParameterListY.String{h.ParameterListY.Value};
+for i = 1:num_species %%% read out parameter positions for every species
+    x{i} = find(strcmp(BurstData{file_n(i)}.NameArray,paramX));
+    y{i} = find(strcmp(BurstData{file_n(i)}.NameArray,paramY));
+end
+valid = ~(cellfun(@isempty,x) | cellfun(@isempty,y));
+x = x(valid); y=y(valid);
+file_n = file_n(valid); species_n = species_n(valid); subspecies_n = subspecies_n(valid);
+num_species = sum(valid);
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
@@ -5844,17 +5851,17 @@ miny = zeros(num_species,1);
 maxx = zeros(num_species,1);
 maxy = zeros(num_species,1);
 for i = 1:num_species
-    minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x)),x));
-    miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y)),y));
-    maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x)),x));
-    maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y)),y));
+    minx(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+    miny(i) = min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+    maxx(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+    maxy(i) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
 
 H = cell(num_species,1);
 for i = 1:num_species
-    [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x), datatoplot{i}(:,y),[nbinsX,nbinsY], x_boundaries, y_boundaries);
+    [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
 end
 
 
@@ -5942,8 +5949,8 @@ else
     end
 end
 
-xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
-ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
+xlabel(h.axes_general,paramX,'Color',UserValues.Look.Fore);
+ylabel(h.axes_general,paramY,'Color',UserValues.Look.Fore);
 
 %plot first histogram
 hx = sum(H{1},1);
