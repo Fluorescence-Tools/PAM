@@ -1,11 +1,12 @@
 function [hE] = recurrence_hist(T,E_ini,dE,Start,Stop)
-global BurstData
+global BurstData BurstMeta
+file = BurstMeta.SelectedFile;
 x = linspace(0,1,51);
-val = (BurstData.DataCut(:,1) > E_ini-dE) & (BurstData.DataCut(:,1) < E_ini+dE);
-hE_ini = histc(BurstData.DataCut(val,1),x);
+val = (BurstData{file}.DataCut(:,1) > E_ini-dE) & (BurstData{file}.DataCut(:,1) < E_ini+dE);
+hE_ini = histc(BurstData{file}.DataCut(val,1),x);
 
-start = Start(BurstData.Selected);
-stop = Stop(BurstData.Selected);
+start = Start(BurstData{file}.Selected);
+stop = Stop(BurstData{file}.Selected);
 
 stp = stop(val);
 val_idx = find(val);
@@ -35,7 +36,7 @@ rec = logical(rec);
 %dT2 = repmat(Stop,1,numel(stp)) - repmat(stp',numel(Stop),1);
 %rec = sum((dT1 > T(1)) & (dT2 < T(2)),2) > 0;
 
-hE_T = histc(BurstData.DataCut(rec,1),x);
+hE_T = histc(BurstData{file}.DataCut(rec,1),x);
 
 hE_ini = hE_ini./sum(hE_ini);
 hE = hE_T;
