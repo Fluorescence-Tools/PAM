@@ -132,7 +132,7 @@ fprintf(fileID,formatSpec,excitation_wavelengths(1),excitation_wavelengths(1),..
 sample_name = UserValues.MetaData.SampleName;
 buffer_name = UserValues.MetaData.SampleName;
 dye_names =   UserValues.MetaData.DyeNames;
-m
+
 %% Write Sample Metadata to YAML file
 
 formatSpec = ['sample: \n'...
