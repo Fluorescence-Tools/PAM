@@ -6368,6 +6368,8 @@ if species(2) == 1
                                 if BurstData{file}.Cut{species(1),1}{index(1)}{index(2)+1} < BurstData{file}.Cut{species(1),j}{CheckParam}{index(2)+1}
                                     BurstData{file}.Cut{species(1),j}{CheckParam}(index(2)+1) = BurstData{file}.Cut{species(1),1}{index(1)}(index(2)+1);
                                 end
+                            case 3 %%% active changed
+                                BurstData{file}.Cut{species(1),j}{CheckParam}(index(2)+1) = BurstData{file}.Cut{species(1),1}{index(1)}(index(2)+1);
                         end
                     elseif index(2) == 4 %%% Parameter was deleted
                         BurstData{file}.Cut{species(1),j}(CheckParam) = [];
