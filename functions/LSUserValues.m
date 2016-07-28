@@ -220,6 +220,10 @@ if Mode==0 %%% Loads user values
         S.File.BurstBrowserPath=pwd;
     end
     P.File.BurstBrowserPath = S.File.BurstBrowserPath;
+    if ~isfield(S.File, 'BurstBrowserDatabasePath') || isempty(S.File.BurstBrowserDatabasePath)  || ~ischar(S.File.BurstBrowserDatabasePath) || ~exist(S.File.BurstBrowserDatabasePath,'dir')
+        S.File.BurstBrowserDatabasePath=S.File.BurstBrowserPath;
+    end
+    P.File.BurstBrowserDatabasePath = S.File.BurstBrowserDatabasePath;
     if ~isfield(S.File, 'PDAPath') || isempty(S.File.PDAPath)  || ~ischar(S.File.PDAPath) || ~exist(S.File.PDAPath,'dir')
         S.File.PDAPath=pwd;
     end

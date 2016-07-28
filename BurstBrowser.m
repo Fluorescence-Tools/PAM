@@ -11533,18 +11533,38 @@ switch mode
             h.DatabaseBB.Save.Enable = 'off';
         end
     case 3 %% Load database
-        Path = UserValues.File.BurstBrowserPath;
+        Path = UserValues.File.BurstBrowserDatabasePath;
         [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',Path,'MultiSelect', 'off');
-        load('-mat',fullfile(Path,FileName));
-        BurstMeta.Database = s.database;
-        h.DatabaseBB.List.String = s.str;
-        clear s;
+        if FileName == 0
+            return;
+        end
         %%% store path in BurstMeta
-        BurstMeta.DatabasePath = Path;
+        UserValues.File.BurstBrowserDatabasePath = Path;
+        db = load('-mat',fullfile(Path,FileName)); db = db.s;
+        %%% do check of database
+        % check for non *.bur files
+        % check for non-existing files/invalid paths
+        valid = true(size(db.database,1),1);
+        for i = 1:size(db.database,1)
+            if ~strcmp(db.database{i,1}(end-3:end),'.bur') || ~(exist([db.database{i,2} filesep db.database{i,1}],'file')==2)
+                valid(i) = false;
+            end
+        end
+        if sum(valid) == 0
+            disp('Database file does not contain *.bur files or files are not accessible.');
+            return;
+        end
+        % remove invalid
+        db.str = db.str(valid); db.database=db.database(valid,:);
+        BurstMeta.Database = db.database;
+        h.DatabaseBB.List.String = db.str;
+        clear db;
+        
         if size(BurstMeta.Database, 1) > 0
             % reenable save
             h.DatabaseBB.Save.Enable = 'on';
         end
+        LSUserValues(1);
     case 4 %% Save complete database
         Path = UserValues.File.BurstBrowserPath;
         [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', Path);
