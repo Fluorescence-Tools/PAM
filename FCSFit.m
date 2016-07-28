@@ -738,6 +738,10 @@ switch Type
                 'Parent',h.Residuals_Axes,...
                 'XData',FCSMeta.Data{end,1},...
                 'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,4} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',FCSMeta.Data{end,2});
             FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
     case {3,4} %% Individual curves from correlation files
@@ -788,6 +792,10 @@ switch Type
                     'Parent',h.Residuals_Axes,...
                     'XData',FCSMeta.Data{end,1},...
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                FCSMeta.Plots{end,4} = line(...
+                    'Parent',h.FCS_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',FCSMeta.Data{end,2});
                 FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
         end
@@ -1203,12 +1211,17 @@ switch mode
         %%% Updates new plots to style
         for i=1:numel(FCSData.FileName)
            FCSMeta.Plots{i,1}.Color=str2num(Data{i,1}); %#ok<*ST2NM>
+           FCSMeta.Plots{i,4}.Color=str2num(Data{i,1});
            FCSMeta.Plots{i,2}.Color=str2num(Data{i,1});
            FCSMeta.Plots{i,3}.Color=str2num(Data{i,1});
            FCSMeta.Plots{i,1}.LineStyle=Data{i,2};
            FCSMeta.Plots{i,1}.LineWidth=str2double(Data{i,3});
            FCSMeta.Plots{i,1}.Marker=Data{i,4};
            FCSMeta.Plots{i,1}.MarkerSize=str2double(Data{i,5});
+           FCSMeta.Plots{i,4}.LineStyle=Data{i,2};
+           FCSMeta.Plots{i,4}.LineWidth=str2double(Data{i,3});
+           FCSMeta.Plots{i,4}.Marker=Data{i,4};
+           FCSMeta.Plots{i,4}.MarkerSize=str2double(Data{i,5});
            FCSMeta.Plots{i,2}.LineStyle=Data{i,6};
            FCSMeta.Plots{i,3}.LineStyle=Data{i,6};
            FCSMeta.Plots{i,2}.LineWidth=str2double(Data{i,7});
@@ -1249,6 +1262,7 @@ switch mode
                     FCSMeta.Plots{i,1}.Color=NewColor;
                     FCSMeta.Plots{i,2}.Color=NewColor;
                     FCSMeta.Plots{i,3}.Color=NewColor;
+                    FCSMeta.Plots{i,4}.Color=NewColor;
                 end
                 if numel(File)>1
                     h.Style_Table.Data{end,1} = num2str(NewColor);
@@ -1257,18 +1271,22 @@ switch mode
             case 2 %%% Changes data line style
                 for i=File
                     FCSMeta.Plots{i,1}.LineStyle=NewData;
+                    FCSMeta.Plots{i,4}.LineStyle=NewData;
                 end
             case 3 %%% Changes data line width
                 for i=File
                     FCSMeta.Plots{i,1}.LineWidth=str2double(NewData);
+                    FCSMeta.Plots{i,4}.LineWidth=str2double(NewData);
                 end
             case 4 %%% Changes data marker style
                 for i=File
                     FCSMeta.Plots{i,1}.Marker=NewData;
+                    FCSMeta.Plots{i,4}.Marker=NewData;
                 end
             case 5 %%% Changes data marker size
                 for i=File
                     FCSMeta.Plots{i,1}.MarkerSize=str2double(NewData);
+                    FCSMeta.Plots{i,4}.MarkerSize=str2double(NewData);
                 end
             case 6 %%% Changes fit line style
                 for i=File
@@ -1390,17 +1408,11 @@ for i=1:size(FCSMeta.Plots,1)
         end      
         %% Updates data plot y values
         if Normalization_Method ~= 7 && Normalization_Method ~= 3 
-            FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B;  
+            FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
+            FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
             FCSMeta.Plots{i,1}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
-        end
-        %% Updates data errorbars/ turns them off
-        if Plot_Errorbars
-            FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
-            FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
-        else
-            FCSMeta.Plots{i,1}.LData=0;
-            FCSMeta.Plots{i,1}.UData=0;
+            FCSMeta.Plots{i,4}.YData=(FCSMeta.Data{i,2}-P(end))/B;  
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
@@ -1440,14 +1452,22 @@ for i=1:size(FCSMeta.Plots,1)
         h.Fit_Table.Data{i,end}=num2str(Chisqr);
         h.Fit_Table.CellEditCallback={@Update_Table,3};
         %% Makes plot visible, if it is active
-        FCSMeta.Plots{i,1}.Visible='on';
         FCSMeta.Plots{i,2}.Visible='on';
         FCSMeta.Plots{i,3}.Visible='on';
+        %% Updates data errorbars/ turns them off
+        if Plot_Errorbars
+            FCSMeta.Plots{i,1}.Visible = 'on';
+            FCSMeta.Plots{i,4}.Visible = 'off';
+        else
+            FCSMeta.Plots{i,1}.Visible = 'off';
+            FCSMeta.Plots{i,4}.Visible = 'on';
+        end
     else
         %% Hides plots
         FCSMeta.Plots{i,1}.Visible='off';
         FCSMeta.Plots{i,2}.Visible='off';
         FCSMeta.Plots{i,3}.Visible='off';
+        FCSMeta.Plots{i,4}.Visible='off';
     end
 end
 
@@ -1546,7 +1566,7 @@ switch mode
         H.Residuals.YLabel.String = {'Weighted'; 'residuals'};
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
-        UseCurves = sort(numel(h.FCS_Axes.Children)+1-[Active*2-1; Active*2]);
+        UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
         
         H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
         if h.Export_FitsLegend.Value
