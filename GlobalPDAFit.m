@@ -113,6 +113,20 @@ if isempty(h.GlobalPDAFit)
         'Tag','StopFit',...
         'Label','Stop',...
         'Callback',@Stop_PDA_Fit);
+    h.Menu.EstimateError = uimenu(...
+        'Parent',h.Menu.Fit,...
+        'Label','Estimate Error',...
+        'Tag','EstimateError');
+    h.Menu.EstimateErrorMCMC = uimenu(...
+        'Parent',h.Menu.EstimateError,...
+        'Label','Estimate Error from Markov-chain Monte Carlo',...
+        'Tag','EstimateErrorMCMC',...
+        'Callback',@Start_PDA_Fit);
+    h.Menu.EstimateErrorHessian = uimenu(...
+        'Parent',h.Menu.EstimateError,...
+        'Label','Estimate Error from Hessian Matrix',...
+        'Tag','EstimateErrorHessian',...
+        'Callback',@Start_PDA_Fit);
     %%% Info Menu
     h.Menu.Info = uimenu(...
         'Parent',h.GlobalPDAFit,...
@@ -2040,57 +2054,84 @@ if sum(PDAMeta.Global) == 0
             end
         end
         
-        if obj == h.Menu.ViewFit
-            %% Check if View_Curve was pressed
-            %%% Only Update Plot and break
-            Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
-            switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-                case {'MLE','MonteCarlo'}
-                    %%% For Updating the Result Plot, use MC sampling
-                    PDAMonteCarloFit_Single(fitpar);
-                case 'Histogram Library'
-                    PDAHistogramFit_Single(fitpar);
-            end
-        else
-            %% Do Fit
-            Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-            switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
-                case 'Histogram Library'
-                    fitfun = @(x) PDAHistogramFit_Single(x);
-                case 'MLE'
-                    %msgbox('doesnt work yet')
-                    %return
-                    fitfun = @(x) PDA_MLE_Fit_Single(x);
-                case 'MonteCarlo'
-                    %msgbox('doesnt work yet')
-                    %return
-                    fitfun = @(x) PDAMonteCarloFit_Single(x);
-            end
-            
-            switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
-                case 'Simplex'
-                    fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
-                    fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
-                case 'Gradient-Based'
-                    %msgbox('doesnt work yet')
-                    %return
-                    fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
-                    fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
-                case 'Patternsearch'
-                    %msgbox('doesnt work yet')
-                    %return
-                    opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
-                    fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
-                case 'Gradient-Based (global)'
-                    %msgbox('doesnt work yet')
-                    %return
-                    opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter');%,'PlotFcns',@optimplotfvalPDA);
-                    problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',A,'beq',b,'lb',LB,'ub',UB,'options',opts);
-                    gs = GlobalSearch;
-                    fitpar = run(gs,problem);
-            end
+        switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+            case 'Histogram Library'
+                fitfun = @(x) PDAHistogramFit_Single(x,h);
+            case 'MLE'
+                %msgbox('doesnt work yet')
+                %return
+                fitfun = @(x) PDA_MLE_Fit_Single(x);
+            case 'MonteCarlo'
+                %msgbox('doesnt work yet')
+                %return
+                fitfun = @(x) PDAMonteCarloFit_Single(x);
+        end
+                
+        switch obj
+            case h.Menu.ViewFit
+                %% Check if View_Curve was pressed
+                %%% Only Update Plot and break
+                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
+                switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+                    case {'MLE','MonteCarlo'}
+                        %%% For Updating the Result Plot, use MC sampling
+                        PDAMonteCarloFit_Single(fitpar);
+                    case 'Histogram Library'
+                        PDAHistogramFit_Single(fitpar,h);
+                end
+            case h.Menu.StartFit
+                %% Do Fit
+                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+
+                switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
+                    case 'Simplex'
+                        fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
+                        fitpar = fminsearchbnd(fitfun, fitpar, LB, UB, fitopts);
+                    case 'Gradient-Based'
+                        %msgbox('doesnt work yet')
+                        %return
+                        fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
+                        fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
+                    case 'Patternsearch'
+                        %msgbox('doesnt work yet')
+                        %return
+                        opts = psoptimset('Cache','on','Display','iter','PlotFcns',@psplotbestf);%,'UseParallel','always');
+                        fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
+                    case 'Gradient-Based (global)'
+                        %msgbox('doesnt work yet')
+                        %return
+                        opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter');%,'PlotFcns',@optimplotfvalPDA);
+                        problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'Aeq',A,'beq',b,'lb',LB,'ub',UB,'options',opts);
+                        gs = GlobalSearch;
+                        fitpar = run(gs,problem);
+                end
+            case {h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC}
+                switch obj
+                    case h.Menu.EstimateErrorMCMC
+                        PDAMeta.FitInProgress = 1;
+                        % use MCMC sampling to get errorbar estimates
+                        proposal = abs(fitpar)/100;
+                        %%% define log-likelihood function, which is just the negative of the chi2!
+                        loglikelihood = @(x) (-1)*fitfun(x);
+                        %%% Sample
+                        nsamples = 1E3; spacing = 10;
+                        [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,LB,UB,fitpar',fixed',~fixed',h.FitTab.Table.ColumnName(2:3:end-1));
+                        PDAMeta.ConfInt = [(mean(samples(1:spacing:end,~fixed))-std(samples(1:spacing:end,~fixed)))', (mean(samples(1:spacing:end,~fixed))+std(samples(1:spacing:end,~fixed)))'];
+                    case h.Menu.EstimateErrorHessian
+                        PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
+                        %call fminunc at final point with 1 iteration to get hessian
+                        PDAMeta.Fixed = fixed;
+                        fitopts = optimoptions('fminunc','MaxIter',1,'Algorithm','quasi-newton');
+                        [~,~,~,~,~,hessian] = fminunc(fitfun,fitpar(~fixed),fitopts);
+                        %fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter');%,'PlotFcns',@optimplotfvalPDA);
+                        %[~,~,~,~,~,~,hessian] = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
+                        err = sqrt(diag(inv(hessian)));
+                        PDAMeta.ConfInt = [fitpar(~fixed)' - err, fitpar(~fixed)' + err];
+                end
+                assignin('base','ConfInt',PDAMeta.ConfInt);
+                PDAMeta.FitInProgress = 0; % disable fit
         end
         %Calculate chi^2
         switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
@@ -2287,9 +2328,9 @@ PDAMeta.FitInProgress = 0;
 h.FitTab.Table.Enable='on';
 
 % model for normal histogram library fitting (not global)
-function [chi2] = PDAHistogramFit_Single(fitpar)
+function [chi2] = PDAHistogramFit_Single(fitpar,h)
 global PDAMeta PDAData
-h = guidata(findobj('Tag','GlobalPDAFit'));
+%h = guidata(findobj('Tag','GlobalPDAFit'));
 i = PDAMeta.file;
 
 %%% Aborts Fit
@@ -2299,6 +2340,13 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
+if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+    % only the non-fixed parameters are passed, reconstruct total fitpar
+    % array from dummy data
+    fitpar_dummy = PDAMeta.FitParams(i,:);
+    fitpar_dummy(~PDAMeta.Fixed) = fitpar;
+    fitpar = fitpar_dummy;
+end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
 %%% amplitude fit parameter so it does not mess up further uses of fitpar
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
@@ -2444,8 +2492,9 @@ if h.SettingsTab.LiveUpdate.Value
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(i) ' of ' num2str(sum(PDAMeta.Active))];
-Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
-Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
+
+%Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
+%Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % model for normal histogram library fitting (global)
 function [mean_chi2] = PDAHistogramFit_Global(fitpar)
