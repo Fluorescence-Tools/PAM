@@ -2124,9 +2124,11 @@ if sum(PDAMeta.Global) == 0
                 if obj == h.Menu.EstimateErrorMCMC %%% refine by doing MCMC sampling
                         PDAMeta.FitInProgress = 3; %%% indicate that we need a loglikelihood instead of chi2 value
                         % use MCMC sampling to get errorbar estimates
+                        %%% query sampling parameters
+                        data = inputdlg({'Number of samples:','Spacing for statistical independence:'},'Specify MCMC sampling parameters',1,{'1000','10'});
+                        data = cellfun(@str2double,data);
+                        nsamples = data(1); spacing = data(2);
                         proposal = ci'/10;
-                        %%% Sample
-                        nsamples = 1E3; spacing = 10;
                         [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',fixed',~fixed',cellfun(@(x) x(11:end-4),h.FitTab.Table.ColumnName(2:3:end-1),'UniformOutput',false));
                         v = numel(residual)-numel(fitpar(~fixed)); % number of degrees of freedom
                         perc = tinv(1-alpha/2,v);
