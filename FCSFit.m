@@ -1456,6 +1456,8 @@ for i=1:size(FCSMeta.Plots,1)
         FCSMeta.Plots{i,3}.Visible='on';
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
+            FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
+            FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
             FCSMeta.Plots{i,1}.Visible = 'on';
             FCSMeta.Plots{i,4}.Visible = 'off';
         else
@@ -1725,17 +1727,20 @@ if sum(Global)==0
             if h.Conf_Interval.Value
                 ConfInt = zeros(size(FCSMeta.Params,1),2);
                 method = h.Conf_Interval_Method.Value;
+                alpha = 0.05; %95% confidence interval
                 if method == 1
-                    ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+                    ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                 elseif method == 2
-                    confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
+                    confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
                     proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
                     %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
                     loglikelihood = @(x) (-1/2)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-                    ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+std(samples(1:spacing:end,:)))'];
+                    v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
+                    perc = tinv(1-alpha/2,v);
+                    ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
                 end
                 FCSMeta.Confidence_Intervals{i} = ConfInt;
             end
@@ -1783,17 +1788,20 @@ else
     %%% calculate confidence intervals
     if h.Conf_Interval.Value
         method = h.Conf_Interval_Method.Value;
+        alpha = 0.05; %95% confidence interval
         if method == 1
-            ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian);
+            ConfInt = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
         elseif method == 2
-            confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
+            confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
             proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
             %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
             loglikelihood = @(x) (-1/2)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            ConfInt = [(mean(samples(1:spacing:end,:))-std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+std(samples(1:spacing:end,:)))'];
+            v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
+            perc = tinv(1-alpha/2,v);
+            ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*(samples(1:spacing:end,:)))'];
         end
         GlobConfInt = ConfInt(1:sum(Global),:);
         ConfInt(1:sum(Global),:) = [];

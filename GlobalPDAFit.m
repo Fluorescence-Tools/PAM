@@ -2105,15 +2105,16 @@ if sum(PDAMeta.Global) == 0
                         fitpar = run(gs,problem);
                 end
             case {h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC}
+                alpha = 0.05; %95% confidence interval
                 %%% get error bars from jacobian
                 PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
                 %call fminunc at final point with 1 iteration to get hessian
                 PDAMeta.Fixed = fixed;
                 fitopts = optimoptions('lsqnonlin','MaxIter',1);
                 [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar(~fixed),LB(~fixed),UB(~fixed),fitopts);
-                ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian);
+                ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian,'alpha',alpha);
                 ci = (ci(:,2)-ci(:,1))/2;
-                PDAMeta.ConfInt(:,i) = ci;
+                PDAMeta.ConfInt_Jac(:,i) = ci;
                 %%% Alternative implementations using fminunc and fmincon to estimate the hessian
                 % fitopts = optimoptions('fminunc','MaxIter',1,'Algorithm','quasi-newton');
                 % [~,~,~,~,~,hessian] = fminunc(fitfun,fitpar(~fixed),fitopts);
@@ -2127,7 +2128,9 @@ if sum(PDAMeta.Global) == 0
                         %%% Sample
                         nsamples = 1E3; spacing = 10;
                         [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',fixed',~fixed',cellfun(@(x) x(11:end-4),h.FitTab.Table.ColumnName(2:3:end-1),'UniformOutput',false));
-                        PDAMeta.ConfInt(:,i) = std(samples(1:spacing:end,~fixed))';
+                        v = numel(residual)-numel(fitpar(~fixed)); % number of degrees of freedom
+                        perc = tinv(1-alpha/2,v);
+                        PDAMeta.ConfInt_MCMC(:,i) = perc*std(samples(1:spacing:end,~fixed))';
                         PDAMeta.MCMC_mean(:,i) = mean(samples(1:spacing:end,~fixed))';
                 end
                 PDAMeta.FitInProgress = 0; % disable fit
@@ -2316,12 +2319,13 @@ else
                 h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str,num2cell([PDAMeta.FitParams(i,:) PDAMeta.chi2(i)]),'UniformOutput',false);
             end
         case {h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC}
+            alpha = 0.05; %95% confidence interval
             %%% get error bars from jacobian
             PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
             fitopts = optimoptions('lsqnonlin','MaxIter',1);
             [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
-            ci = nlparci(fitpar,residual,'jacobian',jacobian);
-            ci = (ci(:,2)-ci(:,1))/2; ci = ci';
+            ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
+            ci = (ci(:,2)-ci(:,1))/2; ci = ci';PDAMeta.ConfInt_Jac = ci;
             if obj ==  h.Menu.EstimateErrorMCMC %%% additionally, refine by doing mcmc sampling
                 PDAMeta.FitInProgress = 3; %%% indicate to get loglikelihood instead chi2
                 % get parameter names in correct order
@@ -2341,7 +2345,9 @@ else
                 %%% Sample
                 nsamples = 1E3; spacing = 10;
                 [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
-                ci= std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
+                v = numel(residual)-numel(fitpar); % number of degrees of freedom
+                perc = tinv(1-alpha/2,v);
+                ci= perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
             end
             %%% Sort confidence intervals back to fitparameters
             err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -2355,7 +2361,7 @@ else
                 err(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 ci(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
             end
-            PDAMeta.ConfInt = err;
+            PDAMeta.ConfInt_MCMC = err;
             if obj == h.Menu.EstimateErrorMCMC
                 %%% Sort MCMC_mean value back to fit parameters
                 MCMC_mean(:,PDAMeta.Global)=repmat(m_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -2377,8 +2383,9 @@ else
 end
 % make confidence intervals available in base workspace
 if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
-    assignin('base','ConfInt',PDAMeta.ConfInt);
+    assignin('base','ConfInt_Jac',PDAMeta.ConfInt_Jac);
     if obj == h.Menu.EstimateErrorMCMC
+        assignin('base','ConfInt_MCMC',PDAMeta.ConfInt_MCMC);
         assignin('base','MCMC_mean',PDAMeta.MCMC_mean);
     end
 end
