@@ -1730,8 +1730,8 @@ if sum(Global)==0
                 elseif method == 2
                     confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
                     proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
-                    %%% define log-likelihood function, which is just the negative of the chi2!
-                    loglikelihood = @(x) (-1)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
+                    %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
+                    loglikelihood = @(x) (-1/2)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
                     %%% Sample
                     nsamples = 1E4; spacing = 1E2;
                     [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
@@ -1788,8 +1788,8 @@ else
         elseif method == 2
             confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',0.32);
             proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
-            %%% define log-likelihood function, which is just the negative of the chi2!
-            loglikelihood = @(x) (-1)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
+            %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
+            loglikelihood = @(x) (-1/2)*sum((Fit_Global(x,{XData,EData,Points,Fixed,Global,Active})-YData./EData).^2);
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
