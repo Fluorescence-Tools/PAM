@@ -4195,21 +4195,21 @@ switch mode
                 H{i} = [H{i} H{i}(end)];
                 H{i} = smooth(H{i},3); H{i} = H{i}';
             end
-            H = vertcat(H{:});
+            H = vertcat(H{:}); H = H';
             figure('Color',[1 1 1],'Position',[700 100 600 400]);
-            contourf(xE(1:end),1:1:size(H,1),H);
+            contourf(1:1:size(H,2),xE(1:end),H);
             colormap(jet);
             ax = gca;
             ax.Color = [1 1 1];
             ax.FontSize = 20;
             ax.LineWidth = 2;
             ax.Layer = 'top';
-            ax.XLim = [0,1];
+            ax.YLim = [0,1];
             ax.Units = 'normalized';
             ax.Position(3) = 0.6;
             ax.Units = 'pixels';
-            xlabel('FRET efficiency');
-            ylabel('File Number');
+            ylabel('FRET efficiency');
+            xlabel('File Number');
             text(1.02,ax.YLim(2),legend_entries);
         end
     case 3
@@ -4271,21 +4271,21 @@ switch mode
                 if j == 3
                     xE = xEBR;
                 end
-                H = H_all{j};
+                H = H_all{j}; H = H';
                 figure('Color',[1 1 1],'Position',[100+600*(j-1) 500 600 400]);
-                contourf(xE(1:end),1:1:size(H,1),H);
+                contourf(1:1:size(H,2),xE(1:end),H);
                 colormap(jet);
                 ax = gca;
                 ax.Color = [1 1 1];
                 ax.FontSize = 20;
                 ax.LineWidth = 2;
                 ax.Layer = 'top';
-                ax.XLim = [0,1];
+                ax.YLim = [0,1];
                 ax.Units = 'normalized';
                 ax.Position(3) = 0.6;
                 ax.Units = 'pixels';
-                xlabel(xlb{j});
-                ylabel('File Number');
+                ylabel(xlb{j});
+                xlabel('File Number');
                 text(1.02,ax.YLim(2),legend_entries);
             end
         end
