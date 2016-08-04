@@ -146,7 +146,7 @@ end
 
 %%% Assign values from header to output variables
 SyncRate = 1/MeasDesc_GlobalResolution;
-Resolution = MeasDesc_Resolution./HW_BaseResolution;
+Resolution = MeasDesc_Resolution./1E-12;%./HW_BaseResolution; %%% Resolution in picoseconds!
 nRecords = TTResult_NumberOfRecords;
 %%% check for file type
 
