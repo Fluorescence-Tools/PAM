@@ -149,95 +149,101 @@ SyncRate = 1/MeasDesc_GlobalResolution;
 Resolution = MeasDesc_Resolution./HW_BaseResolution;
 nRecords = TTResult_NumberOfRecords;
 %%% check for file type
-if TTResultFormat_TTTRRecType == rtHydraHarpT3
-    %%% HydraHarp T3 V1 file format
-    Version = 1;
-elseif TTResultFormat_TTTRRecType == rtHydraHarp2T3
-    %%% HydraHarp T3 V2 file format
-    Version = 2;
-else
-    disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
-    return;
-end
+
+switch TTResultFormat_TTTRRecType
+    case {rtHydraHarpT3,rtHydraHarp2T3}
+        if TTResultFormat_TTTRRecType == rtHydraHarpT3
+            %%% HydraHarp T3 V1 file format
+            Version = 1;
+        elseif TTResultFormat_TTTRRecType == rtHydraHarp2T3
+            %%% HydraHarp T3 V2 file format
+            Version = 2;
+        else
+            disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
+            return;
+        end
     
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-%  This reads the T3 mode event records
-%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %
+        %  This reads the T3 mode event records
+        %
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-T3WRAPAROUND=1024;
+        T3WRAPAROUND=1024;
 
-Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits:
+        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits:
 
-Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits:
+        nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits:
 
-Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
-%   the dtime unit depends on "Resolution" that can be obtained from header
+        dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+        %   the dtime unit depends on "Resolution" that can be obtained from header
 
-Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
+        channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
 
-Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-special = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+        special = (bitand(bitshift(T3Record,-31),1));   % the last bit:
 
-clear T3Record
+        clear T3Record
 
-Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+        Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-if Version == 1
+            
+        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
+        if Version == 2 %%% this is NEW in version 2, not applicable to version 1
+            OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
+        end
+        OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
 
-    %waitbar(0.6,h,'Extracting Eventtimes according to Data Format Version 1 Scheme')
+        ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
+        TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
+        channel = channel(ValidIndices);
+        dtime = dtime(ValidIndices);
 
-    TimeTag = zeros(1,nRecords);
+    case rtPicoHarpT3
+        
+        T3WRAPAROUND=65536;
 
-    TimeTag(special == 1 & channel == 63) = double(T3WRAPAROUND);
-    TimeTag = cumsum(TimeTag);
-    ValidIndices = find(special == 0 | ((channel>=1)&(channel<=15)));
-    TimeTag(ValidIndices) = double(nsync(ValidIndices))+TimeTag(ValidIndices)';
-    TimeTag = TimeTag(ValidIndices);
-    channel = channel(ValidIndices);
-    dtime = dtime(ValidIndices);
+        Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-elseif Version == 2
+        T3Record = fread(fid, NoE, 'ubit32');  
 
-    %waitbar(0.6,h,'Extracting Eventtimes according to Data Format Version 2 Scheme')
+        Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-    %     TimeTag = zeros(1,nRecords);
-    %     TimeTag(special == 1 & channel == 63 & nsync ~= 0) = double(T3WRAPAROUND.*nsync(special == 1 & channel == 63));
-    %     waitbar(0.7,h)
-    %     TimeTag(special == 1 & channel == 63 & nsync == 0) = double(T3WRAPAROUND);
-    %     TimeTag = cumsum(TimeTag);
-    %     waitbar(0.8,h)
-    %     ValidIndices = find(special == 0 | ((channel>=1)&(channel<=15)));
-    %     TimeTag(ValidIndices) = double(nsync(ValidIndices))+TimeTag(ValidIndices)';
-    %     waitbar(0.9,h)
-    %     TimeTag = TimeTag(ValidIndices);
-    %     channel = channel(ValidIndices);
-    %     dtime = dtime(ValidIndices);
+        nsync = int16(bitand(T3Record,65535)); 
 
+        Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-    OverflowCorrection = zeros(1,nRecords);
-    OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1;
-    OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
-    OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
+        dtime = uint16(bitand(bitshift(T3Record,-16),4095));  
+        Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-    ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
-    %OverflowCorrection(ValidIndices) = dtime(ValidIndices) + OverflowCorrection(ValidIndices);
-    TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
-    channel = channel(ValidIndices);
-    dtime = dtime(ValidIndices);
-else
-    fprintf(1,'\n\n      Warning: This program is for File version 1.0 and 2.0 only. The process has been aborted please check sourcode to add compatibility for other fleversions.');
-    STOP;
+        channel = int8(bitand(bitshift(T3Record,-28),15)); 
+
+        Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+
+        special = (bitand(bitshift(T3Record,-16),15));   % the last bit:
+
+        clear T3Record
+
+        Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
+
+        OverflowCorrection = zeros(1,nRecords);
+        OverflowCorrection( (special == 0) & (channel == 15)) = 1;
+        OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
+
+        ValidIndices = ((channel >= 1) & (channel <= 4));
+        TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
+        channel = channel(ValidIndices);
+        dtime = dtime(ValidIndices);
 end
     
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
