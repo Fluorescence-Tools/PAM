@@ -3253,6 +3253,25 @@ h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)) ' ns \nr_0 = ' num2s
 h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2)*TACtoTime 0.9*h.Result_Plot.YLim(2)];
 h.G_factor_edit.String = num2str(G);
 UserValues.TauFit.G{chan} = G;
+%%% assign G factor to correct burst channel (donor/acceptor)
+switch UserValues.BurstSearch.Method
+    case {1,2} % 2 color MFD
+        switch chan
+            case 1 %%% green donor
+                UserValues.BurstBrowser.Corrections.GfactorGreen = G;
+            case 2 %%% red acceptor 
+                UserValues.BurstBrowser.Corrections.GfactorRed = G;
+        end
+    case {3,4}
+        switch chan
+            case 1 %%% blue donor
+                UserValues.BurstBrowser.Corrections.GfactorBlue = G;
+            case 2 %%% green acceptor/donor
+                UserValues.BurstBrowser.Corrections.GfactorGreen = G;
+            case 3 %%% red acceptor
+                UserValues.BurstBrowser.Corrections.GfactorRed = G;
+        end
+end
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
