@@ -3248,10 +3248,15 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     end
 end
 
-clear global -regexp BurstMeta BurstTCSPCData PhotonStream
+clear global -regexp BurstMeta BurstTCSPCData PhotonStream BurstData
 Pam = findobj('Tag','Pam');
-if isempty(Pam)
-    clear global -regexp BurstData
+if ~isempty(Pam)
+    %%% reset the burst gui
+    h.Burst.Button.ForegroundColor = UserValues.Look.Fore;
+    h.Burst.BurstLifetime_Button.Enable = 'off';
+    h.Burst.NirFilter_Button.Enable = 'off';
+    h.Burst.LoadedFile_Text.String = 'no *.bur file loaded';
+    h.Burst.LoadedFile_Text.TooltipString = '';
 end
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
@@ -5347,6 +5352,7 @@ else
     h.axes_1d_y_text.Visible = 'off';
 end
 
+%% Gaussian fitting
 if obj == h.Fit_Gaussian_Button
     %%% Perform fitting of Gausian Mixture model to currently plotted data
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
@@ -5399,6 +5405,7 @@ if obj == h.Fit_Gaussian_Button
                     BurstMeta.Plots.Mixture.plotY(i).Visible = 'on';
                 end
                 % prepare fit data
+                if h.Hist_log10.Value; HH = 10.^(HH);end;
                 xbins_fit = linspace(xbins(1),xbins(end),1000);
                 ybins_fit = linspace(ybins(1),ybins(end),1000);
                 [X,Y] = meshgrid(xbins_fit,ybins_fit);
@@ -5564,9 +5571,10 @@ if obj == h.Fit_Gaussian_Button
                         end
                     end
                 end
-
-                xdata = {xbins,ybins,sum(sum(HH)),fixed,nG,0};
+                
+                if h.Hist_log10.Value; HH = 10.^(HH);end;
                 ydata = HH;
+                xdata = {xbins,ybins,sum(sum(ydata)),fixed,nG,0};
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
