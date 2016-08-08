@@ -4089,7 +4089,13 @@ if obj == h.FRET_comp_File_Menu
         return;
     end
     dummy = load(fullfile(PathName,FileNames{1}),'-mat');
-    mode = numel(fieldnames(dummy))+1; % 2is 2color, 3 is 3color
+    switch numel(fieldnames(dummy))% 2is 2color, 3 is 3color
+        case 1
+            mode = 2;
+        case 3
+            mode= 3;
+    end
+
     switch mode
         case 2 
             %%% Load FRET arrays
