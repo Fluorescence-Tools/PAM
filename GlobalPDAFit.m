@@ -2183,7 +2183,7 @@ else
     % PDAMeta.FitParams = files x 16 double
     % PDAMeta.UB/LB     = 1     x 16 double
     
-    PDAMeta.DoHalfGlobal = 0;
+    PDAMeta.DoHalfGlobal = 1;
     % put PDAMeta.DoHalfGlobal to 1 if you want to globally link a parameter between
     % the first part of the files, and globally link the same parameter for the
     % last part of the files. Do not F that parameter but G it in the UI.
@@ -2194,6 +2194,8 @@ else
         PDAMeta.HalfGlobal(1) = true; %half globally link k12
         PDAMeta.HalfGlobal(4) = true; %half globally link k21
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
+        %PDAMeta.HalfGlobal(2) = true; %half globally link R1
+        %PDAMeta.HalfGlobal(5) = true; %half globally link R2
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
@@ -3255,48 +3257,63 @@ else
     end
     
     % Function to export all figure and table data to a structure (for external use)
-    datasize = size(PDAMeta.Plots.Gauss_All,1);
+    
+    % save file info
     tmp = struct;
     tmp.file = PDAData.FileName;
     tmp.path = PDAData.PathName;
     tmp.active = Active;
     h = guidata(findobj('Tag','GlobalPDAFit'));
+    
+    % save the fit table
     tmp.fittable = cell(size(h.FitTab.Table.Data, 1)-2, size(h.FitTab.Table.Data(1,2:3:end), 2));
     tmp.fittable(1,:) = h.FitTab.Table.ColumnName(2:3:end);
     tmp.fittable(2:end,:) = h.FitTab.Table.Data(1:end-3,2:3:end);
+    
+    % save the parameters table
     tmp.parameterstable = cell(size(h.ParametersTab.Table.Data));
     tmp.parameterstable(1,:) = h.ParametersTab.Table.ColumnName;
     tmp.parameterstable(2:end,:) = h.ParametersTab.Table.Data(1:end-1,:);
     
+    % save the Gauss plots
+    datasize = size(PDAMeta.Plots.Gauss_All,1);
     gausx = size(PDAMeta.Plots.Gauss_All{1,1}.XData,2);
-    tmp.gauss = [];
-    tmp.gaussheader = cell(1,datasize*7);
+    data = [];
+    header = cell(1,datasize*7);
     for i = 1:datasize
         %x
-        tmp.gauss(1:gausx,7*i-6) = PDAMeta.Plots.Gauss_All{i,1}.XData;
+        data(1:gausx,7*i-6) = PDAMeta.Plots.Gauss_All{i,1}.XData;
         for j = 1:6
             %gauss
-            tmp.gauss(1:gausx,7*i-6+j) = PDAMeta.Plots.Gauss_All{i,j}.YData;
+            data(1:gausx,7*i-6+j) = PDAMeta.Plots.Gauss_All{i,j}.YData;
         end
-        tmp.gaussheader(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
+        header(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
     end
+    tmp.gauss = cell(size(data, 1)+1, size(data, 2));
+    tmp.gauss(1,:) = header;
+    tmp.gauss(2:end,:) = num2cell(data);
     
+    % save Epr histograms, fit and res
     datax = size(PDAMeta.Plots.Data_All{1,1}.XData,2);
-    tmp.epr = [];
-    tmp.eprheader = cell(1,datasize*9);
+    data = [];
+    header = cell(1,datasize*9);
     for i = 1:datasize
         %x axis
-        tmp.epr(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
+        data(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
         % data
-        tmp.epr(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
+        data(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
         % res
-        tmp.epr(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
+        data(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
         for j = 1:6
             %fit
-            tmp.epr(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
+            data(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
         end
-        tmp.eprheader(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
+        header(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
     end
+        tmp.epr = cell(size(data, 1)+1, size(data, 2));
+    tmp.epr(1,:) = header;
+    tmp.epr(2:end,:) = num2cell(data);
+    
     assignin('base','DataTableStruct',tmp);
     save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
 end
