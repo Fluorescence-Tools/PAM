@@ -3556,6 +3556,7 @@ end
 if any(mode==2)
     %%% Calculates the borders of the trace patches
     if h.MT.Trace_Sectioning.Value==1
+
         PamMeta.MT_Patch_Times=linspace(0,FileInfo.MeasurementTime,UserValues.Settings.Pam.MT_Number_Section+1);
     else
         PamMeta.MT_Patch_Times=0:UserValues.Settings.Pam.MT_Time_Section:FileInfo.MeasurementTime;
