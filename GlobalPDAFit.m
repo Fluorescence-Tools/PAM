@@ -1201,10 +1201,18 @@ switch mode
         % predefine handle cells
         PDAMeta.Plots.Data_All = cell(n,1);
         PDAMeta.Plots.Res_All = cell(n,1);
-        PDAMeta.Plots.Fit_All = cell(n,6);
+        PDAMeta.Plots.Fit_All = cell(n,8); 
+        % 1 = all
+        % 2:6 = substates
+        % 7 = D only
+        % 8 = all dynamic bursts
         PDAMeta.Plots.BSD_All = cell(n,1);
         PDAMeta.Plots.ES_All = cell(n,1);
-        PDAMeta.Plots.Gauss_All = cell(n,6);
+        PDAMeta.Plots.Gauss_All = cell(n,8);
+        % 1 = all
+        % 2:6 = substates
+        % 7 = D only
+        % 8 = all dynamic bursts
         PDAMeta.hProx = cell(n,1); %hProx has to be global cause it's used for error calculation during fitting
         cla(h.AllTab.Main_Axes)
         cla(h.AllTab.Res_Axes)
@@ -1295,7 +1303,11 @@ switch mode
                 'LineWidth',1,...
                 'Visible', 'off');
             % plots for individual fits
-            for j = 2:6
+            for j = 2:8
+                % 1 = all
+                % 2:6 = substates
+                % 7 = D only
+                % 8 = all dynamic bursts
                 PDAMeta.Plots.Fit_All{i,j} = stairs(h.AllTab.Main_Axes,...
                     xProx,...
                     zeros(numel(xProx),1),...
@@ -1349,7 +1361,7 @@ switch mode
             % generate exemplary distance plots
             x = 0:0.1:150;
             g = zeros(5,150*10+1);
-            for j = 1:5
+            for j = 1:6
                 g(j,:) = normpdf(x,40+10*j,j);
             end;
             % summed distance plot
@@ -1359,7 +1371,11 @@ switch mode
                 'LineWidth',2,...
                 'Visible', 'off');
             %individual distance plots
-            for j = 2:6
+            for j = 2:7
+                % 1 = all
+                % 2:6 = substates
+                % 7 = D only
+                % 8 = all dynamic bursts
                 PDAMeta.Plots.Gauss_All{i,j} = plot(h.AllTab.Gauss_Axes,...
                     x,g(j-1,:),...
                     'Color',light,...
@@ -1442,10 +1458,22 @@ switch mode
             PDAMeta.Plots.Res_Single.XData = xProx;
             
             % fit
-            for j = 2:6
+            for j = 2:8
+                % 1 = all
+                % 2:6 = substates
+                % 7 = D only
+                % 8 = all dynamic bursts
                 PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
-                PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];%only define those properties that are different to the all tab
+                PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];
                 PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
+            end
+            if h.SettingsTab.DynamicModel.Value
+                % state 1
+                PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
+                % state 2
+                PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
+                % in between 1 and 2
+                PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
             end
             % summed fit
             PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
@@ -1458,7 +1486,7 @@ switch mode
             PDAMeta.Plots.ES_Single = copyobj(PDAMeta.Plots.ES_All{i}, h.SingleTab.ES_Axes);
             PDAMeta.Plots.ES_Single.Color = 'k';%only define those properties that are different to the all tab
             % gaussians
-            for j = 1:6
+            for j = 1:7
                 PDAMeta.Plots.Gauss_Single{1,j} = copyobj(PDAMeta.Plots.Gauss_All{i,j}, h.SingleTab.Gauss_Axes);
                 PDAMeta.Plots.Gauss_Single{1,j}.Color = [0.4 0.4 0.4]; %only define those properties that are different to the all tab
             end
@@ -1482,13 +1510,16 @@ switch mode
                 PDAMeta.Plots.Res_All{i}.Visible = tex;
             end
             PDAMeta.Plots.BSD_All{i}.Visible = tex;
-            for j = 1:6
+            for j = 1:8
+                % 1 = all
+                % 2:6 = substates
+                % 7 = D only
+                % 8 = all dynamic bursts
                 if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0;
                     % data has been fitted before and component exists
                     PDAMeta.Plots.Fit_All{i,j}.Visible = tex;
                     PDAMeta.Plots.Gauss_All{i,j}.Visible = tex;
-                end
-                
+                end  
             end
             % Update the 'Single' tab plots
             if isempty(Active)
@@ -1498,7 +1529,11 @@ switch mode
                     PDAMeta.Plots.Res_Single.Visible = 'off';
                 end
                 PDAMeta.Plots.BSD_Single.Visible = 'off';
-                for j = 1:6
+                for j = 1:8
+                    % 1 = all
+                    % 2:6 = substates
+                    % 7 = D only
+                    % 8 = all dynamic bursts
                     if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
                         % data has been fitted before and component exists
                         PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
@@ -1563,6 +1598,22 @@ switch mode
                     'Visible', 'on',...
                     'YData', ydatafitind);
             end
+            if h.SettingsTab.DynamicModel.Value
+                % plot the summed dynamic component
+                if h.SettingsTab.OuterBins_Fix.Value
+                    % do not display or take into account during fitting, the
+                    % outer bins of the histogram.
+                    ydatafitind = [PDAMeta.hFit_onlyDyn{i}(2); PDAMeta.hFit_onlyDyn{i}(2:end-1); PDAMeta.hFit_onlyDyn{i}(end-1); PDAMeta.hFit_onlyDyn{i}(end-1)];
+                else
+                    ydatafitind = [PDAMeta.hFit_onlyDyn{i}; PDAMeta.hFit_onlyDyn{i}(end)];
+                end
+                set(PDAMeta.Plots.Fit_All{i,8},...
+                    'Visible', 'on',...
+                    'YData', ydatafitind);
+            else
+                set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
+            end
+            
             set(PDAMeta.Chi2_All,...
                 'Visible','on',...
                 'String', ['\chi^2_{red.} = ' sprintf('%1.2f',mean(PDAMeta.chi2))]);
@@ -1597,6 +1648,21 @@ switch mode
                     set(PDAMeta.Plots.Fit_Single{1,c+1},...
                         'Visible', 'on',...
                         'YData', ydatafitind);
+                end
+                if h.SettingsTab.DynamicModel.Value
+                    % plot the summed dynamic component
+                    if h.SettingsTab.OuterBins_Fix.Value
+                        % do not display or take into account during fitting, the
+                        % outer bins of the histogram.
+                        ydatafitind = [PDAMeta.hFit_onlyDyn{i}(2); PDAMeta.hFit_onlyDyn{i}(2:end-1); PDAMeta.hFit_onlyDyn{i}(end-1); PDAMeta.hFit_onlyDyn{i}(end-1)];
+                    else
+                        ydatafitind = [PDAMeta.hFit_onlyDyn{i}; PDAMeta.hFit_onlyDyn{i}(end)];
+                    end
+                    set(PDAMeta.Plots.Fit_Single{1,8},...
+                        'Visible', 'on',...
+                        'YData', ydatafitind);
+                else
+                    set(PDAMeta.Plots.Fit_Single{1,8},'Visible', 'off');
                 end
                 set(PDAMeta.Chi2_Single,...
                     'Visible','on',...
@@ -1661,9 +1727,25 @@ switch mode
                 'Visible', 'on',...
                 'YData', ydatafitind);
         end
+        if h.SettingsTab.DynamicModel.Value
+            % plot the summed dynamic component
+            if h.SettingsTab.OuterBins_Fix.Value
+                % do not display or take into account during fitting, the
+                % outer bins of the histogram.
+                ydatafitind = [PDAMeta.hFit_onlyDyn{i}(2); PDAMeta.hFit_onlyDyn{i}(2:end-1); PDAMeta.hFit_onlyDyn{i}(end-1); PDAMeta.hFit_onlyDyn{i}(end-1)];
+            else
+                ydatafitind = [PDAMeta.hFit_onlyDyn{i}; PDAMeta.hFit_onlyDyn{i}(end)];
+            end
+            set(PDAMeta.Plots.Fit_All{i,8},...
+                'Visible', 'on',...
+                'YData', ydatafitind);
+        else
+            set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
+        end
         set(PDAMeta.Plots.Fit_All{i,1},...
             'Visible', 'on',...
             'YData', ydatafit);
+        
         if i == Active(h.SingleTab.Popup.Value)
             set(PDAMeta.Plots.Res_Single,...
                 'Visible', 'on',...
@@ -1680,6 +1762,28 @@ switch mode
                     'Visible', 'on',...
                     'YData', ydatafitind);
             end
+            if h.SettingsTab.DynamicModel.Value
+                % plot the summed dynamic component
+                if h.SettingsTab.OuterBins_Fix.Value
+                    % do not display or take into account during fitting, the
+                    % outer bins of the histogram.
+                    ydatafitind = [PDAMeta.hFit_onlyDyn{i}(2); PDAMeta.hFit_onlyDyn{i}(2:end-1); PDAMeta.hFit_onlyDyn{i}(end-1); PDAMeta.hFit_onlyDyn{i}(end-1)];
+                else
+                    ydatafitind = [PDAMeta.hFit_onlyDyn{i}; PDAMeta.hFit_onlyDyn{i}(end)];
+                end
+                set(PDAMeta.Plots.Fit_Single{1,8},...
+                    'Visible', 'on',...
+                    'YData', ydatafitind);
+                PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
+                PDAMeta.Plots.Fit_Single{1,3}.Color = [0 1 1];
+                PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
+            else
+                set(PDAMeta.Plots.Fit_Single{1,8},'Visible', 'off');
+                PDAMeta.Plots.Fit_Single{1,2}.Color = [0.2 0.2 0.2];
+                PDAMeta.Plots.Fit_Single{1,3}.Color = [0.2 0.2 0.2];
+                PDAMeta.Plots.Fit_Single{1,8}.Color = [0.2 0.2 0.2];
+            end
+            
             set(PDAMeta.Plots.Fit_Single{1,1},...
                 'Visible', 'on',...
                 'YData', ydatafit);
@@ -1720,14 +1824,14 @@ for i = 1:numel(PDAData.FileName)
     PDAMeta.directexc(i) = cell2mat(h.ParametersTab.Table.Data(i,2));
     PDAMeta.gamma(i) = cell2mat(h.ParametersTab.Table.Data(i,1));
     % Make Plots invisible
-    for c = 1:6
+    for c = 1:8
         PDAMeta.Plots.Fit_All{i,c}.Visible = 'off';
         PDAMeta.Plots.Gauss_All{i,c}.Visible = 'off';
     end
     PDAMeta.Plots.Res_All{i}.Visible = 'off';
     
     if i == h.SingleTab.Popup.Value
-        for c = 1:6
+        for c = 1:8
             PDAMeta.Plots.Fit_Single{1,c}.Visible = 'off';
             PDAMeta.Plots.Gauss_Single{1,c}.Visible = 'off';
         end
@@ -2527,10 +2631,17 @@ else %%% dynamic model
         hFit_Dyn = hFit_Dyn./norm;
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
-
+    
+    % the whole dynamic part
+    %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
+    % only the dynamic bursts
+    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
 end
 
+
+
 %%% Add donor only species
+PDAMeta.hFit_Donly = fitpar(end)*PDAMeta.P_donly{i}';
 % the sum of areas will > 1 this way?
 hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
 
@@ -2692,8 +2803,13 @@ for j=1:sum(PDAMeta.Active)
             %%% weight by probability of occurence
             hFit_Ind_dyn{t} = PofT(t)*hFit_Ind_dyn{t};
         end
+        % bursts that did not leave state 1 during the burst: to indicate
+        % where state 1 is in the Epr plot
         hFit_Ind{1} = hFit_Ind_dyn{1};
+        % bursts that did not leave state 2 during the burst: to indicate
+        % where state 2 is in the Epr plot
         hFit_Ind{2} = hFit_Ind_dyn{end};
+        
         hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
         %%% Add static models
         if numel(PDAMeta.Comp{i}) > 2
@@ -2714,10 +2830,18 @@ for j=1:sum(PDAMeta.Active)
             end
             hFit_Dyn = hFit_Dyn./norm;
         end
+        % sum the static and dynamic components
         hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
+        
+        % the whole dynamic part
+        %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
+        % only the dynamic bursts
+        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
     end
+
     
     %%% Add donor only species
+    PDAMeta.hFit_Donly = fraction_Donly*PDAMeta.P_donly{i}';
     hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
     
     %%% correct for slight number deviations between hFit and hMeasured
@@ -3289,9 +3413,8 @@ else
         end
         header(7*i-6:7*i) = {'x','gauss_sum','gauss1','gauss2','gauss3','gauss4','gauss5'};
     end
-    tmp.gauss = cell(size(data, 1)+1, size(data, 2));
-    tmp.gauss(1,:) = header;
-    tmp.gauss(2:end,:) = num2cell(data);
+    tmp.gauss = data;
+    tmp.gaussheader = header;
     
     % save Epr histograms, fit and res
     datax = size(PDAMeta.Plots.Data_All{1,1}.XData,2);
@@ -3299,20 +3422,19 @@ else
     header = cell(1,datasize*9);
     for i = 1:datasize
         %x axis
-        data(1:datax,9*i-8) = PDAMeta.Plots.Data_All{i,1}.XData;
+        data(1:datax,11*i-10) = PDAMeta.Plots.Data_All{i,1}.XData;
         % data
-        data(1:datax,9*i-7) = PDAMeta.Plots.Data_All{i,1}.YData;
+        data(1:datax,11*i-9) = PDAMeta.Plots.Data_All{i,1}.YData;
         % res
-        data(1:datax,9*i-6) = PDAMeta.Plots.Res_All{i,1}.YData;
-        for j = 1:6
+        data(1:datax,11*i-8) = PDAMeta.Plots.Res_All{i,1}.YData;
+        for j = 1:8
             %fit
-            data(1:datax,9*i-6+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
+            data(1:datax,11*i-8+j) = PDAMeta.Plots.Fit_All{i,j}.YData;
         end
-        header(9*i-8:9*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5'};
+        header(11*i-10:11*i) = {'x','data','res','fit_sum','fit1','fit2','fit3','fit4','fit5','Donly','dynamic'};
     end
-        tmp.epr = cell(size(data, 1)+1, size(data, 2));
-    tmp.epr(1,:) = header;
-    tmp.epr(2:end,:) = num2cell(data);
+    tmp.epr = data;
+    tmp.eprheader = header;
     
     assignin('base','DataTableStruct',tmp);
     save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
