@@ -146,6 +146,7 @@ switch (Type)
                 %%% Concatenates data to previous files and adds Imagetime
                 %%% to consecutive files
                 if any(~cellfun(@isempty,MI(:)))
+                    skip = false;
                     for k = Rout
                         %%% Removes photons detected after "official"
                         %%% end of file are discarded
@@ -154,6 +155,11 @@ switch (Type)
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; Totaltime + MT{k}];   MT{k}=[];
                         TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
                     end
+                else %%% file was empty!
+                    skip = true;
+                end
+                if skip
+                    continue;
                 end
                 %%% Determines last photon for each file
                 for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
