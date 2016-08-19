@@ -1582,7 +1582,24 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.DoPCH = S.MIA.DoPCH;
     
+    %% Trace
+    if ~isfield(S, 'Trace')
+        disp('WARNING: UserValues structure incomplete, field "Trace" missing');
+        S.Trace = [];
+    end
+    P.Trace = S.Trace;
+
+    if ~isfield(S.Trace, 'DonPar')
+        disp('WARNING: UserValues structure incomplete, field "Trace.DonPar" missing');
+        S.Trace.DonPar = 1;
+    end
+    P.Trace.DonPar = S.Trace.DonPar;
     
+    if ~isfield(S.Trace, 'AccPar')
+        disp('WARNING: UserValues structure incomplete, field "Trace.AccPar" missing');
+        S.Trace.AccPar = 1;
+    end
+    P.Trace.AccPar = S.Trace.AccPar;
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
