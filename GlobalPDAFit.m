@@ -884,10 +884,10 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'String','0.08',...
+        'String',UserValues.PDA.SigmaAtFractionOfR,...
         'Tooltipstring', 'If you want this parameter globally, globally link some random parameter like Donly',...
         'FontSize',12,...
-        'Callback',[],...
+        'Callback',{@Update_Plots,0},...
         'Position',[0.76 0.75 0.05 0.2],...
         'Enable','off',...
         'Tag','SigmaAtFractionOfR_edit');
@@ -1833,6 +1833,7 @@ UserValues.PDA.Smin = h.SettingsTab.StoichiometryThresholdLow_Edit.String;
 UserValues.PDA.Smax = h.SettingsTab.StoichiometryThresholdHigh_Edit.String;
 UserValues.PDA.Dynamic = h.SettingsTab.DynamicModel.Value;
 UserValues.PDA.FixSigmaAtFraction = h.SettingsTab.FixSigmaAtFractionOfR.Value;
+UserValues.PDA.SigmaAtFractionOfR = h.SettingsTab.SigmaAtFractionOfR_edit.String;
 UserValues.PDA.FixSigmaAtFractionFix = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
 UserValues.PDA.IgnoreOuterBins = h.SettingsTab.OuterBins_Fix.Value;
 UserValues.PDA.HalfGlobal = h.SettingsTab.HalfGlobal.Value;
@@ -2335,7 +2336,7 @@ else
     % PDAMeta.FitParams = files x 16 double
     % PDAMeta.UB/LB     = 1     x 16 double
     
-    % put UserValues.PDA.HalfGlobal to 1 if you want to globally link a parameter between
+    % check 'Half Global' if you want to globally link a parameter between
     % the first part of the files, and globally link the same parameter for the
     % last part of the files. Do not F that parameter but G it in the UI.
     if UserValues.PDA.HalfGlobal
@@ -2345,8 +2346,8 @@ else
         PDAMeta.HalfGlobal(1) = true; %half globally link k12
         PDAMeta.HalfGlobal(4) = true; %half globally link k21
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
-        %PDAMeta.HalfGlobal(2) = true; %half globally link R1
-        %PDAMeta.HalfGlobal(5) = true; %half globally link R2
+        PDAMeta.HalfGlobal(2) = true; %half globally link R1
+        PDAMeta.HalfGlobal(5) = true; %half globally link R2
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
@@ -3483,6 +3484,8 @@ else
     tmp.epr = data;
     tmp.eprheader = header;
     
+    % save the settings
+    tmp.settings = UserValues.PDA;
     assignin('base','DataTableStruct',tmp);
     save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
 end

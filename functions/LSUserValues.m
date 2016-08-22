@@ -1420,6 +1420,12 @@ if Mode==0 %%% Loads user values
     end
     P.PDA.FixSigmaAtFraction = S.PDA.FixSigmaAtFraction;
     
+    if ~isfield(S.PDA, 'SigmaAtFractionOfR')
+        disp('WARNING: UserValues structure incomplete, field "PDA.SigmaAtFractionOfR" missing');
+        S.PDA.SigmaAtFractionOfR = '0.08';
+    end
+    P.PDA.SigmaAtFractionOfR = S.PDA.SigmaAtFractionOfR;
+    
     if ~isfield(S.PDA, 'FixSigmaAtFractionFix')
         disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFractionFix" missing');
         S.PDA.FixSigmaAtFractionFix = 0;
