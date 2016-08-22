@@ -1388,6 +1388,80 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall was incomplete');
     end
     P.BurstBrowser.Settings.CompareFRETHist_Waterfall = S.BurstBrowser.Settings.CompareFRETHist_Waterfall;
+    
+    %% PDA
+    if ~isfield(S, 'PDA')
+        disp('WARNING: UserValues structure incomplete, field "PDA" missing');
+        S.PDA = [];
+    end
+    P.PDA = S.PDA;
+    
+    if ~isfield(S.PDA, 'Dynamic')
+        disp('WARNING: UserValues structure incomplete, field "PDA.Dynamic" missing');
+        S.PDA.Dynamic = 0;
+    end
+    P.PDA.Dynamic = S.PDA.Dynamic;
+    
+    if ~isfield(S.PDA, 'IgnoreOuterBins')
+        disp('WARNING: UserValues structure incomplete, field "PDA.IgnoreOuterBins" missing');
+        S.PDA.IgnoreOuterBins = 0;
+    end
+    P.PDA.IgnoreOuterBins = S.PDA.IgnoreOuterBins;
+    
+    if ~isfield(S.PDA, 'HalfGlobal')
+        disp('WARNING: UserValues structure incomplete, field "PDA.HalfGlobal" missing');
+        S.PDA.HalfGlobal = 0;
+    end
+    P.PDA.HalfGlobal = S.PDA.HalfGlobal;
+    
+    if ~isfield(S.PDA, 'FixSigmaAtFraction')
+        disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFraction" missing');
+        S.PDA.FixSigmaAtFraction = 0;
+    end
+    P.PDA.FixSigmaAtFraction = S.PDA.FixSigmaAtFraction;
+    
+    if ~isfield(S.PDA, 'FixSigmaAtFractionFix')
+        disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFractionFix" missing');
+        S.PDA.FixSigmaAtFractionFix = 0;
+    end
+    P.PDA.FixSigmaAtFractionFix = S.PDA.FixSigmaAtFractionFix;
+    
+    if ~isfield(S.PDA, 'NoBins')
+        disp('WARNING: UserValues structure incomplete, field "PDA.NoBins" missing');
+        S.PDA.NoBins = '100';
+    end
+    P.PDA.NoBins = S.PDA.NoBins;
+    
+    if ~isfield(S.PDA, 'MinPhotons')
+        disp('WARNING: UserValues structure incomplete, field "PDA.MinPhotons" missing');
+        S.PDA.MinPhotons = '0';
+    end
+    P.PDA.MinPhotons = S.PDA.MinPhotons;
+    
+    if ~isfield(S.PDA, 'MaxPhotons')
+        disp('WARNING: UserValues structure incomplete, field "PDA.MaxPhotons" missing');
+        S.PDA.MaxPhotons = 'Inf';
+    end
+    P.PDA.MaxPhotons = S.PDA.MaxPhotons;
+    
+    if ~isfield(S.PDA, 'GridRes')
+        disp('WARNING: UserValues structure incomplete, field "PDA.GridRes" missing');
+        S.PDA.GridRes = '100';
+    end
+    P.PDA.GridRes = S.PDA.GridRes;
+    
+    if ~isfield(S.PDA, 'Smin')
+        disp('WARNING: UserValues structure incomplete, field "PDA.Smin" missing');
+        S.PDA.Smin = '0';
+    end
+    P.PDA.Smin = S.PDA.Smin;
+    
+    if ~isfield(S.PDA, 'Smax')
+        disp('WARNING: UserValues structure incomplete, field "PDA.Smax" missing');
+        S.PDA.Smax = '1';
+    end
+    P.PDA.Smax = S.PDA.Smax;
+    
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
