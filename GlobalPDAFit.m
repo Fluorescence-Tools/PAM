@@ -926,7 +926,7 @@ if isempty(h.GlobalPDAFit)
         'Value',0,...
         'FontSize',12,...
         'String','gauss amplitude',...
-        'Tooltipstring', 'the amplitude of the gaussian is the fraction of molecules in that state',...
+        'Tooltipstring', '(Unchecked: area / checked: amplitude) of the gaussian is the fraction of molecules in that state',...
         'Callback',{@Update_Plots,1},...
         'Position',[0.8 0.5 0.2 0.2],...
         'Tag','OuterBins_Fix');
@@ -1302,6 +1302,15 @@ switch mode
                 'Color',normal,...
                 'LineWidth',1,...
                 'Visible', 'off');
+            
+            % fit plots
+            PDAMeta.Plots.Fit_All{i,1} = stairs(h.AllTab.Main_Axes,...
+                xProx,...
+                zeros(numel(xProx),1),...
+                'Color',dark,...
+                'LineWidth',2,...
+                'Visible','off');
+            
             % plots for individual fits
             for j = 2:8
                 % 1 = all
@@ -1316,14 +1325,7 @@ switch mode
                     'Linestyle','--',...
                     'Visible','off');
             end
-            % fit plots
-            PDAMeta.Plots.Fit_All{i,1} = stairs(h.AllTab.Main_Axes,...
-                xProx,...
-                zeros(numel(xProx),1),...
-                'Color',dark,...
-                'LineWidth',2,...
-                'Linestyle','-',...
-                'Visible','off');
+
             % burst size distribution plot
             if isempty(PDAData.BrightnessReference)
                 PDAMeta.Plots.BSD_Reference = plot(h.AllTab.BSD_Axes,...
@@ -1379,7 +1381,8 @@ switch mode
                 PDAMeta.Plots.Gauss_All{i,j} = plot(h.AllTab.Gauss_Axes,...
                     x,g(j-1,:),...
                     'Color',light,...
-                    'LineWidth',1,...
+                    'LineWidth',2,...
+                    'LineStyle', '--',...
                     'Visible', 'off');
             end
             xlim(h.AllTab.Gauss_Axes,[40 120]);
@@ -1457,7 +1460,12 @@ switch mode
                 'Color','k') %only define those properties that are different to the all tab
             PDAMeta.Plots.Res_Single.XData = xProx;
             
-            % fit
+            % summed fit
+            PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
+            PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
+            PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
+            
+            % individual fits
             for j = 2:8
                 % 1 = all
                 % 2:6 = substates
@@ -1467,6 +1475,7 @@ switch mode
                 PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];
                 PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
             end
+            
             if h.SettingsTab.DynamicModel.Value
                 % state 1
                 PDAMeta.Plots.Fit_Single{1,2}.Color = [1 0 1];
@@ -1475,10 +1484,7 @@ switch mode
                 % in between 1 and 2
                 PDAMeta.Plots.Fit_Single{1,8}.Color = [1 1 0];
             end
-            % summed fit
-            PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
-            PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
-            PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
+
             % bsd
             PDAMeta.Plots.BSD_Single = copyobj(PDAMeta.Plots.BSD_All{i}, h.SingleTab.BSD_Axes);
             PDAMeta.Plots.BSD_Single.Color = 'k';%only define those properties that are different to the all tab
@@ -1695,8 +1701,8 @@ switch mode
         end
         xlim(h.AllTab.Gauss_Axes,[Mini, Maxi]);
         xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
-        xlim(h.AllTab.Gauss_Axes,[25 70]);
-        xlim(h.SingleTab.Gauss_Axes,[25 70]);
+        xlim(h.AllTab.Gauss_Axes,[20 70]);
+        xlim(h.SingleTab.Gauss_Axes,[20 70]);
         
         %%% Set Gauss Axis Y limit
         ylim(h.AllTab.Gauss_Axes,[minGaussSum, maxGaussSum*1.05]);
@@ -2287,7 +2293,7 @@ else
     % PDAMeta.FitParams = files x 16 double
     % PDAMeta.UB/LB     = 1     x 16 double
     
-    PDAMeta.DoHalfGlobal = 1;
+    PDAMeta.DoHalfGlobal = 0;
     % put PDAMeta.DoHalfGlobal to 1 if you want to globally link a parameter between
     % the first part of the files, and globally link the same parameter for the
     % last part of the files. Do not F that parameter but G it in the UI.
@@ -2298,8 +2304,8 @@ else
         PDAMeta.HalfGlobal(1) = true; %half globally link k12
         PDAMeta.HalfGlobal(4) = true; %half globally link k21
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
-        %PDAMeta.HalfGlobal(2) = true; %half globally link R1
-        %PDAMeta.HalfGlobal(5) = true; %half globally link R2
+        PDAMeta.HalfGlobal(2) = true; %half globally link R1
+        PDAMeta.HalfGlobal(5) = true; %half globally link R2
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
@@ -3882,7 +3888,8 @@ for i = 2:6
         0:0.1:150,...
         gauss_dummy{1}(i-1,:),...
         'Color',color(i-1,:),...
-        'LineWidth',2);
+        'LineWidth',2,...
+        'LineStyle', '-');
 end
 xlim(h.SingleTab.Gauss_Axes,[40 120]);
 
