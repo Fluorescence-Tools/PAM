@@ -2432,7 +2432,9 @@ if ~advanced
         Photons_total{i,4} = cell2mat(Photons4);
         MI_total{i,4} = cell2mat(MI4);
         clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
-
+        
+        %%% we need to adjust the MIbins here
+        MI_Bins = 4*2^14+1;
         stop(Update);
     end
 
@@ -2634,7 +2636,12 @@ if advanced
         %%% R0 (only non-zero for cross-color elements!!!)
         %%% Step for recalculation
         %%% linkerlength (one value only for now!)
-        Dist = [Dist;SimData.Species(i).R(:)];
+        if SimData.Species.FRET(i) == 1 %%% no FRET specified, set distances to something very large
+            largeDist = [0,0,0,0;10000,0,0,0;10000,10000,0,0;10000,10000,10000,0];
+            Dist = [Dist;largeDist(:)];
+        else %%% read out
+            Dist = [Dist;SimData.Species(i).R(:)];
+        end
         sigmaR = [sigmaR;SimData.Species(i).DistanceWidth(:)];
         %%% Set R0 to zero for unused colors!
         R0_temp = SimData.Species(i).R0(:);
