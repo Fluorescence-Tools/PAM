@@ -2636,7 +2636,7 @@ if advanced
         %%% R0 (only non-zero for cross-color elements!!!)
         %%% Step for recalculation
         %%% linkerlength (one value only for now!)
-        if SimData.Species.FRET(i) == 1 %%% no FRET specified, set distances to something very large
+        if SimData.Species(i).FRET == 1 %%% no FRET specified, set distances to something very large
             largeDist = [0,0,0,0;10000,0,0,0;10000,10000,0,0;10000,10000,10000,0];
             Dist = [Dist;largeDist(:)];
         else %%% read out
