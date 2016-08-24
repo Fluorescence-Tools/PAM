@@ -233,7 +233,7 @@ void Simulate_Diffusion(
                         binomial_distribution<__int64_t> binomial(1, Ex);
                         if ((double) binomial(mt))/// Generates photons with probability
                         {                            
-                            Microtimes[NPhotons[0]] = (unsigned short)j*16384; /// PIE Laser pulse for microtime
+                            Microtimes[NPhotons[0]] = (unsigned short)j*16384+1; /// PIE Laser pulse for microtime
                             
                             ///////////////////////////////////////////////
                             //// Emitting dye (FRET) //////////////////////
@@ -388,7 +388,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         Time, // Additional random seed value
         Map_Type, Map); // Map for quenching/barriers etc.
         
-    const mwSize NP[]={NPhotons[0],1};
+    const mwSize NP[]={static_cast<mwSize>(NPhotons[0]),1};
     const mwSize SizePos[]={3,1};
      
     double* Final_Pos;

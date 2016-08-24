@@ -379,7 +379,7 @@ void Simulate_Diffusion(
                             // convolute Microtime with IRF
                             Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
                             Microtimes[NPhotons[0]] += (unsigned short)(j*(int)(MI_Bins/4)); /// PIE Laser pulse for microtime
-                            if (Microtimes[NPhotons[0]] < 0) {Microtimes[NPhotons[0]] = 0;};
+                            if (Microtimes[NPhotons[0]] < 1) {Microtimes[NPhotons[0]] = 1;};
                             // Microtime checkup
                             Microtimes[NPhotons[0]] %= MI_Bins;
                             

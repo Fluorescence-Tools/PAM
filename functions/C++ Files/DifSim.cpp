@@ -233,7 +233,7 @@ void Simulate_Diffusion(
                         binomial_distribution<__int64, double> binomial(1, Ex);
                         if ((double) binomial(mt))/// Generates photons with probability
                         {                            
-                            Microtimes[NPhotons[0]] = (unsigned short)j*16384; /// PIE Laser pulse for microtime
+                            Microtimes[NPhotons[0]] = (unsigned short)j*16384+1; /// PIE Laser pulse for microtime
                             
                             ///////////////////////////////////////////////
                             //// Emitting dye (FRET) //////////////////////
@@ -255,7 +255,7 @@ void Simulate_Diffusion(
                                 }
 
                                 
-                                if ((FRET[3]-1) > 1E-4) /// FRET is feasíble
+                                if ((FRET[3]-1) > 1E-4) /// FRET is feas?ble
                                 {
                                     for (p=m; p<4; p++) { FRET[p] = FRET[p]/FRET[3]; }  /// Calculates cummulative FRET Probabilites
 
