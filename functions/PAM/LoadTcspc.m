@@ -103,8 +103,14 @@ switch (Type)
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
         %%% Initializes microtime and macotime arrays
-        TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
+            
         
         Totaltime=0;
         %%% Reads all selected files
