@@ -2401,7 +2401,6 @@ if ~advanced
                     FRET, Cross,... %%% Relative FRET and Crosstalk rates
                     uint32(Time(end)*1000+k+j),...%%% Uses current time, frame and particle to have more precision of the random seed (second resolution)
                     Map_Type, SimData.Map{Sel});  %%% Type of barriers/quenching and barrier map
-                
                 %%% Channel is a 8 bit number that defines the exact photon type
                 %%% bits 0,1 for excitation laser
                 %%% bits 2,3 for excited dye
@@ -2413,17 +2412,10 @@ if ~advanced
                 Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
                 Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
                 Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-                if SimData.Species(i).UseLT
-                    MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
-                    MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
-                    MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
-                    MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
-                else
-                    MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
-                    MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
-                    MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
-                    MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
-                end
+                MI1{j} = [MI1{j}; uint16(MI(bitand(Channel,3)==0))];
+                MI2{j} = [MI2{j}; uint16(MI(bitand(Channel,3)==1))];
+                MI3{j} = [MI3{j}; uint16(MI(bitand(Channel,3)==2))];
+                MI4{j} = [MI4{j}; uint16(MI(bitand(Channel,3)==3))];
             end
 
             FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
@@ -2883,17 +2875,10 @@ if advanced
                     Photons2{j} = [Photons2{j}; Photons(bitand(Channel,3)==1)+(k-1)*double(Frametime)];
                     Photons3{j} = [Photons3{j}; Photons(bitand(Channel,3)==2)+(k-1)*double(Frametime)];
                     Photons4{j} = [Photons4{j}; Photons(bitand(Channel,3)==3)+(k-1)*double(Frametime)];
-                    if SimData.Species(i).UseLT
-                        MI1{j} = [MI1{j}; MI(bitand(Channel,3)==0)];
-                        MI2{j} = [MI2{j}; MI(bitand(Channel,3)==1)];
-                        MI3{j} = [MI3{j}; MI(bitand(Channel,3)==2)];
-                        MI4{j} = [MI4{j}; MI(bitand(Channel,3)==3)];
-                    else
-                        MI1{j} = [MI1{j}; uint16(Channel(bitand(Channel,3)==0))];
-                        MI2{j} = [MI2{j}; uint16(Channel(bitand(Channel,3)==1))];
-                        MI3{j} = [MI3{j}; uint16(Channel(bitand(Channel,3)==2))];
-                        MI4{j} = [MI4{j}; uint16(Channel(bitand(Channel,3)==3))];
-                    end
+                    MI1{j} = [MI1{j}; uint16(MI(bitand(Channel,3)==0))];
+                    MI2{j} = [MI2{j}; uint16(MI(bitand(Channel,3)==1))];
+                    MI3{j} = [MI3{j}; uint16(MI(bitand(Channel,3)==2))];
+                    MI4{j} = [MI4{j}; uint16(MI(bitand(Channel,3)==3))];
                 elseif use_aniso == 1
                     %%% Assigns photons according to detection channel
                     Photons1{j} = [Photons1{j}; Photons((bitand(Channel,3)==0) & (Pol==0))+(k-1)*double(Frametime)];
