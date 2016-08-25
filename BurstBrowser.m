@@ -3062,7 +3062,7 @@ switch mode
         %%% Main Tab
         BurstMeta.Plots.Main_histX = bar(h.axes_1d_x,0.5,1,'FaceColor',[0.6 0.6 0.6],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
         BurstMeta.Plots.Main_histY = bar(h.axes_1d_y,0.5,1,'FaceColor',[0.6 0.6 0.6],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu);
-        BurstMeta.Plots.ZScale_hist= bar(h.axes_ZScale,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'UIContextMenu',h.ExportGraph_Menu,'Visible','off');
+        BurstMeta.Plots.ZScale_hist= bar(h.axes_ZScale,0.5,1,'FaceColor',[0 0 0],'BarWidth',1,'LineStyle','none','UIContextMenu',h.ExportGraph_Menu,'Visible','off');
         %%% Initialize both image AND contour plots in array
         BurstMeta.Plots.Main_Plot(1) = imagesc(zeros(2),'Parent',h.axes_general,'UIContextMenu',h.ExportGraph_Menu);axis(h.axes_general,'tight');
         [~,BurstMeta.Plots.Main_Plot(2)] = contourf(zeros(2),10,'Parent',h.axes_general,'Visible','off');BurstMeta.Plots.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
@@ -10501,6 +10501,9 @@ switch obj
                             end
                         end
                         panel_copy.Children(i).YLim = [0, lim];
+                            % change the grayscale of the bars and remove the line
+                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                        panel_copy.Children(i).Children(9).LineStyle = 'none';
                     %end
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
@@ -10519,8 +10522,11 @@ switch obj
                             end
                         end
                         panel_copy.Children(i).YLim = [0, lim];
-                    %end
-                     panel_copy.Children(i).XTickLabelMode = 'auto';
+                        %end
+                        panel_copy.Children(i).XTickLabelMode = 'auto';
+                        % change the grayscale of the bars and remove the line
+                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                        panel_copy.Children(i).Children(9).LineStyle = 'none';
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -10864,10 +10870,18 @@ switch obj
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    % change the grayscale of the bars and remove the line
+                    panel_copy.Children(i).Children.FaceColor = [0.7 0.7 0.7];
+                    panel_copy.Children(i).Children.LineStyle = 'none';
+                    
                 case 'axes_lifetime_ind_1d_x'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    % change the grayscale of the bars and remove the line
+                    panel_copy.Children(i).Children.FaceColor = [0.7 0.7 0.7];
+                    panel_copy.Children(i).Children.LineStyle = 'none';
+                    
                 case 'axes_lifetime_ind_2d'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];

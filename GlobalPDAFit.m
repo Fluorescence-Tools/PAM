@@ -1119,12 +1119,15 @@ for i = 1:numel(FileName)
                 PDAData.BrightnessReference.PN = histcounts(PDAData.BrightnessReference.N,1:(max(PDAData.BrightnessReference.N)+1));
             end
             if isfield(SavedData,'Sigma')
-                h.SettingsTab.FixSigmaAtFractionOfR.Value = SavedData.Sigma(1);
-                h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(SavedData.Sigma(2));
-                h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value = SavedData.Sigma(3);
-                UserValues.PDA.FixSigmaAtFraction = SavedData.Sigma(1);
-                UserValues.PDA.FixSigmaAtFractionFix = SavedData.Sigma(3);
-                LSUserValues(1)
+                try
+                    h.SettingsTab.FixSigmaAtFractionOfR.Value = SavedData.Sigma(1);
+                    h.SettingsTab.SigmaAtFractionOfR_edit.String = num2str(SavedData.Sigma(2));
+                    h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value = SavedData.Sigma(3);
+                    UserValues.PDA.FixSigmaAtFraction = SavedData.Sigma(1);
+                    UserValues.PDA.FixSigmaAtFractionFix = SavedData.Sigma(3);
+                    LSUserValues(1)
+                catch
+                end
             end
             if isfield(SavedData,'Dynamic')
                 h.SettingsTab.DynamicModel.Value = SavedData.Dynamic;
@@ -1178,7 +1181,7 @@ for i = 1:numel(PDAData.FileName)
     SavedData.FitTable = h.FitTab.Table.Data(i,:);
     SavedData.FitTable{1} = true; %put file to active to avoid problems when reloading data
     SavedData.Sigma = [h.SettingsTab.FixSigmaAtFractionOfR.Value,...
-        num2str(h.SettingsTab.SigmaAtFractionOfR_edit.String),...
+        str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String),...
         h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
@@ -1866,7 +1869,7 @@ for i = 1:numel(PDAData.FileName)
             allsame = 0;
         end
     end
-    PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
+    PDAMeta.BGdonor(i) = strmat(h.ParametersTab.Table.Data(i,4));
     PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
     PDAMeta.crosstalk(i) = cell2mat(h.ParametersTab.Table.Data(i,3));
     PDAMeta.R0(i) = cell2mat(h.ParametersTab.Table.Data(i,6));
@@ -2348,6 +2351,8 @@ else
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
         PDAMeta.HalfGlobal(2) = true; %half globally link R1
         PDAMeta.HalfGlobal(5) = true; %half globally link R2
+        PDAMeta.HalfGlobal(3) = true; %half globally link sigma1
+        PDAMeta.HalfGlobal(6) = true; %half globally link sigma2
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
