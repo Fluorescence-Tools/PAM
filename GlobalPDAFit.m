@@ -1869,7 +1869,7 @@ for i = 1:numel(PDAData.FileName)
             allsame = 0;
         end
     end
-    PDAMeta.BGdonor(i) = strmat(h.ParametersTab.Table.Data(i,4));
+    PDAMeta.BGdonor(i) = cell2mat(h.ParametersTab.Table.Data(i,4));
     PDAMeta.BGacc(i) = cell2mat(h.ParametersTab.Table.Data(i,5));
     PDAMeta.crosstalk(i) = cell2mat(h.ParametersTab.Table.Data(i,3));
     PDAMeta.R0(i) = cell2mat(h.ParametersTab.Table.Data(i,6));
@@ -2351,8 +2351,8 @@ else
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
         PDAMeta.HalfGlobal(2) = true; %half globally link R1
         PDAMeta.HalfGlobal(5) = true; %half globally link R2
-        PDAMeta.HalfGlobal(3) = true; %half globally link sigma1
-        PDAMeta.HalfGlobal(6) = true; %half globally link sigma2
+        %PDAMeta.HalfGlobal(3) = true; %half globally link sigma1
+        %PDAMeta.HalfGlobal(6) = true; %half globally link sigma2
     end
     
     %%% If sigma is fixed at fraction of R, add the parameter here
