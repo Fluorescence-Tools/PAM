@@ -990,6 +990,7 @@ if isempty(h.GlobalPDAFit)
     SampleData
     Update_FitTable([],[],0);
     Update_ParamTable([],[],0);
+    Update_GUI(h.SettingsTab.DynamicModel,[]);
     Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
 else
     figure(h.GlobalPDAFit); % Gives focus to GlobalPDAFit figure
@@ -1161,7 +1162,8 @@ if a > 1
 end
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
-
+Update_GUI(h.SettingsTab.DynamicModel,[]);
+Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
 Update_FitTable([],[],1);
 Update_ParamTable([],[],1);
 Update_Plots([],[],3);
@@ -2349,8 +2351,8 @@ else
         PDAMeta.HalfGlobal(1) = true; %half globally link k12
         PDAMeta.HalfGlobal(4) = true; %half globally link k21
         PDAMeta.HalfGlobal(7) = true; %half globally link Area3
-        PDAMeta.HalfGlobal(2) = true; %half globally link R1
-        PDAMeta.HalfGlobal(5) = true; %half globally link R2
+        %PDAMeta.HalfGlobal(2) = true; %half globally link R1
+        %PDAMeta.HalfGlobal(5) = true; %half globally link R2
         %PDAMeta.HalfGlobal(3) = true; %half globally link sigma1
         %PDAMeta.HalfGlobal(6) = true; %half globally link sigma2
     end
