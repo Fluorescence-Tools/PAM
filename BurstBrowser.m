@@ -6277,30 +6277,30 @@ if ~all(species == [0,0])
     CutState = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
     if ~isempty(CutState) %%% only proceed if there are elements in the CutTable
         for i = 1:size(CutState,1)
-            if ~strcmp(CutState{i,1}(1:4),'AR: ') %%% if not arbitrary cut
-                if CutState{i,4} == 1 %%% only if the Cut is set to "active"
+            if CutState{i,4} == 1 %%% only if the Cut is set to "active"
+                if ~strcmp(CutState{i,1}(1:4),'AR: ') %%% if not arbitrary cut
                     Index = (strcmp(CutState(i,1),BurstData{file}.NameArray));
                     Valid = Valid & (BurstData{file}.DataArray(:,Index) >= CutState{i,2}) & (BurstData{file}.DataArray(:,Index) <= CutState{i,3});
+                else %%% arbitrary cut
+                    ARCutState = BurstData{file}.ArbitraryCut{species(1),species(2)}{i};
+                    [nbinsY, nbinsX] = size(ARCutState.Mask);
+                    mask = ARCutState.Mask(:);
+                    %%% read out parameters used for arbitrary cut
+                    IndexX = (strcmp(ARCutState.ParamX,BurstData{file}.NameArray));
+                    IndexY = (strcmp(ARCutState.ParamY,BurstData{file}.NameArray));
+                    parX = BurstData{file}.DataArray(:,IndexX);
+                    parY = BurstData{file}.DataArray(:,IndexY);
+                    %%% filter out-of-bounds data
+                    valid_bounds = (parX >= ARCutState.LimX(1)) & (parX <= ARCutState.LimX(2)) &...
+                        (parY >= ARCutState.LimY(1)) & (parY <= ARCutState.LimY(2));
+                    %%% histogram data to apply mask
+                    [~,~,~,~,~, bin] = calc2dhist(parX(valid_bounds),parY(valid_bounds),[nbinsX,nbinsY],ARCutState.LimX,ARCutState.LimY);
+
+                    valid_mask = mask(sub2ind(size(ARCutState.Mask),bin(:,1),bin(:,2)));
+                    valid_bounds(valid_bounds) = valid_mask;
+
+                    Valid = Valid & valid_bounds;
                 end
-            else %%% arbitrary cut
-                ARCutState = BurstData{file}.ArbitraryCut{species(1),species(2)}{i};
-                [nbinsY, nbinsX] = size(ARCutState.Mask);
-                mask = ARCutState.Mask(:);
-                %%% read out parameters used for arbitrary cut
-                IndexX = (strcmp(ARCutState.ParamX,BurstData{file}.NameArray));
-                IndexY = (strcmp(ARCutState.ParamY,BurstData{file}.NameArray));
-                parX = BurstData{file}.DataArray(:,IndexX);
-                parY = BurstData{file}.DataArray(:,IndexY);
-                %%% filter out-of-bounds data
-                valid_bounds = (parX >= ARCutState.LimX(1)) & (parX <= ARCutState.LimX(2)) &...
-                    (parY >= ARCutState.LimY(1)) & (parY <= ARCutState.LimY(2));
-                %%% histogram data to apply mask
-                [~,~,~,~,~, bin] = calc2dhist(parX(valid_bounds),parY(valid_bounds),[nbinsX,nbinsY],ARCutState.LimX,ARCutState.LimY);
-                
-                valid_mask = mask(sub2ind(size(ARCutState.Mask),bin(:,1),bin(:,2)));
-                valid_bounds(valid_bounds) = valid_mask;
-                
-                Valid = Valid & valid_bounds;
             end
         end
     end
@@ -6489,7 +6489,9 @@ if species(2) == 1
                     end
                 end
             else %%% Parameter is new to GlobalCut
-                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(index(1));
+                if ~strcmp(ChangedParameterName(1:4),'AR: ') %%% make sure it is not an arbitrary selection
+                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(index(1));
+                end
             end
         end
     end
