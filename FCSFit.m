@@ -656,7 +656,8 @@ h = guidata(findobj('Tag','FCSFit'));
 [FileName,PathName,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
                                       '*.cor','Averaged correlation based on .txt. filetype';...
                                       '*.mcor','Individual correlation curves based on matlab filetype';...
-                                      '*.cor','Individual correlation curves based on .txt. filetype';},...
+                                      '*.cor','Individual correlation curves based on .txt. filetype';...
+                                      '*.his','FRET efficiency data from BurstBrowser';},...
                                       'Choose a referenced data file',...
                                       UserValues.File.FCSPath,... 
                                       'MultiSelect', 'on');
@@ -798,6 +799,47 @@ switch Type
                     'YData',FCSMeta.Data{end,2});
                 FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
+        end
+    case {5}   %% 2color FRET data from BurstBrowser
+        FCSMeta.DataType = 'FRET';
+        x = -0.1:0.01:1.1;
+        for i=1:numel(FileName)
+            %%% Reads files
+                E = load([PathName FileName{i}],'-mat'); E = E.E;
+                Data.Cor_Times = x;
+                his = histcounts(E,x); his = his./sum(his);
+                Data.Cor_Average = [his his(end)];
+                Data.Cor_SEM = zeros(size(Data.Cor_Average,1),size(Data.Cor_Average,2));
+                Data.Cor_Array = [];
+                Data.Valid = [];
+                Data.Counts = [numel(E), numel(E)];
+                FCSData.Data{end+1} = Data;
+
+                %%% Updates global parameters
+                FCSData.FileName{end+1} = FileName{i}(1:end-5);
+                FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+                FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
+                FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+                FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
+                %%% Creates new plots
+                FCSMeta.Plots{end+1,1} = stairs(...
+                    FCSMeta.Data{end,1},...
+                    FCSMeta.Data{end,2},...
+                    'Parent',h.FCS_Axes);
+                FCSMeta.Plots{end,2} = line(...
+                    'Parent',h.FCS_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                FCSMeta.Plots{end,3} = line(...
+                    'Parent',h.Residuals_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                FCSMeta.Plots{end,4} = line(...
+                    'Parent',h.FCS_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',FCSMeta.Data{end,2});
+                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
 end
 
@@ -1416,8 +1458,11 @@ for i=1:size(FCSMeta.Plots,1)
         end
         %% Calculates fit y data and updates fit plot
         P=FCSMeta.Params(:,i);
-        x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000); %plot fit function in higher binning than data!
-        %eval(FCSMeta.Model.Function);
+        if ~strcmp(FCSMeta.DataType,'FRET')
+            x = logspace(log10(FCSMeta.Data{i,1}(1)),log10(FCSMeta.Data{i,1}(end)),10000); %plot fit function in higher binning than data!
+        else
+            x = linspace(FCSMeta.Data{i,1}(1),FCSMeta.Data{i,1}(end),10000); %plot fit function in higher binning than data!
+        end
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
