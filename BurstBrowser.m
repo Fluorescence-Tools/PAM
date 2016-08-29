@@ -532,7 +532,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.025 0.35 0.45 0.03],...
+        'Position',[0.01 0.35 0.23 0.03],...
         'Style','pushbutton',...
         'Tag','MutliPlotButton',...
         'String','Plot multiple species',...
@@ -546,7 +546,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.525 0.35 0.45 0.03],...
+        'Position',[0.26 0.35 0.23 0.03],...
         'Style','pushbutton',...
         'Tag','CutButton',...
         'String','Manual Cut (space)',...
@@ -554,6 +554,32 @@ if isempty(hfig)
         'TooltipString','Manual Cut (space)',...
         'Callback',@ManualCut);
     
+    %define arbitrary cut button
+    h.ArbitraryCutButton = uicontrol(...
+        'Parent',h.SecondaryTabSelectionPanel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.51 0.35 0.23 0.03],...
+        'Style','pushbutton',...
+        'Tag','ArbitraryCutButton',...
+        'String','Arbitrary Cut',...
+        'FontSize',12,...
+        'TooltipString','Arbitrary Cut',...
+        'Callback',@ManualCut);
+    h.ArbitraryCutInvertCheckbox = uicontrol(...
+        'Parent',h.SecondaryTabSelectionPanel,...
+        'Units','normalized',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.76 0.35 0.23 0.03],...
+        'Style','checkbox',...
+        'Tag','ArbitraryCutInvertCheckbox',...
+        'String','Invert AR',...
+        'Value',0,...
+        'FontSize',12,...
+        'TooltipString','Invert arbitrary cut',...
+        'Callback',[]);
     %define cut selection popupmenu
     h.CutSelection = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -6033,94 +6059,140 @@ function ManualCut(obj,~)
 
 h = guidata(obj);
 global BurstData BurstMeta
-set(gcf,'Pointer','cross');
-k = waitforbuttonpress;
-point1 = get(gca,'CurrentPoint');    % button down detected
-%%% check if correct axis was clicked
-if gca ~= h.axes_general
-    return;
-end
-finalRect = rbbox;           % return figure units
-point2 = get(gca,'CurrentPoint');    % button up detected
-set(gcf,'Pointer','Arrow');
-point1 = point1(1,1:2);
-point2 = point2(1,1:2);
+%%% switch to main tab
+h.Main_Tab.SelectedTab = h.Main_Tab_General;
 
-if (all(point1(1:2) == point2(1:2)))
-    disp('error');
-    return;
-end
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
+        
+switch obj
+    case h.CutButton
+        set(gcf,'Pointer','cross');
+        k = waitforbuttonpress;
+        point1 = get(gca,'CurrentPoint');    % button down detected
+        %%% check if correct axis was clicked
+        if gca ~= h.axes_general
+            return;
+        end
+        finalRect = rbbox;           % return figure units
+        point2 = get(gca,'CurrentPoint');    % button up detected
+        set(gcf,'Pointer','Arrow');
+        point1 = point1(1,1:2);
+        point2 = point2(1,1:2);
 
-%%% Check whether the CutParameter already exists or not
-ExistingCuts = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
-param_x = get(h.ParameterListX,'Value');
-param_y = get(h.ParameterListY,'Value');
-if ~isempty(ExistingCuts)
-    if any(strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1)))
-        BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
-    else
-        BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
-    end
-    
-    if any(strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1)))
-        BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
-    else
-        BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
-    end
-else
-    BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
-    BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
-end
+        if (all(point1(1:2) == point2(1:2)))
+            disp('error');
+            return;
+        end
 
-%%% If a change was made to the GlobalCuts Species, update all other
-%%% existent species with the changes
-if species(2) == 1
-    if numel(BurstData{file}.Cut) > 1 %%% Check if there are other species defined
-        ChangedParamX = BurstData{file}.NameArray{get(h.ParameterListX,'Value')};
-        ChangedParamY = BurstData{file}.NameArray{get(h.ParameterListY,'Value')};
-        GlobalParams = vertcat(BurstData{file}.Cut{species(1),1}{:});
-        GlobalParams = GlobalParams(1:numel(BurstData{file}.Cut{species(1),1}),1);
-        %%% cycle through the number of other species
-        num_species = sum(~cellfun(@isempty,BurstData{file}.Cut(species(1),:)));
-        for j = 2:num_species
-            %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
-            if ~isempty(ParamList)
-                ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
-                CheckParam = strcmp(ParamList,ChangedParamX);
-                if any(CheckParam)
-                    %%% Parameter added or changed
-                    %%% Override the parameter with GlobalCut
-                    BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
-                else %%% Parameter is new to GlobalCut
-                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
+        %%% Check whether the CutParameter already exists or not
+        ExistingCuts = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
+        param_x = get(h.ParameterListX,'Value');
+        param_y = get(h.ParameterListY,'Value');
+        if ~isempty(ExistingCuts)
+            if any(strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1)))
+                BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_x},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+            else
+                BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+            end
+
+            if any(strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1)))
+                BurstData{file}.Cut{species(1),species(2)}{strcmp(BurstData{file}.NameArray{param_y},ExistingCuts(:,1))} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+            else
+                BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+            end
+        else
+            BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListX,'Value')}, min([point1(1) point2(1)]),max([point1(1) point2(1)]), true,false};
+            BurstData{file}.Cut{species(1),species(2)}{end+1} = {BurstData{file}.NameArray{get(h.ParameterListY,'Value')}, min([point1(2) point2(2)]),max([point1(2) point2(2)]), true,false};
+        end
+
+        %%% If a change was made to the GlobalCuts Species, update all other
+        %%% existent species with the changes
+        if species(2) == 1
+            if numel(BurstData{file}.Cut) > 1 %%% Check if there are other species defined
+                ChangedParamX = BurstData{file}.NameArray{get(h.ParameterListX,'Value')};
+                ChangedParamY = BurstData{file}.NameArray{get(h.ParameterListY,'Value')};
+                GlobalParams = vertcat(BurstData{file}.Cut{species(1),1}{:});
+                GlobalParams = GlobalParams(1:numel(BurstData{file}.Cut{species(1),1}),1);
+                %%% cycle through the number of other species
+                num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+                for j = 2:num_species
+                    %%% Check if the parameter already exists in the species j
+                    ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
+                    if ~isempty(ParamList)
+                        ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
+                        CheckParam = strcmp(ParamList,ChangedParamX);
+                        if any(CheckParam)
+                            %%% Parameter added or changed
+                            %%% Override the parameter with GlobalCut
+                            BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
+                        else %%% Parameter is new to GlobalCut
+                            BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
+                        end
+                    else %%% Parameter is new to GlobalCut
+                        BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
+                    end
                 end
-            else %%% Parameter is new to GlobalCut
-                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamX));
+                for j = 2:num_species
+                    %%% Check if the parameter already exists in the species j
+                    ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
+                    if ~isempty(ParamList)
+                        ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
+                        CheckParam = strcmp(ParamList,ChangedParamY);
+                        if any(CheckParam)
+                            %%% Parameter added or changed
+                            %%% Override the parameter with GlobalCut
+                            BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
+                        else %%% Parameter is new to GlobalCut
+                            BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
+                        end
+                    else %%% Parameter is new to GlobalCut
+                        BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
+                    end
+                end
             end
         end
-        for j = 2:num_species
-            %%% Check if the parameter already exists in the species j
-            ParamList = vertcat(BurstData{file}.Cut{species(1),j}{:});
-            if ~isempty(ParamList)
-                ParamList = ParamList(1:numel(BurstData{file}.Cut{species(1),j}),1);
-                CheckParam = strcmp(ParamList,ChangedParamY);
-                if any(CheckParam)
-                    %%% Parameter added or changed
-                    %%% Override the parameter with GlobalCut
-                    BurstData{file}.Cut{species(1),j}(CheckParam) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
-                else %%% Parameter is new to GlobalCut
-                    BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
+    case h.ArbitraryCutButton
+        %%% enable imfreehand
+        roi = imfreehand(h.axes_general);
+        %%% wait till double click
+        wait(roi);
+        if ~roi.isvalid
+            return;
+        end
+        %%% make mask
+        mask = createMask(roi,BurstMeta.Plots.Main_Plot(1));
+        if h.ArbitraryCutInvertCheckbox.Value
+            mask = 1-mask;
+        end
+        %%% delete roi
+        delete(roi);
+        
+        %%% we need to store the current plot state to recall the arbitrary cut later
+        % add it in any way to the selected species
+        % additional field contains a structure with parameter names, plot boundaries and mask
+        name = ['AR: ' BurstData{file}.NameArray{get(h.ParameterListX,'Value')} '/' BurstData{file}.NameArray{get(h.ParameterListY,'Value')}];
+        BurstData{file}.Cut{species(1),species(2)}{end+1} = {name, NaN, NaN, true,false};
+        BurstData{file}.ArbitraryCut{species(1),species(2)}{numel(BurstData{file}.Cut{species(1),species(2)})} = struct('ParamX',BurstData{file}.NameArray{get(h.ParameterListX,'Value')},'ParamY',BurstData{file}.NameArray{get(h.ParameterListY,'Value')},...
+            'Mask',mask,'LimX',h.axes_general.XLim,'LimY',h.axes_general.YLim);
+        
+        %%% If a change was made to the GlobalCuts Species, add arbitrary cut to all other
+        %%% existent species with the changes
+        if species(2) == 1
+            CutData = BurstData{file}.Cut{species(1),species(2)}(end);
+            ARCutData = BurstData{file}.ArbitraryCut{species(1),species(2)}(end);
+            if numel(BurstData{file}.Cut) > 1 %%% Check if there are other species defined
+                %%% cycle through the number of other species
+                num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
+                for j = 2:num_species
+                    %%% add arbitrary cut
+                    BurstData{file}.Cut{species(1),j}(end+1) = CutData;
+                    BurstData{file}.ArbitraryCut{species(1),j}(numel(BurstData{file}.Cut{species(1),j})) = ARCutData;
                 end
-            else %%% Parameter is new to GlobalCut
-                BurstData{file}.Cut{species(1),j}(end+1) = BurstData{file}.Cut{species(1),1}(strcmp(GlobalParams,ChangedParamY));
             end
         end
-    end
+        
 end
-
 UpdateCutTable(h);
 UpdateCuts();
 
@@ -6205,9 +6277,30 @@ if ~all(species == [0,0])
     CutState = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
     if ~isempty(CutState) %%% only proceed if there are elements in the CutTable
         for i = 1:size(CutState,1)
-            if CutState{i,4} == 1 %%% only if the Cut is set to "active"
-                Index = find(strcmp(CutState(i,1),BurstData{file}.NameArray));
-                Valid = Valid & (BurstData{file}.DataArray(:,Index) >= CutState{i,2}) & (BurstData{file}.DataArray(:,Index) <= CutState{i,3});
+            if ~strcmp(CutState{i,1}(1:4),'AR: ') %%% if not arbitrary cut
+                if CutState{i,4} == 1 %%% only if the Cut is set to "active"
+                    Index = (strcmp(CutState(i,1),BurstData{file}.NameArray));
+                    Valid = Valid & (BurstData{file}.DataArray(:,Index) >= CutState{i,2}) & (BurstData{file}.DataArray(:,Index) <= CutState{i,3});
+                end
+            else %%% arbitrary cut
+                ARCutState = BurstData{file}.ArbitraryCut{species(1),species(2)}{i};
+                [nbinsY, nbinsX] = size(ARCutState.Mask);
+                mask = ARCutState.Mask(:);
+                %%% read out parameters used for arbitrary cut
+                IndexX = (strcmp(ARCutState.ParamX,BurstData{file}.NameArray));
+                IndexY = (strcmp(ARCutState.ParamY,BurstData{file}.NameArray));
+                parX = BurstData{file}.DataArray(:,IndexX);
+                parY = BurstData{file}.DataArray(:,IndexY);
+                %%% filter out-of-bounds data
+                valid_bounds = (parX >= ARCutState.LimX(1)) & (parX <= ARCutState.LimX(2)) &...
+                    (parY >= ARCutState.LimY(1)) & (parY <= ARCutState.LimY(2));
+                %%% histogram data to apply mask
+                [~,~,~,~,~, bin] = calc2dhist(parX(valid_bounds),parY(valid_bounds),[nbinsX,nbinsY],ARCutState.LimX,ARCutState.LimY);
+                
+                valid_mask = mask(sub2ind(size(ARCutState.Mask),bin(:,1),bin(:,2)));
+                valid_bounds(valid_bounds) = valid_mask;
+                
+                Valid = Valid & valid_bounds;
             end
         end
     end
