@@ -6441,6 +6441,7 @@ if index(2) < 4
     BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1}=NewData;
 elseif index(2) == 4 %delete this entry
     BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
+    BurstData{file}.ArbitraryCut{species(1),species(2)}(index(1)) = [];
 end
 
 %%% If a change was made to the GlobalCuts Species, update all other
@@ -6480,6 +6481,7 @@ if species(2) == 1
                         end
                     elseif index(2) == 4 %%% Parameter was deleted
                         BurstData{file}.Cut{species(1),j}(CheckParam) = [];
+                        BurstData{file}.ArbitraryCut{species(1),j}(CheckParam) = [];
                     end
                 else %%% Parameter is new to species
                     if index(2) ~= 4 %%% Parameter added or changed
