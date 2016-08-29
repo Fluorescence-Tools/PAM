@@ -802,14 +802,15 @@ switch Type
         end
     case {5}   %% 2color FRET data from BurstBrowser
         FCSMeta.DataType = 'FRET';
-        x = -0.1:0.01:1.1;
+        x = (-0.1:0.01:1.1)';
         for i=1:numel(FileName)
             %%% Reads files
                 E = load([PathName FileName{i}],'-mat'); E = E.E;
                 Data.Cor_Times = x;
-                his = histcounts(E,x); his = his./sum(his);
-                Data.Cor_Average = [his his(end)];
-                Data.Cor_SEM = zeros(size(Data.Cor_Average,1),size(Data.Cor_Average,2));
+                his = histcounts(E,x); his = [his'; his(end)];
+                Data.Cor_Average = his./sum(his);
+                error = sqrt(his)./sum(his); %error(error==0) = 1;
+                Data.Cor_SEM = error;
                 Data.Cor_Array = [];
                 Data.Valid = [];
                 Data.Counts = [numel(E), numel(E)];
@@ -823,9 +824,10 @@ switch Type
                 FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
                 FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
                 %%% Creates new plots
-                FCSMeta.Plots{end+1,1} = stairs(...
+                FCSMeta.Plots{end+1,1} = errorbar(...
                     FCSMeta.Data{end,1},...
                     FCSMeta.Data{end,2},...
+                     FCSMeta.Data{end,3},...
                     'Parent',h.FCS_Axes);
                 FCSMeta.Plots{end,2} = line(...
                     'Parent',h.FCS_Axes,...
@@ -835,10 +837,10 @@ switch Type
                     'Parent',h.Residuals_Axes,...
                     'XData',FCSMeta.Data{end,1},...
                     'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                FCSMeta.Plots{end,4} = line(...
-                    'Parent',h.FCS_Axes,...
-                    'XData',FCSMeta.Data{end,1},...
-                    'YData',FCSMeta.Data{end,2});
+                FCSMeta.Plots{end,4} = stairs(...
+                    FCSMeta.Data{end,1},...
+                    FCSMeta.Data{end,2},...
+                    'Parent',h.FCS_Axes);
                 FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
 end
@@ -1556,9 +1558,11 @@ switch mode
     case 1 %%% Change X scale
         if strcmp(Obj.Checked,'off')
             h.FCS_Axes.XScale='log';
+            h.Residuals_Axes.XScale = 'log';
             Obj.Checked='on';
         else
             h.FCS_Axes.XScale='lin';
+            h.Residuals_Axes.XScale = 'lin';
             Obj.Checked='off';
         end
     case 2 %%% Exports plots to new figure
