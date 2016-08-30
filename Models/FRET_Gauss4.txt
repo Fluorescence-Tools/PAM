@@ -1,0 +1,22 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+3 component Gaussian distribution fit for FRET data.
+
+    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): A1            = 0.5;     LB = 0;      UB = 1;
+Param(2): mu1           = 0.2;     LB = -0.1;	UB = 1;   
+Param(3): s1            = 0.1;     LB = 0;      UB = 0.25;
+Param(4): A2            = 0.5;     LB = 0;      UB = 1;
+Param(5): mu2           = 0.8;     LB = -0.1;   UB = 1;
+Param(6): s2            = 0.1;     LB = 0;      UB = 0.25;
+Param(7): A3            = 0;       LB = 0;      UB = 1;f
+Param(8): mu3           = 0.5;     LB = -0.1;   UB = 1;f
+Param(9): s3            = 0.1;     LB = 0;      UB = 0.25;f
+Param(10): A4            = 0;       LB = 0;      UB = 1;f
+Param(11): mu4           = 0.5;     LB = -0.1;   UB = 1;f
+Param(12): s4            = 0.1;     LB = 0;      UB = 0.25;f
+Param(13): offset         = 0;      LB = 0;      UB = 1;f
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1; 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT= P(10)+(P(1)*(1/sqrt(2*pi*P(3)^2))*exp(-((x-P(2)).^2)./(2*P(3)^2))+P(4)*(1/sqrt(2*pi*P(6)^2))*exp(-((x-P(5)).^2)./(2*P(6)^2))+P(7)*(1/sqrt(2*pi*P(9)^2))*exp(-((x-P(8)).^2)./(2*P(9)^2)))+P(10)*(1/sqrt(2*pi*P(12)^2))*exp(-((x-P(11)).^2)./(2*P(12)^2)));

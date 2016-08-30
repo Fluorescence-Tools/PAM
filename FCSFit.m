@@ -203,7 +203,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Callback',@Update_Plots,...
         'Position',[0.002 0.64 0.1 0.1]); 
     %%% Text
-    uicontrol(...
+    h.Norm_Text = uicontrol(...
         'Parent',h.Setting_Panel,...
         'Tag','Setting_Panel',...
         'Units','normalized',...
@@ -559,7 +559,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'UIContextMenu',h.FCS_Plot_Menu,...
         'Position',[0.06 0.28 0.93 0.7],...
         'Box','off');
-    h.FCS_Axes.XLabel.String = 'Time Lag {\it\tau{}} [s]';
+    h.FCS_Axes.XLabel.String = 'time lag {\it\tau{}} [s]';
     h.FCS_Axes.XLabel.Color = Look.Fore;
     h.FCS_Axes.YLabel.String = 'G({\it\tau{}})';
     h.FCS_Axes.YLabel.Color = Look.Fore;  
@@ -584,7 +584,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     h.Residuals_Axes.GridColorMode = 'manual';
     h.Residuals_Axes.GridColor = [0 0 0];
     h.Residuals_Axes.XTickLabel=[];
-    h.Residuals_Axes.YLabel.String = 'Weighted residuals';
+    h.Residuals_Axes.YLabel.String = 'weighted residuals';
     h.Residuals_Axes.YLabel.Color = Look.Fore;
     
     linkaxes([h.FCS_Axes h.Residuals_Axes],'x');
@@ -618,7 +618,9 @@ end
     FCSMeta.Fits=[];
     FCSMeta.Color=[1 1 0; 0 0 1; 1 0 0; 0 0.5 0; 1 0 1; 0 1 1];
     FCSMeta.FitInProgress = 0;    
+    FCSMeta.DataType = 'FCS';
     
+    h.CurrentGui = 'FCS';
     guidata(h.FCSFit,h); 
     Load_Fit([],[],0);
     Update_Style([],[],0) 
@@ -691,7 +693,7 @@ end
 
 switch Type
     case {1,2} %%% Averaged correlation files
-        FCSMeta.DataType = 'averaged';
+        FCSMeta.DataType = 'FCS averaged';
         for i=1:numel(FileName)
             %%% Reads files (1 == .mcor; 2 == .cor)
             if Type == 1
@@ -745,8 +747,10 @@ switch Type
                 'YData',FCSMeta.Data{end,2});
             FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
     case {3,4} %% Individual curves from correlation files
-        FCSMeta.DataType = 'individual';
+        FCSMeta.DataType = 'FCS individual';
         for i=1:numel(FileName)
             %%% Reads files (3 == .mcor; 4 == .cor)
             if Type == 3
@@ -800,55 +804,111 @@ switch Type
                 FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
             end
         end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
     case {5}   %% 2color FRET data from BurstBrowser
         FCSMeta.DataType = 'FRET';
         x = (-0.1:0.01:1.1)';
         for i=1:numel(FileName)
             %%% Reads files
-                E = load([PathName FileName{i}],'-mat'); E = E.E;
-                Data.Cor_Times = x;
-                his = histcounts(E,x); his = [his'; his(end)];
-                Data.Cor_Average = his./sum(his);
-                error = sqrt(his)./sum(his); %error(error==0) = 1;
-                Data.Cor_SEM = error;
-                Data.Cor_Array = [];
-                Data.Valid = [];
-                Data.Counts = [numel(E), numel(E)];
-                FCSData.Data{end+1} = Data;
+            E = load([PathName FileName{i}],'-mat'); E = E.E;
+            Data.Cor_Times = x;
+            his = histcounts(E,x); his = [his'; his(end)];
+            Data.Cor_Average = his./sum(his)./min(diff(x));
+            error = sqrt(his)./sum(his)./min(diff(x));
+            Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
+            Data.Cor_Array = [];
+            Data.Valid = [];
+            Data.Counts = [numel(E), numel(E)];
+            FCSData.Data{end+1} = Data;
 
-                %%% Updates global parameters
-                FCSData.FileName{end+1} = FileName{i}(1:end-5);
-                FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
-                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
-                FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
-                FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
-                FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
-                %%% Creates new plots
-                FCSMeta.Plots{end+1,1} = errorbar(...
-                    FCSMeta.Data{end,1},...
-                    FCSMeta.Data{end,2},...
-                     FCSMeta.Data{end,3},...
-                    'Parent',h.FCS_Axes);
-                FCSMeta.Plots{end,2} = line(...
-                    'Parent',h.FCS_Axes,...
-                    'XData',FCSMeta.Data{end,1},...
-                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                FCSMeta.Plots{end,3} = line(...
-                    'Parent',h.Residuals_Axes,...
-                    'XData',FCSMeta.Data{end,1},...
-                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
-                FCSMeta.Plots{end,4} = stairs(...
-                    FCSMeta.Data{end,1},...
-                    FCSMeta.Data{end,2},...
-                    'Parent',h.FCS_Axes);
-                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+            %%% Updates global parameters
+            FCSData.FileName{end+1} = FileName{i}(1:end-5);
+            FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+            FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+            FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
+            FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+            FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
+            %%% Creates new plots
+            FCSMeta.Plots{end+1,1} = errorbar(...
+                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,2},...
+                error,...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Plots{end,2} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,3} = line(...
+                'Parent',h.Residuals_Axes,...
+                'XData',FCSMeta.Data{end,1},...
+                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+            FCSMeta.Plots{end,4} = stairs(...
+                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,2},...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
         end
+        %%% change the gui
+        SwitchGUI(h,'FRET');
 end
 
 %%% Updates table and plot data and style to new size
 Update_Style([],[],1);
 Update_Table([],[],1);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to switch GUI between FRET and FCS %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function SwitchGUI(handles,toType)
+global UserValues
+if isempty(handles)
+    handles = guidata(gcf);
+end
+if strcmp(toType,handles.CurrentGui);
+    return;
+end
+if strcmp(handles.CurrentGui,'FCS') %%% switch to FRET
+    %%% change the minmax boundaries for plot
+    handles.Fit_Min.String = '-0.1';
+    handles.Fit_Max.String = '1';
+    %%% hide normalization box and set to none
+    handles.Normalize.Visible = 'off';
+    handles.Normalize.Value = 1;
+    handles.Norm_Text.Visible = 'off';
+    handles.Norm_Time.Visible = 'off';
+    %%% disable XLOG menu point for main axis
+    handles.FCS_Plot_XLog.Visible = 'off';
+    handles.FCS_Plot_XLog.Checked = 'off';
+    handles.FCS_Axes.XScale='lin';
+    handles.Residuals_Axes.XScale = 'lin';
+    %%% Change axis labels
+    handles.FCS_Axes.XLabel.String = 'FRET efficiency';
+    handles.FCS_Axes.YLabel.String = 'PDF';
+    
+    handles.CurrentGui = 'FRET';
+elseif strcmp(handles.CurrentGui,'FRET') %%% switch to FCS
+     %%% change the minmax boundaries for plot
+    handles.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
+    handles.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
+    %%% hide normalization box and set to none
+    handles.Normalize.Visible = 'on';
+    handles.Normalize.Value = UserValues.FCSFit.NormalizationMethod;
+    handles.Norm_Text.Visible = 'on';
+    handles.Norm_Time.Visible = 'on';
+    %%% disable XLOG menu point for main axis
+    handles.FCS_Plot_XLog.Visible = 'on';
+    handles.FCS_Plot_XLog.Checked = 'on';
+    handles.FCS_Axes.XScale='log';
+    handles.Residuals_Axes.XScale = 'log';
+     %%% Change axis labels
+    handles.FCS_Axes.XLabel.String = 'time lag {\it\tau{}} [s]';
+    handles.FCS_Axes.YLabel.String = 'G({\it\tau{}})';
+    
+    handles.CurrentGui = 'FCS';
+end
+
+guidata(handles.FCSFit,handles); 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to save merged .cor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -873,7 +933,7 @@ Cor_Array = [];
 Header = cell(0);
 Counts = [0,0];
 switch FCSMeta.DataType
-    case 'averaged'
+    case 'FCS averaged'
         % multiple averaged file were loaded
         Cor_Times = FCSData.Data{active(minlen_ix(1))}.Cor_Times; % Take Cor_Times from first file, should be same for all.
         for i = active'
@@ -882,7 +942,7 @@ switch FCSMeta.DataType
             Header{end+1} = FCSData.Data{i}.Header;
             Counts = Counts + FCSData.Data{i}.Counts;
         end
-    case 'individual'
+    case 'FCS individual'
         % individual curves from 1 file were loaded
         Cor_Times = FCSMeta.Data{active(minlen_ix(1)),1}; % Take Cor_Times from first file, should be same for all.
         for i = active'
@@ -1397,8 +1457,10 @@ Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
 Conv_Interval = h.Conf_Interval.Value;
 %%% store in UserValues
-UserValues.FCSFit.Fit_Min = Min;
-UserValues.FCSFit.Fit_Max = Max;
+if ~strcmp(FCSMeta.DataType,'FRET') %%% only store for FCS data
+    UserValues.FCSFit.Fit_Min = Min;
+    UserValues.FCSFit.Fit_Max = Max;
+end
 UserValues.FCSFit.Plot_Errorbars = Plot_Errorbars;
 UserValues.FCSFit.NormalizationMethod = Normalization_Method;
 UserValues.FCSFit.Conf_Interval = Conv_Interval;
@@ -1503,8 +1565,13 @@ for i=1:size(FCSMeta.Plots,1)
         FCSMeta.Plots{i,3}.Visible='on';
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
-            FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
-            FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+            if ~strcmp(FCSMeta.DataType,'FRET')
+                FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
+                FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+            else
+                FCSMeta.Plots{i,1}.LData=FCSMeta.Plots{i,1}.LData/B;
+                FCSMeta.Plots{i,1}.UData=FCSMeta.Plots{i,1}.UData/B;
+            end
             FCSMeta.Plots{i,1}.Visible = 'on';
             FCSMeta.Plots{i,4}.Visible = 'off';
         else
@@ -1540,9 +1607,21 @@ else
 end
 %%% Updates axes limits
 h.FCS_Axes.XLim=[Min Max];
-h.FCS_Axes.YLim=[YMin-0.1*abs(YMin) YMax+0.05*YMax+0.0001];
+if ~strcmp(FCSMeta.DataType,'FRET')
+    h.FCS_Axes.YLim=[YMin-0.1*abs(YMin) YMax+0.05*YMax+0.0001];
+else
+    h.FCS_Axes.YLim=[0 YMax+0.05*YMax+0.0001];
+end
 h.Residuals_Axes.YLim=[RMin-0.1*abs(RMin) RMax+0.05*RMax+0.0001];
 
+if gcbo == h.Fit_Weights
+    %%% change axis label
+    if h.Fit_Weights.Value == 1
+        h.Residuals_Axes.YLabel.String = 'weighted residuals';
+    else
+        h.Residuals_Axes.YLabel.String = 'residuals';
+    end
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Context menu callbacks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1570,16 +1649,18 @@ switch mode
         Size = [str2double(h.Export_XSize.String) str2double(h.Export_YSize.String) str2double(h.Export_YSizeRes.String)];
         FontSize = str2double(h.Export_FontSize.String);
         
+        if ~strcmp(FCSMeta.DataType,'FRET')
+            Scale = [floor(log10(h.FCS_Axes.XLim(1))), ceil(h.FCS_Axes.XLim(2))];
+            XTicks = zeros(diff(Scale),1);
+            XTickLabels = cell(diff(Scale),1);
+            j=1;        
+            for i=Scale(1):Scale(2)
+                XTicks(j) = 10^i;
+                XTickLabels{j} = ['10^{',num2str(i),'}'];
+                j = j+1;
+            end  
+        end
         
-        Scale = [floor(log10(h.FCS_Axes.XLim(1))), ceil(h.FCS_Axes.XLim(2))];
-        XTicks = zeros(diff(Scale),1);
-        XTickLabels = cell(diff(Scale),1);
-        j=1;        
-        for i=Scale(1):Scale(2)
-            XTicks(j) = 10^i;
-            XTickLabels{j} = ['10^{',num2str(i),'}'];
-            j = j+1;
-        end        
         %% Creates new figure
         H.Fig=figure(...
             'Units','points',...
@@ -1589,32 +1670,59 @@ switch mode
             'Position',[50 150 Size(1)+5*FontSize+15 Size(2)+Size(3)+6.5*FontSize]);
         whitebg([1 1 1]);   
         %% Creates axes for correlation and residuals
-        H.FCS=axes(...
-            'Parent',H.Fig,...
-            'XScale','log',...
-            'FontSize', FontSize,...
-            'XTick',XTicks,...
-            'XTickLabel',XTickLabels,...
-            'Layer','bottom',...
-            'Units','points',...
-            'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)]);                
-        H.Residuals=axes(...
-            'Parent',H.Fig,...
-            'XScale','log',...
-            'FontSize', FontSize,...
-            'XTick',XTicks,...
-            'XTickLabel',[],...
-            'Layer','bottom',...
-            'Units','points',...
-            'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)]);
+        if ~strcmp(FCSMeta.DataType,'FRET')
+            H.FCS=axes(...
+                'Parent',H.Fig,...
+                'XScale','log',...
+                'FontSize', FontSize,...
+                'XTick',XTicks,...
+                'XTickLabel',XTickLabels,...
+                'Layer','bottom',...
+                'Units','points',...
+                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)]);    
+            
+            H.Residuals=axes(...
+                'Parent',H.Fig,...
+                'XScale','log',...
+                'FontSize', FontSize,...
+                'XTick',XTicks,...
+                'XTickLabel',[],...
+                'Layer','bottom',...
+                'Units','points',...
+                'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)]);
+        else
+            H.FCS=axes(...
+                'Parent',H.Fig,...
+                'XScale','lin',...
+                'FontSize', FontSize,...
+                'Layer','bottom',...
+                'Units','points',...
+                'Position',[15+4.2*FontSize 3.5*FontSize Size(1) Size(2)]);    
+            H.Residuals=axes(...
+                'Parent',H.Fig,...
+                'XScale','lin',...
+                'FontSize', FontSize,...
+                'XTickLabel',[],...
+                'Layer','bottom',...
+                'Units','points',...
+                'Position',[15+4.2*FontSize 5*FontSize+Size(2) Size(1) Size(3)]);
+        end
+            
+        
         %% Sets axes parameters
         linkaxes([H.FCS,H.Residuals],'x');
         H.FCS.XLim=h.FCS_Axes.XLim;
         H.FCS.YLim=h.FCS_Axes.YLim;
-        H.FCS.XLabel.String = 'Time Lag {\it\tau{}} [s]';
-        H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+        switch FCSMeta.DataType
+            case 'FCS'
+                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
+                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+            case 'FRET'
+                H.FCS.XLabel.String = 'FRET efficiency';
+                H.FCS.YLabel.String = 'PDF'; 
+        end
         H.Residuals.YLim=h.Residuals_Axes.YLim;
-        H.Residuals.YLabel.String = {'Weighted'; 'residuals'};
+        H.Residuals.YLabel.String = {'weighted'; 'residuals'};
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
         UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);

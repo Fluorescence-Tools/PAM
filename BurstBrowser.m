@@ -420,6 +420,7 @@ if isempty(hfig)
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
     h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Histogram');
+    h.Export_FRET_Hist_Timeseries_Menu = javax.swing.JMenuItem('Export FRET Histogram (Time Series)');
     h.SendToTauFit = javax.swing.JMenuItem('Send Selected Species to TauFit');
     % set callbacks
     set(h.AddSpeciesMenuItem,'ActionPerformedCallback',@AddSpecies);
@@ -429,6 +430,7 @@ if isempty(hfig)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
     set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
+    set(h.Export_FRET_Hist_Timeseries_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
     set(h.SendToTauFit,'ActionPerformedCallback',@Send_To_TauFit);
     % construct contextmenu
     h.SpeciesListMenu = javax.swing.JPopupMenu;
@@ -440,6 +442,7 @@ if isempty(hfig)
     h.ExportMenuItem.add(h.Export_FRET_Hist_Menu);
     h.ExportMenuItem.add(h.ExportSpeciesToPDAMenuItem);
     h.ExportMenuItem.add(h.ExportMicrotimePattern);
+    h.ExportMenuItem.add(h.Export_FRET_Hist_Timeseries_Menu);
     h.SpeciesListMenu.add(h.ExportMenuItem);
     h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
 
@@ -9004,17 +9007,40 @@ else
     end
     SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
     filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
-    switch BurstData{file}.BAMethod
-        case {1,2}
-            E = BurstData{file}.DataCut(:,1);
-            %%% Save E array in *.his file
-            save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
-        case {3,4}
-            EGR = BurstData{file}.DataCut(:,1);
-            EBG = BurstData{file}.DataCut(:,2);
-            EBR = BurstData{file}.DataCut(:,3);
-            %%% Save E array in *.his file
-            save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+    obj = gcbo;
+    switch obj.Label
+        case 'Export FRET Histogram '
+            switch BurstData{file}.BAMethod
+                case {1,2}
+                    E = BurstData{file}.DataCut(:,1);
+                    %%% Save E array in *.his file
+                    save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
+                case {3,4}
+                    EGR = BurstData{file}.DataCut(:,1);
+                    EBG = BurstData{file}.DataCut(:,2);
+                    EBR = BurstData{file}.DataCut(:,3);
+                    %%% Save E array in *.his file
+                    save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+            end
+        case 'Export FRET Histogram (Time Series)'
+            %%% export a time series in specific binnig
+            %%% query binning
+            timebin = inputdlg('Enter time bin in minutes:','Specifiy time bin',1,{'10'});
+            timebin = round(str2double(timebin{1}))*60;
+            macrotime = BurstData{file}.DataCut(:,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray));
+            times = 0:timebin:ceil(macrotime(end)/timebin)*timebin;
+            for i = 1:numel(times)-1
+                % get valid bursts
+                valid = (macrotime >= times(i)) & (macrotime <= times(i+1));
+                E = BurstData{file}.DataCut(valid,1);
+                % generate name
+                name = [filename(1:end-4) '_' num2str(round(times(i)/timebin)) 'to' num2str(round(times(i+1)/timebin)) 'min.his'];
+                %%% Save E array in *.his file
+                save(fullfile(UserValues.BurstBrowser.PrintPath,name),'E');
+            end
+            m = msgbox('Done exporting time series.');
+            pause(1);
+            delete(m);
     end
 end
 
