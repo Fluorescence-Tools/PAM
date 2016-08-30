@@ -9034,7 +9034,7 @@ else
                 valid = (macrotime >= times(i)) & (macrotime <= times(i+1));
                 E = BurstData{file}.DataCut(valid,1);
                 % generate name
-                name = [filename(1:end-4) '_' num2str(round(times(i)/timebin)) 'to' num2str(round(times(i+1)/timebin)) 'min.his'];
+                name = [filename(1:end-4) '_' num2str(round(times(i)/60)) 'to' num2str(round(times(i+1)/60)) 'min.his'];
                 %%% Save E array in *.his file
                 save(fullfile(UserValues.BurstBrowser.PrintPath,name),'E');
             end

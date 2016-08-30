@@ -48,12 +48,12 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     %%% Menu to load new Cor file
     h.LoadCor = uimenu(h.File,...
         'Tag','LoadCor',...
-        'Label','Load New Cor Files',...
+        'Label','Load New Files',...
         'Callback',{@Load_Cor,1});
     %%% Menu to add Cor files to existing
     h.AddCor = uimenu(h.File,...
         'Tag','AddCor',...
-        'Label','Add Cor Files',...
+        'Label','Add Files',...
         'Callback',{@Load_Cor,2});
     %%% Menu to load fit function
     h.LoadFit = uimenu(h.File,...
@@ -240,6 +240,32 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Visible','off',...
         'Callback',@Update_Plots,...
         'Position',[0.145 0.51 0.04 0.1]);  
+    %%% Editbox for binning for FRET histograms
+    h.FRETbin_Text = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Setting_Panel',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'Style','text',...
+        'String','FRET bin width:',...
+        'Position',[0.002 0.51 0.08 0.1],...
+        'Visible','off');
+    %%% Popupmenu to choose normalization method
+    h.FRETbin = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Normalize',...
+        'Units','normalized',...
+        'FontSize',10,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Style','edit',...
+        'String',num2str(UserValues.FCSFit.FRETbin),...
+        'Callback',@rebinFRETdata,...
+        'Position',[0.082 0.52 0.06 0.1],...
+        'Visible','off'); 
     %%% Checkbox to toggle confidence interval calculation
     h.Conf_Interval = uicontrol(...
         'Parent',h.Setting_Panel,...
@@ -808,10 +834,12 @@ switch Type
         SwitchGUI(h,'FCS');
     case {5}   %% 2color FRET data from BurstBrowser
         FCSMeta.DataType = 'FRET';
-        x = (-0.1:0.01:1.1)';
+        bin = UserValues.FCSFit.FRETbin;
+        x = (-0.1:bin:ceil(1.1/bin)*bin)';
         for i=1:numel(FileName)
             %%% Reads files
             E = load([PathName FileName{i}],'-mat'); E = E.E;
+            Data.E = E;
             Data.Cor_Times = x;
             his = histcounts(E,x); his = [his'; his(end)];
             Data.Cor_Average = his./sum(his)./min(diff(x));
@@ -885,6 +913,9 @@ if strcmp(handles.CurrentGui,'FCS') %%% switch to FRET
     %%% Change axis labels
     handles.FCS_Axes.XLabel.String = 'FRET efficiency';
     handles.FCS_Axes.YLabel.String = 'PDF';
+    %%% show FRET binning controls
+    handles.FRETbin_Text.Visible = 'on';
+    handles.FRETbin.Visible = 'on';
     
     handles.CurrentGui = 'FRET';
 elseif strcmp(handles.CurrentGui,'FRET') %%% switch to FCS
@@ -904,6 +935,9 @@ elseif strcmp(handles.CurrentGui,'FRET') %%% switch to FCS
      %%% Change axis labels
     handles.FCS_Axes.XLabel.String = 'time lag {\it\tau{}} [s]';
     handles.FCS_Axes.YLabel.String = 'G({\it\tau{}})';
+    %%% hide FRET binning controls
+    handles.FRETbin_Text.Visible = 'off';
+    handles.FRETbin.Visible = 'off';
     
     handles.CurrentGui = 'FCS';
 end
@@ -1569,8 +1603,9 @@ for i=1:size(FCSMeta.Plots,1)
                 FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
                 FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
             else
-                FCSMeta.Plots{i,1}.LData=FCSMeta.Plots{i,1}.LData/B;
-                FCSMeta.Plots{i,1}.UData=FCSMeta.Plots{i,1}.UData/B;
+                error = FCSMeta.Data{i,3}; error(FCSMeta.Data{i,2}==0) = 0;
+                FCSMeta.Plots{i,1}.LData=error/B;
+                FCSMeta.Plots{i,1}.UData=error/B;
             end
             FCSMeta.Plots{i,1}.Visible = 'on';
             FCSMeta.Plots{i,4}.Visible = 'off';
@@ -1731,12 +1766,13 @@ switch mode
         if h.Export_FitsLegend.Value
             H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
         else
-            
-            LegendString = h.FCS_Legend.String(1:2:end-1);
-            for i=1:numel(LegendString)
-                LegendString{i} = LegendString{i}(7:end);
+            if h.FCS_Legend.isvalid
+                LegendString = h.FCS_Legend.String(1:2:end-1);
+                for i=1:numel(LegendString)
+                    LegendString{i} = LegendString{i}(7:end);
+                end
+                H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:2),LegendString,'Interpreter','none');
             end
-            H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:2),LegendString,'Interpreter','none');
         end
         H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);          
         %% Toggles box and grid
@@ -2094,5 +2130,46 @@ end
 Out=Out./Weights;
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to recalculate binning for FRET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function rebinFRETdata(obj,~)
+global UserValues FCSData FCSMeta
+h = guidata(obj);
+bin = str2double(obj.String);
+%%% round to multiples of 0.01
+bin = ceil(bin/0.01)*0.01;
+x = (-0.1:bin:ceil(1.1/bin)*bin)';
+UserValues.FCSFit.FRETbin = bin;
+obj.String = num2str(bin);
+for i=1:numel(FCSData.Data)
+    %%% Reads data
+    E = FCSData.Data{i}.E;
+    Data.E = E;
+    Data.Cor_Times = x;
+    his = histcounts(E,x); his = [his'; his(end)];
+    Data.Cor_Average = his./sum(his)./min(diff(x));
+    error = sqrt(his)./sum(his)./min(diff(x));
+    Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
+    Data.Cor_Array = [];
+    Data.Valid = [];
+    Data.Counts = [numel(E), numel(E)];
+    FCSData.Data{i} = Data;
 
+    %%% Updates global parameters
+    FCSMeta.Data{i,1} = FCSData.Data{i}.Cor_Times;
+    FCSMeta.Data{i,2} = FCSData.Data{i}.Cor_Average;
+    FCSMeta.Data{i,2}(isnan(FCSMeta.Data{i,2})) = 0;
+    FCSMeta.Data{i,3} = FCSData.Data{i}.Cor_SEM;
+    FCSMeta.Data{i,3}(isnan(FCSMeta.Data{i,3})) = 1;
+    
+    %%% Update Plots
+    FCSMeta.Plots{i,1}.XData = FCSMeta.Data{i,1};
+    FCSMeta.Plots{i,1}.YData = FCSMeta.Data{i,2};
+    FCSMeta.Plots{i,1}.LData = error;
+    FCSMeta.Plots{i,1}.UData = error;
 
+    FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1};
+    FCSMeta.Plots{i,4}.YData = FCSMeta.Data{i,2};       
+end
+Update_Plots;

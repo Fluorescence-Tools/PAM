@@ -489,6 +489,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.FCSFit.Hide_Legend was incomplete');
     end
     P.FCSFit.Hide_Legend = S.FCSFit.Hide_Legend;
+    %%% Checks if FCSFit.FRETbin subfield exists
+    if ~isfield (S.FCSFit, 'FRETbin')
+        S.FCSFit.FRETbin=0.01;
+        disp('UserValues.FCSFit.FRETbin was incomplete');
+    end
+    P.FCSFit.FRETbin = S.FCSFit.FRETbin;
     %%% Checks, if FCSFit.PlotStyles subfield exists
     if ~isfield (S.FCSFit,'PlotStyles')
         S.FCSFit.PlotStyles = repmat({'1 1 1','none','1','.','8','-','1','none','8',false},10,1); % Consider 10 plots, which should be enough
