@@ -9009,7 +9009,7 @@ else
     filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
     obj = gcbo;
     switch obj.Label
-        case 'Export FRET Histogram '
+        case 'Export FRET Histogram'
             switch BurstData{file}.BAMethod
                 case {1,2}
                     E = BurstData{file}.DataCut(:,1);
