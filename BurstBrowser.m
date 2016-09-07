@@ -6437,6 +6437,10 @@ switch index(2)
                 hObject.Data{i,5} = false;
             end
         end
+        %%% if arbitrary cut was clicked, prevent checking 
+        if strcmp(ChangedParameterName(1:4),'AR: ')
+            hObject.Data{index(1),5} = false;
+        end
 end
 
 if index(2) < 4
