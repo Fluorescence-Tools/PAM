@@ -833,6 +833,8 @@ switch (Type)
         FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
 end
+%%% close all open file handles
+fclose('all');
 Progress(1,h.Progress.Axes, h.Progress.Text);
 
 if strcmp(UserValues.Detector.Auto,'on')
