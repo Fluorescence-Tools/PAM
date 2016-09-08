@@ -3259,7 +3259,7 @@ if any(mode==1)
                         end
                     case 3 %%% Uses ROI of correctiond image (=> static species)
                         if Frame>0;
-                            Image=double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame)-MIAData.Data{i,2}(:,:,Frame));
+                            Image=double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame))-MIAData.Data{i,2}(:,:,Frame);
                         elseif Frame==0
                             Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
                             Image=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames)-MIAData.Data{i,2}(:,:,Frames)),3);
@@ -4129,7 +4129,7 @@ h.Mia_Image.Settings.ROI_FramesUse.Value=2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Generates corrected images %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_Correct(~,~)
+function Mia_Correct(~,~,AR)
 global MIAData
 h = guidata(findobj('Tag','Mia'));
 h.Mia_Progress_Text.String = 'Applying Correction';
@@ -4158,11 +4158,21 @@ for i=1:2
             case 1 %%% Do nothing
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                 +(mean2(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))));
+                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                if exist('AR','var')
+                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i},3)]) & MIAData.AR{i}))=NaN;
+                end
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(nanmean(nanmean(Add)));
+                clear Add
             case 3 %%% Frame ROI mean
+                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                if exist('AR','var')
+                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i},3)]) & MIAData.AR{i}))=NaN;
+                end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                 +(repmat(mean(mean((single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                                  +repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
+%                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
+%                                  +(repmat(mean(mean((single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 4 %%% Pixel mean
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
                                  +(repmat(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3),[1,1,size(MIAData.Data{i,1},3)]));
@@ -4230,9 +4240,9 @@ for i=1:2
                 Filter=ones(Box)/prod(Box);
                 MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
-if h.Mia_Image.Settings.ROI_FramesUse.Value == 3       
-    MIAData.AR{i}=true(size(MIAData.Data{i,2}));
-end
+% if h.Mia_Image.Settings.ROI_FramesUse.Value == 3       
+%     MIAData.AR{i}=true(size(MIAData.Data{i,2}));
+% end
     end
     
 end
@@ -4241,11 +4251,16 @@ end
 Mia_Freehand([],[],3);
 
 %%% Performs Arbitrary Region selection
-if h.Mia_Image.Settings.ROI_FramesUse.Value == 3
-    Mia_Arbitrary_Region([],[]);
+if h.Mia_Image.Settings.ROI_FramesUse.Value == 3 && nargin<3
+     Mia_Arbitrary_Region([],[]);
+elseif h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+     Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+else
+    Update_Plots([],[],4,1:size(MIAData.Data,1))
 end
+
 %%% Updates additional plots
-Update_Plots([],[],4,1:size(MIAData.Data,1))
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4388,7 +4403,8 @@ switch h.Mia_Image.Settings.ROI_AR_Same.Value
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
 end
-Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+Mia_Correct([],[],1);
+%Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates arbitrary regions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
