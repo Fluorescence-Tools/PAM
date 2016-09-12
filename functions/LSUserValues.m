@@ -1720,7 +1720,10 @@ else
 end
 
 %%% Saves user values
-Profiledir = [pwd filesep 'profiles'];
+Path=mfilename('fullpath');
+Folder=strfind(Path,filesep);
+Path=Path(1:(Folder(end-1)));
+Profiledir = [Path 'profiles'];
 if ~isempty(Current) %% Saves loaded profile
     Profile=Current;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');

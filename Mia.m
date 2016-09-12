@@ -2750,9 +2750,7 @@ switch mode
             [FileName2,Path2] = uigetfile({'*.tif'}, 'Load TIFFs for channel 2', Path1, 'MultiSelect', 'on');
         end
         UserValues.File.MIAPath = Path1;
-        if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
-            mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
-        end
+
         LSUserValues(1);
         %%% Transforms FileName into cell array
         if ~iscell(FileName1)
@@ -3285,12 +3283,16 @@ if any(mode==1)
                 h.Plots.Image(i,2).AlphaData = ~isnan(Image);
                 if Frame>0 %%% For one frame, use manual selection and arbitrary region
                     if ~isempty(MIAData.AR)
-                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,1}(:,:,Frame) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
                     else
                         h.Plots.Image(i,2).AlphaData = 1;
                     end
                 else %%% For all frames, only use manual selection
-                    h.Plots.Image(i,2).AlphaData = (MIAData.MS{i}+AlphaRatio)/(1+AlphaRatio);
+                    if ~isempty(MIAData.AR)
+                        h.Plots.Image(i,2).AlphaData = ((MIAData.AR{i,2}(:,:) & MIAData.MS{i})+AlphaRatio)/(1+AlphaRatio);
+                    else
+                        h.Plots.Image(i,2).AlphaData = 1;
+                    end
                 end
                 %%% Updates axis
                 h.Mia_Image.Axes(i,2).XLim=[0 size(Image,2)]+0.5;
@@ -3625,7 +3627,7 @@ if any(mode==4)
             
             Data = MIAData.Data{1,2};
             if ~isempty(MIAData.AR)
-                Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+                Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
             h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1);
             
@@ -3634,7 +3636,7 @@ if any(mode==4)
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{1,2};
             if ~isempty(MIAData.AR)
-                Data(~(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3)))) = NaN;
+                Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
             h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
@@ -3649,7 +3651,7 @@ if any(mode==4)
             h.Plots.PCH(1,1).YData = MIAData.PCH{1};
             Max = max(MIAData.Data{1,2}(:));
             h.Plots.PCH(1,2).XData = 0:Max;
-            h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1},3))), 0:Max);
+            h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
             if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
                 h.Mia_Image.PCH_Axes.YScale = 'Lin';
             else
@@ -3669,7 +3671,7 @@ if any(mode==4)
         h.Mia_Additional.Axes(1).YScale = 'Lin';
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
-                h.Plots.Additional_Axes(1,1).YData = mean(mean(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},2),1);
+                h.Plots.Additional_Axes(1,1).YData = mean(mean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
                 if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
                     h.Plots.Additional_Axes(1,1).YData = h.Plots.Additional_Axes(1,1).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                     h.Mia_Additional.Axes(1).YLabel.String = 'Average Frame Countrate [kHz]';
@@ -3677,7 +3679,7 @@ if any(mode==4)
                     h.Mia_Additional.Axes(1).YLabel.String = 'Average Frame Counts';
                 end   
             case 2 %%% Variance
-                h.Plots.Additional_Axes(1,1).YData = var(reshape(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},[],size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
+                h.Plots.Additional_Axes(1,1).YData = var(reshape(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),[],size(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
                 h.Mia_Additional.Axes(1).YLabel.String = 'Spatial Variance';
             case 3 %%% PCH
                 h.Plots.Additional_Axes(1,1).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(1,2).Value).XData;
@@ -3720,9 +3722,9 @@ if any(mode==4)
         %% Updates image plot 
         switch h.Mia_Additional.Plot_Popup(1,3).Value
             case 1 %%% Counts/Countrate
-                Data = mean(MIAData.Data{1,1},3);
+                Data = mean(single(MIAData.Data{1,1}),3);
             case 2 %%% Variance
-                Data = var(MIAData.Data{1,1},0,3);
+                Data = var(single(MIAData.Data{1,1}),0,3);
             case 3 %%% Maximum Projection
                 Data = max(MIAData.Data{1,1},[],3);
         end
@@ -3762,14 +3764,14 @@ if any(mode==4)
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1);
             Data = MIAData.Data{2,2};
             if ~isempty(MIAData.AR)
-                Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2}(1,:,:),3)))) = NaN;
+                Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
             h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{2,2};
             if ~isempty(MIAData.AR)
-                Data(~(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2}(1,:,:),3)))) = NaN;
+                Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
             h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             
@@ -3785,7 +3787,7 @@ if any(mode==4)
             h.Plots.PCH(2,1).Visible = 'on';
             Max = max(MIAData.Data{2,2}(:));
             h.Plots.PCH(2,2).XData = 0:Max;
-            h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2},3))), 0:Max);
+            h.Plots.PCH(2,2).YData = histc(MIAData.Data{2,2}(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1},3))), 0:Max);
             h.Plots.PCH(2,2).Visible = 'on';
         else
            h.Plots.PCH(2,1).XData = [0 1];
@@ -3799,12 +3801,12 @@ if any(mode==4)
         h.Plots.Additional_Axes(1,2).Visible = 'on';
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
-                h.Plots.Additional_Axes(1,2).YData = mean(mean(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},2),1);
+                h.Plots.Additional_Axes(1,2).YData = mean(mean(single(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
                 if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
                     h.Plots.Additional_Axes(1,2).YData = h.Plots.Additional_Axes(1,2).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 end
             case 2 %%% Variance
-                h.Plots.Additional_Axes(1,2).YData = var(reshape(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},[],size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
+                h.Plots.Additional_Axes(1,2).YData = var(reshape(single(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value}),[],size(MIAData.Data{2,h.Mia_Additional.Plot_Popup(1,2).Value},3)));
             case 3 %%% PCH
                 h.Plots.Additional_Axes(1,2).XData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).XData;
                 h.Plots.Additional_Axes(1,2).YData = h.Plots.PCH(1,h.Mia_Additional.Plot_Popup(2,2).Value).YData;
@@ -3827,22 +3829,22 @@ if any(mode==4)
         %% Updates image plot
         switch h.Mia_Additional.Plot_Popup(2,3).Value
             case 1 %%% Counts/Countrate
-                Data = mean(MIAData.Data{2,1},3);
+                Data = mean(single(MIAData.Data{2,1}),3);
             case 2 %%% Variance
-                Data = var(MIAData.Data{2,1},0,3);
+                Data = var(single(MIAData.Data{2,1}),0,3);
             case 3 %%% Maximum Projection
                 Data = max(MIAData.Data{2,1},[],3);
             case 4 %%% Combines both colors
-                Data = mean(MIAData.Data{1,1},3);
+                Data = mean(single(MIAData.Data{1,1}),3);
                 Data(:,:,2) = (Data-min(Data(:)))/(max(Data(:))-min(Data(:)));
-                Data2 = mean(MIAData.Data{2,1},3);
+                Data2 = mean(single(MIAData.Data{2,1}),3);
                 Data2 = repmat((Data2-min(Data2(:)))/(max(Data2(:))-min(Data2(:))),1,1,3);
                 Data(:,:,[1 3]) = Data2(:,:,[1 3]);
             case 5 %%% Ratio of both colors
-                Data = mean(MIAData.Data{1,1},3)./mean(MIAData.Data{2,1},3);
+                Data = mean(single(MIAData.Data{1,1}),3)./mean(single(MIAData.Data{2,1}),3);
                 Data(isnan(Data))= nanmax(Data(:));
             case 6 %%% Ratio of both colors
-                Data = (mean(MIAData.Data{1,1},3)/mean2(MIAData.Data{1,1}))./(mean(MIAData.Data{2,1},3)/mean2(MIAData.Data{2,1}));
+                Data = (mean(single(MIAData.Data{1,1}),3)/mean2(single(MIAData.Data{1,1})))./(mean(single(MIAData.Data{2,1}),3)/mean2(single(MIAData.Data{2,1})));
                 Data(isnan(Data))= nanmax(Data(:));
         end
         h.Plots.Additional_Image(2).CData = Data;
@@ -4159,15 +4161,15 @@ for i=1:2
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-                if exist('AR','var')
-                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i},3)]) & MIAData.AR{i}))=NaN;
+                if exist('AR','var') && h.Mia_Image.Settings.ROI_FramesUse.Value == 3;
+                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(nanmean(nanmean(Add)));
                 clear Add
             case 3 %%% Frame ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-                if exist('AR','var')
-                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i},3)]) & MIAData.AR{i}))=NaN;
+                if exist('AR','var') && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
                                   +repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
@@ -4360,7 +4362,7 @@ for i=Channel
         Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
         Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
     end
-    
+    MIAData.AR{i,2}=Use(:,:,1);
     %%% Removes pixels, if invalid pixels were used for averaging
     if h.Mia_Image.Settings.Correction_Add.Value==5 || h.Mia_Image.Settings.Correction_Subtract.Value==4
         % you add the moving average or subtract the moving average
@@ -4381,7 +4383,7 @@ for i=Channel
         Use=logical(floor(imfilter(single(Use),Filter,'replicate')));
     end
     
-    MIAData.AR{i}=Use;
+    MIAData.AR{i,1}=Use;
     clear Data;
 end
 
@@ -4389,16 +4391,20 @@ switch h.Mia_Image.Settings.ROI_AR_Same.Value
     case 1 %%% Individual channels      
     case 2 %%% Channel 1
         if size(MIAData.Data,1)>1
-            MIAData.AR{2} = MIAData.AR{1};
+            MIAData.AR{2,1} = MIAData.AR{1,1};
+            MIAData.AR{2,2} = MIAData.AR{1,2};
         end  
     case 3 %%% Channel 2
         if size(MIAData.Data,1)>1
-            MIAData.AR{1} = MIAData.AR{2};
+            MIAData.AR{1,1} = MIAData.AR{2,1};
+            MIAData.AR{1,2} = MIAData.AR{2,2};
         end   
     case 4 %%% Both channels
         if size(MIAData.Data,1)>1
-            MIAData.AR{1} = MIAData.AR{1} & MIAData.AR{2};
-            MIAData.AR{2} = MIAData.AR{1} & MIAData.AR{2};
+            MIAData.AR{1,1} = MIAData.AR{1,1} & MIAData.AR{2,1};
+            MIAData.AR{1,2} = MIAData.AR{1,2} & MIAData.AR{2,2};
+            MIAData.AR{2,1} = MIAData.AR{1,1} & MIAData.AR{2,1};
+            MIAData.AR{2,2} = MIAData.AR{1,2} & MIAData.AR{2,2};
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
@@ -4608,7 +4614,7 @@ if ~isempty(MIAData.Data)
         h.Plots.ROI(i).Position=[Pos-0.5 Size];
     end
     %%% Updates images
-    Mia_Correct;
+    Mia_Correct([],[],1);
     
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4721,7 +4727,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
         end
         Frames=intersect(Frames,Active);
         for i=Auto
-            Use{i} = MIAData.AR{i}(:,:,Frames) & repmat(MIAData.MS{i},1,1,numel(Frames));
+            Use{i} = MIAData.AR{i,1}(:,:,Frames) & repmat(MIAData.MS{i},1,1,numel(Frames));
         end
 end
 
@@ -4839,6 +4845,9 @@ end
 
 %%% Saves correlation files
 if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
+    if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
+        mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
+    end
     DataAll=cell(3,2);
     InfoAll = struct;
     %% Gets auto correlations data to save
@@ -5297,7 +5306,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
         end
         Frames = intersect(Frames,Active);
         for i=Auto
-            Use{i} = logical(MIAData.AR{i}(:,:,1:Frames(end)) & repmat(MIAData.MS{i},1,1,Frames(end)));
+            Use{i} = logical(MIAData.AR{i,1}(:,:,1:Frames(end)) & repmat(MIAData.MS{i},1,1,Frames(end)));
         end   
 end
 
@@ -5379,6 +5388,9 @@ for i=1:3 %%%
         MIAData.TICS{i}(~repmat(Valid,1,1,size(MIAData.TICS{i},3))) = NaN;
         %% Saves data
         if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
+            if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
+                mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
+            end
             %%% Generates filename
             if i<3
                 FileName = MIAData.FileName{i}{1}(1:end-4);
@@ -5412,100 +5424,103 @@ for i=1:3 %%%
         end     
     end
 end
-%% Get Info structure
-Info = struct;
-%%% Pixel [?s], Line [ms] and Frametime [s]
-Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
-%%% Pixel size
-Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
-%%% ROI and TOI
-Info.Frames = Frames;
-From = h.Plots.ROI(1).Position(1:2)+0.5;
-To = From+h.Plots.ROI(1).Position(3:4)-1;
-Info.ROI = [From To];
-%%% Countrate
-Info.Counts = Counts;
-%%% Correction information
-Info.Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
-if h.Mia_Image.Settings.Correction_Subtract.Value == 4
-    Info.Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
+    %% Get Info structure
+    Info = struct;
+    %%% Pixel [?s], Line [ms] and Frametime [s]
+    Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
+    %%% Pixel size
+    Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+    %%% ROI and TOI
+    Info.Frames = Frames;
+    From = h.Plots.ROI(1).Position(1:2)+0.5;
+    To = From+h.Plots.ROI(1).Position(3:4)-1;
+    Info.ROI = [From To];
+    %%% Countrate
+    Info.Counts = Counts;
+    %%% Correction information
+    Info.Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
+    if h.Mia_Image.Settings.Correction_Subtract.Value == 4
+        Info.Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+    end
+    Info.Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
+    if h.Mia_Image.Settings.Correction_Add.Value == 5
+        Info.Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+    end
+    %%% Correlation Type (Arbitrary region == 3)
+    Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
+    switch h.Mia_Image.Settings.ROI_FramesUse.Value
+        case [1 2] %%% All/Selected frames
+            %%% Mean intensity [counts]
+            Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+            Info.AR = [];
+        case 3 %%% Arbitrary region
+            %%% Mean intensity of selected pixels [counts]
+            Image = double(MIAData.Data{i,2}(:,:,Frames));
+            Info.Mean = mean(Image(Use{i}));
+            %%% Arbitrary region information
+            Info.AR.Int_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
+            Info.AR.Int_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
+            Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+            Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+            Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+            Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+            Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
+            Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+    end
+    %% Saves info file
+    
+    
+    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(i) '.txt']);
+    FID = fopen(Current_FileName,'w');
+    fprintf(FID,'%s\n','Image Correlation info file');
+    %%% Pixel\Line\Frame times
+    fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+    fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+    fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+    %%% Pixel size
+    fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+    %%% Region of interest
+    fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+    %%% Counts per pixel
+    fprintf(FID,'%s\t%f\t%f\n', 'Mean counts per pixel:',Info.Counts(1),Info.Counts(2));
+    %%% Frames used
+    fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+    %%% Subtraction used
+    switch h.Mia_Image.Settings.Correction_Subtract.Value
+        case 1
+            fprintf(FID,'%s\n','Nothing subtracted');
+        case 2
+            fprintf(FID,'%s\n','Frame mean subtracted');
+        case 3
+            fprintf(FID,'%s\n','Pixel mean subtracted');
+        case 4
+            fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+    end
+    %%% Addition used
+    switch h.Mia_Image.Settings.Correction_Subtract.Value
+        case 1
+            fprintf(FID,'%s\n','Nothing added');
+        case 2
+            fprintf(FID,'%s\n','Total mean added');
+        case 3
+            fprintf(FID,'%s\n','Frame mean added');
+        case 4
+            fprintf(FID,'%s\n','Pixel mean added');
+        case 5
+            fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
+    end
+    %%% Arbitrary region
+    if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+        fprintf(FID,'%s\n','Arbitrary region used:');
+        fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min);
+        fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max);
+        fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
+        fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
+        fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
+    end
+    fclose(FID);
 end
-Info.Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
-if h.Mia_Image.Settings.Correction_Add.Value == 5
-    Info.Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
-end
-%%% Correlation Type (Arbitrary region == 3)
-Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
-switch h.Mia_Image.Settings.ROI_FramesUse.Value
-    case [1 2] %%% All/Selected frames
-        %%% Mean intensity [counts]
-        Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
-        Info.AR = [];
-    case 3 %%% Arbitrary region
-        %%% Mean intensity of selected pixels [counts]
-        Image = double(MIAData.Data{i,2}(:,:,Frames));
-        Info.Mean = mean(Image(Use{i}));
-        %%% Arbitrary region information
-        Info.AR.Int_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max.String);
-        Info.AR.Int_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min.String);
-        Info.AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-        Info.AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-        Info.AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-        Info.AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-        Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-        Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
-end
-%% Saves info file
-Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(i) '.txt']);
-FID = fopen(Current_FileName,'w');
-fprintf(FID,'%s\n','Image Correlation info file');
-%%% Pixel\Line\Frame times
-fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
-fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
-fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
-%%% Pixel size
-fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
-%%% Region of interest
-fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
-%%% Counts per pixel
-fprintf(FID,'%s\t%f\t%f\n', 'Mean counts per pixel:',Info.Counts(1),Info.Counts(2));
-%%% Frames used
-fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
-%%% Subtraction used
-switch h.Mia_Image.Settings.Correction_Subtract.Value
-    case 1
-        fprintf(FID,'%s\n','Nothing subtracted');
-    case 2
-        fprintf(FID,'%s\n','Frame mean subtracted');
-    case 3
-        fprintf(FID,'%s\n','Pixel mean subtracted');
-    case 4
-        fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
-end
-%%% Addition used
-switch h.Mia_Image.Settings.Correction_Subtract.Value
-    case 1
-        fprintf(FID,'%s\n','Nothing added');
-    case 2
-        fprintf(FID,'%s\n','Total mean added');
-    case 3
-        fprintf(FID,'%s\n','Frame mean added');
-    case 4
-        fprintf(FID,'%s\n','Pixel mean added');
-    case 5
-        fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', Info.Correction.SubROI(1), ' Pixel', Info.Correction.SubROI(2),' Frames');
-end
-%%% Arbitrary region
-if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-    fprintf(FID,'%s\n','Arbitrary region used:');
-    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',Info.AR.Int_Min);
-    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',Info.AR.Int_Max);
-    fprintf(FID,'%s\t%u,%u\n','Subregions size:',Info.AR.Var_SubSub,Info.AR.Var_Sub);
-    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',Info.AR.Int_Fold_Min,Info.AR.Int_Fold_Max);
-    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',Info.AR.Var_Fold_Min,Info.AR.Var_Fold_Max);
-end    
-fclose(FID);   
-
 %%% Switches 2nd and 3rd entry to make it conform with ICS
 %%% Cross is 2nd entry
 if size(MIAData.TICS,2)>1
@@ -5529,7 +5544,6 @@ h = guidata(findobj('Tag','Mia'));
 global MIAData UserValues
 
 MIAData.STICS = [];
-
 %%% Stops, if no data was loaded
 if size(MIAData.Data,1)<1
     return;
@@ -5585,7 +5599,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
         end
         Frames=intersect(Frames,Active);
         for i=Auto
-            Use{i} = MIAData.AR{i}(:,:,Frames) & repmat(MIAData.MS{i},1,1,numel(Frames));
+            Use{i} = MIAData.AR{i,1}(:,:,Frames) & repmat(MIAData.MS{i},1,1,numel(Frames));
         end
 end
 
@@ -5705,6 +5719,9 @@ end
 
 Progress(1,h.Mia_Progress_Axes, h.Mia_Progress_Text);
 %% Saves correlations
+if ~isdir(fullfile(UserValues.File.MIAPath,'Mia')) && h.Mia_Image.Calculations.Cor_Save_STICS.Value>1
+    mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
+end
 %%% .mcor filetype (iMSD)
 if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [2 4])
     %% Creates new filename
