@@ -140,45 +140,49 @@ switch (Type)
             for j = card
                 %%% Update Progress
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
-                %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
-                %%% Finds, which routing bits to use
-                if strcmp(UserValues.Detector.Auto,'off')
-                    Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
-                else
-                    Rout = 1:10; %%% consider up to 10 routing channels
-                end
-                Rout(Rout>numel(MI)) = [];
-                %%% Concatenates data to previous files and adds Imagetime
-                %%% to consecutive files
-                if any(~cellfun(@isempty,MI(:)))
-                    skip = false;
-                    for k = Rout
-                        %%% Removes photons detected after "official"
-                        %%% end of file are discarded
-                        MI{k}(MT{k}>Imagetime)=[];
-                        MT{k}(MT{k}>Imagetime)=[];
-                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; Totaltime + MT{k}];   MT{k}=[];
-                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
-                    end
-                else %%% file was empty!
-                    skip = true;
-                end
-                if skip
-                    continue;
-                end
-                %%% Determines last photon for each file
-                for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
-                    FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
-                end
                 
-                %%% Determines, if linesync was used
-                if isempty(Linetimes) && ~isempty(PLF{1})
-                    Linetimes=[0 PLF{1}];
-                elseif isempty(Linetimes) && ~isempty(PLF{2})
-                    Linetimes=[0 PLF{2}];
-                elseif isempty(Linetimes) && ~isempty(PLF{3})
-                    Linetimes=[0 PLF{3}];
+                %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
+                if any(cell2mat(strfind(UserValues.Detector.enabled(UserValues.Detector.Det==j),'on')))
+                    
+                    [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
+                    %%% Finds, which routing bits to use
+                    if strcmp(UserValues.Detector.Auto,'off')
+                        Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    else
+                        Rout = 1:10; %%% consider up to 10 routing channels
+                    end
+                    Rout(Rout>numel(MI)) = [];
+                    %%% Concatenates data to previous files and adds Imagetime
+                    %%% to consecutive files
+                    if any(~cellfun(@isempty,MI(:)))
+                        skip = false;
+                        for k = Rout
+                            %%% Removes photons detected after "official"
+                            %%% end of file are discarded
+                            MI{k}(MT{k}>Imagetime)=[];
+                            MT{k}(MT{k}>Imagetime)=[];
+                            TcspcData.MT{j,k}=[TcspcData.MT{j,k}; Totaltime + MT{k}];   MT{k}=[];
+                            TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
+                        end
+                    else %%% file was empty!
+                        skip = true;
+                    end
+                    if skip
+                        continue;
+                    end
+                    %%% Determines last photon for each file
+                    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+                        FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+                    end
+                    
+                    %%% Determines, if linesync was used
+                    if isempty(Linetimes) && ~isempty(PLF{1})
+                        Linetimes=[0 PLF{1}];
+                    elseif isempty(Linetimes) && ~isempty(PLF{2})
+                        Linetimes=[0 PLF{2}];
+                    elseif isempty(Linetimes) && ~isempty(PLF{3})
+                        Linetimes=[0 PLF{3}];
+                    end
                 end
             end
             %%% Creates linebreak entries
@@ -337,34 +341,36 @@ switch (Type)
                 %%% Update Progress
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                if Type == 2
-                    FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
-                end
-                [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], Card);
-                if isempty(FileInfo.SyncPeriod)
-                    FileInfo.SyncPeriod = SyncRate^-1;
-                end
-                if isempty(FileInfo.ClockPeriod)
-                    FileInfo.ClockPeriod = ClockRate^-1;
-                end
-                %%% Finds, which routing bits to use
-                if strcmp(UserValues.Detector.Auto,'off')
-                    Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
-                else
-                    Rout = 1:10; %%% consider up to 10 routing channels
-                end
-                Rout(Rout>numel(MI))=[];
-                %%% Concaternates data to previous files and adds Imagetime
-                %%% to consecutive files
-                if any(~cellfun(@isempty,MI(:)))
-                    for k=Rout
-                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
-                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
+                if any(cell2mat(strfind(UserValues.Detector.enabled(UserValues.Detector.Det==j),'on')))
+                    if Type == 2
+                        FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                     end
-                end
-                %%% Determines last photon for each file
-                for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
-                    FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+                    [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], Card);
+                    if isempty(FileInfo.SyncPeriod)
+                        FileInfo.SyncPeriod = SyncRate^-1;
+                    end
+                    if isempty(FileInfo.ClockPeriod)
+                        FileInfo.ClockPeriod = ClockRate^-1;
+                    end
+                    %%% Finds, which routing bits to use
+                    if strcmp(UserValues.Detector.Auto,'off')
+                        Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j))';
+                    else
+                        Rout = 1:10; %%% consider up to 10 routing channels
+                    end
+                    Rout(Rout>numel(MI))=[];
+                    %%% Concaternates data to previous files and adds Imagetime
+                    %%% to consecutive files
+                    if any(~cellfun(@isempty,MI(:)))
+                        for k=Rout
+                            TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{k}];   MT{k}=[];
+                            TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
+                        end
+                    end
+                    %%% Determines last photon for each file
+                    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+                        FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+                    end
                 end
             end
         end

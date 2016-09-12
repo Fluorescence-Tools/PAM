@@ -2548,10 +2548,10 @@ addpath(genpath(['.' filesep 'functions']));
 %         'Position',[0.01 0.01 0.49 0.48]);
     %%% Following is alternate implementation using a table instead of a
     %%% list
-    TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on'};
-    ColumnNames = {'Name','Det#','Rout#','Color','Filter','Pol','BS','enabled'};
-    ColumnEditable = [false,true,true,false,true,true,true,true];
-    ColumnFormat = {'char','numeric','numeric','char','char',{'none','Par','Per'},{'none','50:50'},{'on','off'}};
+    TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on',0};
+    ColumnNames = {'Name','Det#','Rout#','Color','Filter','Pol','BS','Enabled','Delete'};
+    ColumnEditable = [true,true,true,false,true,true,true,true,true];
+    ColumnFormat = {'char','numeric','numeric','char','char',{'none','Par','Per'},{'none','50:50'},{'on','off'},'logical'};
     RowNames = [];
     h.MI.Channels_List = uitable(...
         'Parent',h.Profiles.Panel,...
@@ -3989,6 +3989,7 @@ if obj == h.MI.Auto
     return;
 end
 %% Check what object called the function
+Update = true;
 action = '';
 if obj == h.MI.Add
     action = 'add';
@@ -4012,6 +4013,8 @@ if obj == h.MI.Channels_List
         Sel=ed.Indices(1);
         %%% Determine which cell was edited
         switch ed.Indices(2)
+            case 1 %%% Name was clicked
+                UserValues.Detector.Name{Sel} = ed.NewData;
             case 2 %%% Detector was changed
                 UserValues.Detector.Det(Sel) = ed.NewData;
             case 3 %%% Rout was changed
@@ -4024,6 +4027,23 @@ if obj == h.MI.Channels_List
                 UserValues.Detector.BS{Sel} = ed.NewData;
             case 8 %%% enabled was changed
                 UserValues.Detector.enabled{Sel} = ed.NewData;
+            case 9 %%% Delete detector
+                h.MI.Channels_List.Data(Sel,:)=[];
+                %% Deletes all selected microtimechannels
+                UserValues.Detector.Det(Sel)=[];
+                UserValues.Detector.Rout(Sel)=[];
+                UserValues.Detector.Name(Sel)=[];
+                UserValues.Detector.Color(Sel,:)=[];
+                UserValues.Detector.Filter(Sel)=[];
+                UserValues.Detector.Pol(Sel)=[];
+                UserValues.Detector.BS(Sel)=[];
+                UserValues.Detector.enabled(Sel)=[];
+                try
+                    UserValues.Detector.Shift(Sel)=[];
+                end
+                PamMeta.MI_Hist(Sel)=[];
+                %%% Saves new tabs in guidata
+                guidata(h.Pam,h)       
         end
     end
 
@@ -4032,31 +4052,7 @@ if obj == h.MI.Channels_List
             Sel=ed.Indices(1);
             %%% Determine which cell was edited
             switch ed.Indices(2)
-                case 1 %%% Name was clicked
-                    %%% query new name, also give option to delete
-                    NewName = inputdlg('Specify new name. Cancel to delete channel.','Change Channel Name',1,UserValues.Detector.Name(Sel));
-                    if isempty(NewName) %%% cancel was pressed, remove channel
-                        action = 'delete';
-                        %% Deletes all selected microtimechannels        
-                        UserValues.Detector.Det(Sel)=[];
-                        UserValues.Detector.Rout(Sel)=[];
-                        UserValues.Detector.Name(Sel)=[];
-                        UserValues.Detector.Color(Sel,:)=[];
-                        UserValues.Detector.Filter(Sel)=[];
-                        UserValues.Detector.Pol(Sel)=[];
-                        UserValues.Detector.BS(Sel)=[];
-                        UserValues.Detector.enabled(Sel)=[];
-                        try
-                        UserValues.Detector.Shift(Sel)=[];
-                        end
-                        PamMeta.MI_Hist(Sel)=[];
-                        %%% Saves new tabs in guidata
-                        guidata(h.Pam,h)       
-                    else
-                        Hex_color=dec2hex(round(UserValues.Detector.Color(Sel,:)*255))';
-                        h.MI.Channels_List.Data{Sel,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' NewName{1} '</Font></html>'];
-                        UserValues.Detector.Name{Sel} = NewName{1};
-                    end
+                
                 case 4 %%% Color was clicked
                     NewColor = uisetcolor;
                     if NewColor == 0
@@ -4065,23 +4061,29 @@ if obj == h.MI.Channels_List
                     UserValues.Detector.Color(Sel,:) = NewColor;
                     %%% Update Color of Name also
                     Hex_color = dec2hex(round(UserValues.Detector.Color(Sel,:)*255))';
-                    h.MI.Channels_List.Data{Sel,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.Detector.Name{Sel} '</Font></html>'];
+                    h.MI.Channels_List.Data{Sel,4} = ['<HTML><FONT color=#' Hex_color(:)' '>' num2str(UserValues.Detector.Color(Sel,:)) '</Font></html>'];
+                otherwise
+                    Update = false;
             end
         end
     end
 end
-%%% reenable callbacks
+if Update
+    %% Update
+    LSUserValues(1);
+    %%% Updates channels
+    Update_Detector_Channels([],[],0:2)
+    %%% Updates plots
+    if strcmp(action,'add') || strcmp(action,'delete')
+        Update_Data([],[],0,0);
+    end
+    %%% reenable callbacks
+    Update_Display([],[],4:5);
+end
 h.MI.Channels_List.CellEditCallback = @MI_Channels_Functions;
 h.MI.Channels_List.CellSelectionCallback = @MI_Channels_Functions;
-%% Update
-LSUserValues(1);
-%%% Updates channels
-Update_Detector_Channels([],[],0:2)
-if strcmp(action,'add') || strcmp(action,'delete')
-    Update_Data([],[],0,0);
-end
-%%% Updates plots
-Update_Display([],[],4:5);
+
+
 
 
 function MI_Channels_Functions_old(obj,ed)
@@ -4300,17 +4302,20 @@ if any(mode==2)
     Data = cell(numel(UserValues.Detector.Name),8);
     for i = 1:numel(UserValues.Detector.Name)
         Hex_color=dec2hex(round(UserValues.Detector.Color(i,:)*255))';
-        Data{i,1} = ['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.Detector.Name{i} '</Font></html>'];
+        Data{i,1} = UserValues.Detector.Name{i};
         Data{i,2} = UserValues.Detector.Det(i);
         Data{i,3} = UserValues.Detector.Rout(i);
-        Data{i,4} = num2str(UserValues.Detector.Color(i,:));
+        Data{i,4} = ['<HTML><FONT color=#' Hex_color(:)' '>' num2str(UserValues.Detector.Color(i,:)) '</Font></html>'];
         Data{i,5} = UserValues.Detector.Filter{i};
         Data{i,6} = UserValues.Detector.Pol{i};
         Data{i,7} = UserValues.Detector.BS{i};
         Data{i,8} = UserValues.Detector.enabled{i};
     end
     h.MI.Channels_List.Data = Data;
-    
+    h.MI.Phasor_Det.String = {Data{:,1}};
+    h.MI.Phasor_Det.Value=1;
+    h.MI.Calib_Det.String = {Data{:,1}};
+    h.MI.Calib_Det.Value=1;
     %%% Updates plot selection lists
     for i=1:NTabs 
         for j=1:NPlots 

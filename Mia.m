@@ -5400,6 +5400,7 @@ for i=1:3 %%%
                 Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
             end
             
+            k=0;
             %%% Checks, if file already exists
             if  exist(Current_FileName,'file')
                 k=1;
@@ -5470,8 +5471,11 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     end
     %% Saves info file
     
-    
-    Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(i) '.txt']);
+    if k==0
+        Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
+    else
+        Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info' num2str(k) '.txt']);
+    end
     FID = fopen(Current_FileName,'w');
     fprintf(FID,'%s\n','Image Correlation info file');
     %%% Pixel\Line\Frame times
