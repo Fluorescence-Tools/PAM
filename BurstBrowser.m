@@ -5392,6 +5392,7 @@ if obj == h.Fit_Gaussian_Button
         %%% remove field in BurstMeta
         BurstMeta = rmfield(BurstMeta,'Fitting');
     end
+    paramx = x; paramy = y;
     %%% Perform fitting of Gausian Mixture model to currently plotted data
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
@@ -5714,8 +5715,8 @@ if obj == h.Fit_Gaussian_Button
     BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
     BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
     BurstMeta.Fitting.BurstCount = H;
-    BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{x};
-    BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{y};
+    BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
+    BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
     
     if colorbyparam
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
