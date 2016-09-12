@@ -1368,6 +1368,8 @@ if isempty(hfig)
         'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore,...
         'TooltipStr','red. Chi2 value');
+    h.FitTable_ContextMenu = uicontextmenu;
+    h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Define Species from Fit','Callback',@SpeciesFromGaussianFit);
     h.GUIData.TableDataMLE = cell(7,6);
     h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
     h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
@@ -1395,6 +1397,7 @@ if isempty(hfig)
                 'Data',h.GUIData.TableDataMLE,...
                 'ColumnWidth',h.GUIData.ColumnWidthMLE,...
                 'ColumnFormat',h.GUIData.ColumnFormatMLE,...
+                'UIContextMenu',h.FitTable_ContextMenu,...
                 'TooltipString','<html>Result of the Gaussian mixture fit.<br>If "converged" is zero, the fit did not converge. <br>-logL: negative log-likelihood. <br>BIC: Bayesian information criterion. The model with the lowest value is preferred.<br>Distribution widths are given as &sigma=sqrt(&sigma<sup>2</sup>), while the covariance COV(XY) is given as actual variance.</html>');
         case 'LSQ'
             h.Fit_Gaussian_Text = uitable(...
@@ -1408,6 +1411,7 @@ if isempty(hfig)
                 'ColumnEditable',h.GUIData.ColumnEditableLSQ,...
                 'Data',h.GUIData.TableDataLSQ,...
                 'ColumnWidth',h.GUIData.ColumnWidthLSQ,...
+                'UIContextMenu',h.FitTable_ContextMenu,...
                 'TooltipString','<html>Gaussian fit table</html>');
     end
     %% Secondary tab options
@@ -4476,6 +4480,7 @@ if strcmpi(clickType,'right')
         disp('Cuts can not be applied to total data set. Select a species first.');
         return;
     end
+
     %%%add to cut list if right-clicked
     param = clickedIndex;
     
@@ -5196,7 +5201,7 @@ end
 %%% check what plot type to use
 colorbyparam = any(cell2mat(h.CutTable.Data(:,5)));
 if ~colorbyparam
-    [H, xbins,ybins] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
+    [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     if(get(h.Hist_log10, 'Value'))
         HH = log10(H);
     else
@@ -5449,7 +5454,8 @@ if obj == h.Fit_Gaussian_Button
                 BurstMeta.Plots.Mixture.plotX(1).YData = pX;
                 BurstMeta.Plots.Mixture.plotY(1).XData = ybins_fit;
                 BurstMeta.Plots.Mixture.plotY(1).YData = pY;
-
+                
+                [Xdata,Ydata] = meshgrid(xbins,ybins);
                 %%% Update subplots
                 if nG > 1
                     for i = 1:nG
@@ -5469,6 +5475,12 @@ if obj == h.Fit_Gaussian_Button
                         BurstMeta.Plots.Mixture.plotY(i+1).Visible = 'on';
                         BurstMeta.Plots.Mixture.plotY(i+1).XData = ybins_fit;
                         BurstMeta.Plots.Mixture.plotY(i+1).YData = p_ind_y./sum(p_ind_y).*sum(sum(HH)).*GModel.ComponentProportion(i)*1000/nbinsY;
+                        %%% store for species assignment using data binning
+                        p_ind = mvnpdf([Xdata(:) Ydata(:)],GModel.mu(i,:),GModel.Sigma(:,:,i));
+                        p_ind = reshape(p_ind,[numel(xbins),numel(ybins)]);p_ind = p_ind./sum(sum(p_ind));
+                        BurstMeta.Fitting.Species{i} = p_ind;
+                        BurstMeta.Fitting.MeanX(i) = GModel.mu(i,1);
+                        BurstMeta.Fitting.MeanY(i) = GModel.mu(i,2);
                     end
                 end
                 %%% output result in table
@@ -5676,6 +5688,11 @@ if obj == h.Fit_Gaussian_Button
                         BurstMeta.Plots.Mixture.plotY(i+1).Visible = 'on';
                         BurstMeta.Plots.Mixture.plotY(i+1).XData = ybins_fit;
                         BurstMeta.Plots.Mixture.plotY(i+1).YData = Res(1+(i-1)*6)*p_ind_y*1000/nbinsY;
+                        %%% store for species assignment using data binning
+                        p_ind = MultiGaussFit(x_ind,{xbins,ybins,sum(sum(HH)),fixed,nG,1});
+                        BurstMeta.Fitting.Species{i} = Res(1+(i-1)*6)*p_ind;
+                        BurstMeta.Fitting.MeanX(i) = x_ind(2+(i-1)*6);
+                        BurstMeta.Fitting.MeanY(i) = x_ind(3+(i-1)*6);
                     end
                 end
                 %%% make variance to sigma
@@ -5690,6 +5707,11 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
+    BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
+    BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
+    BurstMeta.Fitting.BurstCount = H;
+    BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{x};
+    BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{y};
     
     if colorbyparam
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
@@ -5697,9 +5719,68 @@ if obj == h.Fit_Gaussian_Button
     h.Progress_Text.String = 'Done';
 end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Defines new cuts from fitted Gaussians  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function SpeciesFromGaussianFit(obj,~)
+global BurstData BurstMeta
+file = BurstMeta.SelectedFile;
+h = guidata(obj);
+%%% assign bursts to species according to bin and probability
+%%% uses stored information in BurstMeta.Fitting
+
+%%% convert species probability density functions to probability for bin
+nSpecies = numel(BurstMeta.Fitting.Species);
+pTotal = BurstMeta.Fitting.Species{1}(:);
+for i = 2:nSpecies
+    pTotal = pTotal + BurstMeta.Fitting.Species{i}(:);
+end
+pSpecies = BurstMeta.Fitting.Species{1}(:)./pTotal;
+for i = 2:nSpecies
+    pSpecies = [pSpecies, BurstMeta.Fitting.Species{i}(:)./pTotal];
+end
+
+%%% number of bursts in each bin
+burstCount = BurstMeta.Fitting.BurstCount(:);
+%%% bins of valid bursts
+burstIdx = sub2ind(size(BurstMeta.Fitting.BurstCount),BurstMeta.Fitting.BurstBins(:,1),BurstMeta.Fitting.BurstBins(:,2));
+
+speciesAssignment = NaN(numel(burstCount),1);
+%%% loop over all bins
+for i = 1:numel(burstCount)
+    if burstCount(i) == 0
+        continue;
+    end
+    %%% assign the bursts randomly to a species based on pSpecies
+    nPerSpecies = round(burstCount(i).*pSpecies(i,:));
+    spec = [];
+    for s = 1:nSpecies
+        spec = [spec, s*ones(1,nPerSpecies(s))];
+    end
+    spec = spec(randperm(numel(spec)));
+    spec = spec(1:burstCount(i));
+    speciesAssignment(burstIdx == i) = spec;
+end
+
+%%% add a new species to the species list with specific name
+%%% subspecies correspond to the identified species
+SpeciesNames = BurstData{file}.SpeciesNames;
+SpeciesNames(end+1,1) = {['Fit: ' BurstMeta.Fitting.ParamX ' - ' BurstMeta.Fitting.ParamY]};
+BurstData{file}.Cut(end+1,:) = {{}};
+for i = 1:nSpecies
+    SpeciesNames(end,i+1) = {['Species ' num2str(i) ': ('  sprintf('%.2f',BurstMeta.Fitting.MeanX(i)) '/' sprintf('%.2f',BurstMeta.Fitting.MeanY(i)) ')']};
+    BurstData{file}.Cut(end,i+1) = {{}};
+end
+BurstData{file}.SpeciesNames = SpeciesNames;
+
+%%% Add valid arrays to BurstData{file}.FitCut cell array
+BurstData{file}.FitCut(size(SpeciesNames,1),1) = {~isnan(burstIdx)};
+for i = 1:nSpecies
+    BurstData{file}.FitCut(size(SpeciesNames,1),i+1) = {speciesAssignment == i};
+end
+UpdateSpeciesList(h);
+
+%%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ChangePlotType(obj,~)
 global UserValues BurstMeta
@@ -6307,6 +6388,10 @@ if ~all(species == [0,0])
             end
         end
     end
+    if strcmp(BurstData{file}.SpeciesNames{species(1),1}(1:5),'Fit: ')%%% check if fit species was selected
+        %%% read out additonal cuts from stored variable
+        Valid = Valid & BurstData{file}.FitCut{species(1),species(2)};
+    end
 end
 
 Data = BurstData{file}.DataArray(Valid,:);
@@ -6377,6 +6462,7 @@ global BurstData BurstMeta
 index = eventdata.Indices;
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies; % in the DataTree
+
 %read out the parameter name
 ChangedParameterName = BurstData{file}.Cut{species(1),species(2)}{index(1)}{1};
 %change value in structure
@@ -6448,7 +6534,12 @@ if index(2) < 4
     BurstData{file}.Cut{species(1),species(2)}{index(1)}{index(2)+1}=NewData;
 elseif index(2) == 4 %delete this entry
     BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
-    BurstData{file}.ArbitraryCut{species(1),species(2)}(index(1)) = [];
+    try
+        BurstData{file}.ArbitraryCut{species(1),species(2)}(index(1)) = [];
+    end
+    try
+        BurstData{file}.FitCut{species(1),species(2)}(index(1)) = [];
+    end
 end
 
 %%% If a change was made to the GlobalCuts Species, update all other
@@ -6488,7 +6579,9 @@ if species(2) == 1
                         end
                     elseif index(2) == 4 %%% Parameter was deleted
                         BurstData{file}.Cut{species(1),j}(CheckParam) = [];
-                        BurstData{file}.ArbitraryCut{species(1),j}(CheckParam) = [];
+                        try
+                            BurstData{file}.ArbitraryCut{species(1),j}(CheckParam) = [];
+                        end
                     end
                 else %%% Parameter is new to species
                     if index(2) ~= 4 %%% Parameter added or changed
