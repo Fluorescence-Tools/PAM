@@ -1,7 +1,22 @@
 function [MT, MI,SyncRate,Resolution,PLF] = Read_HT3(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles,mode)
-%%% Input parameters:
-%%% Filename: Full filename
-%%% NoE: Maximal number of entries to load
+% Read-in routine for *.ht3 files recorded with HydraHarp400
+%
+% Args:
+%   * Filename: Full path to file
+%   * NoE: Number of photon entries to load
+%   * ProgressAxes: Handle to the progress axis
+%   * ProgressText: Handle to the progress text field
+%   * FileNumber: Number of the file to be loaded
+%   * Numfiles: Total number of files to be read
+%   * mode: Filetype: mode=1 for *.ht3 files recorded with PicoQuant software, mode=2 for *.ht3 files recorded with Fabsurf software
+%
+% Returns:
+%   * MT: Cell array of macrotimes in the file for every detector
+%   * MI: Cell array of microtimes in the file for every detector
+%   * SyncRate: Repetition rate/TAC range
+%   * Resolution: Microtime resolution in picoseconds
+%   * PLF: Linesyncs
+
 fid=fopen(FileName,'r');
 switch mode
     case 1 %%% .ht3 file from HydraHarp Software, read whole header etc...

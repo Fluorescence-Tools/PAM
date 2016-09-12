@@ -1,6 +1,14 @@
 function [MT, MI,SyncRate,Resolution] = Read_hdf5(FileName)
-
-%%% read out the information from the photon-hdf5 file one by one
+% read out the information from the photon-hdf5 file one by one
+%
+% Args:
+%   * FileName: Full path to file
+%
+% Returns:
+%   * MT: Cell array of macrotimes in the file for every detector
+%   * MI: Cell array of microtimes in the file for every detector
+%   * SyncRate: Repetition rate/TAC range
+%   * Resolution: Microtime resolution in picoseconds
 
 %%% confirm the measurement type
 measurementType = h5read(FileName,'/photon_data/measurement_specs/measurement_type');

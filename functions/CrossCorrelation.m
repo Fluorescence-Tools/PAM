@@ -1,12 +1,16 @@
 function [Cor_Array,Timeaxis] = CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2,mode)
-%%% Data1, Data2: Photon macrotimes
-%%% Weights1, Weights2: Photon weights
-%%% Blocktimes: 2xn vector of star/stop times
-%%% ProgressStruct: Structure with information for Progress;
-%%% ProgressStruct.Axes: handle of progress axes
-%%% ProgressStruct.Test: handles to progress text field
-%%% ProgressStruct.Max: total number of correlation bins
-%%% ProgressStruct.Current: number of correlation bins previously completed
+% Calculates crosscorrelation function of two photon streams.
+%
+% Args:
+%   * Data1, Data2: Cell arrays of photon time stamps for each block
+%   * Maxtime: Maximum photon arrival time
+%   * Weights1, Weights2: Cell arrays of photon weights. Used for FLCS, defaults to 1)
+%   * mode: mode=1 performs normal correlation based on blocks of photon data. mode=2 performs burstwise correlation. In this case, Data1/2 are cell arrays of burstwise photon data. Defaults to 1.
+%
+% Returns:
+%   * Cor_Array: Array of computed correlation functions. Number of correlation curves returned is equal to the number of blocks (mode 1), or equal to 50 in case of burstwise correlation (mode 2).
+%   * Timeaxis: Timeaxis for correlation function
+
 global UserValues
 
 %%% If no weights are specified, set to 1
