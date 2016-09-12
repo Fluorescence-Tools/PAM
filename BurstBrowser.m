@@ -5388,6 +5388,10 @@ end
 
 %% Gaussian fitting
 if obj == h.Fit_Gaussian_Button
+    if isfield(BurstMeta,'Fitting')
+        %%% remove field in BurstMeta
+        BurstMeta = rmfield(BurstMeta,'Fitting');
+    end
     %%% Perform fitting of Gausian Mixture model to currently plotted data
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
@@ -5726,6 +5730,15 @@ function SpeciesFromGaussianFit(obj,~)
 global BurstData BurstMeta
 file = BurstMeta.SelectedFile;
 h = guidata(obj);
+
+if ~isfield(BurstMeta,'Fitting')
+    disp('Perform a Gaussian fit first');
+    return;
+end
+if ~isfield(BurstMeta.Fitting,'Species') %%% occurs when only one species was used for fitting
+    disp('Multi-species fit required.');
+    return;
+end
 %%% assign bursts to species according to bin and probability
 %%% uses stored information in BurstMeta.Fitting
 
@@ -5766,10 +5779,10 @@ end
 %%% subspecies correspond to the identified species
 SpeciesNames = BurstData{file}.SpeciesNames;
 SpeciesNames(end+1,1) = {['Fit: ' BurstMeta.Fitting.ParamX ' - ' BurstMeta.Fitting.ParamY]};
-BurstData{file}.Cut(end+1,:) = {{}};
+BurstData{file}.Cut{end+1,1} = {{BurstMeta.Fitting.ParamX,h.axes_general.XLim(1),h.axes_general.XLim(2),true,false},{BurstMeta.Fitting.ParamY,h.axes_general.YLim(1),h.axes_general.YLim(2),true,false}};
 for i = 1:nSpecies
     SpeciesNames(end,i+1) = {['Species ' num2str(i) ': ('  sprintf('%.2f',BurstMeta.Fitting.MeanX(i)) '/' sprintf('%.2f',BurstMeta.Fitting.MeanY(i)) ')']};
-    BurstData{file}.Cut(end,i+1) = {{}};
+    BurstData{file}.Cut{end,i+1} = {{BurstMeta.Fitting.ParamX,h.axes_general.XLim(1),h.axes_general.XLim(2),true,false};{BurstMeta.Fitting.ParamY,h.axes_general.YLim(1),h.axes_general.YLim(2),true,false}};
 end
 BurstData{file}.SpeciesNames = SpeciesNames;
 
@@ -6536,9 +6549,6 @@ elseif index(2) == 4 %delete this entry
     BurstData{file}.Cut{species(1),species(2)}(index(1)) = [];
     try
         BurstData{file}.ArbitraryCut{species(1),species(2)}(index(1)) = [];
-    end
-    try
-        BurstData{file}.FitCut{species(1),species(2)}(index(1)) = [];
     end
 end
 
