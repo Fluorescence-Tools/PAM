@@ -5423,16 +5423,17 @@ if obj == h.Fit_Gaussian_Button
                     h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
                 end
             else
+                valid = isfinite(datatoplot(:,x)) & isfinite(datatoplot(:,y));
                 if h.Fit_Gaussian_Pick.Value
                     cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
                     [x_start,y_start] = ginput(nG);
                     start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
                 else
                     %[~,ix_max] = max(HH(:));
                     %[y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
                     %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(:,x),datatoplot(:,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
                 end
                 % plot contour plot over image plot
                 % hide contourf plot, make image plot visible
