@@ -3023,7 +3023,7 @@ switch obj
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
         elseif number_of_exponentials == 2
             tres_aniso = @(x,xdata) ((x(2)-x(4)).*exp(-xdata./x(1)) + x(4)).*exp(-xdata./x(3));
-            param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
+            param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,8/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         end
         
