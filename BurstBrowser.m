@@ -5759,7 +5759,7 @@ burstCount = BurstMeta.Fitting.BurstCount(:);
 %%% bins of valid bursts
 burstIdx = sub2ind(size(BurstMeta.Fitting.BurstCount),BurstMeta.Fitting.BurstBins(:,1),BurstMeta.Fitting.BurstBins(:,2));
 
-speciesAssignment = NaN(numel(burstCount),1);
+speciesAssignment = NaN(numel(burstIdx),1);
 %%% loop over all bins
 for i = 1:numel(burstCount)
     if burstCount(i) == 0
@@ -5767,6 +5767,10 @@ for i = 1:numel(burstCount)
     end
     %%% assign the bursts randomly to a species based on pSpecies
     nPerSpecies = round(burstCount(i).*pSpecies(i,:));
+    while sum(nPerSpecies) < burstCount(i)
+        ix = randi(nSpecies);
+        nPerSpecies(ix) = nPerSpecies(ix) + 1;
+    end
     spec = [];
     for s = 1:nSpecies
         spec = [spec, s*ones(1,nPerSpecies(s))];
@@ -11513,7 +11517,7 @@ PlotLifetimeInd([],[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% General Functions for plotting 2d-Histogram of data %%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [H,xbins,ybins,xbins_hist,ybins_hist, bin] = calc2dhist(x,y,nbins,limx,limy)
+function [H,xbins,ybins,xbins_hist,ybins_hist, bin_out] = calc2dhist(x,y,nbins,limx,limy)
 %%% ouput arguments:
 %%% H:                      Image Data
 %%% xbins/ybins:            corrected xbins for image plot
@@ -11537,6 +11541,7 @@ end
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
 y = y(valid);
+bin_out = NaN(size(valid,1),2);
 if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no smoothing
     %%% prepare bins
     Xn = nbins(1)+1;
@@ -11559,7 +11564,7 @@ if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no
         biny(biny == Yn) = Yn -1;
         binx(binx == 0) = 1;
         biny(biny == 0) = 1;
-        bin = [biny,binx];
+        bin_out(valid,:) = [biny,binx];
     end
     H = reshape(h, Yn, Xn);
     %[H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
