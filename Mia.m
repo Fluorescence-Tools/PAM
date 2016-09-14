@@ -898,7 +898,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min pixel countrate' 10 'averaged over all frames'],...
             'Position',[0.56 0.46, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Int(1)));
         %%% Maximal average pixel countrate
         h.Mia_Image.Settings.ROI_AR_Int_Max = uicontrol(...
@@ -911,7 +911,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max pixel countrate' 10 'averaged over all frames'],...
             'Position',[0.78 0.46, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Int(2)));
         %%% Text
         h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
@@ -937,7 +937,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies the smaller sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
             'Position',[0.56 0.39, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Region(1)));
         %%% Larger subregion
         h.Mia_Image.Settings.ROI_AR_Sub2 = uicontrol(...
@@ -950,7 +950,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies the larger sliding window used' 10 'for intensity\variance thresholding' 10 'for arbitrary region ICS'],...
             'Position',[0.78 0.39, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Region(2)));
         %%% Text
         h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
@@ -976,7 +976,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min intensity ratio' 10 'of subregions specified above'],...
             'Position',[0.56 0.32, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Int_Fold(1)));
         %%% Maximal intensity ratio of subregions
         h.Mia_Image.Settings.ROI_AR_Int_Fold_Max = uicontrol(...
@@ -989,7 +989,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max intensity ratio' 10 'of subregions specified above'],...
             'Position',[0.78 0.32, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Int_Fold(2)));
         %%% Text
         h.Mia_Image.Settings.ROI_AR_Text{end+1} = uicontrol(...
@@ -1015,7 +1015,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies min variance ratio' 10 'of subregions specified above'],...
             'Position',[0.56 0.25, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Var_Fold(1)));
         %%% Maximal variance ratio of subregions
         h.Mia_Image.Settings.ROI_AR_Var_Fold_Max = uicontrol(...
@@ -1028,7 +1028,7 @@ if isempty(h.Mia)
             'TooltipString',['Specifies max variance ratio' 10 'of subregions specified above'],...
             'Position',[0.78 0.25, 0.2 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',num2str(UserValues.MIA.AR_Var_Fold(2))); 
         %%% Same AR for both channels
         h.Mia_Image.Settings.ROI_AR_Same = uicontrol(...
@@ -1041,7 +1041,7 @@ if isempty(h.Mia)
             'Value',1,...
             'Position',[0.02 0.17, 0.64 0.06],...
             'Visible', 'off',...
-            'Callback',@Mia_Arbitrary_Region,...
+            'Callback',{@Mia_Correct,1},...
             'String',{'Individual Channels', 'Channel1','Channel2','Both'});
         if ismac
             h.Mia_Image.Settings.ROI_AR_Same.ForegroundColor = [0 0 0];
@@ -1083,7 +1083,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.34 0.92, 0.64 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'String',{'Nothing','Frame mean','Pixel mean','Moving average'});
         if ismac
             h.Mia_Image.Settings.Correction_Subtract.ForegroundColor = [0 0 0];
@@ -1110,7 +1110,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.27 0.84, 0.15 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'Visible','off',...
             'String',num2str(UserValues.MIA.Correct_Sub_Values(1)));
         %%% Text
@@ -1134,7 +1134,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.83 0.84, 0.15 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'Visible','off',...
             'String',num2str(UserValues.MIA.Correct_Sub_Values(2)));
         %%% Text
@@ -1158,7 +1158,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.34 0.7, 0.64 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'String',{'Nothing','Total mean','Frame mean','Pixel mean','Moving average'});
         if ismac
             h.Mia_Image.Settings.Correction_Add.ForegroundColor = [0 0 0];
@@ -1185,7 +1185,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.27 0.62, 0.15 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'Visible','off',...
             'String',num2str(UserValues.MIA.Correct_Add_Values(1)));
         %%% Text
@@ -1209,7 +1209,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.83 0.62, 0.15 0.06],...
-            'Callback',@Mia_Correct,...
+            'Callback',{@Mia_Correct,1},...
             'Visible','off',...
             'String',num2str(UserValues.MIA.Correct_Add_Values(2)));
             %% Mia image orientation tab 
@@ -2698,7 +2698,7 @@ MIAData.Cor=cell(3,2);
 MIAData.FileName=cell(0);
 MIAData.Use=ones(2,1);
 MIAData.AR = [];
-MIAData.MS = [];
+MIAData.MS = cell(2,2);
 MIAData.TICS = [];
 MIAData.TICS_Int = [];
 MIAData.TICS_MS = [];
@@ -3257,10 +3257,10 @@ if any(mode==1)
                         end
                     case 3 %%% Uses ROI of correctiond image (=> static species)
                         if Frame>0;
-                            Image=double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame))-MIAData.Data{i,2}(:,:,Frame);
+                            Image=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frame))-MIAData.Data{i,2}(:,:,Frame);
                         elseif Frame==0
                             Frames = str2num(h.Mia_Image.Settings.ROI_Frames.String); %#ok<ST2NM>
-                            Image=mean(double(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames)-MIAData.Data{i,2}(:,:,Frames)),3);
+                            Image=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),Frames))-MIAData.Data{i,2}(:,:,Frames),3);
                         end
                 end
                 
@@ -3651,6 +3651,7 @@ if any(mode==4)
             h.Plots.PCH(1,1).YData = MIAData.PCH{1};
             Max = max(MIAData.Data{1,2}(:));
             h.Plots.PCH(1,2).XData = 0:Max;
+            
             h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
             if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
                 h.Mia_Image.PCH_Axes.YScale = 'Lin';
@@ -4138,6 +4139,15 @@ h.Mia_Progress_Text.String = 'Applying Correction';
 h.Mia_Progress_Axes.Color=[1 0 0];  
 drawnow;
 
+%%% Clears manually selected ROIs
+if AR==2  
+Mia_Freehand([],[],3,0);
+end
+%%% Performs Arbitrary Region selection
+if h.Mia_Image.Settings.ROI_FramesUse.Value == 3 && AR~=0
+     Mia_Arbitrary_Region([],[]);
+end
+
 %%% Extracts ROI position
 From=h.Plots.ROI(1).Position(1:2)+0.5;
 To=From+h.Plots.ROI(1).Position(3:4)-1;
@@ -4161,23 +4171,25 @@ for i=1:2
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-                if exist('AR','var') && h.Mia_Image.Settings.ROI_FramesUse.Value == 3;
+                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3;
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(nanmean(nanmean(Add)));
                 clear Add
             case 3 %%% Frame ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-                if exist('AR','var') && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
                                   +repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
-%                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-%                                  +(repmat(mean(mean((single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 4 %%% Pixel mean
+                Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+                    Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
+                end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                 +(repmat(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3),[1,1,size(MIAData.Data{i,1},3)]));
+                                 +(repmat(nanmean(Add,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 5 %%% Moving average
                 h.Mia_Image.Settings.Correction_Add_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Pixel_Text.Visible='on';
@@ -4209,11 +4221,19 @@ for i=1:2
         switch h.Mia_Image.Settings.Correction_Subtract.Value
             case 1 %%% Do nothing
             case 2 %%% Frame ROI mean
+                Sub=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+                    Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
+                end
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)))),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                                 -(repmat(nanmean(nanmean(Sub)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 3 %%% Pixel mean
+                Sub=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
+                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
+                    Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
+                end
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3),[1,1,size(MIAData.Data{i,1},3)]));
+                                 -(repmat(nanmean(Sub,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 4 %%% Moving average
                 h.Mia_Image.Settings.Correction_Subtract_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Pixel_Text.Visible='on';
@@ -4242,28 +4262,10 @@ for i=1:2
                 Filter=ones(Box)/prod(Box);
                 MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
-% if h.Mia_Image.Settings.ROI_FramesUse.Value == 3       
-%     MIAData.AR{i}=true(size(MIAData.Data{i,2}));
-% end
-    end
-    
+    end   
 end
 
-%%% Clears manually selected ROIs
-Mia_Freehand([],[],3);
-
-%%% Performs Arbitrary Region selection
-if h.Mia_Image.Settings.ROI_FramesUse.Value == 3 && nargin<3
-     Mia_Arbitrary_Region([],[]);
-elseif h.Mia_Image.Settings.ROI_FramesUse.Value == 3
-     Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
-else
-    Update_Plots([],[],4,1:size(MIAData.Data,1))
-end
-
-%%% Updates additional plots
-
-
+Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates arbitrary regions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4317,7 +4319,7 @@ for i=Channel
     if Int_Max>Int_Min
         Use(Data>Int_Max)=false;
     end
-    
+    MIAData.AR{i,2}=Use;
     %% Sliding window thresholding for arbitrary region ICS
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% The variance and itensity in a small rectangular region is
@@ -4327,7 +4329,7 @@ for i=Channel
     
     %%% Thresholding operates on uncorrected data
     Data=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-    %%% Exdents array to determine which pixels to use, because now
+    %%% Exdents aray to determine which pixels to use, because now
     %%% every frame is calculated individually
     Use=repmat(Use,[1 1 size(Data,3)]);
     if Var_SubSub>1 && Var_Sub>Var_SubSub
@@ -4362,7 +4364,7 @@ for i=Channel
         Use(1:Start,:,:)=false; Use(:,1:Start,:)=false;
         Use(end-Stop:end,:,:)=false; Use(:,end-Stop:end,:)=false;
     end
-    MIAData.AR{i,2}=Use(:,:,1);
+    
     %%% Removes pixels, if invalid pixels were used for averaging
     if h.Mia_Image.Settings.Correction_Add.Value==5 || h.Mia_Image.Settings.Correction_Subtract.Value==4
         % you add the moving average or subtract the moving average
@@ -4409,12 +4411,11 @@ switch h.Mia_Image.Settings.ROI_AR_Same.Value
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
 end
-Mia_Correct([],[],1);
-%Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates arbitrary regions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_Freehand(~,~,mode)
+function Mia_Freehand(~,~,mode,Correct)
 h = guidata(findobj('Tag','Mia'));
 global MIAData
 
@@ -4446,7 +4447,7 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+        Mia_Correct([],[],0);
     case 2 %%% Unselect Region for general manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
@@ -4462,17 +4463,19 @@ switch mode
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],[1,4],1:size(MIAData.Data,1));
+        Mia_Correct([],[],0);
     case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
-            MIAData.MS{i} = true(size(MIAData.Data{i,2},1),size(MIAData.Data{i,2},2));
+            MIAData.MS{i} = true(str2double(h.Mia_Image.Settings.ROI_SizeX.String),str2double(h.Mia_Image.Settings.ROI_SizeY.String));
         end 
         if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
             MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
         end
-        Update_Plots([],[],1,1:size(MIAData.Data,1));
-        
+        if nargin<4 || Correct~=0
+            Mia_Correct([],[],0);
+            %Update_Plots([],[],1,1:size(MIAData.Data,1));
+        end
     %%% TICS manual selection 
     case 4 %%% Select Region for TICS manual seletion
         ROI = imfreehand;
@@ -4604,7 +4607,7 @@ if ~isempty(MIAData.Data)
                     
                 otherwise 
                     %%% Updates images
-                    Mia_Correct;
+                    Mia_Correct([],[],2);
                     return;                   
             end
     end
@@ -4614,9 +4617,10 @@ if ~isempty(MIAData.Data)
         h.Plots.ROI(i).Position=[Pos-0.5 Size];
     end
     %%% Updates images
-    Mia_Correct([],[],1);
+    Mia_Correct([],[],2);
     
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6372,7 +6376,7 @@ for i=mode
                     end
                     h.Plots.Image(1,2).UIContextMenu = h.Mia_Image.Menu;
                     h.Plots.Image(2,2).UIContextMenu = h.Mia_Image.Menu;
-                    Mia_Arbitrary_Region([],[]);
+                    Mia_Correct([],[],1);
             end
         case 4 %%% Save TICS manual selection
             %%% Generates filename
