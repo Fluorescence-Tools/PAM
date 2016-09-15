@@ -4471,6 +4471,8 @@ switch obj
                 set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', []);
                 %%% enable multiplot button
                 h.MultiPlotButton.Enable = 'on';
+                %%% change text of "Replace corrections for all loaded files with current one"
+                h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of selected files with current one';
             case 0
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -4478,6 +4480,8 @@ switch obj
                 set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
                 %%% disable multiplot button
                 h.MultiPlotButton.Enable = 'off';
+                 %%% change text of "Replace corrections for all loaded files with current one"
+                h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of all files with current one';
         end
 end
 LSUserValues(1);
@@ -7112,7 +7116,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.05 1]);
+    [H,xbins,ybins] = calc2dhist(tauGG,E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.05 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -7747,21 +7751,28 @@ if obj == h.ApplyCorrectionsAll_Menu
             validBAMethods = [3,4];
     end
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
-    for i = 1:numel(BurstData)
+
+    if ~h.MultiselectOnCheckbox.Value
+        files = 1:numel(BurstData);
+    else %%% only loop over selected foles
+        files = get_multiselection(h);
+        files = unique(files);
+    end
+    for i = files
         if any(BurstData{i}.BAMethod == validBAMethods)
             %%% don't replace donor-only lifetimes
             DonorLifetime = BurstData{i}.Corrections.DonorLifetime;
             AcceptorLifetime = BurstData{i}.Corrections.AcceptorLifetime;
-            
+
             BurstData{i}.Corrections = Corrections;
-            
+
             BurstData{i}.Corrections.DonorLifetime = DonorLifetime;
             BurstData{i}.Corrections.AcceptorLifetime = AcceptorLifetime;
         end
     end
     %%% Apply Corrections
     sel_file = BurstMeta.SelectedFile;
-    for i = 1:numel(BurstData)
+    for i = files
         BurstMeta.SelectedFile = i;
         ApplyCorrections([],[],h,0); %%% Apply without display update
     end
