@@ -3958,10 +3958,19 @@ for i = 1:numel(FileName)
     S.BurstData.PathName = PathName{i};
     %%% check for existing Cuts
     if ~isfield(S.BurstData,'Cut') %%% no cuts existed
-        %initialize Cut Cell Array
-        S.BurstData.Cut{1} = {};
-        S.BurstData.Cut{2} = {};
-        S.BurstData.Cut{3} = {};
+        %initialize Cut Cell Array with standard cuts
+        switch S.BurstData.BAMethod
+            case {1,2,5}
+                %%% FRET efficiency and stoichiometry basic cuts
+                Cut = {{'FRET Efficiency',-0.1,1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
+            case {3,4}
+                %%% 3color, only do FRET GR and Stoichiometry cuts
+                Cut = {{'FRET Efficiency GR',-0.1,1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
+                    {'Stoichiometry BG',-0.1,1.1,true,false},{'Stoichiometry BR',-0.1,1.1,true,false}};
+        end
+        S.BurstData.Cut{1} = Cut;
+        S.BurstData.Cut{2} = Cut;
+        S.BurstData.Cut{3} = Cut;
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
@@ -7039,6 +7048,9 @@ if obj == h.DetermineCorrectionsButton
     
     E_raw = NGR./(NGR+NGG);
     histE_donly = histc(E_raw,x_axis);
+    x_axis = x_axis(1:end-1);
+    histE_donly(end-1) = histE_donly(end-1)+histE_donly(end);
+    histE_donly(end) = [];
     BurstMeta.Plots.histE_donly.XData = x_axis;
     BurstMeta.Plots.histE_donly.YData = histE_donly;
     axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
@@ -7067,6 +7079,9 @@ if obj == h.DetermineCorrectionsButton
     NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
     histS_aonly = histc(S_raw,x_axis);
+    x_axis = x_axis(1:end-1);
+    histS_aonly(end-1) = histS_aonly(end-1)+histS_aonly(end);
+    histS_aonly(end) = [];
     BurstMeta.Plots.histS_aonly.XData = x_axis;
     BurstMeta.Plots.histS_aonly.YData = histS_aonly;
     axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
@@ -7271,6 +7286,9 @@ if any(BurstData{file}.BAMethod == [3,4])
         %%% Crosstalk B->G
         EBG_raw = NBG./(NBG+NBB);
         histEBG_blueonly = histc(EBG_raw,x_axis);
+        x_axis = x_axis(1:end-1);
+        histEBG_blueonly(end-1) = histEBG_blueonly(end-1)+histEBG_blueonly(end);
+        histEBG_blueonly(end) = [];
         BurstMeta.Plots.histEBG_blueonly.XData = x_axis;
         BurstMeta.Plots.histEBG_blueonly.YData = histEBG_blueonly;
         axis(h.Corrections.ThreeCMFD.axes_crosstalk_BG,'tight');
@@ -7293,6 +7311,9 @@ if any(BurstData{file}.BAMethod == [3,4])
         x_axis = linspace(-0.05,0.25,50);
         EBR_raw = NBR./(NBR+NBB);
         histEBR_blueonly = histc(EBR_raw,x_axis);
+        x_axis = x_axis(1:end-1);
+        histEBR_blueonly(end-1) = histEBR_blueonly(end-1)+histEBR_blueonly(end);
+        histEBR_blueonly(end) = [];
         BurstMeta.Plots.histEBR_blueonly.XData = x_axis;
         BurstMeta.Plots.histEBR_blueonly.YData = histEBR_blueonly;
         axis(h.Corrections.ThreeCMFD.axes_crosstalk_BR,'tight');
@@ -7320,6 +7341,9 @@ if any(BurstData{file}.BAMethod == [3,4])
         x_axis = linspace(UserValues.BurstBrowser.Settings.S_Aonly_Min,UserValues.BurstBrowser.Settings.S_Aonly_Max,25);
         SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
         histSBG_greenonly = histc(SBG_raw,x_axis);
+        x_axis = x_axis(1:end-1);
+        histSBG_greenonly(end-1) = histSBG_greenonly(end-1)+histSBG_greenonly(end);
+        histSBG_greenonly(end) = [];
         BurstMeta.Plots.histSBG_greenonly.XData = x_axis;
         BurstMeta.Plots.histSBG_greenonly.YData = histSBG_greenonly;
         axis(h.Corrections.ThreeCMFD.axes_direct_excitation_BG,'tight');
@@ -7347,6 +7371,9 @@ if any(BurstData{file}.BAMethod == [3,4])
         x_axis = linspace(UserValues.BurstBrowser.Settings.S_Aonly_Min,UserValues.BurstBrowser.Settings.S_Aonly_Max,25);
         SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
         histSBR_redonly = histc(SBR_raw,x_axis);
+        x_axis = x_axis(1:end-1);
+        histSBR_redonly(end-1) = histSBR_redonly(end-1)+histSBR_redonly(end);
+        histSBR_redonly(end) = [];
         BurstMeta.Plots.histSBR_redonly.XData = x_axis;
         BurstMeta.Plots.histSBR_redonly.YData = histSBR_redonly;
         axis(h.Corrections.ThreeCMFD.axes_direct_excitation_BR,'tight');
