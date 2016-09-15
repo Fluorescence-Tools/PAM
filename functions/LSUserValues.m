@@ -1394,7 +1394,6 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall was incomplete');
     end
     P.BurstBrowser.Settings.CompareFRETHist_Waterfall = S.BurstBrowser.Settings.CompareFRETHist_Waterfall;
-    
     %% PDA
     if ~isfield(S, 'PDA')
         disp('WARNING: UserValues structure incomplete, field "PDA" missing');
