@@ -1978,7 +1978,81 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'Callback',@UpdateOptions...
         );
-    
+    %%% Editboxes for S thresholds for species selection
+    h.ThresholdsContainer = uigridcontainer(...
+        'GridSize',[3,3],...
+        'HorizontalWeight',[0.4,0.3,0.3],...
+        'Parent',h.DataProcessingPanel,...
+        'Units','norm',...
+        'Position',[.02,.26,.5,.22],...
+        'BackgroundColor',Look.Back);
+    h.Threshold_Text = uicontrol('style','text',...
+        'Parent',h.ThresholdsContainer,...
+        'String','Thresholds:',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Threshold_MinText = uicontrol('style','text',...
+        'Parent',h.ThresholdsContainer,...
+        'String','Min',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Threshold_MaxText = uicontrol('style','text',...
+        'Parent',h.ThresholdsContainer,...
+        'String','Max',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Threshold_SDonlyText = uicontrol('style','text',...
+        'Parent',h.ThresholdsContainer,...
+        'String','S(D only)',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Threshold_S_Donly_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.ThresholdsContainer,...
+        'String',num2str(UserValues.BurstBrowser.Settings.S_Donly_Min),...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',@UpdateOptions);
+    h.Threshold_S_Donly_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.ThresholdsContainer,...
+        'String',num2str(UserValues.BurstBrowser.Settings.S_Donly_Max),...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',@UpdateOptions);
+    h.Threshold_SAonlyText = uicontrol('style','text',...
+        'Parent',h.ThresholdsContainer,...
+        'String','S(A only)',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+    h.Threshold_S_Aonly_Min_Edit = uicontrol('style','edit',...
+        'Parent',h.ThresholdsContainer,...
+        'String',num2str(UserValues.BurstBrowser.Settings.S_Aonly_Min),...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',@UpdateOptions);
+    h.Threshold_S_Aonly_Max_Edit = uicontrol('style','edit',...
+        'Parent',h.ThresholdsContainer,...
+        'String',num2str(UserValues.BurstBrowser.Settings.S_Aonly_Max),...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Callback',@UpdateOptions);
     %% Database tab   
     %%% Database list
     h.DatabaseBB.List = uicontrol(...
@@ -4483,6 +4557,34 @@ switch obj
                  %%% change text of "Replace corrections for all loaded files with current one"
                 h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of all files with current one';
         end
+    case h.Threshold_S_Donly_Min_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+             h.Threshold_S_Donly_Min_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Donly_Min);
+        else
+            UserValues.BurstBrowser.Settings.S_Donly_Min = newVal;
+        end
+    case h.Threshold_S_Donly_Max_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+             h.Threshold_S_Donly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Donly_Max);
+        else
+            UserValues.BurstBrowser.Settings.S_Donly_Max = newVal;
+        end
+    case h.Threshold_S_Aonly_Min_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+             h.Threshold_S_Aonly_Min_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Aonly_Min);
+        else
+            UserValues.BurstBrowser.Settings.S_Aonly_Min = newVal;
+        end
+    case h.Threshold_S_Aonly_Max_Edit
+        newVal = str2double(obj.String);
+        if isnan(newVal)
+             h.Threshold_S_Aonly_Max_Edit.String = num2str(UserValues.BurstBrowser.Settings.S_Aonly_Max);
+        else
+            UserValues.BurstBrowser.Settings.S_Aonly_Max = newVal;
+        end
 end
 LSUserValues(1);
 
@@ -6928,9 +7030,10 @@ if obj == h.DetermineCorrectionsButton
         %%% same order of parameters in NameArray...)
     end
     %% plot raw FRET Efficiency for S>0.9
-    x_axis = linspace(0,0.3,120);
-    Smin = 0.95;
-    S_threshold = (data_for_corrections(:,indS)>Smin);
+    x_axis = linspace(-0.1,0.3,120);
+    Smin = UserValues.BurstBrowser.Settings.S_Donly_Min;
+    Smax = UserValues.BurstBrowser.Settings.S_Donly_Max;
+    S_threshold = (data_for_corrections(:,indS)>Smin) & (data_for_corrections(:,indS)<Smax);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
     
@@ -6955,10 +7058,10 @@ if obj == h.DetermineCorrectionsButton
         end
     end
     %% plot raw data for S < 0.25 for direct excitation
-    %%% check if plot exists
-    Smax = 0.25;
-    x_axis = linspace(0,Smax,100);
-    S_threshold = (data_for_corrections(:,indS)<Smax);
+    Smin = UserValues.BurstBrowser.Settings.S_Aonly_Min;
+    Smax = UserValues.BurstBrowser.Settings.S_Aonly_Max;
+    x_axis = linspace(Smin,Smax,100);
+    S_threshold = (data_for_corrections(:,indS)<Smax) & (data_for_corrections(:,indS)>Smin);
     NGR = data_for_corrections(S_threshold,indNGR) - Background_GR.*data_for_corrections(S_threshold,indDur);
     NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
     NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
@@ -7157,9 +7260,11 @@ if any(BurstData{file}.BAMethod == [3,4])
     
     if obj == h.DetermineCorrectionsButton
         %% Blue dye only
-        S_threshold = ( (data_for_corrections(:,indSBG) > 0.9) &...
-            (data_for_corrections(:,indSBR) > 0.9) );
-        x_axis = linspace(0,0.3,50);
+        Smin = UserValues.BurstBrowser.Settings.S_Donly_Min;
+        Smax = UserValues.BurstBrowser.Settings.S_Donly_Max;
+        S_threshold = (data_for_corrections(:,indSBG) > Smin) & (data_for_corrections(:,indSBG) < Smax) &...
+            (data_for_corrections(:,indSBR) > Smin) & (data_for_corrections(:,indSBR) < Smax) ;
+        x_axis = linspace(-0.05,0.3,50);
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
         NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
         NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
@@ -7206,13 +7311,13 @@ if any(BurstData{file}.BAMethod == [3,4])
             end
         end
         %% Green dye only
-        S_threshold = ( (data_for_corrections(:,indSBG) < 0.2) &...
-            (data_for_corrections(:,indS) > 0.9) );
+        S_threshold =  (data_for_corrections(:,indSBG) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data_for_corrections(:,indSBG) > UserValues.BurstBrowser.Settings.S_Aonly_Min) &...
+            (data_for_corrections(:,indS) > UserValues.BurstBrowser.Settings.S_Donly_Min) & (data_for_corrections(:,indS) < UserValues.BurstBrowser.Settings.S_Donly_Max) ;
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
         NBG = data_for_corrections(S_threshold,indNBG) - Background_BG.*data_for_corrections(S_threshold,indDur);
         NGG = data_for_corrections(S_threshold,indNGG) - Background_GG.*data_for_corrections(S_threshold,indDur);
         
-        x_axis = linspace(0,0.2,20);
+        x_axis = linspace(UserValues.BurstBrowser.Settings.S_Aonly_Min,UserValues.BurstBrowser.Settings.S_Aonly_Max,25);
         SBG_raw = (NBB+NBG)./(NBB+NBG+NGG);
         histSBG_greenonly = histc(SBG_raw,x_axis);
         BurstMeta.Plots.histSBG_greenonly.XData = x_axis;
@@ -7233,13 +7338,13 @@ if any(BurstData{file}.BAMethod == [3,4])
             end
         end
         %% Red dye only
-        S_threshold = ( (data_for_corrections(:,indS) < 0.2) &...
-            (data_for_corrections(:,indSBR) < 0.2) );
+        S_threshold = (data_for_corrections(:,indS) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data_for_corrections(:,indS) > UserValues.BurstBrowser.Settings.S_Aonly_Min) &...
+            (data_for_corrections(:,indSBR) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data_for_corrections(:,indSBR) > UserValues.BurstBrowser.Settings.S_Aonly_Min);
         NBB = data_for_corrections(S_threshold,indNBB) - Background_BB.*data_for_corrections(S_threshold,indDur);
         NBR = data_for_corrections(S_threshold,indNBR) - Background_BR.*data_for_corrections(S_threshold,indDur);
         NRR = data_for_corrections(S_threshold,indNRR) - Background_RR.*data_for_corrections(S_threshold,indDur);
         
-        x_axis = linspace(-0.05,0.1,50);
+        x_axis = linspace(UserValues.BurstBrowser.Settings.S_Aonly_Min,UserValues.BurstBrowser.Settings.S_Aonly_Max,25);
         SBR_raw = (NBB+NBR)./(NBB+NBR+NRR);
         histSBR_redonly = histc(SBR_raw,x_axis);
         BurstMeta.Plots.histSBR_redonly.XData = x_axis;
@@ -8076,7 +8181,7 @@ if sum(y_data) <= 10 %%% low amount of data, take mean and std instead
     GaussFun = (GaussFun./max(GaussFun)).*max(y_data);
     return;
 end
-[gauss, gof] = fit(x_data,y_data,Gauss,'StartPoint',param,'Lower',[0,0,0,0],'Upper',[Inf,Inf,Inf,A/10]);
+[gauss, gof] = fit(x_data,y_data,Gauss,'StartPoint',param,'Lower',[0,0,0,0],'Upper',[Inf,Inf,Inf,A/4]);
 coefficients = coeffvalues(gauss);
 mean = coefficients(2);
 GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
@@ -8099,7 +8204,7 @@ if gof.adjrsquare < 0.9 %%% fit was bad
         b=0;%assume zero background
         param = [A1,m1,s1,A2,m2,s2,b];
     end
-    [gauss,~] = fit(x_data,y_data,Gauss2fun,'StartPoint',param,'Lower',zeros(1,numel(param)));
+    [gauss,~] = fit(x_data,y_data,Gauss2fun,'StartPoint',param,'Lower',zeros(1,numel(param)),'Upper',[inf(1,numel(param)-1),A1/4]);
     coefficients = coeffvalues(gauss);
     %get maximum amplitude
     [~,Amax] = max([coefficients(1) coefficients(4)]);
@@ -8160,22 +8265,6 @@ else %%% Set to empty
     h.Calc_fFCS_Filter_button.Enable = 'off';
     h.Do_fFCS_button.Enable = 'off';
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%% Updates GUI elements in Correlation Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function UpdateCorrelateGUI(obj,~,h)
-global BurstData BurstMeta PhotonStream
-if nargin == 2
-    if isempty(obj)
-        h = guidata(findobj('Tag','BurstBrowser'));
-    else
-        h = guidata(obj);
-    end
-end
-file = BurstMeta.SelectedFile;
-
-%%% Check if AllPhotons have been loaded
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Microtime Histograms in fFCS tab %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10316,11 +10405,11 @@ if all(data(:,idx_tauGG) == 0)
 end
 if any(BurstData{file}.BAMethod == [1,2,5])
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
-    valid = (data(:,idxS) > 0.95);
+    valid = (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Donly_Min) & (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Donly_Max);
 elseif any(BurstData{file}.BAMethod == [3,4])
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
     %idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
-    valid = (data(:,idxS) > 0.90) & (data(:,idxS) < 1.1);% &...
+    valid = (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Donly_Min) & (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Donly_Max);% &...
         %(BurstData{file}.DataArray(:,idxSBG) > 0) & (BurstData{file}.DataArray(:,idxSBG) < 0.1);
 end
 x_axis = 0:0.05:10;
@@ -10334,11 +10423,11 @@ UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
 idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
 if any(BurstData{file}.BAMethod == [1,2,5])
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
-    valid = (data(:,idxS) < 0.1);
+    valid = (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Aonly_Min);
 elseif any(BurstData{file}.BAMethod == [3,4])
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
     %idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
-    valid = (data(:,idxS) < 0.1) & (data(:,idxS) > -0.1);% &...
+    valid = (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Aonly_Min);% &...
         %(BurstData{file}.DataArray(:,idxSBR) < 0.1) & (BurstData{file}.DataArray(:,idxSBR) > -0.1);
 end
 x_axis = 0:0.05:10;
@@ -10368,8 +10457,8 @@ if any(BurstData{file}.BAMethod == [3,4])
     idxSBG = strcmp(BurstData{file}.NameArray,'Stoichiometry BG');
     idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
 
-    valid = ( (data(:,idxSBG) > 0.98) &...
-        (data(:,idxSBR) > 0.98) );
+    valid = (data(:,idxSBG) > UserValues.BurstBrowser.Settings.S_Donly_Min) & (data(:,idxSBG) < UserValues.BurstBrowser.Settings.S_Donly_Max) &...
+        (data(:,idxSBR) > UserValues.BurstBrowser.Settings.S_Donly_Min) & (data(:,idxSBR) < UserValues.BurstBrowser.Settings.S_Donly_Max);
     x_axis = 0:0.05:10;
     htauBB = histc(data(valid,idx_tauBB),x_axis);
     [DonorBlueLifetime, ~] = GaussianFit(x_axis',htauBB);

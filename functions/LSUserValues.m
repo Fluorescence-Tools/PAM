@@ -1394,6 +1394,30 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall was incomplete');
     end
     P.BurstBrowser.Settings.CompareFRETHist_Waterfall = S.BurstBrowser.Settings.CompareFRETHist_Waterfall;
+    %%% Check, if BurstBrowser.Settings.S_Donly_Min subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'S_Donly_Min')
+        S.BurstBrowser.Settings.S_Donly_Min=0.95;
+        disp('UserValues.BurstBrowser.Settings.S_Donly_Min was incomplete');
+    end
+    P.BurstBrowser.Settings.S_Donly_Min = S.BurstBrowser.Settings.S_Donly_Min;
+    %%% Check, if BurstBrowser.Settings.S_Donly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'S_Donly_Max')
+        S.BurstBrowser.Settings.S_Donly_Max=1.05;
+        disp('UserValues.BurstBrowser.Settings.S_Donly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.S_Donly_Max = S.BurstBrowser.Settings.S_Donly_Max;
+    %%% Check, if BurstBrowser.Settings.S_Aonly_Min subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'S_Aonly_Min')
+        S.BurstBrowser.Settings.S_Aonly_Min=-0.1;
+        disp('UserValues.BurstBrowser.Settings.S_Aonly_Min was incomplete');
+    end
+    P.BurstBrowser.Settings.S_Aonly_Min = S.BurstBrowser.Settings.S_Aonly_Min;
+    %%% Check, if BurstBrowser.Settings.S_Aonly_Max subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'S_Aonly_Max')
+        S.BurstBrowser.Settings.S_Aonly_Max=0.2;
+        disp('UserValues.BurstBrowser.Settings.S_Aonly_Max was incomplete');
+    end
+    P.BurstBrowser.Settings.S_Aonly_Max = S.BurstBrowser.Settings.S_Aonly_Max;
     %% PDA
     if ~isfield(S, 'PDA')
         disp('WARNING: UserValues structure incomplete, field "PDA" missing');
