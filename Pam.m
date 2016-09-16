@@ -8238,7 +8238,7 @@ switch mode
             h.Database.Delete.Enable = 'off';
         end
     case 3 %% Load database
-        [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',UserValues.File.Path,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile({'*.dab', 'Database file (*.dab)'}, 'Choose database to load',UserValues.File.Path,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         PamMeta.Database = s.database;
         h.Database.List.String = s.str;
@@ -8251,7 +8251,7 @@ switch mode
             h.Database.Delete.Enable = 'on';
         end
     case 4 %% Save complete database
-        [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', UserValues.File.Path);
+        [File, Path] = uiputfile({'*.dab', 'Database file (*.dab)'}, 'Save database', UserValues.File.Path);
         s = struct;
         s.database = PamMeta.Database;
         s.str = h.Database.List.String;

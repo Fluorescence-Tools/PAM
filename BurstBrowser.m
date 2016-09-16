@@ -2141,7 +2141,7 @@ if isempty(hfig)
         'String','Save Database',...
         'Callback',{@Database,4},...
         'Position',[0.05 0.91 0.35 0.035],...
-        'enable', 'off',...
+        'enable', 'on',...
         'Tooltipstring', 'Save database to a file');
     %%% Button to add files to the database from dialog
     h.DatabaseBB.AddFiles = uicontrol(...
@@ -12507,7 +12507,7 @@ switch mode
         end
     case 3 %% Load database
         Path = UserValues.File.BurstBrowserDatabasePath;
-        [FileName, Path] = uigetfile({'*.dab', 'Database file'}, 'Choose database to load',Path,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile({'*.bdb', 'Burst Database file (*.bdb)';'*.dab','PAM Database file (*.dab)'}, 'Choose database to load',Path,'MultiSelect', 'off');
         if FileName == 0
             return;
         end
@@ -12539,8 +12539,8 @@ switch mode
         end
         LSUserValues(1);
     case 4 %% Save complete database
-        Path = UserValues.File.BurstBrowserPath;
-        [File, Path] = uiputfile({'*.dab', 'Database file'}, 'Save database', Path);
+        Path = UserValues.File.BurstBrowserDatabasePath;
+        [File, Path] = uiputfile({'*.bdb', 'Database file (*.bdb)'}, 'Save database', Path);
         s = struct;
         s.database = BurstMeta.Database;
         s.str = h.DatabaseBB.List.String;

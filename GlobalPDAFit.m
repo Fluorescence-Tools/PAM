@@ -4092,7 +4092,7 @@ switch mode
         end
     case 2 
         %% Load database
-        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file'}, 'Choose PDA database to load',UserValues.File.PDAPath,'MultiSelect', 'off');
+        [FileName, Path] = uigetfile({'*.pab', 'PDA Database file (*.pab)'}, 'Choose PDA database to load',UserValues.File.PDAPath,'MultiSelect', 'off');
         load('-mat',fullfile(Path,FileName));
         if FileName ~= 0
             PDAData.FileName = s.file;
@@ -4109,7 +4109,7 @@ switch mode
         end
     case 3 
         %% Save complete database
-        [File, Path] = uiputfile({'*.pab', 'PDA Database file'}, 'Save PDA database', UserValues.File.PDAPath);
+        [File, Path] = uiputfile({'*.pab', 'PDA Database file (*.pab)'}, 'Save PDA database', UserValues.File.PDAPath);
         s = struct;
         s.file = PDAData.FileName;
         s.path = PDAData.PathName;
