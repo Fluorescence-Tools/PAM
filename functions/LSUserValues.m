@@ -1424,6 +1424,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.S_Aonly_Max was incomplete');
     end
     P.BurstBrowser.Settings.S_Aonly_Max = S.BurstBrowser.Settings.S_Aonly_Max;
+    %%% Check, if BurstBrowser.DatabaseString subfield exists
+    if ~isfield(S.BurstBrowser, 'DatabaseString')
+        S.BurstBrowser.DatabaseString={};
+        disp('UserValues.BurstBrowser.DatabaseString was incomplete');
+    end
+    P.BurstBrowser.DatabaseString = S.BurstBrowser.DatabaseString;
+    %%% Check, if BurstBrowser.Database subfield exists
+    if ~isfield(S.BurstBrowser, 'Database')
+        S.BurstBrowser.Database={};
+        disp('UserValues.BurstBrowser.Database was incomplete');
+    end
+    P.BurstBrowser.Database = S.BurstBrowser.Database;
     %% PDA
     if ~isfield(S, 'PDA')
         disp('WARNING: UserValues structure incomplete, field "PDA" missing');
