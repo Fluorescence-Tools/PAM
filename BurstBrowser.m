@@ -4953,7 +4953,7 @@ file = BurstMeta.SelectedFile;
 SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
 %Valid = UpdateCuts(SelectedSpecies);
 
-for file = 1:numel(BurstData)
+%for file = 1:numel(BurstData)
     BurstMeta.SelectedFile = file;
     Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
     %%% Load associated .bps file, containing Macrotime, Microtime and Channel
@@ -5176,7 +5176,7 @@ for file = 1:numel(BurstData)
                 end
         end
     end
-end
+%end
 Progress(1,h.Progress_Axes,h.Progress_Text);
 %%% Set tcPDA Path to BurstBrowser Path
 UserValues.tcPDA.PathName = UserValues.File.BurstBrowserPath;
@@ -7085,7 +7085,10 @@ if obj == h.DetermineCorrectionsButton
     [mean_ct, GaussFit] = GaussianFit(x_axis',histE_donly);
     BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
-    UserValues.BurstBrowser.Corrections.CrossTalk_GR = mean_ct./(1-mean_ct);
+    ct = mean_ct/(1-mean_ct);
+    if ~isnan(ct) && (ct > 0)
+        UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
+    end
     
     if ~h.MultiselectOnCheckbox.Value
         BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
@@ -7117,8 +7120,10 @@ if obj == h.DetermineCorrectionsButton
     [mean_de, GaussFit] = GaussianFit(x_axis',histS_aonly);
     BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
     BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
-    UserValues.BurstBrowser.Corrections.DirectExcitation_GR = mean_de./(1-mean_de);
-    
+    de = mean_de/(1-mean_de);
+    if ~isnan(de) && (de > 0)
+        UserValues.BurstBrowser.Corrections.DirectExcitation_GR = de;
+    end
     if ~h.MultiselectOnCheckbox.Value
         BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
     else %%% Update for all files contributing
@@ -7323,8 +7328,10 @@ if any(BurstData{file}.BAMethod == [3,4])
         [mean_ct, GaussFit] = GaussianFit(x_axis',histEBG_blueonly);
         BurstMeta.Plots.Fits.histEBG_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBG_blueonly(1).YData = GaussFit;
-        UserValues.BurstBrowser.Corrections.CrossTalk_BG = mean_ct./(1-mean_ct);
-        
+        ct = mean_ct/(1-mean_ct);
+        if ~isnan(ct) && (ct > 0)
+            UserValues.BurstBrowser.Corrections.CrossTalk_BG = ct;
+        end
         if ~h.MultiselectOnCheckbox.Value
             BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
         else %%% Update for all files contributing
@@ -7348,8 +7355,10 @@ if any(BurstData{file}.BAMethod == [3,4])
         [mean_ct, GaussFit] = GaussianFit(x_axis',histEBR_blueonly);
         BurstMeta.Plots.Fits.histEBR_blueonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histEBR_blueonly(1).YData = GaussFit;
-        UserValues.BurstBrowser.Corrections.CrossTalk_BR = mean_ct./(1-mean_ct);
-        
+        ct = mean_ct/(1-mean_ct);
+        if ~isnan(ct) && (ct > 0)
+            UserValues.BurstBrowser.Corrections.CrossTalk_BR = ct;
+        end
         if ~h.MultiselectOnCheckbox.Value
             BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
         else %%% Update for all files contributing
@@ -7378,8 +7387,10 @@ if any(BurstData{file}.BAMethod == [3,4])
         [mean_de, GaussFit] = GaussianFit(x_axis',histSBG_greenonly);
         BurstMeta.Plots.Fits.histSBG_greenonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBG_greenonly(1).YData = GaussFit;
-        UserValues.BurstBrowser.Corrections.DirectExcitation_BG = mean_de./(1-mean_de);
-        
+        de =  mean_de/(1-mean_de);
+        if ~isnan(de) && (de > 0)
+            UserValues.BurstBrowser.Corrections.DirectExcitation_BG = de;
+        end
         if ~h.MultiselectOnCheckbox.Value
             BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
         else %%% Update for all files contributing
@@ -7408,8 +7419,10 @@ if any(BurstData{file}.BAMethod == [3,4])
         [mean_de, GaussFit] = GaussianFit(x_axis',histSBR_redonly);
         BurstMeta.Plots.Fits.histSBR_redonly(1).XData = x_axis;
         BurstMeta.Plots.Fits.histSBR_redonly(1).YData = GaussFit;
-        UserValues.BurstBrowser.Corrections.DirectExcitation_BR = mean_de./(1-mean_de);
-        
+        de = mean_de/(1-mean_de);
+        if ~isnan(de) && (de > 0)
+            UserValues.BurstBrowser.Corrections.DirectExcitation_BR = de;
+        end
         if ~h.MultiselectOnCheckbox.Value
             BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
         else %%% Update for all files contributing
