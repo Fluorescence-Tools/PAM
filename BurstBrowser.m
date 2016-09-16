@@ -3406,7 +3406,7 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
             return;
     end
 end
-
+LSUserValues(1);
 clear global -regexp BurstMeta BurstTCSPCData PhotonStream BurstData
 Pam = findobj('Tag','Pam');
 if ~isempty(Pam)
@@ -3425,10 +3425,10 @@ Sim=findobj('Tag','Sim');
 PCF=findobj('Tag','PCF');
 TauFit=findobj('Tag','TauFit');
 PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit)
+PDA = findobj('Tag','GlobalPDAFit');
+if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit) && isempty(PDA)
     clear global -regexp UserValues
 end
-LSUserValues(1);
 delete(gcf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
