@@ -49,7 +49,7 @@ addpath(genpath(['.' filesep 'functions']));
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.Pam,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:3 6 13:17]))
+    delete(toolbar_items([2:7 9 13:17]))
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
@@ -7447,8 +7447,8 @@ if any(isempty(BurstData.IRF)) || any(isempty(BurstData.ScatterPattern))
     return;
 end
 %% Prepare the data for lifetime fitting
-h.Progress.Text.String = 'Preparing Data for Lifetime Fit...';
-set(h.Pam, 'pointer', 'arrow'); drawnow;
+Progress(0,h.Progress.Axes,h.Progress.Text,'Loading Data for Lifetime Fit...');
+%set(h.Pam, 'pointer', 'arrow'); drawnow;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 if exist(fullfile(Path,[File '.bps']),'file') == 2
@@ -7465,6 +7465,7 @@ else
     %%% Store the correct Path in TauFitData
     TauFitData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
 end
+Progress(0.5,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
 TauFitData.Microtime = Microtime;
 TauFitData.Channel = Channel;
 %%% Get total vector of microtime and channel
@@ -7486,10 +7487,13 @@ switch BurstData.BAMethod
         
         %%% Calculate and store Histograms in TauFitData
         TauFitData.hMI_Par{1} = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+        Progress(0.6,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per{1} = histc(Microtime(Channel == 2), (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+        Progress(0.7,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Par{2} = histc(Microtime(Channel == 5), (BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+        Progress(0.8,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per{2} = histc(Microtime(Channel == 6), (BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
-        
+        Progress(0.9,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         %%% Read out the Microtime Histograms of the IRF for the two channels        
         TauFitData.hIRF_Par{1} = BurstData.IRF{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
         TauFitData.hIRF_Par{2} = BurstData.IRF{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
@@ -7535,12 +7539,17 @@ switch BurstData.BAMethod
         
         %%% Calculate and store MI Histograms in TauFitData
         TauFitData.hMI_Par{1} = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar])));
+        Progress(0.57,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per{1} = histc(Microtime(Channel == 2), (BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_BBperp])));
+        Progress(0.64,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Par{2} = histc(Microtime(Channel == 7), (BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar])));
+        Progress(0.71,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per{2} = histc(Microtime(Channel == 8), (BurstData.PIE.From(8):min([BurstData.PIE.To(8) max_MIBins_GGperp])));
+        Progress(0.78,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Par{3} = histc(Microtime(Channel == 11), (BurstData.PIE.From(11):min([BurstData.PIE.To(11) max_MIBins_RRpar])));
+        Progress(0.85,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per{3} = histc(Microtime(Channel == 12), (BurstData.PIE.From(12):min([BurstData.PIE.To(12) max_MIBins_RRperp])));
-        
+        Progress(0.92,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         %%% Read out the Microtime Histograms of the IRF for the two channels        
         TauFitData.hIRF_Par{1} = BurstData.IRF{idx_BBpar}(BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_BBpar]));
         TauFitData.hIRF_Par{2} = BurstData.IRF{idx_GGpar}(BurstData.PIE.From(7):min([BurstData.PIE.To(7) max_MIBins_GGpar]));
@@ -7584,7 +7593,9 @@ switch BurstData.BAMethod
         
         %%% Calculate and store Histograms in TauFitData
         TauFitData.hMI_Par{1} = histc(Microtime(Channel == 1), (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GG])));
+        Progress(0.7,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Par{2} = histc(Microtime(Channel == 3), (BurstData.PIE.From(3):min([BurstData.PIE.To(3) max_MIBins_RR])));
+        Progress(0.9,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
         TauFitData.hMI_Per = TauFitData.hMI_Par;
         
         %%% Read out the Microtime Histograms of the IRF for the two channels        
@@ -7620,8 +7631,8 @@ if ~isfield(BurstData,'Resolution')
     TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
 elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
     TauFitData.TACChannelWidth = BurstData.Resolution/1000;
-    %Anders, does BurstData.Resolution ever exist?
 end
+Progress(1,h.Progress.Axes,h.Progress.Text,'Fitting Lifetime in TauFit...');
 TauFit(obj,[]);
 Update_Display([],[],1);
 

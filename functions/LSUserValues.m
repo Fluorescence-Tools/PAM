@@ -665,6 +665,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.AutoIRFShift was incomplete');
     end
     P.BurstSearch.AutoIRFShift = S.BurstSearch.AutoIRFShift;
+    %%% Checks if BurstSearch.BurstwiseLifetime_SaveImages subfield exists
+    if ~isfield (S.BurstSearch, 'BurstwiseLifetime_SaveImages')
+        S.BurstSearch.BurstwiseLifetime_SaveImages=1;
+        disp('UserValues.BurstSearch.BurstwiseLifetime_SaveImages was incomplete');
+    end
+    P.BurstSearch.BurstwiseLifetime_SaveImages = S.BurstSearch.BurstwiseLifetime_SaveImages;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield (S,'TauFit')

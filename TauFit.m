@@ -806,6 +806,17 @@ if exist('ph','var')
                     UserValues.TauFit.Ignore{i} = 1;
                 end
                 set(h.Determine_GFactor_Button,'Visible','off');
+                %%% add checkbox for saving images of fit arrangement
+                h.Save_Figures = uicontrol(...
+                    'Parent',h.PIEChannel_Panel,...
+                    'style','checkbox',...
+                    'units','normalized',...
+                    'BackgroundColor', Look.Back,...
+                    'ForegroundColor', Look.Fore,...
+                    'Callback',@UpdateOptions,...
+                    'String','Auto-save images of plots',...
+                    'Value',UserValues.BurstSearch.BurstwiseLifetime_SaveImages,...
+                    'Position',[0.55,0.05,0.5,0.12]);
         end
     end
 end
@@ -1141,8 +1152,6 @@ h.ConvolutionType_Menu = uicontrol(...
     'Style','popupmenu',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
-    'BackgroundColor',Look.Axes,...
-    'ForegroundColor',Look.Fore,...
     'Position',[0.4 0.9 0.5 0.07],...
     'String',{'linear','circular'},...
     'Value',find(strcmp({'linear','circular'},UserValues.TauFit.ConvolutionType)),...
@@ -4048,16 +4057,18 @@ switch TauFitData.BAMethod
                         Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
                     end
                 end
-                %%% Save image of the individual decays
-                Update_Plots(obj)
-                f = ExportGraph(h.Microtime_Plot_Export);
-                close(f)
-                %%% Save image of the fit
-                h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
-                Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
-                f = ExportGraph(h.Export_Result);
-                close(f)
-                
+                if UserValues.BurstSearch.BurstwiseLifetime_SaveImages
+                    %%% Save image of the individual decays
+                    Update_Plots(obj)
+                    f = ExportGraph(h.Microtime_Plot_Export);
+                    close(f)
+                    %%% Save image of the fit
+                    h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
+                    Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
+                    f = ExportGraph(h.Export_Result);
+                    close(f)
+                end
+  
                 % I just read the data from the plots to avoid confusion.
                 %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
                 %%% Changed this back so a better correction of the IRF can be
@@ -4113,6 +4124,7 @@ switch TauFitData.BAMethod
         % put channel back to 1
         h.ChannelSelect_Popupmenu.Value = 1;
         Update_Plots(obj)
+        h.Progress_Text.String = 'Fitting Data...';
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));
@@ -4289,16 +4301,17 @@ switch TauFitData.BAMethod
                         Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
                     end
                 end
-                %%% Save image of the individual decays
-                Update_Plots(obj)
-                f = ExportGraph(h.Microtime_Plot_Export);
-                close(f)
-                %%% Save image of the fit
-                h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
-                Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
-                f = ExportGraph(h.Export_Result);
-                close(f)
-                
+                if UserValues.BurstSearch.BurstwiseLifetime_SaveImages
+                    %%% Save image of the individual decays
+                    Update_Plots(obj)
+                    f = ExportGraph(h.Microtime_Plot_Export);
+                    close(f)
+                    %%% Save image of the fit
+                    h.FitPar_Table.Data{end,4} = true; %fix the IRF shift
+                    Start_Fit(h.Fit_Button,[]) % Callback Pre-Fit
+                    f = ExportGraph(h.Export_Result);
+                    close(f)
+                end
                 %Irf = G{chan}*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
@@ -4352,6 +4365,7 @@ switch TauFitData.BAMethod
         % put channel back to 1
         h.ChannelSelect_Popupmenu.Value = 1;
         Update_Plots(obj)
+        h.Progress_Text.String = 'Fitting Data...';
         for j = 1:(numel(parts)-1)
             MI = Microtime((parts(j)+1):parts(j+1));
             CH = Channel((parts(j)+1):parts(j+1));
@@ -4707,6 +4721,10 @@ UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
 LSUserValues(1)
 if obj == h.G_factor_edit
     %DetermineGFactor(obj)
+end
+if obj == h.Save_Figures
+    UserValues.BurstSearch.BurstwiseLifetime_SaveImages = obj.Value;
+    LSUserValues(1);
 end
 
 function IncludeChannel(obj,~)
