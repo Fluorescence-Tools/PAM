@@ -498,11 +498,11 @@ if isempty(hfig)
         circle_image = ['<html><img src="file://' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
         zscale_image = ['<html><img src="file://' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
     end
-    cname = {'<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
-    cformat = {'numeric','numeric','logical','logical','logical'};
-    ceditable = [true true true true true];
-    table_dat = {'','',false,false,false};
-    cwidth = {'auto','auto',25,25,25};
+    cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
+    cformat = {'char','numeric','numeric','logical','logical','logical'};
+    ceditable = [false,true true true true true];
+    table_dat = {'','','',false,false,false};
+    cwidth = {225,'auto','auto',25,25,25};
     
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -512,6 +512,7 @@ if isempty(hfig)
         'BackgroundColor', [Look.Table1;Look.Table2],...
         'ForegroundColor', Look.TableFore,...
         'Tag','CutTable',...
+        'RowName',[],...
         'ColumnName',cname,...
         'ColumnFormat',cformat,...
         'ColumnEditable',ceditable,...
@@ -5398,7 +5399,7 @@ if size(CutState,2) > 0
     end
 end
 %%% check what plot type to use
-colorbyparam = any(cell2mat(h.CutTable.Data(:,5))) && ~h.MultiselectOnCheckbox.Value;
+colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value;
 if ~colorbyparam
     if ~h.MultiselectOnCheckbox.Value
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
@@ -5447,7 +5448,10 @@ else
     Mask = zeros(size(H,1),size(H,2));
     counter = zeros(size(H,1),size(H,2));
     % which parameter in the list defines the Mask
-    z = find(strcmp(h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5))),BurstData{file}.NameArray)); 
+    param = h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),1};
+    %%% remove html formatting
+    param = param(23:end-18);
+    z = find(strcmp(param,BurstData{file}.NameArray)); 
     z = datatoplot(:,z);
     % sort all selected bursts into the Mask
     for i = 1:size(bin,1) %bin in a list of X and Y bins of all selected bursts
@@ -5460,7 +5464,7 @@ else
     Mask(counter > 0) = Mask(counter > 0)./counter(counter > 0); 
     zParam = Mask(:);
     % go in between the limits defined in the cut table 
-    zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
+    zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),2} h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),3}];
     Mask(Mask < zlim(1)) = zlim(1);
     Mask(Mask > zlim(2)) = zlim(2);
     Mask = floor(63*(Mask-zlim(1))./(zlim(2)-zlim(1)))+1;
@@ -5517,7 +5521,7 @@ else
     BurstMeta.Plots.ZScale_hist.YData = Z;
     xlim(h.axes_ZScale,zlim);
     %%% Update Colorbar
-    h.colorbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
+    h.colorbar.Label.String = param;%h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
     h.colorbar.Ticks = [0,1/2,1];
     h.colorbar.TickLabels = {sprintf('%.2f',(zlim(1)));sprintf('%.2f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.2f',zlim(2))};
     h.colorbar.AxisLocation='out';
@@ -6625,27 +6629,28 @@ file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
 
 if all(species == [0,0])
-    data = {'','',false,false};
-    rownames = {''};
+    data = {'','','',false,false};
+    %rownames = {''};
 else
     if ~isempty(BurstData{file}.Cut{species(1),species(2)})
         data = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
-        %rownames = cellfun(@(x) ['<html>' x '</html>'],data(:,1),'UniformOutput',false);
-        rownames = data(:,1);
-        data = data(:,2:end);
+        data(:,1) = cellfun(@(x) ['<html><font size=4><b>' x '</b></font></html>'],data(:,1),'UniformOutput',false);
+        %rownames = data(:,1);
+        %data = data(:,2:end);
     else %data has been deleted, reset to default values
-        data = {'','',false,false};
-        rownames = {''};
+        data = {'','','',false,false};
+        %rownames = {''};
     end
 end
+
 if size(data,1) == size(h.CutTable.Data,1)
-    h.CutTable.Data(:,1:4) = data;
+    h.CutTable.Data(:,1:5) = data;
 elseif size(data,1) < size(h.CutTable.Data,1) 
-    h.CutTable.Data = [data, h.CutTable.Data(1:size(data,1),5)];
+    h.CutTable.Data = [data, h.CutTable.Data(1:size(data,1),6)];
 elseif size(data,1) > size(h.CutTable.Data,1)
-    h.CutTable.Data = [data, vertcat(h.CutTable.Data(:,5),num2cell(false(size(data,1)-size(h.CutTable.Data,1),1)))];
+    h.CutTable.Data = [data, vertcat(h.CutTable.Data(:,6),num2cell(false(size(data,1)-size(h.CutTable.Data,1),1)))];
 end
-h.CutTable.RowName = rownames;
+%h.CutTable.RowName = rownames;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Applies Cuts to Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6766,6 +6771,7 @@ h = guidata(hObject);
 global BurstData BurstMeta
 %check which cell was changed
 index = eventdata.Indices;
+index(2) = index(2)-1; %%% lower by one since we changed the parameter name to be in first column
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies; % in the DataTree
 
@@ -6826,12 +6832,12 @@ switch index(2)
         %%% disable all other active components
         for i = 1:size(hObject.Data)
             if i ~= index(1)
-                hObject.Data{i,5} = false;
+                hObject.Data{i,6} = false;
             end
         end
         %%% if arbitrary cut was clicked, prevent checking 
         if strcmp(ChangedParameterName(1:4),'AR: ')
-            hObject.Data{index(1),5} = false;
+            hObject.Data{index(1),6} = false;
         end
 end
 
@@ -11475,17 +11481,19 @@ switch obj
         end
         %%% Update Colorbar by plotting it anew
         if ~strcmp(panel_copy.Children(3).Children(8).Visible,'on') %%% check that multiplot is NOT used (if multi plot is used, first stair plot is visible)
-            if any(cell2mat(h.CutTable.Data(:,5)))  %%% colored by parameter
+            if any(cell2mat(h.CutTable.Data(:,6)))  %%% colored by parameter
                 cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8); 
                 %panel_copy.Children(3).XTickLabel(end) = {' '};
+                param = h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),1};
+                param = param(23:end-18); %%% remove html string
                 cbar.Position = [0.77,0.915,0.15,0.02];
                 cbar.AxisLocation = 'out';
                 cbar.Label.String = 'Occurrence';
                 cbar.Label.Units = 'normalized';
                 cbar.Label.Position = [0.5,2.85,0];
-                cbar.Label.String = h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
+                cbar.Label.String = param;
                 cbar.Ticks = [cbar.Limits(1), cbar.Limits(1) + 0.5*(cbar.Limits(2)-cbar.Limits(1)),cbar.Limits(2)];
-                zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),1} h.CutTable.Data{cell2mat(h.CutTable.Data(:,5)),2}];
+                zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),2} h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),3}];
                 cbar.TickLabels = {sprintf('%.1f',(zlim(1)));sprintf('%.1f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.1f',zlim(2))};
                 if (panel_copy.Children(3).XLim(2) - panel_copy.Children(3).XTick(end))/(panel_copy.Children(3).XLim(2)-panel_copy.Children(3).XLim(1)) < 0.05 %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
                     panel_copy.Children(3).XTickLabel{end} = '';
