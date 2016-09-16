@@ -448,7 +448,15 @@ if isempty(hfig)
 
     %%% Define Species List
     % new: use uitreenode
-    h.SpeciesList.Root = uitreenode('v0','internalHandle','Data Tree',[],false);
+    %%% read icons
+    [iconBurst,map] = imread('images/BurstBrowser/plottype-hist.gif');
+    iconBurst = ind2rgb(iconBurst,map);
+    h.icons.iconBurst = imresize(iconBurst,[16,16]);
+    h.icons.iconFile = imresize(imread('images/BurstBrowser/folder.jpg'),[16,16]);
+    h.icons.iconSpecies = imresize(imread('images/BurstBrowser/book_sim.jpg'),[16,16]);
+    h.icons.iconSubspecies = imresize(imread('images/BurstBrowser/help_rn.jpg'),[16,16]);
+    h.SpeciesList.Root = uitreenode('v0','internalHandle','Burst Data',[],false);
+    h.SpeciesList.Root.setIcon(im2java(h.icons.iconBurst));
     [h.SpeciesList.Tree, h.SpeciesList.container] = uitree('v0','Root',h.SpeciesList.Root);
     set(h.SpeciesList.container,...% 'Parent', h.SecondaryTabSelectionPanel,...
         'Parent',h.BurstBrowser,...
@@ -467,11 +475,23 @@ if isempty(hfig)
         'Callback',@ApplyCutsToLoaded);
     
     %define the cut table
-    cname = {'min','max','A','D','ZScale'};
+    if ispc
+        trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+        trash_image = strrep(trash_image,'\','/');
+        circle_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        circle_image = strrep(circle_image,'\','/');
+        zscale_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+        zscale_image = strrep(zscale_image,'\','/');
+    else
+        trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
+        circle_image = ['<html><img src="file://' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        zscale_image = ['<html><img src="file://' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+    end
+    cname = {'<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'numeric','numeric','logical','logical','logical'};
     ceditable = [true true true true true];
     table_dat = {'','',false,false,false};
-    cwidth = {'auto','auto',50,50,50};
+    cwidth = {'auto','auto',25,25,25};
     
     h.CutTable = uitable(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -486,6 +506,7 @@ if isempty(hfig)
         'ColumnEditable',ceditable,...
         'Data',table_dat,...
         'ColumnWidth',cwidth,...
+        'FontSize',12,...
         'CellEditCallback',@CutTableChange,...
         'UIContextMenu',h.CutTable_Menu);
     
@@ -499,7 +520,8 @@ if isempty(hfig)
         'Position',[0 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListX',...
-        'Enable','on');%,...
+        'Enable','on',...
+        'FontSize',12);%,...
         %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
         %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
@@ -512,7 +534,8 @@ if isempty(hfig)
         'Position',[0.5 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListY',...
-        'Enable','on');%,...
+        'Enable','on',...
+        'FontSize',12);%,...
         %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
         %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
@@ -6585,6 +6608,7 @@ if all(species == [0,0])
 else
     if ~isempty(BurstData{file}.Cut{species(1),species(2)})
         data = vertcat(BurstData{file}.Cut{species(1),species(2)}{:});
+        %rownames = cellfun(@(x) ['<html>' x '</html>'],data(:,1),'UniformOutput',false);
         rownames = data(:,1);
         data = data(:,2:end);
     else %data has been deleted, reset to default values
@@ -12484,18 +12508,22 @@ end
 
 function UpdateSpeciesList(h)
 global BurstData BurstMeta
-h.SpeciesList.Root = uitreenode('v0',h.SpeciesList.Tree,'Data Tree',[],false);
+h.SpeciesList.Root = uitreenode('v0',h.SpeciesList.Tree,'Data Tree',[] ,false);
+h.SpeciesList.Root.setIcon(im2java(h.icons.iconBurst));
 for f = 1:numel(BurstData)
     % populate uitree
     h.SpeciesList.File(f) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.FileName, [], false);
+    h.SpeciesList.File(f).setIcon(im2java(h.icons.iconFile));
     for i = 1:size(BurstData{f}.SpeciesNames,1)
         %%% make uitreenode for every subgroup
         h.SpeciesList.Species{f}(i) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.SpeciesNames{i,1}, [], false);
+        h.SpeciesList.Species{f}(i).setIcon(im2java(h.icons.iconSpecies));
         %%% add subnodes for every subspecies
         for j = 2:size(BurstData{f}.SpeciesNames,2)
             if ~isempty(BurstData{f}.SpeciesNames{i,j})
                 h.SpeciesList.Nodes{f}{i}(j) = uitreenode('v0', h.SpeciesList.Tree, BurstData{f}.SpeciesNames{i,j}, [], true);
                 h.SpeciesList.Species{f}(i).add(h.SpeciesList.Nodes{f}{i}(j));
+                h.SpeciesList.Nodes{f}{i}(j).setIcon(im2java(h.icons.iconSubspecies));
             end
         end
         h.SpeciesList.File(f).add(h.SpeciesList.Species{f}(i));
