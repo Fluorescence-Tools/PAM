@@ -1406,7 +1406,7 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.51 0.62, 0.47 0.06],...
-            'String',{'Do not save','Save as iMSD(.mcor)','Save as STICS (.miacor)','Both'});      
+            'String',{'Do not save','Save as iMSD(.mcor)','Save as STICS (.stcor)','Both'});      
         if ismac
             h.Mia_Image.Calculations.Cor_Save_SICS.ForegroundColor = [0 0 0];
             h.Mia_Image.Calculations.Cor_Save_SICS.BackgroundColor = [1 1 1];
@@ -4466,7 +4466,7 @@ switch mode
         Mia_Correct([],[],0);
     case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
-            MIAData.MS{i} = true(str2double(h.Mia_Image.Settings.ROI_SizeX.String),str2double(h.Mia_Image.Settings.ROI_SizeY.String));
+            MIAData.MS{i} = true(str2double(h.Mia_Image.Settings.ROI_SizeY.String),str2double(h.Mia_Image.Settings.ROI_SizeX.String));
         end 
         if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
             MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
