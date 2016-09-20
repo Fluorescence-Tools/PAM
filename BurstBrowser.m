@@ -4594,7 +4594,7 @@ switch obj
                 %%% enable multiplot button
                 h.MultiPlotButton.Enable = 'on';
                 %%% change text of "Replace corrections for all loaded files with current one"
-                h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of selected files with current one';
+                %h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of selected files with current one';
             case 0
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -4603,7 +4603,7 @@ switch obj
                 %%% disable multiplot button
                 h.MultiPlotButton.Enable = 'off';
                  %%% change text of "Replace corrections for all loaded files with current one"
-                h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of all files with current one';
+                %h.ApplyCorrectionsAll_Menu.Label = 'Replace corrections of all files with current one';
         end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
@@ -7952,12 +7952,12 @@ if obj == h.ApplyCorrectionsAll_Menu
     end
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
 
-    if ~h.MultiselectOnCheckbox.Value
+    %if ~h.MultiselectOnCheckbox.Value
         files = 1:numel(BurstData);
-    else %%% only loop over selected foles
-        files = get_multiselection(h);
-        files = unique(files);
-    end
+    %else %%% only loop over selected foles
+    %    files = get_multiselection(h);
+    %    files = unique(files);
+    %end
     for i = files
         if any(BurstData{i}.BAMethod == validBAMethods)
             %%% don't replace donor-only lifetimes
@@ -9324,39 +9324,67 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         end
         
     end
-else %%% Update UserValues with new values
+else %%% Update UserValues and BurstData with new values
     LSUserValues(0);
+    if ~h.MultiselectOnCheckbox.Value
+       files = BurstMeta.SelectedFile;
+    else %%% loop over selected files
+       files = get_multiselection(h);
+       files = unique(files);
+    end
     switch obj
         case h.CorrectionsTable
             h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
             Data = obj.Data(:,2);
+            
             if any(BurstData{file}.BAMethod == [1,2,5]) %%% 2cMFD
+                %%% Update UserValues Structure
                 UserValues.BurstBrowser.Corrections.Gamma_GR = Data{1};
-                BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = Data{2};
-                BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = Data{3};
-                BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= Data{4};
-                BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = Data{5};
-                BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = Data{6};
-                BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = Data{7};
                 UserValues.BurstBrowser.Corrections.l2 = Data{8};
                 UserValues.BurstBrowser.Corrections.Background_GGpar= Data{9};
-                BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= Data{10};
-                BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= Data{11};
-                BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= Data{12};
-                BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
                 UserValues.BurstBrowser.Corrections.Background_RRpar= Data{13};
-                BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
                 UserValues.BurstBrowser.Corrections.Background_RRperp= Data{14};
-                BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                for file = files
+                    switch e.Indices(1)
+                        case 1
+                            BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                        case 2
+                            BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                        case 3
+                            BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                        case 4
+                            BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                        case 5
+                            BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                        case 6
+                            BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                        case 7
+                            
+                        case 8
+                            
+                        case 9
+                            BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                        case 10
+                            BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                        case 11
+                            BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                        case 12
+                            BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                        case 13
+                            BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                        case 14
+                            BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                    end
+                end
                 if ~strcmp(h.Corrections.TwoCMFD.axes_crosstalk.Title.String,'Lifetime of Donor only')
                     %%% only execute when axis is not used for lifetime plot
                     switch e.Indices(1)
@@ -9406,71 +9434,109 @@ else %%% Update UserValues with new values
                         Data{2} = Data{3}/Data{1};
                         obj.Data{2,2} = Data{2};
                 end
+                %%% Update UserValues
                 UserValues.BurstBrowser.Corrections.Gamma_GR = Data{1};
-                BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
                 UserValues.BurstBrowser.Corrections.Gamma_BG = Data{2};
-                BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
                 UserValues.BurstBrowser.Corrections.Gamma_BR = Data{3};
-                BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
                 UserValues.BurstBrowser.Corrections.Beta_GR = Data{4};
-                BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
                 UserValues.BurstBrowser.Corrections.Beta_BG = Data{5};
-                BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
                 UserValues.BurstBrowser.Corrections.Beta_BR = Data{6};
-                BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_GR = Data{7};
-                BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BG = Data{8};
-                BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
                 UserValues.BurstBrowser.Corrections.CrossTalk_BR = Data{9};
-                BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_GR= Data{10};
-                BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BG= Data{11};
-                BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
                 UserValues.BurstBrowser.Corrections.DirectExcitation_BR= Data{12};
-                BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
                 UserValues.BurstBrowser.Corrections.GfactorBlue = Data{13};
-                BurstData{file}.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
                 UserValues.BurstBrowser.Corrections.GfactorGreen = Data{14};
-                BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
                 UserValues.BurstBrowser.Corrections.GfactorRed = Data{15};
-                BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
                 UserValues.BurstBrowser.Corrections.l1 = Data{16};
                 UserValues.BurstBrowser.Corrections.l2 = Data{17};
                 UserValues.BurstBrowser.Corrections.Background_BBpar= Data{18};
-                BurstData{file}.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
                 UserValues.BurstBrowser.Corrections.Background_BBperp= Data{19};
-                BurstData{file}.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
                 UserValues.BurstBrowser.Corrections.Background_BGpar= Data{20};
-                BurstData{file}.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
                 UserValues.BurstBrowser.Corrections.Background_BGperp= Data{21};
-                BurstData{file}.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
                 UserValues.BurstBrowser.Corrections.Background_BRpar= Data{22};
-                BurstData{file}.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
                 UserValues.BurstBrowser.Corrections.Background_BRperp= Data{23};
-                BurstData{file}.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
                 UserValues.BurstBrowser.Corrections.Background_GGpar= Data{24};
-                BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
                 UserValues.BurstBrowser.Corrections.Background_GGperp= Data{25};
-                BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
                 UserValues.BurstBrowser.Corrections.Background_GRpar= Data{26};
-                BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
                 UserValues.BurstBrowser.Corrections.Background_GRperp= Data{27};
-                BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
-                UserValues.BurstBrowser.Corrections.Background_RRpar= Data{28};
-                BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                UserValues.BurstBrowser.Corrections.Background_RRpar= Data{28};                
                 UserValues.BurstBrowser.Corrections.Background_RRperp= Data{29};
-                BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                for file = files
+                    switch e.Indices(1)
+                        case 1
+                            BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
+                        case 2
+                            BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
+                        case 3
+                            BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
+                        case 4
+                            BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+                        case 5
+                            BurstData{file}.Corrections.Beta_BG = UserValues.BurstBrowser.Corrections.Beta_BG;
+                        case 6
+                            BurstData{file}.Corrections.Beta_BR = UserValues.BurstBrowser.Corrections.Beta_BR;
+                        case 7
+                            BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
+                        case 8
+                            BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
+                        case 9
+                            BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
+                        case 10
+                            BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
+                        case 11
+                            BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
+                        case 12
+                            BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
+                        case 13
+                            BurstData{file}.Corrections.GfactorBlue = UserValues.BurstBrowser.Corrections.GfactorBlue;
+                        case 14
+                            BurstData{file}.Corrections.GfactorGreen = UserValues.BurstBrowser.Corrections.GfactorGreen;
+                        case 15
+                            BurstData{file}.Corrections.GfactorRed = UserValues.BurstBrowser.Corrections.GfactorRed;
+                        case 16
+                            
+                        case 17
+                            
+                        case 18
+                            BurstData{file}.Background.Background_BBpar = UserValues.BurstBrowser.Corrections.Background_BBpar;
+                        case 19
+                            BurstData{file}.Background.Background_BBperp = UserValues.BurstBrowser.Corrections.Background_BBperp;
+                        case 20
+                            BurstData{file}.Background.Background_BGpar = UserValues.BurstBrowser.Corrections.Background_BGpar;
+                        case 21
+                            BurstData{file}.Background.Background_BGperp = UserValues.BurstBrowser.Corrections.Background_BGperp;
+                        case 22
+                            BurstData{file}.Background.Background_BRpar = UserValues.BurstBrowser.Corrections.Background_BRpar;
+                        case 23
+                            BurstData{file}.Background.Background_BRperp = UserValues.BurstBrowser.Corrections.Background_BRperp;
+                        case 24
+                            BurstData{file}.Background.Background_GGpar = UserValues.BurstBrowser.Corrections.Background_GGpar;
+                        case 25
+                            BurstData{file}.Background.Background_GGperp = UserValues.BurstBrowser.Corrections.Background_GGperp;
+                        case 26
+                            BurstData{file}.Background.Background_GRpar = UserValues.BurstBrowser.Corrections.Background_GRpar;
+                        case 27
+                            BurstData{file}.Background.Background_GRperp = UserValues.BurstBrowser.Corrections.Background_GRperp;
+                        case 28
+                            BurstData{file}.Background.Background_RRpar = UserValues.BurstBrowser.Corrections.Background_RRpar;
+                        case 29
+                            BurstData{file}.Background.Background_RRperp = UserValues.BurstBrowser.Corrections.Background_RRperp;
+                    end
+                end
                 switch e.Indices(1)
                     case {7:12} 
-                        msgbox('anders, if you"re interested in having the red plots being updated when you change this value, see the two color code or let me know! xxx Jelle')
+                        %msgbox('anders, if you"re interested in having the red plots being updated when you change this value, see the two color code or let me know! xxx Jelle')
                 end
             end
         case h.DonorLifetimeEdit
             if ~isnan(str2double(h.DonorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetime = str2double(h.DonorLifetimeEdit.String);
-                BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                for file = files
+                    BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
+                end
             else %%% Reset value
                 h.DonorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetime);
             end
@@ -9480,7 +9546,9 @@ else %%% Update UserValues with new values
         case h.AcceptorLifetimeEdit
             if ~isnan(str2double(h.AcceptorLifetimeEdit.String))
                 UserValues.BurstBrowser.Corrections.AcceptorLifetime = str2double(h.AcceptorLifetimeEdit.String);
-                BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+                for file = files
+                    BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
+                end
             else %%% Reset value
                 h.AcceptorLifetimeEdit.String = num2str(UserValues.BurstBrowser.Corrections.AcceptorLifetime);
             end
@@ -9489,7 +9557,9 @@ else %%% Update UserValues with new values
         case h.DonorLifetimeBlueEdit
             if ~isnan(str2double(h.DonorLifetimeBlueEdit.String))
                 UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = str2double(h.DonorLifetimeBlueEdit.String);
-                BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+                for file = files
+                    BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
+                end
             else %%% Reset value
                 h.DonorLifetimeBlueEdit.String = num2str(UserValues.BurstBrowser.Corrections.DonorLifetimeBlue);
             end
@@ -9499,7 +9569,9 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusEdit
             if ~isnan(str2double(h.FoersterRadiusEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadius = str2double(h.FoersterRadiusEdit.String);
-                BurstData{file}.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                for file = files
+                    BurstData{file}.Corrections.FoersterRadius = UserValues.BurstBrowser.Corrections.FoersterRadius;
+                end
             else %%% Reset value
                 h.FoersterRadiusEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadius);
             end
@@ -9509,7 +9581,9 @@ else %%% Update UserValues with new values
         case h.LinkerLengthEdit
             if ~isnan(str2double(h.LinkerLengthEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLength = str2double(h.LinkerLengthEdit.String);
-                BurstData{file}.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                for file = files
+                    BurstData{file}.Corrections.LinkerLength = UserValues.BurstBrowser.Corrections.LinkerLength;
+                end
             else %%% Reset value
                 h.LinkerLengthEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLength);
             end
@@ -9518,7 +9592,9 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusBGEdit
             if ~isnan(str2double(h.FoersterRadiusBGEdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBG = str2double(h.FoersterRadiusBGEdit.String);
-                BurstData{file}.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
+                for file = files
+                    BurstData{file}.Corrections.FoersterRadiusBG = UserValues.BurstBrowser.Corrections.FoersterRadiusBG;
+                end
             else %%% Reset value
                 h.FoersterRadiusBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBG);
             end
@@ -9528,7 +9604,9 @@ else %%% Update UserValues with new values
         case h.LinkerLengthBGEdit
             if ~isnan(str2double(h.LinkerLengthBGEdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBG = str2double(h.LinkerLengthBGEdit.String);
-                BurstData{file}.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
+                for file = files
+                    BurstData{file}.Corrections.LinkerLengthBG = UserValues.BurstBrowser.Corrections.LinkerLengthBG;
+                end
             else %%% Reset value
                 h.LinkerLengthBGEdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBG);
             end
@@ -9537,7 +9615,9 @@ else %%% Update UserValues with new values
         case h.FoersterRadiusBREdit
             if ~isnan(str2double(h.FoersterRadiusBREdit.String))
                 UserValues.BurstBrowser.Corrections.FoersterRadiusBR = str2double(h.FoersterRadiusBREdit.String);
-                BurstData{file}.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
+                for file = files
+                    BurstData{file}.Corrections.FoersterRadiusBR = UserValues.BurstBrowser.Corrections.FoersterRadiusBR;
+                end
             else %%% Reset value
                 h.FoersterRadiusBREdit.String = num2str(UserValues.BurstBrowser.Corrections.FoersterRadiusBR);
             end
@@ -9547,7 +9627,9 @@ else %%% Update UserValues with new values
         case h.LinkerLengthBREdit
             if ~isnan(str2double(h.LinkerLengthBREdit.String))
                 UserValues.BurstBrowser.Corrections.LinkerLengthBR = str2double(h.LinkerLengthBREdit.String);
-                BurstData{file}.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
+                for file = files
+                    BurstData{file}.Corrections.LinkerLengthBR = UserValues.BurstBrowser.Corrections.LinkerLengthBR;
+                end
             else %%% Reset value
                 h.LinkerLengthBREdit.String = num2str(UserValues.BurstBrowser.Corrections.LinkerLengthBR);
             end
@@ -9556,21 +9638,27 @@ else %%% Update UserValues with new values
         case h.r0Green_edit
             if ~isnan(str2double(h.r0Green_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_green = str2double(h.r0Green_edit.String);
-                BurstData{file}.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+                for file = files
+                    BurstData{file}.Corrections.r0_green = UserValues.BurstBrowser.Corrections.r0_green;
+                end
             else %%% Reset value
                 h.r0Green_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_green);
             end
         case h.r0Red_edit
             if ~isnan(str2double(h.r0Red_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_red = str2double(h.r0Red_edit.String);
-                BurstData{file}.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+                for file = files
+                    BurstData{file}.Corrections.r0_red = UserValues.BurstBrowser.Corrections.r0_red;
+                end
             else %%% Reset value
                 h.r0Red_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_red);
             end
         case h.r0Blue_edit
             if ~isnan(str2double(h.r0Blue_edit.String))
                 UserValues.BurstBrowser.Corrections.r0_blue = str2double(h.r0Blue_edit.String);
-                BurstData{file}.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+                for file = files
+                    BurstData{file}.Corrections.r0_blue = UserValues.BurstBrowser.Corrections.r0_blue;
+                end
             else %%% Reset value
                 h.r0Blue_edit.String = num2str(UserValues.BurstBrowser.Corrections.r0_blue);
             end
