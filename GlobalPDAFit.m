@@ -1901,7 +1901,7 @@ PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
 
 %%% Read fit settings and store in UserValues
 %% Prepare Fit Inputs
-if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
+if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
     PDAMeta.P = cell(numel(PDAData.FileName),NobinsE+1);
     counter = 1;
     maxN = 0;
@@ -1964,11 +1964,20 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                 Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Epsilon Grid...');
                 
                 % generate NobinsE+1 values for eps
-                E_grid = linspace(0,1,NobinsE+1);
-                R_grid = linspace(0,5*PDAMeta.R0(i),100000)';
-                epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
-                epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
-                [NF, N, eps] = meshgrid(0:maxN,1:maxN,epsEgrid);
+                %E_grid = linspace(0,1,NobinsE+1);
+                %R_grid = linspace(0,5*PDAMeta.R0(i),100000)';
+                %epsEgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((E_grid+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-E_grid))).^(-1);
+                %epsRgrid = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*(((PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))+(1./(1+(R_grid./PDAMeta.R0(i)).^6)))./(1-(1./(1+(R_grid./PDAMeta.R0(i)).^6))))).^(-1);
+                
+                %%% new: use linear distribution of eps since the
+                %%% conversion of P(R) to P(eps) returns a probility
+                %%% density, that would have to be converted to a
+                %%% probability by multiplying with the bin width.
+                %%% Instead, usage of a linear grid of eps ensures that the
+                %%% returned P(eps) is directly a probabilty
+                eps_min = 1-(1+PDAMeta.crosstalk(i)+PDAMeta.gamma(i)*((0+PDAMeta.directexc(i)/(1-PDAMeta.directexc(i)))./(1-0))).^(-1);
+                eps_grid = linspace(eps_min,1,NobinsE+1);
+                [NF, N, eps] = meshgrid(0:maxN,1:maxN,eps_grid);
                 % generates a grid cube:
                 % NF all possible number of FRET photons
                 % N all possible total number of photons
@@ -1989,10 +1998,10 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             % histogram NF+NG into maxN+1 bins
             PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
             % assign current file to global cell
-            PDAMeta.E_grid{i} = E_grid;
-            PDAMeta.R_grid{i} = R_grid;
-            PDAMeta.epsEgrid{i} = epsEgrid;
-            PDAMeta.epsRgrid{i} = epsRgrid;
+            %PDAMeta.E_grid{i} = E_grid;
+            %PDAMeta.R_grid{i} = R_grid;
+            PDAMeta.eps_grid{i} = eps_grid;
+            %PDAMeta.epsRgrid{i} = epsRgrid;
             PDAMeta.PN{i} = PN;
             PDAMeta.PNF{i} = PNF;
             PDAMeta.PNF_donly{i} = PNF_donly;
@@ -2005,12 +2014,12 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
             Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
             Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Calculating Histogram Library...');
             PDAMeta.HistLib = [];
-            P = cell(1,numel(E_grid));
+            P = cell(1,numel(eps_grid));
             PN_dummy = PN';
             %% Calculate shot noise limited histogram
             % case 1, no background in either channel
             if NBG == 0 && NBR == 0
-                for j = 1:numel(E_grid)
+                for j = 1:numel(eps_grid)
                     %for a particular value of E
                     P_temp = PNF(:,:,j);
                     E_temp = NF(:,:,j)./N(:,:,j);
@@ -2032,7 +2041,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'epsEgrid')
                     P{1,j} = accumarray(PDAMeta.HistLib.bin{i}{j},PDAMeta.HistLib.P_array{i}{j}.*PN_trans);
                 end
             else
-                for j = 1:numel(E_grid)
+                for j = 1:numel(eps_grid)
                     bin = cell((NBG+1)*(NBR+1),1);
                     P_array = cell((NBG+1)*(NBR+1),1);
                     validd = cell((NBG+1)*(NBG+1),1);
@@ -2643,8 +2652,8 @@ else %%% dynamic model
         end
     %end
     %%% calculate mixtures with brightness correction (always active!)
-    Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
-    Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
+    Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+    Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
     %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
     Peps(:,end) = PE{1};
     Peps(:,1) = PE{2};
@@ -2839,8 +2848,8 @@ for j=1:sum(PDAMeta.Active)
             end
         %end
         %%% calculate mixtures with brightness correction (always active!)
-        Peps = mixPE_c(PDAMeta.epsEgrid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.epsEgrid{i}),Q(1),Q(2));
-        Peps = reshape(Peps,numel(PDAMeta.epsEgrid{i}),numel(PofT));
+        Peps = mixPE_c(PDAMeta.eps_grid{i},PE{1},PE{2},PofT,numel(PofT),numel(PDAMeta.eps_grid{i}),Q(1),Q(2));
+        Peps = reshape(Peps,numel(PDAMeta.eps_grid{i}),numel(PofT));
         %%% for some reason Peps becomes "ripply" at the extremes... Correct by replacing with ideal distributions
         Peps(:,end) = PE{1};
         Peps(:,1) = PE{2};
@@ -2961,7 +2970,7 @@ end
 % function that generates Equation 10 from Antonik 2006 J Phys Chem B
 function [Pe] = Generate_P_of_eps(RDA, sigma, i)
 global PDAMeta
-eps = PDAMeta.epsEgrid{i};
+eps = PDAMeta.eps_grid{i};
 if PDAMeta.directexc(i) == 0
     % generate gaussian distributions of PDA.epsilon weights
     % Eq 10 in Antonik 2006 c Phys Chem B
@@ -3263,6 +3272,7 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
         %%% Laurence, T. A. & Chromy, B. A. Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7, 338?339 (2010).
         log_term = -2*H_meas.*log(hFit./H_meas);
         log_term(isnan(log_term)) = 0;
+        log_term(~isfinite(log_term)) = 0;
         dev_mle = 2*(hFit-H_meas)+log_term;
         w_res = sign(H_meas-hFit).*sqrt(dev_mle);
 end
