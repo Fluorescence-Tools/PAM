@@ -38,6 +38,10 @@ if isempty(h.PhasorTIFF)
     whitebg(Look.Fore);
     %%% Changes Pam background; must be called after whitebg
     h.PhasorTIFF.Color=Look.Back;
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.PhasorTIFF,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:7 9 13:17]));
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Menues %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

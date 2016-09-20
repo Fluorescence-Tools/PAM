@@ -39,7 +39,10 @@ h.MIAFit = figure(...
 whitebg(Look.Axes);
 %%% Changes Pam background; must be called after whitebg
 h.MIAFit.Color=Look.Back;
-
+%%% Remove unneeded items from toolbar
+toolbar = findall(h.MIAFit,'Type','uitoolbar');
+toolbar_items = findall(toolbar);
+delete(toolbar_items([2:7 13:17]));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Menubar %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -41,6 +41,10 @@ if isempty(h.Phasor) % Creates new figure, if none exists
     whitebg(Look.Fore);
     %%% Changes Pam background; must be called after whitebg
     h.Phasor.Color=Look.Back;
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.Phasor,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:7 9 13:17]));
     
     h.Load_Phasor = uimenu(...
     'Parent',h.Phasor,...

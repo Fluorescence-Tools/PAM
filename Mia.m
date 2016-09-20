@@ -34,7 +34,10 @@ if isempty(h.Mia)
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg
     h.Mia.Color=Look.Back;
-    
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.Mia,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:7 13:17]));
     %%% Menu to load mia data
     h.Mia_Load = uimenu(...
     'Parent',h.Mia,...

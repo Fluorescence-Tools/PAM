@@ -40,7 +40,10 @@ addpath(genpath(['.' filesep 'functions']));
     h.PCF.Color=Look.Back;
     %%% Initializes cell containing text objects (for changes between mac/pc
     h.Text={};
-   
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.PCF,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:7 9 13:17]));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Menubar %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%      

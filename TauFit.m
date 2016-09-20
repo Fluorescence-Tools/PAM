@@ -1,5 +1,7 @@
 function TauFit(obj,~)
+global UserValues
 h.TauFit = findobj('Tag','TauFit');
+LSUserValues(0);
 %%% If called from command line, close
 if nargin < 1 && isempty(gcbo)
     Close_TauFit
@@ -11,7 +13,7 @@ if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit
 end
-global UserValues TauFitData BurstData
+global TauFitData BurstData
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
 end
@@ -45,6 +47,11 @@ h.TauFit = figure(...
 whitebg(Look.Axes);
 %%% Changes background; must be called after whitebg
 h.TauFit.Color=Look.Back;
+%%% Remove unneeded items from toolbar
+toolbar = findall(h.TauFit,'Type','uitoolbar');
+toolbar_items = findall(toolbar);
+delete(toolbar_items([2:7 9 13:17]));
+    
 %%% menu
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
 h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','fitted microtime pattern',...
