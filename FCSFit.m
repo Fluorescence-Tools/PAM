@@ -30,7 +30,10 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'CloseRequestFcn',@Close_FCSFit,...
         'Visible','on');
     %h.FCSFit.Visible='off';
-    
+    %%% Remove unneeded items from toolbar
+    toolbar = findall(h.FCSFit,'Type','uitoolbar');
+    toolbar_items = findall(toolbar);
+    delete(toolbar_items([2:7 9 13:17]))
     %%% Sets background of axes and other things
     whitebg(Look.Axes);
     %%% Changes Pam background; must be called after whitebg

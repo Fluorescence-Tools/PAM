@@ -3245,13 +3245,13 @@ for j = PDAMeta.Comp{file}
 end
 H_res_dummy = zeros(numel(PDAMeta.hProx{file}),5);
 for j = PDAMeta.Comp{file}
-    H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1));
+    H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1))./sampling;
 end
 hFit = zeros(numel(PDAMeta.hProx{file}),1);
 for j = PDAMeta.Comp{file}
     hFit = hFit + A(j).*H_res_dummy(:,j);
 end
-hFit = sum(H_meas)*hFit./sum(hFit);
+%hFit = sum(H_meas)*hFit./sum(hFit);
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
     case 2 %%% Assume gaussian error on data, normal chi2
@@ -3261,10 +3261,10 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
     case 1 %%% Assume poissonian error on data, MLE poissonian
         %%%% see:
         %%% Laurence, T. A. & Chromy, B. A. Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7, 338?339 (2010).
-        log_term = -2*PDAMeta.hProx{i}.*log(hFit./PDAMeta.hProx{i});
+        log_term = -2*H_meas.*log(hFit./H_meas);
         log_term(isnan(log_term)) = 0;
-        dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term;
-        w_res = sign(PDAMeta.hProx{i}-hFit).*sqrt(dev_mle);
+        dev_mle = 2*(hFit-H_meas)+log_term;
+        w_res = sign(H_meas-hFit).*sqrt(dev_mle);
 end
 usedBins = sum(H_meas ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value

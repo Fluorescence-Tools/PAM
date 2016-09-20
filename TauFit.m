@@ -7,8 +7,6 @@ if nargin < 1 && isempty(gcbo)
     return;
 end
 
-%obj = gcbo;
-
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit
