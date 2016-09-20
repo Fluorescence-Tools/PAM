@@ -3067,11 +3067,12 @@ end
 NG = PDAData.Data{file}.NG(PDAMeta.valid{file});
 NF = PDAData.Data{file}.NF(PDAMeta.valid{file});
 
-steps = 5;
+steps = 10;
+n_sigma = 3; %%% how many sigma to sample?
 L = cell(5,1); %%% Likelihood per Gauss
 for j = PDAMeta.Comp{file}
     %%% define Gaussian distribution of distances
-    xR = (fitpar(j,2)-3*fitpar(j,3)):(6*fitpar(j,3)/steps):(fitpar(j,2)+3*fitpar(j,3));
+    xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
     PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
     PR = PR'./sum(PR);
     %%% Calculate E values for R grid
