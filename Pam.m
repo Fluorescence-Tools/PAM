@@ -3532,7 +3532,7 @@ if any(mode==5)
         Valid=[];
         %%% Finds microtime plots containing PIE channel
         for j=Channel(:)'
-           Valid=[Valid find(UserValues.Detector.Plots(:)==j)];
+           Valid=[Valid reshape(find(UserValues.Detector.Plots(:)==j),1,[])];
         end
         %%% For all microtime plots containing PIE channel
         for j=Valid(:)'
