@@ -3632,7 +3632,7 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
-            h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1);
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1);
             
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
         else
@@ -3641,7 +3641,7 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
-            h.Plots.Int(1,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
         end
         
@@ -3675,7 +3675,7 @@ if any(mode==4)
         h.Mia_Additional.Axes(1).YScale = 'Lin';
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
-                h.Plots.Additional_Axes(1,1).YData = mean(mean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
+                h.Plots.Additional_Axes(1,1).YData = mean(nanmean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
                 if h.Mia_Additional.Axes(1).YLabel.UserData == 1;
                     h.Plots.Additional_Axes(1,1).YData = h.Plots.Additional_Axes(1,1).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                     h.Mia_Additional.Axes(1).YLabel.String = 'Average Frame Countrate [kHz]';
