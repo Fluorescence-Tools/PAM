@@ -1433,7 +1433,19 @@ if isempty(h.Mia)
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.78 0.54, 0.2 0.06],...
-            'String','20');        
+            'String','20');     
+        %%% Checkbox to switch between automatic\manual filenames 
+        h.Mia_Image.Calculations.Save_Name = uicontrol(...
+            'Parent', h.Mia_Image.Calculations.Cor_Panel,...
+            'Style','checkbox',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'Value',UserValues.MIA.AutoNames,...
+            'Callback', @(src,event) LSUserValues(1,src,{'Value','MIA','AutoNames'}),...
+            'BackgroundColor', Look.Back,...
+            'ForegroundColor', Look.Fore,...
+            'Position',[0.02 0.46, 0.7 0.06],...
+            'String','Use automatic filename');  
             %% Perform N&B calculation tab
         %%% Tab and panel for perform correlation UIs
         h.Mia_Image.Calculations.NB_Tab= uitab(...
@@ -4973,26 +4985,44 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                 case {1,2}
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
-            %%% Generates filename
-            Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.miacor']);
-            Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.miacor']);
-            Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.miacor']);
-            Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
-            %%% Checks, if file already exists and create new filename
-            if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName1=[Current_FileName1(1:end-7) '_' num2str(k) '.miacor'];
-                Current_FileName2=[Current_FileName2(1:end-7) '_' num2str(k) '.miacor'];
-                Current_FileName3=[Current_FileName3(1:end-7) '_' num2str(k) '.miacor'];
-                Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
-                %%% Increases counter, until no file is found
-                while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                    k=k+1;
-                    Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                    Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                    Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                    Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+            
+            if ~h.Mia_Image.Calculations.Save_Name.Value
+                [FileName,PathName] = uiputfile([FileName '.miacor'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+                if numel(FileName)>11 && (strcmp(FileName(end-11:end),'_ACF1.miacor') || strcmp(FileName(end-11:end),'_ACF2.miacor')) 
+                    FileName=FileName(1:end-12);
+                    
+                elseif numel(FileName)>10 && strcmp(FileName(end-10:end),'_CCF.miacor')
+                    FileName=FileName(1:end-11);
+                else
+                    FileName=FileName(1:end-7);
+                end
+                Current_FileName1=fullfile(PathName,[FileName '_ACF1.miacor']);
+                Current_FileName2=fullfile(PathName,[FileName '_ACF2.miacor']);
+                Current_FileName3=fullfile(PathName,[FileName '_CCF.miacor']);
+                Current_FileName4=fullfile(PathName,[FileName '_Info.txt']);
+                
+            else
+                %%% Generates filename
+                Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.miacor']);
+                Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.miacor']);
+                Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.miacor']);
+                Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
+                %%% Checks, if file already exists and create new filename
+                if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                    k=1;
+                    %%% Adds 1 to filename
+                    Current_FileName1=[Current_FileName1(1:end-7) '_' num2str(k) '.miacor'];
+                    Current_FileName2=[Current_FileName2(1:end-7) '_' num2str(k) '.miacor'];
+                    Current_FileName3=[Current_FileName3(1:end-7) '_' num2str(k) '.miacor'];
+                    Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
+                    %%% Increases counter, until no file is found
+                    while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                        k=k+1;
+                        Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                        Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                        Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                        Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                    end
                 end
             end
             %%% Saves Auto correlations
@@ -5075,26 +5105,45 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                 case {1,2}
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
-            %%% Generates filename
-            Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.tif']);
-            Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.tif']);
-            Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.tif']);
-            Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
-            %%% Checks, if file already exists and create new filename
-            if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName1=[Current_FileName1(1:end-4) '_' num2str(k) '.tif'];
-                Current_FileName2=[Current_FileName2(1:end-4) '_' num2str(k) '.tif'];
-                Current_FileName3=[Current_FileName3(1:end-4) '_' num2str(k) '.tif'];
-                Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
-                %%% Increases counter, until no file is found
-                while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
-                    k=k+1;
-                    Current_FileName1=[Current_FileName1(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                    Current_FileName2=[Current_FileName2(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                    Current_FileName3=[Current_FileName3(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                    Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+            if ~h.Mia_Image.Calculations.Save_Name.Value
+                [FileName,PathName] = uiputfile([FileName '.tif'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+                if numel(FileName)>8 && (strcmp(FileName(end-8:end),'_ACF1.tif') || strcmp(FileName(end-8:end),'_ACF2.tif'))
+                    FileName=FileName(1:end-9);
+                    
+                elseif numel(FileName)>7 && strcmp(FileName(end-7:end),'_CCF.tif')
+                    FileName=FileName(1:end-8);
+                else
+                    FileName=FileName(1:end-4);
+                end
+                Current_FileName1=fullfile(PathName,[FileName '_ACF1.tif']);
+                Current_FileName2=fullfile(PathName,[FileName '_ACF2.tif']);
+                Current_FileName3=fullfile(PathName,[FileName '_CCF.tif']);
+                Current_FileName4=fullfile(PathName,[FileName '_Info.txt']);
+                
+            else
+                
+                
+                %%% Generates filename
+                Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.tif']);
+                Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.tif']);
+                Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.tif']);
+                Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
+                %%% Checks, if file already exists and create new filename
+                if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                    k=1;
+                    %%% Adds 1 to filename
+                    Current_FileName1=[Current_FileName1(1:end-4) '_' num2str(k) '.tif'];
+                    Current_FileName2=[Current_FileName2(1:end-4) '_' num2str(k) '.tif'];
+                    Current_FileName3=[Current_FileName3(1:end-4) '_' num2str(k) '.tif'];
+                    Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
+                    %%% Increases counter, until no file is found
+                    while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+                        k=k+1;
+                        Current_FileName1=[Current_FileName1(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                        Current_FileName2=[Current_FileName2(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                        Current_FileName3=[Current_FileName3(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                        Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                    end
                 end
             end
             %% Saves info file

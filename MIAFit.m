@@ -1034,7 +1034,7 @@ Update_Table([],[],1); %contains UpdatePlots, where the 2D plot is updated
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
 global MIAFitMeta MIAFitData UserValues
@@ -1560,7 +1560,23 @@ switch mode
                 end           
             end            
         end
-    case 2
+    case 2 %%% Export data to workspace
+        
+        x = str2double(h.Fit_X.String);
+        y = str2double(h.Fit_Y.String);
+        [x,y] = meshgrid(1:x,1:y);
+        x = x - ceil(max(max(x))/2);
+        y = y - ceil(max(max(y))/2);
+        
+        
+        for i=1:numel(MIAFitData.FileName)
+            MIAFits.Fits{i} = feval(MIAFitMeta.Model.Function,MIAFitMeta.Params(:,i),x,y,i);
+        end
+        MIAFits.Data=MIAFitData.Data(:,1);
+        MIAFits.Weights=MIAFitData.Data(:,2);
+        MIAFits.Params = MIAFitMeta.Params;
+        MIAFits.Model = MIAFitMeta.Model;
+        assignin('base', 'MIAFits', MIAFits);
     case 3 %%% Change number of plots
        if Obj == h.Export_NumX
            NumX = str2double(h.Export_NumX.String);

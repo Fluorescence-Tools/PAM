@@ -1,4 +1,4 @@
-function  [Profiles,Current] = LSUserValues(Mode)
+function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
 global UserValues FileInfo
 
 
@@ -1709,6 +1709,12 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.DoPCH = S.MIA.DoPCH;
     
+    if ~isfield(S.MIA, 'AutoNames')
+        disp('WARNING: UserValues structure incomplete, field "MIA.AutoNames" missing');
+        S.MIA.AutoNames = 1;
+    end
+    P.MIA.AutoNames = S.MIA.AutoNames;
+    
     %% Trace
     if ~isfield(S, 'Trace')
         disp('WARNING: UserValues structure incomplete, field "Trace" missing');
@@ -1731,6 +1737,17 @@ if Mode==0 %%% Loads user values
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
 else
+    if nargin==3
+        switch numel(Param)
+            case 2
+                UserValues.(Param{2})=Obj.(Param{1});
+            case 3
+                UserValues.(Param{2}).(Param{3})=Obj.(Param{1});
+            case 4
+                UserValues.(Param{2}).(Param{3}).(Param{4})=Obj.(Param{1});
+        end
+    end
+    
     Current=[];
     %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
     if findobj('Tag','Pam') == get(groot,'CurrentFigure');
