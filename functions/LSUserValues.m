@@ -903,6 +903,15 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser was incomplete');
     end
     P.BurstBrowser = S.BurstBrowser;
+    %%% Checks, if BurstBrowser.CutDatabase subfield exists
+    %%% Here, user-defined standard cuts are stored
+    %%% Contains 2CMFD cuts in CutDatabase(1) and 3CMFD cuts in CutDatabase(2)
+    if ~isfield (S.BurstBrowser,'CutDatabase')
+        S.BurstBrowser.CutDatabase{1}=struct();
+        S.BurstBrowser.CutDatabase{2}=struct();
+        disp('UserValues.BurstBrowser.CutDatabase was incomplete');
+    end
+    P.BurstBrowser.CutDatabase = S.BurstBrowser.CutDatabase;
     %%% Checks, if BurstBrowser.Corrections subfield exists
     %%% Here the correction factors are stored
     if ~isfield (S.BurstBrowser,'Corrections')

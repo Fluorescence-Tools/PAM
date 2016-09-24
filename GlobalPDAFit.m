@@ -1737,8 +1737,8 @@ switch mode
         end
         xlim(h.AllTab.Gauss_Axes,[Mini, Maxi]);
         xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
-        xlim(h.AllTab.Gauss_Axes,[20 70]);
-        xlim(h.SingleTab.Gauss_Axes,[20 70]);
+        %xlim(h.AllTab.Gauss_Axes,[20 70]);
+        %xlim(h.SingleTab.Gauss_Axes,[20 70]);
         
         %%% Set Gauss Axis Y limit
         ylim(h.AllTab.Gauss_Axes,[minGaussSum, maxGaussSum*1.05]);
