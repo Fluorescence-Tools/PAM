@@ -3604,7 +3604,8 @@ if obj ~= h.DatabaseBB.List
     LSUserValues(0);
     switch obj
         case {h.Load_Bursts, h.Append_File}
-            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'on');
+            path= fullfile(UserValues.File.BurstBrowserPath,'..',filesep);
+            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
             if FilterIndex == 0
                 return;
             end
@@ -3617,7 +3618,8 @@ if obj ~= h.DatabaseBB.List
             %%% only consider one level downwards
             FileName = cell(0);
             PathName = cell(0);
-            pathname = uigetdir(UserValues.File.BurstBrowserPath,'Choose a folder. All *.bur files from direct subfolders will be loaded.');
+            path= fullfile(UserValues.File.BurstBrowserPath,'..',filesep);
+            pathname = uigetdir(path,'Choose a folder. All *.bur files from direct subfolders will be loaded.');
             subdir = dir(pathname);
             subdir = subdir([subdir.isdir]);
             subdir = subdir(3:end); %%% remove '.' and '..' folders
@@ -4218,6 +4220,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
 count = 0;
+PathName= fullfile(PathName,'..',filesep);%%% go one layer above since .*bur files are nested
 while FileName ~= 0
     [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
     if ~iscell(FileName)
@@ -4378,9 +4381,9 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update the print path %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Choose_PrintPath_Menu(~,~)
+function Choose_PrintPath_Menu(obj,~)
 global UserValues
-
+h = guidata(obj);
 try
     PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
 catch
@@ -4747,6 +4750,8 @@ switch obj
                 h.AddSpecies_Button.Visible = 'off';
                 h.RemoveSpecies_Button.Visible = 'off';
                 h.RenameSpecies_Button.Visible = 'off';
+                h.Export_To_PDA_Button.Visible = 'off';
+                h.Send_to_TauFit_Button.Visible = 'off';
             case 0
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -4758,6 +4763,8 @@ switch obj
                 h.AddSpecies_Button.Visible = 'on';
                 h.RemoveSpecies_Button.Visible = 'on';
                 h.RenameSpecies_Button.Visible = 'on';
+                h.Export_To_PDA_Button.Visible = 'on';
+                h.Send_to_TauFit_Button.Visible = 'on';
          end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
@@ -6088,12 +6095,13 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
-    BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
-    BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
-    BurstMeta.Fitting.BurstCount = H;
-    BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
-    BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
-    
+    if paramx ~= paramy
+        BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
+        BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
+        BurstMeta.Fitting.BurstCount = H;
+        BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
+        BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
+    end
     if colorbyparam
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
@@ -12446,6 +12454,8 @@ if isfield(BurstData{file},'FileNameSPC')
     else
         FileName = BurstData{file}.FileNameSPC;
     end
+else
+    FileName = BurstData{file}.FileName(1:end-4);
 end
 
 if BurstData{file}.SelectedSpecies(1) ~= 0
@@ -12469,7 +12479,7 @@ if directly_save
     if ask_file
         %%% Get Path to save File
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(BurstData{file}.PathName,FigureName));
+        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
         %[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
         if FileName == 0
             delete(hfig);
@@ -12957,6 +12967,8 @@ switch mode
         s.database = BurstMeta.Database;
         s.str = h.DatabaseBB.List.String;
         save(fullfile(Path,File),'s');
+        %%% store path in BurstMeta
+        UserValues.File.BurstBrowserDatabasePath = Path;
     case 5 %% Loads selected files into BurstBrowser
         h.Progress.Text.String='Loading new files';
         Load_Burst_Data_Callback(obj,[]);

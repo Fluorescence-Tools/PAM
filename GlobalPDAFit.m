@@ -73,11 +73,13 @@ if isempty(h.GlobalPDAFit)
         'Parent',h.Menu.File,...
         'Label','Add File(s)...',...
         'Callback',{@Load_PDA, 2},...
+        'enable','off',...
         'Tag','Add');
     h.Menu.Save = uimenu(...
         'Parent',h.Menu.File,...
         'Label','Save to File(s)',...
         'Callback',@Save_PDA,...
+        'enable','off',...
         'Tag','Save');
     h.Menu.Export = uimenu(...
         'Parent',h.Menu.File,...
@@ -1048,7 +1050,8 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     h.ParametersTab.Table.Data(1:end-1,:)=[];
     h.PDADatabase.List.String = [];
     h.PDADatabase.Save.Enable = 'off';
-
+    h.Menu.Add.Enable = 'on';
+    h.Menu.Save.Enable = 'on';
 end
 errorstr = cell(0,1);
 a = 1;
@@ -1627,7 +1630,7 @@ switch mode
                 'YData', ydatafit);
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
-                'YData', ydatares);
+                'YData', real(ydatares));
             for c = PDAMeta.Comp{i}
                 if h.SettingsTab.OuterBins_Fix.Value
                     % do not display or take into account during fitting, the
@@ -1678,7 +1681,7 @@ switch mode
                     'YData', ydatafit);
                 set(PDAMeta.Plots.Res_Single,...
                     'Visible', 'on',...
-                    'YData', ydatares);
+                    'YData', real(ydatares));
                 for c = PDAMeta.Comp{i}
                     if h.SettingsTab.OuterBins_Fix.Value
                         % do not display or take into account during fitting, the
@@ -2313,7 +2316,7 @@ if sum(PDAMeta.Global) == 0
                 %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
             case 'MLE'
                 %%% For Updating the Result Plot, use MC sampling
-                PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
+                PDAMeta.chi2(i) = PDAMonteCarloFit_Single(fitpar);
                 %%% Update Plots
                 h.FitTab.Bar.YData = PDAMeta.hFit;
                 h.Res_Bar.YData = PDAMeta.w_res;
@@ -2326,7 +2329,7 @@ if sum(PDAMeta.Global) == 0
             case 'MonteCarlo'
                 %PDAMeta.chi2 = PDAMonteCarloFit_Single(fitpar);
             otherwise
-                PDAMeta.chi2 = 0;
+                PDAMeta.chi2(i) = 0;
         end
         
         % display final mean chi^2
