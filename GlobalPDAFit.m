@@ -1012,18 +1012,15 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 
 if mode ~= 3
     %% Load or Add data
-    [FileName,p] = uigetfile({'*.pda','*.pda file'},'Select *.pda file',...
-        UserValues.File.PDAPath,'Multiselect','on');
-    %%% Transforms to cell array, if only one file was selected
-    if ~iscell(FileName)
-        FileName = {FileName};
-    end
+    Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.File.PDAPath);
+    FileName = Files(:,1);
+    PathName = Files(:,2);
     %%% Only executes, if at least one file was selected
     if all(FileName{1}==0)
         return
     end
-    PathName = cell(numel(FileName),1);
-    PathName(:) = {p};
+    %PathName = cell(numel(FileName),1);
+    %PathName(:) = {p};
 else
     %% Database loading
     FileName = PDAData.FileName;
@@ -1541,7 +1538,7 @@ switch mode
         end
     case 4
         %% change active checkbox 
-        PDAMeta.PreparationDone = 0; %recalculate histogram
+        %PDAMeta.PreparationDone = 0; %recalculate histogram (why?)
         for i = 1:numel(PDAData.FileName)
             if cell2mat(h.FitTab.Table.Data(i,1))
                 %active
@@ -2991,25 +2988,46 @@ if PDAMeta.directexc(i) == 0
         (1./(1-eps)-(1+PDAMeta.crosstalk(i))).^(-1/6)- ...
         RDA).^2);
 elseif PDAMeta.directexc(i) ~= 0
-    dRdeps = -((PDAMeta.R0(i)^6*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
-        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
-        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
-        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))...
-        - ((PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))*(PDAMeta.crosstalk(i)...
-        - PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) + PDAMeta.directexc(i)*PDAMeta.gamma(i) + 1))./...
-        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i)...
-        - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
-        + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i)).^2)./...
-        (6*(-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
-        - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps...
-        + PDAMeta.directexc(i)*PDAMeta.gamma(i) + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps -...
-        PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(5/6));
-    P_Rofeps = (1/(sqrt(2*pi)*sigma)).*...
-        exp(-(RDA - (-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./...
-        (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
-        + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i) +...
-        PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(1/6)).^2./(2*sigma^2));
-    Pe = dRdeps.*P_Rofeps;
+    old = 0;
+    if old
+        dRdeps = -((PDAMeta.R0(i)^6*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
+            - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
+            + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
+            + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))...
+            - ((PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))*(PDAMeta.crosstalk(i)...
+            - PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) + PDAMeta.directexc(i)*PDAMeta.gamma(i) + 1))./...
+            (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i)...
+            - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i)...
+            + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i)).^2)./...
+            (6*(-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./(PDAMeta.crosstalk(i)...
+            - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps + PDAMeta.directexc(i)*eps...
+            + PDAMeta.directexc(i)*PDAMeta.gamma(i) + PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps -...
+            PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(5/6));
+        P_Rofeps = (1/(sqrt(2*pi)*sigma)).*...
+            exp(-(RDA - (-(PDAMeta.R0(i)^6*PDAMeta.gamma(i) - PDAMeta.R0(i)^6*eps*PDAMeta.gamma(i))./...
+            (PDAMeta.crosstalk(i) - eps - PDAMeta.crosstalk(i)*PDAMeta.directexc(i) - PDAMeta.crosstalk(i)*eps...
+            + PDAMeta.directexc(i)*eps + PDAMeta.directexc(i)*PDAMeta.gamma(i) +...
+            PDAMeta.crosstalk(i)*PDAMeta.directexc(i)*eps - PDAMeta.directexc(i)*eps*PDAMeta.gamma(i))).^(1/6)).^2./(2*sigma^2));
+        Pe = dRdeps.*P_Rofeps;
+    else
+        %%% redone formula derivation by hand, easier to read
+        R0 = PDAMeta.R0(i);
+        d = PDAMeta.directexc(i)/(1-PDAMeta.directexc(i));
+        ct = PDAMeta.crosstalk(i);
+        gamma = PDAMeta.gamma(i);
+        epsilon = eps;
+        Rofeps = R0*( (gamma*(1+d)) ./ ( (1./(1-epsilon)) -1 -ct -gamma*d) ).^(1/6);
+        dRdeps = (R0/6)*...
+            ( (gamma*(1+d)) ./ ( (1./(1-epsilon)) -1 -ct -gamma*d) ).^(-5/6).*...
+            gamma.*(1+d).*...
+            ( (1./(1-epsilon)) -1 -ct -gamma*d).^(-2).*...
+            (1-epsilon).^(-2);
+        dRdeps(1) = 0;
+        PRofeps = (1/(sqrt(2*pi)*sigma))*...
+            exp((-1/(2*sigma^2)).*...
+            (Rofeps-RDA).^2);
+        Pe = dRdeps.*PRofeps;
+    end
 end
 Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe); %area-normalized Pe
@@ -3563,7 +3581,7 @@ switch mode
     case 0 %%% Updates whole table (Open UI)
         %%% Disables cell callbacks, to prohibit double callback
         h.FitTab.Table.CellEditCallback=[];
-        %%% Column names & widths
+        %%% Column namges & widths
         Columns=cell(50,1);
         Columns{1}='Active';
         for i=1:5
@@ -3752,11 +3770,17 @@ switch mode
             end
         elseif e.Indices(2)==1
             %% Active was changed
-            h.FitTab.Table.Enable='off';
-            pause(0.2)
-            Update_Plots([],[],4)
-            Update_Plots([],[],2) % to display the correct one on the single tab
-            h.FitTab.Table.Enable='on';
+            %%% check if at least one fit is still active
+            if sum(cell2mat(h.FitTab.Table.Data(1:end-3,1))) > 0
+                h.FitTab.Table.Enable='off';
+                pause(0.2)
+                Update_Plots([],[],4)
+                Update_Plots([],[],2) % to display the correct one on the single tab
+                h.FitTab.Table.Enable='on';
+            else
+                %%% reset status
+                h.FitTab.Table.Data{e.Indices(1),e.Indices(2)} = true;
+            end
         end
         %%% Mirror the table in PDAData.FitTable
         %PDAData.FitTable = h.FitTab.Table.Data(1:end-3,:);
@@ -4352,3 +4376,28 @@ PofT = (...
        ((k2*T1+k1*T2)/(k1+k2))*(sqrt(k1*k2)/sqrt(T1*T2))*...
        besseli(1,2*sqrt(k1*k2*T1*T2)) ...
        ) * exp(-k1*T1-k2*T2)*dt;
+   
+
+function Files = GetMultipleFiles(FilterSpec,Title,PathName)
+FileName = 1;
+count = 0;
+while FileName ~= 0
+    [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
+    if ~iscell(FileName)
+        if FileName ~= 0
+            count = count+1;
+            Files{count,1} = FileName;
+            Files{count,2} = PathName;
+        end
+    elseif iscell(FileName)
+        for i = 1:numel(FileName)
+            if FileName{i} ~= 0
+                count = count+1;
+                Files{count,1} = FileName{i};
+                Files{count,2} = PathName;
+            end
+        end
+        FileName = FileName{end};
+    end
+    PathName= fullfile(PathName,'..',filesep);%%% go one layer above since .*pda files are nested
+end

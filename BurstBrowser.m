@@ -1569,7 +1569,8 @@ if isempty(hfig)
         'ForegroundColor',Look.Fore,...
         'TooltipStr','red. Chi2 value');
     h.FitTable_ContextMenu = uicontextmenu;
-    h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Define Species from Fit','Callback',@SpeciesFromGaussianFit);
+    h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Copy fit result to clipboard','Callback',@CopyFitresultToClipboard);
+    h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Define Species from Fit','Callback',@SpeciesFromGaussianFit,'Separator','on');
     h.GUIData.TableDataMLE = cell(7,6);
     h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
     h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
@@ -5783,9 +5784,19 @@ if obj == h.Fit_Gaussian_Button
     switch UserValues.BurstBrowser.Settings.GaussianFitMethod
         case 'MLE'
             if x == y %%% same data selected, 1D fitting
+                BurstMeta.Fitting.FitType = '1D';
+                
                 GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
                 xbins_fit = linspace(xbins(1),xbins(end),1000);
                 p = pdf(GModel,xbins_fit');
+                Res = zeros(1,3*nG);
+                Res(1:3:end) = GModel.ComponentProportion;
+                Res(2:3:end) = GModel.mu;
+                Res(3:3:end) = sqrt(GModel.Sigma);
+                Res(end+1) = GModel.NegativeLogLikelihood;
+                Res(end+1) = GModel.BIC;
+                BurstMeta.Fitting.FitResult = Res;
+                
                 BurstMeta.Plots.Mixture.plotX(1).Visible = 'on';
                 BurstMeta.Plots.Mixture.plotX(1).XData = xbins_fit;
                 BurstMeta.Plots.Mixture.plotX(1).YData = p./sum(p).*sum(sum(HH))*1000/nbinsX;
@@ -5806,6 +5817,8 @@ if obj == h.Fit_Gaussian_Button
                     h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
                 end
             else
+                BurstMeta.Fitting.FitType = '2D';
+                
                 valid = isfinite(datatoplot(:,x)) & isfinite(datatoplot(:,y));
                 if h.Fit_Gaussian_Pick.Value
                     cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
@@ -5818,6 +5831,16 @@ if obj == h.Fit_Gaussian_Button
                     %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
                     GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
                 end
+                Res = zeros(1,6*nG);
+                Res(1:6:end) = GModel.ComponentProportion;
+                Res(2:6:end) = GModel.mu(:,1);
+                Res(3:6:end) = GModel.mu(:,2);
+                Res(4:6:end) = sqrt(GModel.Sigma(1,1,:));
+                Res(5:6:end) = sqrt(GModel.Sigma(2,2,:));
+                Res(6:6:end) = GModel.Sigma(1,2,:);
+                Res(end+1) = GModel.NegativeLogLikelihood;
+                Res(end+1) = GModel.BIC;
+                BurstMeta.Fitting.FitResult = Res;
                 % plot contour plot over image plot
                 % hide contourf plot, make image plot visible
                 BurstMeta.Plots.Main_Plot(1).Visible = 'on';
@@ -5883,6 +5906,8 @@ if obj == h.Fit_Gaussian_Button
             end
         case 'LSQ'
             if x == y %%% same data selected, 1D fitting
+                BurstMeta.Fitting.FitType = '1D';
+                
                 xbins_fit = linspace(xbins(1),xbins(end),1000);
                 x_start = mean(datatoplot(:,x));
                 %%% for non fixed values, take estimate
@@ -5922,6 +5947,7 @@ if obj == h.Fit_Gaussian_Button
                 %%% Assigns parameters from table to fixed parameters
                 Res(fixed)=BurstMeta.GaussianFit.Params(fixed);
                 Res(1:3:end) = Res(1:3:end)./sum(Res(1:3:end));
+                BurstMeta.Fitting.FitResult = [Res(1:3*nG), chi2];
                 
                 p = MultiGaussFit_1D(Res,{xbins_fit,sum(sum(HH)),fixed,nG,1});
                 BurstMeta.Plots.Mixture.plotX(1).Visible = 'on';
@@ -5951,6 +5977,8 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
                 
             else
+                BurstMeta.Fitting.FitType = '2D';
+                
                 cov = [std(datatoplot(:,x)).^2,std(datatoplot(:,y)).^2,0];
                 if h.Fit_Gaussian_Pick.Value
                     [x_start,y_start] = ginput(nG);
@@ -6027,7 +6055,11 @@ if obj == h.Fit_Gaussian_Button
                     Res(5+(i-1)*6) = COV(2,2);
                 end
                 Res(1:6:end) = Res(1:6:end)./sum(Res(1:6:end));
-
+                
+                FitResult = Res;
+                FitResult(4:6:end) = sqrt(FitResult(4:6:end));
+                FitResult(5:6:end) = sqrt(FitResult(5:6:end));
+                BurstMeta.Fitting.FitResult = [FitResult(1:6*nG),chi2];
                 % plot contour plot over image plot
                 % hide contourf plot, make image plot visible
                 BurstMeta.Plots.Main_Plot(1).Visible = 'on';
@@ -6037,6 +6069,7 @@ if obj == h.Fit_Gaussian_Button
                     BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
                     BurstMeta.Plots.Mixture.plotY(i).Visible = 'on';
                 end
+
                 % prepare fit data
                 xbins_fit = linspace(xbins(1),xbins(end),1000);
                 ybins_fit = linspace(ybins(1),ybins(end),1000);
@@ -13194,3 +13227,46 @@ if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
         h.ParameterListY.Value = 1;
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Copies Gauss Fit Data to Clipboard %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function CopyFitresultToClipboard(obj,~)
+global BurstMeta
+if ~isfield(BurstMeta,'Fitting')
+    return;
+end
+res = BurstMeta.Fitting.FitResult;
+h = guidata(obj);
+
+switch BurstMeta.Fitting.FitType
+    case '1D'
+        Header = {'Fraction','Mean(X)','sigma(X)'};
+    case '2D'
+        Header = {'Fraction','Mean(X)','Mean(Y)','sigma(XX)','sigma(YY)','COV(XY)'};
+end
+
+Info = cell(2,numel(Header));
+switch h.Fit_GaussianMethod_Popupmenu.Value
+    case 1 %MLE
+        Info(1:2,1:2) = {'NegativeLogLikelihood','BIC';res(end-1),res(end)};
+        res(end-1:end) = [];
+    case 2 %LSQ
+        Info(1:2,1) = {'Chi2';res(end)};
+        res(end) = [];
+end
+Header = [Info;Header];
+data = [];
+switch BurstMeta.Fitting.FitType
+    case '1D'
+        nG = numel(res)/3;
+        for i = 1:nG
+            data = [data;num2cell(res((1:3)+(i-1)*3))];
+        end
+    case '2D'
+        nG = numel(res)/6;
+        for i = 1:nG
+            data = [data;num2cell(res((1:6)+(i-1)*6))];
+        end
+end
+Mat2clip([Header;data]);
