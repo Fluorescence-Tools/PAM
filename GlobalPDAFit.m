@@ -3512,6 +3512,47 @@ else
     tmp.settings = UserValues.PDA;
     assignin('base','DataTableStruct',tmp);
     save(GenerateName(fullfile(Path, 'figure_table_data.mat'),1), 'tmp')
+    
+    %%% save everything to an excel table
+    fitResult = cell(size(tmp.fittable,1),size(tmp.fittable,2));
+    fitResult{1,1} = 'FileNames';
+    fitResult(2:numel(tmp.file)+1,1) = tmp.file';
+    tmp.fittable(2:end,:) = num2cell(cellfun(@str2double,tmp.fittable(2:end,:)));
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b> ',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
+    %%% write to text file
+    fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
+    fprintf(fID,[repmat('%s\t',1,17),'%s\n'],fitResult{1,:});
+    for i = 2:size(fitResult,1)
+        fprintf(fID,['%s' repmat('\t%.2f',1,17) '\n\n'],fitResult{i,:});
+    end
+    fprintf(fID,'Parameters:\n');
+    fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
+    fprintf(fID,[repmat('%.2f\t',1,6) '%.2f\n'],tmp.parameterstable{2,:});
+    fprintf(fID,'\nSettings:\n');
+    settings = [fieldnames(tmp.settings), struct2cell(tmp.settings)];
+    for i = 1:size(settings,1)
+        if ischar(settings{i,2})
+            settings{i,2} = str2double(settings{i,2});
+        end
+    end
+    for i = 1:size(settings,1)-2
+        fprintf(fID,'%s\t%d\n',settings{i,:});
+    end
+    fprintf(fID,'%s\t%.2f\n',settings{end-1,:});
+    fprintf(fID,'%s\t%.2f\n',settings{end,:});
+    fclose(fID);
+    %%% save plot data also
+    fID  = fopen(GenerateName(fullfile(Path, 'Plots.txt'),1),'w');
+    data = [tmp.eprheader; num2cell(tmp.epr)];
+    fprintf(fID,[repmat('%s\t',1,size(data,2)-1) '%s\n'],data{1,:});
+    formatSpec = [repmat('%.2f\t',1,size(data,2)-1) '%.2f\n'];
+    for i = 2:size(data,1)
+        fprintf(fID,formatSpec,data{i,:});
+    end
+    fclose(fID);
 end
 
 % Update the Fit Tab
