@@ -1400,8 +1400,8 @@ switch mode
                 'LineStyle','none',...
                 'Marker','.');
             % generate exemplary distance plots
-            x = 0:0.1:150;
-            g = zeros(5,150*10+1);
+            x = 0:0.1:200;
+            g = zeros(5,200*10+1);
             for j = 1:6
                 g(j,:) = normpdf(x,40+10*j,j);
             end;

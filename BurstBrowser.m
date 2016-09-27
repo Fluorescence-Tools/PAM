@@ -4239,6 +4239,7 @@ while FileName ~= 0
         end
         FileName = FileName{end};
     end
+    PathName= fullfile(PathName,'..',filesep);%%% go one layer above since .*bur files are nested
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6095,7 +6096,7 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
-    if paramx ~= paramy
+    if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.Value
         BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
         BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
         BurstMeta.Fitting.BurstCount = H;
@@ -12967,8 +12968,9 @@ switch mode
         s.database = BurstMeta.Database;
         s.str = h.DatabaseBB.List.String;
         save(fullfile(Path,File),'s');
-        %%% store path in BurstMeta
+        %%% store path in UserValues
         UserValues.File.BurstBrowserDatabasePath = Path;
+        LSUserValues(1);
     case 5 %% Loads selected files into BurstBrowser
         h.Progress.Text.String='Loading new files';
         Load_Burst_Data_Callback(obj,[]);
