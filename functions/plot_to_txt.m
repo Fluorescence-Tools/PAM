@@ -14,10 +14,15 @@ for i = 1:numel(child)
 end
 child = child(logical(valid));
 %% loop over children and extract data
+count = 0;
 for i = 1:numel(child)
-        xdat{1+numel(child)-i} = child(i).XData; % reverse direction for correct plotting order
-        ydat{1+numel(child)-i} = child(i).YData;
-        name{1+numel(child)-i} = child(i).DisplayName;
+    if strcmp(child(i).Visible,'on');
+        count = count+1;
+        xdat{count} = child(i).XData; % reverse direction for correct plotting order
+        ydat{count} = child(i).YData;
+        name{count} = child(i).DisplayName;
+        
+    end
 end
 
 %% convert to matrix
