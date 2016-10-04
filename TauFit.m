@@ -151,7 +151,7 @@ h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0
 
 h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off','LineWidth',2);
 h.Residuals_Plot.YLabel.Color = Look.Fore;
-h.Residuals_Plot.YLabel.String = 'w_res';
+h.Residuals_Plot.YLabel.String = 'w_{res}';
 h.Residuals_Plot.XGrid = 'on';
 h.Residuals_Plot.YGrid = 'on';
 
@@ -703,6 +703,10 @@ if exist('ph','var')
                     'Label','2 exponentials',...
                     'Checked','off',...
                     'Callback',@Start_Fit);
+                h.Fit_Tail_3exp = uimenu('Parent',h.Fit_Tail_Menu,...
+                    'Label','3 exponentials',...
+                    'Checked','off',...
+                    'Callback',@Start_Fit);
                 h.Fit_Tail_Button.UIContextMenu = h.Fit_Tail_Menu;
                 %%% Button to fit Time resolved anisotropy
                 h.Fit_Aniso_Button = uicontrol(...
@@ -910,6 +914,10 @@ if exist('bh','var')
         h.Fit_Tail_Menu = uicontextmenu;
         h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
             'Label','2 exponentials',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_Tail_3exp = uimenu('Parent',h.Fit_Tail_Menu,...
+            'Label','3 exponentials',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Tail_Button.UIContextMenu = h.Fit_Tail_Menu;
@@ -1701,7 +1709,12 @@ if isobject(obj) % check if matlab object
             if obj == h.Ignore_Slider
                 TauFitData.Ignore{chan} = floor(obj.Value);
             elseif obj == h.Ignore_Edit
-                TauFitData.Ignore{chan} = str2double(obj.String);
+                if obj.Value <  1
+                    TauFitData.Ignore{chan} = 1;
+                    obj.String = '1';
+                else
+                    TauFitData.Ignore{chan} = str2double(obj.String);
+                end
             end
         case {h.FitPar_Table}
             TauFitData.IRFShift{chan} = obj.Data{end,1};
@@ -1897,6 +1910,7 @@ else
 end
 h.Result_Plot_Text.Visible = 'off';
 h.Output_Text.String = '';
+h.Plots.Residuals.Visible = 'on';
 %% Prepare FitData
 TauFitData.FitData.Decay_Par = h.Plots.Decay_Par.YData;
 TauFitData.FitData.Decay_Per = h.Plots.Decay_Per.YData;
@@ -2858,7 +2872,6 @@ switch obj
         TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
         %%% Update plots
-        h.Plots.Residuals.Visible = 'on';
         if ignore > 1
             h.Plots.DecayResult_ignore.Visible = 'on';
             h.Plots.Residuals_ignore.Visible = 'on';
@@ -3108,9 +3121,11 @@ switch obj
         h.Plots.DecayResult.Color = [0 0 0];
         h.Plots.Residuals.Color = [0 0 0];
         h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
-    case {h.Fit_Tail_Button,h.Fit_Tail_2exp}
+    case {h.Fit_Tail_Button,h.Fit_Tail_2exp,h.Fit_Tail_3exp}
         if obj == h.Fit_Tail_2exp
             number_of_exponentials = 2;
+        elseif obj == h.Fit_Tail_3exp
+            number_of_exponentials = 3;
         else
             number_of_exponentials = 1;
         end
@@ -3131,6 +3146,14 @@ switch obj
             model = @(x,xdata) x(1)*(x(4)*exp(-xdata./x(2))+(1-x(4))*exp(-xdata./x(3)))+x(5);
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.5,0];
             param = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+        elseif number_of_exponentials == 3
+            %%% param is
+            %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
+            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+(1-x(5)-x(6))*exp(-xdata./x(4)))+x(7);
+            param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
+                0.3,0.3,0];
+            options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
+            param = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
         end
         
         x_fitres = ignore:numel(Decay);
@@ -3166,10 +3189,14 @@ switch obj
         if number_of_exponentials == 1
             str = sprintf('I_0 = %1.2f \n\\tau = %2.2f ns\noffset = %3.2f',param(1),param(2)*TACtoTime,param(3));
         elseif number_of_exponentials == 2
-            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\nfraction 1 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4),param(5),TACtoTime*(param(4)*param(2)+(1-param(4))*param(3)));
+            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\nfraction 1 = %3.2f\nfraction 2 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',...
+                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4),1-param(4),param(5),TACtoTime*(param(4)*param(2)+(1-param(4))*param(3)));
+        elseif number_of_exponentials == 3
+            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\n\\tau_3 = %2.2f ns\nfraction 1 = %3.2f\nfraction 2 = %3.2f\nfraction 3 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',...
+                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4)*TACtoTime,param(5),param(6),1-param(5)-param(6),param(7),TACtoTime*(param(5)*param(2)+param(6)*param(3)+(1-param(5)-param(6))*param(4)));
         end
         h.Result_Plot_Text.String = str;
-        h.Result_Plot_Text.Position = [0.8 0.85];
+        h.Result_Plot_Text.Position = [0.8 0.8];
         
         x = 1:numel(Decay);
         h.Plots.Residuals.XData = x_fitres*TACtoTime;
@@ -3217,33 +3244,36 @@ else
     chan = TauFitData.chan;
 end
 %%% Read out the data from the plots
+ignore = TauFitData.Ignore{chan};
 MI = h.Plots.Decay_Par.XData;
 Decay_Par = h.Plots.Decay_Par.YData;
 Decay_Per = h.Plots.Decay_Per.YData;
 %%% Calculate Anisotropy
-l1 = 0.03;
-l2 = 0.03;
+l1 = UserValues.TauFit.l1;
+l2 = UserValues.TauFit.l2;
 Anisotropy = (Decay_Par-Decay_Per)./((1-3*l1).*Decay_Par + (2-3*l2)*Decay_Per);
+Anisotropy(isnan(Anisotropy)) = 0;
+Anisotropy_fit = Anisotropy(ignore:end);
+x_ax = 1:numel(Anisotropy_fit);
 %%% Define FitFunction
 Fit_Exp = @(p,x) (p(1)-p(3)).*exp(-x./p(2)) + p(3);
 %%% perform fit
 if obj == h.G_factor_edit %user edited the G factor editbox
     offset=(1-UserValues.TauFit.G{chan})/(2*UserValues.TauFit.G{chan}+1);
-    x0 = [0.4,1,offset];
+    x0 = [0.4,round(1/TauFitData.TACChannelWidth),offset];
     lb = [0,0,0.99*offset];
     ub = [0.4,Inf,1.01*offset];
     if ub(3) == 0;
         ub(3) = 0.01;
     end
 else %user pressed Get G
-    %x0 = [0.4,round(1/TauFitData.TACChannelWidth),0];
-    x0 = [0.4,1,0];
+    x0 = [0.4,round(1/TauFitData.TACChannelWidth),0];
     lb = [0,0,-0.4];
     ub = [0.4,Inf,0.4];
 end
-[x,~,res] = lsqcurvefit(Fit_Exp,x0,MI,Anisotropy,lb,ub);
+[x,~,res] = lsqcurvefit(Fit_Exp,x0,x_ax,Anisotropy_fit,lb,ub);
 
-FitFun = Fit_Exp(x,MI);
+FitFun = Fit_Exp(x,x_ax);
 
 
 %%% Update Plots
@@ -3251,12 +3281,14 @@ h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 h.Plots.IRFResult.Visible = 'off';
 %TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
-h.Plots.DecayResult.XData = MI;%*TACtoTime;
-h.Plots.DecayResult.YData = Anisotropy;
-h.Plots.FitResult.XData = MI;%*TACtoTime;
+h.Plots.DecayResult.XData = MI(ignore:end);%*TACtoTime;
+h.Plots.DecayResult.YData = Anisotropy_fit;
+h.Plots.FitResult.XData = MI(ignore:end);%*TACtoTime;
 h.Plots.FitResult.YData = FitFun;
+h.Plots.DecayResult_ignore.XData = MI(1:ignore);
+h.Plots.DecayResult_ignore.YData = Anisotropy(1:ignore);
 axis(h.Result_Plot,'tight');
-h.Plots.Residuals.XData = MI;%*TACtoTime;
+h.Plots.Residuals.XData = MI(ignore:end);%*TACtoTime;
 h.Plots.Residuals.YData = res;
 h.Plots.Residuals_ZeroLine.XData = MI;%*TACtoTime;
 h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
