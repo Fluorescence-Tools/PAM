@@ -3090,7 +3090,7 @@ switch obj
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
         elseif number_of_exponentials == 2
-            str = sprintf('rho_1 = %1.2f ns\nrho_2 = %1.2f ns\nr_0 = %2.4f\nr_1 = %3.4f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+            str = sprintf('rho_f = %1.2f ns\nrho_p = %1.2f ns\nr_0 = %2.4f\nr_\infty = %3.4f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
         end
         h.Result_Plot_Text.String = str;
         h.Result_Plot_Text.Position = [0.8 0.9];
@@ -3137,15 +3137,25 @@ switch obj
         if number_of_exponentials == 1
             %%% param is
             %%% I0, tau, offset
-            model = @(x,xdata) x(1)*exp(-xdata./x(2))+x(3);
+            model = @(x,xdata) (x(1)*exp(-xdata./x(2))+x(3));
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0];
-            param = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0],[Inf,Inf,Inf]);
+            if h.UseWeightedResiduals_Menu.Value
+                weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0],[Inf,Inf,Inf]);
+            else
+                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0],[Inf,Inf,Inf]);
+            end
         elseif number_of_exponentials == 2
             %%% param is
             %%% I0, tau1, tau2, Fraction1, offset
             model = @(x,xdata) x(1)*(x(4)*exp(-xdata./x(2))+(1-x(4))*exp(-xdata./x(3)))+x(5);
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.5,0];
-            param = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+            if h.UseWeightedResiduals_Menu.Value
+                weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+            else
+                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+            end
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
@@ -3153,12 +3163,16 @@ switch obj
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
                 0.3,0.3,0];
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
-            param = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+            if h.UseWeightedResiduals_Menu.Value
+                weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+            else
+                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+            end
         end
         
         x_fitres = ignore:numel(Decay);
         fitres = model(param,x_fit);fitres = fitres(1:(numel(Decay)-ignore+1));
-        res = Decay_fit-fitres;
         
         Decay_ignore = Decay(1:ignore);
         
@@ -3297,7 +3311,7 @@ h.Plots.Residuals_ZeroLine.YData = zeros(1,numel(MI));
 G = (1-x(3))./(1+2*x(3));
 h.Result_Plot_Text.Visible = 'on';
 TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
-h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)) ' ns \nr_0 = ' num2str(x(1))...
+h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)*TACtoTime) ' ns \nr_0 = ' num2str(x(1))...
     '\nr_i_n_f = ' num2str(x(3))]);
 h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2)*TACtoTime 0.9*h.Result_Plot.YLim(2)];
 h.G_factor_edit.String = num2str(G);
