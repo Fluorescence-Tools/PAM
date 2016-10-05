@@ -54,15 +54,18 @@ delete(toolbar_items([2:7 9 13:17]));
     
 %%% menu
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
-h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','fitted microtime pattern',...
-    'Callback',@Export);
-h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
-    'Callback',@Export);
 h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
     'Callback',@Export);
 h.Compare_Result = uimenu(h.Menu.Export_Menu,'Label','Compare Data...',...
-    'Separator','on',...
+    'Separator','off',...
     'Callback',@Export);
+h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Clipboard',...
+    'Callback',@Export,...
+    'Separator','on');
+h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted microtime pattern',...
+    'Callback',@Export);
+    
+
 
 %% Main Fluorescence Decay Plot
 %%% Panel containing decay plot and information
@@ -830,7 +833,7 @@ if exist('ph','var')
     end
 end
 if exist('bh','var')
-    if bh.SendToTauFit.equals(obj)
+    if bh.SendToTauFit.equals(obj) || obj == bh.Send_to_TauFit_Button
         TauFitData.Who = 'BurstBrowser';
         global BurstMeta
         % User clicked Send Species to TauFit in BurstBrowser
@@ -944,7 +947,7 @@ if exist('bh','var')
         if any(TauFitData.BAMethod == [1,2])
             %%% Add menu for Kappa2 simulation
             h.Menu.Extra_Menu = uimenu(h.TauFit,'Label','Extra...');
-            h.Menu.Sim_Kappa2_Menu = uimenu(h.Menu.Extra_Menu,'Label','Simulated Kappa2 distribution','Callback',@Kappa2_Sim);
+            h.Menu.Sim_Kappa2_Menu = uimenu(h.Menu.Extra_Menu,'Label','Simulate Kappa2 distribution','Callback',@Kappa2_Sim);
         end
     end
 end
@@ -4714,7 +4717,7 @@ Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','
 Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','FFraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
