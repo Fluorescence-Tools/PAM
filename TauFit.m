@@ -2188,7 +2188,14 @@ switch obj
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
-                
+                %%% fix amplitudes the same way it is done in the fit
+                %%% function
+                if (FitResult{4} + FitResult{5}) > 1
+                    a1 = FitResult{4}./(FitResult{4}+ FitResult{5});
+                    a2 = FitResult{5}./(FitResult{4}+ FitResult{5});
+                    FitResult{4} = a1;
+                    FitResult{5} = a2;
+                end
                 %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
                 %%% (i.e. correct for brightness)
                 %%% Intensity is proportional to tau*amplitude
@@ -3155,7 +3162,7 @@ switch obj
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
-            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+(1-x(5)-x(6))*exp(-xdata./x(4)))+x(7);
+            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
                 0.3,0.3,0];
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
