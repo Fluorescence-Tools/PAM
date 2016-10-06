@@ -10,6 +10,15 @@ Look=UserValues.Look;
 if isempty(hfig)
     warning('off','MATLAB:uigridcontainer:MigratingFunction');
     warning('off','MATLAB:uiflowcontainer:MigratingFunction');
+    
+    %%% start splash screen
+    s = SplashScreen( 'Splashscreen', 'images/BurstBrowser/splash.jpg', ...
+                         'ProgressBar', 'on', ...
+                         'ProgressPosition', 5, ...
+                         'ProgressRatio', 0 );
+     s.addText( 30, 50, 'BurstBrowser', 'FontSize', 30, 'Color', [1 1 1] );
+     s.addText( 30, 80, 'v1.0', 'FontSize', 20, 'Color', [1 1 1] );
+     s.addText( 300, 270, 'Loading...', 'FontSize', 20, 'Color', 'white' );
     %% Define main window
     h.BurstBrowser = figure(...
         'Units','normalized',...
@@ -434,6 +443,7 @@ if isempty(hfig)
         'Position',[0 0 1 1],...
         'Tag','SecondaryTabDatabasePanel');
     
+    s.ProgressRatio = 0.25;
     
     %%% jave based right-click menu for uitree implementation
     %%% see http://undocumentedmatlab.com/blog/adding-context-menu-to-uitree
@@ -798,6 +808,7 @@ if isempty(hfig)
         'Callback',@UpdateCutDatabase);
     h.CutDatabase.UIContextMenu = h.ApplyCutDatabase_Menu;
     %% Secondary tab corrections
+    s.ProgressRatio = 0.5;
     %%% Buttons
     %%% vertical layout for buttons
     h.CorrectionsButtonsContainer = uiflowcontainer(...
@@ -1617,7 +1628,7 @@ if isempty(hfig)
                 'TooltipString','<html>Gaussian fit table</html>');
     end
     %% Secondary tab options
-    
+    s.ProgressRatio = 0.75;
     %%% Display Options Panel
     h.DisplayOptionsPanel = uipanel(...
         'Parent',h.SecondaryTabOptionsPanel,...
@@ -2714,6 +2725,7 @@ if isempty(hfig)
     ylabel(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R','Color',UserValues.Look.Fore);
     title(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'FRET Efficiency B->G+R vs. Lifetime BB','Color',UserValues.Look.Fore);
     %% Define Axes in Lifetime Tab
+    s.ProgressRatio = 0.9;
     %%% Make Tabs for all plots and one for selecting individual plots for
     %%% inspection in detail
     % context menu for All tab lifetimes
@@ -3336,6 +3348,8 @@ if isempty(hfig)
     h.File_Menu.Enable = 'on';
     
     h.BurstBrowser.Visible = 'on';
+    
+    delete(s);
 else
     figure(hfig);
 end
