@@ -2923,7 +2923,7 @@ for j=1:sum(PDAMeta.Active)
         case 2 %%% Assume gaussian error on data, normal chi2
             error = sqrt(PDAMeta.hProx{i});
             error(error == 0) = 1;
-            PDAMeta.w_res{i} = (PDAMeta.hProx{i}-hFit)./error;
+            PDAMeta.w_res{i} = (hFit-PDAMeta.hProx{i})./error;
             if PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
                 loglikelihood(i) = (-1/2)*sum(PDAMeta.w_res{i}.^2); %%% loglikelihood is the negative of chi2 divided by two
             end
