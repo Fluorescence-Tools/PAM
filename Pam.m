@@ -22,6 +22,15 @@ addpath(genpath(['.' filesep 'functions']));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% start splash screen
+    s = SplashScreen( 'Splashscreen', 'images/PAM/logo.png', ...
+                         'ProgressBar', 'on', ...
+                         'ProgressPosition', 5, ...
+                         'ProgressRatio', 0 );
+     s.addText( 30, 50, 'PAM - PIE Analysis with MATLAB', 'FontSize', 30, 'Color', [1 1 1] );
+     s.addText( 30, 80, 'v1.0', 'FontSize', 20, 'Color', [1 1 1] );
+     s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
+    
     %%% Disables negative values for log plot warning
     warning('off','MATLAB:Axes:NegativeDataInLogAxis');
     %%% Loads user profile    
@@ -43,7 +52,7 @@ addpath(genpath(['.' filesep 'functions']));
         'UserData',[],...
         'OuterPosition',[0.01 0.1 0.98 0.9],...
         'CloseRequestFcn',@Close_Pam,...
-        'Visible','on');  
+        'Visible','off');  
     %h.Pam.Visible='off';
     
     %%% Remove unneeded items from toolbar
@@ -246,7 +255,6 @@ addpath(genpath(['.' filesep 'functions']));
         'Label','Pam Manual (not enabled yet)');
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for progressbar
     h.Progress.Panel = uibuttongroup(...
@@ -281,12 +289,14 @@ addpath(genpath(['.' filesep 'functions']));
         'Position',[0.5 0.5]);
 %% Detector tabs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    s.ProgressRatio = 0.25;
     %%% Microtime tabs container
     h.Det_Tabs = uitabgroup(...
         'Parent',h.Pam,...
         'Tag','Det_Tabs',...
         'Units','normalized',...
         'Position',[0.505 0.01 0.485 0.98]);    
+
     %% Plot and functions for microtimes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Microtime tab
     h.MI.Tab= uitab(...
@@ -559,6 +569,8 @@ addpath(genpath(['.' filesep 'functions']));
         'Tag','Save_Selected',...
         'Callback',{@Cor_Selection,4});    
     %% Burst tab
+    s.ProgressRatio = 0.5;
+    
     h.Burst.Tab = uitab(...
         'Parent',h.Det_Tabs,...
         'Tag','Burst_Tab',...
@@ -1676,12 +1688,14 @@ addpath(genpath(['.' filesep 'functions']));
     h.Plots.Calib_Shift_New=handle(plot(1:400, zeros(400,1),'r'));
 %% Trace and Image tabs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    s.ProgressRatio = 0.75;
     %%% Macrotime tabs container
     h.MT.Tab = uitabgroup(...
         'Parent',h.Pam,...
         'Tag','MT_Tab',...
         'Units','normalized',...
         'Position',[0.01 0.01 0.485 0.485]);   
+
     %% Plot and functions for intensity trace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Intensity trace tab
     h.Trace.Tab= uitab(...
@@ -2305,6 +2319,7 @@ addpath(genpath(['.' filesep 'functions']));
         'UserData',0,...
         'Tooltipstring', 'Make sure "Burst analysis" tab settings are correct');  
     %% Export tab
+    s.ProgressRatio = 0.9;
     h.Export.Tab= uitab(...
         'Parent',h.Var_Tab,...
         'Tag','Export_Tab',...
@@ -2715,8 +2730,9 @@ if ismac
             h.Text{i}.FontSize = (h.Text{i}.FontSize)*scale_factor;
         end
     end
-    
 end
+
+
 %% Global variable initialization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 FileInfo=[];
@@ -2758,6 +2774,7 @@ Update_Display([],[],0);
 %%% Initializes fFCS GUI
 Update_fFCS_GUI([],[]);
 
+delete(s);
 h.Pam.Visible='on';  
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

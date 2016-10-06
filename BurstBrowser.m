@@ -18,7 +18,7 @@ if isempty(hfig)
                          'ProgressRatio', 0 );
      s.addText( 30, 50, 'BurstBrowser', 'FontSize', 30, 'Color', [1 1 1] );
      s.addText( 30, 80, 'v1.0', 'FontSize', 20, 'Color', [1 1 1] );
-     s.addText( 300, 270, 'Loading...', 'FontSize', 20, 'Color', 'white' );
+     s.addText( 385, 330, 'Loading...', 'FontSize', 20, 'Color', 'white' );
     %% Define main window
     h.BurstBrowser = figure(...
         'Units','normalized',...
