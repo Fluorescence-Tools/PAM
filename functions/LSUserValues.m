@@ -912,6 +912,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.CutDatabase was incomplete');
     end
     P.BurstBrowser.CutDatabase = S.BurstBrowser.CutDatabase;
+    %%% Check, if BurstBrowser.PrintPath subfield exists
+    if ~isfield(S.BurstBrowser, 'PrintPath')
+        S.BurstBrowser.PrintPath=pwd;
+        disp('UserValues.BurstBrowser.PrintPath was incomplete');
+    end
+    P.BurstBrowser.PrintPath = S.BurstBrowser.PrintPath;
     %%% Checks, if BurstBrowser.Corrections subfield exists
     %%% Here the correction factors are stored
     if ~isfield (S.BurstBrowser,'Corrections')
@@ -1318,12 +1324,6 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings was incomplete');
     end
     P.BurstBrowser.Settings = [];
-    %%% Check, if BurstBrowser.Settings.PrintPath subfield exists
-    if ~isfield(S.BurstBrowser.Settings, 'PrintPath')
-        S.BurstBrowser.Settings.PrintPath=pwd;
-        disp('UserValues.BurstBrowser.Settings.PrintPath was incomplete');
-    end
-    P.BurstBrowser.Settings.PrintPath = S.BurstBrowser.Settings.PrintPath;
     %%% Check, if BurstBrowser.Settings.SaveOnClose subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'SaveOnClose')
         S.BurstBrowser.Settings.SaveOnClose=0;
