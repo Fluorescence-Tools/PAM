@@ -807,7 +807,7 @@ addpath(genpath(['.' filesep 'functions']));
         'String','100',...
         'Callback',[],...
         'Position',[0.6 0.4 0.2 0.08],...
-        'TooltipString',sprintf('Specify the Time Constant for Filter Calculation (e.g. 100 or 100;200 or 100:100:1000)'));   
+        'TooltipString',sprintf('Specify the Time Constant for Filter Calculation in microseconds.'));  %(e.g. 100 or 100;200 or 100:100:1000)'
     %%%text label to specify the unit of the edit values (mu s)
     h.Burst.NirFilter_Text1 = uicontrol(...
         'Style','text',...
@@ -6569,6 +6569,11 @@ StartParPool();
 % some numbers eg. 100;200
 % range of numbers eg. 100:100:1000
 tau_2CDE = str2num(h.Burst.NirFilter_Edit.String);
+if numel(tau_2CDE) > 1
+    disp('Mulitple 2CDE time windows not supported at the moment.');
+    return;
+end
+
 h.Progress.Text.String = 'Preparing Data...';drawnow;
 if isnan(tau_2CDE)
     h.Burst.NirFilter_Edit.String =  '100';

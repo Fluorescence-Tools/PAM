@@ -13225,7 +13225,7 @@ if nargin == 2
 end
 
 file = BurstMeta.SelectedFile;
-if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
+if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray) || any(~strcmp(h.ParameterListX.String',BurstData{file}.NameArray))
     paramX = h.ParameterListX.String{h.ParameterListX.Value};
     h.ParameterListX.String = BurstData{file}.NameArray;
     val = find(strcmp(BurstData{file}.NameArray,paramX));
