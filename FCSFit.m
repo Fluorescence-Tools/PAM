@@ -1225,7 +1225,7 @@ switch mode
         %%% Updates parameter values in table
         h.Fit_Table.Data(1:end-3,4:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
         %%% Updates plots
-        Update_Plots        
+        %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 3 %%% Individual cells calbacks 
@@ -2060,8 +2060,6 @@ if ~FCSMeta.FitInProgress
     Out = zeros(size(Data{2}));
     return;
 end
-%%% This was slow as f**k, never do this in a fitting routine!
-%h = guidata(findobj('Tag','FCSFit'));
 
 x=Data{1};
 Weights=Data{2};
