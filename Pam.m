@@ -2367,12 +2367,16 @@ addpath(genpath(['.' filesep 'functions']));
     drawnow
     Export_PIE = findjobj(h.Export.PIE);
     if ~isempty(Export_PIE)
-        Names = Export_PIE.getComponent(4);
+        try
+            Names = Export_PIE.getComponent(4);
+        catch
+            Names = Export_PIE.getComponent(0);
+        end
         Names.setPreferredSize(java.awt.Dimension(175,100));
         Names = Names.getComponent(0);
         Names.setSize(175,100);
     end
-    
+
     h.Export.Text = {};
     h.Export.Text{end+1} = uicontrol(...
         'Parent',h.Export.Panel,...
