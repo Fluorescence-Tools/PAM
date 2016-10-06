@@ -2727,7 +2727,7 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
         log_term = -2*PDAMeta.hProx{i}.*log(hFit./PDAMeta.hProx{i});
         log_term(isnan(log_term)) = 0;
         dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term;
-        w_res = sign(PDAMeta.hProx{i}-hFit).*sqrt(dev_mle);
+        w_res = sign(hFit-PDAMeta.hProx{i}).*sqrt(dev_mle);
 end
 usedBins = sum(PDAMeta.hProx{i} ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
@@ -2933,7 +2933,7 @@ for j=1:sum(PDAMeta.Active)
             log_term = -2*PDAMeta.hProx{i}.*log(hFit./PDAMeta.hProx{i});
             log_term(isnan(log_term)) = 0;
             dev_mle = 2*(hFit-PDAMeta.hProx{i})+log_term;
-            PDAMeta.w_res{i} = sign(PDAMeta.hProx{i}-hFit).*sqrt(dev_mle);
+            PDAMeta.w_res{i} = sign(hFit-PDAMeta.hProx{i}).*sqrt(dev_mle);
             if PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
                 %%% compute loglikelihood without normalization to P(x|x)
                 log_term = PDAMeta.hProx{i}.*log(hFit);log_term(isnan(log_term)) = 0;
@@ -3299,7 +3299,7 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
         log_term(isnan(log_term)) = 0;
         log_term(~isfinite(log_term)) = 0;
         dev_mle = 2*(hFit-H_meas)+log_term;
-        w_res = sign(H_meas-hFit).*sqrt(dev_mle);
+        w_res = sign(hFit-H_meas).*sqrt(dev_mle);
 end
 usedBins = sum(H_meas ~= 0);
 if ~h.SettingsTab.OuterBins_Fix.Value
