@@ -622,7 +622,9 @@ if isempty(hfig)
         'CellEditCallback',@CutTableChange,...
         'UIContextMenu',h.CutTable_Menu);
     h.CutTable.Units = 'pixels';
-    h.CutTable.ColumnWidth{1} = h.CutTable.Position(3)-2*80-2*25-29;
+    h.CutTable.ColumnWidth{1} = h.CutTable.Position(3)-2*80-2*25-56;
+    h.CutTable.Units = 'normalized';
+    
     %define the parameter selection listboxes
     h.ParameterListX = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
