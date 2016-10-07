@@ -3007,40 +3007,48 @@ switch mode
         end
         
         Sel = h.Mia_Image.Settings.Channel_PIE(1).Value;
-        %%% Gets the photons
-        if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
-            Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
-                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel));
+        
+        if isfield(FileInfo, 'LineStart')
+            [~, Stack, ~, ~] = PTU_Image(TcspcData.MT{1,1}*FileInfo.ClockPeriod, 1);
+            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+            MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
+            clear Stack;
         else
-            Stack = [];
-            for j = UserValues.PIE.Combined{Sel} %%% Combined channel
-                Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))]; %#ok<AGROW>
+            %%% Gets the photons
+            if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
+                Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel));
+            else
+                Stack = [];
+                for j = UserValues.PIE.Combined{Sel} %%% Combined channel
+                    Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
+                        TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))]; %#ok<AGROW>
+                end
             end
-        end
-        
-        %%% Calculates pixel times for each line and file
-        %%Pixeltimes=zeros(FileInfo(1).Lines^2,FileInfo(1).NumberOfFiles);
-        NoF = floor(FileInfo(1).MeasurementTime/FileInfo(1).ImageTime);
-        Pixeltimes=zeros(FileInfo(1).Lines^2,NoF);
-        for j=1:NoF
-            for k=1:FileInfo.Lines
-                Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+            
+            %%% Calculates pixel times for each line and file
+            %%Pixeltimes=zeros(FileInfo(1).Lines^2,FileInfo(1).NumberOfFiles);
+            NoF = floor(FileInfo(1).MeasurementTime/FileInfo(1).ImageTime);
+            Pixeltimes=zeros(FileInfo(1).Lines^2,NoF);
+            for j=1:NoF
+                for k=1:FileInfo.Lines
+                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+                end
             end
+            
+            %%% Histograms photons to pixels
+            Stack = single(histc(Stack,Pixeltimes(:)));
+            %%% In case no photons exist
+            if numel(Stack)==0
+                Stack = zeros(size(Stack,1),1);
+            end
+            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
+            MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
+            clear Stack;
         end
-        
-        %%% Histograms photons to pixels
-        Stack = single(histc(Stack,Pixeltimes(:)));
-        %%% In case no photons exist
-        if numel(Stack)==0
-            Stack = zeros(size(Stack,1),1);
-        end
-        %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-        MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
-        clear Stack;        
         %% Updates frame settings for channel 1
         %%% Unlinks framses
         h.Mia_Image.Settings.Channel_Link.Value = 0;
@@ -3056,9 +3064,9 @@ switch mode
         h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
         h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
-        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=1;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=1;
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
-        MIAData.Use=ones(2,size(MIAData.Data{1,1},3)); 
+        MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
         %% Stops function, if only one channel was loaded and clear channel 2
         if h.Mia_Image.Settings.Channel_PIE(2).Value == numel(h.Mia_Image.Settings.Channel_PIE(2).String)
             %%% Clears images
@@ -3114,7 +3122,7 @@ switch mode
         
         %%% Reshapes pixelvector to a pixel x pixel x frames matrix
         MIAData.Data{2,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
-        clear Stack; 
+        clear Stack;
         %% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);

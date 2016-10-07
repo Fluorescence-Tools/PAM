@@ -1,4 +1,5 @@
-function [MT, MI,SyncRate,Resolution] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI,Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+
 %%% Input parameters:
 %%% Filename: Full filename
 %%% NoE: Maximal number of entries to load
@@ -39,8 +40,11 @@ rtTimeHarp260PT2 = hex2dec('00010206');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode
 % Globals for subroutines
 TTResultFormat_TTTRRecType = 0;
 TTResult_NumberOfRecords = 0;
-MeasDesc_Resolution = 0;
-MeasDesc_GlobalResolution = 0;
+%Create a structure called Header to store all the outputs of Read_PTU
+%function
+Header = struct;
+Header.MeasDesc_Resolution = 0;
+Header.MeasDesc_GlobalResolution = 0;
 
 Magic = fread(fid, 8, '*char');
 if not(strcmp(Magic(Magic~=0)','PQTTTR'))
@@ -59,18 +63,18 @@ while 1
     TagIdent = (TagIdent(TagIdent ~= 0))'; % remove #0 and more more readable
     TagIdx = fread(fid, 1, 'int32');    % TagHead.Idx
     TagTyp = fread(fid, 1, 'uint32');   % TagHead.Typ
-                                        % TagHead.Value will be read in the
-                                        % right type function  
+    % TagHead.Value will be read in the
+    % right type function
     if TagIdx > -1
-      EvalName = [TagIdent '(' int2str(TagIdx + 1) ')'];
+        EvalName = [TagIdent '(' int2str(TagIdx + 1) ')'];
     else
-      EvalName = TagIdent;
+        EvalName = TagIdent;
     end
-    %fprintf(1,'\n   %-40s', EvalName);  
+    %fprintf(1,'\n   %-40s', EvalName);
     % check Typ of Header
     switch TagTyp
         case tyEmpty8
-            fread(fid, 1, 'int64');   
+            fread(fid, 1, 'int64');
             %fprintf(1,'<Empty>');
         case tyBool8
             TagInt = fread(fid, 1, 'int64');
@@ -80,7 +84,7 @@ while 1
             else
                 %fprintf(1,'TRUE');
                 eval([EvalName '=true;']);
-            end            
+            end
         case tyInt8
             TagInt = fread(fid, 1, 'int64');
             %fprintf(1,'%d', TagInt);
@@ -89,7 +93,7 @@ while 1
             TagInt = fread(fid, 1, 'int64');
             %fprintf(1,'%X', TagInt);
             eval([EvalName '=TagInt;']);
-        case tyColor8    
+        case tyColor8
             TagInt = fread(fid, 1, 'int64');
             %fprintf(1,'%X', TagInt);
             eval([EvalName '=TagInt;']);
@@ -111,7 +115,7 @@ while 1
             TagString = (TagString(TagString ~= 0))';
             %fprintf(1, '%s', TagString);
             if TagIdx > -1
-               EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
+                EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
             end;
             if strcmp(TagIdent,'UsrHeadName') && exist('UsrHeadName','var')
                 %%% Catch case where length of TagString exceeds length of
@@ -121,7 +125,7 @@ while 1
                 end
             end
             eval([EvalName '=TagString;']);
-        case tyWideString 
+        case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
             TagInt = fread(fid, 1, 'int64');
@@ -129,13 +133,13 @@ while 1
             TagString = (TagString(TagString ~= 0))';
             %fprintf(1, '%s', TagString);
             if TagIdx > -1
-               EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
+                EvalName = [TagIdent '(' int2str(TagIdx + 1) ',:)'];
             end;
             eval([EvalName '=TagString;']);
         case tyBinaryBlob
             TagInt = fread(fid, 1, 'int64');
             %fprintf(1,'<Binary Blob with %d Bytes>', TagInt);
-            fseek(fid, TagInt, 'cof');    
+            fseek(fid, TagInt, 'cof');
         otherwise
             error('Illegal Type identifier found! Broken file?');
     end;
@@ -145,8 +149,8 @@ while 1
 end
 
 %%% Assign values from header to output variables
-SyncRate = 1/MeasDesc_GlobalResolution;
-Resolution = MeasDesc_Resolution./1E-12;%./HW_BaseResolution; %%% Resolution in picoseconds!
+Header.SyncRate = 1/MeasDesc_GlobalResolution;
+Header.Resolution = MeasDesc_Resolution./HW_BaseResolution;
 nRecords = TTResult_NumberOfRecords;
 %%% check for file type
 
@@ -162,48 +166,122 @@ switch TTResultFormat_TTTRRecType
             disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
             return;
         end
-    
+        
+        % change this value to 3 if you read in images
+        Header.Measurement_SubMode = 1;
+        %Header.Measurement_SubMode = Measurement_SubMode;
+        Header.PixX = 0;
+        Header.PixY = 0;
+        Header.bidir = 0;
+        Header.FrameStartMarker = 0;
+        Header.LineMarker = 0;
+        Header.NoF = 1;
+        
+        %Measurement_SubMode = 1;
+        %if exist ('Measurement_SubMode', 'var')
+        %Header.Measurement_SubMode = Measurement_SubMode;
+        %{
+    Measurement_Submode
+    -------------------
+    Can take the values OSC, INT, TRES, IMG (enumerated starting with 0):
+    0: OSC means "oscillator mode" (a special online measurement mode, rarely used)
+    1: INT means "integrating", (standard mode, also for point measurements)
+    2: TRES means "Time Resolved Emission Spectra" (one histogram per wavelength step)
+    3: IMG means image
+        %}
+        if Header.Measurement_SubMode == 3
+            if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
+                Header.PixX = ImgHdr_PixX; end
+            if exist ('ImgHdr_PixY' , 'var') % Number of pixels in the y direction
+                Header.PixY =  ImgHdr_PixY; end
+            if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
+                Header.bidir = ImgHdr_BiDirect; end
+            if exist ('ImgHdr_Frame', 'var') % frame bit. should be 4.
+                Header.FrameStartMarker = ImgHdr_Frame; end
+            if exist ('ImgHdr_LineStart', 'var')
+                Header.LineMarker = ImgHdr_LineStart;  end
+            if exist ('NumberOfFrames', 'var')
+                Header.NoF = NumberOfFrames; end
+        end
+        %end
+        
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
         %  This reads the T3 mode event records
         %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+        
+        %%%% File format:
+        %%%% Bit/Byte 1      2      3      4      5      6      7      8
+        %%%%       1  MT1    MT2    MT3    MT4    MT5    MT6    MT7    MT8
+        %%%%       2  MT9    MT10   MI1    MI2    MI3    MI4    MI5    MI6
+        %%%%       3  MI7    MI8    MI9    MI10   MI11   MI12   MI13   MI14
+        %%%%       4  MI15   CH1    CH2    CH3    CH4    CH5    CH6    SPEC
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % SPECIAL:
+        %    0: regular input channel
+        %    1: special record (line, frame)
+        % CHANNEL:
+        %   if Special = 0:
+        %    63: macrotime overflow (nsync) occured
+        %    >=1, <=15: these are TCSPC detector channel identifiers
+        %   if Special = 1:
+        %    >=1, <=15: these are imaging markers
+        % NSYNC:
+        %    0: old style single overflow
+        
+        
         T3WRAPAROUND=1024;
-
+        
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits:
-
+        
+        T3Record = fread(fid, NoE, 'ubit32');     % all 32 bits
+        
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits:
-
+        
+        % macrotime, MT
+        nsync = int16(bitand(T3Record,1023));       % the lowest 10 bits
+        
         Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits:
+        
+        % microtime, MI
+        dtime = uint16(bitand(bitshift(T3Record,-10),32767));   % the next 15 bits
         %   the dtime unit depends on "Resolution" that can be obtained from header
-
+        
         Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits:
-
+        
+        % see CHANNEL
+        channel = int8(bitand(bitshift(T3Record,-25),63));   % the next 6 bits
+        
         Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        special = (bitand(bitshift(T3Record,-31),1));   % the last bit:
-
+        
+        special = logical(bitand(bitshift(T3Record,-31),1));   % the last bit:
+        
         clear T3Record
-
+        
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-            
+        
         OverflowCorrection = zeros(1,nRecords);
         OverflowCorrection( (special == 1) & (channel == 63) & (nsync == 0) ) = 1; %%% this generally only applies for version 1, but may apply to version 2 also
         if Version == 2 %%% this is NEW in version 2, not applicable to version 1
             OverflowCorrection( (special == 1) & (channel == 63) & (nsync ~= 0) ) = nsync( (special == 1) & (channel == 63) & (nsync ~= 0) );
         end
         OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
-
+        
+        %Calculates the frame marker indices and the line marker indices
+        %from the total timetag
+        if Header.Measurement_SubMode == 3
+            TimeTag = double(nsync)'+OverflowCorrection;
+            FrameMarkerIndices = find(special & (channel == 1));
+            NoOfFrames = nnz(FrameMarkerIndices);
+            Header.NoF= floor(NoOfFrames);
+            Header.FrameIndices = TimeTag(FrameMarkerIndices);
+            Header.LineIndices = TimeTag(find(special & (channel == 2)));
+        end
+        
+        % calculate actual timetag of photons
         ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);
@@ -212,48 +290,59 @@ switch TTResultFormat_TTTRRecType
     case rtPicoHarpT3
         
         T3WRAPAROUND=65536;
-
+        
         Progress(0.1/NumFiles,ProgressAxes,ProgressText,['Reading Byte Record of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        T3Record = fread(fid, NoE, 'ubit32');  
-
+        
+        T3Record = fread(fid, NoE, 'ubit32');
+        
         Progress(0.2/NumFiles,ProgressAxes,ProgressText,['Reading Macrotime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        nsync = int16(bitand(T3Record,65535)); 
-
+        
+        nsync = int16(bitand(T3Record,65535));
+        
         Progress(0.3/NumFiles,ProgressAxes,ProgressText,['Reading Microtime of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        dtime = uint16(bitand(bitshift(T3Record,-16),4095));  
+        
+        dtime = uint16(bitand(bitshift(T3Record,-16),4095));
         Progress(0.4/NumFiles,ProgressAxes,ProgressText,['Reading Channel of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
-        channel = int8(bitand(bitshift(T3Record,-28),15)); 
-
+        
+        channel = int8(bitand(bitshift(T3Record,-28),15));
+        
         Progress(0.5/NumFiles,ProgressAxes,ProgressText,['Reading Special Records of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
+        
         special = (bitand(bitshift(T3Record,-16),15));   % the last bit:
-
+        
         clear T3Record
-
+        
         Progress(0.6/NumFiles,ProgressAxes,ProgressText,['Processing Overflows of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
-
+        
         OverflowCorrection = zeros(1,nRecords);
         OverflowCorrection( (special == 0) & (channel == 15)) = 1;
         OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
-
+        
         ValidIndices = ((channel >= 1) & (channel <= 4));
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);
         dtime = dtime(ValidIndices);
 end
-    
+
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-MT = cell(max(channel)+1,1);
-MI = cell(max(channel)+1,1);
-for i=unique(channel)'
-    MT{i+1} = TimeTag(channel==i)';
-    MI{i+1} = dtime(channel==i);
+a = unique(channel)';
+if min(a) == 0
+    MT = cell(max(channel)+1,1);
+    MI = cell(max(channel)+1,1);
+    for i=unique(channel)'
+        MT{i+1} = TimeTag(channel==i)';
+        MI{i+1} = dtime(channel==i);
+    end
+else
+    MT = cell(max(channel),1);
+    MI = cell(max(channel),1);
+    for i=unique(channel)'
+        MT{i} = TimeTag(channel==i)';
+        MI{i} = dtime(channel==i);
+    end
 end
+
 
 Progress(1/NumFiles,ProgressAxes,ProgressText, ['File ' num2str(FileNumber) ' of ' num2str(NumFiles) ' loaded']);
 

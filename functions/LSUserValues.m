@@ -595,7 +595,7 @@ if Mode==0 %%% Loads user values
     P.Phasor = [];
     %%% Checks, if Phasor.Reference subfield exists
     if ~isfield (S.Phasor,'Reference')
-        S.Phasor.Reference=zeros(numel(S.Detector.Det),4096);
+          S.Phasor.Reference=zeros(numel(S.Detector.Det),4096);
         disp('UserValues.Phasor.Reference was incomplete');
     elseif size(S.Phasor.Reference,1)<numel(P.Detector.Det)
         S.Phasor.Reference(numel(P.Detector.Det),end) = 0;

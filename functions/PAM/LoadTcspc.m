@@ -671,7 +671,7 @@ switch (Type)
             FileInfo.LineTimes(end+(1:size(Loaded.Info.LineTimes,1)),end+(1:size(Loaded.Info.LineTimes,2))) = Loaded.Info.LineTimes + FileInfo.MeasurementTime/FileInfo.ClockPeriod;
             FileInfo.MeasurementTime = FileInfo.MeasurementTime + Loaded.Info.MeasurementTime;
             FileInfo.NumberOfFiles = FileInfo.NumberOfFiles + Loaded.Info.NumberOfFiles;
-        end    
+        end
     case 8 %%% .PTU files from HydraHarp Software V3.0
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
@@ -691,15 +691,24 @@ switch (Type)
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
+        FileInfo.bidir = 0;
+        FileInfo.Measurement_SubMode = 0;
+        
+        % Initializes line and frame markers
+        FileInfo.LineStart = [];
+        FileInfo.LineStop = [];
+        FileInfo.FrameStart = [];
+        FileInfo.FrameStop = [];
+        FileInfo.NoF = 1;
         
         %%% Initializes microtime and macotime arrays
-        if strcmp(UserValues.Detector.Auto,'off')
+%         if strcmp(UserValues.Detector.Auto,'off')
             TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
             TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-        else
-            TcspcData.MT=cell(10,10); %%% default to 10 channels
-            TcspcData.MI=cell(10,10); %%% default to 10 channels
-        end
+%         else
+%             TcspcData.MT=cell(10,10); %%% default to 10 channels
+%             TcspcData.MI=cell(10,10); %%% default to 10 channels
+%         end
         
         %%% Reads all selected files
         for i=1:numel(FileName)
@@ -715,16 +724,17 @@ switch (Type)
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, SyncRate, Resolution] = Read_PTU(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
+            [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
+            
             
             if isempty(FileInfo.SyncPeriod)
-                FileInfo.SyncPeriod = 1/SyncRate;
+                FileInfo.SyncPeriod = 1/Header.SyncRate;
             end
             if isempty(FileInfo.ClockPeriod)
-                FileInfo.ClockPeriod = 1/SyncRate;
+                FileInfo.ClockPeriod = 1/Header.SyncRate;
             end
             if isempty(FileInfo.Resolution)
-                FileInfo.Resolution = Resolution;
+                FileInfo.Resolution = Header.Resolution;
             end
             %%% Finds, which routing bits to use
             if strcmp(UserValues.Detector.Auto,'off')
@@ -738,8 +748,10 @@ switch (Type)
             if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
                     for k=Rout
-                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
-                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
+                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];
+                        MT{j,k}=[];
+                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];
+                        MI{j,k}=[];
                     end
                 end
             end
@@ -748,12 +760,51 @@ switch (Type)
                 FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
             end
             
+            % Depending on the submode we have an image (3) or a point (1)
+            
+            % FileInfo.Measurement_SubMode = Header.Measurement_SubMode;
+            % This should be defined in the header of the PTU file
+            FileInfo.Measurement_SubMode = Header.Measurement_SubMode;
+            if FileInfo.Measurement_SubMode == 3 % Image PTU data
+                % Calculate the start and stop macrotimes of the lines and the frames
+                for a = 1:2:size(Header.LineIndices,2)-1
+                    FileInfo.LineStart = [FileInfo.LineStart; Header.LineIndices(a) + MaxMT];
+                    FileInfo.LineStop = [FileInfo.LineStop; Header.LineIndices(a+1) + MaxMT];
+                end
+                
+                %%% When there are frame start and frame stop
+                evenodd =1;
+                for b = 1:size(Header.FrameIndices,2)
+                    if mod(evenodd, 2) == 0
+                        FileInfo.FrameStop = [FileInfo.FrameStop; Header.FrameIndices(b)+ MaxMT];
+                        evenodd = evenodd +1;
+                    else
+                        FileInfo.FrameStart = [FileInfo.FrameStart; Header.FrameIndices(b)+ MaxMT];
+                        evenodd = evenodd +1;
+                    end
+                end
+                
+                %                 %%% WHen there are only frame starts
+                %                 TcspcData.FrameStart = [TcspcData.FrameStart; Header.FrameIndices + MaxMT];
+                FileInfo.bidir = Header.bidir; % Defined in the header in the PTU file
+                FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+                lines = FileInfo.LineStart((FileInfo.LineStart >= FileInfo.FrameStart(1)) & (FileInfo.LineStart <= FileInfo.FrameStart(2)));
+                FileInfo.Lines = floor(size(lines,1));
+                %Assuming the image is square
+                FileInfo.Pixels=FileInfo.Lines^2;
+                FileInfo.ImageTime = (FileInfo.LineStart(FileInfo.Lines+1) - FileInfo.LineStart(1))*FileInfo.ClockPeriod;
+                FileInfo.TACRange = FileInfo.SyncPeriod;
+                FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+                FileInfo.NoF = size(FileInfo.FrameStart,1);
+                
+            else % point PTU data
+                FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+                FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+                FileInfo.ImageTime =  FileInfo.MeasurementTime;
+                FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+                FileInfo.TACRange = FileInfo.SyncPeriod;
+            end
         end
-        FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
-        FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTime =  FileInfo.MeasurementTime;
-        FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-        FileInfo.TACRange = FileInfo.SyncPeriod;
     case 9 %%% .h5 files in PhotonHDF5 file format
         FileInfo.FileType = 'PhotonHDF5';
         %%% General FileInfo

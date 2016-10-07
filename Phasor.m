@@ -344,6 +344,7 @@ if isempty(h.Phasor) % Creates new figure, if none exists
         'Value',1,...
         'ToolTipString', ['<html>Toggle autoscaling of images'],...
         'String','Use Autoscale:');
+   
     %%% Lower threshold
     h.ASmin = uicontrol(...
         'Parent',h.Settings_Panel,...
@@ -1633,7 +1634,7 @@ delete(Obj);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Phasor_Data(~,~)
 h = guidata(findobj('Tag','Phasor'));
-global PhasorData UserValues
+global PhasorData UserValues FileInfo
 LSUserValues(0);
 
 %%% Choose files to load
@@ -1651,6 +1652,8 @@ if any(FileName{1}~=0)
     for i=1:numel(FileName)    
         %%% Loades Data
         PhasorData.Data{end+1}=load([PathName FileName{i}],'-mat');  
+        
+        
         %%% Saves filename in global data
         PhasorData.Files{end+1,1}=FileName{i}; 
         PhasorData.Files{end,2}=PathName; 

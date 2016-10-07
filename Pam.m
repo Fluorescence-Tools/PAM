@@ -2837,7 +2837,7 @@ end
 %% Creates trace and image plots
 
 %%% Creates macrotime bins for traces (currently fixed 10ms)
-PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
+ PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
 
 %%% Creates a intensity trace and image for each non-combined PIE channel
 if ~isempty(PIE)
@@ -2858,24 +2858,33 @@ if ~isempty(PIE)
                 PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
             end
             %% Calculates image
-            if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                %%% Goes back from total microtime to file microtime
-                PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
-                %%% Calculates Pixel vector
-                Pixeltimes=0;
-                for j=1:FileInfo.Lines
-                    Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+            if h.MT.Use_Image.Value && ~isempty(PIE_MT)   
+                if isfield(FileInfo, 'LineStart')
+                        if FileInfo.Measurement_SubMode == 3
+                            [imageseries, ~, ~, ~] = PTU_Image(PIE_MT,1);
+                            PamMeta.Image{i}=permute(sum(imageseries,3),[2 1 3]);
+                        else
+                            PamMeta.Image{i}=zeros(FileInfo.Lines);
+                        end
+                else
+                        %%% Goes back from total microtime to file microtime
+                        PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
+                        %%% Calculates Pixel vector
+                        Pixeltimes=0;
+                        for j=1:FileInfo.Lines
+                            Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+                        end
+                        Pixeltimes(end)=[];
+                        %%% Calculate image vector
+                        PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);
+                        %%% Reshapes pixel vector to image
+                        PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
                 end
-                Pixeltimes(end)=[];
-                %%% Calculate image vector
-                PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);  
-                %%% Reshapes pixel vector to image
-                PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
-                
-                
             else
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
             end
+            
+            
             
             %% Calculate mean arival time image
             if h.MT.Use_Image.Value && h.MT.Use_Lifetime.Value
@@ -5466,7 +5475,7 @@ h=guidata(findobj('Tag','Pam'));
 Det=h.MI.Phasor_Det.Value;
 %%% Sets reference to 0 in case of shorter MI length
 UserValues.Phasor.Reference(Det,:)=0;
-UserValues.Phasor.Reference(:,FileInfo.MI_Bins+1:end)=[];
+% UserValues.Phasor.Reference = zeros(numel(UserValues.Detector.Det),4096);
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 
@@ -5475,10 +5484,10 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Phasor_Calc(~,~)   
+function Phasor_Calc(~,~)
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
-if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference') 
+if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     
     %%% Determines correct detector and routing
     Det=UserValues.Detector.Det(h.MI.Phasor_Det.Value);
@@ -5492,10 +5501,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         %%% Saves pathname
         UserValues.File.PhasorPath=PathName;
         LSUserValues(1);
-
+        
         Shift=h.MI.Phasor_Slider.Value;
-        Bins=FileInfo.MI_Bins;
-        TAC=str2double(h.MI.Phasor_TAC.String);
+        Bins = 4096; % To avoid errors of different Bins and reference size
+        TAC=str2double(h.MI.Phasor_TAC.String)/FileInfo.MI_Bins*4096; % To always have the right TAC values independently of the number of bins.
         Ref_LT=str2double(h.MI.Phasor_Ref.String);
         From=str2double(h.MI.Phasor_From.String);
         To=str2double(h.MI.Phasor_To.String);
@@ -5513,7 +5522,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if To<Bins
             Ref(To+1:Bins)=0;
         end
-        Ref_Mean=sum(Ref.*(1:Bins))/sum(Ref)*TAC/Bins-Ref_LT;       
+        Ref_Mean=sum(Ref.*(1:Bins))/sum(Ref)*TAC/Bins-Ref_LT;
         Ref = Ref./sum(Ref);
         
         %%% Calculates phase and modulation of the instrument
@@ -5527,59 +5536,91 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             Fi_inst=Fi_inst+pi;
         end
         
-        %%% Selects and sorts photons;
-        Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;        
+        %Extract Macrotimes        
+        Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+        
+        if isfield(FileInfo, 'LineStart')
+            % for example: PTU imaging data
+            [imageseries, Stack, hisbins,Photons] = PTU_Image(Photons,2);
+            %Sort photons per pixel (hisbins: vector of the 
+            %macrotimes of the line starts and pixel starts so that the 
+            %intensity histogram has the form:
+            % pix-pix-pix-pix-interline-pix-pix-pix-interline...)
+            FileInfo.ImageTime = FileInfo.LineStop(FileInfo.Lines)*FileInfo.ClockPeriod;
+            
+        else% Data without interlines, for example Fabsurf data
+            %%% Calculates Pixel vector
+            Pixeltimes=0;
+            for j=1:FileInfo.Lines
+                Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+            end
+            hisbins = Pixeltimes.*FileInfo.ClockPeriod;
+        end
+        
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
+        Intensity= histc(Photons,hisbins);
         
         if numel(FileInfo.LineTimes) == 1 
             %%% Point measurement, split up according to bins set for FCS analyis
             FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
             FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
         end
-        %%% Calculates Pixel vector
-        Pixeltimes=0;
-        for j=1:FileInfo.Lines
-            Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
-        end
         
-        %%% Calculates, which Photons belong to which pixel
-        Intensity=histc(Photons,Pixeltimes.*FileInfo.ClockPeriod);
         Intensity = Intensity(1:end-1);
         clear Photons
         Pixel=[1;cumsum(Intensity)];
         Pixel(Pixel==0)=1;
+        
         %%% Sorts Microtimes
         Photons=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
         Photons=Photons(Index);
         clear Index
         
-        %%% Calculates phasor data for each pixel
-        G(1:Bins)=cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
-        S(1:Bins)=sin((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;        
-        g=zeros(FileInfo.Lines);
-        s=zeros(FileInfo.Lines);
-        Mean_LT=zeros(FileInfo.Lines);
-        FLIM=zeros(1,Bins);
-        flim=FLIM;
-        for i=1:(numel(Pixel)-1)
-            FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
-            flim=flim+FLIM;
-            Mean_LT(i)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
-            g(i)=sum(G.*FLIM)/sum(FLIM);
-            s(i)=sum(S.*FLIM)/sum(FLIM);
-            if isnan(g(i)) || isnan(s(i))
-                g(i)=0; s(i)=0;
-            end
-            if mod(i,FileInfo.Lines)==0
-                Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
+        G(1:Bins) = cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
+        S(1:Bins) = sin((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
+        g = zeros(FileInfo.Lines);
+        s = zeros(FileInfo.Lines);
+        Mean_LT = zeros(FileInfo.Lines);
+        FLIM = zeros(1,Bins);
+        flim = FLIM;
+        
+        if isfield(FileInfo, 'LineStart')
+            a = 1; % Counter for interline bins in the vector Pixel
+        else
+            a = NaN; % If no Interline bins are present, a is NaN so
+            % the while loop below doesn't skip any bins in "Pixel".
+        end
+        i = 1; % Counter for all "Pixel" bins
+        j = 1; % Counter for number of actual pixel bins in "Pixel"
+        while i<(numel(Pixel)-1)
+            if i == (FileInfo.Lines + 1)*a + 1
+                % skip those photons belonging to an interline bin
+                i = i + 1;
+                a = a + 1;
+            else
+                FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
+                flim=flim+FLIM;
+                Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
+                g(j)=sum(G.*FLIM)/sum(FLIM);
+                s(j)=sum(S.*FLIM)/sum(FLIM);
+                if isnan(g(j)) || isnan(s(j))
+                    g(j)=0; s(j)=0;
+                end
+                if mod(i,FileInfo.Lines)==0
+                    Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
+                end
+                i = i + 1; 
+                j = j + 1; 
             end
         end
+        
         g=flip(g',1);s=flip(s',1);
         
         neg=find(g<0 & s<0);
         g(neg)=-g(neg);
         s(neg)=-s(neg);
+        
         
         %%% Calculates additional data
         PamMeta.Fi=atan(s./g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
@@ -5588,11 +5629,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.TauM=real(sqrt((1./(s.^2+g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
         PamMeta.g=g;
         PamMeta.s=s;
-        PamMeta.Phasor_Int=flip(reshape(Intensity,[FileInfo.Lines,FileInfo.Lines])',1);
+        
         
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
-        Frames=FileInfo.NumberOfFiles;
         FileNames=FileInfo.FileName;
         Path=FileInfo.Path;
         Imagetime=FileInfo.ImageTime;
@@ -5601,17 +5641,32 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         M=PamMeta.M;
         TauP=PamMeta.TauP;
         TauM=PamMeta.TauM;
-        Intensity=reshape(Intensity,[Lines,Lines]);
-        Intensity=flip(Intensity',1);
         Type = FileInfo.Type;
-        save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type'); 
+        
+         
+        if isfield(FileInfo, 'LineStart') % Files with interline data such as PTU
+            allframes = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
+            PamMeta.Phasor_Int = rot90(sum(allframes,3),2);
+            Frames=FileInfo.NoF;
+            Intensity = imageseries; %Output of the function PTU_Image. 3D matrix of pix*pix*frame
+            Intensity = fliplr(rot90(sum(Intensity,3),3)); % 2D matrix of the sum matrices above
+        else % Files withourt interline data
+            PamMeta.Phasor_Int=flip(reshape(Intensity,[FileInfo.Lines,FileInfo.Lines])',1);
+            Frames=FileInfo.NumberOfFiles;
+            Intensity=reshape(Intensity,[Lines,Lines]);
+            Intensity=flip(Intensity',1);
+        end
+        
+        save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
         
         h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
     end
     
-    h.Progress.Text.String = FileInfo.FileName{1};
-    h.Progress.Axes.Color=UserValues.Look.Control;
 end
+
+h.Progress.Text.String = FileInfo.FileName{1};
+h.Progress.Axes.Color=UserValues.Look.Control;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for keeping Burst GUI updated  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5634,8 +5689,8 @@ if isempty(obj) || obj == h.Burst.BurstSearchSelection_Popupmenu
     h.Burst.BurstPIE_Table.RowName = TableContent.RowName;
     h.Burst.BurstPIE_Table.ColumnName = TableContent.ColumnName;
     h.Burst.BurstPIE_Table.ColumnEditable=true(numel(h.Burst.BurstPIE_Table.ColumnName),1)';
-
-    BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}; 
+    
+    BurstPIE_Table_Data = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method};
     BurstPIE_Table_Format = cell(1,size(BurstPIE_Table_Data,2));
     BurstPIE_Table_Format(:) = {UserValues.PIE.Name};
 
