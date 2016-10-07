@@ -993,10 +993,11 @@ if isempty(h.GlobalPDAFit)
     %% store handles structure
     guidata(h.GlobalPDAFit,h);
     SampleData
-    Update_FitTable([],[],0);
+    Update_FitTable([],[],0); %initialize
     Update_ParamTable([],[],0);
     Update_GUI(h.SettingsTab.DynamicModel,[]);
     Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
+    Update_FitTable([],[],0); %reset to standard
 else
     figure(h.GlobalPDAFit); % Gives focus to GlobalPDAFit figure
 end
@@ -3585,27 +3586,28 @@ switch mode
         Columns=cell(50,1);
         Columns{1}='Active';
         for i=1:5
-            Columns{9*i-7}=['<HTML><b> Area' num2str(i) '</b>'];
+            Columns{9*i-7}=['<HTML><b> A<sub>' num2str(i) '</sub></b>'];
             Columns{9*i-6}='F';
             Columns{9*i-5}='G';
-            Columns{9*i-4}=['<HTML><b> RDA' num2str(i) ' [A] </b>'];
+            Columns{9*i-4}=['<HTML><b> R<sub>' num2str(i) '</sub> [&Aring;]</b>'];
             Columns{9*i-3}='F';
             Columns{9*i-2}='G';
-            Columns{9*i-1}=['<HTML><b> sigDA' num2str(i) ' [A] </b>'];
+            Columns{9*i-1}=['<HTML><b> &sigma;<sub>'  num2str(i) '</sub> [&Aring;]</b>'];
             Columns{9*i}='F';
             Columns{9*i+1}='G';
         end
-        Columns{47} = '<HTML><b>D only</b>';
+        Columns{47} = '<HTML><b>D<sub>only</sub></b>';
         Columns{48} = 'F';
         Columns{49} = 'G';
-        Columns{end}='chi2';
+        Columns{end}='<html><b>&chi;<sup>2</sup><sub>red.</sub></b></html>';
         ColumnWidth=zeros(numel(Columns),1);
-        ColumnWidth(2:3:end-3)=70;
-        ColumnWidth(3:3:end-2)=20;
-        ColumnWidth(4:3:end-1)=20;
+        ColumnWidth(2:3:end-3)=40;
+        ColumnWidth(2:9:end-12)=30;
+        ColumnWidth(3:3:end-2)=15;
+        ColumnWidth(4:3:end-1)=15;
         ColumnWidth(1)=40;
-        ColumnWidth(end-1)=20;
-        ColumnWidth(end)=60;
+        ColumnWidth(end-1)=15;
+        ColumnWidth(end)=40;
         h.FitTab.Table.ColumnName=Columns;
         h.FitTab.Table.ColumnWidth=num2cell(ColumnWidth');
         %%% Sets row names to file names
@@ -3716,7 +3718,7 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         % when user touches the all row, value is applied to all cells
         h.FitTab.Table.CellEditCallback=[];
-        pause(0.5) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
+        %pause(0.25) %leave here, otherwise matlab will magically prohibit cell callback even before you click the cell
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
             if isempty(e.Indices) || (e.Indices(1)~=(size(h.FitTab.Table.Data,1)-2) && e.Indices(2)~=1)
                 h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
@@ -3752,6 +3754,19 @@ switch mode
             end
         elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=3 && e.Indices(1)<size(h.FitTab.Table.Data,1)-1
             %% Value was fixed
+            %%% if an amplitude was clicked, check if it is zero
+            %%% -if it is zero and was disabled before, enable all related
+            %%% parameters
+            %%% -otherwise, disable all
+            if any(e.Indices(2) == 3:9:size(h.FitTab.Table.Data,2)-11)
+                if strcmp(h.FitTab.Table.Data(e.Indices(1),e.Indices(2)-1),'0')
+                    if NewData == true
+                        h.FitTab.Table.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({true});
+                    elseif NewData == false
+                        h.FitTab.Table.Data(e.Indices(1),[e.Indices(2)+3,e.Indices(2)+6]) = deal({false});
+                    end
+                end
+            end
             %%% Updates ALL row
             if all(cell2mat(h.FitTab.Table.Data(1:end-3,e.Indices(2))))
                 h.FitTab.Table.Data{end-2,e.Indices(2)}=true;
@@ -4235,15 +4250,19 @@ elseif obj == h.SettingsTab.DynamicModel
     switch h.SettingsTab.DynamicModel.Value
         case 1 %%% switched to dynamic
             %%% Change label of Fit Parameter Table
-            h.FitTab.Table.ColumnName{2} = '<HTML><b> k12 [ms^-1]</b>';
-            h.FitTab.Table.ColumnName{11} = '<HTML><b> k21 [ms^-1]</b>';
+            h.FitTab.Table.ColumnName{2} = '<HTML><b>k<sub>12</sub> [ms<sup>-1</sup>]</b>';
+            h.FitTab.Table.ColumnName{11} = '<HTML><b>k<sub>21</sub> [ms<sup>-1</sup>]</b>';
+            h.FitTab.Table.ColumnWidth{2} = 70;
+            h.FitTab.Table.ColumnWidth{11} = 70;
             %%% Only enable Histogram Library in PDA Method
             h.SettingsTab.PDAMethod_Popupmenu.Value = 1;
             h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
-            h.FitTab.Table.ColumnName{2} = '<HTML><b> Area1</b>';
-            h.FitTab.Table.ColumnName{11} = '<HTML><b> Area2</b>';
+            h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
+            h.FitTab.Table.ColumnName{11} = '<HTML><b>A<sub>2</sub></b>';
+            h.FitTab.Table.ColumnWidth{2} = 30;
+            h.FitTab.Table.ColumnWidth{11} = 30;
             %%% Revert to all PDA Methods
             h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
     end
