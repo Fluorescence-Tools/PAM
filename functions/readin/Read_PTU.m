@@ -1,4 +1,4 @@
-function [MT, MI,Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
+function [MT, MI, Header] = Read_PTU(FileName,NoE,ProgressAxes,ProgressText,FileNumber,NumFiles)
 
 %%% Input parameters:
 %%% Filename: Full filename
@@ -167,19 +167,6 @@ switch TTResultFormat_TTTRRecType
             return;
         end
         
-        % change this value to 3 if you read in images
-        Header.Measurement_SubMode = 1;
-        %Header.Measurement_SubMode = Measurement_SubMode;
-        Header.PixX = 0;
-        Header.PixY = 0;
-        Header.bidir = 0;
-        Header.FrameStartMarker = 0;
-        Header.LineMarker = 0;
-        Header.NoF = 1;
-        
-        %Measurement_SubMode = 1;
-        %if exist ('Measurement_SubMode', 'var')
-        %Header.Measurement_SubMode = Measurement_SubMode;
         %{
     Measurement_Submode
     -------------------
@@ -189,6 +176,17 @@ switch TTResultFormat_TTTRRecType
     2: TRES means "Time Resolved Emission Spectra" (one histogram per wavelength step)
     3: IMG means image
         %}
+        
+        % hardcoded because it's not in the PTU file in Leuven...
+        Header.Measurement_SubMode = 1;
+        %Header.Measurement_SubMode = Measurement_SubMode;
+        Header.PixX = 0;
+        Header.PixY = 0;
+        Header.bidir = 0;
+        Header.FrameStartMarker = 0;
+        Header.LineMarker = 0;
+        Header.NoF = 1;
+        
         if Header.Measurement_SubMode == 3
             if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
                 Header.PixX = ImgHdr_PixX; end
