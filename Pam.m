@@ -2860,13 +2860,15 @@ if ~isempty(PIE)
             %% Calculates image
             if h.MT.Use_Image.Value && ~isempty(PIE_MT)   
                 if isfield(FileInfo, 'LineStart')
-                        if FileInfo.Measurement_SubMode == 3
+                    % e.g. Leuven PTU data, image does not contain the laser retractions
+                        if FileInfo.Measurement_SubMode == 3 % user recorded images
                             [imageseries, ~, ~, ~] = PTU_Image(PIE_MT,1);
                             PamMeta.Image{i}=permute(sum(imageseries,3),[2 1 3]);
-                        else
+                        else % user recorded point data
                             PamMeta.Image{i}=zeros(FileInfo.Lines);
                         end
-                else
+                else 
+                    % Munich Fabsurf, image will contain the laser retractions
                         %%% Goes back from total microtime to file microtime
                         PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
                         %%% Calculates Pixel vector

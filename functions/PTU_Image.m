@@ -1,4 +1,7 @@
 function [imageseries, Stack, Bins, PIE_MT] = PTU_Image(PIE_MT, mode)
+% Function that generates the image for PTU data containing framestarts, linestarts and linestops
+% Called in Pam (Update_Data and Phasor_Calc) and in Mia
+
 global FileInfo 
 
 %Macrotimes of the line starts and line stop

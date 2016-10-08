@@ -3008,12 +3008,12 @@ switch mode
         
         Sel = h.Mia_Image.Settings.Channel_PIE(1).Value;
         
-        if isfield(FileInfo, 'LineStart')
+        if isfield(FileInfo, 'LineStart') %e.g. Leuven imaging PTU files, images do not contain the laser retraction
             [~, Stack, ~, ~] = PTU_Image(TcspcData.MT{1,1}*FileInfo.ClockPeriod, 1);
             %%% Reshapes pixelvector to a pixel x pixel x frames matrix
             MIAData.Data{1,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
             clear Stack;
-        else
+        else %e.g. Munich Fabsurf data, images contain the laser retraction. 
             %%% Gets the photons
             if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
                 Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
