@@ -167,19 +167,22 @@ switch TTResultFormat_TTTRRecType
             return;
         end
         
-        %{
-    Measurement_Submode
-    -------------------
-    Can take the values OSC, INT, TRES, IMG (enumerated starting with 0):
-    0: OSC means "oscillator mode" (a special online measurement mode, rarely used)
-    1: INT means "integrating", (standard mode, also for point measurements)
-    2: TRES means "Time Resolved Emission Spectra" (one histogram per wavelength step)
-    3: IMG means image
-        %}
-        
-        % hardcoded because it's not in the PTU file in Leuven...
-        Header.Measurement_SubMode = 1;
         %Header.Measurement_SubMode = Measurement_SubMode;
+        
+        %{
+        Measurement_Submode
+        -------------------
+        Can take the values OSC, INT, TRES, IMG (enumerated starting with 0):
+        0: OSC means "oscillator mode" (a special online measurement mode, rarely used)
+        1: INT means "integrating", (standard mode, also for point measurements)
+        2: TRES means "Time Resolved Emission Spectra" (one histogram per wavelength step)
+        3: IMG means image
+        
+        Normally the above should be correctly in the PTU file; in practice
+        it is not, so we use the presence of linestart info etc. to check
+        whether imaging was done
+        %}
+
         Header.PixX = 0;
         Header.PixY = 0;
         Header.bidir = 0;
@@ -187,22 +190,18 @@ switch TTResultFormat_TTTRRecType
         Header.LineMarker = 0;
         Header.NoF = 1;
         
-        if Header.Measurement_SubMode == 3
-            if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
-                Header.PixX = ImgHdr_PixX; end
-            if exist ('ImgHdr_PixY' , 'var') % Number of pixels in the y direction
-                Header.PixY =  ImgHdr_PixY; end
-            if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
-                Header.bidir = ImgHdr_BiDirect; end
-            if exist ('ImgHdr_Frame', 'var') % frame bit. should be 4.
-                Header.FrameStartMarker = ImgHdr_Frame; end
-            if exist ('ImgHdr_LineStart', 'var')
-                Header.LineMarker = ImgHdr_LineStart;  end
-            if exist ('NumberOfFrames', 'var')
-                Header.NoF = NumberOfFrames; end
-        end
-        %end
-        
+        if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
+            Header.PixX = ImgHdr_PixX; end
+        if exist ('ImgHdr_PixY' , 'var') % Number of pixels in the y direction
+            Header.PixY =  ImgHdr_PixY; end
+        if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
+            Header.bidir = ImgHdr_BiDirect; end
+        if exist ('ImgHdr_Frame', 'var') % frame bit. should be 4.
+            Header.FrameStartMarker = ImgHdr_Frame; end
+        if exist ('ImgHdr_LineStart', 'var')
+            Header.LineMarker = ImgHdr_LineStart;  end
+        if exist ('NumberOfFrames', 'var')
+            Header.NoF = NumberOfFrames; end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
@@ -224,7 +223,7 @@ switch TTResultFormat_TTTRRecType
         % CHANNEL:
         %   if Special = 0:
         %    63: macrotime overflow (nsync) occured
-        %    >=1, <=15: these are TCSPC detector channel identifiers
+        %    0-15: these are TCSPC detector channel identifiers
         %   if Special = 1:
         %    >=1, <=15: these are imaging markers
         % NSYNC:
@@ -268,16 +267,13 @@ switch TTResultFormat_TTTRRecType
         end
         OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
         
-        %Calculates the frame marker indices and the line marker indices
-        %from the total timetag
-        if Header.Measurement_SubMode == 3
-            TimeTag = double(nsync)'+OverflowCorrection;
-            FrameMarkerIndices = find(special & (channel == 1));
-            NoOfFrames = nnz(FrameMarkerIndices);
-            Header.NoF= floor(NoOfFrames);
-            Header.FrameIndices = TimeTag(FrameMarkerIndices);
-            Header.LineIndices = TimeTag(find(special & (channel == 2)));
-        end
+        %Calculates the frame and line marker indices from the total timetag
+        TimeTag = double(nsync)'+OverflowCorrection;
+        FrameMarkerIndices = find(special & (channel == 1));
+        NoOfFrames = nnz(FrameMarkerIndices);
+        Header.NoF= floor(NoOfFrames);
+        Header.FrameIndices = TimeTag(FrameMarkerIndices);
+        Header.LineIndices = TimeTag(find(special & (channel == 2)));
         
         % calculate actual timetag of photons
         ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
@@ -324,23 +320,13 @@ end
 
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
-a = unique(channel)';
-if min(a) == 0
-    MT = cell(max(channel)+1,1);
-    MI = cell(max(channel)+1,1);
-    for i=unique(channel)'
-        MT{i+1} = TimeTag(channel==i)';
-        MI{i+1} = dtime(channel==i);
-    end
-else
-    MT = cell(max(channel),1);
-    MI = cell(max(channel),1);
-    for i=unique(channel)'
-        MT{i} = TimeTag(channel==i)';
-        MI{i} = dtime(channel==i);
-    end
+% channel is 0-15, so assign between 1-16
+MT = cell(max(channel)+1,1);
+MI = cell(max(channel)+1,1);
+for i=unique(channel)'
+    MT{i+1} = TimeTag(channel==i)';
+    MI{i+1} = dtime(channel==i);
 end
-
 
 Progress(1/NumFiles,ProgressAxes,ProgressText, ['File ' num2str(FileNumber) ' of ' num2str(NumFiles) ' loaded']);
 

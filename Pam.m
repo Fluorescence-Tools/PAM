@@ -2861,26 +2861,22 @@ if ~isempty(PIE)
             if h.MT.Use_Image.Value && ~isempty(PIE_MT)   
                 if isfield(FileInfo, 'LineStart')
                     % e.g. Leuven PTU data, image does not contain the laser retractions
-                        if FileInfo.Measurement_SubMode == 3 % user recorded images
-                            [imageseries, ~, ~, ~] = PTU_Image(PIE_MT,1);
-                            PamMeta.Image{i}=permute(sum(imageseries,3),[2 1 3]);
-                        else % user recorded point data
-                            PamMeta.Image{i}=zeros(FileInfo.Lines);
-                        end
-                else 
+                    [imageseries, ~, ~, ~] = PTU_Image(PIE_MT,1);
+                    PamMeta.Image{i}=permute(sum(imageseries,3),[2 1 3]);
+                else
                     % Munich Fabsurf, image will contain the laser retractions
-                        %%% Goes back from total microtime to file microtime
-                        PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
-                        %%% Calculates Pixel vector
-                        Pixeltimes=0;
-                        for j=1:FileInfo.Lines
-                            Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
-                        end
-                        Pixeltimes(end)=[];
-                        %%% Calculate image vector
-                        PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);
-                        %%% Reshapes pixel vector to image
-                        PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
+                    %%% Goes back from total microtime to file microtime
+                    PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
+                    %%% Calculates Pixel vector
+                    Pixeltimes=0;
+                    for j=1:FileInfo.Lines
+                        Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+                    end
+                    Pixeltimes(end)=[];
+                    %%% Calculate image vector
+                    PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);
+                    %%% Reshapes pixel vector to image
+                    PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
                 end
             else
                 PamMeta.Image{i}=zeros(FileInfo.Lines);

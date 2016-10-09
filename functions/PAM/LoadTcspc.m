@@ -760,12 +760,7 @@ switch (Type)
                 FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
             end
             
-            % Depending on the submode we have an image (3) or a point (1)
-            
-            % FileInfo.Measurement_SubMode = Header.Measurement_SubMode;
-            % This should be defined in the header of the PTU file
-            FileInfo.Measurement_SubMode = Header.Measurement_SubMode;
-            if FileInfo.Measurement_SubMode == 3 % Image PTU data
+            if ~isempty(Header.LineIndices) % Image PTU data
                 % Calculate the start and stop macrotimes of the lines and the frames
                 for a = 1:2:size(Header.LineIndices,2)-1
                     FileInfo.LineStart = [FileInfo.LineStart; Header.LineIndices(a) + MaxMT];
@@ -784,8 +779,6 @@ switch (Type)
                     end
                 end
                 
-                %                 %%% WHen there are only frame starts
-                %                 TcspcData.FrameStart = [TcspcData.FrameStart; Header.FrameIndices + MaxMT];
                 FileInfo.bidir = Header.bidir; % Defined in the header in the PTU file
                 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
                 lines = FileInfo.LineStart((FileInfo.LineStart >= FileInfo.FrameStart(1)) & (FileInfo.LineStart <= FileInfo.FrameStart(2)));
