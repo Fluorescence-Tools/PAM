@@ -6406,13 +6406,88 @@ for i = 1:num_species
 end
 x_boundaries = [min(minx) max(maxx)];
 y_boundaries = [min(miny) max(maxy)];
-if exist('limits','var') %%% apply additional global bounds
+
+if ~exist('limits','var') 
+    %%% additionally, look for specified cuts and overwrite auto-bounds
+    xlimits = cell(num_species,1); ylimits = cell(num_species,1);
+    for i = 1:num_species
+        %%% find the bounds
+        file =file_n(i);
+        species = [species_n(i),subspecies_n(i)];
+        NameArray = BurstData{file}.NameArray;
+
+        %%% set limits
+        xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
+        ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})) max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
+        %%% find cuts to parameters to be plotted and change limits if needed
+        if all(species == [0,0])
+            CutState= {};
+        else
+            Cut = BurstData{file}.Cut{species(1),species(2)};
+            CutState = vertcat(Cut{:});
+        end
+        if size(CutState,2) > 0
+            CutParameters = CutState(:,1);
+            if any(strcmp(NameArray{x{i}},CutParameters))
+                if CutState{strcmp(NameArray{x{i}},CutParameters),4} == 1 %%% Check if active
+                    %%% Set x-axis limits according to cut boundaries of selected parameter
+                    xlimits{i} = [CutState{strcmp(NameArray{x{i}},CutParameters),2},...
+                        CutState{strcmp(NameArray{x{i}},CutParameters),3}];
+                else
+                    %%% set to min max
+                    xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
+                end
+            else
+                %%% set to min max
+                xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
+            end
+
+            if any(strcmp(NameArray{y{i}},CutParameters))
+                if CutState{strcmp(NameArray{y{i}},CutParameters),4} == 1 %%% Check if active
+                    %%% Set x-axis limits according to cut boundaries of selected parameter
+                    ylimits{i} = [CutState{strcmp(NameArray{y{i}},CutParameters),2},...
+                        CutState{strcmp(NameArray{y{i}},CutParameters),3}];
+                else
+                    %%% set to min max
+                    ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
+                end
+            else
+                %%% set to min max
+                ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
+            end
+            if isempty(xlimits{i})
+                %selection is empty
+                xlimits{i} = [0,1];
+            end
+            if isempty(ylimits{i})
+                %selection is empty
+                ylimits{i} = [0,1];
+            end
+            if sum(xlimits{i} == [0,0]) == 2
+                xlimits{i} = [0 1];
+            end
+            if sum(ylimits{i} == [0,0]) == 2
+                ylimits{i} = [0 1];
+            end
+        end
+    end
+    %%% find minimum and maximum limits
+    xlimits = cell2mat(vertcat(xlimits(:)));
+    ylimits = cell2mat(vertcat(ylimits(:)));
+    %%% overwrite
+    x_boundaries(1) = min([x_boundaries(1) min(xlimits(:,1))]);
+    x_boundaries(2) = max([x_boundaries(2) max(xlimits(:,2))]);
+    y_boundaries(1) = min([y_boundaries(1) min(ylimits(:,1))]);
+    y_boundaries(2) = max([y_boundaries(2) max(ylimits(:,2))]);
+elseif exist('limits','var') %%% called with absolute limits
+    %%% obey specified limits!
     x_boundaries(1) = max([x_boundaries(1) limits{1}(1)]);
     x_boundaries(2) = min([x_boundaries(2) limits{1}(2)]);
     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
 
+    
 H = cell(num_species,1);
 for i = 1:num_species
     [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
@@ -8379,9 +8454,11 @@ switch BurstData{file}.BAMethod
     case {1,2,5} %2color
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
         indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+        indEPR = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
     case {3,4} %3color
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
         indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
+        indEPR = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio GR'));
 end
 indDur = strcmp(BurstData{file}.NameArray,'Duration [ms]');
 indNGG = strcmp(BurstData{file}.NameArray,'Number of Photons (GG)');
@@ -8414,6 +8491,9 @@ NGG = NGG - Dur.*BG_GG;
 NGR = NGR - Dur.*BG_GR;
 NRR = NRR - Dur.*BG_RR;
 
+%%% recalculate proximity ratio (only background corrected)
+EPR = NGR./(NGR+NGG);
+
 %%% Apply CrossTalk and DirectExcitation Corrections
 NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
 
@@ -8424,9 +8504,11 @@ if UserValues.BurstBrowser.Corrections.UseBeta == 1
 elseif UserValues.BurstBrowser.Corrections.UseBeta == 0
     S = (NGR + gamma_gr.*NGG)./(NGR + gamma_gr.*NGG + NRR);
 end
+
 %%% Update Values in the DataArray
 BurstData{file}.DataArray(:,indE) = E;
 BurstData{file}.DataArray(:,indS) = S;
+BurstData{file}.DataArray(:,indEPR) = EPR;
 
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
@@ -8524,7 +8606,9 @@ if any(BurstData{file}.BAMethod == [3,4])
         SBG = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + gamma_gr.*NGG + NGR);
         SBR = (gamma_br.*NBB + gamma_gr.*NBG + NBR)./(gamma_br.*NBB + gamma_gr.*NBG + NBR + NRR);
     end
-    %%% Recalculate proximity ratios
+    %%% Recalculate proximity ratios (these are corrected, but not directly
+    %%% related to distance. They can be converted to distances, however,
+    %%% using correct formulas.) 
     PrGR = EGR; % no change for GR
     PrBG = gamma_gr.*NBG./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
     PrBR = NBR./(gamma_br.*NBB+gamma_gr.*NBG+NBR);
