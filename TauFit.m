@@ -4303,23 +4303,34 @@ switch TauFitData.BAMethod
                         fraction_bg = zeros(size(bg,1),size(bg,2));
                     end
                     
-                    scat = SCATTER{chan};
-                    model = MODEL{chan};
-                    parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
-                        if fraction_bg(i) == 1
-                            lt(i,chan) = NaN;
-                        else
-                            %%% Implementation of burst-wise background correction
-                            %%% Calculate Fractions of Background and Signal
-                            % if 50% of signal is background, fraction_bg in the following model will be approximately 0.5
-                            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                            %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
-                            lt(i,chan) = LifetimeFitMLE_c(Mic{chan}(:,i)./sum(Mic{chan}(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
-                         end
-                    end
-                    lifetime{j} = lt;
+                    model = MODEL{chan}; 
+                    scat = SCATTER{chan}(:,ones(steps_tau+1,1));
+                    microTimes = Mic{chan};
+                    
+                    lt(:,chan) = LifetimeFitMLE_array(microTimes(:),model(:),range,size(model,2),size(model,1),size(microTimes,2),scat,fraction_bg);
+                    %%% set lifetime to NaN if no signal was present
+                    lt(fraction_bg == 1,chan) = NaN;
+                    
+                    %parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
+                    %    
+                    %    if fraction_bg(i) == 1
+                    %        lt(i,chan) = NaN;
+                    %    else
+                    %        %%% Implementation of burst-wise background correction
+                    %        %%% Calculate Fractions of Background and Signal
+                    %        % if 50% of signal is background, fraction_bg in the following model will be approximately 0.5
+                    %        if use_bg
+                    %            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat;
+                    %        else
+                    %            modelfun = model;
+                    %        end
+                    %        %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                    %        lt(i,chan) = LifetimeFitMLE_c(microTimes(:,i)./sum(microTimes(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
+                    %     end
+                    %end
                 end
             end
+            lifetime{j} = lt;
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
@@ -4548,22 +4559,32 @@ switch TauFitData.BAMethod
                         fraction_bg = zeros(size(bg,1),size(bg,2));
                     end
                     
-                    scat = SCATTER{chan};
                     model = MODEL{chan};
-                    parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
-                        if fraction_bg(i) == 1
-                            lt(i,chan) = NaN;
-                        else
-                            %%% Implementation of burst-wise background correction
-                            %%% Calculate Fractions of Background and Signal
-                            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                            %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
-                            LifetimeFitMLE_c(Mic{chan}(:,i)./sum(Mic{chan}(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
-                        end
-                    end
-                    lifetime{j} = lt;
+                    scat = SCATTER{chan}(:,ones(steps_tau+1,1));
+                    microTimes = Mic{chan};
+                    
+                    lt(:,chan) = LifetimeFitMLE_array(microTimes(:),model(:),range,size(model,2),size(model,1),size(microTimes,2),scat,fraction_bg);
+                    %%% set lifetime to NaN if no signal was present
+                    lt(fraction_bg == 1,chan) = NaN;
+                    
+                    %parfor (i = 1:size(Mic{chan},2),UserValues.Settings.Pam.ParallelProcessing)
+                    %    if fraction_bg(i) == 1
+                    %        lt(i,chan) = NaN;
+                    %    else
+                    %        %%% Implementation of burst-wise background correction
+                    %        %%% Calculate Fractions of Background and Signal
+                    %        if use_bg
+                    %            modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat;
+                    %        else
+                    %            modelfun = model;
+                    %        end
+                    %        %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                    %        lt(i,chan) = LifetimeFitMLE_c(microTimes(:,i)./sum(microTimes(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
+                    %    end
+                    %end
                 end
             end
+            lifetime{j} = lt;
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
