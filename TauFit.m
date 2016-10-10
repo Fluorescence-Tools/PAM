@@ -4313,8 +4313,9 @@ switch TauFitData.BAMethod
                             %%% Calculate Fractions of Background and Signal
                             % if 50% of signal is background, fraction_bg in the following model will be approximately 0.5
                             modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                            [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
-                        end
+                            %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                            lt(i,chan) = LifetimeFitMLE_c(Mic{chan}(:,i)./sum(Mic{chan}(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
+                         end
                     end
                     lifetime{j} = lt;
                 end
@@ -4556,7 +4557,8 @@ switch TauFitData.BAMethod
                             %%% Implementation of burst-wise background correction
                             %%% Calculate Fractions of Background and Signal
                             modelfun = (1-fraction_bg(i)).*model + fraction_bg(i).*scat(:,ones(steps_tau+1,1));
-                            [lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                            %[lt(i,chan),~] = LifetimeFitMLE(Mic{chan}(:,i),modelfun,range);
+                            LifetimeFitMLE_c(Mic{chan}(:,i)./sum(Mic{chan}(:,i)),modelfun(:),range,size(modelfun,2),size(modelfun,1));
                         end
                     end
                     lifetime{j} = lt;
