@@ -8508,7 +8508,7 @@ end
 %%% Update Values in the DataArray
 BurstData{file}.DataArray(:,indE) = E;
 BurstData{file}.DataArray(:,indS) = S;
-BurstData{file}.DataArray(:,indEPR) = EPR;
+%BurstData{file}.DataArray(:,indEPR) = EPR;
 
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
