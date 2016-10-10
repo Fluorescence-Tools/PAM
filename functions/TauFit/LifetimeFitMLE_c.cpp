@@ -26,14 +26,18 @@ void LifetimeFitMLE(double *sig, double *model, double *range, int n_tau, int n_
     int MIN = 0;
     int points_per_iter = 21;
     
+    double *current_model = new double[n_datapoints*points_per_iter]; 
+    double *current_range = new double[points_per_iter];
+    double *istar = new double[points_per_iter]; 
+    double *istar_temp = new double[n_datapoints]; 
+    
     for (i=0;i<3;i++)
     {
         // read out model given by current search range
-        double current_range [points_per_iter]; for (j=0;j<points_per_iter;j++) {current_range[j] = 0;}
-
+        for (j=0;j<points_per_iter;j++) {current_range[j] = 0;}
         for (k=0;k<points_per_iter;k++) {current_range[k] = range[MIN+k*div];}
+        for (j=0;j<n_datapoints*points_per_iter;j++) {current_model[j] = 0;}
         
-        double current_model [n_datapoints*points_per_iter]; for (j=0;j<n_datapoints*points_per_iter;j++) {current_model[j] = 0;}
         for (k=0;k<points_per_iter;k++)
             {
                 for (j=0;j<n_datapoints;j++)
@@ -42,10 +46,10 @@ void LifetimeFitMLE(double *sig, double *model, double *range, int n_tau, int n_
                 }
             }
         
-        double istar [points_per_iter]; for (j=0;j<points_per_iter;j++) {istar[j] = 0;}
+        for (j=0;j<points_per_iter;j++) {istar[j] = 0;}
         for (k=0;k<points_per_iter;k++)
         {
-            double istar_temp [n_datapoints]; for (j=0;j<n_datapoints;j++) {istar_temp[j] = 0;}
+            for (j=0;j<n_datapoints;j++) {istar_temp[j] = 0;}
             // calculate loglikelihood = SIG*log(SIG/Model)
             for (j=0;j<n_datapoints;j++)
             {
@@ -91,6 +95,11 @@ void LifetimeFitMLE(double *sig, double *model, double *range, int n_tau, int n_
         }
         div /= 10;
     }
+    
+    delete [] current_range;
+    delete [] current_model;
+    delete [] istar;
+    delete [] istar_temp;
 };
 
 
