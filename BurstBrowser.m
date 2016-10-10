@@ -8492,7 +8492,7 @@ NGR = NGR - Dur.*BG_GR;
 NRR = NRR - Dur.*BG_RR;
 
 %%% recalculate proximity ratio (only background corrected)
-EPR = NGR./(NGR+NGG);
+% EPR = NGR./(NGR+NGG);
 
 %%% Apply CrossTalk and DirectExcitation Corrections
 NGR = NGR - de_gr.*NRR - ct_gr.*NGG;
