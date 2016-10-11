@@ -1373,6 +1373,9 @@ if isempty(obj) || obj == h.LoadData_Button
         elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,1)) &&...
                 strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,2)))
             chan = 2;
+        elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
+            %%% identical channels selected
+            chan = 5;
         else %%% Set channel to 4 if no MFD channel was selected
             chan = 4;
         end
@@ -1386,6 +1389,9 @@ if isempty(obj) || obj == h.LoadData_Button
         elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,1)) &&...
                 strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,2)))
             chan = 3;
+        elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
+            %%% identical channels selected
+            chan = 5;
         else %%% Set channel to 4 if no MFD channel was selected
             chan = 4;
         end
@@ -1448,6 +1454,65 @@ if isempty(obj) || obj == h.LoadData_Button
     %%% Generate XData
     TauFitData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
     TauFitData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
+end
+%%% disable some GUI elements of the same channel is used twice, i.e. no
+%%% polarized detection
+if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
+    set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
+        h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
+        h.IRFrelShift_Edit,h.IRFrelShift_Text,h.IRFrelShift_Slider,...
+        h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
+        h.G_factor_edit,h.G_factor_text,...
+        h.l1_edit,h.l1_text,...
+        h.l2_edit,h.l2_text],'Visible','off'); 
+    %%% set l1 and l2 to zero
+    h.l1_edit.String = '0';
+    h.l2_edit.String = '0';
+    %%% set G to 1
+    UserValues.TauFit.G{chan} = 1;
+    h.G_factor_edit.String = '1';
+    %%% set perp sliders/edit to zero
+    UserValues.TauFit.ShiftPer{chan} = 0;
+    TauFitData.ShiftPer{chan} = 0;
+    h.ShiftPer_Edit.String = '0';
+    h.ShiftPer_Slider.Value = 0;
+    UserValues.TauFit.IRFrelShift{chan} = 0;
+    TauFitData.IRFrelShift{chan} = 0;
+    h.IRFrelShift_Edit.String = '0';
+    h.IRFrelShift_Slider.Value = 0;
+    UserValues.TauFit.ScatrelShift{chan} = 0;
+    TauFitData.ScatrelShift{chan} = 0;
+    h.ScatrelShift_Edit.String = '0';
+    h.ScatrelShift_Slider.Value = 0;
+    %%% disable anisotropy fit methods
+    if h.FitMethod_Popupmenu.Value > 5
+        h.FitMethod_Popupmenu.Value = 1;
+    end
+    h.FitMethod_Popupmenu.String = h.FitMethods(1:5);
+else
+    set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
+        h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
+        h.IRFrelShift_Edit,h.IRFrelShift_Text,h.IRFrelShift_Slider,...
+        h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
+        h.G_factor_edit,h.G_factor_text,...
+        h.l1_edit,h.l1_text,...
+        h.l2_edit,h.l2_text],'Visible','on'); 
+    %%% reenable polarization correction factors
+    h.l1_edit.String = num2str(UserValues.TauFit.l1);
+    h.l2_edit.String = num2str(UserValues.TauFit.l2);
+    h.G_factor_edit.String = num2str(UserValues.TauFit.G{chan});
+    %%% set perp sliders/edit to zero
+    TauFitData.ShiftPer{chan} = UserValues.TauFit.ShiftPer{chan};
+    h.ShiftPer_Edit.String = num2str(UserValues.TauFit.ShiftPer{chan});
+    h.ShiftPer_Slider.Value = UserValues.TauFit.ShiftPer{chan};
+    TauFitData.IRFrelShift{chan} = UserValues.TauFit.IRFrelShift{chan};
+    h.IRFrelShift_Edit.String = num2str(UserValues.TauFit.IRFrelShift{chan});
+    h.IRFrelShift_Slider.Value = UserValues.TauFit.IRFrelShift{chan};
+    TauFitData.ScatrelShift{chan} = UserValues.TauFit.ScatrelShift{chan};
+    h.ScatrelShift_Edit.String = num2str(UserValues.TauFit.ScatrelShift{chan});
+    h.ScatrelShift_Slider.Value = UserValues.TauFit.ScatrelShift{chan};
+    %%% reenable anisotropy fit methods
+    h.FitMethod_Popupmenu.String = h.FitMethods;
 end
 Update_Plots(obj)
 

@@ -685,7 +685,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.StartPar={0,0,0,0};
         disp('UserValues.TauFit.StartPar was incomplete');
     end
-    if numel(S.TauFit.StartPar) < 4
+    if numel(S.TauFit.StartPar) < 5
         S.TauFit.StartPar{end+1} = 0;
         disp('UserValues.TauFit.StartPar was wrong size');
     end
@@ -697,7 +697,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.Length={0,0,0,0};
         disp('UserValues.TauFit.Length was incomplete');
     end
-    if numel(S.TauFit.Length) < 4
+    if numel(S.TauFit.Length) < 5
         S.TauFit.Length{end+1} = 0;
         disp('UserValues.TauFit.Length was wrong size');
     end
@@ -709,7 +709,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.ShiftPer={1,1,1,1};
         disp('UserValues.TauFit.ShiftPer was incomplete');
     end
-    if numel(S.TauFit.ShiftPer) < 4
+    if numel(S.TauFit.ShiftPer) < 5
         S.TauFit.ShiftPer{end+1} = 1;
         disp('UserValues.TauFit.ShiftPer was wrong size');
     end
@@ -721,7 +721,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRFLength={100,100,100,100};
         disp('UserValues.TauFit.IRFLength was incomplete');
     end
-    if numel(S.TauFit.IRFLength) < 4
+    if numel(S.TauFit.IRFLength) < 5
         S.TauFit.IRFLength{end+1} = 100;
         disp('UserValues.TauFit.IRFLength was wrong size');
     end
@@ -732,7 +732,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRFShift={0,0,0,0};
         disp('UserValues.TauFit.IRFShift was incomplete');
     end
-    if numel(S.TauFit.IRFShift) < 4
+    if numel(S.TauFit.IRFShift) < 5
         S.TauFit.IRFShift{end+1} = 0;
         disp('UserValues.TauFit.IRFShift was wrong size');
     end
@@ -744,7 +744,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.IRFrelShift={0,0,0,0};
         disp('UserValues.TauFit.IRFrelShift was incomplete');
     end
-    if numel(S.TauFit.IRFrelShift) < 4
+    if numel(S.TauFit.IRFrelShift) < 5
         S.TauFit.IRFrelShift{end+1} = 0;
         disp('UserValues.TauFit.IRFrelShift was wrong size');
     end
@@ -756,7 +756,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.ScatShift={0,0,0,0};
         disp('UserValues.TauFit.ScatShift was incomplete');
     end
-    if numel(S.TauFit.ScatShift) < 4
+    if numel(S.TauFit.ScatShift) < 5
         S.TauFit.ScatShift{end+1} = 0;
         disp('UserValues.TauFit.ScatShift was wrong size');
     end
@@ -768,7 +768,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.ScatrelShift={0,0,0,0};
         disp('UserValues.TauFit.ScatrelShift was incomplete');
     end
-    if numel(S.TauFit.ScatrelShift) < 4
+    if numel(S.TauFit.ScatrelShift) < 5
         S.TauFit.ScatrelShift{end+1} = 0;
         disp('UserValues.TauFit.ScatrelShift was wrong size');
     end
@@ -780,7 +780,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.Ignore={1,1,1,1};
         disp('UserValues.TauFit.Ignore was incomplete');
     end
-    if numel(S.TauFit.Ignore) < 4
+    if numel(S.TauFit.Ignore) < 5
         S.TauFit.Ignore{end+1} = 1;
         disp('UserValues.TauFit.Ignore was wrong size');
     end
@@ -802,7 +802,7 @@ if Mode==0 %%% Loads user values
         S.TauFit.G={1,1,1,1};
         disp('UserValues.TauFit.G was incomplete');
     end
-    if numel(S.TauFit.G) < 4
+    if numel(S.TauFit.G) < 5
         S.TauFit.G{end+1} = 1;
         disp('UserValues.TauFit.G was wrong size');
     end
@@ -891,6 +891,13 @@ if Mode==0 %%% Loads user values
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams{4} = params;
         S.TauFit.FitFix{4} = fix;
+        disp('UserValues.TauFit.FitParams/FitFix was incomplete');
+    end
+    if numel(S.TauFit.FitParams) < 5
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
+        S.TauFit.FitParams{end+1} = params;
+        S.TauFit.FitFix{end+1} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     P.TauFit.FitParams = S.TauFit.FitParams;
