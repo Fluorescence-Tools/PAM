@@ -1433,6 +1433,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.S_Aonly_Max was incomplete');
     end
     P.BurstBrowser.Settings.S_Aonly_Max = S.BurstBrowser.Settings.S_Aonly_Max;
+    %%% Check, if BurstBrowser.Settings.E_Aonly_Min subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'E_Aonly_Min')
+        S.BurstBrowser.Settings.E_Aonly_Min=0.25;
+        disp('UserValues.BurstBrowser.Settings.E_Aonly_Min was incomplete');
+    end
+    P.BurstBrowser.Settings.E_Aonly_Min = S.BurstBrowser.Settings.E_Aonly_Min;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser, 'DatabaseString')
         S.BurstBrowser.DatabaseString={};

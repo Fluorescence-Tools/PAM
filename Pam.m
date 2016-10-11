@@ -6692,8 +6692,16 @@ h.Burst.NirFilter_Button.ForegroundColor = [0 0.8 0];
 %%% Loads a performed BurstSearch for further/re-analysis  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Performed_BurstSearch(obj,~)
-clearvars -global BurstData BurstTCSPCData
 global BurstData UserValues
+%%% check if BurstData variable exists, if it is a cell (as used in
+%%% BursBrowser) and whether BurstBrowser is open
+hBB = findobj('Tag','BurstBrowser');
+if ~isempty(BurstData) && iscell(BurstData) && ~isempty(hBB)
+    msgbox('Please close BurstBrowser before loading performed burst data.','Could not load burst data...');
+    return;
+end
+clearvars -global BurstData BurstTCSPCData
+
 h = guidata(obj);
 [FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
 
