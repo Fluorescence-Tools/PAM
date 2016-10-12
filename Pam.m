@@ -7111,8 +7111,10 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     if any(BAMethod == [3 4])
         PamMeta.Burst.Preview.ch3 = ch3./bin_time_ms;
     end
-    %%% set the second to be displayed (here first)+
-    PamMeta.Burst.Preview.Second = 0;
+    %%% set the second to be displayed (here first)
+    if ~isfield(PamMeta.Burst.Preview,'Second')
+        PamMeta.Burst.Preview.Second = 0;
+    end
     
     %%% clear old data
     if isfield(h.Plots.BurstPreview,'SearchResult')
@@ -7273,6 +7275,9 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     h.Burst.Axes_Interphot.YLimMode = 'auto';
     axis(h.Burst.Axes_Interphot,'tight');
     h.Burst.Axes_Interphot.XLim = [0 1];
+     %%% Update the x-axis limits of Burst_Axes
+    h.Burst.Axes_Intensity.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
+    h.Burst.Axes_Interphot.XLim = [PamMeta.Burst.Preview.Second  PamMeta.Burst.Preview.Second+1];
 else %%% < or > was pressed
     switch obj %%% determine if < or > was clicked
         case h.Burst.BurstSearchPreview_Forward_Button
