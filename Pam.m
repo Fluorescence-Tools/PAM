@@ -6913,7 +6913,7 @@ elseif BurstIdentification == 2
         dT_m = zeros(size(dT,1),size(dT,2));
         dT_s = zeros(size(dT,1),size(dT,2));
         % Apply Lee Filter with window 2m+1
-        sig_0 = mean(dT); %%% constant filter parameter set to mean of interphoton time
+        sig_0 = std(dT); %%% constant filter parameter is the noise variance, set to standard devitation of interphoton time
         dT_cumsum = cumsum(dT);
         dT_cumsum = [0; dT_cumsum];
         for i = m+1:numel(dT)-m
@@ -7223,7 +7223,7 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
     dT_m = zeros(size(dT,1),size(dT,2));
     dT_s = zeros(size(dT,1),size(dT,2));
     % Apply Lee Filter with window 2m+1
-    sig_0 = mean(dT); %%% constant filter parameter set to mean of interphoton time
+    sig_0 = std(dT); %%% constant filter parameter is the noise variance, set to standard devitation of interphoton time
     dT_cumsum = cumsum(dT);
     dT_cumsum = [0; dT_cumsum];
     for i = m+1:numel(dT)-m
