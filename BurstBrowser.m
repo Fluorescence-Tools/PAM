@@ -458,6 +458,7 @@ if isempty(hfig)
     h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Histogram');
     h.Export_FRET_Hist_Timeseries_Menu = javax.swing.JMenuItem('Export FRET Histogram (Time Series)');
     h.SendToTauFit = javax.swing.JMenuItem('Send Selected Species to TauFit');
+    h.DisplayFileInfo = javax.swing.JMenuItem('Display File Info');
     % set callbacks
     set(h.AddSpeciesMenuItem,'ActionPerformedCallback',@AddSpecies);
     set(h.RemoveSpeciesMenuItem,'ActionPerformedCallback',@RemoveSpecies);
@@ -468,6 +469,7 @@ if isempty(hfig)
     set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
     set(h.Export_FRET_Hist_Timeseries_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
     set(h.SendToTauFit,'ActionPerformedCallback',@Send_To_TauFit);
+    set(h.DisplayFileInfo,'ActionPerformedCallback',@DisplayFileInfo);
     % construct contextmenu
     h.SpeciesListMenu = javax.swing.JPopupMenu;
     h.SpeciesListMenu.add(h.AddSpeciesMenuItem);
@@ -481,7 +483,8 @@ if isempty(hfig)
     h.ExportMenuItem.add(h.Export_FRET_Hist_Timeseries_Menu);
     h.SpeciesListMenu.add(h.ExportMenuItem);
     h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
-
+    h.SpeciesListMenu.addSeparator;
+    h.SpeciesListMenu.add(h.DisplayFileInfo);
     %%% Define Species List
     % new: use uitreenode
     %%% read icons
@@ -13428,3 +13431,35 @@ switch BurstMeta.Fitting.FitType
         end
 end
 Mat2clip([Header;data]);
+
+function DisplayFileInfo(~,~)
+global BurstMeta BurstData
+
+fid = fopen(fullfile(BurstData{BurstMeta.SelectedFile}.PathName,[BurstData{BurstMeta.SelectedFile}.FileName(1:end-3) 'txt']));
+if fid == -1
+    disp('No file info found.');
+    return;
+end
+screensize = get(0,'screensize');
+
+f = figure('menu','none','toolbar','none',...
+    'numbertitle','off','name','',...
+    'Units','pixels',...
+    'Position',[screensize(3)/2-300,screensize(4)/2-400,600,800]);
+ph = uipanel(f,'Units','normalized','position',[0 0 1 1],'title',...
+    ['File Info for ' BurstData{BurstMeta.SelectedFile}.FileName],'FontSize',12);
+lbh = uicontrol(ph,'style','listbox','Units','normalized','position',...
+    [0 0 1 1],'FontSize',12);
+indic = 1;
+while 1
+     tline = fgetl(fid);
+     if ~ischar(tline), 
+         break
+     end
+     strings{indic}=tline; 
+     indic = indic + 1;
+end
+fclose(fid);
+set(lbh,'string',strings);
+set(lbh,'Value',1);
+set(lbh,'Selected','on');

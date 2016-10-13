@@ -6510,6 +6510,41 @@ Store_IRF_Scat_inBur('nothing',[],[0,1])
 BurstData.FileNameSPC = FileName; %%% The Name without extension
 BurstData.PathName = FileInfo.Path;
 
+%%% the burst search parameters
+BurstSearchParameters = struct;
+BurstSearchParameters.BurstMinimumLength = L;
+%%% the used burst search and smoothing method
+BurstSearchParameters.BurstSearch = h.Burst.BurstSearchSelection_Popupmenu.String{h.Burst.BurstSearchSelection_Popupmenu.Value};
+BurstSearchParameters.BurstSearchSmoothingMethod = h.Burst.BurstSearchSmoothing_Popupmenu.String{h.Burst.BurstSearchSmoothing_Popupmenu.Value};
+BurstSearchParameters.PIEchannelselection = h.Burst.BurstPIE_Table.Data;
+switch h.Burst.BurstSearchSmoothing_Popupmenu.Value
+    case 1 %%% Sliding time window
+        BurstSearchParameters.TimeWindow = T;
+        if numel(M) == 1
+            BurstSearchParameters.PhotonsPerTimewindow = M;
+        elseif numel(M) == 2
+            BurstSearchParameters.PhotonsPerTimewindowGX = M(1);
+            BurstSearchParameters.PhotonsPerTimewindowRR = M(2);
+        elseif numel(M) == 3
+            BurstSearchParameters.PhotonsPerTimewindowBX = M(1);
+            BurstSearchParameters.PhotonsPerTimewindowGX = M(2);
+            BurstSearchParameters.PhotonsPerTimewindowRR = M(3);
+        end
+    case 2 %%% Interphoton time with Lee filter
+        BurstSearchParameters.SmoothingWindow = T;
+        if numel(M) == 1
+            BurstSearchParameters.InterphotonTimeThreshold = M;
+        elseif numel(M) == 2
+            BurstSearchParameters.InterphotonTimeThresholdGX = M(1);
+            BurstSearchParameters.InterphotonTimeThresholdRR = M(2);
+        elseif numel(M) == 3
+            BurstSearchParameters.InterphotonTimeThresholdBX = M(1);
+            BurstSearchParameters.InterphotonTimeThresholdGX = M(2);
+            BurstSearchParameters.InterphotonTimeThresholdRR = M(3);
+        end
+end
+BurstData.BurstSearchParameters = BurstSearchParameters;
+
 if ~exist([pathstr filesep FileName],'dir')
     mkdir(pathstr,FileName);
 end
@@ -6519,35 +6554,35 @@ pathstr = [pathstr filesep FileName];
 %%% The Naming follows the Abbreviation for the BurstSearch Method.
 switch BAMethod 
     case 1
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CMFD_']);
+        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CMFD']);
     case 2
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'DCBS_2CMFD_']);
+        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'DCBS_2CMFD']);
     case 3
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_3CMFD_']);
+        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_3CMFD']);
     case 4
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'TCBS_3CMFD_']);
+        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'TCBS_3CMFD']);
     case 5
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CnoMFD_']);
+        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CnoMFD']);
 end
 
 %%% add the used parameters also to the filename
-switch BAMethod
-    case {1,3,5} %APBS L,M,T
-        FullFileName = [FullFileName ...
-            num2str(L) '_' num2str(M)...
-            '_' num2str(T)];
-    case 2 %DCBS, now 2 M values; L,MD,MA,T
-        FullFileName = [FullFileName ...
-            num2str(L) '_' num2str(M(1))...
-            '_' num2str(M(2))...
-            '_' num2str(T)];
-    case 4 %TCBS
-        FullFileName = [FullFileName ...
-            num2str(L) '_' num2str(M(1))...
-            '_' num2str(M(2))...
-            '_' num2str(M(3))...
-            '_' num2str(T)];
-end
+% switch BAMethod
+%     case {1,3,5} %APBS L,M,T
+%         FullFileName = [FullFileName ...
+%             num2str(L) '_' num2str(M)...
+%             '_' num2str(T)];
+%     case 2 %DCBS, now 2 M values; L,MD,MA,T
+%         FullFileName = [FullFileName ...
+%             num2str(L) '_' num2str(M(1))...
+%             '_' num2str(M(2))...
+%             '_' num2str(T)];
+%     case 4 %TCBS
+%         FullFileName = [FullFileName ...
+%             num2str(L) '_' num2str(M(1))...
+%             '_' num2str(M(2))...
+%             '_' num2str(M(3))...
+%             '_' num2str(T)];
+% end
 
 %%% Save the Burst Data
 BurstFileName = [FullFileName '.bur'];
@@ -6556,6 +6591,8 @@ BurstFileName = GenerateName(BurstFileName, 1);
 BurstData.FileName = BurstFileName;
 save(BurstFileName,'BurstData','-v7.3');
 
+%%% save a text file with information about the burst analysis
+save_burst_info(BurstData);
 
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
@@ -6608,6 +6645,72 @@ if h.Burst.BurstLifetime_Checkbox.Value
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Saves information about the burst search in a .txt file  %%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function save_burst_info(BurstData)
+global UserValues
+h = guidata(findobj('Tag','Pam'));
+fid = fopen([BurstData.FileName(1:end-3) 'txt'],'w');
+fprintf(fid,'Burst search settings:\n\n');
+fprintf(fid,'Burst search method:\t%s\n',BurstData.BurstSearchParameters.BurstSearch);
+fprintf(fid,'Smoothing method:\t%s\n',BurstData.BurstSearchParameters.BurstSearchSmoothingMethod);
+fprintf(fid,'Minimum burst size:\t%d photons\n',BurstData.BurstSearchParameters.BurstMinimumLength);
+switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
+    case 'Sliding Time Window' %%% Sliding time window
+        fprintf(fid,'Time window:\t%d\n',BurstData.BurstSearchParameters.TimeWindow);
+        if isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindow')
+            fprintf(fid,'Photons per time window:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindow);
+        elseif ~isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindowBX')
+            fprintf(fid,'Photons per time window GX:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowGX);
+            fprintf(fid,'Photons per time window RR:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowRR);
+        else
+            fprintf(fid,'Photons per time window BX:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowBX);
+            fprintf(fid,'Photons per time window GX:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowGX);
+            fprintf(fid,'Photons per time window RR:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowRR);
+        end
+    case 'Interphoton Time with Lee Filter' %%% Interphoton time with Lee filter
+        fprintf(fid,'Smoothing window:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
+        if isfield(BurstData.BurstSearchParameters,'InterphotonTimeThreshold')
+            fprintf(fid,'Interphoton time threshold:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThreshold);
+        elseif ~isfield(BurstData.BurstSearchParameters,'InterphotonTimeThresholdBX')
+            fprintf(fid,'Interphoton time threshold GX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
+            fprintf(fid,'Interphoton time threshold RR:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
+        else
+            fprintf(fid,'Interphoton time threshold BX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdBX);
+            fprintf(fid,'Interphoton time threshold GX:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdGX);
+            fprintf(fid,'Interphoton time threshold RR:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThresholdRR);
+        end
+end
+
+%%% PIE Channel selection
+fprintf(fid,'\n');
+PIEchans = BurstData.BurstSearchParameters.PIEchannelselection;
+switch BurstData.BurstSearchParameters.BurstSearch
+    case {'APBS 2C-MFD','DCBS 2C-MFD'}
+        fprintf(fid,'Channel\tParallel\tPerpendicular\n');
+        fprintf(fid,'DD\t%s\t%s\n',PIEchans{1,1},PIEchans{1,2});
+        fprintf(fid,'DA\t%s\t%s\n',PIEchans{2,1},PIEchans{2,2});
+        fprintf(fid,'AA\t%s\t%s\n',PIEchans{3,1},PIEchans{3,2});
+    case {'APBS 3C-MFD','DCBS 3C-MFD'}
+        fprintf(fid,'Channel\tParallel\tPerpendicular\n');
+        fprintf(fid,'BB\t%s\t%s\n',PIEchans{1,1},PIEchans{1,2});
+        fprintf(fid,'BG\t%s\t%s\n',PIEchans{2,1},PIEchans{2,2});
+        fprintf(fid,'BR\t%s\t%s\n',PIEchans{3,1},PIEchans{3,2});
+        fprintf(fid,'GG\t%s\t%s\n',PIEchans{4,1},PIEchans{4,2});
+        fprintf(fid,'GR\t%s\t%s\n',PIEchans{5,1},PIEchans{5,2});
+        fprintf(fid,'GR\t%s\t%s\n',PIEchans{6,1},PIEchans{6,2});
+    case {'APBS 2C-noMFD'}
+        fprintf(fid,'Channel\tPIE channel\n');
+        fprintf(fid,'DD\t%s\n',PIEchans{1,1});
+        fprintf(fid,'DA\t%s\n',PIEchans{2,1});
+        fprintf(fid,'AA\t%s\n',PIEchans{3,1});
+end
+fprintf(fid,'\n2CDE filter parameter:\t - mus\n'); %%% empty if not determined
+fprintf(fid,'\n');
+fprintf(fid,'Analysis date:\t%s\n',datetime);
+fprintf(fid,'\n\nMeta Data:\n\n');
+Save_MetaData([],[],fid); %%% append meta data (automatically closes the fid)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function NirFilter(~,~)
@@ -6633,57 +6736,67 @@ if isnan(tau_2CDE)
     tau_2CDE = 100;
 end
 BAMethod = BurstData.BAMethod;
+BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
 
 h.Progress.Text.String = 'Calculating 2CDE Filter...'; drawnow;
 tic
-for t=1:numel(tau_2CDE)
-    tau = tau_2CDE(t)*1E-6/BurstData.ClockPeriod;
-    if numel(tau_2CDE) == 1
-        tex = 'Calculating 2CDE Filter...';
-    else
-        tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
-    end
-    if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
-        FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
-        ALEX_2CDE = zeros(numel(Macrotime),1);
-
-        %%% Split into 10 parts to display progress
-        parts = (floor(linspace(1,numel(Macrotime),11)));
-        for j = 1:10
-            Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
-            end
-        end
-        idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
-        idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
-        BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
-        BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
-    elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
-        FRET_2CDE = zeros(numel(Macrotime),3);
-        ALEX_2CDE = zeros(numel(Macrotime),3);
-        %%% Split into 10 parts to display progress
-        parts = (floor(linspace(1,numel(Macrotime),11)));
-        for j = 1:10
-            Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-                [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
-            end
-        end    
-        idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
-        idx_FRET2CDE = find(strcmp('FRET 2CDE BG Filter',BurstData.NameArray));
-        BurstData.DataArray(:,idx_ALEX2CDE:(idx_ALEX2CDE+2)) = ALEX_2CDE;
-        BurstData.DataArray(:,idx_FRET2CDE:(idx_FRET2CDE+2)) = FRET_2CDE;
-    end
-    if numel(tau_2CDE) == 1
-        save(BurstData.FileName,'BurstData');
-    else
-        save([BurstData.FileName(1:end-4) '_TC' num2str(tau_2CDE(t)) '_.bur'],'BurstData');
-    end
+%for t=1:numel(tau_2CDE)
+tau = tau_2CDE(t)*1E-6/BurstData.ClockPeriod;
+if numel(tau_2CDE) == 1
+    tex = 'Calculating 2CDE Filter...';
+else
+    tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
 end
+if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
+    FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
+    ALEX_2CDE = zeros(numel(Macrotime),1);
+
+    %%% Split into 10 parts to display progress
+    parts = (floor(linspace(1,numel(Macrotime),11)));
+    for j = 1:10
+        Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
+        parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
+            [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+        end
+    end
+    idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
+    idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
+    BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
+    BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
+    FRET_2CDE = zeros(numel(Macrotime),3);
+    ALEX_2CDE = zeros(numel(Macrotime),3);
+    %%% Split into 10 parts to display progress
+    parts = (floor(linspace(1,numel(Macrotime),11)));
+    for j = 1:10
+        Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
+        parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
+            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
+        end
+    end    
+    idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
+    idx_FRET2CDE = find(strcmp('FRET 2CDE BG Filter',BurstData.NameArray));
+    BurstData.DataArray(:,idx_ALEX2CDE:(idx_ALEX2CDE+2)) = ALEX_2CDE;
+    BurstData.DataArray(:,idx_FRET2CDE:(idx_FRET2CDE+2)) = FRET_2CDE;
+end
+%if numel(tau_2CDE) == 1
+save(BurstData.FileName,'BurstData');
+%else
+%   save([BurstData.FileName(1:end-4) '_TC' num2str(tau_2CDE(t)) '_.bur'],'BurstData');
+%end
+
+%%% update the info txt file
+filename = fullfile([BurstData.FileName(1:end-3) 'txt']);
+A = regexp( fileread(filename), '\n', 'split');
+row = find(cell2mat(cellfun(@(x) logical(strcmp(x(1:min([22,end])),'2CDE filter parameter:')),A,'UniformOutput',false)));
+A{row} = sprintf('2CDE filter parameter:\t%d mus',tau_2CDE);
+fid = fopen(filename, 'w');
+fprintf(fid, '%s\n', A{:});
+fclose(fid);
+%end
 Progress(1,h.Progress.Axes, h.Progress.Text,tex);
 toc
 Update_Display([],[],1);
@@ -9381,25 +9494,27 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that exports MetaData to txt file %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Save_MetaData(obj,~)
+function Save_MetaData(~,~,fid)
 global UserValues PamMeta FileInfo
-h = guidata(findobj('Tag','Pam'));
+%h = guidata(findobj('Tag','Pam'));
+if nargin < 3 %%% no file id given, create one
+    if strcmp(FileInfo.FileName{1},'Nothing loaded')
+        return;
+    end
 
-if strcmp(FileInfo.FileName{1},'Nothing loaded')
-    return;
-end
-
-[~,FileName,~] = fileparts(FileInfo.FileName{1});
-FilePath = [FileInfo.Path filesep FileName '.txt'];
-%%% open file
-[fid,err] = fopen(FilePath,'w');
-if fid == -1
-    return;
+    [~,FileName,~] = fileparts(FileInfo.FileName{1});
+    FilePath = [FileInfo.Path filesep FileName '.txt'];
+    %%% open file
+    [fid,err] = fopen(FilePath,'w');
+    if fid == -1
+        return;
+    end
 end
 
 %%% write metadata
-fprintf(fid,'User:\t\t%s\n\n',UserValues.MetaData.User);
 fprintf(fid,'Filename:\t%s\n',FileInfo.FileName{1});
+fprintf(fid,'Recording date:\t%s\n',get_date_modified(FileInfo.Path,FileInfo.FileName{1}));
+fprintf(fid,'User:\t\t%s\n\n',UserValues.MetaData.User);
 fprintf(fid,'Sample:\t\t%s\n',UserValues.MetaData.SampleName);
 fprintf(fid,'Buffer:\t\t%s\n',UserValues.MetaData.BufferName);
 fprintf(fid,'Exc.Wav.:\t%s\n',UserValues.MetaData.ExcitationWavelengths);
