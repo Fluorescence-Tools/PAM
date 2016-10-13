@@ -10553,8 +10553,8 @@ if any(BurstData{file}.BAMethod == [3,4])
     idx_rBB = strcmp('Anisotropy BB',NameArray);
     idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
     %% Plot E1A vs. tauBB
-    valid = (datatoplot(:,idx_tauBB) > 0.01);
     if ~h.MultiselectOnCheckbox.Value
+        valid = (datatoplot(:,idx_tauBB) > 0.01);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])], [-0.05 1]);
     else
         [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 BurstData{file}.Corrections.DonorLifetimeBlue+1.5], [-0.05 1]});
