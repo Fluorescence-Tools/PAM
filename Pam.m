@@ -9612,7 +9612,11 @@ switch obj
 end
 
 function Open_Doc(~,~)
-[status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
+if isunix
+    [status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
+elseif ispc
+    [status,cmdout] = system('doc/sphinx_docs/build/html/index.html');
+end
 if ~isempty(cmdout)
     disp(cmdout);
 end
