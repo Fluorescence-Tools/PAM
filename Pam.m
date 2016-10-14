@@ -252,7 +252,8 @@ addpath(genpath(['.' filesep 'functions']));
         'Parent', h.Menu.Extras,...
         'Tag','Manual_Menu',...
         'Separator','on',...
-        'Label','Pam Manual (not enabled yet)');
+        'Label','PAM Manual',...
+        'Callback',@Open_Doc);
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9608,4 +9609,10 @@ switch obj
         %%% Button for Loading the profile from the folder of the
         %%% currently opened TCSPC file
         %'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
+end
+
+function Open_Doc(~,~)
+[status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
+if ~isempty(cmdout)
+    disp(cmdout);
 end
