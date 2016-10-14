@@ -6648,16 +6648,15 @@ end
 %%% Saves information about the burst search in a .txt file  %%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function save_burst_info(BurstData)
-global UserValues
-h = guidata(findobj('Tag','Pam'));
+
 fid = fopen([BurstData.FileName(1:end-3) 'txt'],'w');
 fprintf(fid,'Burst search settings:\n\n');
-fprintf(fid,'Burst search method:\t%s\n',BurstData.BurstSearchParameters.BurstSearch);
-fprintf(fid,'Smoothing method:\t%s\n',BurstData.BurstSearchParameters.BurstSearchSmoothingMethod);
-fprintf(fid,'Minimum burst size:\t%d photons\n',BurstData.BurstSearchParameters.BurstMinimumLength);
+fprintf(fid,'Burst search method:\t\t%s\n',BurstData.BurstSearchParameters.BurstSearch);
+fprintf(fid,'Smoothing method:\t\t%s\n',BurstData.BurstSearchParameters.BurstSearchSmoothingMethod);
+fprintf(fid,'Minimum burst size:\t\t%d photons\n',BurstData.BurstSearchParameters.BurstMinimumLength);
 switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
     case 'Sliding Time Window' %%% Sliding time window
-        fprintf(fid,'Time window:\t%d\n',BurstData.BurstSearchParameters.TimeWindow);
+        fprintf(fid,'Time window:\t\t%d\n',BurstData.BurstSearchParameters.TimeWindow);
         if isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindow')
             fprintf(fid,'Photons per time window:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindow);
         elseif ~isfield(BurstData.BurstSearchParameters,'PhotonsPerTimewindowBX')
@@ -6669,7 +6668,7 @@ switch BurstData.BurstSearchParameters.BurstSearchSmoothingMethod
             fprintf(fid,'Photons per time window RR:\t%d\n',BurstData.BurstSearchParameters.PhotonsPerTimewindowRR);
         end
     case 'Interphoton Time with Lee Filter' %%% Interphoton time with Lee filter
-        fprintf(fid,'Smoothing window:\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
+        fprintf(fid,'Smoothing window:\t\t%d\n',BurstData.BurstSearchParameters.SmoothingWindow);
         if isfield(BurstData.BurstSearchParameters,'InterphotonTimeThreshold')
             fprintf(fid,'Interphoton time threshold:\t%d\n',BurstData.BurstSearchParameters.InterphotonTimeThreshold);
         elseif ~isfield(BurstData.BurstSearchParameters,'InterphotonTimeThresholdBX')
@@ -6687,12 +6686,12 @@ fprintf(fid,'\n');
 PIEchans = BurstData.BurstSearchParameters.PIEchannelselection;
 switch BurstData.BurstSearchParameters.BurstSearch
     case {'APBS 2C-MFD','DCBS 2C-MFD'}
-        fprintf(fid,'Channel\tParallel\tPerpendicular\n');
+        fprintf(fid,'Channel\tPar.\tPerp.\n');
         fprintf(fid,'DD\t%s\t%s\n',PIEchans{1,1},PIEchans{1,2});
         fprintf(fid,'DA\t%s\t%s\n',PIEchans{2,1},PIEchans{2,2});
         fprintf(fid,'AA\t%s\t%s\n',PIEchans{3,1},PIEchans{3,2});
     case {'APBS 3C-MFD','DCBS 3C-MFD'}
-        fprintf(fid,'Channel\tParallel\tPerpendicular\n');
+        fprintf(fid,'Channel\tPar.\tPerp.\nn');
         fprintf(fid,'BB\t%s\t%s\n',PIEchans{1,1},PIEchans{1,2});
         fprintf(fid,'BG\t%s\t%s\n',PIEchans{2,1},PIEchans{2,2});
         fprintf(fid,'BR\t%s\t%s\n',PIEchans{3,1},PIEchans{3,2});
@@ -9540,6 +9539,9 @@ for i = 1:numel(UserValues.Detector.Det)
 end
 
 fprintf(fid,'\n');
+%%% profile name
+s = load(fullfile(pwd,'profiles','Profile.mat'));
+fprintf(fid,'Profile name:\t%s\n\n',s.Profile(1:end-4));
 %%% PIE channel information
 fprintf(fid,'PIE Channel Information\n');
 %find longest name
