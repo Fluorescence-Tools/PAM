@@ -3989,11 +3989,11 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(h.PIE.DetectionChannel.Value);
         UserValues.PIE.Router(Sel)=UserValues.Detector.Rout(h.PIE.DetectionChannel.Value);
     %%% Updates PIE detector
-    elseif obj == h.PIE.Detector
-        UserValues.PIE.Detector(Sel)=str2double(h.PIE.Detector.String);
+    %elseif obj == h.PIE.Detector
+    %    UserValues.PIE.Detector(Sel)=str2double(h.PIE.Detector.String);
     %%% Updates PIE routing
-    elseif obj == h.PIE.Routing
-        UserValues.PIE.Router(Sel)=str2double(h.PIE.Routing.String);
+    %elseif obj == h.PIE.Routing
+    %    UserValues.PIE.Router(Sel)=str2double(h.PIE.Routing.String);
     %%% Updates PIE mictrotime minimum
     elseif obj == h.PIE.From
         UserValues.PIE.From(Sel)=max([str2double(h.PIE.From.String),1]);
