@@ -2643,7 +2643,8 @@ addpath(genpath(['.' filesep 'functions']));
         'Dye Names','Atto532, Atto647N';...
         'Buffer Name','Sample Buffer';...
         'Sample Name','Test Sample';...
-        'User','User'};
+        'User','User';...
+        'Comment',''};
     h.Profiles.MetaDataTable = uitable(...
         'Parent',h.Profiles.Panel,...
         'Units','normalized',...
@@ -3992,7 +3993,7 @@ Update_Display([],[],2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_MetaData(~,e)
 global UserValues
-MetaDataList = {'ExcitationWavelengths';'ExcitationPower';'DyeNames';'BufferName';'SampleName';'User'};
+MetaDataList = {'ExcitationWavelengths';'ExcitationPower';'DyeNames';'BufferName';'SampleName';'User';'Comment'};
 UserValues.MetaData.(MetaDataList{e.Indices(1),1}) = e.NewData;
 LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4575,7 +4576,7 @@ h.MI.Calib_Det.Value=1;
 h.Profiles.MetaDataTable.Data(:,2) = ...
     {UserValues.MetaData.ExcitationWavelengths;UserValues.MetaData.ExcitationPower;...
     UserValues.MetaData.DyeNames;UserValues.MetaData.BufferName;...
-    UserValues.MetaData.SampleName;UserValues.MetaData.User};
+    UserValues.MetaData.SampleName;UserValues.MetaData.User;UserValues.MetaData.Comment};
 %%% Sets BurstSearch GUI according to UserValues
 Update_BurstGUI([],[]);
 
@@ -6596,8 +6597,8 @@ save_burst_info(BurstData);
 
 %%% Save the full Photon Information (for FCS/fFCS) in an external file
 %%% that can be loaded at a later timepoint
-PhotonsFileName = [FullFileName '.bps']; %%% .bps is burst-photon-stream
-PhotonsFileName = GenerateName(PhotonsFileName, 1);
+PhotonsFileName = [BurstFileName(1:end-3) 'bps']; %%% .bps is burst-photon-stream
+%PhotonsFileName = GenerateName(PhotonsFileName, 1);
 %Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
 %Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
 %Channel = cellfun(@uint8,Channel,'UniformOutput',false);
@@ -9513,7 +9514,9 @@ end
 %%% write metadata
 fprintf(fid,'Filename:\t%s\n',FileInfo.FileName{1});
 fprintf(fid,'Recording date:\t%s\n',get_date_modified(FileInfo.Path,FileInfo.FileName{1}));
-fprintf(fid,'User:\t\t%s\n\n',UserValues.MetaData.User);
+fprintf(fid,'User:\t\t%s\n',UserValues.MetaData.User);
+fprintf(fid,'Comment:\t%s\n\n',UserValues.MetaData.Comment);
+
 fprintf(fid,'Sample:\t\t%s\n',UserValues.MetaData.SampleName);
 fprintf(fid,'Buffer:\t\t%s\n',UserValues.MetaData.BufferName);
 fprintf(fid,'Exc.Wav.:\t%s\n',UserValues.MetaData.ExcitationWavelengths);

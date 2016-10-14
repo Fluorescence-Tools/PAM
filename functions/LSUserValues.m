@@ -428,6 +428,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.MetaData.User was incomplete');
     end
     P.MetaData.User = S.MetaData.User;
+     %%% Checks, if Comment subfield exists
+    if ~isfield (S.MetaData, 'Comment')
+        S.MetaData.Comment='';
+        disp('UserValues.MetaData.Comment was incomplete');
+    end
+    P.MetaData.Comment = S.MetaData.Comment;
     %% FCSFit
     %%% Checks, if FCSFit subfield exists
     if ~isfield (S, 'FCSFit')
