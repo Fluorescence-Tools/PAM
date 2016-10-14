@@ -130,8 +130,10 @@ switch (Type)
             end
             %%% check for disabled detectors
             for j = card
-                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
-                    card(card==j) = [];
+                if sum(UserValues.Detector.Det==j) > 0
+                    if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                        card(card==j) = [];
+                    end
                 end
             end
             %%% Checks, which and how many card exist for each file
@@ -159,8 +161,10 @@ switch (Type)
                 
                 %%% check for disabled routing bits
                 for r = Rout
-                    if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
-                        Rout(Rout==r) = [];
+                    if sum(UserValues.Detector.Rout==r) > 0
+                        if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                            Rout(Rout==r) = [];
+                        end
                     end
                 end
                 
@@ -329,8 +333,10 @@ switch (Type)
             end
             %%% check for disabled detectors
             for j = card
-                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
-                    card(card==j) = [];
+                if sum(UserValues.Detector.Det==j) > 0
+                    if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                        card(card==j) = [];
+                    end
                 end
             end
             %%% Checks, which and how many card exist for each file
@@ -377,8 +383,10 @@ switch (Type)
                 
                 %%% check for disabled routing bits
                 for r = Rout
-                    if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
-                        Rout(Rout==r) = [];
+                    if sum(UserValues.Detector.Rout==r) > 0
+                        if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                            Rout(Rout==r) = [];
+                        end
                     end
                 end
                 
@@ -443,8 +451,10 @@ switch (Type)
         end
         %%% check for disabled detectors
         for j = card
-            if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
-                card(card==j) = [];
+            if sum(UserValues.Detector.Det==j) > 0
+                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                    card(card==j) = [];
+                end
             end
         end
         
@@ -488,8 +498,10 @@ switch (Type)
                     
                     %%% check for disabled routing bits
                     for r = Rout
-                        if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
-                            Rout(Rout==r) = [];
+                        if sum(UserValues.Detector.Rout==r) > 0
+                            if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                                Rout(Rout==r) = [];
+                            end
                         end
                     end
             
@@ -560,8 +572,10 @@ switch (Type)
         end
         %%% check for disabled detectors
         for j = card
-            if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
-                card(card==j) = [];
+            if sum(UserValues.Detector.Det==j) > 0
+                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                    card(card==j) = [];
+                end
             end
         end
         
@@ -608,8 +622,10 @@ switch (Type)
 
                     %%% check for disabled routing bits
                     for r = Rout
-                        if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
-                            Rout(Rout==r) = [];
+                        if sum(UserValues.Detector.Rout==r) > 0
+                            if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                                Rout(Rout==r) = [];
+                            end
                         end
                     end
                     
