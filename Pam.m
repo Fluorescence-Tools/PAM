@@ -1594,7 +1594,7 @@ addpath(genpath(['.' filesep 'functions']));
         'String','1',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.77 0.965 0.05 0.025]);
+        'Position',[0.77 0.97 0.05 0.025]);
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.MI.Calib_Panel,...
@@ -6706,7 +6706,7 @@ switch BurstData.BurstSearchParameters.BurstSearch
 end
 fprintf(fid,'\n2CDE filter parameter:\t - mus\n'); %%% empty if not determined
 fprintf(fid,'\n');
-fprintf(fid,'Analysis date:\t%s\n',datetime);
+fprintf(fid,'Analysis date:\t%s\n',char(datetime));
 fprintf(fid,'\n\nMeta Data:\n\n');
 Save_MetaData([],[],fid); %%% append meta data (automatically closes the fid)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
