@@ -4071,7 +4071,9 @@ if obj == h.MI.Channels_List
                 try
                     UserValues.Detector.Shift(Sel)=[];
                 end
-                PamMeta.MI_Hist(Sel)=[];
+                try
+                    PamMeta.MI_Hist(Sel)=[];
+                end
                 %%% Saves new tabs in guidata
                 guidata(h.Pam,h)       
         end
