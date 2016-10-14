@@ -9615,7 +9615,8 @@ function Open_Doc(~,~)
 if isunix
     [status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
 elseif ispc
-    [status,cmdout] = system('doc/sphinx_docs/build/html/index.html');
+    command = [pwd,'\doc\sphinx_docs\build\html\index.html'];
+    [status,cmdout] = system(command);
 end
 if ~isempty(cmdout)
     disp(cmdout);
