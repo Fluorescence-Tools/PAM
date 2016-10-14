@@ -161,7 +161,7 @@ switch (Type)
                 
                 %%% check for disabled routing bits
                 for r = Rout
-                    if sum(UserValues.Detector.Rout==r) > 0
+                    if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
                         if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
                             Rout(Rout==r) = [];
                         end
@@ -383,7 +383,7 @@ switch (Type)
                 
                 %%% check for disabled routing bits
                 for r = Rout
-                    if sum(UserValues.Detector.Rout==r) > 0
+                    if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
                         if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
                             Rout(Rout==r) = [];
                         end
@@ -498,7 +498,7 @@ switch (Type)
                     
                     %%% check for disabled routing bits
                     for r = Rout
-                        if sum(UserValues.Detector.Rout==r) > 0
+                        if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
                             if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
                                 Rout(Rout==r) = [];
                             end
@@ -622,7 +622,7 @@ switch (Type)
 
                     %%% check for disabled routing bits
                     for r = Rout
-                        if sum(UserValues.Detector.Rout==r) > 0
+                        if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
                             if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
                                 Rout(Rout==r) = [];
                             end
