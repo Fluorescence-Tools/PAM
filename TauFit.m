@@ -1902,6 +1902,7 @@ end
 if h.AutoFit_Menu.Value
     Start_Fit(h.Fit_Button)
 end
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Saves the changed PIEChannel Selection to UserValues %%%%%%%%%%%%%%%%%
@@ -4197,7 +4198,7 @@ switch TauFitData.BAMethod
         for chan = 1:2
             if UserValues.TauFit.IncludeChannel(chan)
                 h.ChannelSelect_Popupmenu.Value = chan;
-                Update_Plots(obj)
+                Update_Plots(obj);
                 %%% User clicked 'Burst Analysis' button on the Burst or
                 %%% Batch analysis tab in Pam when 'Fit Lifetime' checkbox was checked.
                 if obj == ph.Burst.Button
