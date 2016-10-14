@@ -6743,60 +6743,60 @@ load(fullfile(Path,[File '.bps']),'-mat');
 
 h.Progress.Text.String = 'Calculating 2CDE Filter...'; drawnow;
 tic
-%for t=1:numel(tau_2CDE)
-tau = tau_2CDE(t)*1E-6/BurstData.ClockPeriod;
-if numel(tau_2CDE) == 1
-    tex = 'Calculating 2CDE Filter...';
-else
-    tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
-end
-if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
-    FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
-    ALEX_2CDE = zeros(numel(Macrotime),1);
-
-    %%% Split into 10 parts to display progress
-    parts = (floor(linspace(1,numel(Macrotime),11)));
-    for j = 1:10
-        Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-        parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-            [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
-        end
+for t=1:numel(tau_2CDE)
+    tau = tau_2CDE(t)*1E-6/BurstData.ClockPeriod;
+    if numel(tau_2CDE) == 1
+        tex = 'Calculating 2CDE Filter...';
+    else
+        tex = ['Calculating 2CDE Filter ' num2str(t) ' of ' num2str(numel(tau_2CDE))];
     end
-    idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
-    idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
-    BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
-    BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
-elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
-    FRET_2CDE = zeros(numel(Macrotime),3);
-    ALEX_2CDE = zeros(numel(Macrotime),3);
-    %%% Split into 10 parts to display progress
-    parts = (floor(linspace(1,numel(Macrotime),11)));
-    for j = 1:10
-        Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
-        parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-            [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
-        end
-    end    
-    idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
-    idx_FRET2CDE = find(strcmp('FRET 2CDE BG Filter',BurstData.NameArray));
-    BurstData.DataArray(:,idx_ALEX2CDE:(idx_ALEX2CDE+2)) = ALEX_2CDE;
-    BurstData.DataArray(:,idx_FRET2CDE:(idx_FRET2CDE+2)) = FRET_2CDE;
-end
-%if numel(tau_2CDE) == 1
-save(BurstData.FileName,'BurstData');
-%else
-%   save([BurstData.FileName(1:end-4) '_TC' num2str(tau_2CDE(t)) '_.bur'],'BurstData');
-%end
+    if any(BurstData.BAMethod == [1,2,5]) %2 Color Data
+        FRET_2CDE = zeros(numel(Macrotime),1); %#ok<USENS>
+        ALEX_2CDE = zeros(numel(Macrotime),1);
 
-%%% update the info txt file
-filename = fullfile([BurstData.FileName(1:end-3) 'txt']);
-A = regexp( fileread(filename), '\n', 'split');
-row = find(cell2mat(cellfun(@(x) logical(strcmp(x(1:min([22,end])),'2CDE filter parameter:')),A,'UniformOutput',false)));
-A{row} = sprintf('2CDE filter parameter:\t%d mus',tau_2CDE);
-fid = fopen(filename, 'w');
-fprintf(fid, '%s\n', A{:});
-fclose(fid);
-%end
+        %%% Split into 10 parts to display progress
+        parts = (floor(linspace(1,numel(Macrotime),11)));
+        for j = 1:10
+            Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
+            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
+                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+            end
+        end
+        idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
+        idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
+        BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
+        BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+    elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
+        FRET_2CDE = zeros(numel(Macrotime),3);
+        ALEX_2CDE = zeros(numel(Macrotime),3);
+        %%% Split into 10 parts to display progress
+        parts = (floor(linspace(1,numel(Macrotime),11)));
+        for j = 1:10
+            Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
+            parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
+                [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
+            end
+        end    
+        idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
+        idx_FRET2CDE = find(strcmp('FRET 2CDE BG Filter',BurstData.NameArray));
+        BurstData.DataArray(:,idx_ALEX2CDE:(idx_ALEX2CDE+2)) = ALEX_2CDE;
+        BurstData.DataArray(:,idx_FRET2CDE:(idx_FRET2CDE+2)) = FRET_2CDE;
+    end
+    %if numel(tau_2CDE) == 1
+    save(BurstData.FileName,'BurstData');
+    %else
+    %   save([BurstData.FileName(1:end-4) '_TC' num2str(tau_2CDE(t)) '_.bur'],'BurstData');
+    %end
+
+    %%% update the info txt file
+    filename = fullfile([BurstData.FileName(1:end-3) 'txt']);
+    A = regexp( fileread(filename), '\n', 'split');
+    row = find(cell2mat(cellfun(@(x) logical(strcmp(x(1:min([22,end])),'2CDE filter parameter:')),A,'UniformOutput',false)));
+    A{row} = sprintf('2CDE filter parameter:\t%d mus',tau_2CDE);
+    fid = fopen(filename, 'w');
+    fprintf(fid, '%s\n', A{:});
+    fclose(fid);
+end
 Progress(1,h.Progress.Axes, h.Progress.Text,tex);
 toc
 Update_Display([],[],1);
