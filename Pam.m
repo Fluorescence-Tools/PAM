@@ -2107,43 +2107,54 @@ addpath(genpath(['.' filesep 'functions']));
         'Units','normalized',...
         'FontSize',12,...
         'HorizontalAlignment','left',...
-        'String','Detector:',...
+        'String','Detection channel:',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.415 0.8 0.11 0.08]);    
+        'Position',[0.415 0.8 0.22 0.08]);    
     %%% Editbox for PIE channel detector
-    h.PIE.Detector = uicontrol(...
-        'Parent',h.PIE.Panel,...
-        'Tag','PIE_Detector',...
-        'Style','edit',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'Callback',@Update_PIE_Channels,...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.54 0.8 0.08 0.08]);   
+%     h.PIE.Detector = uicontrol(...
+%         'Parent',h.PIE.Panel,...
+%         'Tag','PIE_Detector',...
+%         'Style','edit',...
+%         'Units','normalized',...
+%         'FontSize',12,...
+%         'Callback',@Update_PIE_Channels,...
+%         'BackgroundColor', Look.Control,...
+%         'ForegroundColor', Look.Fore,...
+%         'Position',[0.54 0.8 0.08 0.08]);   
     %%% Text
-    h.Text{end+1} = uicontrol(...
-        'Parent',h.PIE.Panel,...
-        'Style','text',...
-        'Units','normalized',...
-        'FontSize',12,...
-        'HorizontalAlignment','left',...
-        'String','Routing:',...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.63 0.8 0.11 0.08]);    
+%     h.Text{end+1} = uicontrol(...
+%         'Parent',h.PIE.Panel,...
+%         'Style','text',...
+%         'Units','normalized',...
+%         'FontSize',12,...
+%         'HorizontalAlignment','left',...
+%         'String','Routing:',...
+%         'BackgroundColor', Look.Back,...
+%         'ForegroundColor', Look.Fore,...
+%         'Position',[0.63 0.8 0.11 0.08]);    
     %%% Editbox for PIE channel routing
-    h.PIE.Routing = uicontrol(...
+%     h.PIE.Routing = uicontrol(...
+%         'Parent',h.PIE.Panel,...
+%         'Tag','PIE_Routing',...
+%         'Style','edit',...
+%         'Units','normalized',...
+%         'FontSize',12,...
+%         'Callback',@Update_PIE_Channels,...
+%         'BackgroundColor', Look.Control,...
+%         'ForegroundColor', Look.Fore,...
+%         'Position',[0.745 0.8 0.08 0.08]);
+    h.PIE.DetectionChannel = uicontrol(...
         'Parent',h.PIE.Panel,...
         'Tag','PIE_Routing',...
-        'Style','edit',...
+        'Style','popupmenu',...
         'Units','normalized',...
         'FontSize',12,...
         'Callback',@Update_PIE_Channels,...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.745 0.8 0.08 0.08]); 
+        'BackgroundColor',[1 1 1],...
+        'ForegroundColor', [0 0 0],...
+        'Position',[0.64 0.8 0.34 0.08],...
+        'String',color_string(UserValues.Detector.Name,UserValues.Detector.Color));
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.PIE.Panel,...
@@ -2568,17 +2579,24 @@ addpath(genpath(['.' filesep 'functions']));
 %         'Position',[0.01 0.01 0.49 0.48]);
     %%% Following is alternate implementation using a table instead of a
     %%% list
+    if ispc
+        trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+        trash_image = strrep(trash_image,'\','/');
+    else
+        trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
+    end
     TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on',0};
-    ColumnNames = {'Name','Det#','Rout#','Color','Filter','Pol','BS','Enabled','Delete'};
+    ColumnNames = {'<html><font size=4><b>Name</b></font></html>','<html><font size=4><b>Det#</b></font></html>','<html><font size=4><b>Rout#</b></font></html>','<html><font size=4><b>Color</b></font></html>','<html><font size=4><b>Filter</b></font></html>','<html><font size=4><b>Pol</b></font></html>','<html><font size=4><b>BS</b></font></html>','<html><font size=4><b>Enabled</b></font></html>',trash_image};
     ColumnEditable = [true,true,true,false,true,true,true,true,true];
     ColumnFormat = {'char','numeric','numeric','char','char',{'none','Par','Per'},{'none','50:50'},{'on','off'},'logical'};
     RowNames = [];
+
     h.MI.Channels_List = uitable(...
         'Parent',h.Profiles.Panel,...
         'Tag','MI_Channels_List',...
         'Units','normalized',...
         'FontSize',14,...
-        'TooltipString',sprintf('List of detector/routing pairs to be loaded/displayed \n disabled denotes pairs that will be loaded but not displayed'),...
+        'TooltipString',sprintf('List of detection channels defined as detector/routing pairs to be loaded/displayed.\nDisabled denotes pairs that will be loaded but not displayed.\nDet#:\tDetector number\nRout#:\tRouting number\nColor:\t Display color\nFilter:\t Emission filter in the format "center wavelenght/range"\nPol:\t polarization\nBS:\tUse of 50:50 beam splitter'),...
         'Uicontextmenu',h.MI.Channels_Menu,...
         'CellEditCallback',@MI_Channels_Functions,...
         'CellSelectionCallback',@MI_Channels_Functions,...
@@ -2588,7 +2606,11 @@ addpath(genpath(['.' filesep 'functions']));
         'RowName',RowNames,...
         'ColumnEditable',ColumnEditable,...
         'ColumnFormat',ColumnFormat,...
-        'ColumnWidth','auto');
+        'ColumnWidth',{200,50,50,50,75,75,75,60,20});
+    %%% adjust column width
+    h.MI.Channels_List.Units = 'pixels';
+    h.MI.Channels_List.ColumnWidth{1} = h.MI.Channels_List.Position(3) - sum(cell2mat(h.MI.Channels_List.ColumnWidth(2:end))) - 35;
+    h.MI.Channels_List.Units = 'normalized';
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.Profiles.Panel,...
@@ -3123,8 +3145,12 @@ Sel=h.PIE.List.Value(1);
 if any(mode==1)
     %%% Updates PIE channel settings to current PIE channel
     h.PIE.Name.String=UserValues.PIE.Name{Sel};
-    h.PIE.Detector.String=num2str(UserValues.PIE.Detector(Sel));
-    h.PIE.Routing.String=num2str(UserValues.PIE.Router(Sel));
+    if UserValues.PIE.Detector(Sel) ~= 0 %%% only if no combined channel is selected
+        h.PIE.DetectionChannel.Value = find((UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) &...
+            (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)));
+    end
+    %h.PIE.Detector.String=num2str(UserValues.PIE.Detector(Sel));
+    %h.PIE.Routing.String=num2str(UserValues.PIE.Router(Sel));
     h.PIE.From.String=num2str(UserValues.PIE.From(Sel));
     h.PIE.To.String=num2str(UserValues.PIE.To(Sel));
     
@@ -3137,38 +3163,46 @@ if any(mode==1)
     %%% Disables PIE info controls for combined channels
     if UserValues.PIE.Detector(Sel)==0
        h.PIE.Name.Enable='inactive'; 
-       h.PIE.Detector.Enable='inactive';
-       h.PIE.Routing.Enable='inactive';
+       %h.PIE.Detector.Enable='inactive';
+       %h.PIE.Routing.Enable='inactive';
+       h.PIE.DetectionChannel.Enable = 'inactive';
+       h.PIE.DetectionChannel.Visible = 'off';
        h.PIE.From.Enable='inactive';
        h.PIE.To.Enable='inactive';
        
        h.PIE.Name.BackgroundColor=UserValues.Look.Back; 
-       h.PIE.Detector.BackgroundColor=UserValues.Look.Back; 
-       h.PIE.Routing.BackgroundColor=UserValues.Look.Back; 
+       %h.PIE.Detector.BackgroundColor=UserValues.Look.Back; 
+       %h.PIE.Routing.BackgroundColor=UserValues.Look.Back; 
+       h.PIE.DetectionChannel.BackgroundColor = UserValues.Look.Back; 
        h.PIE.From.BackgroundColor=UserValues.Look.Back; 
        h.PIE.To.BackgroundColor=UserValues.Look.Back;  
        
        h.PIE.Name.ForegroundColor=UserValues.Look.Disabled; 
-       h.PIE.Detector.ForegroundColor=UserValues.Look.Disabled; 
-       h.PIE.Routing.ForegroundColor=UserValues.Look.Disabled; 
+       %h.PIE.Detector.ForegroundColor=UserValues.Look.Disabled; 
+       %h.PIE.Routing.ForegroundColor=UserValues.Look.Disabled; 
+       h.PIE.DetectionChannel.ForegroundColor = UserValues.Look.Disabled; 
        h.PIE.From.ForegroundColor=UserValues.Look.Disabled;  
        h.PIE.To.ForegroundColor=UserValues.Look.Disabled;   
     else
        h.PIE.Name.Enable='on'; 
-       h.PIE.Detector.Enable='on';
-       h.PIE.Routing.Enable='on';
+       %h.PIE.Detector.Enable='on';
+       %h.PIE.Routing.Enable='on';
+       h.PIE.DetectionChannel.Enable = 'on';
+       h.PIE.DetectionChannel.Visible = 'on';
        h.PIE.From.Enable='on';
        h.PIE.To.Enable='on';   
        
        h.PIE.Name.BackgroundColor=UserValues.Look.Control; 
-       h.PIE.Detector.BackgroundColor=UserValues.Look.Control; 
-       h.PIE.Routing.BackgroundColor=UserValues.Look.Control; 
+       %h.PIE.Detector.BackgroundColor=UserValues.Look.Control; 
+       %h.PIE.Routing.BackgroundColor=UserValues.Look.Control; 
+       h.PIE.DetectionChannel.BackgroundColor = [1 1 1]; 
        h.PIE.From.BackgroundColor=UserValues.Look.Control; 
        h.PIE.To.BackgroundColor=UserValues.Look.Control;  
        
        h.PIE.Name.ForegroundColor=UserValues.Look.Fore; 
-       h.PIE.Detector.ForegroundColor=UserValues.Look.Fore; 
-       h.PIE.Routing.ForegroundColor=UserValues.Look.Fore; 
+       %h.PIE.Detector.ForegroundColor=UserValues.Look.Fore; 
+       %h.PIE.Routing.ForegroundColor=UserValues.Look.Fore;
+       h.PIE.DetectionChannel.ForegroundColor = [0 0 0]; 
        h.PIE.From.ForegroundColor=UserValues.Look.Fore;  
        h.PIE.To.ForegroundColor=UserValues.Look.Fore; 
     end
@@ -3706,7 +3740,9 @@ switch e.Key
         UserValues.PIE.ScatterPattern{end+1} = [];
         UserValues.PIE.Background(end+1)=0;
         %%% Reset Correlation Table Data Matrix
-        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);      
+         cor_sel = UserValues.Settings.Pam.Cor_Selection;
+        cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
+        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);      
         %%% Updates Pam meta data; input 3 should be empty to improve speed
         %%% Input 4 is the new channel
         Update_to_UserValues
@@ -3732,7 +3768,9 @@ switch e.Key
         UserValues.PIE.ScatterPattern(Sel) = [];
         UserValues.PIE.Background(Sel) = [];
         %%% Reset Correlation Table Data Matrix
-        UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
+        cor_sel = UserValues.Settings.Pam.Cor_Selection;
+        cor_sel(:,Sel) = []; cor_sel(Sel,:) = [];
+        UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
         %%% in Pam meta data
         PamMeta.Trace(Sel)=[];
         PamMeta.Image(Sel)=[];
@@ -3946,6 +3984,10 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         Update_Cor_Table(obj);
         %%% Rename channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+    elseif obj == h.PIE.DetectionChannel
+    %%% Updates PIE detector and routing
+        UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(h.PIE.DetectionChannel.Value);
+        UserValues.PIE.Router(Sel)=UserValues.Detector.Rout(h.PIE.DetectionChannel.Value);
     %%% Updates PIE detector
     elseif obj == h.PIE.Detector
         UserValues.PIE.Detector(Sel)=str2double(h.PIE.Detector.String);
@@ -4000,8 +4042,8 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback functions of microtime channel list and UIContextmenues  %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% "+"-Key or Add menu: Generate new PIE channel
-%%% "-"-Key, "del"-Key or Delete menu: Deletes first selected PIE channel
+%%% "+"-Key or Add menu: Generate new detection channel
+%%% "-"-Key, "del"-Key or Delete menu: Deletes first selected detection channel
 %%% "c"-Key or Color menu: Opens menu to choose channel color
 %%% "n"-Key: Opens dialog menu to change Channel name
 function MI_Channels_Functions(obj,ed)
@@ -4058,6 +4100,18 @@ if obj == h.MI.Channels_List
             case 8 %%% enabled was changed
                 UserValues.Detector.enabled{Sel} = ed.NewData;
             case 9 %%% Delete detector
+                %%% check if any PIE channels used this detection channel
+                if any( (UserValues.PIE.Detector == UserValues.Detector.Det(Sel)) & (UserValues.PIE.Router == UserValues.Detector.Rout(Sel)))
+                    %%% reset to first detection channel
+                    chans = find((UserValues.PIE.Detector == UserValues.Detector.Det(Sel)) & (UserValues.PIE.Router == UserValues.Detector.Rout(Sel)));
+                    for p = chans
+                        UserValues.PIE.Detector(p) = UserValues.Detector.Det(1);
+                        UserValues.PIE.Router(p) = UserValues.Detector.Rout(1);
+                    end
+                    %%% update 
+                    Update_Display([],[],0)
+                end
+                
                 h.MI.Channels_List.Data(Sel,:)=[];
                 %% Deletes all selected microtimechannels
                 UserValues.Detector.Det(Sel)=[];
@@ -4111,6 +4165,8 @@ if Update
     end
     %%% reenable callbacks
     Update_Display([],[],4:5);
+    %%% update detection channels list
+    h.PIE.DetectionChannel.String = color_string(UserValues.Detector.Name,UserValues.Detector.Color);
 end
 h.MI.Channels_List.CellEditCallback = @MI_Channels_Functions;
 h.MI.Channels_List.CellSelectionCallback = @MI_Channels_Functions;
@@ -4151,7 +4207,7 @@ switch e.Key
             UserValues.Phasor.Reference(end+1,end)=0;
         end
     case 'delete' 
-        %% Deletes all selected microtimechannels        
+        %% Deletes all selected microtimechannels
         UserValues.Detector.Det(Sel)=[];
         UserValues.Detector.Rout(Sel)=[];
         UserValues.Detector.Name(Sel)=[];
@@ -9622,4 +9678,12 @@ elseif ispc
 end
 if ~isempty(cmdout)
     disp(cmdout);
+end
+
+function colored_strings = color_string(strings,colors)
+%%% takes a cell array of strings and formats them using html to appear as color
+colored_strings = cell(numel(strings),1);
+for i = 1:numel(strings)
+    Hex_color=dec2hex(round(colors(i,:)*255))';
+    colored_strings{i} = ['<HTML><FONT color=#' Hex_color(:)' '>' strings{i} '</Font></html>'];
 end
