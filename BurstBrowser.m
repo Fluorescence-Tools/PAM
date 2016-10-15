@@ -10752,9 +10752,9 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                     delete(m);
                     return;
                 end
-                y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-                    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                    x);
+                %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+                %    x);
                 if button(1) == 1 %%% left mouseclick, update first line, reset all others off
                     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3).Visible = 'off';
@@ -10785,12 +10785,12 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 if line < 1 || line > 3
                     return;
                 end
-                y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-                    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                    x);
+                %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+                %    x);
             end
             [dynFRETline, ~,tau] = dynamicFRETline(BurstData{file}.Corrections.DonorLifetime,...
-                y(1),y(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
+                x(1),x(2),BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength);
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).Visible = 'on';
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).XData = tau;
             BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(line).YData = dynFRETline;
@@ -11316,16 +11316,24 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Calculates dynamic FRET line between two states  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [out, func, xval] = dynamicFRETline(tauD,E1,E2,R0,s)
+function [out, func, xval] = dynamicFRETline(tauD,tau1,tau2,R0,s)
 res = 1000;
-if E1 > E2
-    xval  = linspace((1-E1)*tauD,(1-E2)*tauD,1000);
+if tau1 > tau2
+    xval  = linspace(tau2,tau1,1000);
 else
-    xval  = linspace((1-E2)*tauD,(1-E1)*tauD,1000);
+    xval  = linspace(tau1,tau2,1000);
 end
+% if E1 > E2
+%     xval  = linspace((1-E1)*tauD,(1-E2)*tauD,1000);
+% else
+%     xval  = linspace((1-E2)*tauD,(1-E1)*tauD,1000);
+% end
 %%% Calculate two distance distribution for two states
 %RDA1 = R0*((tauD/tau1)-1)^(-1/6);
 %RDA2 = R0*((tauD/tau2)-1)^(-1/6);
+%%% convert to intensity weighted lifetime
+E1 = conversion_tau(tauD,R0,s,tau1);
+E2 = conversion_tau(tauD,R0,s,tau2);
 RDA1 = R0.*(1/E1-1)^(1/6);if E1 == 0;RDA1 = 5*R0-2*s;end;
 RDA2 = R0.*(1/E2-1)^(1/6);if E2 == 0;RDA2 = 5*R0-2*s;end;
 r = linspace(0*R0,5*R0,res);
