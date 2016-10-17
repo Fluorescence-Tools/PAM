@@ -7192,6 +7192,7 @@ switch obj
         CutName = inputdlg('Specify the new cut name:','Adding cut to database...',[1 50],{'New Cut'},'on');
         if ~isempty(CutName)
             CutName = CutName{1};
+            CutName = matlab.lang.makeValidName(CutName); %%% make it a valid variable name
             UserValues.BurstBrowser.CutDatabase{BAMethod}.(CutName) = BurstData{file}.Cut{species(1),species(2)};
         end
         %%% Refresh GUI
