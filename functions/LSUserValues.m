@@ -19,7 +19,7 @@ if Mode==0 %%% Loads user values
             break;
         end
     end
-    
+
     %%% Checks, if a Profile exists and if Profile.mat has a valid profile saved
     %%% Both do not exist; it creates new ones
     if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
@@ -40,7 +40,7 @@ if Mode==0 %%% Loads user values
     end
     %%% Determines current Profile
     load([Profiledir filesep 'Profile.mat']);
-    
+
     %%% Compares current profile to existing profiles
     Current=[];
     for i=1:numel(Profiles)
@@ -55,11 +55,11 @@ if Mode==0 %%% Loads user values
     end
     %%% Loads UserValues of current profile
     S = load(fullfile(Profiledir,Profile));
-    
-    
+
+
     %% PIE: Definition of PIE channels %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
     %%% Checks, if all fields exist and redefines them
     if ~isfield (S, 'PIE') || any(~isfield(S.PIE, {'Name';'Detector';'Router';'From';'To';'Color';'Combined';'Duty_Cycle'}));
         S.PIE=[];
@@ -101,7 +101,7 @@ if Mode==0 %%% Loads user values
     P.PIE.Background = S.PIE.Background;
     %% Detector: Definition of Tcspc cards/routing channels to use %%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
     %%% Checks, if all fields exist and redefines them
     if ~isfield (S, 'Detector') || any(~isfield(S.Detector, {'Det';'Rout';'Color';'Shift';'Name';'Plots'}));
         S.Detector=[];
@@ -149,7 +149,7 @@ if Mode==0 %%% Loads user values
     P.Detector.Auto = S.Detector.Auto;
     %% Look: Definition of Pam colors and style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
     %%% Checks, if fields exist
     if ~isfield (S, 'Look') || any(~isfield(S.Look, {'Back';'Fore';'Control';'Axes';'Disabled';'Shadow';'AxesFore';'List';'ListFore';'Table1';'Table2';'TableFore';'Font';'AxWidth'}));
         S.Look=[];
@@ -185,7 +185,7 @@ if Mode==0 %%% Loads user values
     P.Look.Font = S.Look.Font;
     P.Look.AxWidth = S.Look.AxWidth;
     %% File: Last used Paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
     %%% Checks, if fields exist
     if ~isfield (S, 'File');
         S.File=[];
@@ -240,8 +240,8 @@ if Mode==0 %%% Loads user values
         S.File.PhasorTIFFPath=pwd;
     end
     P.File.PhasorTIFFPath = S.File.PhasorTIFFPath;
-    
-    
+
+
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
     end
@@ -250,8 +250,8 @@ if Mode==0 %%% Loads user values
         S.File.MIAFit_Standard=[];
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
-    
-    
+
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -269,7 +269,7 @@ if Mode==0 %%% Loads user values
         '*.ppf','Pam Photon File (Created by Pam)';...
         '*.ptu','HydraHarp 400 TTTR file (*.ptu)';...
         '*.h5;*.hdf5','PhotonHDF5 File (*.h5,*.hdf5)'};
-    
+
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
         S.File.SPC_FileTypes = CurrentFileTypes;
@@ -288,7 +288,7 @@ if Mode==0 %%% Loads user values
     end
     P.File.OpenTCSPC_FilterIndex = S.File.OpenTCSPC_FilterIndex;
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
-    
+
     %%% Checks, if Settings field exists
     if ~isfield (S, 'Settings')
         S.Settings=[];
@@ -301,6 +301,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam was incomplete');
     end
     P.Settings.Pam = [];
+    %%% Checks, if Pam.Use_TimeTrace subfield exists
+    if ~isfield (S.Settings.Pam, 'Use_TimeTrace')
+        S.Settings.Pam.Use_TimeTrace=1;
+        disp('UserValues.Settings.Pam.Use_TimeTrace was incomplete');
+    end
+    P.Settings.Pam.Use_TimeTrace = S.Settings.Pam.Use_TimeTrace;
+    %%% Checks, if Pam.Use_PCH subfield exists
+    if ~isfield (S.Settings.Pam, 'Use_PCH')
+        S.Settings.Pam.Use_PCH=0;
+        disp('UserValues.Settings.Pam.Use_PCH was incomplete');
+    end
+    P.Settings.Pam.Use_PCH = S.Settings.Pam.Use_PCH;
     %%% Checks, if Pam.Use_Image subfield exists
     if ~isfield (S.Settings.Pam, 'Use_Image')
         S.Settings.Pam.Use_Image=0;
@@ -684,7 +696,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit was incomplete');
     end
     P.TauFit = [];
-    
+
     %%% Checks, if TauFit.StartPar exists
     %%% (This field contains the Start Parallel editbox/slider value)
     if ~isfield (S.TauFit,'StartPar')
@@ -696,7 +708,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.StartPar was wrong size');
     end
     P.TauFit.StartPar = S.TauFit.StartPar;
-    
+
     %%% Checks, if TauFit.Length exists
     %%% (This field contains the Length editbox/slider value)
     if ~isfield (S.TauFit,'Length')
@@ -708,7 +720,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.Length was wrong size');
     end
     P.TauFit.Length = S.TauFit.Length;
-    
+
     %%% Checks, if TauFit.ShiftPer exists
     %%% (This field contains the Shift perpendicular editbox/slider value)
     if ~isfield (S.TauFit,'ShiftPer')
@@ -720,7 +732,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.ShiftPer was wrong size');
     end
     P.TauFit.ShiftPer = S.TauFit.ShiftPer;
-    
+
     %%% Checks, if TauFit.IRFLength exists
     %%% (This field contains the IRF Length editbox/slider value)
     if ~isfield (S.TauFit,'IRFLength')
@@ -743,7 +755,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.IRFShift was wrong size');
     end
     P.TauFit.IRFShift = S.TauFit.IRFShift;
-    
+
     %%% Checks, if TauFit.IRFrelShift exists
     %%% (This field contains the relative shift of the perpendicular IRF editbox/slider value)
     if ~isfield (S.TauFit,'IRFrelShift')
@@ -755,7 +767,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.IRFrelShift was wrong size');
     end
     P.TauFit.IRFrelShift = S.TauFit.IRFrelShift;
-    
+
     %%% Checks, if TauFit.ScatShift exists
     %%% (This field contains the Scatter pattern shift editbox/slider value)
     if ~isfield (S.TauFit,'ScatShift')
@@ -767,7 +779,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.ScatShift was wrong size');
     end
     P.TauFit.ScatShift = S.TauFit.ScatShift;
-    
+
     %%% Checks, if TauFit.ScatrelShift exists
     %%% (This field contains the relative shift of the perpendicular scatter editbox/slider value)
     if ~isfield (S.TauFit,'ScatrelShift')
@@ -779,7 +791,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.ScatrelShift was wrong size');
     end
     P.TauFit.ScatrelShift = S.TauFit.ScatrelShift;
-    
+
     %%% Checks, if TauFit.Ignore exists
     %%% (This field contains the editbox/slider value for ignoring the first part of the TAC from fitting quality estimation)
     if ~isfield (S.TauFit,'Ignore')
@@ -791,17 +803,17 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.Ignore was wrong size');
     end
     P.TauFit.Ignore = S.TauFit.Ignore;
-    
+
     %%% Checks, if TauFit.PIEChannelSelection exists
     %%% (This field contains the PIE Channel Selection as String/Name for
     %%% Parallel and Perpendicular Channel)
     if ~isfield (S.TauFit,'PIEChannelSelection')
         dummy = S.PIE.Name{1};
         S.TauFit.PIEChannelSelection={dummy,dummy};
-            disp('UserValues.TauFit.PIEChannelSelection was incomplete');    
+            disp('UserValues.TauFit.PIEChannelSelection was incomplete');
     end
     P.TauFit.PIEChannelSelection = S.TauFit.PIEChannelSelection;
-    
+
     %%% Checks, if TauFit.G exists
     %%% (Gfactors)
     if ~isfield (S.TauFit,'G')
@@ -813,7 +825,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.G was wrong size');
     end
     P.TauFit.G = S.TauFit.G;
-    
+
     %%% Checks, if TauFit.l1 exists
     %%% (First of the correction factors accounting for the polarization mixing caused by the high N.A. objective lense)
     if ~isfield (S.TauFit,'l1')
@@ -835,21 +847,21 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.ConvolutionType was incomplete');
     end
     P.TauFit.ConvolutionType = S.TauFit.ConvolutionType;
-    
+
     %%% Checks, if TauFit.use_weighted_residuals exists
     if ~isfield (S.TauFit,'use_weighted_residuals')
         S.TauFit.use_weighted_residuals=1;
         disp('UserValues.TauFit.use_weighted_residuals was incomplete');
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
-    
+
     %%% Checks, if TauFit.IncludeChannel exists
     if ~isfield (S.TauFit,'IncludeChannel')
         S.TauFit.IncludeChannel=[1,1,1];
         disp('UserValues.TauFit.IncludeChannel was incomplete');
     end
     P.TauFit.IncludeChannel = S.TauFit.IncludeChannel;
-    
+
     %%% Checks, if TauFit.FitMethod exists
     if ~isfield (S.TauFit,'FitMethod')
         S.TauFit.FitMethod=1;
@@ -908,7 +920,7 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.FitParams = S.TauFit.FitParams;
     P.TauFit.FitFix = S.TauFit.FitFix;
-    
+
     %% BurstBrowser
     %%% Checks, if BurstBrowser subfield exists
     if ~isfield (S,'BurstBrowser')
@@ -1330,7 +1342,7 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotGridAboveData was incomplete');
     end
     P.BurstBrowser.Display.PlotGridAboveData = S.BurstBrowser.Display.PlotGridAboveData;
-    
+
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
@@ -1470,201 +1482,201 @@ if Mode==0 %%% Loads user values
         S.PDA = [];
     end
     P.PDA = S.PDA;
-    
+
     if ~isfield(S.PDA, 'Dynamic')
         disp('WARNING: UserValues structure incomplete, field "PDA.Dynamic" missing');
         S.PDA.Dynamic = 0;
     end
     P.PDA.Dynamic = S.PDA.Dynamic;
-    
+
     if ~isfield(S.PDA, 'IgnoreOuterBins')
         disp('WARNING: UserValues structure incomplete, field "PDA.IgnoreOuterBins" missing');
         S.PDA.IgnoreOuterBins = 0;
     end
     P.PDA.IgnoreOuterBins = S.PDA.IgnoreOuterBins;
-    
+
     if ~isfield(S.PDA, 'HalfGlobal')
         disp('WARNING: UserValues structure incomplete, field "PDA.HalfGlobal" missing');
         S.PDA.HalfGlobal = 0;
     end
     P.PDA.HalfGlobal = S.PDA.HalfGlobal;
-    
+
     if ~isfield(S.PDA, 'FixSigmaAtFraction')
         disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFraction" missing');
         S.PDA.FixSigmaAtFraction = 0;
     end
     P.PDA.FixSigmaAtFraction = S.PDA.FixSigmaAtFraction;
-    
+
     if ~isfield(S.PDA, 'SigmaAtFractionOfR')
         disp('WARNING: UserValues structure incomplete, field "PDA.SigmaAtFractionOfR" missing');
         S.PDA.SigmaAtFractionOfR = '0.08';
     end
     P.PDA.SigmaAtFractionOfR = S.PDA.SigmaAtFractionOfR;
-    
+
     if ~isfield(S.PDA, 'FixSigmaAtFractionFix')
         disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFractionFix" missing');
         S.PDA.FixSigmaAtFractionFix = 0;
     end
     P.PDA.FixSigmaAtFractionFix = S.PDA.FixSigmaAtFractionFix;
-    
+
     if ~isfield(S.PDA, 'NoBins')
         disp('WARNING: UserValues structure incomplete, field "PDA.NoBins" missing');
         S.PDA.NoBins = '100';
     end
     P.PDA.NoBins = S.PDA.NoBins;
-    
+
     if ~isfield(S.PDA, 'MinPhotons')
         disp('WARNING: UserValues structure incomplete, field "PDA.MinPhotons" missing');
         S.PDA.MinPhotons = '0';
     end
     P.PDA.MinPhotons = S.PDA.MinPhotons;
-    
+
     if ~isfield(S.PDA, 'MaxPhotons')
         disp('WARNING: UserValues structure incomplete, field "PDA.MaxPhotons" missing');
         S.PDA.MaxPhotons = 'Inf';
     end
     P.PDA.MaxPhotons = S.PDA.MaxPhotons;
-    
+
     if ~isfield(S.PDA, 'GridRes')
         disp('WARNING: UserValues structure incomplete, field "PDA.GridRes" missing');
         S.PDA.GridRes = '100';
     end
     P.PDA.GridRes = S.PDA.GridRes;
-    
+
     if ~isfield(S.PDA, 'Smin')
         disp('WARNING: UserValues structure incomplete, field "PDA.Smin" missing');
         S.PDA.Smin = '0';
     end
     P.PDA.Smin = S.PDA.Smin;
-    
+
     if ~isfield(S.PDA, 'Smax')
         disp('WARNING: UserValues structure incomplete, field "PDA.Smax" missing');
         S.PDA.Smax = '1';
     end
     P.PDA.Smax = S.PDA.Smax;
-    
+
     %% tcPDA
     if ~isfield(S, 'tcPDA')
         disp('WARNING: UserValues structure incomplete, field "tcPDA" missing');
         S.tcPDA = [];
     end
     P.tcPDA = S.tcPDA;
-    
+
     if ~isfield(S.tcPDA, 'PathName')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.PathName" missing');
         S.tcPDA.PathName = pwd;
     end
     P.tcPDA.PathName = S.tcPDA.PathName;
-    
+
     if ~isfield(S.tcPDA, 'FileName')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.FileName" missing');
         S.tcPDA.FileName = '';
     end
     P.tcPDA.FileName = S.tcPDA.FileName;
-    
+
     if ~isfield(S.tcPDA, 'corrections')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections" missing');
         S.tcPDA.corrections = [];
     end
     P.tcPDA.corrections = S.tcPDA.corrections;
-    
+
     if ~isfield(S.tcPDA.corrections, 'ct_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_gr" missing');
         S.tcPDA.corrections.ct_gr = 0;
     end
     P.tcPDA.corrections.ct_gr = S.tcPDA.corrections.ct_gr;
-    
+
     if ~isfield(S.tcPDA.corrections, 'ct_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_bg" missing');
         S.tcPDA.corrections.ct_bg = 0;
     end
     P.tcPDA.corrections.ct_bg = S.tcPDA.corrections.ct_bg;
-    
+
     if ~isfield(S.tcPDA.corrections, 'ct_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.ct_br" missing');
         S.tcPDA.corrections.ct_br = 0;
     end
     P.tcPDA.corrections.ct_br = S.tcPDA.corrections.ct_br;
-    
+
     if ~isfield(S.tcPDA.corrections, 'de_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_gr" missing');
         S.tcPDA.corrections.de_gr = 0;
     end
     P.tcPDA.corrections.de_gr = S.tcPDA.corrections.de_gr;
-    
+
     if ~isfield(S.tcPDA.corrections, 'de_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_bg" missing');
         S.tcPDA.corrections.de_bg = 0;
     end
     P.tcPDA.corrections.de_bg = S.tcPDA.corrections.de_bg;
-    
+
     if ~isfield(S.tcPDA.corrections, 'de_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.de_br" missing');
         S.tcPDA.corrections.de_br = 0;
     end
     P.tcPDA.corrections.de_br = S.tcPDA.corrections.de_br;
-    
+
     if ~isfield(S.tcPDA.corrections, 'gamma_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_gr" missing');
         S.tcPDA.corrections.gamma_gr = 1;
     end
     P.tcPDA.corrections.gamma_gr = S.tcPDA.corrections.gamma_gr;
-    
+
     if ~isfield(S.tcPDA.corrections, 'gamma_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.gamma_br" missing');
         S.tcPDA.corrections.gamma_br = 1;
     end
     P.tcPDA.corrections.gamma_br = S.tcPDA.corrections.gamma_br;
-    
-    
+
+
     if ~isfield(S.tcPDA.corrections, 'BG_bb')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bb" missing');
         S.tcPDA.corrections.BG_bb = 0;
     end
     P.tcPDA.corrections.BG_bb = S.tcPDA.corrections.BG_bb;
-    
+
     if ~isfield(S.tcPDA.corrections, 'BG_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_bg" missing');
         S.tcPDA.corrections.BG_bg = 0;
     end
     P.tcPDA.corrections.BG_bg = S.tcPDA.corrections.BG_bg;
-    
+
     if ~isfield(S.tcPDA.corrections, 'BG_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_br" missing');
         S.tcPDA.corrections.BG_br = 0;
     end
     P.tcPDA.corrections.BG_br = S.tcPDA.corrections.BG_br;
-    
+
     if ~isfield(S.tcPDA.corrections, 'BG_gg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gg" missing');
         S.tcPDA.corrections.BG_gg = 0;
     end
     P.tcPDA.corrections.BG_gg = S.tcPDA.corrections.BG_gg;
-    
+
     if ~isfield(S.tcPDA.corrections, 'BG_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.BG_gr" missing');
         S.tcPDA.corrections.BG_gr = 0;
     end
     P.tcPDA.corrections.BG_gr = S.tcPDA.corrections.BG_gr;
-    
+
     if ~isfield(S.tcPDA.corrections, 'sampling')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.sampling" missing');
         S.tcPDA.corrections.sampling = 1;
     end
     P.tcPDA.corrections.sampling = S.tcPDA.corrections.sampling;
-    
+
     if ~isfield(S.tcPDA.corrections, 'R0_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_gr" missing');
         S.tcPDA.corrections.R0_gr = 68;
     end
     P.tcPDA.corrections.R0_gr = S.tcPDA.corrections.R0_gr;
-    
+
     if ~isfield(S.tcPDA.corrections, 'R0_bg')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_bg" missing');
         S.tcPDA.corrections.R0_bg = 63;
     end
     P.tcPDA.corrections.R0_bg = S.tcPDA.corrections.R0_bg;
-    
+
     if ~isfield(S.tcPDA.corrections, 'R0_br')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_br" missing');
         S.tcPDA.corrections.R0_br = 51;
@@ -1676,73 +1688,73 @@ if Mode==0 %%% Loads user values
         S.MIA = [];
     end
     P.MIA = S.MIA;
-    
+
     if ~isfield(S.MIA, 'ColorMap_Main') || size(S.MIA.ColorMap_Main,1)~=2 || ~isnumeric(S.MIA.ColorMap_Main) || any(isnan(S.MIA.ColorMap_Main))
         disp('WARNING: UserValues structure incomplete, field "MIA.ColorMap_Main" missing');
         S.MIA.ColorMap_Main = [1; 1];
     end
     P.MIA.ColorMap_Main = S.MIA.ColorMap_Main;
-    
+
     if ~isfield(S.MIA, 'CustomColor') || size(S.MIA.CustomColor,1)~=2 || size(S.MIA.CustomColor,2)~=3 || ~isnumeric(S.MIA.CustomColor) || any(isnan(S.MIA.CustomColor(:)))
         disp('WARNING: UserValues structure incomplete, field "MIA.CustomColor" missing');
         S.MIA.CustomColor = [0 1 0; 1 0 0];
     end
     P.MIA.CustomColor = S.MIA.CustomColor;
-    
+
     if ~isfield(S.MIA, 'Correct_Type') || numel(S.MIA.Correct_Type)~=2 || ~isnumeric(S.MIA.Correct_Type) || any(isnan(S.MIA.Correct_Type))
         disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Type" missing');
         S.MIA.Correct_Type = [1 1];
     end
     P.MIA.Correct_Type = S.MIA.Correct_Type;
-    
+
     if ~isfield(S.MIA, 'Correct_Sub_Values') || numel(S.MIA.Correct_Sub_Values)~=2 || ~isnumeric(S.MIA.Correct_Sub_Values) || any(isnan(S.MIA.Correct_Sub_Values))
         disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Sub_Values" missing');
         S.MIA.Correct_Sub_Values = [1 3];
     end
     P.MIA.Correct_Sub_Values = S.MIA.Correct_Sub_Values;
-    
+
     if ~isfield(S.MIA, 'Correct_Add_Values') || numel(S.MIA.Correct_Add_Values)~=2 || ~isnumeric(S.MIA.Correct_Add_Values) || any(isnan(S.MIA.Correct_Add_Values))
         disp('WARNING: UserValues structure incomplete, field "MIA.Correct_Add_Values" missing');
         S.MIA.Correct_Add_Values = [1 3];
     end
     P.MIA.Correct_Add_Values = S.MIA.Correct_Add_Values;
-    
+
     if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=2 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int" missing');
         S.MIA.AR_Int = [10 1000];
     end
     P.MIA.AR_Int = S.MIA.AR_Int;
-    
+
     if ~isfield(S.MIA, 'AR_Region') || numel(S.MIA.AR_Region)~=2 || ~isnumeric(S.MIA.AR_Region) || any(isnan(S.MIA.AR_Region))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Region" missing');
         S.MIA.AR_Region = [10 30];
     end
     P.MIA.AR_Region = S.MIA.AR_Region;
-    
+
     if ~isfield(S.MIA, 'AR_Int_Fold') || numel(S.MIA.AR_Int_Fold)~=2 || ~isnumeric(S.MIA.AR_Int_Fold) || any(isnan(S.MIA.AR_Int_Fold))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int_Fold" missing');
         S.MIA.AR_Int_Fold = [0.6 1.5];
     end
     P.MIA.AR_Int_Fold = S.MIA.AR_Int_Fold;
-    
+
     if ~isfield(S.MIA, 'AR_Var_Fold') || numel(S.MIA.AR_Var_Fold)~=2 || ~isnumeric(S.MIA.AR_Var_Fold) || any(isnan(S.MIA.AR_Var_Fold))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Var_Fold" missing');
         S.MIA.AR_Var_Fold = [0.7 1.2];
     end
     P.MIA.AR_Var_Fold = S.MIA.AR_Var_Fold;
-    
+
     if ~isfield(S.MIA, 'DoPCH')
         disp('WARNING: UserValues structure incomplete, field "MIA.DoPCH" missing');
         S.MIA.DoPCH = 0;
     end
     P.MIA.DoPCH = S.MIA.DoPCH;
-    
+
     if ~isfield(S.MIA, 'AutoNames')
         disp('WARNING: UserValues structure incomplete, field "MIA.AutoNames" missing');
         S.MIA.AutoNames = 1;
     end
     P.MIA.AutoNames = S.MIA.AutoNames;
-    
+
     %% Trace
     if ~isfield(S, 'Trace')
         disp('WARNING: UserValues structure incomplete, field "Trace" missing');
@@ -1755,7 +1767,7 @@ if Mode==0 %%% Loads user values
         S.Trace.DonPar = 1;
     end
     P.Trace.DonPar = S.Trace.DonPar;
-    
+
     if ~isfield(S.Trace, 'AccPar')
         disp('WARNING: UserValues structure incomplete, field "Trace.AccPar" missing');
         S.Trace.AccPar = 1;
@@ -1775,7 +1787,7 @@ else
                 UserValues.(Param{2}).(Param{3}).(Param{4})=Obj.(Param{1});
         end
     end
-    
+
     Current=[];
     %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
     if findobj('Tag','Pam') == get(groot,'CurrentFigure');
