@@ -33,6 +33,7 @@ addpath(genpath(['.' filesep 'functions']));
 
     %%% Disables negative values for log plot warning
     warning('off','MATLAB:Axes:NegativeDataInLogAxis');
+    warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
     %%% Loads user profile
     Profiles=LSUserValues(0);
     %%% To save typing
@@ -2182,7 +2183,7 @@ addpath(genpath(['.' filesep 'functions']));
             '"rightarrow" moves channel down \n'...
             'Rightclick to open contextmenu with additional functions;']),...
         'UIContextMenu',h.PIE.List_Menu,...
-        'Callback',{@Update_Display,1:5},...
+        'Callback',{@Update_Display,[1:5,10]},...
         'KeyPressFcn',@PIE_List_Functions,...
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
@@ -2895,7 +2896,7 @@ PamMeta.Trace=repmat({0:0.01:FileInfo.MeasurementTime},numel(UserValues.PIE.Name
 PamMeta.Image=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.TimeBins=0:0.01:FileInfo.MeasurementTime;
-PamMeta.BinsPCH = 0:1:10;
+PamMeta.BinsPCH =repmat({0:1:10},numel(UserValues.PIE.Name),1);
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
@@ -2960,18 +2961,24 @@ end
 h.Progress.Text.String = 'Updating meta data';
 h.Progress.Axes.Color=[1 0 0];
 drawnow;
-if Detector==0
-    Detector = 1:numel(UserValues.Detector.Name);
-    PamMeta.MI_Hist=cell(numel(UserValues.Detector.Name),1);
-end
+
 if PIE==0
     PIE = find(UserValues.PIE.Detector>0);
-    PamMeta.Image=cell(numel(UserValues.PIE.Name),1);
-    PamMeta.Trace=cell(numel(UserValues.PIE.Name),1);
+    if any(mode == 3)
+        PamMeta.Image=cell(numel(UserValues.PIE.Name),1);
+    elseif any(mode == 1)
+        PamMeta.Trace=cell(numel(UserValues.PIE.Name),1);
+    elseif any(mode == 2)
+        PamMeta.PCH=cell(numel(UserValues.PIE.Name),1);
+    end
 end
 
 %% Creates a microtime histogram for each detector/routing pair
 if any(mode == 0)
+    if Detector==0
+        Detector = 1:numel(UserValues.Detector.Name);
+        PamMeta.MI_Hist=cell(numel(UserValues.Detector.Name),1);
+    end
     if ~isempty(Detector)
         for i=Detector
             %%% Checks, if the appropriate channel is loaded
@@ -2988,8 +2995,6 @@ end
 if any(mode == 1) || any(mode == 2) || any(mode==3)
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
-    
-    PamMeta.BinsPCH = 0:1:10;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
     if ~isempty(PIE)
         for i=PIE
@@ -3021,15 +3026,15 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                             TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
                             if ~isempty(PIE_MT)
                                 trace_ms = histc(PIE_MT,TimeBinsPCH);
-                                PamMeta.BinsPCH = 0:1:max(trace_ms);
-                                PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH);
+                                PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
+                                PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
                             else
-                                PamMeta.BinsPCH = 0:1:10;
-                                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH));
+                                PamMeta.BinsPCH{i} = 0:1:10;
+                                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
                             end
                         else
-                            PamMeta.BinsPCH = 0:1:10;
-                            PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH));
+                            PamMeta.BinsPCH{i} = 0:1:10;
+                            PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
                         end
                     end
                 end
@@ -3098,7 +3103,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
             else
                 %%% Creates a 0 trace for empty/nonexistent detector/routing pairs
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
-                PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH),1);
+                PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
                 PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
@@ -3468,10 +3473,10 @@ if any(mode == 10)
     h.Plots.PCH = {};
     for t = h.PIE.List.Value
          %%% create plot
-         h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH,PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+         h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
     end
     guidata(h.Pam,h);
-    h.PCH.Axes.XLim = [0,PamMeta.BinsPCH(end)];
+    h.PCH.Axes.XLim = [0,max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value)))];
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
@@ -5994,7 +5999,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
         end
 
-=        h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
+        h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
     end
 
 end
