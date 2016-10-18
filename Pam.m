@@ -3139,7 +3139,10 @@ if obj == h.MT.Use_Image
         h.MT.Use_Lifetime.Value=0;
     end
     if UserValues.Settings.Pam.Use_Image
-        h.Image.Tab.Parent = h.MT.Tab;;
+        h.MT.Settings_Tab.Parent = [];
+        h.Image.Tab.Parent = h.MT.Tab;
+        h.MT.Settings_Tab.Parent =  h.MT.Tab;
+        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
     else
         h.Image.Tab.Parent = [];
     end
@@ -3154,7 +3157,10 @@ elseif obj == h.MT.Use_Lifetime
         UserValues.Settings.Pam.Use_Image=1;
     end
     if UserValues.Settings.Pam.Use_Image
+        h.MT.Settings_Tab.Parent =  [];
         h.Image.Tab.Parent = h.MT.Tab;
+        h.MT.Settings_Tab.Parent =  h.MT.Tab;
+        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
     else
         h.Image.Tab.Parent = [];
     end
@@ -3164,7 +3170,10 @@ elseif obj == h.MT.Use_Lifetime
 elseif obj == h.MT.Use_PCH
     UserValues.Settings.Pam.Use_PCH=h.MT.Use_PCH.Value;
     if UserValues.Settings.Pam.Use_PCH
+        h.MT.Settings_Tab.Parent =  [];
         h.PCH.Tab.Parent = h.MT.Tab;
+        h.MT.Settings_Tab.Parent =  h.MT.Tab;
+        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
     else
         h.PCH.Tab.Parent = [];
     end
@@ -3173,7 +3182,10 @@ elseif obj == h.MT.Use_PCH
 elseif obj == h.MT.Use_TimeTrace
     UserValues.Settings.Pam.Use_TimeTrace=h.MT.Use_TimeTrace.Value;
     if UserValues.Settings.Pam.Use_TimeTrace
+        h.MT.Settings_Tab.Parent =  [];
         h.Trace.Tab.Parent = h.MT.Tab;
+        h.MT.Settings_Tab.Parent =  h.MT.Tab;
+        h.MT.Tab.SelectedTab = h.MT.Settings_Tab;
     else
         h.Trace.Tab.Parent = [];
     end
