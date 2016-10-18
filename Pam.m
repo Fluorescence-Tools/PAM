@@ -3103,6 +3103,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
             else
                 %%% Creates a 0 trace for empty/nonexistent detector/routing pairs
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
+                PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);

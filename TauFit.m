@@ -4899,7 +4899,7 @@ LSUserValues(1)
 if obj == h.G_factor_edit
     %DetermineGFactor(obj)
 end
-if obj == h.Save_Figures
+if strcmp(TauFitData.Who,'Burstwise') && obj == h.Save_Figures
     UserValues.BurstSearch.BurstwiseLifetime_SaveImages = obj.Value;
     LSUserValues(1);
 end
