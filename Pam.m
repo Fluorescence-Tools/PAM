@@ -5773,7 +5773,7 @@ LSUserValues(1);
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_Calc(~,~)
-tic
+
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
@@ -5798,6 +5798,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Ref_LT=str2double(h.MI.Phasor_Ref.String);
         From=str2double(h.MI.Phasor_From.String);
         To=str2double(h.MI.Phasor_To.String);
+        UseParticles = h.MI.Phasor_Particles.Value;
 
         %%% Calculates theoretical phase and modulation for reference
         Fi_ref = atan(2*pi*Ref_LT/TAC);
@@ -5826,7 +5827,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             Fi_inst=Fi_inst+pi;
         end
         
-       %% Extracts and reorganizes macrotimes
+        %% Extracts and reorganizes macrotimes
        
         Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
 
@@ -5876,7 +5877,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         clear Photons
         
         %%% Assignes Pixels to Particles if enabled
-        if h.MI.Phasor_Particles.Value>1
+        if UseParticles>1
             BitImage = (Intensity>str2double(h.MI.Phasor_ParticleTH.String));
             Regions = regionprops(BitImage,Intensity,'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
             
@@ -5900,6 +5901,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Photons=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
         Photons=Photons(Index);
         clear Index
+        Update_Progress = FileInfo.Lines;
 
         %% Calculates pixel by pixel phasors
         G(1:Bins) = cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
@@ -5920,37 +5922,39 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         k = 1; % Counter for Particle pixels
 
         while i<(numel(Pixel)-1)
-            if i == (FileInfo.Lines + 1)*a + 1
-                % skip those photons belonging to an interline bin
+            if i == (FileInfo.Lines + 1)*a + 1 % skip those photons belonging to an interline bin
                 i = i + 1;
                 a = a + 1;
-            else
-                if h.MI.Phasor_Particles.Value>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
-                    Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1))';
-                    k = k + 1;
-                elseif h.MI.Phasor_Particles.Value==3 && (k>numel(ParticleIndex) || ParticleIndex(k)~=i) %%% Sets value to 0 if only particles are enabeled
-                    Mean_LT(j)=0;
-                    g(j)=0;
-                    s(j)=0;
-                else    %%% Calculates normal pixels
-                    FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
-                    Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
-                    g(j)=sum(G.*FLIM)/sum(FLIM);
-                    s(j)=sum(S.*FLIM)/sum(FLIM);
-                    if isnan(g(j)) || isnan(s(j))
-                        g(j)=0; s(j)=0;
-                    end
-
-                end
-                if mod(i,FileInfo.Lines)==0
-                    Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
-                end
-                i = i + 1;
-                j = j + 1;
             end
+
+            if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i
+            end
+            if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
+                Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1))';
+                k = k + 1;
+            elseif UseParticles==3 && (k>numel(ParticleIndex) || ParticleIndex(k)~=i) %%% Sets value to 0 if only particles are enabeled
+                Mean_LT(j)=0;
+                g(j)=0;
+                s(j)=0;
+            else    %%% Calculates normal pixels
+                FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
+                Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
+                g(j)=sum(G.*FLIM)/sum(FLIM);
+                s(j)=sum(S.*FLIM)/sum(FLIM);
+                if isnan(g(j)) || isnan(s(j))
+                    g(j)=0; s(j)=0;
+                end
+                
+            end
+            if i==Update_Progress
+                Update_Progress=Update_Progress+FileInfo.Lines;
+                Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
+            end
+            i = i + 1;
+            j = j + 1;
         end
 
-        if h.MI.Phasor_Particles.Value>1 %%% Calculates single phasor for each particle
+        if UseParticles>1 %%% Calculates single phasor for each particle
            for i=1:size(Particles,1)
                Mean_LT_p = (sum(Particles(i,:).*(1:Bins))/sum(Particles(i,:)))*TAC/Bins-Ref_Mean;
                g_p = sum(G.*Particles(i,:))/sum(Particles(i,:));
@@ -5993,7 +5997,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
         
-        if h.MI.Phasor_Particles.Value>1
+        if UseParticles>1
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
         else
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
@@ -6006,7 +6010,7 @@ end
 Progress(1,h.Progress.Axes, h.Progress.Text,FileInfo.FileName{1});
 h.Progress.Text.String = FileInfo.FileName{1};
 h.Progress.Axes.Color=UserValues.Look.Control;
-toc
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
