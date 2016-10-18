@@ -1490,6 +1490,39 @@ addpath(genpath(['.' filesep 'functions']));
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.91 0.93 0.08 0.025]);
+    %%% Particle Detection Selection
+    h.MI.Phasor_Particles = uicontrol(...
+        'Parent',h.MI.Phasor_Panel,...
+        'Tag','MI_Phasor_Particles',...
+        'Style','popupmenu',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String',{'Use Individual Pixels','Use Particles+Pixels','Use Particles Only' },...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.885 0.30 0.025]);
+    %%% Text
+    h.Text{end+1} = uicontrol(...
+        'Parent',h.MI.Phasor_Panel,...
+        'Style','text',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String','Particle Threshold:',...
+        'Horizontalalignment','left',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.32 0.885 0.20 0.025]);
+    %%% Editbox for particle threshold
+    h.MI.Phasor_ParticleTH = uicontrol(...
+        'Parent',h.MI.Phasor_Panel,...
+        'Tag','MI_Phasor_ParticleTH',...
+        'Style','edit',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'String','150',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.52 0.885 0.08 0.025]);
     %%% Phasor referencing axes
     h.MI.Phasor_Axes = axes(...
         'Parent',h.MI.Phasor_Panel,...
@@ -1500,8 +1533,11 @@ addpath(genpath(['.' filesep 'functions']));
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'LineWidth', Look.AxWidth,...
-        'Position',[0.09 0.05 0.89 0.83],...
+        'Position',[0.09 0.05 0.89 0.73],...
         'Box','on');
+
+
+    
     h.MI.Phasor_Axes.XLabel.String='TAC channel';
     h.MI.Phasor_Axes.XLabel.Color=Look.Fore;
     h.MI.Phasor_Axes.YLabel.String='Counts';
@@ -4139,7 +4175,9 @@ end
 if ~isempty(e.Key)
     h.Progress.Text.String = FileInfo.FileName{1};
     h.Progress.Axes.Color=UserValues.Look.Control;
-    Update_to_UserValues; %%% Updates CorrTable and BurstGUI
+    if ~strfind(e.Key,'Export')
+        Update_to_UserValues; %%% Updates CorrTable and BurstGUI
+    end
     LSUserValues(1);
 end
 
@@ -4316,7 +4354,7 @@ if obj == h.MI.Channels_List
 
                 case 4 %%% Color was clicked
                     NewColor = uisetcolor;
-                    if NewColor == 0
+                    if size(NewColor) == 1
                         return;
                     end
                     UserValues.Detector.Color(Sel,:) = NewColor;
@@ -5718,6 +5756,7 @@ LSUserValues(1);
 %%% Function to calculate and save Phasor Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Phasor_Calc(~,~)
+tic
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
@@ -5735,6 +5774,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         UserValues.File.PhasorPath=PathName;
         LSUserValues(1);
 
+        %% Calculates reference
         Shift=h.MI.Phasor_Slider.Value;
         Bins = 4096; % To avoid errors of different Bins and reference size
         TAC=str2double(h.MI.Phasor_TAC.String)/FileInfo.MI_Bins*4096; % To always have the right TAC values independently of the number of bins.
@@ -5768,8 +5808,9 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if (g_inst<0 || s_inst<0)
             Fi_inst=Fi_inst+pi;
         end
-
-        %Extract Macrotimes
+        
+       %% Extracts and reorganizes macrotimes
+       
         Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
 
         if isfield(FileInfo, 'LineStart')
@@ -5783,26 +5824,59 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
 
         else% Data without interlines, for example Fabsurf data
             %%% Calculates Pixel vector
+            
+            if numel(FileInfo.LineTimes) == 1
+                %%% Point measurement, split up according to bins set for FCS analyis
+                FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
+                FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
+            end
+
             Pixeltimes=0;
             for j=1:FileInfo.Lines
                 Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
             end
             hisbins = Pixeltimes.*FileInfo.ClockPeriod;
+            hisbins(2)=hisbins(2)+hisbins(1);
+            hisbins(1)=[];
         end
 
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         Intensity= histc(Photons,hisbins);
-
-        if numel(FileInfo.LineTimes) == 1
-            %%% Point measurement, split up according to bins set for FCS analyis
-            FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
-            FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
-        end
-
-        Intensity = Intensity(1:end-1);
+        
+        if isfield(FileInfo, 'LineStart') % Files with interline data such as PTU
+            allframes = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
+            PamMeta.Phasor_Int = rot90(sum(allframes,3),2);
+            Frames=FileInfo.NoF;
+            Intensity = imageseries; %Output of the function PTU_Image. 3D matrix of pix*pix*frame
+            Intensity = fliplr(rot90(sum(Intensity,3),3)); % 2D matrix of the sum matrices above
+        else % Files withourt interline data
+            PamMeta.Phasor_Int=flip(reshape(Intensity,[FileInfo.Lines,FileInfo.Lines])',1);
+            Frames=FileInfo.NumberOfFiles;
+            Intensity=reshape(Intensity,[FileInfo.Lines,FileInfo.Lines]);
+            Intensity=flip(Intensity',1);
+        end      
         clear Photons
-        Pixel=[1;cumsum(Intensity)];
+        
+        %%% Assignes Pixels to Particles if enabled
+        if h.MI.Phasor_Particles.Value>1
+            BitImage = (Intensity>str2double(h.MI.Phasor_ParticleTH.String));
+            Regions = regionprops(BitImage,Intensity,'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
+            
+            ParticleIndex = [];
+            ParticleNumber = [];
+            for i=1:numel(Regions)
+               ParticleIndex((end+1):(end+numel(Regions(i).PixelIdxList)))= Regions(i).PixelIdxList;
+               ParticleNumber((end+1):(end+numel(Regions(i).PixelIdxList))) = i;
+               Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
+            end
+            [ParticleIndex,i] = sort(ParticleIndex);
+            ParticleNumber = ParticleNumber(i);
+            Particles =  zeros(numel(Regions),Bins);
+        end
+            
+        
+        Pixel=[1;cumsum(Intensity(:))];
         Pixel(Pixel==0)=1;
 
         %%% Sorts Microtimes
@@ -5810,13 +5884,13 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Photons=Photons(Index);
         clear Index
 
+        %% Calculates pixel by pixel phasors
         G(1:Bins) = cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
         S(1:Bins) = sin((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
         g = zeros(FileInfo.Lines);
         s = zeros(FileInfo.Lines);
         Mean_LT = zeros(FileInfo.Lines);
         FLIM = zeros(1,Bins);
-        flim = FLIM;
 
         if isfield(FileInfo, 'LineStart')
             a = 1; % Counter for interline bins in the vector Pixel
@@ -5826,19 +5900,30 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         i = 1; % Counter for all "Pixel" bins
         j = 1; % Counter for number of actual pixel bins in "Pixel"
+        k = 1; % Counter for Particle pixels
+
         while i<(numel(Pixel)-1)
             if i == (FileInfo.Lines + 1)*a + 1
                 % skip those photons belonging to an interline bin
                 i = i + 1;
                 a = a + 1;
             else
-                FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
-                flim=flim+FLIM;
-                Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
-                g(j)=sum(G.*FLIM)/sum(FLIM);
-                s(j)=sum(S.*FLIM)/sum(FLIM);
-                if isnan(g(j)) || isnan(s(j))
-                    g(j)=0; s(j)=0;
+                if h.MI.Phasor_Particles.Value>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
+                    Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1))';
+                    k = k + 1;
+                elseif h.MI.Phasor_Particles.Value==3 && (k>numel(ParticleIndex) || ParticleIndex(k)~=i) %%% Sets value to 0 if only particles are enabeled
+                    Mean_LT(j)=0;
+                    g(j)=0;
+                    s(j)=0;
+                else    %%% Calculates normal pixels
+                    FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
+                    Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
+                    g(j)=sum(G.*FLIM)/sum(FLIM);
+                    s(j)=sum(S.*FLIM)/sum(FLIM);
+                    if isnan(g(j)) || isnan(s(j))
+                        g(j)=0; s(j)=0;
+                    end
+
                 end
                 if mod(i,FileInfo.Lines)==0
                     Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
@@ -5848,13 +5933,29 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             end
         end
 
-        g=flip(g',1);s=flip(s',1);
+        if h.MI.Phasor_Particles.Value>1 %%% Calculates single phasor for each particle
+           for i=1:size(Particles,1)
+               Mean_LT_p = (sum(Particles(i,:).*(1:Bins))/sum(Particles(i,:)))*TAC/Bins-Ref_Mean;
+               g_p = sum(G.*Particles(i,:))/sum(Particles(i,:));
+               s_p = sum(S.*Particles(i,:))/sum(Particles(i,:));
+               if isnan(g_p) || isnan(s_p)
+                   g_p=0; s_p=0;
+               end
+               Mean_LT(ParticleIndex(ParticleNumber == i)) = Mean_LT_p;
+               g(ParticleIndex(ParticleNumber == i)) = g_p;
+               s(ParticleIndex(ParticleNumber == i)) = s_p;
+               Regions(i).Mean_LT=Mean_LT_p;
+               Regions(i).g=g_p;
+               Regions(i).s=s_p;
+           end
+            
+        end
 
         neg=find(g<0 & s<0);
         g(neg)=-g(neg);
         s(neg)=-s(neg);
 
-
+        %% Saves data
         %%% Calculates additional data
         PamMeta.Fi=atan(s./g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
         PamMeta.M=sqrt(s.^2+g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
@@ -5862,8 +5963,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.TauM=real(sqrt((1./(s.^2+g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
         PamMeta.g=g;
         PamMeta.s=s;
-
-
+              
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
         FileNames=FileInfo.FileName;
@@ -5875,30 +5975,21 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauP=PamMeta.TauP;
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
-
-
-        if isfield(FileInfo, 'LineStart') % Files with interline data such as PTU
-            allframes = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
-            PamMeta.Phasor_Int = rot90(sum(allframes,3),2);
-            Frames=FileInfo.NoF;
-            Intensity = imageseries; %Output of the function PTU_Image. 3D matrix of pix*pix*frame
-            Intensity = fliplr(rot90(sum(Intensity,3),3)); % 2D matrix of the sum matrices above
-        else % Files withourt interline data
-            PamMeta.Phasor_Int=flip(reshape(Intensity,[FileInfo.Lines,FileInfo.Lines])',1);
-            Frames=FileInfo.NumberOfFiles;
-            Intensity=reshape(Intensity,[Lines,Lines]);
-            Intensity=flip(Intensity',1);
+        
+        if h.MI.Phasor_Particles.Value>1
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
+        else
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
         end
 
-        save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
-
-        h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
+=        h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
     end
 
 end
-
+Progress(1,h.Progress.Axes, h.Progress.Text,FileInfo.FileName{1});
 h.Progress.Text.String = FileInfo.FileName{1};
 h.Progress.Axes.Color=UserValues.Look.Control;
+toc
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
