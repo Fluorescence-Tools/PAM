@@ -325,6 +325,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Use_Lifetime was incomplete');
     end
     P.Settings.Pam.Use_Lifetime = S.Settings.Pam.Use_Lifetime;
+    %%% Checks, if Pam.ToggleTACTime subfield exists
+    if ~isfield (S.Settings.Pam, 'ToggleTACTime')
+        S.Settings.Pam.ToggleTACTime=0;
+        disp('UserValues.Settings.Pam.ToggleTACTime was incomplete');
+    end
+    P.Settings.Pam.ToggleTACTime = S.Settings.Pam.ToggleTACTime;
     %%% Checks, if Pam.MT_Binning subfield exists
     if ~isfield (S.Settings.Pam, 'MT_Binning')
         S.Settings.Pam.MT_Binning=10;

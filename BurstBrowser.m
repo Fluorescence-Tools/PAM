@@ -4276,6 +4276,12 @@ for i = 1:numel(FileName)
     if isfield(S,'Corrections')
         S.BurstData.Corrections = S.Corrections;
     end
+    if isfield(S,'FitCut')
+        S.BurstData.FitCut = S.FitCut;
+    end
+    if isfield(S,'ArbitraryCut')
+        S.BurstData.ArbitraryCut = S.ArbitraryCut;
+    end
     %%% initialize DataCut
     S.BurstData.DataCut = S.BurstData.DataArray;
     %%% transfer to Global BurstData Structure holding all loaded files
@@ -10399,11 +10405,19 @@ if all(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'bur')) 
         SpeciesNames = BurstData{i}.SpeciesNames;
         SelectedSpecies = BurstData{i}.SelectedSpecies;
         Background = BurstData{i}.Background;
-        Corrections = BurstData{i}.Corrections;
+        Corrections = BurstData{i}.Corrections; 
         %%% New: Cuts stored in Additional Variables (first happens when
         %%% saved in BurstBrowser)
         save(filename{i},'Cut','SpeciesNames','SelectedSpecies',...
             'Background','Corrections','-append');
+        if isfield(BurstData{i},'FitCut')
+            FitCut = BurstData{i}.FitCut;
+            save(filename{i},'FitCut','-append');
+        end
+        if isfield(BurstData{i},'ArbitraryCut')
+            ArbitraryCut = BurstData{i}.ArbitraryCut;
+            save(filename{i},'ArbitraryCut','-append');
+        end
         Progress(i/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Saving...');
     end
 elseif any(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'kba')) % kba files loaded, convert to bur
