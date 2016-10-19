@@ -11706,9 +11706,9 @@ switch mode
             % transfer to global array
             PhotonStream{file}.start = S.PhotonStream.start;
             PhotonStream{file}.stop = S.PhotonStream.stop;
-            PhotonStream{file}.Macrotime = S.PhotonStream.Macrotime;
-            PhotonStream{file}.Microtime = S.PhotonStream.Microtime;
-            PhotonStream{file}.Channel = S.PhotonStream.Channel;
+            PhotonStream{file}.Macrotime = double(S.PhotonStream.Macrotime);
+            PhotonStream{file}.Microtime = double(S.PhotonStream.Microtime);
+            PhotonStream{file}.Channel = double(S.PhotonStream.Channel);
         end
         %%% Enable CorrelateWindow Button
         %h.CorrelateWindow_Button.Enable = 'on';
@@ -11727,9 +11727,9 @@ switch mode
             %%% Store the correct Path in BurstData
             BurstData{file}.FileName = [FileName(1:end-3) 'bur'];
         end
-        BurstTCSPCData{file}.Macrotime = Macrotime;
-        BurstTCSPCData{file}.Microtime = Microtime;
-        BurstTCSPCData{file}.Channel = Channel;
+        BurstTCSPCData{file}.Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);;
+        BurstTCSPCData{file}.Microtime = cellfun(@double,Microtime,'UniformOutput',false);
+        BurstTCSPCData{file}.Channel = cellfun(@double,Channel,'UniformOutput',false);
         clear Macrotime Microtime Channel
 end
 h.Progress_Text.String = prev_string;

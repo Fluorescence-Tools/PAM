@@ -6946,10 +6946,11 @@ save_burst_info(BurstData);
 %%% that can be loaded at a later timepoint
 PhotonsFileName = [BurstFileName(1:end-3) 'bps']; %%% .bps is burst-photon-stream
 %PhotonsFileName = GenerateName(PhotonsFileName, 1);
-%Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
-%Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
-%Channel = cellfun(@uint8,Channel,'UniformOutput',false);
-save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7.3');
+Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
+Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
+Channel = cellfun(@uint8,Channel,'UniformOutput',false);
+save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7');
+
 %%% Save the whole photon stream for fFCS with Donor-Only inclusion or
 %%% purified FCS (inclusion of time window around burst)
 if UserValues.BurstSearch.SaveTotalPhotonStream
@@ -6957,9 +6958,9 @@ if UserValues.BurstSearch.SaveTotalPhotonStream
     PhotonsFileName = GenerateName(PhotonsFileName, 1);
     PhotonStream.start = start_all;
     PhotonStream.stop = stop_all;
-    PhotonStream.Macrotime = Macrotime_all;
-    PhotonStream.Microtime = Microtime_all;
-    PhotonStream.Channel = Channel_all;
+    PhotonStream.Macrotime = uint64(Macrotime_all);
+    PhotonStream.Microtime = uint16(Microtime_all);
+    PhotonStream.Channel = uint8(Channel_all);
     save(PhotonsFileName,'PhotonStream','-v7.3');
 end
 
