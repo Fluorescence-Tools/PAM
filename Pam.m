@@ -6953,7 +6953,7 @@ save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7.3');
 %%% Save the whole photon stream for fFCS with Donor-Only inclusion or
 %%% purified FCS (inclusion of time window around burst)
 if UserValues.BurstSearch.SaveTotalPhotonStream
-    PhotonsFileName = [FullFileName '.aps']; %%% .bps is all-photon-stream
+    PhotonsFileName = [FullFileName '.aps']; %%% .aps is all-photon-stream
     PhotonsFileName = GenerateName(PhotonsFileName, 1);
     PhotonStream.start = start_all;
     PhotonStream.stop = stop_all;

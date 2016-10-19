@@ -784,14 +784,27 @@ switch (Type)
         FileInfo.NoF = 1;
         
         %%% Initializes microtime and macotime arrays
-%         if strcmp(UserValues.Detector.Auto,'off')
-            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-%         else
-%             TcspcData.MT=cell(10,10); %%% default to 10 channels
-%             TcspcData.MI=cell(10,10); %%% default to 10 channels
-%         end
-        
+        if strcmp(UserValues.Detector.Auto,'off')
+           TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+           TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
+        %%% Checks, which detectors to load
+        if strcmp(UserValues.Detector.Auto,'off')
+            card = unique(UserValues.Detector.Det);
+        else
+            card = 1:10; %%% consider up to 10 detection channels
+        end
+        %%% check for disabled detectors
+        for j = card
+            if sum(UserValues.Detector.Det==j) > 0
+                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                    card(card==j) = [];
+                end
+            end
+        end
         %%% Reads all selected files
         for i=1:numel(FileName)
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
@@ -828,7 +841,23 @@ switch (Type)
             %%% Concaternates data to previous files and adds Imagetime
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
-                for j = 1:size(MT,1)
+                for j = card
+                    %%% Finds, which routing bits to use
+                    if strcmp(UserValues.Detector.Auto,'off')
+                        Rout=unique(UserValues.Detector.Rout(UserValues.Detector.Det))';
+                    else
+                        Rout = 1:10; %%% consider up to 10 routing channels
+                    end
+                    Rout(Rout>size(MI,2))=[];
+
+                    %%% check for disabled routing bits
+                    for r = Rout
+                        if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
+                            if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                                Rout(Rout==r) = [];
+                            end
+                        end
+                    end
                     for k=Rout
                         TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];
                         MT{j,k}=[];
