@@ -6902,15 +6902,15 @@ pathstr = [pathstr filesep FileName];
 %%% The Naming follows the Abbreviation for the BurstSearch Method.
 switch BAMethod
     case 1
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CMFD']);
+        FullFileName = fullfile(pathstr, [FileName '_APBS_2CMFD']);
     case 2
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'DCBS_2CMFD']);
+        FullFileName = fullfile(pathstr, [FileName '_DCBS_2CMFD']);
     case 3
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_3CMFD']);
+        FullFileName = fullfile(pathstr, [FileName '_APBS_3CMFD']);
     case 4
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'TCBS_3CMFD']);
+        FullFileName = fullfile(pathstr, [FileName '_TCBS_3CMFD']);
     case 5
-        FullFileName = fullfile(pathstr, [FileName(1:end-2) 'APBS_2CnoMFD']);
+        FullFileName = fullfile(pathstr, [FileName '_APBS_2CnoMFD']);
 end
 
 %%% add the used parameters also to the filename
