@@ -1914,7 +1914,7 @@ addpath(genpath(['.' filesep 'functions']));
         'String','10',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.36 0.92 0.1 0.06]);
+        'Position',[0.28 0.92 0.1 0.06]);
     %%% Text
     h.Text{end+1} = uicontrol(...
         'Parent',h.MT.Settings_Panel,...
@@ -2622,6 +2622,21 @@ addpath(genpath(['.' filesep 'functions']));
         'Tooltipstring', ['<html>',...
             'Number of consecutive frames per slice,<br>',...
             'e.g 3 frames for each different Z-Position']);
+    %%% Button to add files to the database
+    h.Export.MicrotimePattern = uicontrol(...
+        'Parent',h.Export.Panel,...
+        'Tag','Export_MicrotimePattern_Button',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String','Export Microtime Histogram',...
+        'Callback',{@Export_Database,6},...
+        'Position',[0.62 0.08 0.3 0.07],...
+        'enable', 'off',...
+        'UserData',0,...
+        'Tooltipstring', 'Export microtime pattern of selected PIE channels',...
+        'Visible','on');
     %% Profiles tab
     h.Profiles.Tab= uitab(...
         'Parent',h.Var_Tab,...
@@ -3029,7 +3044,7 @@ if any(mode == 0)
         for i=Detector
             %%% Checks, if the appropriate channel is loaded
             if all(size(TcspcData.MI)>=[UserValues.Detector.Det(i),UserValues.Detector.Rout(i)]) && ~isempty(TcspcData.MI{UserValues.Detector.Det(i),UserValues.Detector.Rout(i)})
-                PamMeta.MI_Hist{i}=histc(TcspcData.MI{UserValues.Detector.Det(i),UserValues.Detector.Rout(i)},0:(FileInfo.MI_Bins-1));
+                PamMeta.MI_Hist{i}=histc(TcspcData.MI{UserValues.Detector.Det(i),UserValues.Detector.Rout(i)},1:FileInfo.MI_Bins);
             else
                 PamMeta.MI_Hist{i}=zeros(FileInfo.MI_Bins,1);
             end
@@ -7950,7 +7965,7 @@ switch obj
             if isempty(UserValues.PIE.Combined{i})
                 det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)) );
                 UserValues.PIE.IRF{i} = PamMeta.MI_Hist{det(1)}';
-                %UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+                %UserValues.PIE.IRF{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 1:FileInfo.MI_Bins))';
             end
         end
         h.MI.IRF.Checked = 'on';
@@ -7973,7 +7988,7 @@ switch obj
             %%% Update IRF of selected channel
             det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)) );
             UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{det(1)}';
-            %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 0:(FileInfo.MI_Bins-1)))';
+            %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 1:FileInfo.MI_Bins))';
         else
             uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
             return
@@ -7996,7 +8011,7 @@ switch obj
             if isempty(UserValues.PIE.Combined{i})
                 det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)) );
                 UserValues.PIE.ScatterPattern{i} = PamMeta.MI_Hist{det(1)}';
-                %UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 0:(FileInfo.MI_Bins-1)))';
+                %UserValues.PIE.ScatterPattern{i} = (histc( TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}, 1:FileInfo.MI_Bins))';
             end
         end
 
@@ -9110,6 +9125,7 @@ switch mode
 
             h.Export.TIFF.Enable = 'on';
             h.Export.Save.Enable = 'on';
+            h.Export.MicrotimePattern.Enable = 'on';
         end
     case 2 %% Delete files from database
         %remove rows from list
@@ -9120,6 +9136,7 @@ switch mode
         if numel(h.Export.List.String)<1
             h.Export.TIFF.Enable = 'off';
             h.Export.Save.Enable = 'off';
+            h.Export.MicrotimePattern.Enable = 'off';
         end
     case 3 %% Load database
         [FileName, Path] = uigetfile({'*.edb', 'Export Database file'}, 'Choose export database to load',UserValues.File.Path,'MultiSelect', 'off');
@@ -9132,6 +9149,7 @@ switch mode
         clear s;
         h.Export.TIFF.Enable = 'on';
         h.Export.Save.Enable = 'on';
+        h.Export.MicrotimePattern.Enable = 'on';
     case 4 %% Save complete database
         [File, Path] = uiputfile({'*.edb', 'Database file'}, 'Save export database', UserValues.File.Path);
         if all(File==0)
@@ -9159,6 +9177,47 @@ switch mode
             pause(0.01)
             if h.Export.TIFF.UserData == 0
                 h.Export.TIFF.String = 'Export TIFFs';
+                h.Progress.Text.String = FileInfo.FileName{1};
+                h.Progress.Axes.Color=UserValues.Look.Control;
+                return
+            end
+            try
+                % Path is unique per file in the database, so we have to store
+                % it globally in UserValues each time
+                UserValues.File.Path = PamMeta.Export{i,2};
+                LSUserValues(1);
+                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
+                    PamMeta.Export{i,1},...   %file
+                    PamMeta.Export{i,3});     %type
+                Pam_Export([],event,Sel,1)
+                % set filename color to green
+                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            catch
+                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            end
+            h.Progress.Text.String = FileInfo.FileName{1};
+            h.Progress.Axes.Color = UserValues.Look.Control;
+        end
+        h.Export.TIFF.UserData = 0;
+        h.Export.TIFF.String = 'Export TIFFs';
+    case 6 %%% Export PIE channels as microtime histograms to *.txt file
+        if h.Export.MicrotimePattern.UserData == 0
+            h.Export.MicrotimePattern.UserData = 1;
+            h.Export.MicrotimePattern.String = 'Stop';
+        elseif h.Export.MicrotimePattern.UserData == 1
+            h.Export.MicrotimePattern.UserData = 0;
+        end
+        Sel = find(h.Export.PIE.Data);
+        if numel(Sel)==0
+            return;
+        elseif size(Sel,1)>1
+            Sel=Sel';
+        end
+        event.Key = 'Export_MicrotimePattern';
+        for i = h.Export.List.Value
+            pause(0.01)
+            if h.Export.MicrotimePattern.UserData == 0
+                h.Export.MicrotimePattern.String = 'Export Microtime Histogram';
                 h.Progress.Text.String = FileInfo.FileName{1};
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 return
@@ -9470,6 +9529,41 @@ switch e.Key
             end
         end
         Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
+    case 'Export_MicrotimePattern'
+        %%% Read out Photons and Histogram
+        %%% store in format:
+        %%% channel
+        %%% Decay IRF scatter
+        microtimeHistograms = zeros(FileInfo.MI_Bins,3*numel(Sel));
+        for i = 1:numel(Sel)
+            MI = histc( TcspcData.MI{UserValues.PIE.Detector(Sel(i)),UserValues.PIE.Router(Sel(i))},...
+                1:FileInfo.MI_Bins);
+            PIErange = max([UserValues.PIE.From(Sel(i)),1]):min([UserValues.PIE.To(Sel(i)) numel(MI)]);
+            microtimeHistograms(PIErange,3*(i-1)+1) = MI(PIErange);
+            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.IRF{Sel(i)};
+            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.ScatterPattern{Sel(i)};
+        end
+        %%% create filename
+        [~,fileName,~] = fileparts(FileInfo.FileName{1});
+        for i = 1:numel(Sel)
+            fileName = [fileName '_' UserValues.PIE.Name{Sel(i)}];
+        end
+        fileName = [fileName '.dec'];
+        fid = fopen(fullfile(FileInfo.Path,fileName),'w');
+        %%% write header
+        %%% general info
+        fprintf(fid,'TAC range [ns]:\t\t %.2f\nMicrotime Bins:\t\t %d\nResolution [ps]:\t %.2f\n\n',1E9*FileInfo.TACRange,FileInfo.MI_Bins,1E12*FileInfo.TACRange/FileInfo.MI_Bins);
+        %%% PIE channel names
+        for i = 1:numel(Sel)
+            fprintf(fid,'%s\t\t\t',UserValues.PIE.Name{Sel(i)});
+        end
+        fprintf(fid,'\n');
+        for i = 1:numel(Sel)
+            fprintf(fid,'%s\t%s\t%s\t','Decay','IRF','Scatter');
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

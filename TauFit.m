@@ -53,6 +53,9 @@ toolbar_items = findall(toolbar);
 delete(toolbar_items([2:7 9 13:17]));
     
 %%% menu
+h.Menu.File = uimenu(h.TauFit,'Label','File');
+h.Menu.OpenDecayData = uimenu(h.Menu.File,'Label','Load decay data (*.dec)',...
+    'Callback',@Load_Data);
 h.Menu.Export_Menu = uimenu(h.TauFit,'Label','Export...');
 h.Menu.Save_To_Txt = uimenu(h.Menu.Export_Menu,'Label','Save Data to *.txt',...
     'Callback',@Export);

@@ -94,7 +94,7 @@ switch (Type)
         FileInfo.MI_Bins=4096;
         FileInfo.ImageTime=FileInfo.Fabsurf.Imagetime/1000;
         FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
-        FileInfo.TACRange = FileInfo.SyncPeriod;
+        FileInfo.TACRange = 40E-9;
         FileInfo.ClockPeriod=FileInfo.SyncPeriod; %this is not true if a SPC-630 card is used!
         FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
         FileInfo.LineTimes=zeros(FileInfo.Lines+1,numel(FileName));
