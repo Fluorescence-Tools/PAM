@@ -2181,6 +2181,11 @@ addpath(genpath(['.' filesep 'functions']));
         'Label','...image (as .tiff)',...
         'Tag','PIE_Export_Image_Tiff',...
         'Callback',@PIE_List_Functions);
+    h.PIE.Export_MicrotimePattern = uimenu(...
+        'Parent',h.PIE.Export,...
+        'Label','...microtime pattern (as .dec)',...
+        'Tag','PIE_Export_MicrotimePattern',...
+        'Callback',@PIE_List_Functions);
     %%% PIE Channel list
     h.PIE.List = uicontrol(...
         'Parent',h.PIE.Panel,...
@@ -4040,6 +4045,8 @@ if ~strcmp(ed.EventName,'KeyPress')
         e.Key='Export_Image_File';
     elseif obj == h.PIE.Export_Image_Tiff
         e.Key='Export_Image_Tiff';
+    elseif obj == h.PIE.Export_MicrotimePattern
+         e.Key='Export_MicrotimePattern';
     elseif obj == h.PIE.Combine
         e.Key='Combine';
     elseif obj == h.PIE.Select
@@ -4222,7 +4229,8 @@ switch e.Key
            'Export_Raw_File',... %%% Exports macrotime and microtime as a cell for each PIE channelPam_Export([],e,Sel);
            'Export_Image_Total',... %%% Plots image and exports it into workspace
            'Export_Image_File',... %%% Exports image stack into workspace
-           'Export_Image_Tiff'} %%% Exports image stack into workspace
+           'Export_Image_Tiff',...
+           'Export_MicrotimePattern'} %%% Exports image stack into workspace
        Pam_Export([],e,Sel);
     case 'Combine' %%% Generates a combined PIE channel from existing PIE channels
         %%% Does not combine single
@@ -9527,9 +9535,12 @@ switch e.Key
                    end
                 end
             end
+            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
-        Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
     case 'Export_MicrotimePattern'
+        h.Progress.Text.String = 'Exporting';
+        h.Progress.Axes.Color=[1 0 0];
+        drawnow;
         %%% Read out Photons and Histogram
         %%% store in format:
         %%% channel
@@ -9542,6 +9553,7 @@ switch e.Key
             microtimeHistograms(PIErange,3*(i-1)+1) = MI(PIErange);
             microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.IRF{Sel(i)};
             microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.ScatterPattern{Sel(i)};
+            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         %%% create filename
         [~,fileName,~] = fileparts(FileInfo.FileName{1});
@@ -9564,6 +9576,7 @@ switch e.Key
         fprintf(fid,'\n');
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
+        Progress(1,h.Progress.Axes,h.Progress.Text);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
