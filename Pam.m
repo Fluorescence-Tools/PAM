@@ -3404,6 +3404,8 @@ end
 
 
 %% PIE List update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Updates DetectectionChannel List
+h.PIE.DetectionChannel.String = color_string(UserValues.Detector.Name,UserValues.Detector.Color);
 %%% Uses HTML to set color of each channel to selected color
 List=cell(numel(UserValues.PIE.Name),1);
 for i=1:numel(List)

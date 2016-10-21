@@ -9389,8 +9389,8 @@ for chan = 1:size(c,2)
     MI_perp = MI_total(CH_total == c{chan}(2));
     
     %%% Calculate the histograms
-    MI_par = histc(MI_par,0:(BurstData{file}.FileInfo.MI_Bins-1));
-    MI_perp = histc(MI_perp,0:(BurstData{file}.FileInfo.MI_Bins-1));
+    MI_par = histc(MI_par,1:BurstData{file}.FileInfo.MI_Bins);
+    MI_perp = histc(MI_perp,1:BurstData{file}.FileInfo.MI_Bins);
     TauFitData.hMI_Par{chan} = MI_par(BurstData{file}.PIE.From(c{chan}(1)):min([BurstData{file}.PIE.To(c{chan}(1)) end]));
     TauFitData.hMI_Per{chan} = MI_perp(BurstData{file}.PIE.From(c{chan}(2)):min([BurstData{file}.PIE.To(c{chan}(2)) end]));
     
@@ -11999,6 +11999,24 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
+        if strcmp(axes_copy.Children(8).Visible,'on') %% Multiplot is used (first stair plot is visible)
+            %%% delete all invisible plots
+            del = false(numel(axes_copy.Children),1);
+            for i = 1:numel(axes_copy.Children);
+                if strcmp(axes_copy.Children(i).Visible, 'off')
+                    del(i) = true;
+                end
+            end
+            delete(axes_copy.Children(del));
+            legend('show');
+            hl = hfig.Children(1);
+            
+            hfig.Units = 'pixel';
+            axes_copy.Units = 'pixel';
+            hl.Units = 'pixel';
+            hfig.Position(4) = hfig.Position(4) + 75;
+            hl.Position(2) =  hl.Position(2)+75;
+        end
     case h.Export1DY_Menu
         AspectRatio = 0.7;
         pos = [100,100, round(1.2*size_pixels),round(1.2*size_pixels*AspectRatio)];
@@ -12037,6 +12055,25 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
+        
+        if strcmp(axes_copy.Children(8).Visible,'on') %% Multiplot is used (first stair plot is visible)
+            %%% delete all invisible plots
+            del = false(numel(axes_copy.Children),1);
+            for i = 1:numel(axes_copy.Children);
+                if strcmp(axes_copy.Children(i).Visible, 'off')
+                    del(i) = true;
+                end
+            end
+            delete(axes_copy.Children(del));
+            legend('show');
+            hl = hfig.Children(1);
+            
+            hfig.Units = 'pixel';
+            axes_copy.Units = 'pixel';
+            hl.Units = 'pixel';
+            hfig.Position(4) = hfig.Position(4) + 75;
+            hl.Position(2) =  hl.Position(2)+75;
+        end
     case h.Export2D_Menu
         AspectRatio = 1;
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];

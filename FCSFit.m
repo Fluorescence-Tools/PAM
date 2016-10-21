@@ -1774,7 +1774,7 @@ switch mode
                 for i=1:numel(LegendString)
                     LegendString{i} = LegendString{i}(7:end);
                 end
-                H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:2),LegendString,'Interpreter','none');
+                H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
             end
         end
         H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);          
