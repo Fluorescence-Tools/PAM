@@ -7,6 +7,7 @@ if nargin < 1 && isempty(gcbo)
     Close_TauFit
     disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     return;
+    %TauFitData.Who = 'External';
 end
 
 if ~isempty(h.TauFit)
@@ -679,8 +680,8 @@ if exist('ph','var')
                     'Units','normalized',...
                     'BackgroundColor', Look.Control,...
                     'ForegroundColor', Look.Fore,...
-                    'Position',[0.05 0.55 0.3 0.12],...
-                    'String','Load Data',...
+                    'Position',[0.05 0.55 0.4 0.12],...
+                    'String','Import Data from PAM',...
                     'Callback',@Load_Data);
                 %%% Button to start fitting
                 h.Fit_Button = uicontrol(...
@@ -1274,7 +1275,7 @@ guidata(gcf,h);
 
 % If data is ready to be displayed, display it
 % (user sent data from burstbrowser or wants to do a burstwise fitting)
-if ~strcmp(TauFitData.Who, 'TauFit')
+if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     Update_Plots(obj)
 end
 
@@ -1343,32 +1344,89 @@ global UserValues TauFitData FileInfo TcspcData PamMeta
 h = guidata(findobj('Tag','TauFit'));
 
 %%% check how we got here
-if obj == h.Menu.OpenDecayData
-    %%% called upon loading of text-based *.dec file
-    %%% load file
-    [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...','Multiselect','off');
-    if FilterIndex == 0
-        return;
+if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
+    if obj == h.Menu.OpenDecayData
+        %%% called upon loading of text-based *.dec file
+        %%% load file
+        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','off');
+        if FilterIndex == 0
+            return;
+        end
+        UserValues.File.TauFitPath = PathName;
+        
+        decay_data = dlmread(fullfile(PathName,FileName),'\t',6,0);
+        %%% read other data
+        fid = fopen(fullfile(PathName,FileName),'r');
+        TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
+        MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
+        TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+        fid = fopen(fullfile(PathName,FileName),'r');
+        for i = 1:5
+            line = fgetl(fid);
+        end
+        PIEchans = strsplit(line,'\t');
+        PIEchans(cellfun(@isempty,PIEchans)) = [];
+        %%% sort data into TauFitData structure (MI,IRF,Scat)
+        for i = 1:(size(decay_data,2)/3)
+            TauFitData.External.MI_Hist{i} = decay_data(:,3*(i-1)+1);
+            TauFitData.External.IRF{i} = decay_data(:,3*(i-1)+2);
+            TauFitData.External.Scat{i} = decay_data(:,3*(i-1)+3);
+        end
+        %%% update PIE channel selection with available PIE channels
+        h.PIEChannelPar_Popupmenu.String = PIEchans;
+        h.PIEChannelPer_Popupmenu.String = PIEchans;
+        %%% show file name in GUI
+
+        %%% mark TauFit mode as external
+        TauFitData.Who = 'External';
+
+        if numel(PIEchans) == 1
+            PIEChannel_Par = 1; PIEChannel_Per = 1;
+        else
+            PIEChannel_Par = 1; PIEChannel_Per = 2;
+        end
+        h.PIEChannelPar_Popupmenu.Value = PIEChannel_Par;
+        h.PIEChannelPer_Popupmenu.Value = PIEChannel_Per;
+    elseif obj == h.LoadData_Button
+        PIEChannel_Par = h.PIEChannelPar_Popupmenu.Value;
+        PIEChannel_Per = h.PIEChannelPer_Popupmenu.Value;
     end
-    decay_data = dlmread(fullfile(PathName,FileName),'\t',6,0);
-    %%% read other data
-    fid = fopen(fullfile(PathName,FileName),'r');
-    TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
-    MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
-    TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
-    PIEchans = textscan(fid,'%s\t\t\t%s\t\t\t\n');
-    %%% sort data into TauFitData structure (MI,IRF,Scat)
-    for i = 1:(size(decay_data,2)/3)
-        TauFitData.External.MI_Hist{i} = decay_data(3*(i-1)+1,:);
-        TauFitData.External.IRF{i} = decay_data(3*(i-1)+2,:);
-        TauFitData.External.Scat{i} = decay_data(3*(i-1)+3,:);
+    %%% set the channel variable
+    chan = 4; TauFitData.chan = chan;
+    
+    %%% Microtime Histograms
+    TauFitData.hMI_Par{chan} = TauFitData.External.MI_Hist{PIEChannel_Par};
+    TauFitData.hMI_Per{chan} = TauFitData.External.MI_Hist{PIEChannel_Per};
+    
+    ToFromPar = find(TauFitData.hMI_Par{chan}>0,1,'first'):find(TauFitData.hMI_Par{chan}>0,1,'last');
+    ToFromPer = find(TauFitData.hMI_Per{chan}>0,1,'first'):find(TauFitData.hMI_Per{chan}>0,1,'last');
+    TauFitData.hMI_Par{chan} = TauFitData.hMI_Par{chan}(ToFromPar);
+    TauFitData.hMI_Per{chan} = TauFitData.hMI_Per{chan}(ToFromPer);
+    %%% Read out the Microtime Histograms of the IRF for the two channels
+    TauFitData.hIRF_Par{chan} = TauFitData.External.IRF{PIEChannel_Par}(ToFromPar)';
+    TauFitData.hIRF_Per{chan} = TauFitData.External.IRF{PIEChannel_Per}(ToFromPer)';
+    %%% Normalize IRF for better Visibility
+    TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
+    TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
+    %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
+    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar);
+    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer);
+    %%% Normalize Scatter for better Visibility
+    if ~(sum(TauFitData.hScat_Par{chan})==0)
+        TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
     end
-    %%% update PIE channel selection with available PIE channels
+    if ~(sum(TauFitData.hScat_Per{chan})==0)
+        TauFitData.hScat_Per{chan} = (TauFitData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
+    end
+    %%% Generate XData
+    TauFitData.XData_Par{chan} = ToFromPar - ToFromPar(1);
+    TauFitData.XData_Per{chan} = ToFromPer - ToFromPer(1);
     
-    %%% show file name in GUI
+    %%% Update PIEchannelSelection
+    UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+    UserValues.TauFit.PIEChannelSelection{2} = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
     
-    %%% mark TauFit mode as external
-    TauFitData.Who = 'External';
+    h.LoadData_Button.String = 'Plot Selection';
 else %%% clicked Load Data button, load from PAM
     % Load Data button was pressed
     % User called TauFit from Pam
@@ -1564,7 +1622,7 @@ if strcmp(TauFitData.Who, 'Burstwise')
 end
 
 % How did we get here?
-if ~strcmp(TauFitData.Who, 'TauFit')
+if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
@@ -1982,7 +2040,7 @@ global TauFitData UserValues
 TauFitData.FitType = obj.String{obj.Value};
 %%% Update FitTable
 h = guidata(obj);
-if ~strcmp(TauFitData.Who, 'TauFit')
+if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
@@ -2004,7 +2062,7 @@ end
 function Start_Fit(obj,~)
 global TauFitData UserValues
 h = guidata(findobj('Tag','TauFit'));
-if ~strcmp(TauFitData.Who, 'TauFit')
+if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
@@ -2035,8 +2093,11 @@ Conv_Type = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 % ScatterPer = circshift(ScatterPer,[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}]);
 % ScatterPattern = ScatterPar + 2*ScatterPer;
 ScatterPattern = h.Plots.Scat_Par.YData + 2*h.Plots.Scat_Per.YData;
-ScatterPattern = ScatterPattern'./sum(ScatterPattern);
-
+if ~(sum(ScatterPattern) == 0)
+    ScatterPattern = ScatterPattern'./sum(ScatterPattern);
+else
+    ScatterPattern = ScatterPattern';
+end
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
 IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
@@ -3026,8 +3087,8 @@ switch obj
             % unhide Result Aniso Plot
             h.Result_Plot_Aniso.Parent = h.TauFit_Panel;
             % change axes positions
-            h.Result_Plot.Position = [0.05 0.3 0.9 0.55];
-            h.Result_Plot_Aniso.Position = [0.05 0.075 0.9 0.15];
+            h.Result_Plot.Position = [0.075 0.3 0.9 0.55];
+            h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
             
             r_meas = (G*Decay_par-Decay_per)./(G*Decay_par+2*Decay_per);
             r_fit = (G*Fit_par-Fit_per)./(G*Fit_par+2*Fit_per);
@@ -3103,7 +3164,7 @@ switch obj
             h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
             
             %%% hide aniso plots
-            h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
+            h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
             h.Result_Plot_Aniso.Parent = h.HidePanel;
             
             IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
@@ -3209,7 +3270,7 @@ switch obj
         h.Result_Plot.YLabel.String = 'Anisotropy';
         
         %%% hide aniso plots
-        h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
+        h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
         h.Result_Plot_Aniso.Parent = h.HidePanel;
         
         % hide plots
@@ -3356,7 +3417,7 @@ switch obj
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
         
         %%% hide aniso plots
-        h.Result_Plot.Position = [0.05 0.075 0.9 0.775];
+        h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
         h.Result_Plot_Aniso.Parent = h.HidePanel;
         
         % hide plots
@@ -3384,7 +3445,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Fit done');
 function DetermineGFactor(obj,~)
 global TauFitData UserValues
 h = guidata(findobj('Tag','TauFit'));
-if ~strcmp(TauFitData.Who, 'TauFit')
+if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else

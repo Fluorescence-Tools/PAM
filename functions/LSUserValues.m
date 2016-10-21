@@ -240,7 +240,10 @@ if Mode==0 %%% Loads user values
         S.File.PhasorTIFFPath=pwd;
     end
     P.File.PhasorTIFFPath = S.File.PhasorTIFFPath;
-
+     if ~isfield(S.File, 'TauFitPath') || isempty(S.File.TauFitPath)  || ~ischar(S.File.TauFitPath) || ~exist(S.File.TauFitPath,'dir')
+        S.File.TauFitPath=pwd;
+    end
+    P.File.TauFitPath = S.File.TauFitPath;
 
     if ~isfield(S.File,'FCS_Standard')
         S.File.FCS_Standard=[];
