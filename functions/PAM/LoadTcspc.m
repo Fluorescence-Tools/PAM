@@ -484,7 +484,7 @@ switch (Type)
                 FileInfo.Resolution = Resolution;
             end
    
-            %%% Concaternates data to previous files and adds Imagetime
+            %%% Concatenates data to previous files and adds Imagetime
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
                 for j = card

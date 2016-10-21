@@ -321,8 +321,8 @@ end
 Progress(0.9/NumFiles,ProgressAxes,ProgressText,['Finishing up of File ' num2str(FileNumber) ' of ' num2str(NumFiles) '...']);
 
 % channel is 0-15, so assign between 1-16
-MT = cell(max(channel)+1,1);
-MI = cell(max(channel)+1,1);
+MT = cell(10,1);
+MI = cell(10,1);
 for i=unique(channel)'
     MT{i+1} = TimeTag(channel==i)';
     MI{i+1} = dtime(channel==i);

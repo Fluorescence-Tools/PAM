@@ -27,6 +27,9 @@ Macrotime = h5read(FileName,'/photon_data/timestamps');
 Microtime = h5read(FileName,'/photon_data/nanotimes');
 Channel = h5read(FileName,'/photon_data/detectors');
 
+MT = cell(10,1);
+MI = cell(10,1);
+
 %%% sort photon data into matlab cell arrays
 chan = unique(Channel);
 for i = 1:(max(chan)+1)

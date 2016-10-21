@@ -1341,122 +1341,152 @@ LSUserValues(1)
 function Load_Data(obj,~)
 global UserValues TauFitData FileInfo TcspcData PamMeta
 h = guidata(findobj('Tag','TauFit'));
-% Load Data button was pressed
-% User called TauFit from Pam
-try
-TauFitData.TACRange = FileInfo.TACRange; % in seconds
-catch %%% This occurs when user loads Fabsurf file from Waldi
-   % ask for TACrange, default is 40
-   TauFitData.TACRange = str2double(inputdlg({'TAC Range in ns:'},'Please provide the TAC Range',1,{'40'}));
-end
-TauFitData.MI_Bins = FileInfo.MI_Bins;
-if ~isfield(FileInfo,'Resolution')
-    % in nanoseconds/microtime bin
-    TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
-elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
-    TauFitData.TACChannelWidth = FileInfo.Resolution/1000;
-end
 
-TauFitData.FileName = fullfile(FileInfo.Path, FileInfo.FileName{1}); %only the first filename is stored!
-    
-%%% Cases to consider:
-%%% obj is empty or is Button for LoadData/LoadIRF
-%%% Data has been changed (PIE Channel changed, IRF loaded...)
-if isempty(obj) || obj == h.LoadData_Button
-    %%% find the number of the selected PIE channels
-    PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
-    PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
-    % compare PIE channel selection to burst search selections for
-    % consistency between burstwise/ensemble
-    % (String comparison does not require correct ordering of PIE channels)
-    if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
-        if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
-                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
-            chan = 1;
-        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,1)) &&...
-                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,2)))
-            chan = 2;
-        elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
-            %%% identical channels selected
-            chan = 5;
-        else %%% Set channel to 4 if no MFD channel was selected
-            chan = 4;
-        end
-    elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
-        if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
-                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
-            chan = 1;
-        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,1)) &&...
-                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,2)))
-            chan = 2;
-        elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,1)) &&...
-                strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,2)))
-            chan = 3;
-        elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
-            %%% identical channels selected
-            chan = 5;
-        else %%% Set channel to 4 if no MFD channel was selected
-            chan = 4;
-        end
+%%% check how we got here
+if obj == h.Menu.OpenDecayData
+    %%% called upon loading of text-based *.dec file
+    %%% load file
+    [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...','Multiselect','off');
+    if FilterIndex == 0
+        return;
     end
-    % old method:
-%     % PIE Channels have to be ordered correctly 
-%     if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
-%         if PIEChannel_Par+PIEChannel_Per == 3
-%             chan = 1;
-%         elseif PIEChannel_Par+PIEChannel_Per == 11
-%             chan = 2;
-%         else %%% Set channel to 4 if no MFD channel was selected
-%             chan = 4;
-%         end
-%     elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
-%         if PIEChannel_Par+PIEChannel_Per == 3
-%             chan = 1;
-%         elseif PIEChannel_Par+PIEChannel_Per == 15
-%             chan = 2;
-%         elseif PIEChannel_Par+PIEChannel_Per == 23
-%             chan = 3;
-%         else %%% Set channel to 4 if no MFD channel was selected
-%             chan = 4;
-%         end
-%     end
-    TauFitData.chan = chan;
-    %%% Read out Photons and Histogram
-%     MI_Par = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)},...
-%         0:(TauFitData.MI_Bins-1));
-%     MI_Per = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)},...
-%         0:(TauFitData.MI_Bins-1));
-%     %%% Compute the Microtime Histograms
-%     % the data will be assigned to the appropriate channel, such that the
-%     % slider values are universal between TauFit, Burstwise Taufit and Bulk Burst Taufit
-%     TauFitData.hMI_Par{chan} = MI_Par(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-%     TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
-
-    %%% find the detector of the parallel PIE channel (PamMeta.MI_Hist is defined using the "detectors" defined in PAM, so we need to map back)
-    detPar = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Par)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Par)));
-    detPer = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Per)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Per)));
-    %%% Microtime Histogram of Parallel Channel
-    TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{detPar(1)}(...
-        UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
-    %%% Microtime Histogram of Perpendicular Channel
-    TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{detPer(1)}(...
-        UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
+    decay_data = dlmread(fullfile(PathName,FileName),'\t',6,0);
+    %%% read other data
+    fid = fopen(fullfile(PathName,FileName),'r');
+    TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
+    MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
+    TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+    PIEchans = textscan(fid,'%s\t\t\t%s\t\t\t\n');
+    %%% sort data into TauFitData structure (MI,IRF,Scat)
+    for i = 1:(size(decay_data,2)/3)
+        TauFitData.External.MI_Hist{i} = decay_data(3*(i-1)+1,:);
+        TauFitData.External.IRF{i} = decay_data(3*(i-1)+2,:);
+        TauFitData.External.Scat{i} = decay_data(3*(i-1)+3,:);
+    end
+    %%% update PIE channel selection with available PIE channels
     
-    %%% Read out the Microtime Histograms of the IRF for the two channels
-    TauFitData.hIRF_Par{chan} = UserValues.PIE.IRF{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-    TauFitData.hIRF_Per{chan} = UserValues.PIE.IRF{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
-    %%% Normalize IRF for better Visibility
-    TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
-    TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
-    %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
-    TauFitData.hScat_Per{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
-    %%% Normalize Scatter for better Visibility
-    TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
-    TauFitData.hScat_Per{chan} = (TauFitData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
-    %%% Generate XData
-    TauFitData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
-    TauFitData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
+    %%% show file name in GUI
+    
+    %%% mark TauFit mode as external
+    TauFitData.Who = 'External';
+else %%% clicked Load Data button, load from PAM
+    % Load Data button was pressed
+    % User called TauFit from Pam
+    try
+    TauFitData.TACRange = FileInfo.TACRange; % in seconds
+    catch %%% This occurs when user loads Fabsurf file from Waldi
+       % ask for TACrange, default is 40
+       TauFitData.TACRange = str2double(inputdlg({'TAC Range in ns:'},'Please provide the TAC Range',1,{'40'}));
+    end
+    TauFitData.MI_Bins = FileInfo.MI_Bins;
+    if ~isfield(FileInfo,'Resolution')
+        % in nanoseconds/microtime bin
+        TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
+    elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
+        TauFitData.TACChannelWidth = FileInfo.Resolution/1000;
+    end
+
+    TauFitData.FileName = fullfile(FileInfo.Path, FileInfo.FileName{1}); %only the first filename is stored!
+
+    %%% Cases to consider:
+    %%% obj is empty or is Button for LoadData/LoadIRF
+    %%% Data has been changed (PIE Channel changed, IRF loaded...)
+    if isempty(obj) || obj == h.LoadData_Button
+        %%% find the number of the selected PIE channels
+        PIEChannel_Par = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
+        PIEChannel_Per = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
+        % compare PIE channel selection to burst search selections for
+        % consistency between burstwise/ensemble
+        % (String comparison does not require correct ordering of PIE channels)
+        if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
+            if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
+                    strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
+                chan = 1;
+            elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,1)) &&...
+                    strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(3,2)))
+                chan = 2;
+            elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
+                %%% identical channels selected
+                chan = 5;
+            else %%% Set channel to 4 if no MFD channel was selected
+                chan = 4;
+            end
+        elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
+            if (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,1)) &&...
+                    strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(1,2)))
+                chan = 1;
+            elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,1)) &&...
+                    strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(4,2)))
+                chan = 2;
+            elseif (strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,1)) &&...
+                    strcmp(UserValues.TauFit.PIEChannelSelection{2},UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method}(6,2)))
+                chan = 3;
+            elseif strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
+                %%% identical channels selected
+                chan = 5;
+            else %%% Set channel to 4 if no MFD channel was selected
+                chan = 4;
+            end
+        end
+        % old method:
+    %     % PIE Channels have to be ordered correctly 
+    %     if any(UserValues.BurstSearch.Method == [1,2]) %2color MFD
+    %         if PIEChannel_Par+PIEChannel_Per == 3
+    %             chan = 1;
+    %         elseif PIEChannel_Par+PIEChannel_Per == 11
+    %             chan = 2;
+    %         else %%% Set channel to 4 if no MFD channel was selected
+    %             chan = 4;
+    %         end
+    %     elseif any(UserValues.BurstSearch.Method== [3,4]) %3color MFD
+    %         if PIEChannel_Par+PIEChannel_Per == 3
+    %             chan = 1;
+    %         elseif PIEChannel_Par+PIEChannel_Per == 15
+    %             chan = 2;
+    %         elseif PIEChannel_Par+PIEChannel_Per == 23
+    %             chan = 3;
+    %         else %%% Set channel to 4 if no MFD channel was selected
+    %             chan = 4;
+    %         end
+    %     end
+        TauFitData.chan = chan;
+        %%% Read out Photons and Histogram
+    %     MI_Par = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Par),UserValues.PIE.Router(PIEChannel_Par)},...
+    %         0:(TauFitData.MI_Bins-1));
+    %     MI_Per = histc( TcspcData.MI{UserValues.PIE.Detector(PIEChannel_Per),UserValues.PIE.Router(PIEChannel_Per)},...
+    %         0:(TauFitData.MI_Bins-1));
+    %     %%% Compute the Microtime Histograms
+    %     % the data will be assigned to the appropriate channel, such that the
+    %     % slider values are universal between TauFit, Burstwise Taufit and Bulk Burst Taufit
+    %     TauFitData.hMI_Par{chan} = MI_Par(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+    %     TauFitData.hMI_Per{chan} = MI_Per(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+
+        %%% find the detector of the parallel PIE channel (PamMeta.MI_Hist is defined using the "detectors" defined in PAM, so we need to map back)
+        detPar = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Par)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Par)));
+        detPer = find( (UserValues.Detector.Det == UserValues.PIE.Detector(PIEChannel_Per)) & (UserValues.Detector.Rout == UserValues.PIE.Router(PIEChannel_Per)));
+        %%% Microtime Histogram of Parallel Channel
+        TauFitData.hMI_Par{chan} = PamMeta.MI_Hist{detPar(1)}(...
+            UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]) );
+        %%% Microtime Histogram of Perpendicular Channel
+        TauFitData.hMI_Per{chan} = PamMeta.MI_Hist{detPer(1)}(...
+            UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]) );
+
+        %%% Read out the Microtime Histograms of the IRF for the two channels
+        TauFitData.hIRF_Par{chan} = UserValues.PIE.IRF{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+        TauFitData.hIRF_Per{chan} = UserValues.PIE.IRF{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+        %%% Normalize IRF for better Visibility
+        TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
+        TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
+        %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
+        TauFitData.hScat_Par{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Par}(UserValues.PIE.From(PIEChannel_Par):min([UserValues.PIE.To(PIEChannel_Par) end]));
+        TauFitData.hScat_Per{chan} = UserValues.PIE.ScatterPattern{PIEChannel_Per}(UserValues.PIE.From(PIEChannel_Per):min([UserValues.PIE.To(PIEChannel_Per) end]));
+        %%% Normalize Scatter for better Visibility
+        TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
+        TauFitData.hScat_Per{chan} = (TauFitData.hScat_Per{chan}./max(TauFitData.hScat_Per{chan})).*max(TauFitData.hMI_Per{chan});
+        %%% Generate XData
+        TauFitData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
+        TauFitData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
+    end 
 end
 %%% disable some GUI elements of the same channel is used twice, i.e. no
 %%% polarized detection
