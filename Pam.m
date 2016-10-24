@@ -3186,12 +3186,41 @@ for  i=find(UserValues.PIE.Detector==0)
     PamMeta.Image{i}=zeros(FileInfo.Lines);
     PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
     PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
+    PamMeta.PCH{i}=zeros(max(cellfun(@numel,PamMeta.BinsPCH(UserValues.PIE.Combined{i}))),1);
+    PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
     PamMeta.Info{i}(1:4,1)=0;
+    if UserValues.Settings.Pam.Use_PCH
+        TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
+        trace_ms = zeros(numel(TimeBinsPCH),1);
+    end
     for j=UserValues.PIE.Combined{i}
-        PamMeta.Image{i}=PamMeta.Image{i}+PamMeta.Image{j};
-        PamMeta.Lifetime{i}=PamMeta.Lifetime{i}+PamMeta.Lifetime{j};
-        PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
+        if UserValues.Settings.Pam.Use_Image
+            PamMeta.Image{i}=PamMeta.Image{i}+PamMeta.Image{j};
+            if UserValues.Settings.Pam.Use_Lifetime
+                PamMeta.Lifetime{i}=PamMeta.Lifetime{i}+PamMeta.Lifetime{j};
+            end
+        end
+    	if UserValues.Settings.Pam.Use_TimeTrace
+            PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
+        end
+        if UserValues.Settings.Pam.Use_PCH
+            Det=UserValues.PIE.Detector(j);
+            Rout=UserValues.PIE.Router(j);
+            From=UserValues.PIE.From(j);
+            To=UserValues.PIE.To(j);
+            if all(~isempty([Det,Rout])) && all([Det Rout] <= size(TcspcData.MI)) && ~isempty(TcspcData.MT{Det,Rout})
+                %%% combine time traces with 1 ms binning
+                PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+                if ~isempty(PIE_MT)
+                    trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH);
+                end
+            end
+        end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
+    end
+    if UserValues.Settings.Pam.Use_PCH
+        PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
+        PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
     end
 end
 

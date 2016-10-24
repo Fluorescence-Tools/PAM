@@ -155,12 +155,18 @@ nRecords = TTResult_NumberOfRecords;
 %%% check for file type
 
 switch TTResultFormat_TTTRRecType
-    case {rtHydraHarpT3,rtHydraHarp2T3}
+    case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3}
         if TTResultFormat_TTTRRecType == rtHydraHarpT3
             %%% HydraHarp T3 V1 file format
             Version = 1;
         elseif TTResultFormat_TTTRRecType == rtHydraHarp2T3
             %%% HydraHarp T3 V2 file format
+            Version = 2;
+        elseif TTResultFormat_TTTRRecType == rtTimeHarp260NT3
+            %%% TimeHarp 260 nano T3 file format
+            Version = 2;
+        elseif TTResultFormat_TTTRRecType == rtTimeHarp260PT3
+            %%% TimeHarp 260 pico T3 file format
             Version = 2;
         else
             disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
