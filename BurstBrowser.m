@@ -7452,11 +7452,11 @@ if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GG)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
     
-    if ~sum(strcmp(BurstData{file}.NameArray,'Countrate (GX) [kHz]'))
-        BurstData{file}.NameArray{end+1} = 'Countrate (GX) [kHz]';
+    if ~sum(strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]'))
+        BurstData{file}.NameArray{end+1} = 'Count rate (GX) [kHz]';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Countrate (GX) [kHz]')) = ...
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) ./ BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Duration [ms]'));
          
     % distance (from intensity)
@@ -7494,11 +7494,11 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GG)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
     
-    if ~sum(strcmp(BurstData{file}.NameArray,'Countrate (GX) [kHz]'))
-        BurstData{file}.NameArray{end+1} = 'Countrate (GX) [kHz]';
+    if ~sum(strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]'))
+        BurstData{file}.NameArray{end+1} = 'Count rate (GX) [kHz]';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Countrate (GX) [kHz]')) = ...
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) ./ BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Duration [ms]'));
     %No. of Photons (BX) and Countrate (BX)
     if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (BX)'))
@@ -7508,11 +7508,11 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (BX)')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (BB)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (BG)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (BR)'));
     
-    if ~sum(strcmp(BurstData{file}.NameArray,'Countrate (BX) [kHz]'))
-        BurstData{file}.NameArray{end+1} = 'Countrate (BX) [kHz]';
+    if ~sum(strcmp(BurstData{file}.NameArray,'Count rate (BX) [kHz]'))
+        BurstData{file}.NameArray{end+1} = 'Count rate (BX) [kHz]';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Countrate (BX) [kHz]')) = ...
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Count rate (BX) [kHz]')) = ...
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (BX)')) ./ BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Duration [ms]'));
     
     % GR distance (from intensity)
