@@ -3300,7 +3300,7 @@ elseif obj == h.MT.ToggleTACTime
 elseif obj == h.MT.Binning
     UserValues.Settings.Pam.MT_Binning=str2double(h.MT.Binning.String);
     Update_Data([],[],0,0,1);
-    Update_Display([],[],4);
+    Update_Display([],[],2);
 %%% When changing trace sectioning type
 elseif obj == h.MT.Trace_Sectioning
     UserValues.Settings.Pam.MT_Trace_Sectioning=h.MT.Trace_Sectioning.Value;
