@@ -1490,6 +1490,34 @@ global FCSMeta FCSData UserValues
 
 Min=str2double(h.Fit_Min.String);
 Max=str2double(h.Fit_Max.String);
+%%% input check
+if isnan(Min)
+    Min = UserValues.FCSFit.Fit_Min;
+    h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
+end
+if isnan(Max)
+    Max = UserValues.FCSFit.Fit_Max;
+    h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
+end
+if (Min < 0)
+    Min = 0;
+end
+if (Max < 0)
+    Max = 1;
+end
+if (Min > Max) || (Max < Min)
+    a = Min; b = Max;
+    Min = b;
+    Max = a;
+end
+if (Min == Max)
+    Max = Min+1;
+end
+h.Fit_Min.String = num2str(Min);
+h.Fit_Max.String = num2str(Max);
+UserValues.FCSFit.Fit_Min = Min;
+UserValues.FCSFit.Fit_Max = Min;
+
 Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
 Conv_Interval = h.Conf_Interval.Value;
