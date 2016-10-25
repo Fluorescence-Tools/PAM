@@ -1716,7 +1716,7 @@ switch mode
         FontSize = str2double(h.Export_FontSize.String);
         
         if ~strcmp(FCSMeta.DataType,'FRET')
-            Scale = [floor(log10(h.FCS_Axes.XLim(1))), ceil(h.FCS_Axes.XLim(2))];
+            Scale = [floor(log10(h.FCS_Axes.XTick(1))), ceil(h.FCS_Axes.XTick(end))];
             XTicks = zeros(diff(Scale),1);
             XTickLabels = cell(diff(Scale),1);
             j=1;        
@@ -1777,7 +1777,7 @@ switch mode
         
         %% Sets axes parameters
         linkaxes([H.FCS,H.Residuals],'x');
-        H.FCS.XLim=h.FCS_Axes.XLim;
+        H.FCS.XLim=[h.FCS_Axes.XTick(1),h.FCS_Axes.XTick(end)];
         H.FCS.YLim=h.FCS_Axes.YLim;
         switch FCSMeta.DataType
             case 'FCS'
