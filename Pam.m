@@ -3471,7 +3471,7 @@ if any(mode==1)
     h.PIE.Info.String{2}=num2str(PamMeta.Info{Sel}(2));
     h.PIE.Info.String{3}=[num2str(PamMeta.Info{Sel}(3),'%6.2f' ) ' kHz'];
     h.PIE.Info.String{4}=[num2str(PamMeta.Info{Sel}(4),'%6.2f' ) ' kHz'];
-    h.PIE.Info.String{5} = [num2str(UserValues.PIE.Background(Sel),'%6.2f' ) ' kHz']
+    h.PIE.Info.String{5} = [num2str(UserValues.PIE.Background(Sel),'%6.2f' ) ' kHz'];
     %%% Disables PIE info controls for combined channels
     if UserValues.PIE.Detector(Sel)==0
        h.PIE.Name.Enable='inactive';
@@ -8063,7 +8063,7 @@ switch obj
         h.MI.ScatterPattern.Checked = 'on';
         UserValues.Settings.Pam.PlotScat = 'on';
         LSUserValues(1);
-        Update_Display([],[],8)
+        Update_Display([],[],[1,8])
         h.SaveScatter_Button.ForegroundColor = [0 1 0];
         h.Progress.Text.String = FileInfo.FileName{1};
         h.Progress.Axes.Color = UserValues.Look.Control;
@@ -8139,7 +8139,7 @@ switch obj
         h.MI.ScatterPattern.Checked = 'on';
         UserValues.Settings.Pam.PlotScat = 'on';
         LSUserValues(1);
-        Update_Display([],[],8)
+        Update_Display([],[],[1,8])
         h.SaveScatter_Button.ForegroundColor = [0 1 0];
 end
 

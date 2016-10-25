@@ -271,7 +271,8 @@ if Mode==0 %%% Loads user values
         '*.sim','Pam Simulation file';...
         '*.ppf','Pam Photon File (Created by Pam)';...
         '*.ptu','HydraHarp 400 TTTR file (*.ptu)';...
-        '*.h5;*.hdf5','PhotonHDF5 File (*.h5,*.hdf5)'};
+        '*.h5;*.hdf5','PhotonHDF5 File (*.h5,*.hdf5)';
+        '*.t3r','TimeHarp200 TTTR file (*.t3r)'};
 
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
