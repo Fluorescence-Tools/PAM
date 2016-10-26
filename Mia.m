@@ -2947,7 +2947,7 @@ switch mode
             return;
         end
         Pam = guidata(findobj('Tag','Pam'));        
-        if isempty(Pam) || all(cellfun(@isempty,TcspcData.MT))
+        if isempty(Pam) || all(all(cellfun(@isempty,TcspcData.MT)))
            return 
         end
         %% Clear current Data
