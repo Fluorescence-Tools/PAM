@@ -1279,9 +1279,13 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     Update_Plots(obj)
 end
 
+if strcmp(TauFitData.Who,'BurstBrowser')
+    h.Menu.File.Visible = 'off';
+end
 % If burstwise fitting is performed, we don't need the export menu
 if strcmp(TauFitData.Who,'Burstwise')
     h.Menu.Export_Menu.Visible = 'off';
+    h.Menu.File.Visible = 'off';
 else
     % set method to stored method
     h.FitMethod_Popupmenu.Value = UserValues.TauFit.FitMethod;

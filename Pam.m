@@ -7231,8 +7231,8 @@ BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
-Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
-Channel = cellfun(@double,Channel,'UniformOutput',false);
+%Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
+%Channel = cellfun(@double,Channel,'UniformOutput',false);
 
 h.Progress.Text.String = 'Calculating 2CDE Filter...'; drawnow;
 tic
@@ -8245,7 +8245,7 @@ Progress(0,h.Progress.Axes,h.Progress.Text,'Loading Data for Lifetime Fit...');
 [Path,File,~] = fileparts(BurstData.FileName);
 if exist(fullfile(Path,[File '.bps']),'file') == 2
     %%% load if it exists
-    load(fullfile(Path,[File '.bps']),'-mat');
+    TauFitData = load(fullfile(Path,[File '.bps']),'-mat');
     TauFitData.FileName = BurstData.FileName;
 else
     %%% else ask for the file
@@ -8253,16 +8253,17 @@ else
     if FileName == 0
         return;
     end
-    load('-mat',fullfile(PathName,FileName));
+    TauFitData = load('-mat',fullfile(PathName,FileName));
     %%% Store the correct Path in TauFitData
     TauFitData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
 end
 Progress(0.5,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
-TauFitData.Microtime = cellfun(@double,Microtime,'UniformOutput',false);
-TauFitData.Channel = cellfun(@double,Channel,'UniformOutput',false);
+TauFitData = rmfield(TauFitData,'Macrotime');
+%TauFitData.Microtime = Microtime;%cellfun(@double,Microtime,'UniformOutput',false);
+%TauFitData.Channel = Channel;%cellfun(@double,Channel,'UniformOutput',false);
 %%% Get total vector of microtime and channel
-Microtime = vertcat(Microtime{:});
-Channel = vertcat(Channel{:});
+Microtime = vertcat(TauFitData.Microtime{:});
+Channel = vertcat(TauFitData.Channel{:});
 %%% Calculate the total Microtime Histogram per Color from all bursts
 switch BurstData.BAMethod
     case {1,2} %two color MFD
@@ -8618,9 +8619,9 @@ end
 mex = true;
 if mex
     if nargin == 3
-        KDE = KDE_mex(A,B,tau,numel(A),numel(B));
-    elseif nargin == 2
-        KDE = KDE_mex(A,A,B,numel(A),numel(A));
+        KDE = KDE_mex(double(A),double(B),tau,numel(A),numel(B));
+    elseif nargin == 2 %%% B is tau
+        KDE = KDE_mex(double(A),double(A),B,numel(A),numel(A));
     end
     KDE = KDE';
 else
@@ -8649,7 +8650,7 @@ if isempty(B)
 end
 mex = true;
 if mex
-    KDE = KDE_mex(B,B,tau,numel(B),numel(B));
+    KDE = KDE_mex(double(B),double(B),tau,numel(B),numel(B));
     KDE = KDE'-1; %%% need to subtract one because zero lag is counter here
 else
     M = abs(ones(numel(B),1)*B - B'*ones(1,numel(B)));

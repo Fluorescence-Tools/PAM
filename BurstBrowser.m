@@ -9235,8 +9235,14 @@ if UserValues.BurstBrowser.Settings.Downsample_fFCS
         MI_par{i} = ceil(double(MI_par{i})/new_bin_width);
         MI_perp{i} = ceil(double(MI_perp{i})/new_bin_width);
     end
-    BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
-    BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+    switch UserValues.BurstBrowser.Settings.fFCS_Mode
+        case {3,4}
+            BurstMeta.fFCS.Photons.MI_total_par = MI_total_par;
+            BurstMeta.fFCS.Photons.MI_total_perp = MI_total_perp;
+        case {1,2}
+            BurstMeta.fFCS.Photons.MI_total_par = cellfun(@(x) ceil(double(x)/new_bin_width),BurstMeta.fFCS.Photons.MI_total_par,'UniformOutput',false);
+            BurstMeta.fFCS.Photons.MI_total_perp = cellfun(@(x) ceil(double(x)/new_bin_width),BurstMeta.fFCS.Photons.MI_total_perp,'UniformOutput',false);     
+    end
 end
 
 %%% Calculate the histograms
@@ -11708,21 +11714,21 @@ switch mode
         if isempty(PhotonStream{file})
             if exist([filename(1:end-3) 'aps'],'file') == 2
                 %%% load if it exists
-                S = load([filename(1:end-3) 'aps'],'-mat');
+                PhotonStream{file} = load([filename(1:end-3) 'aps'],'-mat');
             else
                 %%% else ask for the file
                 [FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
                 if FileName == 0
                     return;
                 end
-                S = load('-mat',fullfile(PathName,FileName));
+                PhotonStream{file} = load('-mat',fullfile(PathName,FileName));
             end
             % transfer to global array
-            PhotonStream{file}.start = S.PhotonStream.start;
-            PhotonStream{file}.stop = S.PhotonStream.stop;
-            PhotonStream{file}.Macrotime = double(S.PhotonStream.Macrotime);
-            PhotonStream{file}.Microtime = double(S.PhotonStream.Microtime);
-            PhotonStream{file}.Channel = double(S.PhotonStream.Channel);
+            %PhotonStream{file}.start = S.PhotonStream.start;
+            %PhotonStream{file}.stop = S.PhotonStream.stop;
+            %PhotonStream{file}.Macrotime = S.PhotonStream.Macrotime;
+            %PhotonStream{file}.Microtime = S.PhotonStream.Microtime;
+            %PhotonStream{file}.Channel = S.PhotonStream.Channel;
         end
         %%% Enable CorrelateWindow Button
         %h.CorrelateWindow_Button.Enable = 'on';
@@ -11730,21 +11736,21 @@ switch mode
     case 'bps'
         if exist([filename(1:end-3) 'bps'],'file') == 2
             %%% load if it exists
-            load([filename(1:end-3) 'bps'],'-mat');
+            BurstTCSPCData{file} = load([filename(1:end-3) 'bps'],'-mat');
         else
             %%% else ask for the file
             [FileName,PathName] = uigetfile({'*.bps'}, 'Choose the associated *.bps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
             if FileName == 0
                 return;
             end
-            load('-mat',fullfile(PathName,FileName));
+            BurstTCSPCData{file} = load('-mat',fullfile(PathName,FileName));
             %%% Store the correct Path in BurstData
             BurstData{file}.FileName = [FileName(1:end-3) 'bur'];
         end
-        BurstTCSPCData{file}.Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
-        BurstTCSPCData{file}.Microtime = cellfun(@double,Microtime,'UniformOutput',false);
-        BurstTCSPCData{file}.Channel = cellfun(@double,Channel,'UniformOutput',false);
-        clear Macrotime Microtime Channel
+        %BurstTCSPCData{file}.Macrotime = Macrotime;%cellfun(@double,Macrotime,'UniformOutput',false);
+        %BurstTCSPCData{file}.Microtime = Microtime;%cellfun(@double,Microtime,'UniformOutput',false);
+        %BurstTCSPCData{file}.Channel = Channel;%cellfun(@double,Channel,'UniformOutput',false);
+        %clear Macrotime Microtime Channel
 end
 h.Progress_Text.String = prev_string;
 

@@ -1674,7 +1674,13 @@ if Mode==0 %%% Loads user values
         S.tcPDA.corrections.sampling = 1;
     end
     P.tcPDA.corrections.sampling = S.tcPDA.corrections.sampling;
-
+    
+    if ~isfield(S.tcPDA.corrections, 'nbins')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.nbins" missing');
+        S.tcPDA.corrections.nbins = 50;
+    end
+    P.tcPDA.corrections.nbins = S.tcPDA.corrections.nbins;
+    
     if ~isfield(S.tcPDA.corrections, 'R0_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_gr" missing');
         S.tcPDA.corrections.R0_gr = 68;
