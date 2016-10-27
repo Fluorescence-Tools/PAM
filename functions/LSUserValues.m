@@ -1583,7 +1583,19 @@ if Mode==0 %%% Loads user values
         S.tcPDA.FileName = '';
     end
     P.tcPDA.FileName = S.tcPDA.FileName;
-
+    
+    if ~isfield(S.tcPDA, 'nbins')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.nbins" missing');
+        S.tcPDA.nbins = 50;
+    end
+    P.tcPDA.nbins = S.tcPDA.nbins;
+    
+    if ~isfield(S.tcPDA, 'sampling')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.sampling" missing');
+        S.tcPDA.sampling = 1;
+    end
+    P.tcPDA.sampling = S.tcPDA.sampling;
+    
     if ~isfield(S.tcPDA, 'corrections')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections" missing');
         S.tcPDA.corrections = [];
@@ -1669,18 +1681,6 @@ if Mode==0 %%% Loads user values
     end
     P.tcPDA.corrections.BG_gr = S.tcPDA.corrections.BG_gr;
 
-    if ~isfield(S.tcPDA.corrections, 'sampling')
-        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.sampling" missing');
-        S.tcPDA.corrections.sampling = 1;
-    end
-    P.tcPDA.corrections.sampling = S.tcPDA.corrections.sampling;
-    
-    if ~isfield(S.tcPDA.corrections, 'nbins')
-        disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.nbins" missing');
-        S.tcPDA.corrections.nbins = 50;
-    end
-    P.tcPDA.corrections.nbins = S.tcPDA.corrections.nbins;
-    
     if ~isfield(S.tcPDA.corrections, 'R0_gr')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections.R0_gr" missing');
         S.tcPDA.corrections.R0_gr = 68;
