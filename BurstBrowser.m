@@ -10849,7 +10849,7 @@ if obj == h.FitAnisotropyButton
         rGG = get_multiselection_data(h,'Anisotropy GG');
     end
     PerrinFitGG = fit(tauGG(~isnan(tauGG)),rGG(~isnan(tauGG)),fPerrin,'StartPoint',1);
-    tau = linspace(h.axes_rGGvsTauGG.XLim(1),h.axes_rGGvsTauGG.XLim(2),100);
+    tau = linspace(0,h.axes_rGGvsTauGG.XLim(2),100);
     BurstMeta.Plots.Fits.PerrinGG(1).Visible = 'on';
     BurstMeta.Plots.Fits.PerrinGG(1).XData = tau;
     BurstMeta.Plots.Fits.PerrinGG(1).YData = PerrinFitGG(tau);
@@ -10868,7 +10868,7 @@ if obj == h.FitAnisotropyButton
         rRR = get_multiselection_data(h,'Anisotropy RR');
     end
     PerrinFitRR = fit(tauRR(~isnan(tauRR)),rRR(~isnan(tauRR)),fPerrin,'StartPoint',1);
-    tau = linspace(h.axes_rRRvsTauRR.XLim(1),h.axes_rRRvsTauRR.XLim(2),100);
+    tau = linspace(0,h.axes_rRRvsTauRR.XLim(2),100);
     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
     BurstMeta.Plots.Fits.PerrinRR(1).XData = tau;
     BurstMeta.Plots.Fits.PerrinRR(1).YData = PerrinFitRR(tau);
@@ -10892,7 +10892,7 @@ if obj == h.FitAnisotropyButton
             (rBB > -1) & (rBB < 2) &...
             (~isnan(tauBB));
         PerrinFitBB = fit(tauBB(valid),rBB(valid),fPerrin,'StartPoint',1);
-        tau = linspace(h.axes_rBBvsTauBB.XLim(1),h.axes_rBBvsTauBB.XLim(2),100);
+        tau = linspace(0,h.axes_rBBvsTauBB.XLim(2),100);
         BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
         BurstMeta.Plots.Fits.PerrinBB(1).XData = tau;
         BurstMeta.Plots.Fits.PerrinBB(1).YData = PerrinFitBB(tau);
@@ -11741,7 +11741,7 @@ switch mode
             %%% Store the correct Path in BurstData
             BurstData{file}.FileName = [FileName(1:end-3) 'bur'];
         end
-        BurstTCSPCData{file}.Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);;
+        BurstTCSPCData{file}.Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
         BurstTCSPCData{file}.Microtime = cellfun(@double,Microtime,'UniformOutput',false);
         BurstTCSPCData{file}.Channel = cellfun(@double,Channel,'UniformOutput',false);
         clear Macrotime Microtime Channel

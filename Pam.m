@@ -80,7 +80,7 @@ addpath(genpath(['.' filesep 'functions']));
     h.Menu.Loadtcspc = uimenu(...
         'Parent', h.Menu.File,...
         'Tag','LoadTcspc',...
-        'Label','Load Tcspc Data',...
+        'Label','Load TCSPC Data',...
         'Callback',{@LoadTcspc,@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam});
     h.Menu.Database = uimenu(...
         'Parent', h.Menu.File,...
@@ -7227,6 +7227,8 @@ BurstData.nir_filter_parameter = tau_2CDE;
 %%% Load associated Macro- and Microtimes from *.bps file
 [Path,File,~] = fileparts(BurstData.FileName);
 load(fullfile(Path,[File '.bps']),'-mat');
+Macrotime = cellfun(@double,Macrotime,'UniformOutput',false);
+Channel = cellfun(@double,Channel,'UniformOutput',false);
 
 h.Progress.Text.String = 'Calculating 2CDE Filter...'; drawnow;
 tic
@@ -7246,7 +7248,12 @@ for t=1:numel(tau_2CDE)
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
             parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-                [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+                if ~(numel(Macrotime{i}) > 1E5)
+                    [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+                else
+                     ALEX_2CDE(i) = NaN;
+                     FRET_2CDE(i) = NaN;
+                end
             end
         end
         idx_ALEX2CDE = strcmp('ALEX 2CDE Filter',BurstData.NameArray);
@@ -7261,7 +7268,12 @@ for t=1:numel(tau_2CDE)
         for j = 1:10
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
             parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
-                [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
+                if ~(numel(Macrotime{i}) > 1E5)
+                    [FRET_2CDE(i,:), ALEX_2CDE(i,:)] = KDE_3C(Macrotime{i}',Channel{i}',tau); %#ok<PFIIN>
+                else
+                    FRET_2CDE(i,:) = NaN(1,3);
+                    ALEX_2CDE(i,:) = NaN(1,3);
+                end
             end
         end
         idx_ALEX2CDE = find(strcmp('ALEX 2CDE BG Filter',BurstData.NameArray));
@@ -8242,8 +8254,8 @@ else
     TauFitData.FileName = fullfile(PathName,[FileName(1:end-3) 'bur']);
 end
 Progress(0.5,h.Progress.Axes,h.Progress.Text,'Preparing Data for Lifetime Fit...');
-TauFitData.Microtime = Microtime;
-TauFitData.Channel = Channel;
+TauFitData.Microtime = cellfun(@double,Microtime,'UniformOutput',false);
+TauFitData.Channel = cellfun(@double,Channel,'UniformOutput',false);
 %%% Get total vector of microtime and channel
 Microtime = vertcat(Microtime{:});
 Channel = vertcat(Channel{:});
