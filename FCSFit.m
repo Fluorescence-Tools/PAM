@@ -2023,8 +2023,8 @@ else
             %%% Sample
             nsamples = 1E4; spacing = 1E2;
             [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
-            v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
-            perc = tinv(1-alpha/2,v);
+            %v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom is equal to the number of samples
+            perc = 1.96;%tinv(1-alpha/2,v);
             ConfInt = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*(samples(1:spacing:end,:)))'];
         end
         GlobConfInt = ConfInt(1:sum(Global),:);
