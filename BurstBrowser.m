@@ -5360,8 +5360,8 @@ for file = files
                         tcPDAstruct.NRR = NRRP + NRRS;
                         tcPDAstruct.duration = ones(numel(NBBP),1)*timebin*1000;
                         tcPDAstruct.timebin = timebin*1000;
-                        tcPDAstruct.corrections = BurstData{file}.Corrections;
                         tcPDAstruct.background = BurstData{file}.Background;
+                        tcPDAstruct.corrections = BurstData{file}.Corrections;
                         
                         if save_brightness_reference
                             posSGR = (strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
