@@ -1596,6 +1596,54 @@ if Mode==0 %%% Loads user values
     end
     P.tcPDA.sampling = S.tcPDA.sampling;
     
+    if ~isfield(S.tcPDA, 'use_stochastic_labeling')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.use_stochastic_labeling" missing');
+        S.tcPDA.use_stochastic_labeling = 0;
+    end
+    P.tcPDA.use_stochastic_labeling = S.tcPDA.use_stochastic_labeling;
+    
+    if ~isfield(S.tcPDA, 'use_MLE')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.use_MLE" missing');
+        S.tcPDA.use_MLE = 0;
+    end
+    P.tcPDA.use_MLE = S.tcPDA.use_MLE;
+    
+    if ~isfield(S.tcPDA, 'mcmc_samples')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_samples" missing');
+        S.tcPDA.mcmc_samples = 10000;
+    end
+    P.tcPDA.mcmc_samples = S.tcPDA.mcmc_samples;
+    
+    if ~isfield(S.tcPDA, 'mcmc_spacing')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_spacing" missing');
+        S.tcPDA.mcmc_spacing = 100;
+    end
+    P.tcPDA.mcmc_spacing = S.tcPDA.mcmc_spacing;
+    
+    if ~isfield(S.tcPDA, 'mcmc_wA')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_wA" missing');
+        S.tcPDA.mcmc_wA = 0.02;
+    end
+    P.tcPDA.mcmc_wA = S.tcPDA.mcmc_wA;
+    
+    if ~isfield(S.tcPDA, 'mcmc_wR')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_wR" missing');
+        S.tcPDA.mcmc_wR = 0.25;
+    end
+    P.tcPDA.mcmc_wR = S.tcPDA.mcmc_wR;
+    
+    if ~isfield(S.tcPDA, 'mcmc_wS')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_wS" missing');
+        S.tcPDA.mcmc_wS = 0.25;
+    end
+    P.tcPDA.mcmc_wS = S.tcPDA.mcmc_wS;
+    
+    if ~isfield(S.tcPDA, 'stochastic_labeling_fraction')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.stochastic_labeling_fraction" missing');
+        S.tcPDA.stochastic_labeling_fraction = 0.5;
+    end
+    P.tcPDA.stochastic_labeling_fraction = S.tcPDA.stochastic_labeling_fraction;
+    
     if ~isfield(S.tcPDA, 'corrections')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.corrections" missing');
         S.tcPDA.corrections = [];
