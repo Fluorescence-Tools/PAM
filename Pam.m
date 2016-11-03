@@ -9703,7 +9703,7 @@ switch obj
             for j = 1:numel(Det)
                 MIPattern{Det(j),Rout(j)} = data(:,j);
             end
-            PamMeta.fFCS.MIPattern_Name{i} = filename{1}{1};
+            [~,PamMeta.fFCS.MIPattern_Name{i},~] = fileparts(filename{1}{1});
             PamMeta.fFCS.MIPattern{i} = MIPattern;
             %dummy = load(fullfile(Path,File{i}),'-mat');
             %[~, FileName, ~] = fileparts(File{i});
