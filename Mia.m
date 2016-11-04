@@ -143,7 +143,8 @@ if isempty(h.Mia)
         h.Mia_Image.Axes(i,1).XTick=[];
         h.Mia_Image.Axes(i,1).YTick=[];
         h.Plots.Image(i,2)=imagesc(zeros(1),...
-            'Parent',h.Mia_Image.Axes(i,2));
+            'Parent',h.Mia_Image.Axes(i,2),...
+            'ButtonDownFcn',@Mia_Export);
         h.Mia_Image.Axes(i,2).DataAspectRatio=[1 1 1];
         h.Mia_Image.Axes(i,2).XTick=[];
         h.Mia_Image.Axes(i,2).YTick=[];
@@ -4528,8 +4529,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Mia_ROI(~,e,mode)
-global MIAData
+function Mia_ROI(obj,e,mode)
+global MIAData UserValues
 h = guidata(findobj('Tag','Mia'));
 
 h.Mia_Progress_Text.String = 'Calculating ROI';
@@ -4591,7 +4592,7 @@ if ~isempty(MIAData.Data)
                         Pos(2)=(size(MIAData.Data{1,1},2)-Size(2)+1);
                         h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));
                     end
-                case 'alt' %%%
+                case 'alt' %%% Draw ROI
                     %%% Turns off ROI during selection
                     h.Plots.ROI(1).Visible='off';
                     h.Plots.ROI(2).Visible='off';
@@ -4627,7 +4628,18 @@ if ~isempty(MIAData.Data)
                     h.Plots.ROI(2).Visible='on';
                     h.Plots.ROI(3).Visible='on';
                     h.Plots.ROI(4).Visible='on';
-                    
+                case 'extend' %%% Export Frame
+                    Mia_Export(obj,e);
+                    %% Updates filename display
+                    if numel(MIAData.FileName)==2
+                        h.Mia_Progress_Text.String = [MIAData.FileName{1}{1} ' / ' MIAData.FileName{2}{1}];
+                    elseif numel(MIAData.FileName)==1
+                        h.Mia_Progress_Text.String = MIAData.FileName{1}{1};
+                    else
+                        h.Mia_Progress_Text.String = 'Nothing loaded';
+                    end
+                    h.Mia_Progress_Axes.Color=UserValues.Look.Control;
+                    return;
                 otherwise 
                     %%% Updates images
                     Mia_Correct([],[],2);
@@ -6535,3 +6547,34 @@ end
 if Save
     LSUserValues(1);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for exporting various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Mia_Export(obj,~)
+global UserValues
+h = guidata(findobj('Tag','Mia'));
+
+if ~strcmp(h.Mia.SelectionType,'extend')
+   return; 
+end
+[FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
+if any(FileName~=0)
+    UserValues.File.ExportPath=PathName;
+    LSUserValues(1)
+    Image=single(obj.CData);
+    if size(Image,3)==3
+        Image=Image/max(Image(:))*255;
+    else
+        cmap=colormap(obj.Parent);
+        r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
+        CData = round(Image/max(Image(:))*(size(cmap,1)-1))+1;
+        Image(:,:,1) = reshape(r(CData),size(CData));
+        Image(:,:,2) = reshape(g(CData),size(CData));
+        Image(:,:,3) = reshape(b(CData),size(CData));
+    end
+    
+    imwrite(uint8(Image),fullfile(PathName,FileName));
+end
+
+

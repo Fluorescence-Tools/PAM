@@ -406,7 +406,7 @@ if Mode==0 %%% Loads user values
         S.Settings.Pam.AutoSaveProfile='off';
         disp('UserValues.Settings.Pam.AutoSaveProfile was incomplete');
     end
-    P.Settings.Pam.AutoSaveProfile = S.Settings.Pam.AutoSaveProfile;
+    P.Settings.Pam.AutoSaveProfile = S.Settings.Pam.AutoSaveProfile;    
     %% MetaData: User-dependend meta data
      %%% Checks, if MetaData field exists
     if ~isfield (S, 'MetaData')
