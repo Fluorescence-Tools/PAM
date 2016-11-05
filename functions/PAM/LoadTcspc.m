@@ -270,7 +270,7 @@ switch (Type)
             fclose(fid);
             if ~Corrupt %%% .set file was complete
                 %%% Determines exact .spc filetype to read
-                if (strcmp(Card,'140') || strcmp(Card,'150') || strcmp(Card,'830') || strcmp(Card,'130'))
+                if (strcmp(Card,'140') || strcmp(Card,'150') || strcmp(Card,'130'))
                     Card = 'SPC-140/150/830/130';
                 elseif strcmp(Card,'630')
                     if MI_Bins == 256
@@ -278,6 +278,9 @@ switch (Type)
                     elseif MI_Bins == 4096
                         Card = 'SPC-630 4096chs';
                     end
+                elseif strcmp(Card,'830')
+                    Card = 'SPC-140/150/830/130';
+                    MI_Bins = 4096; %For Hasselt I have to hardcode this, since the MI_Bins is not written in the .set file
                 end
                 %%% Determines real TAC range
                 TACRange = TACRange/TACGain;
@@ -894,6 +897,9 @@ switch (Type)
                 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
                 lines = FileInfo.LineStart((FileInfo.LineStart >= FileInfo.FrameStart(1)) & (FileInfo.LineStart <= FileInfo.FrameStart(2)));
                 FileInfo.Lines = floor(size(lines,1));
+                % following will only work if images are 100 or more lines:
+                FileInfo.LineTime = mean(diff(FileInfo.LineStart(1:100)))*FileInfo.ClockPeriod; %in seconds; this is line+interline
+                FileInfo.PixDwellTime = mean(FileInfo.LineStop(1:size(FileInfo.LineStart,1))-FileInfo.LineStart)/FileInfo.Lines*FileInfo.ClockPeriod; %in seconds
                 %Assuming the image is square
                 FileInfo.Pixels=FileInfo.Lines^2;
                 FileInfo.ImageTime = (FileInfo.LineStart(FileInfo.Lines+1) - FileInfo.LineStart(1))*FileInfo.ClockPeriod;
