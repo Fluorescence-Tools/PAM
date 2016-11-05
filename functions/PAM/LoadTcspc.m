@@ -150,7 +150,7 @@ switch (Type)
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf,[0 0 0], 'SPC-140/150/830/130');
+                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, Scanner, 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')
                     Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
@@ -271,14 +271,17 @@ switch (Type)
             if ~Corrupt %%% .set file was complete
                 %%% Determines exact .spc filetype to read
                 if (strcmp(Card,'140') || strcmp(Card,'150') || strcmp(Card,'130'))
+                    Scanner = [0 0 0];
                     Card = 'SPC-140/150/830/130';
                 elseif strcmp(Card,'630')
+                    Scanner = [0 0 0];
                     if MI_Bins == 256
                         Card = 'SPC-630 256chs';
                     elseif MI_Bins == 4096
                         Card = 'SPC-630 4096chs';
                     end
                 elseif strcmp(Card,'830')
+                    Scanner = [1 1 1];
                     Card = 'SPC-140/150/830/130';
                     MI_Bins = 4096; %For Hasselt I have to hardcode this, since the MI_Bins is not written in the .set file
                 end
@@ -286,6 +289,7 @@ switch (Type)
                 TACRange = TACRange/TACGain;
             else %%% No .set file was found; use standard settings
                 h = msgbox('Setup (.set) file not found!');
+                Scanner = [0 0 0];
                 Card = 'SPC-140/150/830/130';
                 MI_Bins = 4096;
                 TACRange = [];
@@ -369,7 +373,7 @@ switch (Type)
                 if Type == 2
                     FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                 end
-                [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, [0 0 0], Card);
+                [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, Scanner, Card);
                 if isempty(FileInfo.SyncPeriod)
                     FileInfo.SyncPeriod = SyncRate^-1;
                 end

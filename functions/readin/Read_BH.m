@@ -27,14 +27,17 @@ switch Card
         %%%%                       of the entries with 'MTOV = 1' and 'INVALID = 1' described below )
         %%%%          bit 1 = 1 file with markers ( new SPC-140, SPC-150, see below)
         %%%%          bit 0 = reserved
+        %%%% Bit/Byte 7     6       5       4       3       2       1       0
+        %%%%          inval rout    rout    rout    rout    raw     mark    res             
+        
         %%%% every photon is stored as follows in 4 bytes
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% File format:
-        %%%% Bit/Byte 1      2      3      4      5      6      7      8
-        %%%%       1  MT1    MT2    MT3    MT4    MT5    MT6    MT7    MT8
-        %%%%       2  MT9    MT10   MT11   MT12   ROUT1  ROUT2  ROUT3  ROUT4
-        %%%%       3  MI1    MI2    MI3    MI4    MI5    MI6    MI7    MI8
-        %%%%       4  MI9    MI10   MI11   MI12   MARK   GAP    MTOV   INVALID
+        %%%% Bit/Byte 7     6       5       4       3       2       1       0
+        %%%%       1  MT8   MT7     MT6     MT5     MT4     MT3     MT2     MT1
+        %%%%       2  ROUT4 ROUT3   ROUT2   ROUT1   MT12    MT11    MT10    MT9  
+        %%%%       3  MI8   MI7     MI6     MI5     MI4     MI3     MI2     MI1
+        %%%%       4  INVAL MTOV    GAP     MARK    MI12    MI11    MI10    MI9  
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         ByteRecord = fread(FileID, NoE, 'uint32=>uint32');
@@ -53,22 +56,38 @@ switch Card
             ClockRate = SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
             return;
         else
-            %the sync rate is contained in the first 3 bytes of the first byte
+            %the sync rate is contained in the first 3 bytes of the first 32-bit word
             %record in units of 100 ps
             SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
             ClockRate = SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
+            NumberOfRoutingBits = uint8(bitand(bitshift(ByteRecord(1), - 27), 15))+1; %...00001111
+            % +1 because there's always at least 1 route
+            InvalidFirstPhoton = isequal(double(bitand(ByteRecord(1), 2147483648)), 2147483648); % is the very last bit of the first 32-bit word = 1 ?
             ByteRecord(1)=[]; %%% Delete Header entry
             
+            % put Rout in the top 4 bits, since in the lower 4 we need to put the Mark. 
             Rout=uint8(bitand(bitshift(ByteRecord, - 8), 240)); % Loads Routing bits
+            % if MARK == 0
+            % Routing channel 1 => Rout = 00000000 = 0
+            % Routing channel 2 => Rout = 00010000 = 16
+            % Routing channel 3 => Rout = 00100000 = 32
+            % Routing channel 4 => Rout = 00110000 = 48
+            % if MARK == 1, then the pixel, line, frame bits are written into Rout
+            
             Mark=uint8(bitand(bitshift(ByteRecord, -28),  15)); % Loads Mark, Gap, Macrotime Overflow and Invalid bits
             %disp(['Number of invalid entries in ' FileName ': ' num2str(numel(find(Mark==8)))])
             Mark=Mark+Rout; % Combines Rout and Mark to save memory (Matlab has not file format < 8bit)
             clear Rout;
-            
+            %%%% Mark structure
+            %%%% Bit/Byte 7     6       5       4       3       2       1       0
+            %%%%          ROUT4 ROUT3   ROUT2   ROUT1   INVAL   MTOV    GAP     MARK
+           
             MT=uint32(zeros(numel(Mark),1)); % Initializes macrotime overflow variable
             MT(bitand(Mark,12)==4)=1; % One single overflow occured (MTOV==1 & INVALID==0)
-            MT(bitand(Mark,12)==12)=bitand(ByteRecord(bitand(Mark,12)==12),268435455); % Number of times the MT overflowed (Several overflows occured (MTOV==1 & INVALID==1))
-            
+            if sum(Scanner)==0
+                %for Hasselt, ignore this for now
+                MT(bitand(Mark,12)==12)=bitand(ByteRecord(bitand(Mark,12)==12),268435455); % Number of times the MT overflowed (Several overflows occured (MTOV==1 & INVALID==1))
+            end
             Macrotime=uint16(bitand(ByteRecord, 4095)); % Loads Macrotime
             MI=4095-uint16(bitand(bitshift(ByteRecord, -16), 4095)); % Loads Microtime
             clear ByteRecord;
@@ -159,9 +178,22 @@ switch Card
         %%%% The first photon frame (6 bytes) in the .spc file is added by the software and contains information
         %%%% about the Macro Time clock and the number of routing channels used during the measurement:
         %%%%   byte 0, 4, 5 = 0
-        %%%%   byte 2,3     = macro time clock in 0.1 ns units (for 50ns value 500 is set)
-        %%%%   byte 1 : bit 4 = 1 Invalid photon
+        %%%%   byte 1 : bit 4 has to be 1 cause it's an invalid photon
         %%%%            bits 3-0 = number of routing bits
+        %%%%   byte 2,3     = macro time clock in 0.1 ns units (for 50ns value 500 is set)
+
+        % !!!!!!!! HARDCODED SYNCRATE !!!!!!!!
+        SyncRate = 8E7/3; 
+        
+        % record in units of 100 ps
+        % ByteRecord(1) is bytes 0 and 1;
+        % ByteRecord(2) is bytes 2 and 3 and thus contains the ClockRate;
+        ClockRate = 1E10/double(ByteRecord(2));  
+        InvalidFirstPhoton = isequal(double(bitand(ByteRecord(1), 4096)), 4096); % is byte 1 bit 4 = 1 ?
+        % cut ByteRecord(1) at 8bit and put the top 4 bits to 0:
+        NumberOfRoutingBits = uint8(bitand(bitshift(ByteRecord(1), -8), 15))+1; %00001111
+        % +1 because there's always at least 1 route
+        
         %%%% Important:
         %%%% To be able to do bitwise operations, we have to put the 6-byte file
         %%%% into one 16bit and one 32bit variable
@@ -178,23 +210,25 @@ switch Card
         % Byte 3:    R7     <=   R0
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
         fclose(FileID);
-        clear FileID;
+        clear FileID ByteRecord;
         
-        if numel(ByteRecord) < 2 % Even empty file will contain sync rate
+        if numel(ByteRecord1) < 2 % Even empty file will contain sync rate
             h = msgbox(['Empty file: ', FileName]);
             disp(['Empty file: ', FileName])
             pause(1)
             close(h)
         else
-            %the clockrate is contained in the first 3 bytes of the first
-            %record in units of 100 ps
-            SyncRate = 8E7/3; %hardcoded SyncRate
-            ClockRate = 1E10/double(ByteRecord(2));
-            clear ByteRecord
             ByteRecord1(1)=[]; %%% Delete Header entry
             ByteRecord2(1)=[]; %%% Delete Header entry
             % Non macro/microtime information
-            Rout = uint8(bitand(bitshift(ByteRecord2, - 20), 240));
+            % put Rout in the top 4 bits, since in the lower 4 we need to put the Mark. 
+            % we loose the top 4 routing bits, but they're empty anyway
+            Rout = uint8(bitand(bitshift(ByteRecord2, - 20), 240)); %11110000
+            % Routing channel 1 => Rout = 00000000 = 0
+            % Routing channel 2 => Rout = 00010000 = 16
+            % Routing channel 3 => Rout = 00100000 = 32
+            % Routing channel 4 => Rout = 00110000 = 48
+             
             tmp = uint8(bitand(bitshift(ByteRecord1, - 12),  15));
             Mark = tmp;
             Mark = bitset(Mark,1,bitget(tmp, 4)); %MARK
@@ -233,11 +267,13 @@ switch Card
         end
 end
 
+if sum(Scanner)==0 %for Hasselt, ignore this for now
+    % Removes all remaining invalid entries (mostly overflow entries)
+    MI(bitand(Mark,8)==8)=[];
+    MT(bitand(Mark,8)==8)=[];
+    Mark(bitand(Mark,8)==8)=[];
+end
 
-% Removes all remaining invalid entries (mostly overflow entries)
-MI(bitand(Mark,8)==8)=[];
-MT(bitand(Mark,8)==8)=[];
-Mark(bitand(Mark,8)==8)=[];
 % Remove last overflow photon; seems that sometimes the last entry is
 % somehow wrong
 if ~isempty(Mark) && bitand(Mark(end),12)==4
@@ -254,20 +290,20 @@ if any(bitand(Mark,2)==2)
     close(h)
 end
 % Checks for Mark entries (usually frame, line or pixels entries)
-if sum(Scanner>0) && any(bitend(Mark,1)==1)
-    Scanner_Mark=find(bitend(Mark,1)==1);
-    Scanner_Rout=bitand(Mark(Scanner_Mark),112);
+if sum(Scanner)>0 && any(bitand(Mark,1)==1)
+    Scanner_Mark=find(bitand(Mark,1)==1);
+    Scanner_Rout=bitand(Mark(Scanner_Mark),112); %01110000
     Scanner_MT=MT(Scanner_Mark);
     clear Scanner_Mark
     PLF=cell(3,1);
     if Scanner(1) % Reads Pixel times
-        PLF{1}= Scanner_MT(Scanner_Rout==16);
+        PLF{1}= Scanner_MT(Scanner_Rout==16); %00010000
     end
     if Scanner(2) % Reads Line times
-        PLF{2}= Scanner_MT(Scanner_Rout==32);
+        PLF{2}= Scanner_MT(Scanner_Rout==32); %00100000
     end
     if Scanner(3) % Reads Frame times
-        PLF{3}= Scanner_MT(Scanner_Rout==64);
+        PLF{3}= Scanner_MT(Scanner_Rout==64); %01000000
     end
     clear Scanner_MT Scanner_Rout
 else
