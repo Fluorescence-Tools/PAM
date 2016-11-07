@@ -1948,6 +1948,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
             ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... % max photon number
             ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
             ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+        PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
         %%% find the maxN of all data
         maxN = max(maxN, max((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}))));
     end
@@ -3311,6 +3312,7 @@ if h.SettingsTab.Use_Brightness_Corr.Value
 end
 
 BSD = PDAMeta.BSD{file};
+
 H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
@@ -3318,6 +3320,9 @@ PRH = cell(sampling,5);
 for j = PDAMeta.Comp{file}
     if h.SettingsTab.Use_Brightness_Corr.Value
         BSD = BSD_scaled{j};
+    end
+    if size(BSD,2) > size(BSD,1)
+        BSD = BSD';
     end
     for k = 1:sampling
         r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
