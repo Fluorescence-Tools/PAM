@@ -972,6 +972,18 @@ if isempty(h.GlobalPDAFit)
         'Value',UserValues.PDA.HalfGlobal,...
         'Callback', {@Update_Plots, 0},...
         'Position',[0.8 0.1 0.2 0.2]);
+    h.SettingsTab.DeconvoluteBackground = uicontrol(...
+        'Parent',h.SettingsTab.Panel,...
+        'Tag','HalfGlobal',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Style','checkbox',...
+        'String','Deconvolute background',...
+        'Value',UserValues.PDA.DeconvoluteBackground,...
+        'Callback', {@Update_Plots, 0},...
+        'Position',[0.8 0.1 0.2 0.2]);
     %% Other stuff
     %%% Re-enable menu
     h.Menu.File.Enable = 'on';
@@ -1194,7 +1206,7 @@ for i = 1:numel(PDAData.FileName)
 end
 
 % Function that groups things that concern the plots
-function Update_Plots(~,~,mode,reset)
+function Update_Plots(obj,~,mode,reset)
 % function creates and/or updates the plots after:
 % mode = 1: after fitting
 % mode = 2: changing the popup value on single tab + called in UpdatePlot
@@ -1525,6 +1537,22 @@ switch mode
             % bsd
             PDAMeta.Plots.BSD_Single = copyobj(PDAMeta.Plots.BSD_All{i}, h.SingleTab.BSD_Axes);
             PDAMeta.Plots.BSD_Single.Color = 'k';%only define those properties that are different to the all tab
+            % deconvoluted PofF
+            PDAMeta.Plots.PF_Deconvolved_Single = plot(h.SingleTab.BSD_Axes,...
+                    0,...
+                    1,...
+                    'Color','k',...
+                    'LineWidth',2,...
+                    'LineStyle','--',...
+                    'Visible','off');
+            if UserValues.PDA.DeconvoluteBackground
+                if isfield(PDAMeta,'PN')
+                    PDAMeta.Plots.PF_Deconvolved_Single.XData = 1:numel(PDAMeta.PN{i});
+                    PDAMeta.Plots.PF_Deconvolved_Single.YData = PDAMeta.PN{i};
+                    PDAMeta.Plots.PF_Deconvolved_Single.Visible = 'on';
+                end
+            end
+
             % ES
             PDAMeta.Plots.ES_Single = copyobj(PDAMeta.Plots.ES_All{i}, h.SingleTab.ES_Axes);
             PDAMeta.Plots.ES_Single.Color = 'k';%only define those properties that are different to the all tab
@@ -1846,6 +1874,10 @@ UserValues.PDA.SigmaAtFractionOfR = h.SettingsTab.SigmaAtFractionOfR_edit.String
 UserValues.PDA.FixSigmaAtFractionFix = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
 UserValues.PDA.IgnoreOuterBins = h.SettingsTab.OuterBins_Fix.Value;
 UserValues.PDA.HalfGlobal = h.SettingsTab.HalfGlobal.Value;
+UserValues.PDA.DeconvoluteBackground =  h.SettingsTab.DeconvoluteBackground.Value;
+if obj == h.SettingsTab.DeconvoluteBackground
+    PDAMeta.PreparationDone = 0;
+end
 LSUserValues(1)
 
 % File menu - view/start fitting
@@ -1999,8 +2031,13 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
                 %%% Also calculate distribution for donor only
                 PNF_donly = binopdf(NF(:,:,1),N(:,:,1),PDAMeta.crosstalk(i)/(1+PDAMeta.crosstalk(i)));
             end
-            % histogram NF+NG into maxN+1 bins
-            PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
+            if ~UserValues.PDA.DeconvoluteBackground
+                % histogram NF+NG into maxN+1 bins
+                PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
+            else
+                PN = deconvolute_PofF(PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}),(PDAMeta.BGdonor(i)+PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3);
+                PN = PN(1:maxN).*numel(PDAData.Data{i}.NF(PDAMeta.valid{i}));
+            end
             % assign current file to global cell
             %PDAMeta.E_grid{i} = E_grid;
             %PDAMeta.R_grid{i} = R_grid;
@@ -2072,13 +2109,28 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
                             
                     P{1,j} = zeros(Nobins,1);
                     count = 1;
-                    for g = 0:NBG
-                        for r = 0:NBR
-                            PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
-                            PN_trans = PN_trans(:);
-                            PN_trans = PN_trans(validd{count});
-                            P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
-                            count = count+1;
+                    if ~UserValues.PDA.DeconvoluteBackground
+                        for g = 0:NBG
+                            for r = 0:NBR
+                                %%% Approximation of P(F) ~= P(S), i.e. use
+                                %%% P(S) with S = F + BG
+                                PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
+                                PN_trans = PN_trans(:);
+                                PN_trans = PN_trans(validd{count});
+                                P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
+                                count = count+1;
+                            end
+                        end
+                    else
+                        for g = 0:NBG
+                            for r = 0:NBR
+                                %%% Use the deconvolved P(F)
+                                PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
+                                PN_trans = PN_trans(:);
+                                PN_trans = PN_trans(validd{count});
+                                P{1,j} = P{1,j} + accumarray(bin{count},P_array{count}.*PN_trans);
+                                count = count+1;
+                            end
                         end
                     end
                     %Progress(j/numel(E_grid),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Calculating Histogram Library...');
@@ -2140,7 +2192,6 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
         counter = counter + 1;
     end
 end
-
 %% Store fit parameters globally
 PDAMeta.Fixed = cell2mat(h.FitTab.Table.Data(1:end-3,3:3:end-1));
 PDAMeta.Global = cell2mat(h.FitTab.Table.Data(end-2,4:3:end-1));
@@ -3602,7 +3653,7 @@ switch mode
         Columns{end}='<html><b>&chi;<sup>2</sup><sub>red.</sub></b></html>';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(2:3:end-3)=40;
-        ColumnWidth(2:9:end-12)=30;
+        ColumnWidth(2:9:end-12)=40;
         ColumnWidth(3:3:end-2)=15;
         ColumnWidth(4:3:end-1)=15;
         ColumnWidth(1)=40;
@@ -4017,6 +4068,13 @@ PDAMeta.Plots.BSD_Single = plot(h.SingleTab.BSD_Axes,...
     expon{1},...
     'Color','k',...
     'LineWidth',2);
+PDAMeta.Plots.PF_Deconvolved_Single = plot(h.SingleTab.BSD_Axes,...
+    0:200,...
+    expon{1},...
+    'Color','k',...
+    'LineWidth',2,...
+    'LineStyle','--',...
+    'Visible','off');
 axis('tight');
 PDAMeta.Plots.ES_Single = plot(h.SingleTab.ES_Axes,...
     0,...
@@ -4395,7 +4453,67 @@ PofT = (...
        ((k2*T1+k1*T2)/(k1+k2))*(sqrt(k1*k2)/sqrt(T1*T2))*...
        besseli(1,2*sqrt(k1*k2*T1*T2)) ...
        ) * exp(-k1*T1-k2*T2)*dt;
-   
+     
+function PofF = deconvolute_PofF(S,bg,resolution)
+%%% deconvolutes input PofF using a sum of Poisson distributios as kernel
+%%% to obtain background-free fluorescence signal distribution PofF
+%%%
+%%% See: Kalinin, S., Felekyan, S., Antonik, M. & Seidel, C. A. M. Probability Distribution Analysis of Single-Molecule Fluorescence Anisotropy and Resonance Energy Transfer. J. Phys. Chem. B 111, 10253?10262 (2007).
+
+%%% Input parameter:
+%%% S   -   the experimentally observed burst sizes
+%%% bg  -   the total background
+%%% resolution - resolution for brightness vector
+
+if nargin < 3
+    resolution = 200;
+end
+%%% Construct the histogram PF
+xS = 0:1:max(S)+1;
+PS= histcounts(S,xS);
+xS = xS(1:end-1);
+%%% vector of brightnesses to consider
+b = linspace(0,max(S),resolution);
+
+%%% Establish Poisson library based on brightness vector INCLUDING background
+%%% convolution of model PofF with Poissonian background simplifies to
+%%% using a modified brightness b' = b + bg
+%%% This follows because the convolution of two Poissonian distributions
+%%% equals again a Poissonian with sum of rate parameters.
+%%% see equation 12 of reference
+PS_ind = poisspdf(repmat(xS,numel(b),1),repmat(bg+b',1,numel(xS)));
+
+%%% Calculate error estimate based on poissonian counting statistics
+error = sqrt(PS); error(error == 0) = 1;
+
+%%% equation 12 of reference to calculate PofS from library
+% sum(PS_ind.*repmat(p,1,numel(xS),1)) = P(S)
+%%% scaling parameter for the entropy term
+v = 10;
+mem = @(p) -(v*sum(p-p.*log(p)) - sum( (PS-sum(PS_ind.*repmat(p,1,numel(xS),1)).*numel(S)).^2./error.^2)./(numel(PS)));
+%%% initialize p
+p0 = ones(numel(b),1)./numel(b);
+p=p0;
+
+%%% initialize boundaries
+Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
+lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
+
+%%% specify fit options
+opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-4);
+p = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts); 
+
+%%% construct distribution PofF from distribution over brightnesses
+%%% this time, we exculde background to obtain the "purified" fluorescence
+%%% count distribution
+PF_ind = poisspdf(repmat(xS,numel(b),1),repmat(b',1,numel(xS)));
+PofF = sum(PF_ind.*repmat(p,1,numel(xS),1));
+PofF = PofF./sum(PofF);
+
+function [c,ceq] = nonlcon(x)
+%%% nonlinear constraint for deconvolution
+c = [];
+ceq = sum(x) - 1;
 
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;

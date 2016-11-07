@@ -1510,7 +1510,13 @@ if Mode==0 %%% Loads user values
         S.PDA.HalfGlobal = 0;
     end
     P.PDA.HalfGlobal = S.PDA.HalfGlobal;
-
+    
+    if ~isfield(S.PDA, 'DeconvoluteBackground')
+        disp('WARNING: UserValues structure incomplete, field "PDA.DeconvoluteBackground" missing');
+        S.PDA.DeconvoluteBackground = 0;
+    end
+    P.PDA.DeconvoluteBackground = S.PDA.DeconvoluteBackground;
+    
     if ~isfield(S.PDA, 'FixSigmaAtFraction')
         disp('WARNING: UserValues structure incomplete, field "PDA.FixSigmaAtFraction" missing');
         S.PDA.FixSigmaAtFraction = 0;
