@@ -714,7 +714,7 @@ if mode==1
     FCSMeta.Data=[];
     FCSMeta.Params=[];
     FCSMeta.Plots=cell(0);
-    h.Fit_Table.RowName(1:end-3)=[];
+    %h.Fit_Table.RowName(1:end-3)=[];
     h.Fit_Table.Data(1:end-3,:)=[];
     h.Style_Table.RowName(1:end-1,:)=[];
     h.Style_Table.Data(1:end-1,:)=[];
@@ -774,7 +774,7 @@ switch Type
                 'Parent',h.FCS_Axes,...
                 'XData',FCSMeta.Data{end,1},...
                 'YData',FCSMeta.Data{end,2});
-            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
         end
         %%% change the gui
         SwitchGUI(h,'FCS');
@@ -830,7 +830,7 @@ switch Type
                     'Parent',h.FCS_Axes,...
                     'XData',FCSMeta.Data{end,1},...
                     'YData',FCSMeta.Data{end,2});
-                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
             end
         end
         %%% change the gui
@@ -878,7 +878,7 @@ switch Type
                 FCSMeta.Data{end,1},...
                 FCSMeta.Data{end,2},...
                 'Parent',h.FCS_Axes);
-            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,4:3:end-1));
+            FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
         end
         %%% change the gui
         SwitchGUI(h,'FRET');
@@ -1016,6 +1016,7 @@ function Load_Fit(~,~,mode)
 global FCSMeta UserValues
 
 FileName=[];
+FilterIndex = 1;
 if mode
     %% Select a new model to load
     [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [pwd filesep 'Models']);
@@ -1109,35 +1110,42 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];        
         %%% Generates column names and resized them
-        Columns=cell(3*numel(FCSMeta.Model.Params)+4,1);
-        Columns{1}='Active';
-        Columns{2}='<HTML><b> Counts [khz] </b>';
-        Columns{3}='<HTML><b> Brightness [khz]</b>';
+        Columns=cell(3*numel(FCSMeta.Model.Params)+5,1);
+        Columns{1} = '<HTML><b>File</b>';
+        Columns{2}='<HTML><b>Active</b>';
+        Columns{3}='<HTML><b>Counts [khz]</b>';
+        Columns{4}='<HTML><b>Brightness [khz]</b>';
         for i=1:numel(FCSMeta.Model.Params)
-            Columns{3*i+1}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
-            Columns{3*i+2}='F';
-            Columns{3*i+3}='G';
+            Columns{3*i+2}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
+            Columns{3*i+3}='<HTML><b>F</b>';
+            Columns{3*i+4}='<HTML><b>G</b>';
         end
-        Columns{end}='Chi2';
-        ColumnWidth=zeros(numel(Columns),1);
+        Columns{end}='<HTML><b>Chi2</b>';
+        ColumnWidth=cell(1,numel(Columns));
         %ColumnWidth(4:3:end-1)=cellfun('length',FCSMeta.Model.Params).*7;
-        ColumnWidth(4:3:end-1) = 80;
-        ColumnWidth(ColumnWidth>0 & ColumnWidth<30)=45;
-        ColumnWidth(5:3:end-1)=20;
-        ColumnWidth(6:3:end-1)=20;
-        ColumnWidth(1)=40;
-        ColumnWidth(2)=80;
-        ColumnWidth(3)=100;
-        ColumnWidth(end)=40;
+        ColumnWidth(5:3:end-1) = {80};
+        %ColumnWidth(ColumnWidth>0 & ColumnWidth<30)=45;
+        ColumnWidth(6:3:end-1)={20};
+        ColumnWidth(7:3:end-1)={20};
+        ColumnWidth(1) = {100};
+        ColumnWidth(2)={40};
+        ColumnWidth(3)={80};
+        ColumnWidth(4)={100};
+        ColumnWidth(end)={40};
         h.Fit_Table.ColumnName=Columns;
-        h.Fit_Table.ColumnWidth=num2cell(ColumnWidth');        
+        h.Fit_Table.ColumnWidth = ColumnWidth;
+        %h.Fit_Table.ColumnWidth=num2cell(ColumnWidth');        
         %%% Sets row names to file names 
         Rows=cell(numel(FCSData.Data)+3,1);
-        Rows(1:numel(FCSData.Data))=deal(FCSData.FileName);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
-        h.Fit_Table.RowName=Rows;         
+        tmp = FCSData.FileName;
+        for i = 1:numel(tmp)
+            tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
+        end
+        Rows(1:numel(FCSData.Data))=deal(tmp);
+        Rows{end-2}='<HTML><b>ALL</b>';
+        Rows{end-1}='<HTML><b>Lower bound</b>';
+        Rows{end}='<HTML><b>Upper bound</b>';
+        h.Fit_Table.RowName=[];         
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
         %%% 2: Countrate of file
@@ -1145,7 +1153,7 @@ switch mode
         %%% 4:3:end: Parameter value
         %%% 5:3:end: Checkbox to fix parameter
         %%% 6:3:end: Checkbox to fit parameter globaly
-        Data=num2cell(zeros(numel(Rows),numel(Columns)));
+        Data=num2cell(zeros(numel(Rows),numel(Columns)-1));
         for i=1:(numel(Rows)-3)
             %%% Distinguish between Autocorrelation (only take Counts of
             %%% Channel) and Crosscorrelation (take sum of Channels)
@@ -1170,8 +1178,9 @@ switch mode
         Data(end-1:end,1)=deal({[]});
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
-        h.Fit_Table.Data=Data;
-        h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];        
+        h.Fit_Table.Data=[Rows,Data];
+        h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];  
+        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 1 %%% Updates tables when new data is loaded
@@ -1179,25 +1188,23 @@ switch mode
         %%% Sets row names to file names
         Rows=cell(numel(FCSData.Data)+3,1);
         tmp = FCSData.FileName;
-        %%% Cuts the filename up if too long
+
         for i = 1:numel(tmp)
-            try
-                tmp{i} = [tmp{i}(1:20) '...' tmp{i}(end-20:end)];
-            end
+            tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
         end
         Rows(1:numel(tmp))=deal(tmp);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
-        h.Fit_Table.RowName=Rows;
+        Rows{end-2}='<HTML><b>ALL</b>';
+        Rows{end-1}='<HTML><b>Lower bound</b>';
+        Rows{end}='<HTML><b>Upper bound</b>';
+        %h.Fit_Table.RowName=Rows;
         
-        Data=cell(numel(Rows),size(h.Fit_Table.Data,2));
+        Data=cell(numel(Rows),size(h.Fit_Table.Data,2)-1);
         %%% Set last 3 row to ALL, lb and ub
-        Data(1:(size(h.Fit_Table.Data,1)-3),:)=h.Fit_Table.Data(1:end-3,:);
+        Data(1:(size(h.Fit_Table.Data,1)-3),:)=h.Fit_Table.Data(1:end-3,2:end);
         %%% Sets previous files
-        Data(end-2:end,:)=h.Fit_Table.Data(end-2:end,:);
+        Data(end-2:end,:)=h.Fit_Table.Data(end-2:end,2:end);
         %%% Adds new files
-        Data((size(h.Fit_Table.Data,1)-2):(end-3),:)=repmat(h.Fit_Table.Data(end-2,:),[numel(Rows)-(size(h.Fit_Table.Data,1)),1]);
+        Data((size(h.Fit_Table.Data,1)-2):(end-3),:)=repmat(h.Fit_Table.Data(end-2,2:end),[numel(Rows)-(size(h.Fit_Table.Data,1)),1]);
         %%% Calculates countrate
         for i=1:numel(FCSData.Data)
             %%% Distinguish between Autocorrelation (only take Counts of
@@ -1210,7 +1217,8 @@ switch mode
                 Data{i,2}=num2str(sum(FCSData.Data{i}.Counts));
             end
         end
-        h.Fit_Table.Data=Data;
+        h.Fit_Table.Data=[Rows,Data];
+        h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
     case 2 %%% Updates table after fit
@@ -1220,15 +1228,15 @@ switch mode
         for i=1:(size(h.Fit_Table.Data,1)-3)
             P=FCSMeta.Params(:,i);
             eval(FCSMeta.Model.Brightness);
-            h.Fit_Table.Data{i,3}= num2str(str2double(h.Fit_Table.Data{i,2}).*B);
+            h.Fit_Table.Data{i,4}= num2str(str2double(h.Fit_Table.Data{i,2}).*B);
         end
         %%% Updates parameter values in table
-        h.Fit_Table.Data(1:end-3,4:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
+        h.Fit_Table.Data(1:end-3,5:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
         %%% Updates plots
         %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
-    case 3 %%% Individual cells calbacks 
+    case 3 %%% Individual cells callbacks 
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
@@ -1241,36 +1249,37 @@ switch mode
         if isprop(e,'NewData')
             NewData = e.NewData;
         end
+
         if e.Indices(1)==size(h.Fit_Table.Data,1)-2
             %% ALL row wase used => Applies to all files
             h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            if mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4
+            if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
                 %% Value was changed => Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(NewData);
-            elseif mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=6 && NewData==1
+                FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
+            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
                 %% Value was fixed => Uncheck global
                 h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
-            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
+            elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && NewData==1
                 %% Global was change
                 %%% Apply value to all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
                 %%% Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-3)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
                 %%% Unfixes all files to prohibit fixed and global
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
             end
-        elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
+        elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Global was changed => Applies to all files
             h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
             if NewData
                 %%% Apply value to all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
                 %%% Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-3)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
                 %%% Unfixes all file to prohibit fixed and global
                 h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
             end
-        elseif mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
+        elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Value was fixed
             %%% Updates ALL row
             if all(cell2mat(h.Fit_Table.Data(1:end-3,e.Indices(2))))
@@ -1280,15 +1289,15 @@ switch mode
             end
             %%% Unchecks global to prohibit fixed and global
             h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false;});
-        elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
+        elseif mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Value was changed
             if h.Fit_Table.Data{e.Indices(1),e.Indices(2)+2}
                 %% Global => changes value of all files
                 h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-                FCSMeta.Params((e.Indices(2)-1)/3,:)=str2double(NewData);
+                FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
             else
                 %% Not global => only changes value
-                FCSMeta.Params((e.Indices(2)-1)/3,e.Indices(1))=str2double(NewData);
+                FCSMeta.Params((e.Indices(2)-2)/3,e.Indices(1))=str2double(NewData);
                 
             end
         elseif e.Indices(2)==1
@@ -1533,7 +1542,7 @@ UserValues.FCSFit.Hide_Legend = h.Hide_Legend.Value;
 LSUserValues(1);
 
 YMax=0; YMin=0; RMax=0; RMin=0;
-Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
+Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
 for i=1:size(FCSMeta.Plots,1)
     if Active(i)
         %% Calculates normalization parameter B
@@ -1622,7 +1631,7 @@ for i=1:size(FCSMeta.Plots,1)
         RMin=min([RMin, min(Residuals(XMin:XMax))]);        
         %% Calculates Chi^2 and updates table
         h.Fit_Table.CellEditCallback=[];
-        Chisqr=sum(Residuals(XMin:XMax).^2)/(numel(Residuals(XMin:XMax))-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+        Chisqr=sum(Residuals(XMin:XMax).^2)/(numel(Residuals(XMin:XMax))-sum(~cell2mat(h.Fit_Table.Data(i,6:3:end-1))));
         h.Fit_Table.Data{i,end}=num2str(Chisqr);
         h.Fit_Table.CellEditCallback={@Update_Table,3};
         %% Makes plot visible, if it is active
@@ -1790,7 +1799,7 @@ switch mode
         H.Residuals.YLim=h.Residuals_Axes.YLim;
         H.Residuals.YLabel.String = {'weighted'; 'residuals'};
         %% Copies objects to new figure
-        Active = find(cell2mat(h.Fit_Table.Data(1:end-3,1)));
+        Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
         UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
         
         H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
@@ -1832,7 +1841,7 @@ switch mode
         %%% Copies figure handles to workspace
         assignin('base','H',H);
     case 3 %%% Exports data to workspace
-        Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
+        Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
         FCS=[];
         FCS.Model=FCSMeta.Model.Function;
         FCS.FileName=FCSData.FileName(Active)';
@@ -1855,7 +1864,7 @@ switch mode
         assignin('base','FCS',FCS);
     case 4 %%% Exports Fit Result to Clipboard
         FitResult = cell(numel(FCSData.FileName),1);
-        active = cell2mat(h.Fit_Table.Data(1:end-2,1));
+        active = cell2mat(h.Fit_Table.Data(1:end-2,2));
         for i = 1:numel(FCSData.FileName)
             if active(i)
                 FitResult{i} = cell(size(FCSMeta.Params,1)+2,1);
@@ -1902,12 +1911,12 @@ h.FCSFit.Name='FCS Fit  FITTING';
 h.Fit_Table.Enable='off';
 drawnow;
 %%% Reads parameters from table
-Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end-1));
-Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end-1));
-Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
-lb = h.Fit_Table.Data(end-1,4:3:end-1);
+Fixed = cell2mat(h.Fit_Table.Data(1:end-3,6:3:end-1));
+Global = cell2mat(h.Fit_Table.Data(end-2,7:3:end-1));
+Active = cell2mat(h.Fit_Table.Data(1:end-3,2));
+lb = h.Fit_Table.Data(end-1,5:3:end-1);
 lb = cellfun(@str2double,lb);
-ub = h.Fit_Table.Data(end  ,4:3:end-1);
+ub = h.Fit_Table.Data(end,5:3:end-1);
 ub = cellfun(@str2double,ub);
 %%% Read fit settings and store in UserValues
 MaxIter = str2double(h.Iterations.String);
@@ -1922,7 +1931,7 @@ opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
 %%% Performs fit
 if sum(Global)==0
     %% Individual fits, not global
-    for i=find(Active)';
+    for i=find(Active)'
         if ~FCSMeta.FitInProgress
             break;
         end

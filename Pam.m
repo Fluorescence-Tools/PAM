@@ -718,8 +718,12 @@ addpath(genpath(['.' filesep 'functions']));
     %%% (re-)calculation
     h.Burst.Button_Menu = uicontextmenu;
     h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
-            'Label','Load Performed BurstSearch',...
+            'Label','Load performed BurstSearch',...
             'Callback',@Load_Performed_BurstSearch);
+    h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
+        'Label','Export total measurement to PDA',...
+        'Callback',@Export_total_to_PDA,...
+        'Separator','on');
     h.Burst.Button.UIContextMenu = h.Burst.Button_Menu;
     %%% Right-click menu for BurstLifetime_Button to allow loading of
     %%% IRF/Scatter AFTER performed burst search using stored PIE settings
@@ -6251,6 +6255,65 @@ else %change in edit boxes
 end
 LSUserValues(1);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Exports the total measurement for PDA  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Export_total_to_PDA(obj,~)
+global FileInfo UserValues
+h = guidata(obj);
+%%% Only implemented for 2color FRET
+BAMethod = UserValues.BurstSearch.Method;
+if ~any(BAMethod == [1,2])
+    disp('Only implemented for 2color FRET')
+    return;
+end
+
+%%% read out photons
+Photons{1} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1},'Macrotime');
+Photons{2} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2},'Macrotime');
+Photons{3} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1},'Macrotime');
+Photons{4} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2},'Macrotime');
+Photons{5} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1},'Macrotime');
+Photons{6} = Get_Photons_from_PIEChannel(UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2},'Macrotime');
+
+timebin = 1E-3; %%% hardcoded
+timebinMT = timebin/FileInfo.ClockPeriod;
+maxMT = max(cell2mat(cellfun(@(x) x(end),Photons,'UniformOutput',false)));
+
+PDA.NGP = histcounts(Photons{1},0:timebinMT:maxMT);
+PDA.NGS = histcounts(Photons{2},0:timebinMT:maxMT);
+PDA.NFP = histcounts(Photons{3},0:timebinMT:maxMT);
+PDA.NFS = histcounts(Photons{4},0:timebinMT:maxMT);
+PDA.NRP = histcounts(Photons{5},0:timebinMT:maxMT);
+PDA.NRS = histcounts(Photons{6},0:timebinMT:maxMT);
+
+PDA.NG = PDA.NGP+ PDA.NGS;
+PDA.NF = PDA.NFP + PDA.NFS;
+PDA.NR = PDA.NRP + PDA.NRS;
+
+% Background for all burst channels
+Background.Background_GGpar = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,1}));
+Background.Background_GGperp = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{1,2}));
+Background.Background_GRpar = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,1}));
+Background.Background_GRperp = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{2,2}));
+Background.Background_RRpar = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,1}));
+Background.Background_RRperp = ...
+    UserValues.PIE.Background(strcmp(UserValues.PIE.Name,UserValues.BurstSearch.PIEChannelSelection{BAMethod}{3,2}));
+
+PDA.Background = Background;
+
+PDA.Corrections = UserValues.BurstBrowser.Corrections;
+PDA.Type = 'Total Measurement';
+
+[pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
+FileName = fullfile(pathstr,[FileName '_' sprintf('%d',timebin*1E3) 'ms.pda']);
+FileName = GenerateName(FileName, 1);
+save(FileName, 'PDA', 'timebin')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -21,6 +21,7 @@ function GlobalPDAFit(~,~)
 
 %%% TO DO:
 %%% Fix Brightness correction
+%%% Implement donor only for MLE and MC fitting
 
 global UserValues PDAMeta PDAData
 
@@ -1049,6 +1050,7 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.PathName = [];
     PDAData.Data = [];
     PDAData.timebin = [];
+    PDAData.Type = [];
     PDAData.Corrections = [];
     PDAData.Background = [];
     PDAData.OriginalFitParams = [];
@@ -1114,6 +1116,11 @@ for i = 1:numel(FileName)
                     PDAData.BrightnessReference.PN = histcounts(PDAData.BrightnessReference.N,1:(max(PDAData.BrightnessReference.N)+1));
                 end
             end
+            if isfield(PDA,'Type') %%% Type distinguishes between whole measurement and burstwise
+                PDAData.Type{i} = PDA.Type;
+            else
+                PDAData.Type{i} = 'Burst';
+            end
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
         elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
@@ -1151,6 +1158,11 @@ for i = 1:numel(FileName)
                 UserValues.PDA.Dynamic = SavedData.Dynamic;
                 LSUserValues(1)
             end
+            if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
+                PDAData.Type{i} = SavedData.Type;
+            else
+                PDAData.Type{i} = 'Burst';
+            end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -1170,12 +1182,13 @@ for i = 1:numel(FileName)
     else
         errorstr{a} = ['File ' FileName{i} ' on path ' PathName{i} ' could not be found. File omitted from database.'];
         a = a+1;
-    end
+    end       
 end
 PDAData.OriginalFitParams = PDAData.FitTable; %contains the fit table as it was originally displayed when opening the data
 if a > 1
     msgbox(errorstr)
 end
+
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
 Update_GUI(h.SettingsTab.DynamicModel,[]);
@@ -1195,6 +1208,7 @@ for i = 1:numel(PDAData.FileName)
     SavedData.timebin = PDAData.timebin(i);
     SavedData.Corrections = PDAData.Corrections{i};
     SavedData.Background = PDAData.Background{i};
+    SavedData.Type = PDAData.Type{i};
     % for each dataset, all info from the table is saved (including active, global, fixed)
     SavedData.FitTable = h.FitTab.Table.Data(i,:);
     SavedData.FitTable{1} = true; %put file to active to avoid problems when reloading data
@@ -1281,12 +1295,16 @@ switch mode
             normal = color(i,:);
             light = (normal+1)./2;
             dark = normal./2;
-            %%% find valid bins (chosen by thresholds min/max and stoichiometry)
-            StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
-            valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... %min photon number
-                ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... %max photon number
-                ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            if strcmp(PDAData.Type{i},'Burst')
+                %%% find valid bins (chosen by thresholds min/max and stoichiometry)
+                StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
+                valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... %min photon number
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... %max photon number
+                    ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                    ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            else
+                valid = true(size(PDAData.Data{i}.NF));
+            end
             %%% Calculate proximity ratio histogram
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             Sto = (PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NG(valid))./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid)+PDAData.Data{i}.NR(valid));
@@ -1299,8 +1317,8 @@ switch mode
             % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
             % the last element is to allow proper display of the 50th bin
             
-            hBSD = histcounts(BSD,1:(max(BSD)+1));
-            xBSD = 1:max(BSD);
+            hBSD = histcounts(BSD,0:(max(BSD)+1));
+            xBSD = 0:max(BSD);
             
             % make 'stairs' appear similar to 'bar'
             xProx = xProx-mean(diff(xProx))/2;
@@ -1461,12 +1479,16 @@ switch mode
                 % if fit is performed, this will work
                 PDAMeta.Chi2_Single.String = ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))];
             end
-            %%% Re-Calculate proximity ratio histogram
-            StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);  
-            valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...%min photon number
-                ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ...%max photon number
-                ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-                ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            if strcmp(PDAData.Type{i},'Burst')
+                %%% Re-Calculate proximity ratio histogram
+                StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);  
+                valid = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ...%min photon number
+                    ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ...%max photon number
+                    ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                    ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+            else
+                valid = true(size(PDAData.Data{i}.NF));
+            end
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
             % if NumberOfBins = 50, then the EDGES(1:51) array is 0 0.02 0.04... 1.00
@@ -1547,7 +1569,7 @@ switch mode
                     'Visible','off');
             if UserValues.PDA.DeconvoluteBackground
                 if isfield(PDAMeta,'PN')
-                    PDAMeta.Plots.PF_Deconvolved_Single.XData = 1:numel(PDAMeta.PN{i});
+                    PDAMeta.Plots.PF_Deconvolved_Single.XData = 0:(numel(PDAMeta.PN{i})-1);
                     PDAMeta.Plots.PF_Deconvolved_Single.YData = PDAMeta.PN{i};
                     PDAMeta.Plots.PF_Deconvolved_Single.Visible = 'on';
                 end
@@ -1971,13 +1993,16 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
     for i  = find(PDAMeta.Active)'
-        %%% find valid bins (chosen by thresholds min/max and stoichiometry)
-        StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
-        PDAMeta.valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
-            ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... % max photon number
-            ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
-            ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
-        PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
+        if strcmp(PDAData.Type{i},'Burst')
+            %%% find valid bins (chosen by thresholds min/max and stoichiometry)
+            StoAll = (PDAData.Data{i}.NF+PDAData.Data{i}.NG)./(PDAData.Data{i}.NG+PDAData.Data{i}.NF+PDAData.Data{i}.NR);
+            PDAMeta.valid{i} = ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) > str2double(h.SettingsTab.NumberOfPhotMin_Edit.String)) & ... % min photon number
+                ((PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String)) & ... % max photon number
+                ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
+                ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
+        else
+            PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
+        end
         %%% find the maxN of all data
         maxN = max(maxN, max((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}))));
     end
@@ -2066,7 +2091,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
                 PN = histcounts((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i})),1:(maxN+1));
             else
                 PN = deconvolute_PofF(PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}),(PDAMeta.BGdonor(i)+PDAMeta.BGacc(i))*PDAData.timebin(i)*1E3);
-                PN = PN(1:maxN).*numel(PDAData.Data{i}.NF(PDAMeta.valid{i}));
+                PN = PN(1:maxN).*sum(PDAMeta.valid{i} &  ~((PDAData.Data{i}.NG == 0) & (PDAData.Data{i}.NF == 0)));
             end
             % assign current file to global cell
             %PDAMeta.E_grid{i} = E_grid;
@@ -4376,8 +4401,8 @@ elseif obj == h.SettingsTab.DynamicModel
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
             h.FitTab.Table.ColumnName{11} = '<HTML><b>A<sub>2</sub></b>';
-            h.FitTab.Table.ColumnWidth{2} = 30;
-            h.FitTab.Table.ColumnWidth{11} = 30;
+            h.FitTab.Table.ColumnWidth{2} = 40;
+            h.FitTab.Table.ColumnWidth{11} = 40;
             %%% Revert to all PDA Methods
             h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
     end
