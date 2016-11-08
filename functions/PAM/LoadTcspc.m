@@ -74,12 +74,6 @@ else %%% Creates empty struct, if it was called outside of PAM
     h.Progress.Text = [];
 end
 
-
-h.Database.Correlate.Enable = 'on';
-h.Database.Burst.Enable = 'on';
-h.Database.Save.Enable = 'on';
-h.Database.Delete.Enable = 'on';
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Checks which file type was selected
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,7 +144,7 @@ switch (Type)
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, Scanner, 'SPC-140/150/830/130');
+                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, [0 0 0], 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')
                     Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
@@ -1149,7 +1143,7 @@ if strcmp(Caller.Tag, 'Pam')
     Shift_Detector([],[],'load')
     %%% Updates the Pam meta Data; needs inputs 3 and 4 to be zero
     %%% this needs not be done if database is used for batch processing
-    if ~any(gcbo==[h.Database.Correlate h.Database.Burst])
+    if ~any(gcbo==[h.Export.Correlate h.Export.Burst])
         Update_Data([],[],0,0);
         Update_Display([],[],0);
     end

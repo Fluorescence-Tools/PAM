@@ -5955,13 +5955,15 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                 Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
             end
             hisbins = Pixeltimes.*FileInfo.ClockPeriod;
-            hisbins(2)=hisbins(2)+hisbins(1);
             hisbins(1)=[];
         end
 
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         Intensity= histc(Photons,hisbins);
+        
+        Pixel=[1;cumsum(Intensity(:))];
+        Pixel(Pixel==0)=1;
         
         if isfield(FileInfo, 'LineStart') % Files with interline data such as PTU
             allframes = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
@@ -5995,8 +5997,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
             
         
-        Pixel=[1;cumsum(Intensity(:))];
-        Pixel(Pixel==0)=1;
+
 
         %%% Sorts Microtimes
         Photons=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
@@ -6073,6 +6074,8 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             
         end
 
+        g=flip(g',1);s=flip(s',1);
+        
         neg=find(g<0 & s<0);
         g(neg)=-g(neg);
         s(neg)=-s(neg);
