@@ -1669,6 +1669,21 @@ switch mode
                     'Visible', 'on',...
                     'YData', ydatafitind);
             end
+            %%% donor only plot (plot #7)
+            if PDAMeta.FitParams(i,16) > 0 %%% donor only existent
+                if h.SettingsTab.OuterBins_Fix.Value
+                    % do not display or take into account during fitting, the
+                    % outer bins of the histogram.
+                    ydatafitind = [PDAMeta.hFit_Donly{i}(2); PDAMeta.hFit_Donly{i}(2:end-1); PDAMeta.hFit_Donly{i}(end-1); PDAMeta.hFit_Donly{i}(end-1)];
+                else
+                    ydatafitind = [PDAMeta.hFit_Donly{i}'; PDAMeta.hFit_Donly{i}(end)];
+                end
+                PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
+                PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind;
+            else
+                PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
+            end
+            
             if h.SettingsTab.DynamicModel.Value
                 % plot the summed dynamic component
                 if h.SettingsTab.OuterBins_Fix.Value
@@ -1832,6 +1847,20 @@ switch mode
                 set(PDAMeta.Plots.Fit_Single{1,c+1},...
                     'Visible', 'on',...
                     'YData', ydatafitind);
+                %%% donor only plot (plot #7)
+                if PDAMeta.FitParams(i,16) > 0 %%% donor only existent
+                    if h.SettingsTab.OuterBins_Fix.Value
+                        % do not display or take into account during fitting, the
+                        % outer bins of the histogram.
+                        ydatafitind = [PDAMeta.hFit_Donly{i}(2); PDAMeta.hFit_Donly{i}(2:end-1); PDAMeta.hFit_Donly{i}(end-1); PDAMeta.hFit_Donly{i}(end-1)];
+                    else
+                        ydatafitind = [PDAMeta.hFit_Donly{i}'; PDAMeta.hFit_Donly{i}(end)];
+                    end
+                    PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
+                    PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind;
+                else
+                    PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
+                end
             end
             if h.SettingsTab.DynamicModel.Value
                 % plot the summed dynamic component
@@ -2174,13 +2203,28 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
 
                 P_donly = zeros(Nobins,1);
                 count = 1;
-                for g = 0:NBG
-                    for r = 0:NBR
-                        PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
-                        PN_trans = PN_trans(:);
-                        PN_trans = PN_trans(validd{count});
-                        P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
-                        count = count+1;
+                if ~UserValues.PDA.DeconvoluteBackground
+                    for g = 0:NBG
+                        for r = 0:NBR
+                            %%% Approximation of P(F) ~= P(S), i.e. use
+                            %%% P(S) with S = F + BG
+                            PN_trans = repmat(PN_dummy(1+g+r:end),1,maxN+1);%the total number of fluorescence photons is reduced
+                            PN_trans = PN_trans(:);
+                            PN_trans = PN_trans(validd{count});
+                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            count = count+1;
+                        end
+                    end
+                else
+                    for g = 0:NBG
+                        for r = 0:NBR
+                            %%% Use the deconvolved P(F)
+                            PN_trans = repmat(PN_dummy(1:end-g-r),1,maxN+1);%the total number of fluorescence photons is reduced
+                            PN_trans = PN_trans(:);
+                            PN_trans = PN_trans(validd{count});
+                            P_donly = P_donly + accumarray(bin{count},P_array{count}.*PN_trans);
+                            count = count+1;
+                        end
                     end
                 end
             end
@@ -2759,11 +2803,15 @@ else %%% dynamic model
 end
 
 
-
-%%% Add donor only species
-PDAMeta.hFit_Donly = fitpar(end)*PDAMeta.P_donly{i}';
-% the sum of areas will > 1 this way?
-hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
+if fitpar(end) > 0
+    %%% Add donor only species
+    PDAMeta.hFit_Donly{i} = fitpar(end)*PDAMeta.P_donly{i}';
+    % the sum of areas will > 1 this way?
+    hFit = (1-fitpar(end))*hFit + fitpar(end)*PDAMeta.P_donly{i}';
+    for k = 1:numel(hFit_Ind)
+        hFit_Ind{k} = hFit_Ind{k}*(1-fitpar(end));
+    end
+end
 
 %%% correct for slight number deviations between hFit and hMeasured
 %hFit = (hFit./sum(hFit)).*sum(PDAMeta.hProx{i});
@@ -2794,7 +2842,7 @@ end
 PDAMeta.w_res{i} = w_res;
 PDAMeta.hFit{i} = hFit;
 PDAMeta.chi2(i) = chi2;
-for c = PDAMeta.Comp{i};
+for c = PDAMeta.Comp{i}
     PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
 end
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);

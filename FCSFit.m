@@ -1018,7 +1018,7 @@ global FCSMeta UserValues
 FileName=[];
 if mode
     %% Select a new model to load
-    [FileName,PathName]= uigetfile('.txt', 'Choose a fit model', [pwd filesep 'Models']);
+    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [pwd filesep 'Models']);
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
@@ -1037,7 +1037,7 @@ else
     FileName=UserValues.File.FCS_Standard;
 end
 
-if ~isempty(FileName)
+if ~isempty(FileName) && ~(FilterIndex == 0)
     UserValues.File.FCS_Standard=FileName;
     LSUserValues(1);
     
