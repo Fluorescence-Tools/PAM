@@ -5986,7 +5986,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         %%% Assignes Pixels to Particles if enabled
         if UseParticles>1
             BitImage = (Intensity>str2double(h.MI.Phasor_ParticleTH.String));
-            Regions = regionprops(BitImage,Intensity,'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
+            Regions = regionprops(flip(BitImage',2),flip(Intensity',2),'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
             
             ParticleIndex = [];
             ParticleNumber = [];
@@ -6036,7 +6036,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i
             end
             if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
-                Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1))';
+                Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+reshape(histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1)),1,[]);
                 k = k + 1;
             elseif UseParticles==3 && (k>numel(ParticleIndex) || ParticleIndex(k)~=i) %%% Sets value to 0 if only particles are enabeled
                 Mean_LT(j)=0;
