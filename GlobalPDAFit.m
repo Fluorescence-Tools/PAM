@@ -3011,7 +3011,10 @@ for j=1:sum(PDAMeta.Active)
     %%% Add donor only species
     PDAMeta.hFit_Donly = fraction_Donly*PDAMeta.P_donly{i}';
     hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
-    
+    for k = 1:numel(hFit_Ind)
+        hFit_Ind{k} = hFit_Ind{k}*(1-fitpar(end));
+    end
+
     %%% correct for slight number deviations between hFit and hMeasured
 %     for c = PDAMeta.Comp{i}
 %         hFit_Ind{c} = hFit_Ind{c}./sum(hFit).*sum(PDAMeta.hProx{i});
@@ -3054,7 +3057,7 @@ for j=1:sum(PDAMeta.Active)
     if j == h.SingleTab.Popup.Value
         set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
     end
-    for c = PDAMeta.Comp{i};
+    for c = PDAMeta.Comp{i}
         PDAMeta.hFit_Ind{i,c} = hFit_Ind{c};
     end
     if h.SettingsTab.LiveUpdate.Value
@@ -3390,6 +3393,7 @@ hFit = zeros(numel(PDAMeta.hProx{file}),1);
 for j = PDAMeta.Comp{file}
     hFit = hFit + A(j).*H_res_dummy(:,j);
 end
+    
 %hFit = sum(H_meas)*hFit./sum(hFit);
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
