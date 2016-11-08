@@ -2124,7 +2124,7 @@ ShiftParams(4) = TauFitData.IRFLength{chan};
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
-Decay = G*(1-3*l1)*TauFitData.FitData.Decay_Par+(2-3*l2)*TauFitData.FitData.Decay_Per;
+Decay = G*(1-3*l2)*TauFitData.FitData.Decay_Par+(2-3*l1)*TauFitData.FitData.Decay_Per;
 Length = numel(Decay);
 %%% Check if IRFshift is fixed or not
 if h.FitPar_Table.Data{end,4} == 0
@@ -3470,7 +3470,7 @@ Decay_Per = h.Plots.Decay_Per.YData;
 %%% Calculate Anisotropy
 l1 = UserValues.TauFit.l1;
 l2 = UserValues.TauFit.l2;
-Anisotropy = (Decay_Par-Decay_Per)./((1-3*l1).*Decay_Par + (2-3*l2)*Decay_Per);
+Anisotropy = (Decay_Par-Decay_Per)./((1-3*l2).*Decay_Par + (2-3*l1)*Decay_Per);
 Anisotropy(isnan(Anisotropy)) = 0;
 Anisotropy_fit = Anisotropy(ignore:end);
 x_ax = 1:numel(Anisotropy_fit);
