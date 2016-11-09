@@ -4806,14 +4806,9 @@ for i=Auto
             TotalPx(j)=numel(Image);
             MIAData.Cor{floor(i*1.5)}(:,:,j)=(fftshift(real(ifft2(Image_FFT.*conj(Image_FFT))))/(mean2(Image)^2*size(Image,1)*size(Image,2))) - 1;
         end
-        %%% Center point is average of x neighbors to remove noise peak
-        center=[floor(size(MIAData.Cor{floor(i*1.5)},1)/2)+1,floor(size(MIAData.Cor{floor(i*1.5)},2)/2)+1];
-        MIAData.Cor{floor(i*1.5)}(center(1),center(2),j)=(MIAData.Cor{floor(i*1.5)}(center(1),center(2)-1,j)+MIAData.Cor{floor(i*1.5)}(center(1),center(2)+1,j))/2;
-        
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,['Correlating ACF' num2str(i)]);
-        end
-        
+        end       
     end
     %%% Calculates mean intensity for saving
     MeanInt(i)=sum(TotalInt)/sum(TotalPx);
@@ -4846,9 +4841,6 @@ if Cross
             %%% Actual correlation
             MIAData.Cor{2}(:,:,j)=(fftshift(real(ifft2(fft2(Image{1}).*conj(fft2(Image{2})))))/(mean2(Image{1})*mean2(Image{2})*size(Image{1},1)*size(Image{1},2))) - 1;
         end
-        %%% Center point is average of x neighbors to remove noise peak
-        center=[floor(size(MIAData.Cor{2},1)/2)+1,floor(size(MIAData.Cor{2},2)/2)+1];
-        MIAData.Cor{2}(center(1),center(2),j)=(MIAData.Cor{2}(center(1),center(2)-1,j)+MIAData.Cor{2}(center(1),center(2)+1,j))/2;
         if mod(j,100)==0
             Progress(j/numel(Frames),h.Mia_Progress_Axes, h.Mia_Progress_Text,'Correlating CCF');
         end
@@ -5293,6 +5285,9 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
 
 end
 
+
+
+
 for i=channel
     h.Mia_ICS.Axes(i,1).Visible='on';
     h.Mia_ICS.Axes(i,2).Visible='on';
@@ -5300,6 +5295,9 @@ for i=channel
     h.Plots.Cor(i,1).Visible='on';
     h.Plots.Cor(i,2).Visible='on';
     h.Plots.Cor(i,3).Visible='on';
+    
+    center=[floor(size(MIAData.Cor{i},1)/2)+1,floor(size(MIAData.Cor{i},2)/2)+1];
+    MIAData.Cor{i}(center(1),center(2),:)=(MIAData.Cor{i}(center(1),center(2)-1,:)+MIAData.Cor{i}(center(1),center(2)+1,:))/2;
 end
 
 %%% Updates correlation frame slider
@@ -6015,7 +6013,7 @@ NotFixed=find(~cell2mat(h.Mia_ICS.Fit_Table.Data(2:2:end,mode)));
 Params=cellfun(@str2double,h.Mia_ICS.Fit_Table.Data(1:2:end,mode));
 Fit_Params=Params(NotFixed);
 YData=h.Plots.Cor(mode,2).ZData;
-YData(round(size(YData,1)/2),:) = YData(round(size(YData,1)/2)+1,:);
+%YData(round(size(YData,1)/2),:) = YData(round(size(YData,1)/2)+1,:);
 Size=str2double(h.Mia_ICS.Size.String);  
 if str2double(h.Mia_ICS.Frame.String)==0
     %%% Extracts, what frames to use
