@@ -3518,7 +3518,7 @@ h.Result_Plot_Text.Visible = 'on';
 TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 h.Result_Plot_Text.String = sprintf(['rho = ' num2str(x(2)*TACtoTime) ' ns \nr_0 = ' num2str(x(1))...
     '\nr_i_n_f = ' num2str(x(3))]);
-h.Result_Plot_Text.Position = [0.8*h.Result_Plot.XLim(2)*TACtoTime 0.9*h.Result_Plot.YLim(2)];
+h.Result_Plot_Text.Position = [0.8,0.9];%[0.8*h.Result_Plot.XLim(2) 0.9*h.Result_Plot.YLim(2)];
 h.G_factor_edit.String = num2str(G);
 UserValues.TauFit.G{chan} = G;
 %%% assign G factor to correct burst channel (donor/acceptor)
