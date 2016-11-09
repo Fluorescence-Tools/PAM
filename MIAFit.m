@@ -1725,7 +1725,7 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;  
         if h.Omit_Center.Value
             MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;  
-            MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;  
+            MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;   
         elseif h.Omit_Center_Line.Value
             MIAFitMeta.Plots{i,1}.YData = (MIAFitData.Data{i,1}(Center(1)-1, Center(2)+x(1,:))+MIAFitData.Data{i,1}(Center(1)+1, Center(2)+x(1,:)))/B/2;
             MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;  
@@ -2486,7 +2486,7 @@ P(Fixed) = MIAFitMeta.Params(Fixed,i);
 %%% Applies function on parameters
 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
 if h.Omit_Center.Value
-    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,1)+1)/2)) = Omit;
+    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) = Omit;
 elseif h.Omit_Center_Line.Value
     OUT(floor((size(OUT,1)+1)/2),:) = Omit;
 end
