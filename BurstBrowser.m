@@ -2866,7 +2866,7 @@ if isempty(hfig)
         'View',[0 90],...
         'UIContextMenu', h.LifeTime_Menu);
     ylabel(h.axes_rGGvsTauGG,'r_{D}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.075, 0.5, 0]);
-    xlabel(h.axes_rGGvsTauGG,'\tau_{D} [ns]','Color',UserValues.Look.Fore);
+    xlabel(h.axes_rGGvsTauGG,'\tau_{D(A)} [ns]','Color',UserValues.Look.Fore);
     title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG','Color',UserValues.Look.Fore);
     h.axes_rGGvsTauGG.YLabel.Position(1) = h.axes_rGGvsTauGG.YLabel.Position(1)-0.01;
     
@@ -5699,7 +5699,9 @@ if ~colorbyparam
     h.colorbar.Ticks = [];
     h.colorbar.TickLabels = [];
     h.colorbar.TickLabelsMode = 'auto';
+    pause(0.1)
     h.colorbar.TicksMode = 'auto';
+    pause(0.1)
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
         labels = cellfun(@str2double,h.colorbar.TickLabels);
         maxZ = max(H(:));
@@ -11926,7 +11928,7 @@ elseif BAMethod == 2
     h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
     h.axes_EvsTauRR.Title.String = 'FRET Efficiency vs. Lifetime RR';
     h.axes_EvsTauRR.Title.Color = UserValues.Look.Fore;
-    h.axes_rGGvsTauGG.XLabel.String = '\tau_{D} [ns]';
+    h.axes_rGGvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{D}';
     h.axes_rGGvsTauGG.YLabel.Position= [-0.125, 0.5, 0];
     h.axes_rRRvsTauRR.XLabel.String = '\tau_{A} [ns]';
