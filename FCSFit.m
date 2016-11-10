@@ -1179,7 +1179,7 @@ switch mode
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];  
+        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-4),false];  
         h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -1228,7 +1228,7 @@ switch mode
         for i=1:(size(h.Fit_Table.Data,1)-3)
             P=FCSMeta.Params(:,i);
             eval(FCSMeta.Model.Brightness);
-            h.Fit_Table.Data{i,4}= num2str(str2double(h.Fit_Table.Data{i,2}).*B);
+            h.Fit_Table.Data{i,4}= num2str(str2double(h.Fit_Table.Data{i,3}).*B);
         end
         %%% Updates parameter values in table
         h.Fit_Table.Data(1:end-3,5:3:end-1)=cellfun(@num2str,num2cell(FCSMeta.Params)','UniformOutput',false);
@@ -1789,7 +1789,7 @@ switch mode
         H.FCS.XLim=[h.FCS_Axes.XTick(1),h.FCS_Axes.XTick(end)];
         H.FCS.YLim=h.FCS_Axes.YLim;
         switch FCSMeta.DataType
-            case 'FCS'
+            case {'FCS','FCS averaged'}
                 H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
                 H.FCS.YLabel.String = 'G({\it\tau{}})'; 
             case 'FRET'
