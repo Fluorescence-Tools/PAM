@@ -1,4 +1,4 @@
-function Output = Pam (SubFunction)
+function Output = PAM (SubFunction)
 global UserValues FileInfo PamMeta TcspcData
 h.Pam=findobj('Tag','Pam');
 if nargout > 0
