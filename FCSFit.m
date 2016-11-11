@@ -1806,12 +1806,14 @@ switch mode
         if h.Export_FitsLegend.Value
             H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
         else
-            if h.FCS_Legend.isvalid
-                LegendString = h.FCS_Legend.String(1:2:end-1);
-                for i=1:numel(LegendString)
-                    LegendString{i} = LegendString{i}(7:end);
+            if isfield(h,'FCS_Legend')
+                if h.FCS_Legend.isvalid
+                    LegendString = h.FCS_Legend.String(1:2:end-1);
+                    for i=1:numel(LegendString)
+                        LegendString{i} = LegendString{i}(7:end);
+                    end
+                    H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
                 end
-                H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
             end
         end
         H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);          
