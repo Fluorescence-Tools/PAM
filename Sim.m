@@ -1978,8 +1978,8 @@ switch mode
         %    end
         % end
 
-          % lifetime settings
-          h.Sim_UseIRF.Value = SimData.General(File).Species(Sel).UseIRF;
+        % lifetime settings
+        h.Sim_UseIRF.Value = SimData.General(File).Species(Sel).UseIRF;
         % h.Sim_IRF_Width_Edit = ?
         % for i=1:4
         %     h.Sim_LT{i} = ?
@@ -2450,7 +2450,7 @@ if ~advanced
             if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
                AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
                Noise = [];
-               while (isempty(Noise) || Noise(end)<Simtime)
+               while (isempty(Noise) || numel(Noise) < 1E6)%Noise(end)<Simtime)
                    if isempty(Noise)
                        Noise = cumsum(exprnd(AIPT,[10000 1]));
                    else
@@ -2495,8 +2495,6 @@ if advanced
     wr = zeros(4,1); wz = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
 
-    %%% Diffusion
-    D = sqrt(2*SimData.Species(i).D*10^6/Freq);
     %%% Detection probability
     DetP = SimData.Species(i).DetP;
     %%% Excitation probability (including direct excitation)
@@ -2604,6 +2602,7 @@ if advanced
     %%% This means that static species are just assigned zero switching
     %%% probability!
     %%% Parameters are stacked arrays over all species
+    D = [];
     aniso_params = [];
     LT = [];
     Dist = [];
@@ -2613,7 +2612,8 @@ if advanced
     for i = 1:numel(SimData.Species);
         %%% Concentration
         NoP = SimData.Species(i).N;
-
+        %%% Diffusion
+        D = [D; sqrt(2*SimData.Species(i).D*10^6/Freq)];
         %%% Lifetime
         %%% Lifetime of the colors
         if any([SimData.Species.UseLT] == 1)
@@ -2962,7 +2962,7 @@ if advanced
             if str2double(h.Sim_Noise{ix}.String) > 0 && ~isempty(Sim_Photons{ix})
                AIPT = Freq/(str2double(h.Sim_Noise{ix}.String)*1000);
                Noise = [];
-               while (isempty(Noise) || Noise(end)<Simtime)
+               while (isempty(Noise) || numel(Noise) < 1E6) %Noise(end)<Simtime)
                    if isempty(Noise)
                        Noise = cumsum(exprnd(AIPT,[10000 1]));
                    else
@@ -3063,14 +3063,16 @@ switch h.Sim_Save.Value
             end
             FileIRF = [File(1:end-4) '_irf.sim'];
             save(FileIRF,'Sim_Photons','Header');
-            %%% and scatter pattern/background
-            Header.FrameTime = double(ScatTime*Freq/Frames);
-            Sim_Photons = Scat_MT;
-            for i=1:numel(Sim_Photons)
-               Sim_Photons{i,2} = Scat_MI{i};
+            if h.Sim_UseNoise.Value
+                %%% and scatter pattern/background
+                Header.FrameTime = double(ScatTime*Freq/Frames);
+                Sim_Photons = Scat_MT;
+                for i=1:numel(Sim_Photons)
+                   Sim_Photons{i,2} = Scat_MI{i};
+                end
+                FileScat = [File(1:end-4) '_scat.sim'];
+                save(FileScat,'Sim_Photons','Header');
             end
-            FileScat = [File(1:end-4) '_scat.sim'];
-            save(FileScat,'Sim_Photons','Header');
         end
 end
 

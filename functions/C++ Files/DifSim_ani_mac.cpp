@@ -20,7 +20,7 @@ void Simulate_Diffusion(
         __int64_t SimTime,  double *Box,
         double ScanType, double *Step, double *Pixel, double *ScanTicks, int DiffusionStep,
         double *IRFparam, int MI_Bins,
-        double D, double *Pos,
+        double *D, double *Pos,
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
         double *LT, double *p_aniso,
@@ -49,7 +49,7 @@ void Simulate_Diffusion(
 	mt19937 mt; // initialize mersenne twister engine
     mt.seed((unsigned long)time(NULL) + Time); // engine seeding
     //normal distribtion for diffusion
-	normal_distribution<double> normal(0.0, D); //mu = 0.0, sigma = 1.0
+	normal_distribution<double> normal(0.0, 1.0); //mu = 0.0, sigma = 1.0
     /// Generates uniform distributed random number between 0 and 1
     uniform_real_distribution<double> equal_dist(0.0,1.0);
     /// Generates microtimes from IRF
@@ -121,16 +121,16 @@ void Simulate_Diffusion(
                 /// Particle movement /////////////////////////////////////////////
                 if (Map_Type != 8) /// Standard movement
                 {
-                    New_Pos[0] = Pos[0] + normal(mt); // Go one step in x direction
-                    New_Pos[1] = Pos[1] + normal(mt); // Go one step in y direction
+                    New_Pos[0] = Pos[0] + D[state]*normal(mt); // Go one step in x direction
+                    New_Pos[1] = Pos[1] + D[state]*normal(mt); // Go one step in y direction
                 }
                 else /// Position dependent diffusion
                 {
                     Old_Index = (int)(floor(Pos[0]) + Box[0]*floor(Pos[1]));
-                    New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*normal(mt); // Go one step in x direction
-                    New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*normal(mt); // Go one step in y direction
+                    New_Pos[0] = Pos[0] + sqrt(Map[Old_Index])*D[state]*normal(mt); // Go one step in x direction
+                    New_Pos[1] = Pos[1] + sqrt(Map[Old_Index])*D[state]*normal(mt); // Go one step in y direction
                 }
-                if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + normal(mt); } // Go one step in z direction, if not 2D
+                if (Box[2] > 0) { New_Pos[2] = New_Pos[2] + D[state]*normal(mt); } // Go one step in z direction, if not 2D
                 else { Box[2] = 0; } // Puts particle inside plane
 
                 /// Particle exits border /////////////////////////////////////////
@@ -467,7 +467,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     int MI_Bins = mxGetScalar(prhs[8]);
     
     // Particle Parameters
-    double D = mxGetScalar(prhs[9]);  
+    double *D = mxGetPr(prhs[9]);  
     double *Pos = mxGetPr(prhs[10]);
 
     // Color Parameters
