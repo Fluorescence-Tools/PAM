@@ -49,6 +49,12 @@ if isempty(h.Mia)
     'Label','...single color TIFFs',...
     'Callback',{@Mia_Load,1},...
     'Tag','Load_Mia_TIFF_SIngle');
+    %%% Load TIFF
+    h.Mia_Load_TIFF_RLICS = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...RLICS TIFFs',...
+    'Callback',{@Mia_Load,1.5},...
+    'Tag','Load_Mia_TIFF_RLICS');
     %%% Load Data from Pam
     h.Mia_Load_Pam = uimenu(...
     'Parent',h.Mia_Load,...
@@ -2757,7 +2763,7 @@ global MIAData UserValues FileInfo TcspcData
 h = guidata(findobj('Tag','Mia'));
 
 switch mode
-    case 1 %%% Loads single color TIFFs
+    case {1, 1.5} %%% Loads single color TIFFs
         [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', UserValues.File.MIAPath, 'MultiSelect', 'on');
         
         if all(Path1==0)
@@ -2787,6 +2793,7 @@ switch mode
         MIAData.TICS_Int = [];
         MIAData.STICS = [];
         MIAData.STICS_SEM = [];
+        MIAData.RLICS = [];
         for i=1:3
             h.Plots.Cor(i,1).CData=zeros(1,1,3);
             h.Plots.Cor(i,2).ZData=zeros(1);
@@ -2846,11 +2853,30 @@ switch mode
                     h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
                     h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
                     h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                elseif numel(Start)==7 && numel(Stop)==7
+                    h.Mia_Image.Settings.Image_Frame.String = Info(1).ImageDescription(Start(2)+1:Stop(2)-1);
+                    h.Mia_Image.Settings.Image_Line.String = Info(1).ImageDescription(Start(3)+1:Stop(3)-1);
+                    h.Mia_ICS.Fit_Table.Data(15,:) = {Info(1).ImageDescription(Start(3)+1:Stop(3)-1)};
+                    h.Mia_Image.Settings.Image_Pixel.String = Info(1).ImageDescription(Start(4)+1:Stop(4)-1);
+                    h.Mia_ICS.Fit_Table.Data(13,:) = {Info(1).ImageDescription(Start(4)+1:Stop(4)-1)};
+                    h.Mia_Image.Settings.Image_Size.String = Info(1).ImageDescription(Start(5)+1:Stop(5)-1);
+                    h.Mia_ICS.Fit_Table.Data(11,:) = {Info(1).ImageDescription(Start(5)+1:Stop(5)-1)};
+                    MIAData.RLICS(1,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(1,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
                 end
             end
             
             TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
-            for j=1:numel(Info)
+            
+            if isempty(MIAData.RLICS) 
+                Frames = 1:numel(Info);
+            elseif ~isempty(MIAData.RLICS) && mode==1
+                Frames = 1:numel(Info)/2;
+            else
+                Frames = (numel(Info)/2+1):numel(Info);
+            end
+            
+            for j=Frames
                 if mod(j,10)==0
                     %%% Updates progress bar
                     Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName1)),...
@@ -2862,6 +2888,9 @@ switch mode
                 MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
             end
             TIFF_Handle.close(); % Close tif reference   
+        end
+        if ~isempty(MIAData.RLICS) && mode==1.5
+            MIAData.Data{1,1}=single(MIAData.Data{1,1})/MIAData.RLICS(1,1)-MIAData.RLICS(1,2);
         end
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -2906,8 +2935,29 @@ switch mode
         for i=1:numel(FileName2)
             MIAData.FileName{2}{i}=FileName2{i};
             Info=imfinfo(fullfile(Path2,FileName2{i}));
+            
+            
+                        %%% Automatically updates image properties
+            if isfield(Info(1), 'ImageDescription') && ~isempty(Info(1).ImageDescription)
+                Start = strfind(Info(1).ImageDescription,': ');
+                Stop = strfind(Info(1).ImageDescription,'\n');
+                if numel(Start)==7 && numel(Stop)==7
+                    MIAData.RLICS(2,1) = str2double(Info(1).ImageDescription(Start(6)+1:Stop(6)-1));
+                    MIAData.RLICS(2,2) = str2double(Info(1).ImageDescription(Start(7)+1:Stop(7)-1));
+                end
+            end
+            
             TIFF_Handle = Tiff(fullfile(Path2,FileName2{i}),'r'); % Open tif reference
-            for j=1:numel(Info)
+            
+            if isempty(MIAData.RLICS) || size(MIAData.RLICS,1)~=2
+                Frames = 1:numel(Info);
+            elseif size(MIAData.RLICS,1)==2 && mode==1 
+                Frames = 1:numel(Info)/2;
+            else
+                Frames = (numel(Info)/2+1):numel(Info);
+            end
+            
+            for j=Frames
                 if mod(j,10)==0
                     %%% Updates progress bar
                     Progress(((j-1)+numel(Info)*(i-1))/(numel(Info)*numel(FileName2)),...
@@ -2918,6 +2968,9 @@ switch mode
                 TIFF_Handle.setDirectory(j);
                 MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
             end
+        end
+        if ~isempty(MIAData.RLICS) && mode==1.5 && size(MIAData.RLICS,1)==2
+            MIAData.Data{2,1}=single(MIAData.Data{2,1})/MIAData.RLICS(2,1)-MIAData.RLICS(2,2);
         end
         %%% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
@@ -3147,7 +3200,7 @@ switch mode
         Progress(1);  
         %%% Updates plots
         Mia_ROI([],[],1)
-        
+              
 end
 
 
