@@ -20,7 +20,7 @@ void Simulate_Diffusion(
         __int64 SimTime,  double *Box,
         double ScanType, double *Step, double *Pixel, double *ScanTicks, int DiffusionStep,
         double *IRFparam, const int MI_Bins,
-        double D, double *Pos,
+        double *D, double *Pos,
         double *Wr, double *Wz, double *ShiftX, double *ShiftY, double *ShiftZ,
         double *ExP, double *DetP, double *BlP,
         double *LT, double *p_aniso,
@@ -467,7 +467,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const int MI_Bins = mxGetScalar(prhs[8]);
     
     // Particle Parameters
-    double D = mxGetScalar(prhs[9]);  
+    double *D = mxGetPr(prhs[9]);  
     double *Pos = mxGetPr(prhs[10]);
 
     // Color Parameters
