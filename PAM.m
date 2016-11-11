@@ -10056,6 +10056,7 @@ switch obj
         %%% add legends
         names = [PamMeta.fFCS.MIPattern_Name, {'Scatter'}];
         names = names(active); names{end+1} = 'total';
+        names = cellfun(@(x) strrep(x,'_',' '),names,'UniformOutput',false);
         if h.Cor_fFCS.CrossCorr_Checkbox.Value == 0
             legend(h.Cor_fFCS.MIPattern_Axis2,'off');
             legend(h.Cor_fFCS.MIPattern_Axis,names);

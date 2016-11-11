@@ -2490,7 +2490,6 @@ if advanced
     %%% Crosstalk, direct excitation and detection/excitation probabilities
     %%% Bleaching rates
     %%% Diffusion/Quenching maps
-    %%% Diffusion Coefficient (for now)
     i = 1;
     wr = zeros(4,1); wz = zeros(4,1); 
     dX = zeros(4,1); dY = zeros(4,1); dZ = zeros(4,1);
