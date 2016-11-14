@@ -279,7 +279,7 @@ switch TTResultFormat_TTTRRecType
         NoOfFrames = nnz(FrameMarkerIndices);
         Header.NoF= floor(NoOfFrames);
         Header.FrameIndices = TimeTag(FrameMarkerIndices);
-        Header.LineIndices = TimeTag(find(special & (channel == 2)));
+        Header.LineIndices = TimeTag(special & (channel == 2));
         
         % calculate actual timetag of photons
         ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
