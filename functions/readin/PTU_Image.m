@@ -8,6 +8,12 @@ global FileInfo
 LStart = FileInfo.LineStart*FileInfo.ClockPeriod;
 LStop = FileInfo.LineStop*FileInfo.ClockPeriod;
 
+% Imaging bits might have a delay with respect to the actual galvo mirror
+% movement
+delay = 1400/10^6; %seconds
+LStart = LStart-delay;
+LStop = LStop-delay;
+
 % Join the macrotimes of the line starts and line stops
 Bins = union(LStop,LStart);
 
