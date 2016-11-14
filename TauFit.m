@@ -1,6 +1,7 @@
 function TauFit(obj,~)
 global UserValues
 h.TauFit = findobj('Tag','TauFit');
+addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
 %%% If called from command line, close
 if nargin < 1 && isempty(gcbo)
@@ -21,7 +22,6 @@ end
 if ~isempty(findobj('Tag','BurstBrowser'))
     bh = guidata(findobj('Tag','BurstBrowser'));
 end
-addpath(genpath(['.' filesep 'functions']));
 %% Figure Generation
 %%% Load user profile
 LSUserValues(0);
@@ -5100,7 +5100,7 @@ switch obj
             end
             
             chan = h.ChannelSelect_Popupmenu.Value;
-            switch BurstData.BAMethod
+            switch TauFitData.BAMethod
                 case {1,2}
                     switch chan
                         case 1 % GG
@@ -5120,18 +5120,18 @@ switch obj
             end
             
             % reconstruct mi pattern
-            mi_pattern1 = zeros(BurstData.FileInfo.MI_Bins,1);
-            mi_pattern1(BurstData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
-            mi_pattern2 = zeros(BurstData.FileInfo.MI_Bins,1);
-            mi_pattern2(BurstData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
+            mi_pattern1 = zeros(TauFitData.FileInfo.MI_Bins,1);
+            mi_pattern1(TauFitData.PIE.From(Par) + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(1,:);
+            mi_pattern2 = zeros(TauFitData.FileInfo.MI_Bins,1);
+            mi_pattern2(TauFitData.PIE.From(Per) - TauFitData.ShiftPer{chan} + ((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})) = TauFitData.FitResult(2,:);
            
             % define output
             MIPattern = cell(0);
-            MIPattern{BurstData.PIE.Detector(Par),BurstData.PIE.Router(Par)}=mi_pattern1;
-            MIPattern{BurstData.PIE.Detector(Per),BurstData.PIE.Router(Per)}=mi_pattern2;
+            MIPattern{TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par)}=mi_pattern1;
+            MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             
-            FileName = BurstData.SpeciesNames{BurstData.SelectedSpecies};
-            Path = fileparts(BurstData.FileName);
+            FileName = TauFitData.SpeciesName;
+            Path = fileparts(TauFitData.FileName);
         end
         % save
         [~, FileName, ~] = fileparts(FileName);

@@ -5477,11 +5477,11 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function PDAdata = Bursts_to_Timebins(MT,CH,duration)
 %%% Get the maximum number of bins possible in data set
-max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
+max_duration = double(ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration));
 
 %convert absolute macrotimes to relative macrotimes
 bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
-
+bursts = cellfun(@double,bursts,'UniformOutput',false);
 %bin the bursts according to dur, up to max_duration
 bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
 
@@ -9367,6 +9367,10 @@ end
 
 TauFitData.FileName = fullfile(BurstData{file}.PathName, BurstData{file}.FileName);
 TauFitData.BAMethod = BurstData{file}.BAMethod;
+TauFitData.FileInfo = BurstData{file}.FileInfo;
+TauFitData.PIE = BurstData{file}.PIE;
+TauFitData.SpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies};
+TauFitData.FileName = BurstData{file}.FileName;
 %%% Read out the bursts contained in the different species selections
 valid = UpdateCuts([BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)],file);
 
