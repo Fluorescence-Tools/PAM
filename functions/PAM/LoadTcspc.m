@@ -903,7 +903,7 @@ switch (Type)
                 FileInfo.ImageTime = (FileInfo.LineStart(FileInfo.Lines+1) - FileInfo.LineStart(1))*FileInfo.ClockPeriod;
                 FileInfo.TACRange = FileInfo.SyncPeriod;
                 FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-                FileInfo.NoF = size(FileInfo.FrameStart,1);
+                FileInfo.NoF = Header.NoF;
                 
             else % point PTU data
                 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;

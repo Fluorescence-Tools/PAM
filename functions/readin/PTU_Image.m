@@ -2,17 +2,18 @@ function [imageseries, Stack, Bins, PIE_MT] = PTU_Image(PIE_MT, mode)
 % Function that generates the image for PTU data containing framestarts, linestarts and linestops
 % Called in Pam (Update_Data and Phasor_Calc) and in Mia
 
-global FileInfo 
+% FileInfo.FrameStart is not used here at the moment, since there was no
+% need for it.
 
-%Macrotimes of the line starts and line stop
-LStart = FileInfo.LineStart*FileInfo.ClockPeriod;
-LStop = FileInfo.LineStop*FileInfo.ClockPeriod;
+global FileInfo 
 
 % Imaging bits might have a delay with respect to the actual galvo mirror
 % movement
-delay = 1200/10^6; %seconds
-LStart = LStart+delay;
-LStop = LStop+delay;
+delay = 1.2*10^(-3); %seconds
+
+%Macrotimes of the line starts and line stop
+LStart = FileInfo.LineStart*FileInfo.ClockPeriod + delay;
+LStop = FileInfo.LineStop*FileInfo.ClockPeriod + delay;
 
 % Join the macrotimes of the line starts and line stops
 Bins = union(LStop,LStart);
@@ -35,7 +36,7 @@ Stack1 = single(histc(PIE_MT,Bins));
 Stack = zeros(FileInfo.Lines*npix*FileInfo.NoF,1);
 
 %Remove interline data (so between line stop and next line start)
-for i = 1:size(LStop,1)
+for i = 1:FileInfo.Lines*FileInfo.NoF
     Stack((1 + npix*(i-1)):(i*npix)) = Stack1((i+npix*(i-1)):(i*npix + (i-1)));
 end
 

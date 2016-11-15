@@ -276,8 +276,8 @@ switch TTResultFormat_TTTRRecType
         %Calculates the frame and line marker indices from the total timetag
         TimeTag = double(nsync)'+OverflowCorrection;
         FrameMarkerIndices = find(special & (channel == 1));
-        NoOfFrames = nnz(FrameMarkerIndices);
-        Header.NoF= floor(NoOfFrames);
+        % number of frames
+        Header.NoF= floor(size(FrameMarkerIndices,1)/2);
         Header.FrameIndices = TimeTag(FrameMarkerIndices);
         Header.LineIndices = TimeTag(special & (channel == 2));
         
