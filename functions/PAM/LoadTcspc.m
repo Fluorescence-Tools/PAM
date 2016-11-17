@@ -144,7 +144,7 @@ switch (Type)
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, PLF, ~, ~] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, [0 0 0], 'SPC-140/150/830/130');
+                [MT, MI, Header] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, [0 0 0], 'SPC-140/150/830/130');
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')
                     Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
@@ -186,12 +186,12 @@ switch (Type)
                 end
 
                 %%% Determines, if linesync was used
-                if isempty(Linetimes) && ~isempty(PLF{1})
-                    Linetimes=[0 PLF{1}];
-                elseif isempty(Linetimes) && ~isempty(PLF{2})
-                    Linetimes=[0 PLF{2}];
-                elseif isempty(Linetimes) && ~isempty(PLF{3})
-                    Linetimes=[0 PLF{3}];
+                if isempty(Linetimes) && ~isempty(Header.PixelMarker)
+                    Linetimes=[0 Header.PixelMarker];
+                elseif isempty(Linetimes) && ~isempty(Header.LineMarker)
+                    Linetimes=[0 Header.LineMarker];
+                elseif isempty(Linetimes) && ~isempty(Header.FrameMarker)
+                    Linetimes=[0 Header.FrameMarker];
                 end
             end
             %%% Creates linebreak entries
@@ -367,12 +367,12 @@ switch (Type)
                 if Type == 2
                     FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                 end
-                [MT, MI, ~, ClockRate, SyncRate] = Read_BH(fullfile(Path,FileName{i}), Inf, Scanner, Card);
+                [MT, MI, Header] = Read_BH(fullfile(Path,FileName{i}), Inf, Scanner, Card);
                 if isempty(FileInfo.SyncPeriod)
-                    FileInfo.SyncPeriod = SyncRate^-1;
+                    FileInfo.SyncPeriod = Header.SyncRate^-1;
                 end
                 if isempty(FileInfo.ClockPeriod)
-                    FileInfo.ClockPeriod = ClockRate^-1;
+                    FileInfo.ClockPeriod = Header.ClockRate^-1;
                 end
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')
@@ -406,9 +406,34 @@ switch (Type)
             end
         end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
-        FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTime = FileInfo.MeasurementTime;
-        
+        if isempty(Header.PixelMarker)
+            FileInfo.LineTimes = [];
+            FileInfo.ImageTime = [];
+            FileInfo.PixelStart = [];
+            FileInfo.LineStart = [];
+            FileInfo.LineStop = [];
+            FileInfo.FrameStart = [];
+            FileInfo.LineTime = [];
+            FileInfo.LineTime = [];
+            FileInfo.PixDwellTime = [];
+            FileInfo.PixDwellTime = [];
+            FileInfo.PixelsX = [];
+            FileInfo.PixelsY = [];
+            FileInfo.NoF = [];
+        else
+            FileInfo.PixelStart = Header.PixelMarker*FileInfo.ClockPeriod;
+            FileInfo.LineStart = Header.LineMarker*FileInfo.ClockPeriod;
+            FileInfo.LineStop = []; %no linestops are writting into the file
+            FileInfo.FrameStart = Header.FrameMarker*FileInfo.ClockPeriod;
+            FileInfo.LineTime = diff(FileInfo.LineStart);
+            FileInfo.LineTime = mean(FileInfo.LineTime(1:100)); % in seconds
+            FileInfo.PixDwellTime = diff(FileInfo.PixelStart);
+            FileInfo.PixDwellTime = mean(FileInfo.PixDwellTime(1:100)); % in seconds
+            FileInfo.PixelsX = round(FileInfo.LineTime/FileInfo.PixDwellTime);
+            FileInfo.PixelsY = 512; %hardcoded?
+            FileInfo.ImageTime = FileInfo.LineTime*FileInfo.PixelsY;
+            FileInfo.NoF = numel(FileInfo.FrameStart);
+        end
         if isempty(FileInfo.TACRange)
             %%% try to read the TACrange from SyncPeriod and number of used
             %%% MIBins

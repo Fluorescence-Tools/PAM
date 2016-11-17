@@ -3083,25 +3083,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 %% Calculates image
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        if isfield(FileInfo, 'LineStart')
-                            % e.g. Leuven PTU data, image does not contain the laser retractions
-                            [imageseries, ~, ~, ~] = PTU_Image(PIE_MT,1);
-                            PamMeta.Image{i}=permute(sum(imageseries,3),[2 1 3]);
-                        else
-                            % Munich Fabsurf, image will contain the laser retractions
-                            %%% Goes back from total microtime to file microtime
-                            PIE_MT=mod(PIE_MT,FileInfo.ImageTime);
-                            %%% Calculates Pixel vector
-                            Pixeltimes=0;
-                            for j=1:FileInfo.Lines
-                                Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
-                            end
-                            Pixeltimes(end)=[];
-                            %%% Calculate image vector
-                            PamMeta.Image{i}=histc(PIE_MT,Pixeltimes*FileInfo.ClockPeriod);
-                            %%% Reshapes pixel vector to image
-                            PamMeta.Image{i}=flipud(reshape(PamMeta.Image{i},FileInfo.Lines,FileInfo.Lines)');
-                        end
+                        [PamMeta.Image{i}, ~, ~, ~] = CalculateImage(PIE_MT,1);  
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Lines);
                     end
@@ -5954,18 +5936,18 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         
         %% Extracts and reorganizes macrotimes
-       
+        
         Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-
+        
         if isfield(FileInfo, 'LineStart')
             % for example: PTU imaging data
-            [imageseries, Stack, hisbins,Photons] = PTU_Image(Photons,2);
+            [imageseries, Stack, hisbins, Photons] = CalculateImage(Photons,2);
             %Sort photons per pixel (hisbins: vector of the
             %macrotimes of the line starts and pixel starts so that the
             %intensity histogram has the form:
             % pix-pix-pix-pix-interline-pix-pix-pix-interline...)
             FileInfo.ImageTime = FileInfo.LineStop(FileInfo.Lines)*FileInfo.ClockPeriod;
-
+            
         else% Data without interlines, for example Fabsurf data
             %%% Calculates Pixel vector
             
@@ -5974,7 +5956,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
                 FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
                 FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
             end
-
+            
             Pixeltimes=0;
             for j=1:FileInfo.Lines
                 Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
@@ -5982,7 +5964,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             hisbins = Pixeltimes.*FileInfo.ClockPeriod;
             hisbins(1)=[];
         end
-
+        
         [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
         Index=uint32(Index);
         Intensity= histc(Photons,hisbins);
@@ -6001,7 +5983,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             Frames=FileInfo.NumberOfFiles;
             Intensity=reshape(Intensity,[FileInfo.Lines,FileInfo.Lines]);
             Intensity=flip(Intensity',1);
-        end      
+        end
         clear Photons
         
         %%% Assignes Pixels to Particles if enabled
@@ -6012,24 +5994,24 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             ParticleIndex = [];
             ParticleNumber = [];
             for i=1:numel(Regions)
-               ParticleIndex((end+1):(end+numel(Regions(i).PixelIdxList)))= Regions(i).PixelIdxList;
-               ParticleNumber((end+1):(end+numel(Regions(i).PixelIdxList))) = i;
-               Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
+                ParticleIndex((end+1):(end+numel(Regions(i).PixelIdxList)))= Regions(i).PixelIdxList;
+                ParticleNumber((end+1):(end+numel(Regions(i).PixelIdxList))) = i;
+                Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
             end
             [ParticleIndex,i] = sort(ParticleIndex);
             ParticleNumber = ParticleNumber(i);
             Particles =  zeros(numel(Regions),Bins);
         end
-            
         
-
-
+        
+        
+        
         %%% Sorts Microtimes
         Photons=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
         Photons=Photons(Index);
         clear Index
         Update_Progress = FileInfo.Lines;
-
+        
         %% Calculates pixel by pixel phasors
         G(1:Bins) = cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
         S(1:Bins) = sin((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
@@ -6037,7 +6019,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         s = zeros(FileInfo.Lines);
         Mean_LT = zeros(FileInfo.Lines);
         FLIM = zeros(1,Bins);
-
+        
         if isfield(FileInfo, 'LineStart')
             a = 1; % Counter for interline bins in the vector Pixel
         else
@@ -6047,13 +6029,13 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         i = 1; % Counter for all "Pixel" bins
         j = 1; % Counter for number of actual pixel bins in "Pixel"
         k = 1; % Counter for Particle pixels
-
+        
         while i<(numel(Pixel)-1)
             if i == (FileInfo.Lines + 1)*a + 1 % skip those photons belonging to an interline bin
                 i = i + 1;
                 a = a + 1;
             end
-
+            
             if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i
             end
             if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
