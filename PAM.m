@@ -1146,8 +1146,19 @@ addpath(genpath(['.' filesep 'functions']));
         'String','Correlation',...
         'Callback',@Update_fFCS_GUI,...
         'Units','normalized',...
-        'Position',[0.01, 0.6, 0.28,0.08],...
+        'Position',[0.01, 0.6, 0.14,0.08],...
         'Tag','Do_fFCS_Button',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore);
+    %%% Button to export RLICS TIFFs
+    h.Cor_fFCS.RLICS_TIFF= uicontrol(...
+        'Parent',h.Cor_fFCS.Panel,...
+        'String','RLICS',...
+        'Callback',@Update_fFCS_GUI,...
+        'Units','normalized',...
+        'Position',[0.15, 0.6, 0.14,0.08],...
+        'Tag','RLICS_fFCS_Button',...
         'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore);
@@ -9684,6 +9695,112 @@ switch e.Key
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
         Progress(1,h.Progress.Axes,h.Progress.Text);
+    case 'Eport_RLICS_TIFF' %%% Eports image stack as Lifetime Filtered TIFF
+        
+        if mode == 0
+            Path=uigetdir(UserValues.File.ExportPath,'Select folder to save TIFFs');
+        else
+            Path = UserValues.File.Path;
+        end
+        if all(Path==0)
+            return;
+        end
+        h.Progress.Text.String = 'Exporting';
+        h.Progress.Axes.Color=[1 0 0];
+        drawnow;
+        UserValues.File.ExportPath=Path;
+        LSUserValues(1);
+        
+        filter = PamMeta.fFCS.filters;
+        
+        for i=size(filter)
+            %% Initializes data cells
+            Data=[];
+            MI=[];
+            
+            %%% Combines all photons to one vector
+            offset = 0;
+            for l = PamMeta.fFCS.PIEseletion{1}
+                Data=[Data; Get_Photons_from_PIEChannel(l,'Macrotime')];
+                MI = [MI; Get_Photons_from_PIEChannel(l,'Microtime')+offset*FileInfo.MI_Bins];
+                offset = offset + 1;
+            end
+            %%% Weights photons by filter
+            MI = filter{1}{i}(MI);
+            
+            
+            %%% Calculates pixel times for each line and file
+            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
+            for j=1:(size(FileInfo.LineTimes,2))
+                for k=1:(size(FileInfo.LineTimes,1)-1)
+                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
+                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
+                end
+            end
+            
+            %%% Creates linerarized image
+            [Data, idx]=histc(Data,Pixeltimes(:));
+            idx(idx==0)=numel(Data);
+            Data = uint16(Data);
+            %%% Summs weights per pixel
+            MI = accumarray(idx,MI);
+            clear idx;
+            if numel(MI)<numel(Data)
+                MI(numel(Data))=0;
+            end
+            %%% Reshapes image stack
+            Data=flip(permute(reshape(Data,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
+            %%% Rescales and reshapes weighed stack
+            Min = min(MI);
+            Max = max(MI);
+            MI=uint16((MI-Min)/(Max-Min)*2^16);
+            MI=flip(permute(reshape(MI,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
+            
+            File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) 'Filter' num2str(i) '.tif']);
+            
+            Tagstruct.ImageLength = FileInfo.Lines;
+            Tagstruct.ImageWidth = FileInfo.Lines;
+            Tagstruct.Compression = 5; %1==None; 5==LZW
+            Tagstruct.SampleFormat = 1; %UInt
+            Tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+            Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
+            Tagstruct.SamplesPerPixel = 1;
+            Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
+                Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n',...
+                    'RLICS_Scale: ' num2str(Max-Min) '\n',...
+                    'RLICS_Offset: ' num2str(Min) '\n'];
+            else
+                Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'PixelSize [nm]: ' '50' '\n',...
+                    'RLICS_Scale: ' num2str(Max-Min) '\n',...
+                    'RLICS_Offset: ' num2str(Min) '\n'];
+            end
+            TIFF_handle = Tiff(File, 'w');
+            TIFF_handle.setTag(Tagstruct);
+            
+            for j=1:size(Data,3)
+                TIFF_handle.write(Data(:,:,j));
+                TIFF_handle.writeDirectory();
+                TIFF_handle.setTag(Tagstruct);
+            end
+            for j=1:size(MI,3)
+                TIFF_handle.write(MI(:,:,j));
+                if j<size(MI,3)
+                    TIFF_handle.writeDirectory();
+                    TIFF_handle.setTag(Tagstruct);
+                end
+            end
+            TIFF_handle.close()
+        end
+        Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting:')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10137,6 +10254,9 @@ switch obj
                 h.Cor_fFCS.MIPattern_Axis.YScale = 'lin';
                 h.Cor_fFCS.MIPattern_Axis2.YScale = 'lin';
         end
+    case h.Cor_fFCS.RLICS_TIFF
+        evnt.Key='Eport_RLICS_TIFF';
+        Pam_Export([],evnt,[],0);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
