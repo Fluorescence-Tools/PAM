@@ -1651,7 +1651,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Units','normalized',...
         'FontSize',12,...
         'HorizontalAlignment','Left',...
-        'String','Range',...
+        'String','Smoothing:',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Position',[0.28 0.93 0.1 0.025]);
@@ -1735,6 +1735,7 @@ addpath(genpath(['.' filesep 'functions']));
     h.MI.Calib_Axes_Shift.YLabel.Color=Look.Fore;
     h.MI.Calib_Axes_Shift.XLim=[1 400];
     h.Plots.Calib_Shift_New=handle(plot(1:400, zeros(400,1),'r'));
+    h.Plots.Calib_Shift_Smoothed = handle(plot(1:400, zeros(400,1),'b'));
 %% Trace and Image tabs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     s.ProgressRatio = 0.75;
@@ -3858,13 +3859,22 @@ if any(mode==7)
         % slider
         h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
         MIN=max([1 h.MI.Calib_Single.Value]);
-        MAX=min([maxtick, MIN+str2double(h.MI.Calib_Single_Range.String)-1]);
+        MAX=min([maxtick, MIN]);%+str2double(h.MI.Calib_Single_Range.String)-1]);
         h.MI.Calib_Single_Text.String=num2str(MIN);
 
         % interphoton time selected MI histogram (green)
         h.Plots.Calib_Sel.YData=sum(Cor_Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
-
+        
+        % smoothing
+        smoothing = str2double(h.MI.Calib_Single_Range.String);
+        if smoothing > 1
+            h.Plots.Calib_Shift_Smoothed.Visible = 'on';
+            h.Plots.Calib_Shift_Smoothed.XData = 1:1:numel(PamMeta.Det_Calib.Shift);
+            h.Plots.Calib_Shift_Smoothed.YData = smooth(PamMeta.Det_Calib.Shift,smoothing,'rloess');
+         else 
+            h.Plots.Calib_Shift_Smoothed.Visible = 'off';
+        end
     end
 end
 
@@ -8910,6 +8920,15 @@ if nargin<3 % calculate the shift
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
+        
+        smoothing = str2double(h.MI.Calib_Single_Range.String);
+        if smoothing > 1
+            h.Plots.Calib_Shift_Smoothed.Visible = 'on';
+            h.Plots.Calib_Shift_Smoothed.XData = 1:1:numel(PamMeta.Det_Calib.Shift);
+            h.Plots.Calib_Shift_Smoothed.YData = smooth(PamMeta.Det_Calib.Shift,smoothing);
+        else 
+            h.Plots.Calib_Shift_Smoothed.Visible = 'off';
+        end
     end
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
