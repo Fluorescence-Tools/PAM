@@ -144,7 +144,7 @@ switch (Type)
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                [MT, MI, Header] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, [0 0 0], 'SPC-140/150/830/130');
+                [MT, MI, Header] = Read_BH(fullfile(Path, [FileName{i}(1:end-5) num2str(j-1) '.spc']),Inf, [0 0 0], 'SPC-140/150/130');
                 %%% Finds, which routing bits to use
                 if strcmp(UserValues.Detector.Auto,'off')
                     Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
@@ -266,7 +266,7 @@ switch (Type)
                 %%% Determines exact .spc filetype to read
                 if (strcmp(Card,'140') || strcmp(Card,'150') || strcmp(Card,'130'))
                     Scanner = [0 0 0];
-                    Card = 'SPC-140/150/830/130';
+                    Card = 'SPC-140/150/130';
                 elseif strcmp(Card,'630')
                     Scanner = [0 0 0];
                     if MI_Bins == 256
@@ -276,7 +276,7 @@ switch (Type)
                     end
                 elseif strcmp(Card,'830')
                     Scanner = [1 1 1];
-                    Card = 'SPC-140/150/830/130';
+                    Card = 'SPC-830';
                     MI_Bins = 4096; %For Hasselt I have to hardcode this, since the MI_Bins is not written in the .set file
                 end
                 %%% Determines real TAC range
@@ -284,7 +284,7 @@ switch (Type)
             else %%% No .set file was found; use standard settings
                 h = msgbox('Setup (.set) file not found!');
                 Scanner = [0 0 0];
-                Card = 'SPC-140/150/830/130';
+                Card = 'SPC-140/150/130';
                 MI_Bins = 4096;
                 TACRange = [];
                 pause(1)
@@ -293,7 +293,7 @@ switch (Type)
             
         else %if there is no set file, the B&H software was likely not used
             h_msg = msgbox('Setup (.set) file not found!');
-            Card = 'SPC-140/150/830/130';
+            Card = 'SPC-140/150/130';
             MI_Bins = 4096;
             TACRange = [];
             pause(1)
@@ -1181,7 +1181,7 @@ if strcmp(Caller.Tag, 'Pam')
     h.PIE.FileInfoTable.Data(:,2) = {...
         sprintf('%.0f',FileInfo.MeasurementTime);...
         sprintf('%.2f',1E9*FileInfo.ClockPeriod);...
-        sprintf('%.2f',1E-6/FileInfo.ClockPeriod);...
+        sprintf('%.2f',1E-6/FileInfo.SyncPeriod);...
         sprintf('%.2f',1E9*FileInfo.TACRange);...
         sprintf('%d',FileInfo.MI_Bins);...
         sprintf('%.2f',1E12*FileInfo.TACRange/FileInfo.MI_Bins);

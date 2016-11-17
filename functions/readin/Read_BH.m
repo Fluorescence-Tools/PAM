@@ -14,7 +14,7 @@ Header = struct;
 
 FileID = fopen(FileName, 'r');
 switch Card
-    case 'SPC-140/150/830/130'
+    case {'SPC-140/150/130', 'SPC-830'}
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% Data is arranged per 4 bytes
         %%%% Data is read in at 32 bits
@@ -53,14 +53,12 @@ switch Card
             %close(h)
             MT = {[]};
             MI = {[]};
-            Header.SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
-            Header.ClockRate = Header.SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
+            Header.ClockRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
             return;
         else
             %the sync rate is contained in the first 3 bytes of the first 32-bit word
             %record in units of 100 ps
-            Header.SyncRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
-            Header.ClockRate = Header.SyncRate; %only applies when the MT clock in the Becker/Hickl software is the laser sync!
+            Header.ClockRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
             NumberOfRoutingBits = uint8(bitand(bitshift(ByteRecord(1), - 27), 15))+1; %...00001111
             % +1 because there's always at least 1 route
             InvalidFirstPhoton = isequal(double(bitand(ByteRecord(1), 2147483648)), 2147483648); % is the very last bit of the first 32-bit word = 1 ?
@@ -112,6 +110,12 @@ switch Card
             
             MT=cumsum(double(MT))*4096+double(Macrotime); % Transforms MT into continuous stream (as double)
             clear Macrotime;
+        end
+        switch Card
+            case 'SPC-140/150/130'
+                Header.SyncRate = Header.ClockRate; %if the laser is the MT clock
+            case 'SPC-830'
+                Header.SyncRate = 8E7; %UHasselt
         end
     case 'SPC-630 256chs'
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
