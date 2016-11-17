@@ -3856,7 +3856,7 @@ if any(mode==7)
         h.MI.Calib_Single_Text.String=num2str(MIN);
 
         % interphoton time selected MI histogram (green)
-        h.Plots.Calib_Sel.YData=sum(Cor_Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
+        h.Plots.Calib_Sel.YData=sum(PamMeta.Det_Calib.Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
         
         % smoothing
@@ -8885,7 +8885,7 @@ if nargin<3 % calculate the shift
         PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
         PamMeta.Det_Calib.Shift=round(PamMeta.Det_Calib.Shift-PamMeta.Det_Calib.Shift(end));
         PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
-        PamMeta.Det_Calib.Shift(1:5)=PamMeta.Det_Calib.Shift(6);
+        PamMeta.Det_Calib.Shift(1:2)=PamMeta.Det_Calib.Shift(3);
         PamMeta.Det_Calib.Shift=PamMeta.Det_Calib.Shift-max(PamMeta.Det_Calib.Shift);
 
         clear Counts Index
@@ -8906,7 +8906,7 @@ if nargin<3 % calculate the shift
         h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
 
         % interphoton time selected MI histogram (green)
-        h.Plots.Calib_Sel.YData=Cor_Hist(:,h.MI.Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI.Calib_Single.Value),5));
+        h.Plots.Calib_Sel.YData=PamMeta.Det_Calib.Hist(:,h.MI.Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI.Calib_Single.Value),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
 
         % shift plot (red)
@@ -8955,6 +8955,10 @@ function Det_Calib_Save(~,~)
 global UserValues PamMeta
 h=guidata(findobj('Tag','Pam'));
 if isfield(PamMeta.Det_Calib, 'Shift')
+    smoothing = str2double(h.MI.Calib_Single_Range.String);
+    if smoothing > 1
+        PamMeta.Det_Calib.Shift = smooth(PamMeta.Det_Calib.Shift,smoothing);
+    end
     UserValues.Detector.Shift{h.MI.Calib_Det.Value}=PamMeta.Det_Calib.Shift;
     Shift_Detector([],[],'save');
     m = msgbox('Load data again. Store IRFs or scatters only after loading data again!');
