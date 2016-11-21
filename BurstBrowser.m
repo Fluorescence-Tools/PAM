@@ -710,7 +710,7 @@ if isempty(hfig)
         'Style','pushbutton',...
         'Tag','CutButton',...
         'FontSize',12,...
-        'TooltipString','Manual Cut (space)',...
+        'TooltipString','Manual Cut (ctr+space)',...
         'Callback',@ManualCut);
     iconbutton(h.CutButton,'images/BurstBrowser/crop_tool.jpg');
     %define arbitrary cut button
@@ -723,7 +723,7 @@ if isempty(hfig)
         'Style','pushbutton',...
         'Tag','ArbitraryCutButton',...
         'FontSize',12,...
-        'TooltipString','Arbitrary Cut',...
+        'TooltipString','Arbitrary Cut (space)',...
         'Callback',@ManualCut);
     iconbutton(h.ArbitraryCutButton,'images/BurstBrowser/Freehand_24px.jpg');
     h.ArbitraryCutButton_Menu = uicontextmenu;
@@ -6974,26 +6974,30 @@ PlotLifetimeInd([],[],h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstBrowser_KeyPress(obj,eventdata)
 h = guidata(obj);
-switch eventdata.Key
-    case 'space'
-        ManualCut(obj,[])
-        return;
-end
-
-switch eventdata.Modifier{1}
-    case 'control'
-        %%% File Menu Controls
-        switch eventdata.Key
-            case 'n'
-                %%% Load File
-                Load_Burst_Data_Callback([],[])
-            case 's'
-                %%% Save Analysis State
-                Save_Analysis_State_Callback([],[])
-            case 'q'
-                %%% Close Application
-                Close_BurstBrowser([],[])
-        end
+if ~isempty(eventdata.Modifier)
+    switch eventdata.Modifier{1}
+        case 'control'
+            %%% File Menu Controls
+            switch eventdata.Key
+                case 'n'
+                    %%% Load File
+                    Load_Burst_Data_Callback([],[])
+                case 's'
+                    %%% Save Analysis State
+                    Save_Analysis_State_Callback([],[])
+                case 'q'
+                    %%% Close Application
+                    Close_BurstBrowser([],[])
+                case 'space'
+                    %%% Manual Cut
+                     ManualCut(h.CutButton,[])
+            end
+    end
+else
+    switch eventdata.Key
+        case 'space' %%% arbitrary cut
+            ManualCut(h.ArbitraryCutButton,[])
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
