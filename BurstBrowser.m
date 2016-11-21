@@ -7222,7 +7222,15 @@ switch obj
         if ~isempty(CutName)
             CutName = CutName{1};
             CutName = matlab.lang.makeValidName(CutName); %%% make it a valid variable name
-            UserValues.BurstBrowser.CutDatabase{BAMethod}.(CutName) = BurstData{file}.Cut{species(1),species(2)};
+            Cut = BurstData{file}.Cut{species(1),species(2)}; %%% read out the cut
+            del = false(size(Cut));
+            for i = 1:numel(Cut) %%% remove Arbitrary Region cuts
+                if strcmp(Cut{i}{1}(1:4),'AR: ')
+                    del(i) = true;
+                end
+            end
+            Cut(del) = [];
+            UserValues.BurstBrowser.CutDatabase{BAMethod}.(CutName) = Cut;
         end
         %%% Refresh GUI
         h.CutDatabase.String = fieldnames(UserValues.BurstBrowser.CutDatabase{BAMethod});
