@@ -3104,7 +3104,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         %%% Needed for later indexing
                         Image_Sum(Image_Sum<1)=1;
                         %%% Calculates mean arrival time image vector
-                        if ~isempty(PIE_MI)
+                        if ~isempty(PIE_MI) && numel(Image_Sum) > 1
                             PamMeta.Lifetime{i} = PIE_MI(Image_Sum(2:(FileInfo.Pixels+1)))-PIE_MI(Image_Sum(1:FileInfo.Pixels));
                         else
                             PamMeta.Lifetime{i} = zeros(1,FileInfo.Pixels);

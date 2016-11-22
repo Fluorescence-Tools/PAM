@@ -1130,7 +1130,7 @@ switch (Type)
         FileInfo.ImageTime =  FileInfo.MeasurementTime;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
-    case 11 %%% Confocor3 raw data files
+case 11 %%% Confocor3 raw data files
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'Confocor3';
         %%% General FileInfo
