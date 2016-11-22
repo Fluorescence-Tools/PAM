@@ -5878,6 +5878,11 @@ if obj == h.Fit_Gaussian_Button
     if h.MultiselectOnCheckbox.Value
         datatoplot = get_multiselection_data(h);
     end
+    %%% we need to adjust the number of xbins/ybins of KDE has been used
+    if UserValues.BurstBrowser.Display.KDE
+        nbinsX = numel(xbins);
+        nbinsY = numel(ybins);
+    end
     % Fit mixture to data
     switch UserValues.BurstBrowser.Settings.GaussianFitMethod
         case 'MLE'
@@ -6135,6 +6140,10 @@ if obj == h.Fit_Gaussian_Button
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
                 valid = (ydata ~= 0);
+                if UserValues.BurstBrowser.Display.KDE
+                    %%% no bin is zero, so use a different threshold as well
+                    valid = valid & (ydata >= 1);
+                end
                 chi2 = sum(sum((residuals(valid).^2)./max(1,ydata(valid))))./(numel(ydata(valid))-1-sum(fixed));
                 h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
                 
@@ -12994,13 +13003,14 @@ if (~UserValues.BurstBrowser.Display.KDE) || (sum(x) == 0 || sum(y) == 0) %%% no
         bin_out(valid,:) = [biny,binx];
     end
     H = reshape(h, Yn, Xn);
-    %[H, xbins_hist, ybins_hist] = hist2d([x,y], nbins(1)+1,nbins(2)+1,limx, limy);
+    
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
     H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
 elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
     [~,H, xbins_hist, ybins_hist] = kde2d([x y],nbins(1),[limx(1) limy(1)],[limx(2), limy(2)]);
+    H = (H./sum(H(:))).*numel(x);
     xbins_hist = xbins_hist(1,:);
     ybins_hist = ybins_hist(:,1);
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];

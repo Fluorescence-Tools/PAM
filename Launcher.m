@@ -118,7 +118,7 @@ else
 end
 
 function LaunchPam(~,~)
-Pam();
+PAM();
 
 function Open_Doc(~,~)
 if isunix
