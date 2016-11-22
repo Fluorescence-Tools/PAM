@@ -1222,7 +1222,12 @@ switch (Type)
                     end
             
                     for k=Rout
-                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
+                        %%% here, separate detector are saved in separate files, so we need to determine the max mt separately for every file                  
+                        maxMTind = 0;
+                        if ~isempty(TcspcData.MT{j,k})
+                            maxMTind = max(TcspcData.MT{j,k});
+                        end
+                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; maxMTind + MT{j,k}];   MT{j,k}=[];
                         TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
                     end
                 end
