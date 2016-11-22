@@ -1130,6 +1130,114 @@ switch (Type)
         FileInfo.ImageTime =  FileInfo.MeasurementTime;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
+    case 11 %%% Confocor3 raw data files
+        %%% Usually, here no Imaging Information is needed
+        FileInfo.FileType = 'Confocor3';
+        %%% General FileInfo
+        FileInfo.NumberOfFiles=numel(FileName);
+        FileInfo.Type=Type;
+        FileInfo.MI_Bins=[];
+        FileInfo.MeasurementTime=[];
+        FileInfo.ImageTime = [];
+        FileInfo.SyncPeriod= [];
+        FileInfo.ClockPeriod= [];
+        FileInfo.Resolution = [];
+        FileInfo.TACRange = [];
+        FileInfo.Lines=1;
+        FileInfo.LineTimes=[];
+        FileInfo.Pixels=1;
+        FileInfo.ScanFreq=1000;
+        FileInfo.FileName=FileName;
+        FileInfo.Path=Path;
+        FileInfo.Header = cell(numel(FileName),1);
+        %%% Initializes microtime and macotime arrays
+        if strcmp(UserValues.Detector.Auto,'off')
+            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+        else
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
+        end
+        
+        %%% Checks, which detectors to load
+        if strcmp(UserValues.Detector.Auto,'off')
+            card = unique(UserValues.Detector.Det);
+        else
+            card = 1:10; %%% consider up to 10 detection channels
+        end
+        %%% check for disabled detectors
+        for j = card
+            if sum(UserValues.Detector.Det==j) > 0
+                if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+                    card(card==j) = [];
+                end
+            end
+        end
+        
+        %%% Reads all selected files
+        for i=1:numel(FileName)
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
+            
+            %%% if multiple files are loaded, consecutive files need to
+            %%% be offset in time with respect to the previous file
+            MaxMT = 0;
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
+                MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+            end
+            
+            %%% Update Progress
+            Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
+            [MT, MI, SyncRate, Resolution, FileInfo.Header{i}] = Read_ConfoCor3_Raw(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
+            
+            if isempty(FileInfo.SyncPeriod)
+                FileInfo.SyncPeriod = 1/SyncRate;
+            end
+            if isempty(FileInfo.ClockPeriod)
+                FileInfo.ClockPeriod = 1/SyncRate;
+            end
+            if isempty(FileInfo.Resolution)
+                FileInfo.Resolution = Resolution;
+            end
+            
+            %%% Concatenates data to previous files and adds Imagetime
+            %%% to consecutive files
+            if any(~cellfun(@isempty,MI(:)))
+                for j = card
+                    %%% Finds, which routing bits to use
+                    if strcmp(UserValues.Detector.Auto,'off')
+                        Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
+                    else
+                        Rout = 1:10; %%% consider up to 10 routing channels
+                    end
+                    Rout(Rout>size(MI,2))=[];
+                    
+                    %%% check for disabled routing bits
+                    for r = Rout
+                        if sum((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)) > 0
+                            if all(strcmp(UserValues.Detector.enabled((UserValues.Detector.Det==j)&(UserValues.Detector.Rout == r)),'off'))
+                                Rout(Rout==r) = [];
+                            end
+                        end
+                    end
+            
+                    for k=Rout
+                        TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
+                        TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
+                    end
+                end
+            end
+            %%% Determines last photon for each file
+            for k=find(~cellfun(@isempty,TcspcData.MT(j,:)))
+                FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
+            end
+            
+        end
+        FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+        FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
+        FileInfo.ImageTime =  FileInfo.MeasurementTime;
+        FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        FileInfo.TACRange = FileInfo.SyncPeriod;
 end
 %%% close all open file handles
 fclose('all');
