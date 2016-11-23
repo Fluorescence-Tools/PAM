@@ -3635,7 +3635,10 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
             return;
     end
 end
+
+delete(gcf);
 LSUserValues(1);
+
 clear global -regexp BurstMeta BurstTCSPCData PhotonStream BurstData
 Pam = findobj('Tag','Pam');
 if ~isempty(Pam)
@@ -3658,7 +3661,6 @@ PDA = findobj('Tag','GlobalPDAFit');
 if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit) && isempty(PDA)
     clear global -regexp UserValues
 end
-delete(gcf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

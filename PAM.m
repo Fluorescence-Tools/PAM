@@ -2440,9 +2440,9 @@ addpath(genpath(['.' filesep 'functions']));
         'ForegroundColor', Look.ListFore,...
         'KeyPressFcn',{@Database,0},...
         'Tooltipstring', ['<html>'...
-                          'List of files in database <br>',...
-                          '<i>"return"</i>: Loads selected files <b>!!!Only works with same Path and Type!!!</b><br>',...
-                          '<I>"delete"</i>: Removes selected files from list </b>'],...
+                          'List of recently loaded files<br>',...
+                          '<i>"return"</i>: Loads selected files<br>',...
+                          '<I>"delete"</i>: Removes selected files from list</b>'],...
         'Position',[0.01 0.01 0.98 0.98]);
     %% Export tab
     s.ProgressRatio = 0.9;
@@ -2974,6 +2974,8 @@ h.Pam.Visible='on';
 %%% Functions that executes upon closing of pam window %%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_Pam(Obj,~)
+delete(Obj);
+LSUserValues(1);
 clear global -regexp PamMeta TcspcData FileInfo TauFitBurstData
 Phasor=findobj('Tag','Phasor');
 FCSFit=findobj('Tag','FCSFit');
@@ -2990,7 +2992,7 @@ end
 if isempty(BurstBrowser)
     clear global -regexp BurstData BurstTCSPCData PhotonStream
 end
-delete(Obj);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates Pam Meta Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

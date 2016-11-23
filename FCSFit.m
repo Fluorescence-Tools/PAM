@@ -666,6 +666,8 @@ end
 %%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Close_FCSFit(Obj,~)
+delete(Obj);
+LSUserValues(1);
 clear global -regexp FCSData FCSMeta
 Phasor=findobj('Tag','Phasor');
 Pam=findobj('Tag','Pam');
@@ -679,7 +681,6 @@ PhasorTIFF = findobj('Tag','PhasorTIFF');
 if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
     clear global -regexp UserValues
 end
-delete(Obj);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
