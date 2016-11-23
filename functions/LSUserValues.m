@@ -265,6 +265,11 @@ if Mode==0 %%% Loads user values
     end
     P.File.FileHistory.BurstBrowser = S.File.FileHistory.BurstBrowser;
     
+    if ~isfield(S.File.FileHistory,'FCSFit')
+        S.File.FileHistory.FCSFit=[];
+    end
+    P.File.FileHistory.FCSFit = S.File.FileHistory.FCSFit;
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

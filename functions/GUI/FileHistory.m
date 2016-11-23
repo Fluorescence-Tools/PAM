@@ -61,12 +61,9 @@ classdef FileHistory < handle
         
         
         function obj = add_file(obj,new_file)
-            for i = 1:numel(obj.FileList)
-                obj.FileList(i+1) = obj.FileList(i);
-            end
-            obj.FileList{1} = new_file;
+            obj.FileList = [{new_file}, obj.FileList];
             if numel(obj.FileList) > 20 %%% only keep 20 files
-                obj.FileList{end} = [];
+                obj.FileList = obj.FileList(1:20);
             end
             
             filenamestring = [];

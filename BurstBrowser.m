@@ -3806,7 +3806,9 @@ if nargin < 3 %%% not called from file history, update file history with new fil
     %%% add files to file history
     for i = 1:numel(FileName)
         file = fullfile(PathName{i},FileName{i});
-        h.DatabaseBB.FileHistory.add_file(file);
+        if strcmp(file(end-3:end),'.bur')
+            h.DatabaseBB.FileHistory.add_file(file);
+        end
     end
 end
 

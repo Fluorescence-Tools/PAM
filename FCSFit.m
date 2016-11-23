@@ -95,7 +95,6 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
 
 %% Fitting parameters Tab %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%% Microtime tabs container
     h.FitParams_Tab = uitabgroup(...
         'Parent',h.FCSFit,...
         'Tag','FitParams_Tab',...
@@ -539,6 +538,12 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'String','Copy Results to Clipboard',...
         'Callback',{@Plot_Menu_Callback,4},...
         'Position',[0.6 0.42 0.1 0.1]);  
+    %% File History tab %%%%%%%%%%%%%%%%
+    h.Fit_Function_Tab= uitab(...
+        'Parent',h.FitParams_Tab,...
+        'Tag','Fit_Function_Tab',...
+        'Title','File History');
+    h.FileHistory = FileHistory(h.Fit_Function_Tab,'FCSFit',@(x) Load_Cor('FileHistory',[],1,x));
 %% Main Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Panel for fit plots
     h.Fit_Plots_Panel = uibuttongroup(...
@@ -679,23 +684,39 @@ delete(Obj);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Cor(~,~,mode)
+function Load_Cor(~,~,mode,filenames)
 global UserValues FCSData FCSMeta
 h = guidata(findobj('Tag','FCSFit'));
 
-%%% Choose files to load
-[FileName,PathName,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
-                                      '*.cor','Averaged correlation based on .txt. filetype';...
-                                      '*.mcor','Individual correlation curves based on matlab filetype';...
-                                      '*.cor','Individual correlation curves based on .txt. filetype';...
-                                      '*.his','FRET efficiency data from BurstBrowser';},...
-                                      'Choose a referenced data file',...
-                                      UserValues.File.FCSPath,... 
-                                      'MultiSelect', 'on');
-%%% Tranforms to cell array, if only one file was selected
-if ~iscell(FileName)
-    FileName = {FileName};
+if nargin > 3 %%% called from file history
+    %%% only implemented for loading of *.mcor files at the moment, remove
+    %%% all other files
+    Type = 1;
+    %%% split filenames into FileName and pathname
+    for i = 1:numel(filenames)
+        [PathName{i},FileName{i},ext] = fileparts(filenames{i});
+        FileName{i} = [FileName{i} ext];
+    end
+else
+    %%% Choose files to load
+    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
+                                          '*.cor','Averaged correlation based on .txt. filetype';...
+                                          '*.mcor','Individual correlation curves based on matlab filetype';...
+                                          '*.cor','Individual correlation curves based on .txt. filetype';...
+                                          '*.his','FRET efficiency data from BurstBrowser';},...
+                                          'Choose a referenced data file',...
+                                          UserValues.File.FCSPath,... 
+                                          'MultiSelect', 'on');
+    %%% Tranforms to cell array, if only one file was selected
+    if ~iscell(FileName)
+        FileName = {FileName};
+    end
+    %%% assign path to each filename
+    for i = 1:numel(FileName)
+        PathName{i} = path;
+    end
 end
+
 
 %%% Only esecutes, if at least one file was selected
 if all(FileName{1}==0)
@@ -703,7 +724,7 @@ if all(FileName{1}==0)
 end
 
 %%% Saves pathname to uservalues
-UserValues.File.FCSPath=PathName;
+UserValues.File.FCSPath=PathName{1};
 LSUserValues(1);
 %%% Deletes loaded data
 if mode==1
@@ -726,9 +747,11 @@ switch Type
         for i=1:numel(FileName)
             %%% Reads files (1 == .mcor; 2 == .cor)
             if Type == 1
-                FCSData.Data{end+1} = load([PathName FileName{i}],'-mat');
+                FCSData.Data{end+1} = load(fullfile(PathName{i},FileName{i}),'-mat');
+                %%% add file to file history
+                h.FileHistory.add_file(fullfile(PathName{i},FileName{i}));
             else                
-                FID = fopen(fullfile(PathName,FileName{i}));
+                FID = fopen(fullfile(PathName{i},FileName{i}));
                 Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
                 Text = Text{1};
                 Data.Header = Text{1};
@@ -783,9 +806,9 @@ switch Type
         for i=1:numel(FileName)
             %%% Reads files (3 == .mcor; 4 == .cor)
             if Type == 3
-                Data = load([PathName FileName{i}],'-mat');
+                Data = load(fullfile(PathName{i},FileName{i}),'-mat');
             else
-                FID = fopen(fullfile(PathName,FileName{i}));
+                FID = fopen(fullfile(PathName{i},FileName{i}));
                 Text = textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
                 Text = Text{1};
                 Data.Header = Text{1};
@@ -841,7 +864,7 @@ switch Type
         x = (-0.1:bin:ceil(1.1/bin)*bin)';
         for i=1:numel(FileName)
             %%% Reads files
-            E = load([PathName FileName{i}],'-mat'); E = E.E;
+            E = load(fullfile(PathName{i},FileName{i}),'-mat'); E = E.E;
             Data.E = E;
             Data.Cor_Times = x;
             his = histcounts(E,x); his = [his'; his(end)];
