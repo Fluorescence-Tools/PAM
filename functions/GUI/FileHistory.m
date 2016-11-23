@@ -61,6 +61,12 @@ classdef FileHistory < handle
         
         
         function obj = add_file(obj,new_file)
+            if ~isempty(obj.FileList)
+                if strcmp(new_file,obj.FileList{1})
+                    %%% do not add if file is already in position 1
+                    return;
+                end
+            end
             obj.FileList = [{new_file}, obj.FileList];
             if numel(obj.FileList) > 20 %%% only keep 20 files
                 obj.FileList = obj.FileList(1:20);
@@ -79,7 +85,6 @@ classdef FileHistory < handle
             global UserValues
             %%% store in UserValues
             UserValues.File.FileHistory.(obj.GUIname) = obj.FileList;
-            LSUserValues(1);
             delete(obj);
         end
     end

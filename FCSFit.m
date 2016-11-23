@@ -919,7 +919,7 @@ global UserValues
 if isempty(handles)
     handles = guidata(gcf);
 end
-if strcmp(toType,handles.CurrentGui);
+if strcmp(toType,handles.CurrentGui)
     return;
 end
 if strcmp(handles.CurrentGui,'FCS') %%% switch to FRET
@@ -1092,7 +1092,7 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     FCSMeta.Model.Function=cell2mat(FCSMeta.Model.Function);
     %%% Convert to function handle
     FunctionStart = strfind(FCSMeta.Model.Function,'=');
-    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function((FunctionStart(1)+1):end)]);
+    eval(['FCSMeta.Model.Function = @(P,x) ' FCSMeta.Model.Function((FunctionStart(1)+1):end) ';']);
     %%% Extracts parameter names and initial values
     FCSMeta.Model.Params=cell(NParams,1);
     FCSMeta.Model.Value=zeros(NParams,1);
