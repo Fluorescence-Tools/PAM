@@ -2465,7 +2465,7 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'Color',Look.Axes,...
-                'XGrid','on',...
+        'XGrid','on',...
         'YGrid','on',...
         'GridAlpha',0.5,...
         'UIContextMenu',h.ExportGraph_Menu);
@@ -2509,7 +2509,7 @@ if isempty(hfig)
         'LineWidth', Look.AxWidth,...
         'View',[90 90],...
         'Color',Look.Axes,...
-                'XGrid','on',...
+        'XGrid','on',...
         'YGrid','on',...
         'GridAlpha',0.5,...
         'XDir','reverse',...
@@ -2552,6 +2552,10 @@ if isempty(hfig)
         'Visible','off');
     ylabel(h.axes_ZScale, [],'Color',Look.Fore);
     xlabel(h.axes_ZScale, [],'Color',Look.Fore);
+    
+    linkaxes([h.axes_general,h.axes_1d_x],'x');
+    addlistener(h.axes_general,'YLim','PostSet',@linkaxes_y);
+    addlistener(h.axes_1d_y,'XLim','PostSet',@linkaxes_y);
     %% Define axes in Corrections tab
     % defined context menu for corrections tab
     h.Corrections_Menu = uicontextmenu;
@@ -5637,9 +5641,13 @@ BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
 set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
-set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
-set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
-set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
+%%% only hide fit plots if selection of parameter or species has changed,
+%%% or if we switched on KDE
+if any(gcbo == [h.ParameterListX,h.ParameterListY]) || (gcbo == h.SpeciesList.Tree) || (gcbo == h.SmoothKDE)
+    set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
+end
 
 file = BurstMeta.SelectedFile;
 datatoplot = BurstData{file}.DataCut;
@@ -5726,8 +5734,8 @@ if ~colorbyparam
     end
     BurstMeta.Plots.Main_Plot(2).XData = xbins;
     BurstMeta.Plots.Main_Plot(2).YData = ybins;
-    BurstMeta.Plots.Main_Plot(2).ZData = HH/max(max(HH));
-    BurstMeta.Plots.Main_Plot(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    BurstMeta.Plots.Main_Plot(2).ZData = HH;
+    BurstMeta.Plots.Main_Plot(2).LevelList = max(HH(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Disable ZScale Axis
     h.axes_ZScale.Visible = 'off';
     BurstMeta.Plots.ZScale_hist.Visible = 'off';
@@ -5738,14 +5746,14 @@ if ~colorbyparam
     h.colorbar.TickLabelsMode = 'auto';
     pause(0.1)
     h.colorbar.TicksMode = 'auto';
-    pause(0.1)
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-        labels = cellfun(@str2double,h.colorbar.TickLabels);
-        maxZ = max(H(:));
-        for i = 1:numel(labels)
-            h.colorbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
-        end
-    end
+%     pause(0.1)
+%     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+%         labels = cellfun(@str2double,h.colorbar.TickLabels);
+%         maxZ = max(HH(:));
+%         for i = 1:numel(labels)
+%             h.colorbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+%         end
+%     end
 else
     % histogram X vs Y parameter
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
@@ -5983,8 +5991,8 @@ if obj == h.Fit_Gaussian_Button
                 BurstMeta.Fitting.FitResult = Res;
                 % plot contour plot over image plot
                 % hide contourf plot, make image plot visible
-                BurstMeta.Plots.Main_Plot(1).Visible = 'on';
-                BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+                %BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+                %BurstMeta.Plots.Main_Plot(2).Visible = 'off';
                 for i = 1:nG
                     BurstMeta.Plots.Mixture.Main_Plot(i).Visible = 'on';
                     BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
@@ -6204,10 +6212,9 @@ if obj == h.Fit_Gaussian_Button
                 FitResult(4:6:end) = sqrt(FitResult(4:6:end));
                 FitResult(5:6:end) = sqrt(FitResult(5:6:end));
                 BurstMeta.Fitting.FitResult = [FitResult(1:6*nG),chi2];
-                % plot contour plot over image plot
                 % hide contourf plot, make image plot visible
-                BurstMeta.Plots.Main_Plot(1).Visible = 'on';
-                BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+                %BurstMeta.Plots.Main_Plot(1).Visible = 'on';
+                %BurstMeta.Plots.Main_Plot(2).Visible = 'off';
                 for i = 1:nG
                     BurstMeta.Plots.Mixture.Main_Plot(i).Visible = 'on';
                     BurstMeta.Plots.Mixture.plotX(i).Visible = 'on';
@@ -13052,8 +13059,8 @@ elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
     ybins_hist = ybins_hist(:,1);
     H(:,end-1) = H(:,end-1) + H(:,end); H(:,end) = [];
     H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
-    xbins = xbins_hist(1:end-1) + diff(xbins_hist)/2;
-    ybins = ybins_hist(1:end-1) + diff(ybins_hist)/2;
+    xbins = xbins_hist(1:end-1);% + diff(xbins_hist)/2;
+    ybins = ybins_hist(1:end-1);% + diff(ybins_hist)/2;
 end
 
 function Calculate_Settings(obj,~)
@@ -13647,3 +13654,18 @@ end
 fclose(fid);
 set(lbh,'Max',numel(strings));
 set(lbh,'string',strings);
+
+function linkaxes_y(~,obj)
+h = guidata(obj.AffectedObject);
+switch obj.AffectedObject
+    case h.axes_general
+        %%% update XLim of 1d y axis
+        if any(h.axes_general.YLim ~= h.axes_1d_y.XLim)
+            h.axes_1d_y.XLim = h.axes_general.YLim;
+        end
+    case h.axes_1d_y
+        %%% update YLim of 2d axis
+        if any(h.axes_general.YLim ~= h.axes_1d_y.XLim)
+            h.axes_general.YLim = h.axes_1d_y.XLim;
+        end
+end
