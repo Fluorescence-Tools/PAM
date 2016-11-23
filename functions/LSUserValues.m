@@ -270,6 +270,11 @@ if Mode==0 %%% Loads user values
     end
     P.File.FileHistory.FCSFit = S.File.FileHistory.FCSFit;
     
+    if ~isfield(S.File.FileHistory,'PAM')
+        S.File.FileHistory.PAM=[];
+    end
+    P.File.FileHistory.PAM = S.File.FileHistory.PAM;
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

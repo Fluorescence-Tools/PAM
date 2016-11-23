@@ -53,22 +53,17 @@ if strcmp(Caller.Tag, 'Pam')
         %create database
         PamMeta.Database = cell(0,3);
     end
+     % add new files to database
     for i = 1:numel(FileName)
-        %%% Checks, if file already exists
-        Exist = 0;
-        for j=1:size(PamMeta.Database,1)
-           if strcmp(PamMeta.Database{j,1},FileName{i}) && strcmp(PamMeta.Database{j,2},Path)
-               Exist = 1;
-               break;
-           end
-        end
-        if ~Exist %%% Does not add file again
-            PamMeta.Database{end+1,1} = FileName{i};
-            PamMeta.Database{end,2} = Path;
-            PamMeta.Database{end,3} = Type;
-            h.Database.List.String{end+1} = [FileName{i} ' (path:' Path ')'];
-        end
+        PamMeta.Database = [{FileName{i},Path,Type}; PamMeta.Database];
+        h.Database.List.String = [{[FileName{i} ' (path:' Path ')']}; h.Database.List.String];
     end
+    if size(PamMeta.Database,1) > 20
+        PamMeta.Database = PamMeta.Database(1:20,:);
+        h.Database.List.String = h.Database.List.String(1:20);
+    end
+    % store file history in UserValues
+    UserValues.File.FileHistory.PAM = PamMeta.Database;
 else %%% Creates empty struct, if it was called outside of PAM
     h.Progress.Axes = [];
     h.Progress.Text = [];

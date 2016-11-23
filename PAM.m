@@ -2411,7 +2411,7 @@ addpath(genpath(['.' filesep 'functions']));
     h.Database.Tab= uitab(...
         'Parent',h.Var_Tab,...
         'Tag','Database_Tab',...
-        'Title','Previous');
+        'Title','File History');
     %%% Database panel
     h.Database.Panel = uibuttongroup(...
         'Parent',h.Database.Tab,...
@@ -2423,6 +2423,11 @@ addpath(genpath(['.' filesep 'functions']));
         'ShadowColor', Look.Shadow,...
         'Position',[0 0 1 1]);
     %%% Database list
+    % generate string
+    dbstring = cell(size(UserValues.File.FileHistory.PAM,1),1);
+    for i = 1:size(UserValues.File.FileHistory.PAM,1)
+        dbstring{i} = [UserValues.File.FileHistory.PAM{i,1} ' (path:' UserValues.File.FileHistory.PAM{i,2} ')'];
+    end
     h.Database.List = uicontrol(...
         'Parent',h.Database.Panel,...
         'Tag','Database_List',...
@@ -2430,7 +2435,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Units','normalized',...
         'FontSize',12,...
         'Max',2,...
-        'String',[],...
+        'String',dbstring,...
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
         'KeyPressFcn',{@Database,0},...
@@ -2943,6 +2948,7 @@ PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
 PamMeta.Burst.Preview = [];
+PamMeta.Database = UserValues.File.FileHistory.PAM;
 
 TcspcData=[];
 TcspcData.MI=cell(1);
@@ -9047,17 +9053,23 @@ switch mode
         end
         % add new files to database
         for i = 1:numel(FileName)
-            PamMeta.Database{end+1,1} = FileName{i};
-            PamMeta.Database{end,2} = Path;
-            PamMeta.Database{end,3} = Type;
-            h.Database.List.String{end+1} = [FileName{i} ' (path:' Path ')'];
+            PamMeta.Database = [{FileName{i},Path,Type}; PamMeta.Database];
+            h.Database.List.String = [{[FileName{i} ' (path:' Path ')']}; h.Database.List.String];
         end
+        if size(PamMeta.Database,1) > 20
+            PamMeta.Database = PamMeta.Database(1:20,:);
+            h.Database.List.String = h.Database.List.String(1:20);
+        end
+        % store file history in UserValues
+        UserValues.File.FileHistory.PAM = PamMeta.Database;
     case 2 %% Delete files from database
         %remove rows from list
         h.Database.List.String(h.Database.List.Value) = [];
         %remove rows from database
         PamMeta.Database(h.Database.List.Value, :) = [];
         h.Database.List.Value = 1;
+        % store file history in UserValues
+        UserValues.File.FileHistory.PAM = PamMeta.Database;
     case 7 %% Loads selected files into Pam
         %%% Caution! Only works if Path and filetype are the same for all files!
         h.Progress.Text.String='Loading new file';
@@ -9068,6 +9080,20 @@ switch mode
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
             PamMeta.Database(h.Database.List.Value,1),...   %file
             PamMeta.Database{h.Database.List.Value(1),3});     %type
+        % update file history
+        FileName = PamMeta.Database(h.Database.List.Value,1);
+        PathName = PamMeta.Database(h.Database.List.Value,2);
+        Type = PamMeta.Database(h.Database.List.Value,3);
+        for i = 1:numel(FileName)
+            PamMeta.Database = [{FileName{i},PathName{i},Type{i}}; PamMeta.Database];
+            h.Database.List.String = [{[FileName{i} ' (path:' PathName{i} ')']}; h.Database.List.String];
+        end
+        if size(PamMeta.Database,1) > 20
+            PamMeta.Database = PamMeta.Database(1:20,:);
+            h.Database.List.String = h.Database.List.String(1:20);
+        end
+        % store file history in UserValues
+        UserValues.File.FileHistory.PAM = PamMeta.Database;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
