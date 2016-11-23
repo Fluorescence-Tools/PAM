@@ -2317,19 +2317,7 @@ if isempty(hfig)
                           'List of files in database <br>',...
                           '<i>"return"</i>: Loads selected files<br>',...
                           '<I>"delete"</i>: Removes selected files from list </b>'],...
-        'Position',[0.01 0.01 0.98 0.88]);
-    
-%     h.DatabaseBB.Text = {};
-%     h.DatabaseBB.Text{end+1} = uicontrol(...
-%         'Parent',h.DatabaseBB.Panel,...
-%         'Style','text',...
-%         'Units','normalized',...
-%         'FontSize',12,...
-%         'HorizontalAlignment','left',...
-%         'String','Manage database',...
-%         'BackgroundColor', Look.Back,...
-%         'ForegroundColor', Look.Fore,...
-%         'Position',[0.75 0.90 0.24 0.07]);
+        'Position',[0.01 0.51 0.98 0.38]);
     h.DatabaseBB.Load = uicontrol(...
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Load_Button',...
@@ -2397,6 +2385,17 @@ if isempty(hfig)
         'enable', 'on',...
         'UserData',0,...
         'Tooltipstring', '');  
+    
+     h.DatabaseBB.FileHistoryContainer = uibuttongroup(...
+        'Parent',h.DatabaseBB.Panel,...
+        'Tag','DatabaseBB_List',...
+        'Units','normalized',...
+        'FontSize',14,...
+        'Title','File History',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.01 0.01 0.98 0.48]);
+    h.DatabaseBB.FileHistory = FileHistory(h.DatabaseBB.FileHistoryContainer,'BurstBrowser',@(x) Load_Burst_Data_Callback([],[],x));
     %% Define axes in main_tab_general
     %%% Right-click menu for axes
     h.ExportGraph_Menu = uicontextmenu('Parent',h.BurstBrowser);
@@ -3664,31 +3663,48 @@ delete(gcf);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Burst_Data_Callback(obj,~)
-h = guidata(obj);
+function Load_Burst_Data_Callback(obj,~,filenames)
 global BurstData UserValues BurstMeta PhotonStream BurstTCSPCData
 
-if obj ~= h.DatabaseBB.List
-    if obj ~= h.Append_File
-        if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
-            %%% Ask for saving
-            choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
-            switch choice
-                case 'Yes'
-                    Save_Analysis_State_Callback([],[]);
-                case 'Cancel'
-                    return;
-            end
+if ~isempty(obj)
+    h = guidata(obj);
+else
+    h = guidata(findobj('Tag','BurstBrowser'));
+    obj = 'FileHistory';
+end
+
+if obj ~= h.Append_File
+    if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
+        %%% Ask for saving
+        choice = questdlg('Save Changes?','Save before closing','Yes','Discard','Cancel','Discard');
+        switch choice
+            case 'Yes'
+                Save_Analysis_State_Callback([],[]);
+            case 'Cancel'
+                return;
         end
     end
-
+end
+    
+if obj ~= h.DatabaseBB.List
     LSUserValues(0);
+    %%% check if there are subfolders
+    subdir = dir(UserValues.File.BurstBrowserPath);
+    subdir = subdir([subdir.isdir]);
+    subdir = subdir(3:end); %%% remove '.' and '..' folders
+    if isempty(subdir) %%% no subfolders, move one folder up
+        path = fullfile(UserValues.File.BurstBrowserPath,'..',filesep);
+    else 
+        path = UserValues.File.BurstBrowserPath;
+    end
     switch obj
         case {h.Load_Bursts, h.Append_File}
-            path= fullfile(UserValues.File.BurstBrowserPath,'..',filesep);
             [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
             if FilterIndex == 0
                 return;
+            end
+            if ischar(FileName)
+                FileName = {FileName};
             end
             %%% make pathname to cell array
             for i = 1:numel(FileName)
@@ -3699,7 +3715,6 @@ if obj ~= h.DatabaseBB.List
             %%% only consider one level downwards
             FileName = cell(0);
             PathName = cell(0);
-            path= fullfile(UserValues.File.BurstBrowserPath,'..',filesep);
             pathname = uigetdir(path,'Choose a folder. All *.bur files from direct subfolders will be loaded.');
             if pathname == 0
                 return;
@@ -3727,6 +3742,8 @@ if obj ~= h.DatabaseBB.List
                 return;
             end
             FilterIndex = 1; %%% Only bur files supported
+        otherwise
+            pathname = UserValues.File.BurstBrowserPath;
     end
 elseif obj == h.DatabaseBB.List
     %%% get Filelist from Database
@@ -3762,7 +3779,7 @@ end
 %h.CorrelateWindow_Edit.Enable = 'off';
 %%% Load data
 switch obj
-    case {h.Load_Bursts, h.DatabaseBB.List,h.Load_Bursts_From_Folder}
+    case {h.Load_Bursts,h.DatabaseBB.List,h.Load_Bursts_From_Folder}
         %%% clear global variable
         BurstData = [];
         BurstTCSPCData = [];
@@ -3772,10 +3789,26 @@ switch obj
         h.Append_File.Enable = 'on';
     case h.Append_File
         Load_BurstFile(PathName,FileName,FilterIndex,1)
+    otherwise %%% loaded from recent file list
+        if nargin > 2
+            for i = 1:numel(filenames)
+                [PathName{i},FileName{i},ext] = fileparts(filenames{i});
+                FileName{i} = [FileName{i},ext];
+            end
+            Load_BurstFile(PathName,FileName,1);
+        end
 end
 BurstMeta.SelectedFile = 1;
 %%% Update Figure Name
 BurstMeta.DisplayName = BurstData{1}.FileName;
+
+if nargin < 3 %%% not called from file history, update file history with new files
+    %%% add files to file history
+    for i = 1:numel(FileName)
+        file = fullfile(PathName{i},FileName{i});
+        h.DatabaseBB.FileHistory.add_file(file);
+    end
+end
 
 %%% If Pam is open, indicate that a file is loaded
 if ~isempty(findobj('Tag','Pam'))

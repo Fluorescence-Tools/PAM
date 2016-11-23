@@ -253,8 +253,18 @@ if Mode==0 %%% Loads user values
         S.File.MIAFit_Standard=[];
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
+    
+    %%% substructure to save file histories
+    if ~isfield(S.File,'FileHistory')
+        S.File.FileHistory=[];
+    end
+    P.File.FileHistory = S.File.FileHistory;
 
-
+    if ~isfield(S.File.FileHistory,'BurstBrowser')
+        S.File.FileHistory.BurstBrowser=[];
+    end
+    P.File.FileHistory.BurstBrowser = S.File.FileHistory.BurstBrowser;
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%% File types for uigetfile with SPC files  %%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
