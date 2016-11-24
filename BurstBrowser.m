@@ -2547,6 +2547,9 @@ if isempty(hfig)
         'YColor',Look.Fore,...
         'XTick',[],...
         'YTick',[],...
+        'XGrid','on',...
+        'YGrid','on',...
+        'GridAlpha',0.5,...
         'UIContextMenu',h.ExportGraph_Menu,...
         'Color',Look.Axes,...
         'Visible','off');
@@ -5746,14 +5749,6 @@ if ~colorbyparam
     h.colorbar.TickLabelsMode = 'auto';
     pause(0.1)
     h.colorbar.TicksMode = 'auto';
-%     pause(0.1)
-%     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-%         labels = cellfun(@str2double,h.colorbar.TickLabels);
-%         maxZ = max(HH(:));
-%         for i = 1:numel(labels)
-%             h.colorbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
-%         end
-%     end
 else
     % histogram X vs Y parameter
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
@@ -5833,6 +5828,10 @@ else
     BurstMeta.Plots.ZScale_hist.XData = xZ;
     BurstMeta.Plots.ZScale_hist.YData = Z;
     xlim(h.axes_ZScale,zlim);
+    h.axes_ZScale.XTick = linspace(zlim(1),zlim(2),5);
+    h.axes_ZScale.XTickLabel = [];
+    h.axes_ZScale.YTick = linspace(h.axes_ZScale.YLim(1),h.axes_ZScale.YLim(2),5);
+    h.axes_ZScale.YTickLabel = [];
     %%% Update Colorbar
     h.colorbar.Label.String = param;%h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
     h.colorbar.Ticks = [0,1/2,1];
