@@ -1,4 +1,4 @@
-function [MT, MI, Header] = Read_BH(FileName,NoE,Scanner,Card)
+function [MT, MI, Header] = Read_BH(FileName,NoE,Card)
 
 %%% Input parameters:
 %%% Filename: Full filename
@@ -111,12 +111,8 @@ switch Card
             MT=cumsum(double(MT))*4096+double(Macrotime); % Transforms MT into continuous stream (as double)
             clear Macrotime;
         end
-        switch Card
-            case 'SPC-140/150/130'
-                Header.SyncRate = Header.ClockRate; %if the laser is the MT clock
-            case 'SPC-830'
-                Header.SyncRate = 8E7; %UHasselt
-        end
+        Header.SyncRate = Header.ClockRate; %if the laser is the MT clock
+        % If SyncRate ~= ClockRate, it should not be read out here!
     case 'SPC-630 256chs'
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% Data is arranged per 4 bytes
@@ -151,7 +147,8 @@ switch Card
             %the Header.ClockRate is contained in the first 3 bytes of the first
             %record in units of 100 ps
             Header.ClockRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
-            Header.SyncRate = 8E7/3; %hardcoded Header.SyncRate
+            Header.SyncRate = Header.ClockRate; %if the laser is the MT clock
+            % If SyncRate ~= ClockRate, it should not be read out he
             ByteRecord(1)=[]; %%% Delete Header entry
             % Non macro/microtime information
             Rout = uint8(bitand(bitshift(ByteRecord, - 21), 112));
@@ -204,13 +201,13 @@ switch Card
         %%%%            bits 3-0 = number of routing bits
         %%%%   byte 2,3     = macro time clock in 0.1 ns units (for 50ns value 500 is set)
 
-        % !!!!!!!! HARDCODED Header.SyncRate !!!!!!!!
-        Header.SyncRate = 8E7/3; 
-        
+                
         % record in units of 100 ps
         % ByteRecord(1) is bytes 0 and 1;
         % ByteRecord(2) is bytes 2 and 3 and thus contains the Header.ClockRate;
         Header.ClockRate = 1E10/double(ByteRecord(2));  
+        Header.SyncRate = Header.ClockRate; %if the laser is the MT clock
+        % If SyncRate ~= ClockRate, it should not be read out he
         InvalidFirstPhoton = isequal(double(bitand(ByteRecord(1), 4096)), 4096); % is byte 1 bit 4 = 1 ?
         % cut ByteRecord(1) at 8bit and put the top 4 bits to 0:
         NumberOfRoutingBits = uint8(bitand(bitshift(ByteRecord(1), -8), 15))+1; %00001111
@@ -298,16 +295,10 @@ if any(bitand(Mark,2)==2)
 end
 
 % Checks for Mark entries (usually frame, line or pixels entries)
-if sum(Scanner)>0 && any(bitand(Mark,1)==1)
-    if Scanner(1) % Reads Pixel times
+if any(bitand(Mark,1)==1)
         Header.PixelMarker= MT(bitand(Mark, 25)==25); %00011001
-    end
-    if Scanner(2) % Reads Line times
         Header.LineMarker= MT(bitand(Mark, 41)==41); %00101001
-    end
-    if Scanner(3) % Reads Frame times
         Header.FrameMarker= MT(bitand(Mark, 73)==73); %01001001  
-    end
 else
     Header.PixelMarker = [];
     Header.LineMarker = [];

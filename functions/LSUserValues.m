@@ -283,8 +283,7 @@ if Mode==0 %%% Loads user values
     %%% You can edit it here if you want to change/add filetypes.
     %%% The order of filetypes has to correspond to the order in
     %%% LoadTcspc!
-    CurrentFileTypes = {'*0.spc','B&H SPC files recorded with FabSurf (*0.spc)';...
-        '*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
+    CurrentFileTypes = {'*_m1.spc','Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)';...
         '*.spc','Single-card B&H SPC files recorded with B&H-Software (*.spc)';...
         '*.ht3','HydraHarp400 TTTR file (*.ht3)';...
         '*.ht3','FabSurf HydraHarp400 TTTR file (*.ht3)';...
@@ -312,6 +311,11 @@ if Mode==0 %%% Loads user values
         S.File.OpenTCSPC_FilterIndex = 1;
     end
     P.File.OpenTCSPC_FilterIndex = S.File.OpenTCSPC_FilterIndex;
+    if ~isfield(S.File, 'Custom_Filetype')
+        disp('WARNING: UserValues structure incomplete, field "Custom_Filetype" missing');
+        S.File.Custom_Filetype = 'none';
+    end
+    P.File.Custom_Filetype = S.File.Custom_Filetype;
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
 
     %%% Checks, if Settings field exists
@@ -1870,6 +1874,8 @@ if Mode==0 %%% Loads user values
 else
     if nargin==3
         switch numel(Param)
+            case 1 
+                eval(Param{1});
             case 2
                 UserValues.(Param{2})=Obj.(Param{1});
             case 3

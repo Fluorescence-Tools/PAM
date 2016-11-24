@@ -3046,11 +3046,11 @@ switch mode
         LSUserValues(1);
         MIAData.Type = mode;
         MIAData.FileName{1} = FileInfo.FileName;
-        h.Mia_Image.Settings.Image_Frame.String = num2str(FileInfo.ImageTime);
-        h.Mia_Image.Settings.Image_Line.String = num2str(FileInfo.ImageTime./FileInfo.Lines*1000);
-        h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines*1000)};
-        h.Mia_Image.Settings.Image_Pixel.String = num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000);
-        h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(FileInfo.ImageTime./FileInfo.Lines^2*1000000)};
+        h.Mia_Image.Settings.Image_Frame.String = num2str(mean(diff(FileInfo.ImageTimes)));
+        h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
+        h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000)};
+        h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000);
+        h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000)};
         
         if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
             h.Mia_Image.Settings.Image_Size.String = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
@@ -3062,9 +3062,20 @@ switch mode
         
         Sel = h.Mia_Image.Settings.Channel_PIE(1).Value;
         
-        [MIAData.Data{1,1}, ~, ~, ~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
-            TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-            TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
+        if UserValues.PIE.Detector(Sel)~=0           
+            [~,MIAData.Data{1,1},~, ~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, [], 3);
+        else
+            PIE_MT=[];
+            for i=UserValues.PIE.Combined{Sel}
+            PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
+            end
+            [~,MIAData.Data{1,1}, ~, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, [], 3); 
+            clear PIE_MT;
+        end
         
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -3107,39 +3118,21 @@ switch mode
         %% Extracts data from Pam for channel 2
         MIAData.FileName{2} = FileInfo.FileName;
         Sel = h.Mia_Image.Settings.Channel_PIE(2).Value;
-        %%% Gets the photons
-        if UserValues.PIE.Detector(Sel)~=0 %%% Normal PIE channel
-            Stack=TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
-                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel));
+        %%% Gets the photons        
+        if UserValues.PIE.Detector(Sel)~=0           
+            [~,MIAData.Data{2,1},~, ~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, [],  3);
         else
-            Stack = [];
-            for j = UserValues.PIE.Combined{Sel} %%% Combined channel
-                Stack = [Stack; TcspcData.MT{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}(...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}>=UserValues.PIE.From(j) &...
-                    TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))]; %#ok<AGROW>
+            PIE_MT=[];
+            for i=UserValues.PIE.Combined{Sel}
+            PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
             end
+            [~,MIAData.Data{2,1}, ~, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, [], 3); 
+            clear PiE_MT;
         end
-        
-        %%% Calculates pixel times for each line and file
-        Pixeltimes=zeros(FileInfo.Lines^2,NoF);
-        for j=1:NoF
-            for k=1:FileInfo.Lines
-                Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-            end
-        end
-        
-        %%% Histograms photons to pixels
-        Stack = single(histc(Stack,Pixeltimes(:)));
-        %%% In case no photons exist
-        if numel(Stack)==0
-            Stack = zeros(size(Stack,1),1);
-        end
-        
-        %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-        MIAData.Data{2,1} = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,NoF),[2 1 3]),1);
-        clear Stack;
         %% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);

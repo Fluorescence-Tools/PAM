@@ -2828,7 +2828,7 @@ addpath(genpath(['.' filesep 'functions']));
     h.Profiles.MetaDataTable = uitable(...
         'Parent',h.Profiles.Panel,...
         'Units','normalized',...
-        'Position',[0.54 0.5 0.45 0.49],...
+        'Position',[0.54 0.6 0.45 0.49],...
         'Data',DefaultData,...
         'CellEditCallback',@Update_MetaData,...
         'ColumnName',ColumnNames,...
@@ -2895,6 +2895,32 @@ addpath(genpath(['.' filesep 'functions']));
         'Position',[0.32 0.84 0.21 0.07],...
         'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
 
+    %%% Allows custom Filetype selection
+    Customdir = [pwd filesep 'functions' filesep 'Custom_Read_Ins'];
+    %%% Finds all matlab files in profiles directory
+    Custom_Methods = what(Customdir);
+    Custom_Methods = ['none'; Custom_Methods.m(:)];
+    Custom_Value = 1;
+    for i=2:numel(Custom_Methods)
+        Custom_Methods{i}=Custom_Methods{i}(1:end-2);
+        if strcmp(Custom_Methods{i},UserValues.File.Custom_Filetype)
+            Custom_Value = i;
+        end            
+    end   
+    %%% Custom filetype selection
+    h.Profiles.Filetype = uicontrol(...
+        'Parent',h.Profiles.Panel,...
+        'Style', 'popupmenu',...
+        'Tag','Custom_Filetype',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'String', Custom_Methods,...
+        'Value',Custom_Value,...
+        'Callback',@(src,event) LSUserValues(1,src,{'UserValues.File.Custom_Filetype=Obj.String{Obj.Value};'}),...
+        'Position',[0.54 0.51 0.45 0.07],...
+        'Tooltipstring','Select a custom read-in option');
 %% Mac upscaling of Font Sizes
 if ismac
     scale_factor = 1.25;
@@ -3091,39 +3117,34 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 %% Calculates image
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        [PamMeta.Image{i}, ~, ~, ~] = CalculateImage(PIE_MT,1);  
+                        [PamMeta.Image{i}, ~, Bin,] = CalculateImage(PIE_MT,2);
+                        PamMeta.Image{i} = flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1]));
                     else
-                        PamMeta.Image{i}=zeros(FileInfo.Lines);
+                        PamMeta.Image{i}=zeros(FileInfo.Pixel,FileInfo.Lines);
                     end
+                    clear PIE_MT;
 
                     %% Calculate mean arival time image
                     if h.MT.Use_Image.Value && h.MT.Use_Lifetime.Value
-                        %%% Calculates sorted photon indeces and transforms it to uint32 to save memory
-                        [~,PIE_MT]=sort(PIE_MT); PIE_MT=uint32(PIE_MT);
-                        %%% Extracts microtimes of PIE channel
                         PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                        %%% Sorts microtimes
-                        PIE_MI=PIE_MI(PIE_MT); clear PIE_MT;
-                        %%% Calculates summed up microtime to speed up mean arrival time calculation
-                        PIE_MI=cumsum(double(PIE_MI));
-                        %%% Calculates last pixel photon vector
-                        Image_Sum=double(fliplr(PamMeta.Image{i}'));
-                        Image_Sum=[1;cumsum(Image_Sum(:))];
-                        %%% Needed for later indexing
-                        Image_Sum(Image_Sum<1)=1;
-                        %%% Calculates mean arrival time image vector
+                        PIE_MI(Bin==0)=[];
+                        Bin(Bin==0)=[];
                         if ~isempty(PIE_MI) && numel(Image_Sum) > 1
-                            PamMeta.Lifetime{i} = PIE_MI(Image_Sum(2:(FileInfo.Pixels+1)))-PIE_MI(Image_Sum(1:FileInfo.Pixels));
+                            PamMeta.Lifetime{i} = accumarray(Bin,PIE_MI, [FileInfo.Pixels*FileInfo.Lines 1]);%,@mean);
+                            clear PIE_MI Bin;
+                            
+                            %%% Reshapes pixel vector to image and normalizes to nomber of photons
+                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
+                            %%% Sets NaNs to 0 for empty pixels
+                            PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
                         else
-                            PamMeta.Lifetime{i} = zeros(1,FileInfo.Pixels);
+                            PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                         end
-                        clear PIE_MI;
-                        %%% Reshapes pixel vector to image and normalizes to nomber of photons
-                        PamMeta.Lifetime{i}=flipud(reshape(PamMeta.Lifetime{i},FileInfo.Lines,FileInfo.Lines)')./double(PamMeta.Image{i});
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
                     else
-                        PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
+                        clear Bin;
+                        PamMeta.Lifetime{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
                 end
                 %% Calculates photons and countrate for PIE channel
@@ -3600,7 +3621,7 @@ if any(mode==3)
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
-    h.Image.Axes.XLim=[0.5 size(PamMeta.Image{Sel},1)+0.5];
+    h.Image.Axes.XLim=[0.5 size(PamMeta.Image{Sel},2)+0.5];
     h.Image.Axes.YLim=[0.5 size(PamMeta.Image{Sel},1)+0.5];
 end
 
@@ -4927,7 +4948,14 @@ switch e.Key
             LSUserValues(0);
             %%% Changes color to indicate current profile
             h.Profiles.List.String{Sel}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{Sel} '</Font></html>'];
-
+            
+            h.Profiles.Filetype.Value = 1;
+            for i=2:numel(h.Profiles.Filetype.String)
+                if strcmp(h.Profiles.Filetype.String{i},UserValues.File.Custom_Filetype)
+                    h.Profiles.Filetype.Value = i;
+                end
+            end
+            h.Profiles.Filetype.Value
             %%% Resets applied shift to zero; might lead to overcorrection
             Update_to_UserValues;
             Update_Data([],[],0,0);
@@ -5908,12 +5936,12 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         LSUserValues(1);
 
         %% Calculates reference
-        Shift=h.MI.Phasor_Slider.Value;
-        Bins = 4096; % To avoid errors of different Bins and reference size
-        TAC=str2double(h.MI.Phasor_TAC.String)/FileInfo.MI_Bins*4096; % To always have the right TAC values independently of the number of bins.
-        Ref_LT=str2double(h.MI.Phasor_Ref.String);
-        From=str2double(h.MI.Phasor_From.String);
-        To=str2double(h.MI.Phasor_To.String);
+        Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
+        TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
+        Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
+        From=str2double(h.MI.Phasor_From.String); % First MI bin to used
+        To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
         UseParticles = h.MI.Phasor_Particles.Value;
 
         %%% Calculates theoretical phase and modulation for reference
@@ -5921,78 +5949,48 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         M_ref  = 1/sqrt(1+(2*pi*Ref_LT/TAC)^2);
 
         %%% Normalizes reference data
-        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)/sum(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:)),[0 round(Shift)]);
-        Ref = Ref(1:Bins);
+        Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
         if From>1
             Ref(1:(From-1))=0;
         end
-        if To<Bins
-            Ref(To+1:Bins)=0;
+        if To<MI_Bins
+            Ref(To+1:end)=0;
         end
-        Ref_Mean=sum(Ref.*(1:Bins))/sum(Ref)*TAC/Bins-Ref_LT;
+        Ref_Mean=sum(Ref(1:MI_Bins).*(1:MI_Bins))/sum(Ref)*TAC/MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
 
         %%% Calculates phase and modulation of the instrument
-        G_inst(1:Bins)=cos((2*pi./Bins)*(1:Bins)-Fi_ref)/M_ref;
-        S_inst(1:Bins)=sin((2*pi./Bins)*(1:Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:Bins).*G_inst);
-        s_inst=sum(Ref(1:Bins).*S_inst);
+        G_inst=cos((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
+        S_inst=sin((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
+        g_inst=sum(Ref(1:MI_Bins).*G_inst);
+        s_inst=sum(Ref(1:MI_Bins).*S_inst);
         Fi_inst=atan(s_inst/g_inst);
         M_inst=sqrt(s_inst^2+g_inst^2);
         if (g_inst<0 || s_inst<0)
             Fi_inst=Fi_inst+pi;
         end
         
-        %% Extracts and reorganizes macrotimes
-        
-        Photons=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-        
-        if isfield(FileInfo, 'LineStart')
-            % for example: PTU imaging data
-            [imageseries, Stack, hisbins, Photons] = CalculateImage(Photons,2);
-            %Sort photons per pixel (hisbins: vector of the
-            %macrotimes of the line starts and pixel starts so that the
-            %intensity histogram has the form:
-            % pix-pix-pix-pix-interline-pix-pix-pix-interline...)
-            FileInfo.ImageTime = FileInfo.LineStop(FileInfo.Lines)*FileInfo.ClockPeriod;
-            
-        else% Data without interlines, for example Fabsurf data
-            %%% Calculates Pixel vector
-            
-            if numel(FileInfo.LineTimes) == 1
-                %%% Point measurement, split up according to bins set for FCS analyis
-                FileInfo.Lines = ceil(sqrt(UserValues.Settings.Pam.MT_Number_Section));
-                FileInfo.LineTimes = linspace(0,max(Photons)./FileInfo.ClockPeriod,FileInfo.Lines+1);
-            end
-            
-            Pixeltimes=0;
-            for j=1:FileInfo.Lines
-                Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
-            end
-            hisbins = Pixeltimes.*FileInfo.ClockPeriod;
-            hisbins(1)=[];
-        end
-        
-        [Photons,Index]=sort(mod(Photons,FileInfo.ImageTime));
-        Index=uint32(Index);
-        Intensity= histc(Photons,hisbins);
-        
-        Pixel=[1;cumsum(Intensity(:))];
+        %% Extracts macrotimes
+        PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+        %%% Creates image and generates photon to pixel index
+        [Intensity,~, Bin] = CalculateImage(PIE_MT, 2);
+        clear PIE_MT;
+        %%% Extracts microtimes
+        PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
+        %%% Removes invalid photons (usually laser retraction)
+        PIE_MI=PIE_MI(Bin~=0);
+        Bin=Bin(Bin~=0);
+        %%% Collapses microtimes to single frame and sorts photons
+        [~,index] = sort(Bin);
+        clear Bin;
+        PIE_MI = PIE_MI(index);
+        clear index;
+        Pixel= [1; cumsum(Intensity(:))];
         Pixel(Pixel==0)=1;
         
-        if isfield(FileInfo, 'LineStart') % Files with interline data such as PTU
-            allframes = flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NoF),[2 1 3]),1);
-            PamMeta.Phasor_Int = rot90(sum(allframes,3),2);
-            Frames=FileInfo.NoF;
-            Intensity = imageseries; %Output of the function PTU_Image. 3D matrix of pix*pix*frame
-            Intensity = fliplr(rot90(sum(Intensity,3),3)); % 2D matrix of the sum matrices above
-        else % Files withourt interline data
-            PamMeta.Phasor_Int=flip(reshape(Intensity,[FileInfo.Lines,FileInfo.Lines])',1);
-            Frames=FileInfo.NumberOfFiles;
-            Intensity=reshape(Intensity,[FileInfo.Lines,FileInfo.Lines]);
-            Intensity=flip(Intensity',1);
-        end
-        clear Photons
+        Intensity=reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines]);
+        Intensity=flip(Intensity',1);
+        
         
         %%% Assignes Pixels to Particles if enabled
         if UseParticles>1
@@ -6008,86 +6006,70 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             end
             [ParticleIndex,i] = sort(ParticleIndex);
             ParticleNumber = ParticleNumber(i);
-            Particles =  zeros(numel(Regions),Bins);
+            Particles =  zeros(numel(Regions),MI_Bins);
         end
         
         
         
         
         %%% Sorts Microtimes
-        Photons=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-        Photons=Photons(Index);
-        clear Index
         Update_Progress = FileInfo.Lines;
         
         %% Calculates pixel by pixel phasors
-        G(1:Bins) = cos((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
-        S(1:Bins) = sin((2*pi/Bins).*(1:Bins)-Fi_inst)/M_inst;
+        G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+        S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         g = zeros(FileInfo.Lines);
         s = zeros(FileInfo.Lines);
         Mean_LT = zeros(FileInfo.Lines);
-        FLIM = zeros(1,Bins);
+        FLIM = zeros(1,MI_Bins);
         
-        if isfield(FileInfo, 'LineStart')
-            a = 1; % Counter for interline bins in the vector Pixel
-        else
-            a = NaN; % If no Interline bins are present, a is NaN so
-            % the while loop below doesn't skip any bins in "Pixel".
-        end
-        i = 1; % Counter for all "Pixel" bins
-        j = 1; % Counter for number of actual pixel bins in "Pixel"
-        k = 1; % Counter for Particle pixels
-        
-        while i<(numel(Pixel)-1)
-            if i == (FileInfo.Lines + 1)*a + 1 % skip those photons belonging to an interline bin
-                i = i + 1;
-                a = a + 1;
-            end
-            
-            if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i
-            end
+  
+
+        k=1;
+        for i=1:numel(Intensity)
             if UseParticles>1 && k<=numel(ParticleIndex) && ParticleIndex(k)==i %%% Sums all photons for each particle if enabled
-                Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+reshape(histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1)),1,[]);
+                Particles(ParticleNumber(k),:)=Particles(ParticleNumber(k),:)+reshape(histcounts(PIE_MI(Pixel(i):(Pixel(i+1)-1)),0:(MI_Bins)),1,[]);
                 k = k + 1;
             elseif UseParticles==3 && (k>numel(ParticleIndex) || ParticleIndex(k)~=i) %%% Sets value to 0 if only particles are enabeled
-                Mean_LT(j)=0;
-                g(j)=0;
-                s(j)=0;
+                Mean_LT(i)=0;
+                g(i)=0;
+                s(i)=0;
             else    %%% Calculates normal pixels
-                FLIM(:)=histc(Photons(Pixel(i):(Pixel(i+1)-1)),0:(Bins-1));
-                Mean_LT(j)=(sum(FLIM.*(1:Bins))/sum(FLIM))*TAC/Bins-Ref_Mean;
-                g(j)=sum(G.*FLIM)/sum(FLIM);
-                s(j)=sum(S.*FLIM)/sum(FLIM);
-                if isnan(g(j)) || isnan(s(j))
-                    g(j)=0; s(j)=0;
-                end
                 
+                FLIM(:)=histc(PIE_MI(Pixel(i):(Pixel(i+1)-1)),0:(MI_Bins-1));
+                Mean_LT(i)=(sum(FLIM.*(1:MI_Bins))/sum(FLIM))*TAC/MI_Bins-Ref_Mean;
+                g(i)=sum(G.*FLIM)/sum(FLIM);
+                s(i)=sum(S.*FLIM)/sum(FLIM);
+                if isnan(g(i)) || isnan(s(i))
+                    g(i)=0; s(i)=0;
+                end
             end
+            
+            
             if i==Update_Progress
                 Update_Progress=Update_Progress+FileInfo.Lines;
                 Progress(i/(numel(Pixel)-1),h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data:');
             end
-            i = i + 1;
-            j = j + 1;
-        end
-
-        if UseParticles>1 %%% Calculates single phasor for each particle
-           for i=1:size(Particles,1)
-               Mean_LT_p = (sum(Particles(i,:).*(1:Bins))/sum(Particles(i,:)))*TAC/Bins-Ref_Mean;
-               g_p = sum(G.*Particles(i,:))/sum(Particles(i,:));
-               s_p = sum(S.*Particles(i,:))/sum(Particles(i,:));
-               if isnan(g_p) || isnan(s_p)
-                   g_p=0; s_p=0;
-               end
-               Mean_LT(ParticleIndex(ParticleNumber == i)) = Mean_LT_p;
-               g(ParticleIndex(ParticleNumber == i)) = g_p;
-               s(ParticleIndex(ParticleNumber == i)) = s_p;
-               Regions(i).Mean_LT=Mean_LT_p;
-               Regions(i).g=g_p;
-               Regions(i).s=s_p;
-           end
             
         end
+    
+    if UseParticles>1 %%% Calculates single phasor for each particle
+        for i=1:size(Particles,1)
+            Mean_LT_p = (sum(Particles(i,:).*(1:MI_Bins))/sum(Particles(i,:)))*TAC/MI_Bins-Ref_Mean;
+            g_p = sum(G.*Particles(i,:))/sum(Particles(i,:));
+            s_p = sum(S.*Particles(i,:))/sum(Particles(i,:));
+            if isnan(g_p) || isnan(s_p)
+                g_p=0; s_p=0;
+            end
+            Mean_LT(ParticleIndex(ParticleNumber == i)) = Mean_LT_p;
+            g(ParticleIndex(ParticleNumber == i)) = g_p;
+            s(ParticleIndex(ParticleNumber == i)) = s_p;
+            Regions(i).Mean_LT=Mean_LT_p;
+            Regions(i).g=g_p;
+            Regions(i).s=s_p;
+        end
+        
+    end
 
         g=flip(g',1);s=flip(s',1);
         
@@ -6108,8 +6090,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Freq=1/TAC*10^9;
         FileNames=FileInfo.FileName;
         Path=FileInfo.Path;
-        Imagetime=FileInfo.ImageTime;
+        Imagetime=mean(diff(FileInfo.ImageTimes));
+        Frames=numel(FileInfo.ImageTimes)-1;
         Lines=FileInfo.Lines;
+        Pixels=FileInfo.Pixels;
         Fi=PamMeta.Fi;
         M=PamMeta.M;
         TauP=PamMeta.TauP;
@@ -6117,7 +6101,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Type = FileInfo.Type;
         
         if UseParticles>1
-            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
         else
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Freq','Imagetime','Frames','FileNames','Path','Type');
         end
@@ -9541,20 +9525,9 @@ switch e.Key
                         TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
                 end
             end
+            [~,Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
+            Stack=uint16(Stack);
 
-            %%% Calculates pixel times for each line and file
-            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-            for j=1:FileInfo.NumberOfFiles
-                for k=1:FileInfo.Lines
-                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-                end
-            end
-
-            %%% Histograms photons to pixels
-            Stack=uint16(histc(Stack,Pixeltimes(:)));
-            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,FileInfo.NumberOfFiles),[2 1 3]),1);
             %%% Exports matrix to workspace
             if strfind(UserValues.PIE.Name{i},'Comb.:')
                 Name = '';
@@ -9595,19 +9568,8 @@ switch e.Key
                 end
             end
 
-            %%% Calculates pixel times for each line and file
-            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-            for j=1:(size(FileInfo.LineTimes,2))
-                for k=1:(size(FileInfo.LineTimes,1)-1)
-                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-                end
-            end
-
-            %%% Histograms photons to pixels
-            Stack=uint16(histc(Stack,Pixeltimes(:)));
-            %%% Reshapes pixelvector to a pixel x pixel x frames matrix
-            Stack=flip(permute(reshape(Stack,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
+            [~,Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
+            Stack=uint16(Stack);
 
             File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
 
@@ -9621,15 +9583,15 @@ switch e.Key
             Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
             if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
                 Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
-                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
-                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
-                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTimes) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines^2*1e6) '\n',...
                     'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n'];
             else
                 Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
-                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
-                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
-                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTimes) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines^2*1e6) '\n',...
                     'PixelSize [nm]: ' '50' '\n'];
             end
 
@@ -9782,17 +9744,17 @@ switch e.Key
             Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
             if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
                 Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
-                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
-                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
-                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTimes) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines^2*1e6) '\n',...
                     'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n',...
                     'RLICS_Scale: ' num2str(Max-Min) '\n',...
                     'RLICS_Offset: ' num2str(Min) '\n'];
             else
                 Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
-                    'FrameTime [s]: ' num2str(FileInfo.ImageTime) '\n',...
-                    'LineTime [ms]: ' num2str(FileInfo.ImageTime/FileInfo.Lines*1000) '\n',...
-                    'PixelTime [us]: ' num2str(FileInfo.ImageTime/FileInfo.Lines^2*1e6) '\n',...
+                    'FrameTime [s]: ' num2str(FileInfo.ImageTimes) '\n',...
+                    'LineTime [ms]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines*1000) '\n',...
+                    'PixelTime [us]: ' num2str(FileInfo.ImageTimes/FileInfo.Lines^2*1e6) '\n',...
                     'PixelSize [nm]: ' '50' '\n',...
                     'RLICS_Scale: ' num2str(Max-Min) '\n',...
                     'RLICS_Offset: ' num2str(Min) '\n'];
