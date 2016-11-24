@@ -62,14 +62,12 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
     
 else %%% Image data with additional line/frame stop markers and other more complex setups
     Pixeltimes=[];
-    tic
     for i=1:(numel(FileInfo.ImageTimes))
         for j=1:FileInfo.Lines
             Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineStops(i,j),FileInfo.Pixels+1);
         end
         Pixeltimes = [Pixeltimes, reshape(Pixel',1,[])]; %#ok<AGROW>
     end
-    toc
     Pixeltimes(end+1)=max([FileInfo.MeasurementTime,Pixeltimes(end)]);
     %%% Calculate image vector
     if mode == 2

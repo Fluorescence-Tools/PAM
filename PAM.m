@@ -3129,7 +3129,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         PIE_MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
                         PIE_MI(Bin==0)=[];
                         Bin(Bin==0)=[];
-                        if ~isempty(PIE_MI) && numel(Image_Sum) > 1
+                        if ~isempty(PIE_MI)
                             PamMeta.Lifetime{i} = accumarray(Bin,PIE_MI, [FileInfo.Pixels*FileInfo.Lines 1]);%,@mean);
                             clear PIE_MI Bin;
                             
