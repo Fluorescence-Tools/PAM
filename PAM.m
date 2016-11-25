@@ -9718,33 +9718,19 @@ switch e.Key
             %%% Weights photons by filter
             MI = filter{1}{i}(MI);
             
+            [~,Data, Bin,] = CalculateImage(Data,4);
+            Data = flip(permute(reshape(Data,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]),1);
             
-            %%% Calculates pixel times for each line and file
-            Pixeltimes=zeros(FileInfo.Lines^2,FileInfo.NumberOfFiles);
-            for j=1:(size(FileInfo.LineTimes,2))
-                for k=1:(size(FileInfo.LineTimes,1)-1)
-                    Pixel=linspace(FileInfo.LineTimes(k,j),FileInfo.LineTimes(k+1,j),FileInfo.Lines+1);
-                    Pixeltimes(((k-1)*FileInfo.Lines+1):(k*FileInfo.Lines),j)=Pixel(1:end-1);
-                end
-            end
+            MI(Bin==0)=[];
+            Bin(Bin==0)=[];
+            MI = accumarray(Bin,MI, [numel(Data) 1]);
+            clear Bin;
             
-            %%% Creates linerarized image
-            [Data, idx]=histc(Data,Pixeltimes(:));
-            idx(idx==0)=numel(Data);
-            Data = uint16(Data);
-            %%% Summs weights per pixel
-            MI = accumarray(idx,MI);
-            clear idx;
-            if numel(MI)<numel(Data)
-                MI(numel(Data))=0;
-            end
-            %%% Reshapes image stack
-            Data=flip(permute(reshape(Data,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
             %%% Rescales and reshapes weighed stack
             Min = min(MI);
             Max = max(MI);
             MI=uint16((MI-Min)/(Max-Min)*2^16);
-            MI=flip(permute(reshape(MI,FileInfo.Lines,FileInfo.Lines,size(FileInfo.LineTimes,2)),[2 1 3]),1);
+            MI=flip(permute(reshape(MI,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]),1);
             
             File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) 'Filter' num2str(i) '.tif']);
             

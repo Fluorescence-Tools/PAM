@@ -3063,9 +3063,9 @@ switch mode
         Sel = h.Mia_Image.Settings.Channel_PIE(1).Value;
         
         if UserValues.PIE.Detector(Sel)~=0           
-            [~,MIAData.Data{1,1},~, ~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+            [~,MIAData.Data{1,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
                         TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, [], 3);
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
         else
             PIE_MT=[];
             for i=UserValues.PIE.Combined{Sel}
@@ -3073,7 +3073,7 @@ switch mode
                         TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
                         TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
             end
-            [~,MIAData.Data{1,1}, ~, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, [], 3); 
+            [~,MIAData.Data{1,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3); 
             clear PIE_MT;
         end
         
@@ -3120,9 +3120,9 @@ switch mode
         Sel = h.Mia_Image.Settings.Channel_PIE(2).Value;
         %%% Gets the photons        
         if UserValues.PIE.Detector(Sel)~=0           
-            [~,MIAData.Data{2,1},~, ~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+            [~,MIAData.Data{2,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
                         TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, [],  3);
+                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
         else
             PIE_MT=[];
             for i=UserValues.PIE.Combined{Sel}
@@ -3130,7 +3130,7 @@ switch mode
                         TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
                         TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
             end
-            [~,MIAData.Data{2,1}, ~, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, [], 3); 
+            [~,MIAData.Data{2,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3); 
             clear PiE_MT;
         end
         %% Updates frame settings for channel 2

@@ -44,10 +44,16 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
         end
         Pixeltimes(end+1)=FileInfo.MeasurementTime;
         %%% Calculate image vector
-        if mode == 2
+        if mode == 2 %%% Summed up image with photon-to-pixel assignement
             [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
             Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
             Bin = mod(Bin,FileInfo.Pixels*FileInfo.Lines); %%% Collapses to single frame
+            %%% Reshapes pixel vector to image
+            Stack=reshape(Stack,[],i);
+            Imageseries = sum(Stack,2);
+        elseif mode == 4 %%% Full stack with photon-to-pixel assignement
+            [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
+            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
             %%% Reshapes pixel vector to image
             Stack=reshape(Stack,[],i);
             Imageseries = sum(Stack,2);
@@ -70,9 +76,19 @@ else %%% Image data with additional line/frame stop markers and other more compl
     end
     Pixeltimes(end+1)=max([FileInfo.MeasurementTime,Pixeltimes(end)]);
     %%% Calculate image vector
-    if mode == 2
+    if mode == 2 %%% Summed up image with photon-to-pixel assignement
         [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
         Bin = mod(Bin,(FileInfo.Pixels+1)*FileInfo.Lines); %%% Collapses to single frame
+        Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
+        Bin=Bin-floor(Bin/(FileInfo.Pixels+1));
+        Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
+        %%% Reshapes pixel vector to image
+        Stack=reshape(Stack,FileInfo.Pixels+1,FileInfo.Lines,i);
+        Stack=Stack(1:end-1,:,:);
+        Stack=reshape(Stack,[],i);
+        Imageseries = sum(Stack,2);
+    elseif mode == 4 %%% Full stack with photon-to-pixel assignement
+        [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
         Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
         Bin=Bin-floor(Bin/(FileInfo.Pixels+1));
         Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
