@@ -3420,6 +3420,7 @@ if any(mode==2)
                     Fit_Faces=(Fit+circshift(Fit,[-1 0 0])+circshift(Fit,[-1 -1 0])+circshift(Fit,[0 -1 0]))/4;
                     %%% Resizes fit face intenity and applies colormap
                     Fit_Faces=round(63*(Fit_Faces-min(min(Fit_Faces)))/(max(max(Fit_Faces))-min(min(Fit_Faces))))+1;
+                    Fit_Faces(isnan(Fit_Faces))=1;
                     Fit_Faces=reshape(Colormap(Fit_Faces,:),[size(Fit_Faces,1),size(Fit_Faces,2),3]);
                     %%% Links fit z-axes to data axes
                     h.Mia_ICS.Axes(i,3).ZLim=h.Mia_ICS.Axes(i,2).ZLim;

@@ -1832,6 +1832,8 @@ for i=1:size(MIAFitMeta.Plots,1)
             ZData = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))./B;
             if h.Omit_Center_Line.Value
                 ZData(floor((size(ZData,1)+1)/2),:) = (ZData(floor((size(ZData,1)+1)/2)-1,:)+ZData(floor((size(ZData,1)+1)/2)+1,:))/2;
+            elseif h.Omit_Center.Value
+                ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)) = (ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)-1)+ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)+1))/2;
             end
             h.Plots.Main.ZData = ZData;
             %%% Calculates color for main plot faces            
