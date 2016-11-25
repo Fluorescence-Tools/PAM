@@ -3120,7 +3120,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         [PamMeta.Image{i}, ~, Bin,] = CalculateImage(PIE_MT,2);
                         PamMeta.Image{i} = flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1]));
                     else
-                        PamMeta.Image{i}=zeros(FileInfo.Pixel,FileInfo.Lines);
+                        PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
                     clear PIE_MT;
 
