@@ -9000,9 +9000,17 @@ switch mode
         LSUserValues(0);
         %%% Loads all possible file types
         Filetypes = UserValues.File.SPC_FileTypes;
+        if h.Profiles.Filetype.Value>1
+            Custom = str2func(h.Profiles.Filetype.String{h.Profiles.Filetype.Value});
+            [Custom_Suffix, Custom_Description] = feval(Custom);
+            Filetypes{end+1,1} = Custom_Suffix;
+            Filetypes{end,2} = Custom_Description;
+        end
+        
+        
         %%% Finds last used file type
         Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
-        if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1
+        if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1 || Lastfile>size(Filetypes,1)
             Lastfile = 1;
         end
         %%% Puts last used file type to front
@@ -9105,9 +9113,15 @@ switch mode
             %%% following code is for remembering the last used FileType
             %%% Loads all possible file types
             Filetypes = UserValues.File.SPC_FileTypes;
+            if h.Profiles.Filetype.Value>1
+                Custom = str2func(h.Profiles.Filetype.String{h.Profiles.Filetype.Value});
+                [Custom_Suffix, Custom_Description] = feval(Custom);
+                Filetypes{end+1,1} = Custom_Suffix;
+                Filetypes{end,2} = Custom_Description;
+            end
             %%% Finds last used file type
             Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
-            if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1
+            if isempty(Lastfile) || numel(Lastfile)~=1 || ~isnumeric(Lastfile) || isnan(Lastfile) ||  Lastfile <1 || Lastfile>size(Filetypes,1)
                 Lastfile = 1;
             end
             %%% Puts last used file type to front

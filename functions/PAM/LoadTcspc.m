@@ -945,6 +945,21 @@ switch (Type)
     case 9 %%% Custom Read-In types
         %%% The User can select which Read-Ins to display an use
         %%% This will allow easier, modular implementation of custom file types (esp. for scanning) 
+        if ~exist('Custom','var') %%% If it was called from the database etc.
+            Customdir = [pwd filesep 'functions' filesep 'Custom_Read_Ins'];
+            %%% Finds all matlab files in profiles directory
+            Custom_Methods = what(Customdir);
+            Custom_Methods = Custom_Methods.m(:);
+            for i=1:numel(Custom_Methods)
+                if strcmp(UserValues.File.Custom_Filetype, Custom_Methods{i}(1:end-2))
+                    Custom = str2func(UserValues.File.Custom_Filetype);
+                end
+            end
+            if ~exist('Custom','var') %%% Aborts is file does not exist anymore
+                return;
+            end
+        end  
+            
         feval(Custom, FileName,Path,Type,h);
         
 end
