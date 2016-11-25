@@ -31,7 +31,7 @@ FileInfo.Fabsurf=FabsurfInfo(fullfile(Path,FileName{1}));
 %%% General FileInfo
 FileInfo.NumberOfFiles=numel(FileName);
 FileInfo.Type=Type;
-FileInfo.ImageTimes=[];
+FileInfo.ImageTimes=0;
 FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
 FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
 FileInfo.Pixels=FileInfo.Fabsurf.Imagelines;
@@ -68,18 +68,18 @@ Totaltime=0;
 %%% Reads all selected files
 for i=1:numel(FileName)
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
-    
     %%% Calculates ImageTimes in clock ticks for concaternating
     %%% files
     Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
-    ImageTimes=round(Info.ImageTimes/1000/FileInfo.SyncPeriod);
-    
-    %%% if multiple files are loaded, consecutive files need to
-    %%% be offset in time with respect to the previous file
-    MaxMT = 0;
-    if any(~cellfun(@isempty,TcspcData.MT(:)))
-        MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+    if isempty(Info)
+        continue; %%% Skip file
     end
+    FileInfo.SyncPeriod=FileInfo.Fabsurf.RepRate/1000;
+    FileInfo.Lines=FileInfo.Fabsurf.Imagelines;
+    FileInfo.Pixels=FileInfo.Fabsurf.Imagelines;
+    FileInfo.ClockPeriod=FileInfo.SyncPeriod;
+    FileInfo.ScanFreq=FileInfo.Fabsurf.ScanFreqCorrected;
+    ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
     
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
@@ -115,44 +115,28 @@ for i=1:numel(FileName)
             end
             
             for k=Rout
-                TcspcData.MT{j,k}=[TcspcData.MT{j,k}; MaxMT + MT{j,k}];   MT{j,k}=[];
+                TcspcData.MT{j,k}=[TcspcData.MT{j,k}; Totaltime + MT{j,k}];   MT{j,k}=[];
                 TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{j,k}];   MI{j,k}=[];
             end
         end
     end
     %%% Determines last photon for each file
-    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)))
         FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
     end
     
-    if ~isempty(PLF{2})
-        Linetimes=[PLF{2} PLF{2}(end)+mean(diff(PLF{2}))];
-    else
-        Linetimes = [];
-    end
-    
-    %%% Creates linebreak entries
-    if isempty(Linetimes)
-        FileInfo.LineTimes(i,:)=linspace(0,ImageTimes/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
-    elseif numel(Linetimes)==FileInfo.Lines+1
-        FileInfo.LineTimes(i,:)=Linetimes+Totaltime;
-    elseif numel(Linetimes)<FileInfo.Lines+1
-        LT = mean(diff(Linetimes(2:end)));
-        while numel(Linetimes) < FileInfo.Lines+1
-            Linetimes(end+1) = Linetimes(end) + LT;
-        end
-        FileInfo.LineTimes(i,:)=Linetimes+Totaltime;
-    end
     %%% Calculates total time to get one trace from several
     %%% files
-    Totaltime=Totaltime + ImageTimes;
-    
+    Totaltime = Totaltime + ImageTimes;
+    FileInfo.ImageTimes(end+1) = Totaltime*FileInfo.ClockPeriod;
 end
 FileInfo.ClockPeriod = FileInfo.SyncPeriod;
-FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
+FileInfo.MeasurementTime = Totaltime*FileInfo.ClockPeriod; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
 FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
 FileInfo.TACRange = FileInfo.SyncPeriod;
- FileInfo.ImageTimes = [FileInfo.LineTimes(1,:) FileInfo.MeasurementTime];
+for i=1:(numel(FileInfo.ImageTimes)-1)
+    FileInfo.LineTimes(i,:) = linspace(FileInfo.ImageTimes(i),FileInfo.ImageTimes(i+1),FileInfo.Lines+1);
+end
 
 
 function Header = FabsurfInfo(FullFileName,ToRead)

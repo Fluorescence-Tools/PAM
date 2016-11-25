@@ -655,22 +655,15 @@ switch (Type)
                 end
             end
         end
+        MaxMT = 0;
         %%% Reads all selected files
         for i=1:numel(FileName)
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
-            
-            %%% if multiple files are loaded, consecutive files need to
-            %%% be offset in time with respect to the previous file
-            MaxMT = 0;
-            if any(~cellfun(@isempty,TcspcData.MT(:)))
-                MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
-            end
-            
+
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
             [MT, MI, Header] = Read_PTU(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName));
-            
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/Header.SyncRate;
@@ -725,11 +718,11 @@ switch (Type)
             else % point PTU data
                 FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
             end
-            
+            MaxMT = MaxMT + ceil(Header.MeasurementTime*1E-3/FileInfo.ClockPeriod);
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-        FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+        FileInfo.MeasurementTime = MaxMT*FileInfo.ClockPeriod; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
         if isempty(FileInfo.LineTimes) %%%Point Measurements
             FileInfo.ImageTimes = linspace(0,FileInfo.MeasurementTime,i+1);
