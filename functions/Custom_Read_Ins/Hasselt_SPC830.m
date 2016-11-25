@@ -17,7 +17,7 @@ FileInfo.Type = Type;
 FileInfo.MeasurementTime = [];
 FileInfo.ImageTimes = [];
 FileInfo.ImageStops = [];
-FileInfo.SyncPeriod = 1/(12.5*10^6);
+FileInfo.SyncPeriod = []; %ns per period
 FileInfo.ClockPeriod = [];
 FileInfo.TACRange = []; %in seconds
 FileInfo.Lines = [];
@@ -108,7 +108,7 @@ for i=1:numel(FileName)
         
         %%% extracts SyncPeriod and ClockPeriod from Data
         if isempty(FileInfo.SyncPeriod)
-            FileInfo.SyncPeriod = Header.SyncRate^-1;
+            FileInfo.SyncPeriod = 12.5e-9; %hardcoded
         end
         if isempty(FileInfo.ClockPeriod)
             FileInfo.ClockPeriod = Header.ClockRate^-1;
