@@ -902,7 +902,7 @@ if isempty(hfig)
         'Position',[0.5 0.91 0.5 0.03],...
         'Style','pushbutton',...
         'Tag','DetermineGammaLifetimeTwoColorButton',...
-        'String','<html>Fit &gamma;-factor from lifetime (2C)</html>',...
+        'String','<html>Fit &gamma;-factor from lifetime</html>',...
         'TooltipString','<html>Determine &gamma;-factor from lifetime. <br>Minimizes deviation between data and static FRET line.<br>Uses currently selected bursts.</html>',...
         'FontSize',12,...
         'Callback',@DetermineCorrections);
@@ -7780,7 +7780,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
     switch obj
         case h.FitGammaButton
-            [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 10]);
+            [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 quantile(1./S_raw,0.99)]);
         case h.DetermineGammaManuallyButton
             [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
     end
@@ -7811,7 +7811,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
-            ylim(h.Corrections.TwoCMFD.axes_gamma,[1,10]);
+            ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
             %%% Determine Gamma and Beta
             coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
