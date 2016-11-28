@@ -5646,10 +5646,23 @@ set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 %%% only hide fit plots if selection of parameter or species has changed,
 %%% or if we switched on KDE
-if any(gcbo == [h.ParameterListX,h.ParameterListY]) || (gcbo == h.SpeciesList.Tree) || (gcbo == h.SmoothKDE)
+obj = gcbo;
+if obj == h.SmoothKDE
     set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
     set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
     set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
+elseif obj == h.SpeciesList.Tree
+    set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
+else
+    try %%% try for java handle with property name
+        if any(strcmp(obj.Name,{'ParameterListX','ParameterListY'}))
+            set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
+            set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
+            set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
+        end
+    end
 end
 
 file = BurstMeta.SelectedFile;
@@ -6290,6 +6303,13 @@ if obj == h.Fit_Gaussian_Button
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
     h.Progress_Text.String = 'Done';
+    %%% set linecolor of bar plot to none
+    BurstMeta.Plots.Main_histX.EdgeColor = 'none';
+    BurstMeta.Plots.Main_histY.EdgeColor = 'none';
+else
+    %%% set linecolor of bar plot to black
+    BurstMeta.Plots.Main_histX.EdgeColor = [0,0,0];
+    BurstMeta.Plots.Main_histY.EdgeColor = [0,0,0];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12279,18 +12299,18 @@ switch obj
                 cbar = colorbar('peer', panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
-                if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-                    labels = cellfun(@str2double,cbar.TickLabels);
-                    %%% find maximum number of bursts
-                    for k=1:numel(BurstMeta.Plots.Main_Plot)
-                        if strcmp(BurstMeta.Plots.Main_Plot(k).Type,'image')
-                            maxZ = max(BurstMeta.Plots.Main_Plot(k).CData(:));
-                        end
-                    end
-                    for i = 1:numel(labels)
-                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
-                    end
-                end
+%                 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+%                     labels = cellfun(@str2double,cbar.TickLabels);
+%                     %%% find maximum number of bursts
+%                     for k=1:numel(BurstMeta.Plots.Main_Plot)
+%                         if strcmp(BurstMeta.Plots.Main_Plot(k).Type,'image')
+%                             maxZ = max(BurstMeta.Plots.Main_Plot(k).CData(:));
+%                         end
+%                     end
+%                     for i = 1:numel(labels)
+%                         cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+%                     end
+%                 end
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
@@ -12971,17 +12991,17 @@ BurstMeta.Plots.Mixture.Main_Plot(1).LineColor = UserValues.BurstBrowser.Display
 BurstMeta.Plots.Mixture.Main_Plot(2).LineColor = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.Main_Plot(3).LineColor = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.Main_Plot(4).LineColor = UserValues.BurstBrowser.Display.ColorLine4;
-BurstMeta.Plots.Mixture.Main_Plot(4).LineColor = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.Main_Plot(5).LineColor = UserValues.BurstBrowser.Display.ColorLine5;
 BurstMeta.Plots.Mixture.plotX(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotX(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotX(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotX(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
-BurstMeta.Plots.Mixture.plotX(4).Color = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.plotX(5).Color = UserValues.BurstBrowser.Display.ColorLine5;
 BurstMeta.Plots.Mixture.plotY(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotY(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotY(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotY(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
-BurstMeta.Plots.Mixture.plotY(4).Color = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.plotY(5).Color = UserValues.BurstBrowser.Display.ColorLine5;
 %%% Reset color of correction fits
 BurstMeta.Plots.Fits.histE_donly(1).Color = [1,0,0];
 BurstMeta.Plots.Fits.histS_aonly(1).Color = [1,0,0];
