@@ -5881,12 +5881,12 @@ set(h.axes_1d_y,'YTick',yticks(2:end));
 
 %%% set limits of axes
 if ~(xlimits(1) == xlimits(2))
-    xlim(h.axes_general,xlimits);
-    xlim(h.axes_1d_x,xlimits);
+    h.axes_general.XLim = xlimits;
+    h.axes_1d_x.XLim = xlimits;
 end
 if ~(ylimits(1) == ylimits(2))
-    ylim(h.axes_general,ylimits);
-    xlim(h.axes_1d_y,ylimits);
+    h.axes_general.YLim = ylimits;
+    h.axes_1d_y.XLim = ylimits;
 end
 
 if (h.axes_1d_x.XLim(2) - h.axes_1d_x.XTick(end))/(h.axes_1d_x.XLim(2)-h.axes_1d_x.XLim(1)) < 0.02
@@ -5923,6 +5923,10 @@ end
 
 %% Gaussian fitting
 if obj == h.Fit_Gaussian_Button
+    %%% reset plots
+    set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
+    set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
     if isfield(BurstMeta,'Fitting')
         %%% remove field in BurstMeta
         BurstMeta = rmfield(BurstMeta,'Fitting');
