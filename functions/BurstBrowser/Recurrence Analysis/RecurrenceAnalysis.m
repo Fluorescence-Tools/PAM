@@ -8,23 +8,23 @@ Stop = round(Stop.*BurstData{file}.SyncPeriod./1E-3);
 [Cor,Time] = CrossCorrelation({Start},{Stop},max(Stop));
 figure;
 subplot(2,1,1);
-semilogx(Time,Cor);
+semilogx(Time*BurstData{file}.ClockPeriod,Cor);
 
 %%% Calculate Same-Molecule Probability
 p = 1-1./(Cor+1);
 subplot(2,1,2);
-semilogx(Time,p);
+semilogx(Time*BurstData{file}.ClockPeriod,p);
 
 %% Find Bursts in Time Interval with respect to Initial FRET range
 x = linspace(0,1,101);
 E_ini = 0.3;
-dE = 0.02;
+dE = 0.05;
 val = (BurstData{file}.DataCut(:,1) > E_ini-dE) & (BurstData{file}.DataCut(:,1) < E_ini+dE);
 hE_ini = histc(BurstData{file}.DataCut(val,1),x);
 
 start = Start(BurstData{file}.Selected);
 stop = Stop(BurstData{file}.Selected);
-T = [0,2];
+T = [0,10];
 stp = stop(val);
 val_idx = find(val);
 rec = zeros(numel(Stop),1);
@@ -56,7 +56,7 @@ hE_T = hE_T./sum(hE_T);
 figure;plot(x,hE_ini);hold on;plot(x,hE_T);
 
 %% Construct Recurrence Contour plot
-T = [0 5];
+T = [0, 10];
 
 Eanf = 0; Eend= 1; dE = 0.02;
 E = Eanf:dE:Eend;
@@ -65,14 +65,14 @@ for i = 1:numel(E)
     contE(:,i) = recurrence_hist(T,E(i),dE/2,Start,Stop);
 end
     
-figure;imagesc(flipud(contE));
+figure;imagesc(E,E,flipud(contE));
 
 %% Do a time series
-Tanf = 0; Tend = 500; dT = 20;
+Tanf = 0; Tend = 100; dT = 10;
 T = Tanf:dT:Tend;
-E_ini = 0.3; dE = 0.05;
+E_ini = 0.3; dE = 0.1;
 % set an E threshold, i.e. E = 0.3, which is here bin 17
-E_thr = 0.4;
+E_thr = 0.5;
 [~,E_thr_bin] = min(abs(linspace(0,1,51)-E_thr));
 contE = [];
 fraction_low = [];
