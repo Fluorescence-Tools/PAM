@@ -4825,7 +4825,7 @@ switch mode
         legend_entries = legend_entries(valid);
         legend(legend_entries,'fontsize',14);
 end
-
+UpdatePlot([],[],h);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8646,8 +8646,10 @@ if h.MultiselectOnCheckbox.Value
         ApplyCorrections([],[],h,0); %%% Apply without display update
     end
     BurstMeta.SelectedFile = sel_file;
-    %%% Apply with display update
-    ApplyCorrections([],[],h);
+    if display_update
+        %%% Apply with display update
+        ApplyCorrections([],[],h);
+    end
     
     %%% reenable callback and checkbox
     h.MultiselectOnCheckbox.Callback = @UpdateOptions;
