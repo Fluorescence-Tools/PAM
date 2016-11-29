@@ -136,13 +136,20 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Label','Compare',...
         'Tag','Parameter_Comparison_Menu');
+    h.Param_comp_selected_Menu = uimenu(...
+        'Parent',h.Parameter_Comparison_Menu,...
+        'Label','<html>Compare <b>current parameter</b> of selected species</html>',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','Param_comp_selected_Menu',...
+        'Enable','off',...
+        'Separator','off');
     %%% FRET Comparions plot of loaded files
     h.FRET_comp_Loaded_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>FRET histograms</b> of loaded files</html>',...
         'Callback',@Compare_FRET_Hist,...
         'Tag','FRET_comp_Loaded_Menu',...
-        'Separator','off');
+        'Separator','on');
     %%% Parameter Comparions plot from loaded files
     h.Param_comp_Loaded_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
@@ -150,6 +157,7 @@ if isempty(hfig)
         'Callback',@Compare_FRET_Hist,...
         'Tag','Param_comp_Loaded_Menu',...
         'Separator','off');
+    
     %%% FRET Comparions plot from *.his files
     h.FRET_comp_File_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
@@ -4627,6 +4635,31 @@ elseif  obj == h.Param_comp_Loaded_Menu
         end
     end
     BurstMeta.SelectedFile = sel_file;
+elseif obj == h.Param_comp_selected_Menu
+    [files,species,subspecies] = get_multiselection(h);
+    mode = 0;
+    param = h.ParameterListX.String{h.ParameterListX.Value};
+    sel_file = BurstMeta.SelectedFile;
+    P = cell(numel(files),1);
+    for i = 1:numel(files)
+        file = files(i);
+        BurstMeta.SelectedFile = file;
+        %%% Make sure to apply corrections
+        ApplyCorrections(obj,[],h,0);
+        %%% read parmeter values
+        try
+            SelectedSpeciesName = BurstData{file}.SpeciesNames{species(i),subspecies(i)};
+            FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
+        catch
+            FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
+        end
+        p = find(strcmp(BurstData{file}.NameArray,param));
+        if ~isempty(p)
+            [~, Data] = UpdateCuts([species(i),subspecies(i)],file);
+            P{i} = Data(:,p);
+        end
+    end
+    BurstMeta.SelectedFile = sel_file;
 end
 
 switch mode
@@ -4887,6 +4920,7 @@ switch obj
                 h.RenameSpecies_Button.Visible = 'off';
                 h.Export_To_PDA_Button.Visible = 'off';
                 h.Send_to_TauFit_Button.Visible = 'off';
+                h.Param_comp_selected_Menu.Enable = 'on';
             case 0
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -4900,6 +4934,7 @@ switch obj
                 h.RenameSpecies_Button.Visible = 'on';
                 h.Export_To_PDA_Button.Visible = 'on';
                 h.Send_to_TauFit_Button.Visible = 'on';
+                h.Param_comp_selected_Menu.Enable = 'off';
          end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
@@ -6872,7 +6907,7 @@ end
 
 function data = get_multiselection_data(h,param)
 %%% return concatenated data for parameter over all selected species
-%%% if only one parameter is supplied, gives out the total data array over
+%%% if only one argument is supplied, gives out the total data array over
 %%% all parameters
 global BurstData
 [file_n,species_n,subspecies_n] = get_multiselection(h);
