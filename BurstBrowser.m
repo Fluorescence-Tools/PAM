@@ -4662,10 +4662,11 @@ elseif obj == h.Param_comp_selected_Menu
     BurstMeta.SelectedFile = sel_file;
 end
 
+N_bins = UserValues.BurstBrowser.Display.NumberOfBinsX;
+
 switch mode
     case 2 % 2ColorMFD
-        N_bins = 51;
-        xE = linspace(-0.05,1,N_bins);
+        xE = linspace(-0.05,1,N_bins+1);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
             H{i} = H{i}./sum(H{i});
@@ -4715,8 +4716,8 @@ switch mode
             text(1.02,ax.YLim(2),legend_entries);
         end
     case 3
-        xE = linspace(-0.1,1,56);
-        xEBR = linspace(-0.2,1,61);
+        xE = linspace(-0.1,1,ceil(N_bins*1.1)+1);
+        xEBR = linspace(-0.2,1,ceil(N_bins*1.2)+1);
         for i = 1:numel(EGR)
             HGR{i} = histcounts(EGR{i},xE);
             HGR{i} = HGR{i}./sum(HGR{i});
@@ -4795,8 +4796,7 @@ switch mode
         valid = ~(cellfun(@isempty,P));
         %%% take X hist limits
         xlim = h.axes_1d_x.XLim;
-        N_bins = 51;
-        xP = linspace(xlim(1),xlim(2),N_bins);
+        xP = linspace(xlim(1),xlim(2),N_bins+1);
         for i = 1:numel(P)
             if valid(i)
                 H{i} = histcounts(P{i},xP);
