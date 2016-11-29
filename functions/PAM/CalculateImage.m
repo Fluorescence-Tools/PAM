@@ -15,7 +15,7 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
     Linedurations = diff(FileInfo.LineTimes,1,2);
     %%% Faster and less memory intensive way or creating a summed
     %%% up image when all linetimes are identical
-    if mode<3 && (numel(FileInfo.ImageTimes)==2 || max(abs(diff(diff(FileInfo.ImageTimes))))/mean((FileInfo.ImageTimes))<10^9) && (max(abs(diff(Linedurations(:))))/mean(Linedurations(:))<10^6)
+    if mode<3 && (FileInfo.Pixels > 1 && FileInfo.Lines > 1) && (numel(FileInfo.ImageTimes)==2 || max(abs(diff(diff(FileInfo.ImageTimes))))/mean((FileInfo.ImageTimes))<10^9) && (max(abs(diff(Linedurations(:))))/mean(Linedurations(:))<10^6)
         for j=1:FileInfo.Lines
             Pixel(j,:)=linspace(FileInfo.LineTimes(1,j),FileInfo.LineTimes(1,j+1),FileInfo.Pixels+1);
         end

@@ -4113,7 +4113,7 @@ switch e.Key
         UserValues.PIE.ScatterPattern{end+1} = [];
         UserValues.PIE.Background(end+1)=0;
         %%% Reset Correlation Table Data Matrix
-         cor_sel = UserValues.Settings.Pam.Cor_Selection;
+        cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
         UserValues.Settings.Pam.Cor_Selection = cor_sel;%false(numel(UserValues.PIE.Name)+1);
         %%% Updates Pam meta data; input 3 should be empty to improve speed
@@ -4290,7 +4290,10 @@ switch e.Key
             UserValues.PIE.Name{end}(end)=[];
             UserValues.PIE.Duty_Cycle(end+1)=0;
             %%% Reset Correlation Table Data Matrix
-            UserValues.Settings.Pam.Cor_Selection = false(numel(UserValues.PIE.Name)+1);
+            cor_sel = UserValues.Settings.Pam.Cor_Selection;
+            cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
+            UserValues.Settings.Pam.Cor_Selection = cor_sel;
+            Update_to_UserValues;
             Update_Data([],[],[],[]);
             Update_Display([],[],0);
             %%% Updates correlation table
@@ -7125,8 +7128,7 @@ save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7');
 %%% Save the whole photon stream for fFCS with Donor-Only inclusion or
 %%% purified FCS (inclusion of time window around burst)
 if UserValues.BurstSearch.SaveTotalPhotonStream
-    PhotonsFileName = [FullFileName '.aps']; %%% .aps is all-photon-stream
-    PhotonsFileName = GenerateName(PhotonsFileName, 1);
+    PhotonsFileName = [BurstFileName(1:end-3) 'aps']; %%% .aps is all-photon-stream
     PhotonStream.start = start_all;
     PhotonStream.stop = stop_all;
     PhotonStream.Macrotime = uint64(Macrotime_all);

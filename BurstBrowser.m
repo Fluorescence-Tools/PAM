@@ -11663,7 +11663,7 @@ switch obj
             %%% histogram the Macrotimes in bins of 10 ms
             bw = ceil(10E-3./BurstData{file}.ClockPeriod);
             bins_time = bw.*(0:1:ceil(PhotonStream{file}.Macrotime(end)./bw));
-            if ~isfield(PhotonStream,'MT_bin')
+            if ~isfield(PhotonStream{file},'MT_bin')
                 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                 [~, PhotonStream{file}.MT_bin] = histc(PhotonStream{file}.Macrotime,bins_time);
                 [PhotonStream{file}.unique,PhotonStream{file}.first_idx,~] = unique(PhotonStream{file}.MT_bin);
@@ -11845,21 +11845,22 @@ switch mode
         if isempty(PhotonStream{file})
             if exist([filename(1:end-3) 'aps'],'file') == 2
                 %%% load if it exists
-                PhotonStream{file} = load([filename(1:end-3) 'aps'],'-mat');
+                S = load([filename(1:end-3) 'aps'],'-mat');
             else
                 %%% else ask for the file
                 [FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
                 if FileName == 0
                     return;
                 end
-                PhotonStream{file} = load('-mat',fullfile(PathName,FileName));
+                S = load('-mat',fullfile(PathName,FileName));
             end
             % transfer to global array
-            %PhotonStream{file}.start = S.PhotonStream.start;
-            %PhotonStream{file}.stop = S.PhotonStream.stop;
-            %PhotonStream{file}.Macrotime = S.PhotonStream.Macrotime;
-            %PhotonStream{file}.Microtime = S.PhotonStream.Microtime;
-            %PhotonStream{file}.Channel = S.PhotonStream.Channel;
+            PhotonStream{file}.start = S.PhotonStream.start;
+            PhotonStream{file}.stop = S.PhotonStream.stop;
+            PhotonStream{file}.Macrotime = double(S.PhotonStream.Macrotime);
+            PhotonStream{file}.Microtime = S.PhotonStream.Microtime;
+            PhotonStream{file}.Channel = S.PhotonStream.Channel;
+            clear S;
         end
         %%% Enable CorrelateWindow Button
         %h.CorrelateWindow_Button.Enable = 'on';

@@ -79,13 +79,13 @@ for i=1:numel(FileName)
     FileInfo.Pixels=FileInfo.Fabsurf.Imagelines;
     FileInfo.ClockPeriod=FileInfo.SyncPeriod;
     FileInfo.ScanFreq=FileInfo.Fabsurf.ScanFreqCorrected;
-    ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
+    %ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
     
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
     [MT, MI, SyncRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2);
-    
+    ImageTimes = max(cellfun(@max,MT(~cellfun(@isempty,MT))));
     if isempty(FileInfo.SyncPeriod)
         FileInfo.SyncPeriod = 1/SyncRate;
     end
