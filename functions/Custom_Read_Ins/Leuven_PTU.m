@@ -144,11 +144,15 @@ if isempty(FileInfo.LineTimes) %%%Point Measurements
     for i=2:size(FileInfo.LineTimes,1)
         FileInfo.LineTimes(i,:)=FileInfo.LineTimes(i,:)+FileInfo.ImageTimes(i);
     end   
+    FileInfo.Lines=size(FileInfo.LineTimes,2)-1;
+FileInfo.Pixels=FileInfo.Lines;
 else
     FileInfo.ImageTimes = FileInfo.ImageTimes+0.00095;
     FileInfo.ImageStops = FileInfo.ImageStops+0.00095;
     FileInfo.LineStops = FileInfo.LineStops+0.00095;
     FileInfo.LineTimes = FileInfo.LineTimes+0.00095;
+    FileInfo.Lines=size(FileInfo.LineTimes,2);
+FileInfo.Pixels=FileInfo.Lines;
 end
-FileInfo.Lines=size(FileInfo.LineTimes,2)-1;
+FileInfo.Lines=size(FileInfo.LineTimes,2);
 FileInfo.Pixels=FileInfo.Lines;
