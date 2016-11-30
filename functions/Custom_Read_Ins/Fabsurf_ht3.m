@@ -70,7 +70,7 @@ for i=1:numel(FileName)
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
     %%% Calculates ImageTimes in clock ticks for concaternating
     %%% files
-    Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
+    [Info,isMFD]=FabsurfInfo(fullfile(Path,FileName{i}),1);
     if isempty(Info)
         continue; %%% Skip file
     end
@@ -79,13 +79,18 @@ for i=1:numel(FileName)
     FileInfo.Pixels=FileInfo.Fabsurf.Imagelines;
     FileInfo.ClockPeriod=FileInfo.SyncPeriod;
     FileInfo.ScanFreq=FileInfo.Fabsurf.ScanFreqCorrected;
-    %ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
     
     %%% Update Progress
     Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
     %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
     [MT, MI, SyncRate,Resolution,PLF] = Read_HT3(fullfile(Path,FileName{i}),Inf,h.Progress.Axes,h.Progress.Text,i,numel(FileName),2);
-    ImageTimes = max(cellfun(@max,MT(~cellfun(@isempty,MT))));
+    
+    if ~isMFD %%% imagetime corresponds to measurement time
+        ImageTimes=round(Info.Imagetime/1000/FileInfo.SyncPeriod);
+    else %%% MFD has arbitrary time, get it from macrotime
+        ImageTimes = max(cellfun(@max,MT(~cellfun(@isempty,MT))));
+    end
+    
     if isempty(FileInfo.SyncPeriod)
         FileInfo.SyncPeriod = 1/SyncRate;
     end
@@ -139,7 +144,7 @@ for i=1:(numel(FileInfo.ImageTimes)-1)
 end
 
 
-function Header = FabsurfInfo(FullFileName,ToRead)
+function [Header,MFD] = FabsurfInfo(FullFileName,ToRead)
 % SCANNING AND GENERAL PARAMETERS:   
 %   1   Time per Image [ms]            
 %   2   Image Size:                     
@@ -292,11 +297,15 @@ fid(19) = fopen([FullFileName(1:end-8) '_ZScan_info' FullFileName(end-7:end-4) '
 fid(20) = fopen([FullFileName(1:end-8) '_ZTrack_info' FullFileName(end-7:end-4) '.txt']);
 fid(21) = fopen([FullFileName(1:end-8) '_MFD_info' FullFileName(end-7:end-4) '.txt']);
 
+MFD = 0;
 i=1;
 FID=-1;
 while i<22
     if fid(i)~=-1; 
-        FID=fid(i); 
+        FID=fid(i);
+        if any(i==[13,21])
+            MFD = 1;
+        end
         break;
     end;
     i=i+1;
