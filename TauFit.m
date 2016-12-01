@@ -15,7 +15,7 @@ if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit
 end
-global TauFitData BurstData
+global TauFitData PamMeta
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
 end
@@ -751,7 +751,7 @@ if exist('ph','var')
                     'FontSize',12,...
                     'String','Select Channel',...
                     'ToolTipString','Selection of Channel');%%% Popup menus for PIE Channel Selection
-                switch BurstData.BAMethod
+                switch PamMeta.BurstData.BAMethod
                     case {1,2,5}
                         Channel_String = {'GG','RR'};
                     case {3,4}
@@ -1216,7 +1216,7 @@ h.UseWeightedResiduals_Menu = uicontrol(...
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     switch TauFitData.Who
         case 'Burstwise'
-            BAMethod = BurstData.BAMethod;
+            BAMethod = PamMeta.BurstData.BAMethod;
         case 'BurstBrowser'
             BAMethod = BurstData{BurstMeta.SelectedFile}.BAMethod;
     end
@@ -4253,9 +4253,10 @@ a(~fix) = x;
 %%%  Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstWise_Fit(obj,~)
-global BurstData UserValues TauFitData
+global UserValues TauFitData PamMeta
 h = guidata(findobj('Tag','TauFit'));
-
+%%% get BurstData from PamMeta
+BurstData = PamMeta.BurstData;
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
 end
@@ -4776,6 +4777,8 @@ switch TauFitData.BAMethod
         end
 end
 save(TauFitData.FileName,'BurstData');
+%%% update BurstData in PamMeta
+PamMeta.BurstData = BurstData;
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 %%% Change the Color of the Button in Pam
 hPam = findobj('Tag','Pam');

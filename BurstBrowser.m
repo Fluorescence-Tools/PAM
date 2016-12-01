@@ -3775,22 +3775,6 @@ end
 UserValues.File.BurstBrowserPath=pathname;
 LSUserValues(1);
 
-%%% Reset Pam Burst GUI
-if ~isempty(findobj('Tag','Pam'))
-    h_pam = guidata(findobj('Tag','Pam'));
-    %%% Reset loaded file textbox
-    h_pam.Burst.LoadedFile_Text.String = '';
-    %%% Set Analysis Buttons in Pam
-    %%% set the text of the BurstSearch Button to green color to indicate that
-    %%% a burst search has been done
-    h_pam.Burst.Button.ForegroundColor = UserValues.Look.Fore;
-    %%% Disable Lifetime and 2CDE Button
-    h_pam.Burst.BurstLifetime_Button.Enable = 'off';
-    h_pam.Burst.BurstLifetime_Button.ForegroundColor = UserValues.Look.Fore;
-    h_pam.Burst.NirFilter_Button.Enable = 'off';
-    h_pam.Burst.NirFilter_Button.ForegroundColor = UserValues.Look.Fore;
-end
-
 %%% Reset FCS buttons (no *.aps loaded anymore!)
 %h.CorrelateWindow_Button.Enable = 'off';
 %h.CorrelateWindow_Edit.Enable = 'off';

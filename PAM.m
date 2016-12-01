@@ -2985,6 +2985,7 @@ PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
 PamMeta.Burst.Preview = [];
 PamMeta.Database = UserValues.File.FileHistory.PAM;
+PamMeta.BurstData = [];
 
 TcspcData=[];
 TcspcData.MI=cell(1);
@@ -4873,7 +4874,7 @@ end
 %%% "enter"-Key or Select menu: Makes selected profile current profile
 function Update_Profiles(obj,ed)
 h=guidata(findobj('Tag','Pam'));
-global UserValues
+global UserValues PamMeta
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
@@ -4968,7 +4969,6 @@ switch e.Key
                     h.Profiles.Filetype.Value = i;
                 end
             end
-            h.Profiles.Filetype.Value
             %%% Resets applied shift to zero; might lead to overcorrection
             Update_to_UserValues;
             Update_Data([],[],0,0);
@@ -4977,6 +4977,12 @@ switch e.Key
             %%% Update export table
             h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
             h.Export.PIE.Data = false(numel(UserValues.PIE.Name)+1,1);
+            % update file history
+            PamMeta.Database = UserValues.File.FileHistory.PAM;
+            h.Database.List.String = [];
+            for i = 1:size(PamMeta.Database,1)
+                h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
+            end
         end
     case 'duplicate'
         %% Duplicates selected profile
@@ -6326,12 +6332,11 @@ save(FileName, 'PDA', 'timebin')
 %%% Performs a Burst Analysis  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_BurstAnalysis(obj,~)
-global FileInfo UserValues
+global FileInfo UserValues PamMeta
 %% Initialization
 h = guidata(findobj('Tag','Pam'));
 %%% clear preview burst data still in workspace
-clearvars -global BurstData
-global BurstData
+PamMeta.BurstData = [];
 
 %%% Set Progress Bar
 h.Progress.Text.String = 'Performing Burst Search...';
@@ -7024,7 +7029,7 @@ BurstData.PIE.From = UserValues.PIE.From(PIEChannels);
 BurstData.PIE.To = UserValues.PIE.To(PIEChannels);
 
 % get the IRF, scatter decay and background from UserValues
-Store_IRF_Scat_inBur('nothing',[],[0,1])
+BurstData = Store_IRF_Scat_inBur('nothing',BurstData,[0,1]);
 
 %%% get path from spc files, create folder
 [pathstr, FileName, ~] = fileparts(fullfile(FileInfo.Path,FileInfo.FileName{1}));
@@ -7142,6 +7147,9 @@ UserValues.File.BurstBrowserPath = FileInfo.Path;
 
 LSUserValues(1);
 
+%%% store burstdata in PamMeta structure
+PamMeta.BurstData = BurstData;
+
 Progress(1,h.Progress.Axes, h.Progress.Text, 'Done');
 Update_Display([],[],1);
 %%% set the text of the BurstSearch Button to green color to indicate that
@@ -7235,9 +7243,10 @@ Save_MetaData([],[],fid); %%% append meta data (automatically closes the fid)
 %%% Calculates the 2CDE Filter for the BurstSearch Result  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function NirFilter(~,~)
-global BurstData UserValues
+global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
-
+%%% get BurstData from PamMeta
+BurstData = PamMeta.BurstData;
 %%% Open Parpool
 h.Progress.Text.String = 'Opening Parallel Pool...';
 StartParPool();
@@ -7330,23 +7339,21 @@ for t=1:numel(tau_2CDE)
     fprintf(fid, '%s\n', A{:});
     fclose(fid);
 end
+%%% update BurstData in PamMeta
+PamMeta.BurstData = BurstData;
+
 Progress(1,h.Progress.Axes, h.Progress.Text,tex);
 toc
 Update_Display([],[],1);
 h.Burst.NirFilter_Button.ForegroundColor = [0 0.8 0];
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads a performed BurstSearch for further/re-analysis  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Performed_BurstSearch(obj,~)
-global BurstData UserValues
-%%% check if BurstData variable exists, if it is a cell (as used in
-%%% BursBrowser) and whether BurstBrowser is open
-hBB = findobj('Tag','BurstBrowser');
-if ~isempty(BurstData) && iscell(BurstData) && ~isempty(hBB)
-    msgbox('Please close BurstBrowser before loading performed burst data.','Could not load burst data...');
-    return;
-end
-clearvars -global BurstData BurstTCSPCData
+global PamMeta UserValues
+%%% clear BurstData in PamMeta
+PamMeta.BurstData = [];
 
 h = guidata(obj);
 [FileName,PathName] = uigetfile({'*.bur'}, 'Choose a file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
@@ -7356,7 +7363,7 @@ if FileName == 0
 end
 UserValues.File.BurstBrowserPath=PathName;
 LSUserValues(1);
-load('-mat',fullfile(PathName,FileName));
+load('-mat',fullfile(PathName,FileName)); %%% loads data as BurstData structure
 %%% Update FileName (if it was previously analyzed on a different computer)
 BurstData.FileName = fullfile(PathName,FileName);
 
@@ -7422,6 +7429,9 @@ elseif any(BurstData.BAMethod == [3,4])
 end
 [~,h.Burst.LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
 [~,h.Burst.LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
+%%% store in PamMeta
+PamMeta.BurstData = BurstData;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Performs a Burst Search with specified algorithm  %%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -8261,8 +8271,10 @@ function BurstLifetime(obj,~)
 % Close existing TauFit because it might have been called from somewhere else
 delete(findobj('Tag','TauFit'));
 clear global TauFitData
-global UserValues BurstData TauFitData
+global UserValues TauFitData PamMeta
 h = guidata(findobj('Tag','Pam'));
+%%% get BurstData from PamMeta
+BurstData = PamMeta.BurstData;
 %%% Check if IRF and Scatter exists
 if any(isempty(BurstData.IRF)) || any(isempty(BurstData.ScatterPattern))
     warndlg('Define IRF and Scatter first.','No IRF found!');
@@ -8462,20 +8474,26 @@ Update_Display([],[],1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Store loaded IRF/Scatter Measurment in performed BurstSearch %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Store_IRF_Scat_inBur(obj,~,mode)
-global BurstData UserValues FileInfo
+function BurstData = Store_IRF_Scat_inBur(obj,e,mode)
+global PamMeta UserValues FileInfo
 LSUserValues(0);
 h = guidata(findobj('Tag','Pam'));
-if isempty(BurstData)
-    disp('No Burst Data loaded...');
-    return;
-end
 
 if strcmp(obj,'nothing')
-    % function is called during Burst Analysis
+    % function is called during Burst Analysis, which means that
+    % PamMeta.BurstData does not exist yet
+    % instead, it was passed as second argument
+    BurstData = e;
 else
     % function is called from right clicking the Burstwise lifetime button
     h.Progress.Text.String = 'Saving changed MI pattern...';
+    %%% get BurstData from PamMeta
+    BurstData = PamMeta.BurstData;
+end
+
+if isempty(BurstData)
+    disp('No Burst Data loaded...');
+    return;
 end
 
 if any(mode==0)
@@ -8626,6 +8644,8 @@ if ~strcmp(obj,'nothing')
     Progress(1,h.Progress.Axes,h.Progress.Text);
     h.Progress.Text.String = FileInfo.FileName{1};
 end
+%%% update BurstData in PamMeta
+PamMeta.BurstData = BurstData;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function related to 2CDE filter calcula tion (Nir-Filter) %%%%%%%%%%%%%%
