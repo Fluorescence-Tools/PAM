@@ -87,8 +87,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 switch (Type)
     case {1, 2} %%% .spc Files generated with native B&H program
-        %%% 2: '*_m1.spc', 'Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)'
-        %%% 3: '*.spc',    'Single card B&H SPC files recorded with B&H-Software (*.spc)'
+        %%% 1: '*_m1.spc', 'Multi-card B&H SPC files recorded with B&H-Software (*_m1.spc)'
+        %%% 2: '*.spc',    'Single card B&H SPC files recorded with B&H-Software (*.spc)'
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'SPC';
         %%% General FileInfo
@@ -247,7 +247,7 @@ switch (Type)
                 end
             end
             %%% Checks, which and how many card exist for each file
-            if Type == 2
+            if Type == 1
                 for j = card;
                     if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j) '.spc']),'file')
                         card(card==j)=[];
@@ -266,7 +266,7 @@ switch (Type)
                 %%% Update Progress
                 Progress((i-1)/numel(FileName)+(j-1)/numel(card)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str((i-1)*numel(card)+j) ' of ' num2str(numel(FileName)*numel(card))]);
                 %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-                if Type == 2
+                if Type == 1
                     FileName{i} = [FileName{i}(1:end-5) num2str(j) '.spc'];
                 end
                 
