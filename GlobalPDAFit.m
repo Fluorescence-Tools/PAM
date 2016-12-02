@@ -3228,7 +3228,7 @@ NG = PDAData.Data{file}.NG(PDAMeta.valid{file});
 NF = PDAData.Data{file}.NF(PDAMeta.valid{file});
 
 steps = 10;
-n_sigma = 3; %%% how many sigma to sample?
+n_sigma = 3; %%% how many sigma to sample distribution width?
 L = cell(5,1); %%% Likelihood per Gauss
 for j = PDAMeta.Comp{file}
     %%% define Gaussian distribution of distances
