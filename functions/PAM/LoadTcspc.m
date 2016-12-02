@@ -557,7 +557,7 @@ switch (Type)
             FileInfo.ImageTimes = (0:Header.FrameTime:(Header.Frames*Header.FrameTime))/Header.Freq;
             FileInfo.Lines = Header.Lines;
             FileInfo.Pixels = FileInfo.Lines;
-            FileInfo.ScanFreq = FileInfo.Lines/FileInfo.ImageTimes;
+            FileInfo.ScanFreq = FileInfo.Lines/min(diff(FileInfo.ImageTimes));
             FileInfo.TACRange = Header.Info.General.MIRange*1E-9;
             FileInfo.MI_Bins = Header.MI_Bins;
             load(fullfile(Path,FileName{i}),'-mat','Sim_Photons');
