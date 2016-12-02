@@ -840,7 +840,7 @@ end
 if exist('bh','var')
     if bh.SendToTauFit.equals(obj) || obj == bh.Send_to_TauFit_Button
         TauFitData.Who = 'BurstBrowser';
-        global BurstMeta
+        global BurstMeta BurstData
         % User clicked Send Species to TauFit in BurstBrowser
         % fit a lifetime to the bulk data from selected bursts
         %%% display which species user transferred to TauFit
