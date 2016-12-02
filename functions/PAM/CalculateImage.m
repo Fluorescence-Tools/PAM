@@ -1,4 +1,5 @@
 function [Imageseries, Stack, Bin] = CalculateImage(PIE_MT, mode)
+
 global FileInfo
 % function that groups everything concerning image calculations from SPC data
 

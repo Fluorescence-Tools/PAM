@@ -1682,7 +1682,7 @@ delete(Obj);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Phasor_Data(~,~)
 h = guidata(findobj('Tag','Phasor'));
-global PhasorData UserValues FileInfo
+global PhasorData UserValues
 LSUserValues(0);
 
 %%% Choose files to load
@@ -1692,42 +1692,44 @@ if ~iscell(FileName)
     FileName = {FileName};
 end
 %%% Only esecutes, if at least one file was selected
-if any(FileName{1}~=0)
-    %%% Saves Path
-    UserValues.File.PhasorPath=PathName;
-    LSUserValues(1);
-    free=[];
-    for i=1:numel(FileName)    
-        %%% Loades Data
-        PhasorData.Data{end+1}=load([PathName FileName{i}],'-mat');  
-        
-        
-        %%% Saves filename in global data
-        PhasorData.Files{end+1,1}=FileName{i}; 
-        PhasorData.Files{end,2}=PathName; 
-        %%% Global variable for selectiong individual regions
-        PhasorData.Selected_Region{end+1}=false(size(PhasorData.Data{end}.g));
-        %%% Uses file for phasor calculation
-        PhasorData.Selected(end+1)=1;
-        if sum(PhasorData.Plot~=0)<=9
-            %%% Plots file in first free image plot
-            free(end+1)=find(PhasorData.Plot==0,1,'first');
-            PhasorData.Plot(free(end))=numel(PhasorData.Data);
-            %%% Changes filename to blue, to indicate that it is plotted
-            PhasorData.List{end+1}=['<HTML><FONT color="blue">' FileName{i} ' Plot: ' num2str(free(end)) '</Font></html>'];
-        else
-            %%% Changes filename to red, if no free plots are available
-            PhasorData.List{end+1}=['<HTML><FONT color="red">' FileName{i} '</Font></html>'];
-        end
-    end   
-    %%% Updates list
-    h.List.String=PhasorData.List;
-    %%% Selects the last enty in list
-    h.List.Value=size(PhasorData.Files,1);
-
-    %%% Starts plotting; plots phasor and the new images (free)
-    Plot_Phasor([],[],1,[free 10]);
+if all(FileName{1}==0)
+    return
 end
+%%% Saves Path
+UserValues.File.PhasorPath=PathName;
+LSUserValues(1);
+free=[];
+for i=1:numel(FileName)
+    %%% Loades Data
+    PhasorData.Data{end+1}=load([PathName FileName{i}],'-mat');
+    
+    
+    %%% Saves filename in global data
+    PhasorData.Files{end+1,1}=FileName{i};
+    PhasorData.Files{end,2}=PathName;
+    %%% Global variable for selectiong individual regions
+    PhasorData.Selected_Region{end+1}=false(size(PhasorData.Data{end}.g));
+    %%% Uses file for phasor calculation
+    PhasorData.Selected(end+1)=1;
+    if sum(PhasorData.Plot~=0)<=9
+        %%% Plots file in first free image plot
+        free(end+1)=find(PhasorData.Plot==0,1,'first'); %#ok<AGROW>
+        PhasorData.Plot(free(end))=numel(PhasorData.Data);
+        %%% Changes filename to blue, to indicate that it is plotted
+        PhasorData.List{end+1}=['<HTML><FONT color="blue">' FileName{i} ' Plot: ' num2str(free(end)) '</Font></html>'];
+    else
+        %%% Changes filename to red, if no free plots are available
+        PhasorData.List{end+1}=['<HTML><FONT color="red">' FileName{i} '</Font></html>'];
+    end
+end
+%%% Updates list
+h.List.String=PhasorData.List;
+%%% Selects the last enty in list
+h.List.Value=size(PhasorData.Files,1);
+
+%%% Starts plotting; plots phasor and the new images (free)
+Plot_Phasor([],[],1,[free 10]);
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1736,7 +1738,6 @@ end
 function List_Callback(Obj,e)
 h = guidata(findobj('Tag','Phasor'));
 global PhasorData UserValues
-
 %%% Only executes if a valid key was pressed
 if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rightarrow','leftarrow','add'}))
     
@@ -1880,10 +1881,10 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             %%% Finds first selected file
             Sel = h.List.Value(1);
             
-            Pam = findobj('Tag','Pam');
-            if ~isempty(Pam);
-                close(Pam);
-            end
+%             Pam = findobj('Tag','Pam');
+%             if ~isempty(Pam);
+%                 close(Pam);
+%             end
             
             global TcspcData FileInfo %#ok<TLEV>
             UserValues.File.Path = PhasorData.Data{Sel}.Path;
@@ -1937,36 +1938,24 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                     Mask{j} = find(flip(ROI',2));
                 end
             end
-            %%% Calculate pixel times
-            Pixeltimes=0;
-            for j=1:FileInfo.Lines
-                Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
-            end
+%             %%% Calculate pixel times
+%             Pixeltimes=0;
+%             for j=1:FileInfo.Lines
+%                 Pixeltimes(end:(end+FileInfo.Lines))=linspace(FileInfo.LineTimes(j),FileInfo.LineTimes(j+1),FileInfo.Lines+1);
+%             end
             
             %%% Extracts photons for each ROI
             Mask_MT = cell(numel(TcspcData.MT),6);
             Mask_MI = cell(numel(TcspcData.MI),6);
             for i=1:numel(TcspcData.MT)
                 if ~isempty(TcspcData.MT{i})
-                    PIE_MT = {};
-                    PIE_MI = {};
-                    TPhoton = numel(TcspcData.MT{i});
-                    NPhoton = 0;
-                    j = 1;
-                    while NPhoton<TPhoton
-                        MT = TcspcData.MT{i}((TcspcData.MT{i}>((j-1)*FileInfo.ImageTime/FileInfo.ClockPeriod)) & (TcspcData.MT{i}<=((j)*FileInfo.ImageTime/FileInfo.ClockPeriod)));
-                        MI = TcspcData.MI{i}((NPhoton+1):(NPhoton+numel(MT)));
-                        NPhoton = NPhoton+numel(MT);
-                        j = j+1;
-                        Image=cumsum(histc(mod(MT,FileInfo.ImageTime/FileInfo.ClockPeriod),Pixeltimes))+1;
-                        Pixel = cumsum(histc(Image,1:max(Image)))+1;
-                        Pixel = Pixel(1:numel(MT));
-                        for k=1:6
-                            if ~isempty(Mask{k})
-                                Valid = ismember(Pixel,Mask{k});
-                                Mask_MT{i,k} = [Mask_MT{i,k}; MT(Valid)];
-                                Mask_MI{i,k} = [Mask_MI{i,k}; MI(Valid)];
-                            end
+                    [~,~,Bin] = CalculateImage(TcspcData.MT{i}.*FileInfo.ClockPeriod,2);
+                    for k=1:6
+                        if ~isempty(Mask{k})
+                            Bin_ROI = Bin;
+                            Bin_ROI(~ismember(Bin_ROI,Mask{k}))=0;
+                            Mask_MT{i,k}=TcspcData.MT{i}(Bin_ROI~=0);
+                            Mask_MI{i,k}=TcspcData.MI{i}(Bin_ROI~=0);
                         end
                     end
                 end
