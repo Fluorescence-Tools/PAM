@@ -5669,7 +5669,7 @@ set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 %%% only hide fit plots if selection of parameter or species has changed,
 %%% or if we switched on KDE
 obj = gcbo;
-if obj == h.SmoothKDE
+if any(obj == [h.SmoothKDE,h.NumberOfBinsXEdit,h.NumberOfBinsYEdit])
     set(BurstMeta.Plots.Mixture.Main_Plot,'Visible','off');
     set(BurstMeta.Plots.Mixture.plotX,'Visible','off');
     set(BurstMeta.Plots.Mixture.plotY,'Visible','off');
