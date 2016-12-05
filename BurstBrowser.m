@@ -4073,7 +4073,10 @@ for i = 1:numel(FileName)
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                 end
-
+                if sum(strcmp(S.NameArray,'Proximity Ratio B->G+R'))==0
+                    S.NameArray{end+1} = 'Proximity Ratio B->G+R';
+                    S.DataArray(:,end+1) = S.DataArray(:,strcmp(S.NameArray,'FRET Efficiency B->G+R'));
+                end
                 %%% Calculate Anisotropies
                 S.NameArray{end+1} = 'Anisotropy BB';
                 S.NameArray{end+1} = 'Anisotropy GG';
