@@ -372,7 +372,7 @@ h.MI.All_Axes = axes(...
     'Position',[0.09 0.075 0.89 0.90],...
     'TickDir','out',...
     'Box','off');
-h.MI.All_Axes.XLabel.String='TAC channel';
+h.MI.All_Axes.XLabel.String='TCSPC channel';
 h.MI.All_Axes.XLabel.Color=Look.Fore;
 h.MI.All_Axes.YLabel.String='Counts';
 h.MI.All_Axes.YLabel.Color=Look.Fore;
@@ -1278,7 +1278,7 @@ h.Cor_fFCS.Filter_Axis = axes(...
     'LineWidth', Look.AxWidth,...
     'Position',[0.06 0.05 0.925 0.22],...
     'Box','on');
-h.Cor_fFCS.Filter_Axis.XLabel.String='TAC channel';
+h.Cor_fFCS.Filter_Axis.XLabel.String='TCSPC channel';
 h.Cor_fFCS.Filter_Axis.XLabel.Color=Look.Fore;
 h.Cor_fFCS.Filter_Axis.YLabel.String='filter value';
 h.Cor_fFCS.Filter_Axis.YLabel.Color=Look.Fore;
@@ -1317,7 +1317,7 @@ h.Cor_fFCS.Filter_Axis2 = axes(...
     'Position',[0.55 0.05 0.44 0.22],...
     'Box','on',...
     'Visible','off');
-h.Cor_fFCS.Filter_Axis2.XLabel.String='TAC channel';
+h.Cor_fFCS.Filter_Axis2.XLabel.String='TCSPC channel';
 h.Cor_fFCS.Filter_Axis2.XLabel.Color=Look.Fore;
 h.Cor_fFCS.Filter_Axis2.YLabel.String='filter value';
 h.Cor_fFCS.Filter_Axis2.YLabel.Color=Look.Fore;
@@ -1555,7 +1555,7 @@ h.MI.Phasor_Axes = axes(...
 
 
 
-h.MI.Phasor_Axes.XLabel.String='TAC channel';
+h.MI.Phasor_Axes.XLabel.String='TCSPC channel';
 h.MI.Phasor_Axes.XLabel.Color=Look.Fore;
 h.MI.Phasor_Axes.YLabel.String='Counts';
 h.MI.Phasor_Axes.YLabel.Color=Look.Fore;
@@ -1715,7 +1715,7 @@ h.MI.Calib_Axes = axes(...
     'LineWidth', Look.AxWidth,...
     'Position',[0.09 0.4 0.89 0.48],...
     'Box','on');
-h.MI.Calib_Axes.XLabel.String='TAC channel';
+h.MI.Calib_Axes.XLabel.String='TCSPC channel';
 h.MI.Calib_Axes.XLabel.Color=Look.Fore;
 h.MI.Calib_Axes.YLabel.String='Counts';
 h.MI.Calib_Axes.YLabel.Color=Look.Fore;
@@ -2088,7 +2088,7 @@ h.MT.Use_Lifetime = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.14 0.38 0.06]);
-%%% Checkbox to determine if TAC channel or microtime is used for
+%%% Checkbox to determine if TCSPC channel or microtime is used for
 %%% microtime plots
 h.MT.ToggleTACTime = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2455,7 +2455,7 @@ h.PIE.FileInfoTable.ColumnWidth = {name_wid,wid-name_wid-5};
 h.Database.Tab= uitab(...
     'Parent',h.Var_Tab,...
     'Tag','Database_Tab',...
-    'Title','File History');
+    'Title','Recent');
 %%% Database panel
 h.Database.Panel = uibuttongroup(...
     'Parent',h.Database.Tab,...
@@ -3290,7 +3290,7 @@ elseif obj == h.MT.Use_TimeTrace
     end
     Update_Data([],[],0,0,1);
     Update_Display([],[],2);
-    %%% change x axis of microtime plots between TAC channel and time in ns
+    %%% change x axis of microtime plots between TCSPC channel and time in ns
 elseif obj == h.MT.ToggleTACTime
     UserValues.Settings.Pam.ToggleTACTime=h.MT.ToggleTACTime.Value;
     Update_Display([],[],4);
@@ -3691,7 +3691,7 @@ if any(mode==4)
     end
 end
 if any(mode == 4)
-    %%% change xaxis units between TAC channel and time in ns
+    %%% change xaxis units between TCSPC channel and time in ns
     if UserValues.Settings.Pam.ToggleTACTime
         TACtoTime = (1E9*FileInfo.TACRange/FileInfo.MI_Bins);
         %%% switch to time
@@ -3711,14 +3711,14 @@ if any(mode == 4)
             end
         end
     else
-        %%% switch back to TAC channels
+        %%% switch back to TCSPC channels
         TimetoTAC = 1/(1E9*FileInfo.TACRange/FileInfo.MI_Bins);
-        h.MI.All_Axes.XLabel.String = 'TAC channel';
+        h.MI.All_Axes.XLabel.String = 'TCSPC channel';
         h.MI.All_Axes.XTickMode = 'auto';
         h.MI.All_Axes.XTickLabelMode = 'auto';
         for i = 1:numel(h.MI.Individual)
             if strcmp(h.MI.Individual{i}.Type,'axes')
-                h.MI.Individual{i}.XLabel.String = 'TAC channel';
+                h.MI.Individual{i}.XLabel.String = 'TCSPC channel';
                 h.MI.Individual{i}.XTickMode = 'auto';
                 h.MI.Individual{i}.XTickLabelMode = 'auto';
             end
@@ -4711,7 +4711,7 @@ if any(mode==1);
                 'Position',[0.09 0.065+(j-1)*(0.98/NPlots) 0.89 0.98/NPlots-0.065],...
                 'Box','off',...
                 'TickDir','out');
-            h.MI.Individual{i,2*(1+j)-1}.XLabel.String = 'TAC channel';
+            h.MI.Individual{i,2*(1+j)-1}.XLabel.String = 'TCSPC channel';
             h.MI.Individual{i,2*(1+j)-1}.YLabel.String = 'Counts';
             h.MI.Individual{i,2*(1+j)-1}.YLabel.Color = UserValues.Look.Fore;
             h.MI.Individual{i,2*(1+j)-1}.XLabel.Color = UserValues.Look.Fore;
