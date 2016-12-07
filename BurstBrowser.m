@@ -8911,16 +8911,22 @@ if any(size(x_data) ~= size(y_data))
 end
 %% fit with 1 Gaussian
 Gauss = @(A,m,s,b,x) A*exp(-(x-m).^2./s^2)+b;
-if nargin < 5 %no start parameters specified
-    A = max(y_data);%set amplitude as max value
-    m = sum(y_data.*x_data)./sum(y_data);%mean as center value
-    s = sqrt(sum(y_data.*(x_data-m).^2)./sum(y_data));%std as sigma
-    if s == 0
-        s = 1;
-    end
-    b=0;%assume zero background
-    param = [A,m,s,b];
+
+A = max(y_data);%set amplitude as max value
+m = sum(y_data.*x_data)./sum(y_data);%mean as center value
+s = sqrt(sum(y_data.*(x_data-m).^2)./sum(y_data));%std as sigma
+if s == 0
+    s = 1;
 end
+b=0;%assume zero background
+param = [A,m,s,b];
+
+if nargin == 3 %%% output the Gauss with new mean value
+    GaussFun = Gauss(A,mean_new,s,b,x_data);
+    [mean,Gauss1,Gauss2] = deal([]);
+    return;
+end
+
 if sum(y_data) <= 10 %%% low amount of data, take mean and std instead
     mean = m;
     GaussFun = Gauss(A,m,s,0,x_data);
@@ -8931,11 +8937,6 @@ end
 coefficients = coeffvalues(gauss);
 mean = coefficients(2);
 GaussFun = Gauss(coefficients(1),coefficients(2),coefficients(3),coefficients(4),x_data);
-
-if nargin == 3 %%% output the Gauss with new mean value
-    GaussFun = Gauss(coefficients(1),mean_new,coefficients(3),coefficients(4),x_data);
-    return;
-end
 
 if gof.adjrsquare < 0.9 %%% fit was bad
     %%% fit with 2 Gaussians
