@@ -3795,7 +3795,7 @@ if any(mode==8)
                     if ~isempty(UserValues.PIE.ScatterPattern{k})
                         % combined channels will either not be in
                         % UserValues.PIE.ScatterPattern, or will be empty
-                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) numel(UserValues.PIE.ScatterPattern{k}) FileInfo.MI_Bins]);
+                        FromTo = max([UserValues.PIE.From(k) 1]):min([UserValues.PIE.To(k) numel(UserValues.PIE.ScatterPattern{k}) FileInfo.MI_Bins min(cellfun(@numel,PamMeta.MI_Hist))]);
                         if (UserValues.PIE.Detector(k) == UserValues.Detector.Det(detector))...
                                 && (UserValues.PIE.Router(k) == UserValues.Detector.Rout(detector))
                             %%% Plot scatter in PIE Channel range
