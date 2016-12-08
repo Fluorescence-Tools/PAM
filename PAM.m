@@ -7964,7 +7964,8 @@ if obj ==  h.Burst.BurstSearchPreview_Button %%% recalculate the preview
             end
     end
     %%% Color selected regions in Interphoton time plot
-    clear x
+    x = cell(numel(start),1);
+    y = cell(numel(start),1);
     for i=1:numel(start)
         x{i} = AllPhotons(start(i):stop(i)).*FileInfo.ClockPeriod;
         y{i} = dT_f(start(i):stop(i)).*FileInfo.ClockPeriod*1E6;
