@@ -3799,6 +3799,11 @@ switch obj
             Load_BurstFile(PathName,FileName,1);
         end
 end
+if isempty(BurstData)
+    Progress(1,h.Progress_Axes,h.Progress_Text);
+    return;
+end
+
 BurstMeta.SelectedFile = 1;
 %%% Update Figure Name
 BurstMeta.DisplayName = BurstData{1}.FileName;
@@ -3957,6 +3962,10 @@ end
 h = guidata(findobj('Tag','BurstBrowser'));
 for i = 1:numel(FileName)
     Progress((i-1)/numel(FileName),h.Progress_Axes,h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
+    if ~exist(fullfile(PathName{i},FileName{i}),'file')
+        disp(['File ' fullfile(PathName{i},FileName{i}) ' does not exist.']);
+        return;
+    end
     S = load('-mat',fullfile(PathName{i},FileName{i}));
     
     %%% Convert old File Format to new
