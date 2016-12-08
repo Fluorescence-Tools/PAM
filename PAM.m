@@ -3101,10 +3101,10 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                             if ~isempty(PIE_MT)
                                 PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
                             else
-                                PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
+                                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                             end
                         else
-                            PamMeta.Trace{i} = zeros(1,numel(PamMeta.TimeBins));
+                            PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                         end
                     end
                     if any(mode==2)
@@ -3177,6 +3177,12 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
             end
         end
     end
+    %%% flip arrays if they came out wrong
+    for i = 1:numel(PamMeta.Trace)
+        if size(PamMeta.Trace{i},1) < size(PamMeta.Trace{i},2)
+            PamMeta.Trace{i} = PamMeta.Trace{i}';
+        end
+    end
 end
 %%% Calculates trace, image, mean arrival time and info for combined
 %%% channels
@@ -3189,7 +3195,7 @@ for  i=find(UserValues.PIE.Detector==0)
     PamMeta.Info{i}(1:4,1)=0;
     if UserValues.Settings.Pam.Use_PCH
         TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
-        trace_ms = zeros(numel(TimeBinsPCH),1);
+        trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
         if UserValues.Settings.Pam.Use_Image
@@ -3210,7 +3216,11 @@ for  i=find(UserValues.PIE.Detector==0)
                 %%% combine time traces with 1 ms binning
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
                 if ~isempty(PIE_MT)
-                    trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH);
+                    if numel(PIE_MT) > 1
+                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH)';
+                    else
+                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH);
+                    end
                 end
             end
         end
@@ -3576,7 +3586,7 @@ if any(mode == 10)
         h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
     end
     guidata(h.Pam,h);
-    h.PCH.Axes.XLim = [0,max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value)))];
+    h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value))),1])];
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
