@@ -1,4 +1,4 @@
-function [Imageseries, Stack, Bin] = CalculateImage(PIE_MT, mode)
+function [Image,Bin] = CalculateImage(PIE_MT, mode)
 
 global FileInfo
 % function that groups everything concerning image calculations from SPC data
@@ -6,36 +6,12 @@ global FileInfo
 % mode = 1 is called for summed up intensity image only
 % mode = 2 is called for summed up intensity image with photon-to-pixel
 % assignement
-% mode = 3 is called for full Stack
+% mode = 3 is called for full Image
 Pixel = zeros(FileInfo.Lines,FileInfo.Pixels+1);
 Bin=[];
-Imageseries = [];
-Stack = [];
+Image = [];
 if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame start or no markers
     
-    Linedurations = diff(FileInfo.LineTimes,1,2);
-    %%% Faster and less memory intensive way or creating a summed
-    %%% up image when all linetimes are identical
-    if mode<3 && (FileInfo.Pixels > 1 && FileInfo.Lines > 1) && (numel(FileInfo.ImageTimes)==2 || max(abs(diff(diff(FileInfo.ImageTimes))))/mean((FileInfo.ImageTimes))<10^9) && (max(abs(diff(Linedurations(:))))/mean(Linedurations(:))<10^6)
-        for j=1:FileInfo.Lines
-            Pixel(j,:)=linspace(FileInfo.LineTimes(1,j),FileInfo.LineTimes(1,j+1),FileInfo.Pixels+1);
-        end
-        Pixeltimes = reshape(Pixel(:,1:(end-1))',1,[]);
-        Pixeltimes(end+1)=FileInfo.ImageTimes(2);
-        PIE_MT = mod(PIE_MT,FileInfo.ImageTimes(2));
-        if mode ==2 %%% Phasor. Needs a linear intensity vector and a vector for photon-to-pixel assignement.
-            [Imageseries,~,Bin]=histcounts(PIE_MT,Pixeltimes);
-            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
-            Imageseries=reshape(Imageseries,[],1);
-        else %%% Does not return i
-            [Imageseries,~,~]=histcounts(PIE_MT,Pixeltimes);
-            %%% Reshapes pixel vector to image
-            Imageseries=flipud(permute(reshape(Imageseries,FileInfo.Pixels,FileInfo.Lines),[2 1]));
-        end
-        
-        
-    else %%% Slower than the above, but calculates full stack
-        %%% Calculates Pixel vector
         Pixeltimes=[];
         for i=1:(numel(FileInfo.ImageTimes)-1)
             for j=1:FileInfo.Lines
@@ -44,28 +20,21 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
             Pixeltimes = [Pixeltimes, reshape(Pixel(:,1:(end-1))',1,[])]; %#ok<AGROW>
         end
         Pixeltimes(end+1)=FileInfo.MeasurementTime;
-        %%% Calculate image vector
-        if mode == 2 %%% Summed up image with photon-to-pixel assignement
-            [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
-            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
-            Bin = mod(Bin,FileInfo.Pixels*FileInfo.Lines); %%% Collapses to single frame
-            %%% Reshapes pixel vector to image
-            Stack=reshape(Stack,[],i);
-            Imageseries = sum(Stack,2);
-        elseif mode == 4 %%% Full stack with photon-to-pixel assignement
-            [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
-            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
-            %%% Reshapes pixel vector to image
-            Stack=reshape(Stack,[],i);
-            Imageseries = sum(Stack,2);
-        else %%% Calculates full stack
-            [Stack,~,~]=histcounts(PIE_MT,Pixeltimes);
-            %%% Reshapes pixel vector to image
-            Stack=flipud(permute(reshape(Stack,FileInfo.Pixels,FileInfo.Lines,i),[2 1 3]));
-            Imageseries = sum(Stack,3);
-        end
-    end
-    
+        
+        switch mode
+            case 1 %%% Summed up image              
+                [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*FileInfo.Pixels));
+                Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines),[2 1]));
+            case 2 %%% Summed up image vector with photon-to-pixel assignement
+                [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*FileInfo.Pixels));                
+                
+            case 3 %%% Full image
+                [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
+                Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]));
+                
+            case 4 %%% Full image vector with photon-to-pixel assignement
+                [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
+        end    
     
 else %%% Image data with additional line/frame stop markers and other more complex setups
     Pixeltimes=[];
@@ -76,34 +45,36 @@ else %%% Image data with additional line/frame stop markers and other more compl
         Pixeltimes = [Pixeltimes, reshape(Pixel',1,[])]; %#ok<AGROW>
     end
     Pixeltimes(end+1)=max([FileInfo.MeasurementTime,Pixeltimes(end)]);
-    %%% Calculate image vector
-    if mode == 2 %%% Summed up image with photon-to-pixel assignement
-        [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
-        Bin = mod(Bin,(FileInfo.Pixels+1)*FileInfo.Lines); %%% Collapses to single frame
-        Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
-        Bin=Bin-floor(Bin/(FileInfo.Pixels+1));
-        Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
-        %%% Reshapes pixel vector to image
-        Stack=reshape(Stack,FileInfo.Pixels+1,FileInfo.Lines,i);
-        Stack=Stack(1:end-1,:,:);
-        Stack=reshape(Stack,[],i);
-        Imageseries = sum(Stack,2);
-    elseif mode == 4 %%% Full stack with photon-to-pixel assignement
-        [Stack,~,Bin]=histcounts(PIE_MT,Pixeltimes);
-        Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
-        Bin=Bin-floor(Bin/(FileInfo.Pixels+1));
-        Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
-        %%% Reshapes pixel vector to image
-        Stack=reshape(Stack,FileInfo.Pixels+1,FileInfo.Lines,i);
-        Stack=Stack(1:end-1,:,:);
-        Stack=reshape(Stack,[],i);
-        Imageseries = sum(Stack,2);
-    else %%% Calculates full stack
-        [Stack,~,~]=histcounts(PIE_MT,Pixeltimes);
-        %%% Reshapes pixel vector to image
-        Stack=flipud(permute(reshape(Stack,FileInfo.Pixels+1,FileInfo.Lines,i),[2 1 3]));
-        Stack = Stack(:,1:end-1,:);
-        Imageseries = sum(Stack,3);
+    
+    switch mode
+        case 1 %%% Summed up image
+            [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
+            Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines),[2 1]));
+            Image = Image(:,1:end-1);
+        case 2 %%% Summed up image vector with photon-to-pixel assignement
+            [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
+            Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
+            Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
+            Bin=uint32(Bin);
+            %%% Reshapes pixel vector to image
+            Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines);
+            Image=Image(1:end-1,:);
+            Image=reshape(Image,1,[]);
+            
+        case 3 %%% Full image
+            [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
+            Image = flipud(permute(reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,[]),[2 1 3]));
+            Image = Image(:,1:(end-1),:);
+            
+        case 4 %%% Full image vector with photon-to-pixel assignement
+            [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
+            Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
+            Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
+            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
+            %%% Reshapes pixel vector to image
+            Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,i);
+            Image=Image(1:end-1,:,:);
+            Image=reshape(Image,[],i);
     end
 end
             

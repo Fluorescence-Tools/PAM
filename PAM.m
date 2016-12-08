@@ -3128,8 +3128,8 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 %% Calculates image
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        [PamMeta.Image{i}, ~, Bin,] = CalculateImage(PIE_MT,2);
-                        PamMeta.Image{i} = flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1]));
+                        [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
+                        PamMeta.Image{i} = double(flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1])));
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -5994,7 +5994,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
         %%% Creates image and generates photon to pixel index
         Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        [Intensity,~, Bin] = CalculateImage(PIE_MT, 2);
+        [Intensity, Bin] = CalculateImage(PIE_MT, 2);
         clear PIE_MT;
         Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
         %%% Extracts microtimes
@@ -9531,7 +9531,7 @@ switch e.Key
                         TcspcData.MI{UserValues.PIE.Detector(j),UserValues.PIE.Router(j)}<=UserValues.PIE.To(j))];
                 end
             end
-            [~,Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
+            [Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
             Stack=uint16(Stack);
             
             %%% Exports matrix to workspace
@@ -9574,7 +9574,7 @@ switch e.Key
                 end
             end
             
-            [~,Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
+            [Stack,~]=CalculateImage(Stack.*FileInfo.ClockPeriod,3);
             Stack=uint16(Stack);
             
             File=fullfile(Path,[FileInfo.FileName{1}(1:end-4) UserValues.PIE.Name{i} '.tif']);
@@ -9702,7 +9702,7 @@ switch e.Key
             %%% Weights photons by filter
             MI = filter{1}{i}(MI);
             
-            [~,Data, Bin,] = CalculateImage(Data,4);
+            [Data, Bin,] = CalculateImage(Data,4);
             Data = flip(permute(reshape(Data,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]),1);
             
             MI(Bin==0)=[];
