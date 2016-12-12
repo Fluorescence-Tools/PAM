@@ -1318,8 +1318,8 @@ switch mode
             % if NumberOfBins = 50, then xProx(1:51) = 0.01 0.03 .... 0.99 1.01
             % the last element is to allow proper display of the 50th bin
             
-            hBSD = histcounts(BSD,0:(max(BSD)+1));
-            xBSD = 0:max(BSD);
+            hBSD = histcounts(BSD,1:(max(BSD)+1));
+            xBSD = 1:max(BSD);
             
             % make 'stairs' appear similar to 'bar'
             xProx = xProx-mean(diff(xProx))/2;
