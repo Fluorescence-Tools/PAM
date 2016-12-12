@@ -13367,9 +13367,23 @@ switch mode
                     files = files(3:end);
                     if ~isempty(files) %%% ensure that there are files in this subfolder
                         for j = 1:numel(files)
-                            if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
-                                FileName{end+1} = files(j).name;
-                                PathName{end+1} = [pathname filesep subdir(i).name];
+                            if ~files(j).isdir %%% is a file
+                                if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
+                                    FileName{end+1} = files(j).name;
+                                    PathName{end+1} = [pathname filesep subdir(i).name];
+                                end
+                            else %%% is a folder, go one layer deeper
+                                subfolder = [pathname filesep subdir(i).name filesep files(j).name];
+                                files_subfolder = dir(subfolder);
+                                files_subfolder = files_subfolder(3:end);
+                                if ~isempty(files_subfolder)
+                                    for k = 1:numel(files_subfolder)
+                                        if strcmp(files_subfolder(k).name(end-3:end),'.bur') %%% check for bur extension
+                                            FileName{end+1} = files_subfolder(k).name;
+                                            PathName{end+1} = subfolder;
+                                        end
+                                    end
+                                end
                             end
                         end
                     end
@@ -13383,6 +13397,8 @@ switch mode
                 %%% remove existing database
                 BurstMeta.Database = {};
                 h.DatabaseBB.List.String = {};
+                %%% set path
+                UserValues.File.BurstBrowserPath = pathname;
         end  
         %%%check for existing files and append new files to database list
         new = true(size(Files,1),1);
