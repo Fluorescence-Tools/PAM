@@ -653,6 +653,16 @@ if Mode==0 %%% Loads user values
         S.Phasor.Reference(numel(P.Detector.Det),end) = 0;
     end
     P.Phasor.Reference = S.Phasor.Reference;
+    
+    %%% Checks, if Phasor.Reference_Time subfield exists
+    if ~isfield (S.Phasor,'Reference_Time')
+        S.Phasor.Reference_Time=zeros(numel(S.Detector.Det),1);
+        disp('UserValues.Phasor.Reference_Time was incomplete');
+    elseif size(S.Phasor.Reference_Time,1)<numel(P.Detector.Det)
+        S.Phasor.Reference_Time(numel(P.Detector.Det),end) = 0;
+    end
+    P.Phasor.Reference_Time = S.Phasor.Reference_Time;
+    
     %% Burst Search
     %%% Checks, if BurstSearch subfield exists
     if ~isfield (S,'BurstSearch')
