@@ -723,7 +723,7 @@ switch (Type)
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-        FileInfo.MeasurementTime = MaxMT*FileInfo.ClockPeriod; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
+        FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
         if isempty(FileInfo.LineTimes) %%%Point Measurements
             FileInfo.ImageTimes = linspace(0,FileInfo.MeasurementTime,i+1);
