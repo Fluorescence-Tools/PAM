@@ -995,8 +995,8 @@ if isempty(hfig)
         '<html><b>crosstalk</b></html>','<html><b>direct exc.</b></html>',...
         '<html><b>G(green)</b></html>','<html><b>G(red)</b></html>',...
         '<html><b>l1</b></html>','<html><b>l2</b></html>',...
-        '<html><b>BG GG par</b></html>','<html><b>BG GG perp</b></html>','<html><b>BG GR par</b></html>',...
-        '<html><b>BG GR perp</b></html>','<html><b>BG RR par</b></html>','<html><b>BG RR perp</b></html>'}';
+        '<html><b>BG DD par</b></html>','<html><b>BG DD perp</b></html>','<html><b>BG DA par</b></html>',...
+        '<html><b>BG DA perp</b></html>','<html><b>BG AA par</b></html>','<html><b>BG AA perp</b></html>'}';
     Corrections_Columnnames = {'<html><b>Parameter</b></html>','<html><b>Value</b></html>'};
     Corrections_Editable = [false,true];
     Corrections_Data = {1;1;0;0;1;1;0;0;0:0;0;0;0;0;0};
@@ -1450,7 +1450,7 @@ if isempty(hfig)
         'Tag','Secondary_Tab_Correlation_Divider_Menu',...
         'Callback',@Calculate_Settings);
     
-    Names = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','GX1','GX2','RR'};
+    Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
     h.Correlation_Table = uitable(...
         'Parent',h.Correlation_Panel,...
         'Units','normalized',...
@@ -2653,9 +2653,9 @@ if isempty(hfig)
         'GridAlpha',0.5,...
         'View',[0 90],...
         'UIContextMenu', h.Corrections_Menu);
-    xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime GG [ns]','Color',UserValues.Look.Fore);
+    xlabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'Lifetime D [ns]','Color',UserValues.Look.Fore);
     ylabel(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET Efficiency','Color',UserValues.Look.Fore);
-    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET Efficiency vs. Lifetime GG','Color',UserValues.Look.Fore);
+    title(h.Corrections.TwoCMFD.axes_gamma_lifetime,'FRET Efficiency vs. Lifetime D','Color',UserValues.Look.Fore);
 
     %% Corrections - 3ColorMFD
     h.Corrections.ThreeCMFD.axes_crosstalk_BG =  axes(...
@@ -2881,7 +2881,7 @@ if isempty(hfig)
         'UIContextMenu', h.LifeTime_Menu);
     ylabel(h.axes_rGGvsTauGG,'r_{D}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.075, 0.5, 0]);
     xlabel(h.axes_rGGvsTauGG,'\tau_{D(A)} [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_rGGvsTauGG,'Anisotropy GG vs. Lifetime GG','Color',UserValues.Look.Fore);
+    title(h.axes_rGGvsTauGG,'Anisotropy D vs. Lifetime D','Color',UserValues.Look.Fore);
     h.axes_rGGvsTauGG.YLabel.Position(1) = h.axes_rGGvsTauGG.YLabel.Position(1)-0.01;
     
     h.axes_rRRvsTauRR=  axes(...
@@ -2985,7 +2985,7 @@ if isempty(hfig)
         'Tag','lifetime_ind_popupmenu',...
         'Units','normalized',...
         'FontSize',12,...
-        'String',{'E vs tauGG','E vs tauRR','rGG vs tauGG','rRR vs tauRR'},...
+        'String',{'<html>E vs &tau;<sub>D(A)</sub></html>','<html>E vs &tau;<sub>A</sub></html>','<html>r<sub>D</sub> vs &tau;<sub>D(A)</sub></html>','<html>r<sub>A</sub> vs &tau;<sub>A</sub></html>'},...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Callback',@PlotLifetimeInd,...
@@ -3808,13 +3808,12 @@ BurstMeta.SelectedFile = 1;
 %%% Update Figure Name
 BurstMeta.DisplayName = BurstData{1}.FileName;
 
-if nargin < 3 %%% not called from file history, update file history with new files
-    %%% add files to file history
-    for i = 1:numel(FileName)
-        file = fullfile(PathName{i},FileName{i});
-        if strcmp(file(end-3:end),'.bur')
-            h.DatabaseBB.FileHistory.add_file(file);
-        end
+%%%update file history with new files
+%%% add files to file history
+for i = 1:numel(FileName)
+    file = fullfile(PathName{i},FileName{i});
+    if strcmp(file(end-3:end),'.bur')
+        h.DatabaseBB.FileHistory.add_file(file);
     end
 end
 
@@ -3834,7 +3833,7 @@ if ~isempty(findobj('Tag','Pam'))
         h_pam.BurstLifetime_Button.Enable = 'on';
         %%% Check if lifetime has been fit already
         if any(BurstData{1}.BAMethod == [1,2,5])
-            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime GG [ns]',BurstData{1}.NameArray))) == 0 )
+            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime D [ns]',BurstData{1}.NameArray))) == 0 )
                 %%% no lifetime fit
                 h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
             else
@@ -3985,34 +3984,34 @@ for i = 1:numel(FileName)
         switch S.Data.BAMethod
             case {1,2} %%% 2 Color MFD
                 %%% Convert NameArray
-                S.NameArray{strcmp(S.NameArray,'TFRET - TR')} = '|TGX-TRR| Filter';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (green)')} = 'Number of Photons (GG)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret)')} = 'Number of Photons (GR)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (red)')} = 'Number of Photons (RR)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (GG par)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (GG perp)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (GR par)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (GR perp)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (RR par)';
-                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (RR perp)';
+                S.NameArray{strcmp(S.NameArray,'TFRET - TR')} = '|TDX-TAA| Filter';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green)')} = 'Number of Photons (DD)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret)')} = 'Number of Photons (DA)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red)')} = 'Number of Photons (AA)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, parallel)')} = 'Number of Photons (DD par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (green, perpendicular)')} = 'Number of Photons (DD perp)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, parallel)')} = 'Number of Photons (DA par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (fret, perpendicular)')} = 'Number of Photons (DA perp)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, parallel)')} = 'Number of Photons (AA par)';
+                S.NameArray{strcmp(S.NameArray,'Number of Photons (red, perpendicular)')} = 'Number of Photons (AA perp)';
                 if sum(strcmp(S.NameArray,'tau(green)')) > 0
-                    S.NameArray{strcmp(S.NameArray,'tau(green)')} = 'Lifetime GG [ns]';
-                    S.NameArray{strcmp(S.NameArray,'tau(red)')} = 'Lifetime RR [ns]';
-                    S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime GG [ns]'))*1E9;
-                    S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime RR [ns]'))*1E9;
+                    S.NameArray{strcmp(S.NameArray,'tau(green)')} = 'Lifetime D [ns]';
+                    S.NameArray{strcmp(S.NameArray,'tau(red)')} = 'Lifetime A [ns]';
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime D [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime D [ns]'))*1E9;
+                    S.DataArray(:,strcmp(S.NameArray,'Lifetime A [ns]')) = S.DataArray(:,strcmp(S.NameArray,'Lifetime A [ns]'))*1E9;
                 else %%% create zero value arrays
-                    S.NameArray{end+1} = 'Lifetime GG [ns]';
-                    S.NameArray{end+1} = 'Lifetime RR [ns]';
+                    S.NameArray{end+1} = 'Lifetime D [ns]';
+                    S.NameArray{end+1} = 'Lifetime A [ns]';
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                 end
-                S.NameArray{end+1} = 'Anisotropy GG';
-                S.NameArray{end+1} = 'Anisotropy RR';
+                S.NameArray{end+1} = 'Anisotropy DD';
+                S.NameArray{end+1} = 'Anisotropy AA';
                 %%% Caculate Anisotropies
-                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')))./...
-                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (GG perp)')));
-                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')))./...
-                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (RR perp)')));
+                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')))./...
+                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')));
+                S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')))./...
+                    (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')));
 
                 S.BurstData.NameArray = S.NameArray;
                 S.BurstData.DataArray = S.DataArray;
@@ -4190,6 +4189,12 @@ for i = 1:numel(FileName)
             S.BurstData.APBS = 0;
         end
     end
+    %%% New: Cuts stored in Additional Variable when it was already saved
+    %%% once in BurstBrowser
+    %%% overwrite BurstData subfields with separately saved variables
+    if isfield(S,'Cut')
+        S.BurstData.Cut = S.Cut;
+    end
     
     %%% Add corrected proximity ratios (== signal fractions) for three-colorMFD
     if any(S.BurstData.BAMethod == [3,4])
@@ -4210,7 +4215,7 @@ for i = 1:numel(FileName)
         end
     end
 
-    %% Fix missing "FRET" in Efficiency naming (NameArray)
+    %% Fix missing "FRET" in Efficiency naming (NameArray) and update old GG/RR naming scheme to D/A
     try
         if any(S.BurstData.BAMethod == [1,2,5])
             S.BurstData.NameArray{strcmp(S.BurstData.NameArray,'Efficiency')} = 'FRET Efficiency';
@@ -4250,7 +4255,37 @@ for i = 1:numel(FileName)
             end
         end
     end
-    
+	if any(S.BurstData.BAMethod == [1,2,5])
+        oldNames = {'Lifetime GG [ns]','Lifetime RR [ns]','Anisotropy GG','Anisotropy RR','|TGX-TRR| Filter','|TGG-TGR| Filter','Countrate [kHz]'...
+            'Count rate (GG) [kHz]','Count rate (GR) [kHz]','Count rate (RR) [kHz]','Count rate (GG par) [kHz]','Count rate (GG per) [kHz]','Count rate (GR par) [kHz]','Count rate (GR per) [kHz]','Count rate (RR par) [kHz]','Count rate (RR per) [kHz]',...
+            'Countrate (GG) [kHz]','Countrate (GR) [kHz]','Countrate (RR) [kHz]','Countrate (GG par) [kHz]','Countrate (GG per) [kHz]','Countrate (GR par) [kHz]','Countrate (GR per) [kHz]','Countrate (RR par) [kHz]','Countrate (RR per) [kHz]',...
+            'Number of Photons (GG)','Number of Photons (GR)','Number of Photons (RR)','Number of Photons (GG par)','Number of Photons (GG perp)','Number of Photons (GR par)','Number of Photons (GR perp)','Number of Photons (RR par)','Number of Photons (RR perp)'};
+        newNames = {'Lifetime D [ns]','Lifetime A [ns]','Anisotropy D','Anisotropy A','|TDX-TAA| Filter','|TDD-TDA| Filter','Count rate [kHz]'...
+            'Count rate (DD) [kHz]','Count rate (DA) [kHz]','Count rate (AA) [kHz]','Count rate (DD par) [kHz]','Count rate (DD perp) [kHz]','Count rate (DA par) [kHz]','Count rate (DA perp) [kHz]','Count rate (AA par) [kHz]','Count rate (AA perp) [kHz]',...
+            'Count rate (DD) [kHz]','Count rate (DA) [kHz]','Count rate (AA) [kHz]','Count rate (DD par) [kHz]','Count rate (DD perp) [kHz]','Count rate (DA par) [kHz]','Count rate (DA perp) [kHz]','Count rate (AA par) [kHz]','Count rate (AA perp) [kHz]',...
+            'Number of Photons (DD)','Number of Photons (DA)','Number of Photons (AA)','Number of Photons (DD par)','Number of Photons (DD perp)','Number of Photons (DA par)','Number of Photons (DA perp)','Number of Photons (AA par)','Number of Photons (AA perp)'};
+        oldName_exists = false(size(oldNames));
+        for m = 1:numel(oldNames)
+            if sum(strcmp(S.BurstData.NameArray,oldNames{m})) > 0
+                S.BurstData.NameArray{strcmp(S.BurstData.NameArray,oldNames{m})} = newNames{m};
+                oldName_exists(m) = true;
+            end
+        end
+        %%% also fix Cuts for corrected parameters
+        if isfield(S.BurstData,'Cut')
+            for k = 1:numel(S.BurstData.Cut) %%% loop over species
+                for l = 1:numel(S.BurstData.Cut{k}) %%% loop over cuts in species
+                    for m = 1:numel(oldNames)
+                        if oldName_exists(m)
+                            if strcmp(S.BurstData.Cut{k}{l}{1},oldNames{m})
+                                S.BurstData.Cut{k}{l}{1} = newNames{m};
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
     %% Fix naming of ClockPeriod/SyncPeriod
     % burst analysis before December 16, 2015
     if ~isfield(S.BurstData, 'ClockPeriod')
@@ -4306,12 +4341,7 @@ for i = 1:numel(FileName)
             end
         end
     end
-    %%% New: Cuts stored in Additional Variable when it was already saved
-    %%% once in BurstBrowser
-    %%% overwrite BurstData subfields with separately saved variables
-    if isfield(S,'Cut')
-        S.BurstData.Cut = S.Cut;
-    end
+    
     if isfield(S,'SpeciesNames')
         S.BurstData.SpeciesNames = S.SpeciesNames;
     end
@@ -6104,7 +6134,7 @@ if obj == h.Fit_Gaussian_Button
                 BurstMeta.Fitting.FitType = '1D';
                 
                 xbins_fit = linspace(xbins(1),xbins(end),1000);
-                x_start = mean(datatoplot(:,x));
+                x_start = mean(datatoplot(isfinite(datatoplot(:,x)),x));
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
                 x0 = zeros(1,12);
@@ -7566,19 +7596,19 @@ file = BurstMeta.SelectedFile;
 %% Add/Update distance (from intensity), E (from lifetime) and distance (from lifetime) entries
 if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
     %No. of Photons (GX) and Countrate (GX)
-    if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (GX)'))
-        BurstData{file}.NameArray{end+1} = 'Number of Photons (GX)';
+    if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (DX)'))
+        BurstData{file}.NameArray{end+1} = 'Number of Photons (DX)';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) = ...
-        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GG)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DX)')) = ...
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DD)')) + BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
     
-    if ~sum(strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]'))
-        BurstData{file}.NameArray{end+1} = 'Count rate (GX) [kHz]';
+    if ~sum(strcmp(BurstData{file}.NameArray,'Count rate (DX) [kHz]'))
+        BurstData{file}.NameArray{end+1} = 'Count rate (DX) [kHz]';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Count rate (GX) [kHz]')) = ...
-        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (GX)')) ./ BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Duration [ms]'));
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Count rate (DX) [kHz]')) = ...
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DX)')) ./ BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Duration [ms]'));
          
     % distance (from intensity)
     if ~sum(strcmp(BurstData{file}.NameArray,'Distance (from intensity) [A]'))
@@ -7594,7 +7624,7 @@ if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
         BurstData{file}.NameArray{end+1} = 'FRET efficiency (from lifetime)';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
     tauD = BurstData{file}.Corrections.DonorLifetime;
     El = 1-tauDA./tauD;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (from lifetime)')) = El;
@@ -7651,7 +7681,7 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
         BurstData{file}.NameArray{end+1} = 'FRET efficiency GR (from lifetime)';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
     tauD = BurstData{file}.Corrections.DonorLifetime;
     El = 1-tauDA./tauD;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency GR (from lifetime)')) = El;
@@ -7700,15 +7730,19 @@ switch BurstData{file}.BAMethod
     case {1,2,5}
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
         indE = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+        indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+        indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+        indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (AA)'));
     case {3,4}
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
         indE = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio GR'));
+        indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
+        indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
+        indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
 end
 %indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
 indDur = find(strcmp(BurstData{file}.NameArray,'Duration [ms]'));
-indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
-indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
-indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
+
 
 %%% Read out corrections
 if ~(BurstData{file}.BAMethod == 5) %%% MFD
@@ -7910,7 +7944,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     if ~h.MultiselectOnCheckbox.Value
         Valid = UpdateCuts();
 
-        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
         tauGG = BurstData{file}.DataArray(Valid,indTauGG);
         
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
@@ -7920,11 +7954,11 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
         NRR = BurstData{file}.DataArray(Valid,indNRR) - Background_RR.*BurstData{file}.DataArray(Valid,indDur);
         NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     else
-        NGR = get_multiselection_data(h,'Number of Photons (GR)');
-        NGG = get_multiselection_data(h,'Number of Photons (GG)');
-        NRR = get_multiselection_data(h,'Number of Photons (RR)');
+        NGR = get_multiselection_data(h,'Number of Photons (DA)');
+        NGG = get_multiselection_data(h,'Number of Photons (DD)');
+        NRR = get_multiselection_data(h,'Number of Photons (AA)');
         dur = get_multiselection_data(h,'Duration [ms]');
-        tauGG = get_multiselection_data(h,'Lifetime GG [ns]');
+        tauGG = get_multiselection_data(h,'Lifetime D [ns]');
         
         NGR = NGR - Background_GR.*dur;
         NGG = NGG - Background_GG.*dur;
@@ -8359,9 +8393,16 @@ else
 end
 h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 indDur = find(strcmp(BurstData{file}.NameArray,'Duration [ms]'));
-indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
-indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
-indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+        indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+        indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+        indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (AA)'));
+    case {3,4}
+        indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
+        indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
+        indNRR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
+end
 %%% Read out corrections
 if ~(BurstData{file}.BAMethod == 5) %%% MFD
     Background_GR = BurstData{file}.Background.Background_GRpar + BurstData{file}.Background.Background_GRperp;
@@ -8435,10 +8476,10 @@ file = BurstMeta.SelectedFile;
 %% 2cMFD
 %%% Prepare photon counts
 indDur = (strcmp(BurstData{file}.NameArray,'Duration [ms]'));
-indNGG = (strcmp(BurstData{file}.NameArray,'Number of Photons (GG)'));
-indNGR = (strcmp(BurstData{file}.NameArray,'Number of Photons (GR)'));
-indNRR = (strcmp(BurstData{file}.NameArray,'Number of Photons (RR)'));
-indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+indNGG = (strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
+indNGR = (strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
+indNRR = (strcmp(BurstData{file}.NameArray,'Number of Photons (AA)'));
+indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
 
 data_for_corrections = BurstData{file}.DataArray;
 
@@ -8660,15 +8701,19 @@ switch BurstData{file}.BAMethod
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
         indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
         indEPR = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+        indNGG = strcmp(BurstData{file}.NameArray,'Number of Photons (DD)');
+        indNGR = strcmp(BurstData{file}.NameArray,'Number of Photons (DA)');
+        indNRR = strcmp(BurstData{file}.NameArray,'Number of Photons (AA)');
     case {3,4} %3color
         indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry GR'));
         indE = find(strcmp(BurstData{file}.NameArray,'FRET Efficiency GR'));
         indEPR = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio GR'));
+        indNGG = strcmp(BurstData{file}.NameArray,'Number of Photons (GG)');
+        indNGR = strcmp(BurstData{file}.NameArray,'Number of Photons (GR)');
+        indNRR = strcmp(BurstData{file}.NameArray,'Number of Photons (RR)');
 end
 indDur = strcmp(BurstData{file}.NameArray,'Duration [ms]');
-indNGG = strcmp(BurstData{file}.NameArray,'Number of Photons (GG)');
-indNGR = strcmp(BurstData{file}.NameArray,'Number of Photons (GR)');
-indNRR = strcmp(BurstData{file}.NameArray,'Number of Photons (RR)');
+
 
 %%% Read out photons counts and duration
 NGG = BurstData{file}.DataArray(:,indNGG);
@@ -8861,7 +8906,7 @@ if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
     R0 = BurstData{file}.Corrections.FoersterRadius;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from intensity) [A]')) = ((1./E-1).*R0^6).^(1/6);
     %%% Efficiency from lifetime
-    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
     tauD = BurstData{file}.Corrections.DonorLifetime;
     El = 1-tauDA./tauD;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (from lifetime)')) = El;
@@ -10617,14 +10662,18 @@ else
     end
 end
 %%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',NameArray);
-idx_rGG = strcmp('Anisotropy GG',NameArray);
-idx_rRR = strcmp('Anisotropy RR',NameArray);
 switch BurstData{file}.BAMethod
     case {1,2,5} %2color
+        idx_tauGG = strcmp('Lifetime D [ns]',NameArray);
+        idx_tauRR = strcmp('Lifetime A [ns]',NameArray);
+        idx_rGG = strcmp('Anisotropy D',NameArray);
+        idx_rRR = strcmp('Anisotropy A',NameArray);
         idxE = find(strcmp(NameArray,'FRET Efficiency'));
     case {3,4}
+        idx_tauGG = strcmp('Lifetime GG [ns]',NameArray);
+        idx_tauRR = strcmp('Lifetime RR [ns]',NameArray);
+        idx_rGG = strcmp('Anisotropy GG',NameArray);
+        idx_rRR = strcmp('Anisotropy RR',NameArray);
         idxE = find(strcmp(NameArray,'FRET Efficiency GR'));
 end
 %%% Read out the Number of Bins
@@ -10867,11 +10916,18 @@ file = BurstMeta.SelectedFile;
 %%% Use the current cut Data (of the selected species) for plots
 datatoplot = BurstData{file}.DataCut;
 %%% read out the indices of the parameters to plot
-idx_tauGG = strcmp('Lifetime GG [ns]',BurstData{file}.NameArray);
-idx_tauRR = strcmp('Lifetime RR [ns]',BurstData{file}.NameArray);
-idx_rGG = strcmp('Anisotropy GG',BurstData{file}.NameArray);
-idx_rRR = strcmp('Anisotropy RR',BurstData{file}.NameArray);
-idxE = strcmp('FRET Efficiency',BurstData{file}.NameArray);
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+        idx_tauGG = strcmp('Lifetime D [ns]',BurstData{file}.NameArray);
+        idx_tauRR = strcmp('Lifetime A [ns]',BurstData{file}.NameArray);
+        idx_rGG = strcmp('Anisotropy D',BurstData{file}.NameArray);
+        idx_rRR = strcmp('Anisotropy A',BurstData{file}.NameArray);
+    case {3,4}
+        idx_tauGG = strcmp('Lifetime GG [ns]',BurstData{file}.NameArray);
+        idx_tauRR = strcmp('Lifetime RR [ns]',BurstData{file}.NameArray);
+        idx_rGG = strcmp('Anisotropy GG',BurstData{file}.NameArray);
+        idx_rRR = strcmp('Anisotropy RR',BurstData{file}.NameArray);
+end
 %% Add Fits
 if obj == h.PlotStaticFRETButton
     %% Add a static FRET line EvsTau plots
@@ -10979,8 +11035,14 @@ if obj == h.FitAnisotropyButton
         tauGG = datatoplot(:,idx_tauGG);
         rGG = datatoplot(:,idx_rGG);
     else
-        tauGG = get_multiselection_data(h,'Lifetime GG [ns]');
-        rGG = get_multiselection_data(h,'Anisotropy GG');
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                tauGG = get_multiselection_data(h,'Lifetime D [ns]');
+                rGG = get_multiselection_data(h,'Anisotropy D');
+            case {3,4}
+                tauGG = get_multiselection_data(h,'Lifetime GG [ns]');
+                rGG = get_multiselection_data(h,'Anisotropy GG');
+        end
     end
     PerrinFitGG = fit(tauGG(~isnan(tauGG)),rGG(~isnan(tauGG)),fPerrin,'StartPoint',1);
     tau = linspace(0,h.axes_rGGvsTauGG.XLim(2),100);
@@ -10998,8 +11060,14 @@ if obj == h.FitAnisotropyButton
         tauRR = datatoplot(:,idx_tauRR);
         rRR = datatoplot(:,idx_rRR);
     else
-        tauRR = get_multiselection_data(h,'Lifetime RR [ns]');
-        rRR = get_multiselection_data(h,'Anisotropy RR');
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                tauRR = get_multiselection_data(h,'Lifetime A [ns]');
+                rRR = get_multiselection_data(h,'Anisotropy A');
+            case {3,4}
+                tauRR = get_multiselection_data(h,'Lifetime RR [ns]');
+                rRR = get_multiselection_data(h,'Anisotropy RR');
+        end
     end
     PerrinFitRR = fit(tauRR(~isnan(tauRR)),rRR(~isnan(tauRR)),fPerrin,'StartPoint',1);
     tau = linspace(0,h.axes_rRRvsTauRR.XLim(2),100);
@@ -11262,7 +11330,12 @@ else
     %%% NameArray!
 end
 %%% Determine Donor Only lifetime from data with S > 0.95
-idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
+switch BurstData{file}.BAMethod
+    case {1,2,5}
+        idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime D [ns]');
+    case {3,4}
+        idx_tauGG = strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]');
+end
 %%% catch case where no lifetime was determined
 
 if all(data(:,idx_tauGG) == 0)
@@ -11286,7 +11359,7 @@ htauGG(end) = [];
 BurstMeta.Plots.histE_donly.XData = x_axis;
 BurstMeta.Plots.histE_donly.YData = htauGG;
 axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
-h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Lifetime GG [ns]';
+h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Lifetime D [ns]';
 h.Corrections.TwoCMFD.axes_crosstalk.Title.String = 'Lifetime of Donor only';
 %%% fit
 [DonorOnlyLifetime, GaussFit] = GaussianFit(x_axis',htauGG);
@@ -11296,11 +11369,12 @@ BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
 h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
 UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
 %%% Determine Acceptor Only Lifetime from data with S < 0.1
-idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
 if any(BurstData{file}.BAMethod == [1,2,5])
+    idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime A [ns]');
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry');
     valid = (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Aonly_Min);
 elseif any(BurstData{file}.BAMethod == [3,4])
+    idx_tauRR = strcmp(BurstData{file}.NameArray,'Lifetime RR [ns]');
     idxS = strcmp(BurstData{file}.NameArray,'Stoichiometry GR');
     %idxSBR = strcmp(BurstData{file}.NameArray,'Stoichiometry BR');
     valid = (data(:,idxS) < UserValues.BurstBrowser.Settings.S_Aonly_Max) & (data(:,idxS) > UserValues.BurstBrowser.Settings.S_Aonly_Min);% &...
@@ -11317,7 +11391,7 @@ htauRR(end) = [];
 BurstMeta.Plots.histS_aonly.XData = x_axis;
 BurstMeta.Plots.histS_aonly.YData = htauRR;
 axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
-h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Lifetime RR [ns]';
+h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Lifetime A [ns]';
 h.Corrections.TwoCMFD.axes_direct_excitation.Title.String = 'Lifetime of Acceptor only';
 [AcceptorOnlyLifetime, GaussFit] = GaussianFit(x_axis',htauRR);
 BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
@@ -11358,6 +11432,8 @@ if any(BurstData{file}.BAMethod == [3,4])
             BurstData{files(i)}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
         end
     end
+    h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Lifetime GG [ns]';
+    h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Lifetime RR [ns]';
 end
 LSUserValues(1);
 UpdateLifetimePlots([],[],h);
@@ -12049,11 +12125,11 @@ elseif BAMethod == 2
     %%% Change axes in lifetime tab
     h.axes_EvsTauGG.YLabel.String = 'FRET Efficiency';
     h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
-    h.axes_EvsTauGG.Title.String = 'FRET Efficiency vs. Lifetime GG';
+    h.axes_EvsTauGG.Title.String = 'FRET Efficiency vs. Lifetime D';
     h.axes_EvsTauGG.Title.Color = UserValues.Look.Fore;
     h.axes_EvsTauRR.YLabel.String = 'FRET Efficiency';
     h.axes_EvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
-    h.axes_EvsTauRR.Title.String = 'FRET Efficiency vs. Lifetime RR';
+    h.axes_EvsTauRR.Title.String = 'FRET Efficiency vs. Lifetime A';
     h.axes_EvsTauRR.Title.Color = UserValues.Look.Fore;
     h.axes_rGGvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{D}';
@@ -12064,7 +12140,7 @@ elseif BAMethod == 2
     %%% Hide TauBB Export Option
     h.ExportEvsTauBB_Menu.Visible = 'off';
     %% Change Correlation Table
-    Names = {'GG1','GG2','GR1','GR2','RR1','RR2','GG','GR','GX','GX1','GX2','RR'};
+    Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
     h.Correlation_Table.RowName = Names;
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));

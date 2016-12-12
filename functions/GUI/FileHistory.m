@@ -67,7 +67,14 @@ classdef FileHistory < handle
                     return;
                 end
             end
+            if sum(strcmp(new_file,obj.FileList)) > 0
+                %%% file exists already, remove it from its old position
+                pos = find(strcmp(new_file,obj.FileList));
+                obj.FileList(pos) = [];
+            end
+            %%% add the new file to the top
             obj.FileList = [{new_file}, obj.FileList];
+            
             if numel(obj.FileList) > 20 %%% only keep 20 files
                 obj.FileList = obj.FileList(1:20);
             end
