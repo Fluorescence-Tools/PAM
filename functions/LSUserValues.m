@@ -559,6 +559,63 @@ if Mode==0 %%% Loads user values
         disp('UserValues.FCSFit.PlotStyleAll was incomplete');
     end
     P.FCSFit.PlotStyleAll = S.FCSFit.PlotStyleAll;
+    %%% Chacks, if FCSFit.Export subfields exist
+    if ~isfield (S.FCSFit,'Export_X')
+        S.FCSFit.Export_X = '300';
+        disp('UserValues.FCSFit.Export_X was incomplete');
+    end
+    P.FCSFit.Export_X = S.FCSFit.Export_X;
+    
+    if ~isfield (S.FCSFit,'Export_Y')
+        S.FCSFit.Export_Y = '150';
+        disp('UserValues.FCSFit.Export_Y was incomplete');
+    end
+    P.FCSFit.Export_Y = S.FCSFit.Export_Y;
+    
+    if ~isfield (S.FCSFit,'Export_Res')
+        S.FCSFit.Export_Res = '50';
+        disp('UserValues.FCSFit.Export_Res was incomplete');
+    end
+    P.FCSFit.Export_Res = S.FCSFit.Export_Res;
+    
+    if ~isfield (S.FCSFit,'Export_Font') || ~isfield (S.FCSFit.Export_Font,'FontName') || ~isfield (S.FCSFit.Export_Font,'FontWeight')...
+    || ~isfield (S.FCSFit.Export_Font,'FontAngle') || ~isfield (S.FCSFit.Export_Font,'FontUnits') || ~isfield (S.FCSFit.Export_Font,'FontSize')...
+    || ~isfield (S.FCSFit.Export_Font,'FontString')
+
+        S.FCSFit.Export_Font.FontName = 'Arial';
+        S.FCSFit.Export_Font.FontWeight = 'normal';
+        S.FCSFit.Export_Font.FontAngle = 'normal';
+        S.FCSFit.Export_Font.FontUnits = 'points';
+        S.FCSFit.Export_Font.FontSize = 10;
+        S.FCSFit.Export_Font.FontString = 'Export Font: Arial, 10';
+        disp('UserValues.FCSFit.Export_Font was incomplete');
+    end
+    P.FCSFit.Export_Font = S.FCSFit.Export_Font;
+    
+    if ~isfield (S.FCSFit,'Export_Grid')
+        S.FCSFit.Export_Grid = 1;
+        disp('UserValues.FCSFit.Export_Grid was incomplete');
+    end
+    P.FCSFit.Export_Grid = S.FCSFit.Export_Grid;
+    
+    if ~isfield (S.FCSFit,'Export_GridM')
+        S.FCSFit.Export_GridM = 1;
+        disp('UserValues.FCSFit.Export_GridM was incomplete');
+    end
+    P.FCSFit.Export_GridM = S.FCSFit.Export_GridM;
+    
+    if ~isfield (S.FCSFit,'Export_Box')
+        S.FCSFit.Export_Box = 1;
+        disp('UserValues.FCSFit.Export_Box was incomplete');
+    end
+    P.FCSFit.Export_Box = S.FCSFit.Export_Box;
+    
+    if ~isfield (S.FCSFit,'Export_Legend')
+        S.FCSFit.Export_Legend = 0;
+        disp('UserValues.FCSFit.Export_Legend was incomplete');
+    end
+    P.FCSFit.Export_Legend = S.FCSFit.Export_Legend;
+    
     %% MIAFit
     %%% Checks, if MIAFit subfield exists
     if ~isfield (S, 'MIAFit')
