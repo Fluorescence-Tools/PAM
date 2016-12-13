@@ -407,6 +407,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
     P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;
+    %%% Checks, if Pam.Cor_AfterPulsing subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_AfterPulsing')
+        S.Settings.Pam.Cor_AfterPulsing=0;
+        disp('UserValues.Settings.Pam.Cor_AfterPulsing was incomplete');
+    end
+    P.Settings.Pam.Cor_AfterPulsing = S.Settings.Pam.Cor_AfterPulsing;
     %%% Checks if Pam.PlotIRF subfield exists
     if ~isfield (S.Settings.Pam, 'PlotIRF')
         S.Settings.Pam.PlotIRF='off';

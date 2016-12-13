@@ -1672,7 +1672,11 @@ LegendUse=h.FCS_Axes.Children(1:numel(Active)*2);
 for i=1:numel(Active)
     LegendString{2*i-1}=['Data: ' FCSData.FileName{Active(i)}];
     LegendString{2*i}  =['Fit:  ' FCSData.FileName{Active(i)}];
-    LegendUse(2*i-1)=FCSMeta.Plots{Active(i),1};
+    if Plot_Errorbars
+        LegendUse(2*i-1)=FCSMeta.Plots{Active(i),1};
+    else
+        LegendUse(2*i-1)=FCSMeta.Plots{Active(i),4};
+    end
     LegendUse(2*i)=FCSMeta.Plots{Active(i),2};
 end
 if ~isempty(LegendString) && ~h.Hide_Legend.Value
@@ -1728,7 +1732,7 @@ switch mode
         FontSize = h.Export_Font.UserData.FontSize;
         
         if ~strcmp(FCSMeta.DataType,'FRET')
-            Scale = [floor(log10(h.FCS_Axes.XTick(1))), ceil(h.FCS_Axes.XTick(end))];
+            Scale = [floor(log10(h.FCS_Axes.XLim(1))), ceil(h.FCS_Axes.XLim(2))];
             XTicks = zeros(diff(Scale),1);
             XTickLabels = cell(diff(Scale),1);
             j=1;        
@@ -1798,7 +1802,7 @@ switch mode
         
         %% Sets axes parameters
         linkaxes([H.FCS,H.Residuals],'x');
-        H.FCS.XLim=[h.FCS_Axes.XTick(1),h.FCS_Axes.XTick(end)];
+        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
         H.FCS.YLim=h.FCS_Axes.YLim;
         switch FCSMeta.DataType
             case {'FCS','FCS averaged'}
@@ -1824,7 +1828,11 @@ switch mode
                     for i=1:numel(LegendString)
                         LegendString{i} = LegendString{i}(7:end);
                     end
-                    H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
+                    if h.Fit_Errorbars.Value
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
+                    else
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end-2:-3:1),LegendString,'Interpreter','none');
+                    end
                 end
             end
         end

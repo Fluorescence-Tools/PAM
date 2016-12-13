@@ -487,6 +487,19 @@ if ismac
     h.Cor.Type.ForegroundColor = [0 0 0];
     h.Cor.Type.BackgroundColor = [1 1 1];
 end
+h.Cor.AfterPulsingCorrection = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Cor.Panel,...
+    'Units','normalized',...
+    'FontSize',10,...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.67 0.02 0.3 0.09],...
+    'Callback',@Calculate_Settings,...
+    'String','Correct for afterpulsing',...
+    'Value',UserValues.Settings.Pam.Cor_AfterPulsing,...
+    'TooltipString','Enables afterpulsing correction based on FLCS');
+    
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.Cor.Panel,...
@@ -3488,6 +3501,13 @@ elseif obj == h.Cor.Type
     else %%% turn GUI elements off
         set([h.Cor.Pair_Bins,h.Cor.Pair_Dist,findobj('Tag','PairCorDistance'),findobj('Tag','PairCorBins')],'Visible','off');
     end
+    if h.Cor.Type.Value == 1 %%% Point Correlation selected
+        h.Cor.AfterPulsingCorrection.Visible = 'on';
+    else
+        h.Cor.AfterPulsingCorrection.Visible = 'off';
+    end
+elseif obj == h.Cor.AfterPulsingCorrection
+    UserValues.Settings.Pam.Cor_AfterPulsing = h.Cor.AfterPulsingCorrection.Value;
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -5307,19 +5327,19 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
             To2=UserValues.PIE.To(Cor_B(i));
             From2=UserValues.PIE.From(Cor_B(i));
         end
-        
+
         Cor_Type = h.Cor.Type.Value;
         switch Cor_Type %%% Assigns photons and does correlation
             case {1,3,4} %%% Point correlation
                 %%% Initializes data cells
-                Data1=cell(sum(PamMeta.Selected_MT_Patches),1);
-                Data2=cell(sum(PamMeta.Selected_MT_Patches),1);
+                Data1=cell(sum(PamMeta.Selected_MT_Patches),1); MI1 = cell(sum(PamMeta.Selected_MT_Patches),1);
+                Data2=cell(sum(PamMeta.Selected_MT_Patches),1); MI2 = cell(sum(PamMeta.Selected_MT_Patches),1);
                 k=1;
                 Counts1=0;
                 Counts2=0;
                 %%% Seperate calculation for each block
                 for j=find(PamMeta.Selected_MT_Patches)'
-                    Data1{k}=[];
+                    Data1{k}=[]; MI1{k} = [];
                     %%% Combines all photons to one vector
                     for l=1:numel(Det1)
                         if ~isempty(TcspcData.MI{Det1(l),Rout1(l)})
@@ -5330,6 +5350,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
+                                if (UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
+                                    MI1{k}=[MI1{k};...
+                                    TcspcData.MI{Det1(l),Rout1(l)}(...
+                                    TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                                    TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
+                                    TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
+                                    TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
+                                end
                             elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
@@ -5352,7 +5380,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     
                     %%% Only executes if channel1 is not empty
                     if ~isempty(Data1{k})
-                        Data2{k}=[];
+                        Data2{k}=[]; MI2{k} = [];
                         %%% Combines all photons to one vector
                         for l=1:numel(Det2)
                             if ~isempty(TcspcData.MI{Det2(l),Rout2(l)})
@@ -5363,6 +5391,14 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
+                                    if (UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
+                                        MI2{k}=[MI2{k};...
+                                        TcspcData.MI{Det1(l),Rout1(l)}(...
+                                        TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
+                                        TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
+                                        TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
+                                        TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
+                                    end
                                 elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
@@ -5405,13 +5441,48 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end
                 
                 %%% Actually calculates the crosscorrelation
-                if ~(Cor_Type == 4)
-                    [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                else
-                    time_unit = FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
-                    limit = round(10E-6/time_unit); %%% only calculate from -10mus to 10mus
-                    resolution = ceil(100E-12/time_unit); %%% set to 100 ps
-                    [~,Cor_Array,Cor_Times]=nanosecond_correlation(Data1,Data2,limit,resolution,time_unit);
+                switch Cor_Type
+                    case 1
+                        if ~(UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i)))
+                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                        else %%% do after pulse correction if same detector is selected
+                            %%% suppress afterpulsing by FLCS
+                            %%% get microtime hist of PIE channel
+                            det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Cor_A(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Cor_A(i))));
+                            det = det(1);
+                            Decay = PamMeta.MI_Hist{det}(UserValues.PIE.From(Cor_A(i)):UserValues.PIE.To(Cor_A(i)));
+                            %%% avoid zeros in Decay
+                            Decay(Decay==0) = 1;
+                            %%% afterpulsing baseline taken as minimum value of microtime histogram
+                            afterpulsing = min(smooth(Decay,ceil(250e-12/(FileInfo.TACRange/FileInfo.MI_Bins))));
+                            Decay_pure = Decay-afterpulsing; %%% "pure" decay
+                            %%% calculate FLCS filter
+                            diag_Decay = zeros(numel(Decay));
+                            for k = 1:numel(Decay)
+                                diag_Decay(k,k) = 1./Decay(k);
+                            end
+                            MI_species = [Decay_pure./sum(Decay_pure), ones(numel(Decay),1)./numel(Decay)];
+                            filters_temp = ((MI_species'*diag_Decay*MI_species)^(-1)*MI_species'*diag_Decay)';
+                            filter = zeros(numel(PamMeta.MI_Hist{det}),1);
+                            % we only need the filter for the "pure" decay
+                            filter(UserValues.PIE.From(Cor_A(i)):UserValues.PIE.To(Cor_A(i)),1) = filters_temp(:,1);
+                            % filters(UserValues.PIE.From(Cor_A(i)):UserValues.PIE.To(Cor_A(i)),2) = filters_temp(:,2);
+                            %%% assign the weights
+                            Weights1 = cell(numel(Data1),1); Weights2 = cell(numel(Data2),1);
+                            for k = 1:numel(Data1)
+                                Weights1{k} = filter(MI1{k},1);
+                                Weights2{k} = filter(MI2{k},1);
+                            end
+                            %%% Do the autocorrelation with weights
+                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                        end
+                    case {2,3}
+                        [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                    case 4
+                        time_unit = FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
+                        limit = round(10E-6/time_unit); %%% only calculate from -10mus to 10mus
+                        resolution = ceil(100E-12/time_unit); %%% set to 100 ps
+                        [~,Cor_Array,Cor_Times]=nanosecond_correlation(Data1,Data2,limit,resolution,time_unit);
                 end
                 if h.Cor.Type.Value == 1
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
