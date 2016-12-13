@@ -695,6 +695,64 @@ if Mode==0 %%% Loads user values
         disp('UserValues.MIAFit.PlotStyleAll was incomplete');
     end
     P.MIAFit.PlotStyleAll = S.MIAFit.PlotStyleAll;
+    
+    %%% Checks, if MIAFit.Export subfields exist
+    if ~isfield (S.MIAFit,'Export_Size')
+        S.MIAFit.Export_Size = '150';
+        disp('UserValues.MIAFit.Export_Size was incomplete');
+    end
+    P.MIAFit.Export_Size = S.MIAFit.Export_Size;
+    
+    if ~isfield (S.MIAFit,'Export_NumX')
+        S.MIAFit.Export_NumX = '3';
+        disp('UserValues.MIAFit.Export_NumX was incomplete');
+    end
+    P.MIAFit.Export_NumX = S.MIAFit.Export_NumX;
+    
+    if ~isfield (S.MIAFit,'Export_NumY')
+        S.MIAFit.Export_NumY = '1';
+        disp('UserValues.MIAFit.Export_NumY was incomplete');
+    end
+    P.MIAFit.Export_NumY = S.MIAFit.Export_NumY;
+    
+    if ~isfield (S.MIAFit,'Export_RotX')
+        S.MIAFit.Export_RotX = '135';
+        disp('UserValues.MIAFit.Export_RotX was incomplete');
+    end
+    P.MIAFit.Export_RotX = S.MIAFit.Export_RotX;
+    
+    if ~isfield (S.MIAFit,'Export_RotY')
+        S.MIAFit.Export_RotY = '35';
+        disp('UserValues.MIAFit.Export_RotY was incomplete');
+    end
+    P.MIAFit.Export_RotY = S.MIAFit.Export_RotY;
+    
+    if ~isfield (S.MIAFit,'Export_Error')
+        S.MIAFit.Export_Error = '5';
+        disp('UserValues.MIAFit.Export_Error was incomplete');
+    end
+    P.MIAFit.Export_Error = S.MIAFit.Export_Error;
+    
+    if ~isfield (S.MIAFit,'Export_Alpha')
+        S.MIAFit.Export_Alpha = '1';
+        disp('UserValues.MIAFit.Export_Alpha was incomplete');
+    end
+    P.MIAFit.Export_Alpha = S.MIAFit.Export_Alpha;
+    
+    if ~isfield (S.MIAFit,'Export_Font') || ~isfield (S.MIAFit.Export_Font,'FontName') || ~isfield (S.MIAFit.Export_Font,'FontWeight')...
+            || ~isfield (S.MIAFit.Export_Font,'FontAngle') || ~isfield (S.MIAFit.Export_Font,'FontUnits') || ~isfield (S.MIAFit.Export_Font,'FontSize')...
+            || ~isfield (S.MIAFit.Export_Font,'FontString')
+        
+        S.MIAFit.Export_Font.FontName = 'Arial';
+        S.MIAFit.Export_Font.FontWeight = 'normal';
+        S.MIAFit.Export_Font.FontAngle = 'normal';
+        S.MIAFit.Export_Font.FontUnits = 'points';
+        S.MIAFit.Export_Font.FontSize = 10;
+        S.MIAFit.Export_Font.FontString = 'Export Font: Arial, 10';
+        disp('UserValues.MIAFit.Export_Font was incomplete');
+    end
+    P.MIAFit.Export_Font = S.MIAFit.Export_Font;
+    
     %% Phasor
     %%% Checks, if Phasor subfield exists
     if ~isfield (S,'Phasor')
