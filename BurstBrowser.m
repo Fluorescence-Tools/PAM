@@ -7856,9 +7856,16 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
         NRR = BurstData{file}.DataArray(Valid,indNRR) - Background_RR.*BurstData{file}.DataArray(Valid,indDur);
         NGR = NGR - BurstData{file}.Corrections.DirectExcitation_GR.*NRR - BurstData{file}.Corrections.CrossTalk_GR.*NGG;
     else
-        NGR = get_multiselection_data(h,'Number of Photons (GR)');
-        NGG = get_multiselection_data(h,'Number of Photons (GG)');
-        NRR = get_multiselection_data(h,'Number of Photons (RR)');
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                NGR = get_multiselection_data(h,'Number of Photons (DA)');
+                NGG = get_multiselection_data(h,'Number of Photons (DD)');
+                NRR = get_multiselection_data(h,'Number of Photons (AA)');
+            case {3,4}
+                NGR = get_multiselection_data(h,'Number of Photons (GR)');
+                NGG = get_multiselection_data(h,'Number of Photons (GG)');
+                NRR = get_multiselection_data(h,'Number of Photons (RR)');
+        end
         dur = get_multiselection_data(h,'Duration [ms]');
         NGR = NGR - Background_GR.*dur;
         NGG = NGG - Background_GG.*dur;
@@ -9665,6 +9672,8 @@ BurstMeta.Plots.fFCS.FilterPar_Species2.YData = BurstMeta.fFCS.filters_par(2,:);
 if size(BurstMeta.fFCS.filters_par,1) > 2
     BurstMeta.Plots.fFCS.FilterPar_IRF.XData = BurstMeta.fFCS.TAC_par;
     BurstMeta.Plots.fFCS.FilterPar_IRF.YData = BurstMeta.fFCS.filters_par(3,:);
+else
+    BurstMeta.Plots.fFCS.FilterPar_IRF.Visible = 'off';
 end
 if size(BurstMeta.fFCS.filters_par,1) > 3
     BurstMeta.Plots.fFCS.FilterPar_DOnly.Visible = 'on';
@@ -9687,6 +9696,8 @@ BurstMeta.Plots.fFCS.FilterPerp_Species2.YData = BurstMeta.fFCS.filters_perp(2,:
 if size(BurstMeta.fFCS.filters_perp,1) > 2
     BurstMeta.Plots.fFCS.FilterPerp_IRF.XData = BurstMeta.fFCS.TAC_perp;
     BurstMeta.Plots.fFCS.FilterPerp_IRF.YData = BurstMeta.fFCS.filters_perp(3,:);
+else
+    BurstMeta.Plots.fFCS.FilterPerp_IRF.Visible = 'off';
 end
 if size(BurstMeta.fFCS.filters_perp,1) > 3
     BurstMeta.Plots.fFCS.FilterPerp_DOnly.Visible = 'on';
@@ -10408,9 +10419,9 @@ for t = 1:numel(timebin)
     
     duration = timebin{t}/BurstData{file}.ClockPeriod;
     %%% Get the maximum number of bins possible in data set
-    max_duration = ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration);
+    max_duration = double(ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration));
     %convert absolute macrotimes to relative macrotimes
-    bursts = cellfun(@(x) x-x(1)+1,MT,'UniformOutput',false);
+    bursts = cellfun(@(x) double(x-x(1)+1),MT,'UniformOutput',false);
     %bin the bursts according to dur, up to max_duration
     bins = cellfun(@(x) histc(x,duration.*[0:1:max_duration]),bursts,'UniformOutput',false);
     %remove last bin
