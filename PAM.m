@@ -1930,6 +1930,8 @@ h.Image.Axes = axes(...
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
+h.Image.Colorbar.YLabel.String = 'Counts';
+h.Image.Colorbar.YLabel.ButtonDownFcn = @Misc;
 colormap(jet);
 h.Image.Colorbar.Color=Look.Fore;
 
@@ -10462,4 +10464,36 @@ colored_strings = cell(numel(strings),1);
 for i = 1:numel(strings)
     Hex_color=dec2hex(round(colors(i,:)*255))';
     colored_strings{i} = ['<HTML><FONT color=#' Hex_color(:)' '>' strings{i} '</Font></html>'];
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for various small callbacks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Misc(obj,e,mode)
+h=guidata(findobj('Tag','Pam'));
+global UserValues FileInfo PamMeta
+
+if nargin <3
+    switch obj
+        case h.Image.Colorbar.YLabel
+            Pixeltime = mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels*size(FileInfo.LineTimes,1);
+            
+            if strcmp(h.Image.Colorbar.YLabel.String, 'Counts')
+                for i=1:numel(PamMeta.Image)
+                    PamMeta.Image{i} = PamMeta.Image{i}/Pixeltime/1000;
+                end
+                h.Image.Colorbar.YLabel.String = 'Countrate [kHz]';
+                h.Plots.Image.CData = h.Plots.Image.CData/Pixeltime/1000;
+            else
+                for i=1:numel(PamMeta.Image)
+                    PamMeta.Image{i} = PamMeta.Image{i}*Pixeltime*1000;
+                end
+                h.Image.Colorbar.YLabel.String = 'Counts';
+                h.Plots.Image.CData = h.Plots.Image.CData*Pixeltime*1000;
+            end  
+            h.Image.Axes.CLimMode = 'auto';
+    end
+    
 end
