@@ -672,6 +672,9 @@ switch (Type)
             if isempty(FileInfo.ClockPeriod)
                 FileInfo.ClockPeriod = 1/Header.SyncRate;
             end
+            if isempty(FileInfo.Resolution)
+                FileInfo.Resolution = Header.Resolution;
+            end
             %%% Concaternates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
