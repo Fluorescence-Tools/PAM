@@ -1073,7 +1073,7 @@ if isempty(hfig)
         'Position',[0.5 0.92 0.2 0.07],...
         'Style','text',...
         'Tag','r0GG_text',...
-        'String','r0 Green',...
+        'String','r0 Donor',...
         'HorizontalAlignment','left',...
         'TooltipString','Fundamental anisotropy of green dye',...
         'FontSize',12);
@@ -1100,7 +1100,7 @@ if isempty(hfig)
         'Style','text',...
         'HorizontalAlignment','left',...
         'Tag','r0RR_text',...
-        'String','r0 Red',...
+        'String','r0 Acceptor',...
         'TooltipString','Fundamental anisotropy of red dye',...
         'FontSize',12);
     
@@ -2902,7 +2902,7 @@ if isempty(hfig)
         'UIContextMenu', h.LifeTime_Menu);
     ylabel(h.axes_rRRvsTauRR,'r_{A}','Color',UserValues.Look.Fore,'Rotation',0,'Units', 'Normalized', 'Position', [-0.075, 0.5, 0]);
     xlabel(h.axes_rRRvsTauRR,'\tau_{A} [ns]','Color',UserValues.Look.Fore);
-    title(h.axes_rRRvsTauRR,'Anisotropy RR vs. Lifetime RR','Color',UserValues.Look.Fore);
+    title(h.axes_rRRvsTauRR,'Anisotropy A vs. Lifetime A','Color',UserValues.Look.Fore);
     
     %%% Define Axes for 3C
     %%% (For 3C, the four axes of 2C are shifted to the left and two
@@ -3830,10 +3830,6 @@ LSUserValues(1);
 %%% Load data
 switch obj
     case {h.Load_Bursts,h.DatabaseBB.List,h.Load_Bursts_From_Folder}
-        %%% clear global variable
-        BurstData = [];
-        BurstTCSPCData = [];
-        PhotonStream = [];
         Load_BurstFile(PathName,FileName,FilterIndex);
         %%% Enable append file
         h.Append_File.Enable = 'on';
@@ -4006,6 +4002,12 @@ if ischar(FileName)
 end
 if nargin < 4
     append = 0;
+end
+if append == 0
+    %%% clear global variables
+    BurstData = [];
+    BurstTCSPCData = [];
+    PhotonStream = [];
 end
 h = guidata(findobj('Tag','BurstBrowser'));
 for i = 1:numel(FileName)
@@ -5106,7 +5108,7 @@ if strcmpi(clickType,'right')
         case {'Stoichiometry','Stoichiometry GR','Stoichiometry BG','Stoichiometry BR'}
             lower = 0;
             upper = 1;
-        case {'Anisotropy RR','Anisotropy GG','Anisotropy BB'}
+        case {'Anisotropy RR','Anisotropy GG','Anisotropy BB','Anisotropy A','Anisotropy D'}
             lower = -0.2;
             upper = 0.6;
         otherwise  
@@ -7730,7 +7732,7 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
         BurstData{file}.NameArray{end+1} = 'FRET efficiency GR (from lifetime)';
         BurstData{file}.DataArray(:,end+1) = 0;
     end
-    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+    tauDA = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
     tauD = BurstData{file}.Corrections.DonorLifetime;
     El = 1-tauDA./tauD;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency GR (from lifetime)')) = El;
@@ -8819,12 +8821,22 @@ BurstData{file}.DataArray(:,indS) = S;
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
     %%% Read out indices of parameters
-    ind_rGG = strcmp(BurstData{file}.NameArray,'Anisotropy GG');
-    ind_rRR = strcmp(BurstData{file}.NameArray,'Anisotropy RR');
-    indNGGpar = strcmp(BurstData{file}.NameArray,'Number of Photons (GG par)');
-    indNGGperp = strcmp(BurstData{file}.NameArray,'Number of Photons (GG perp)');
-    indNRRpar = strcmp(BurstData{file}.NameArray,'Number of Photons (RR par)');
-    indNRRperp = strcmp(BurstData{file}.NameArray,'Number of Photons (RR perp)');
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            ind_rGG = strcmp(BurstData{file}.NameArray,'Anisotropy D');
+            ind_rRR = strcmp(BurstData{file}.NameArray,'Anisotropy A');
+            indNGGpar = strcmp(BurstData{file}.NameArray,'Number of Photons (DD par)');
+            indNGGperp = strcmp(BurstData{file}.NameArray,'Number of Photons (DD perp)');
+            indNRRpar = strcmp(BurstData{file}.NameArray,'Number of Photons (AA par)');
+            indNRRperp = strcmp(BurstData{file}.NameArray,'Number of Photons (AA perp)');
+        case {3,4}
+            ind_rGG = strcmp(BurstData{file}.NameArray,'Anisotropy GG');
+            ind_rRR = strcmp(BurstData{file}.NameArray,'Anisotropy RR');
+            indNGGpar = strcmp(BurstData{file}.NameArray,'Number of Photons (GG par)');
+            indNGGperp = strcmp(BurstData{file}.NameArray,'Number of Photons (GG perp)');
+            indNRRpar = strcmp(BurstData{file}.NameArray,'Number of Photons (RR par)');
+            indNRRperp = strcmp(BurstData{file}.NameArray,'Number of Photons (RR perp)');
+    end
 
     %%% Read out photons counts and duration
     NGGpar = BurstData{file}.DataArray(:,indNGGpar);
@@ -12147,6 +12159,8 @@ if BAMethod == 3
     h.LinkerLengthBRText.Visible = 'on';
     h.DonorLifetimeBlueText.Visible = 'on';
     h.DonorLifetimeBlueEdit.Visible = 'on';
+    h.r0Green_text.String = 'r0 Green';
+    h.r0Red_text.String = 'r0 Red';
     h.r0Blue_edit.Visible = 'on';
     h.r0Blue_text.Visible = 'on';
     %% Change Lifetime GUI
@@ -12171,9 +12185,11 @@ if BAMethod == 3
     h.axes_rGGvsTauGG.XLabel.String = '\tau_{GG} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{GG}';
     h.axes_rGGvsTauGG.YLabel.Position= [-0.12, 0.5, 0];
+    h.axes_rGGvsTauGG.Title.String= 'Anisotropy GG vs Lifetime GG';
     h.axes_rRRvsTauRR.XLabel.String = '\tau_{RR} [ns]';
     h.axes_rRRvsTauRR.YLabel.String = 'r_{RR}';
     h.axes_rRRvsTauRR.YLabel.Position= [-0.12, 0.5, 0];
+    h.axes_rRRvsTauRR.Title.String= 'Anisotropy RR vs Lifetime RR';
     %%% Unhide TauBB Export Option
     h.ExportEvsTauBB_Menu.Visible = 'on';
     %%% Update Popupmenu in LifetimeInd Tab
@@ -12197,10 +12213,10 @@ elseif BAMethod == 2
     %%% reset Corrections Table
     Corrections_Rownames = {'<html><b>&gamma</b></html>','<html><b>&beta</b></html>',...
         '<html><b>crosstalk</b></html>','<html><b>direct exc.</b></html>',...
-        '<html><b>G(green)</b></html>','<html><b>G(red)</b></html>',...
+        '<html><b>G(D)</b></html>','<html><b>G(A)</b></html>',...
         '<html><b>l1</b></html>','<html><b>l2</b></html>',...
-        '<html><b>BG GG par</b></html>','<html><b>BG GG perp</b></html>','<html><b>BG GR par</b></html>',...
-        '<html><b>BG GR perp</b></html>','<html><b>BG RR par</b></html>','<html><b>BG RR perp</b></html>'}';
+        '<html><b>BG DD par</b></html>','<html><b>BG DD perp</b></html>','<html><b>BG DA par</b></html>',...
+        '<html><b>BG DA perp</b></html>','<html><b>BG AA par</b></html>','<html><b>BG AA perp</b></html>'}';
     Corrections_Data = {1;1;0;0;1;1;0;0;0;0;0;0;0;0};
     %%% Hide 3cMFD corrections
     %h.ExportSpeciesToPDA_2C_for3CMFD_MenuItem.Visible = 'off';
@@ -12218,6 +12234,8 @@ elseif BAMethod == 2
     h.LinkerLengthBRText.Visible = 'off';
     h.DonorLifetimeBlueText.Visible = 'off';
     h.DonorLifetimeBlueEdit.Visible = 'off';
+    h.r0Green_text.String = 'r0 Donor';
+    h.r0Red_text.String = 'r0 Acceptor';
     h.r0Blue_edit.Visible = 'off';
     h.r0Blue_text.Visible = 'off';
     %%% Reset Lifetime Plots
@@ -12242,9 +12260,11 @@ elseif BAMethod == 2
     h.axes_rGGvsTauGG.XLabel.String = '\tau_{D(A)} [ns]';
     h.axes_rGGvsTauGG.YLabel.String = 'r_{D}';
     h.axes_rGGvsTauGG.YLabel.Position= [-0.125, 0.5, 0];
+    h.axes_rGGvsTauGG.Title.String= 'Anisotropy D vs Lifetime D';
     h.axes_rRRvsTauRR.XLabel.String = '\tau_{A} [ns]';
     h.axes_rRRvsTauRR.YLabel.String = 'r_{A}';
     h.axes_rRRvsTauRR.YLabel.Position= [-0.125, 0.5, 0];
+    h.axes_rRRvsTauRR.Title.String= 'Anisotropy A vs Lifetime A';
     %%% Hide TauBB Export Option
     h.ExportEvsTauBB_Menu.Visible = 'off';
     %% Change Correlation Table
