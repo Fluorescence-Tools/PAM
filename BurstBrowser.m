@@ -3862,61 +3862,6 @@ for i = 1:numel(FileName)
     end
 end
 
-%%% If Pam is open, indicate that a file is loaded
-if ~isempty(findobj('Tag','Pam'))
-    %%% only do if only one file is loaded, otherwise it won't work
-    if numel(BurstData) == 1
-        h_pam = guidata(findobj('Tag','Pam'));
-        %%% Update Textbox
-        h_pam.Burst_LoadedFile_Text.String = BurstData{1}.FileName;
-        h.Burst_LoadedFile_Text.TooltipString = BurstData{1}.FileName;
-        %%% Set Analysis Buttons in Pam
-        %%% set the text of the BurstSearch Button to green color to indicate that
-        %%% a burst search has been done
-        h_pam.Burst_Button.ForegroundColor = [0 0.8 0];
-        %%% Enable Lifetime and 2CDE Button
-        h_pam.BurstLifetime_Button.Enable = 'on';
-        %%% Check if lifetime has been fit already
-        if any(BurstData{1}.BAMethod == [1,2,5])
-            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime D [ns]',BurstData{1}.NameArray))) == 0 )
-                %%% no lifetime fit
-                h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
-            else
-                %%% lifetime was fit
-                h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
-            end
-        elseif any(BurstData{1}.BAMethod == [3,4])
-            if (sum(BurstData{1}.DataArray(:,strcmp('Lifetime BB [ns]',BurstData{1}.NameArray))) == 0 )
-                %%% no lifetime fit
-                h_pam.BurstLifetime_Button.ForegroundColor = [1 0 0];
-            else
-                %%% lifetime was fit
-                h_pam.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
-            end
-        end
-        
-        h_pam.NirFilter_Button.Enable = 'on';
-        %%% Check if NirFilter was calculated before
-        if any(BurstData{1}.BAMethod == [1,2,5])
-            if (sum(BurstData{1}.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData{1}.NameArray))) == 0 )
-                %%% no lifetime fit
-                h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
-            else
-                %%% lifetime was fit
-                h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
-            end
-        elseif any(BurstData{1}.BAMethod == [3,4])
-            if (sum(BurstData{1}.DataArray(:,strcmp('ALEX 2CDE GR Filter',BurstData{1}.NameArray))) == 0 )
-                %%% no filter
-                h_pam.NirFilter_Button.ForegroundColor = [1 0 0];
-            else
-                %%% filter was calculated
-                h_pam.NirFilter_Button.ForegroundColor = [0 0.8 0];
-            end
-        end
-    end
-end
-
 % set default to efficiency and stoichiometry
 if any(BurstData{1}.BAMethod == [1,2,5]) %%% Two-Color MFD
     %find positions of FRET Efficiency and Stoichiometry in NameArray
