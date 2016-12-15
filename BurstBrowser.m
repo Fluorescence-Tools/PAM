@@ -7935,11 +7935,15 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
         BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
     else %%% Update for all files contributing
+        sel_file = BurstMeta.SelectedFile;
         Files = get_multiselection(h);
         for i = 1:numel(Files)
+            BurstMeta.SelectedFile = Files(i);
             BurstData{Files(i)}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
             BurstData{Files(i)}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
+            ApplyCorrections([],[],h,0);
         end
+        BurstMeta.SelectedFile = sel_file;
     end
 end
 if obj == h.DetermineGammaLifetimeTwoColorButton
