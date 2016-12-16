@@ -315,19 +315,19 @@ if Mode==0 %%% Loads user values
         S.File.Custom_Filetype = 'none';
     end
     P.File.Custom_Filetype = S.File.Custom_Filetype;
-    %% Scrapbook - for GUI specific notes
-    %%% Checks, if MetaData field exists
-    if ~isfield (S, 'ScrapBook')
-        S.ScrapBook=[];
-        disp('UserValues.ScrapBook was incomplete');
+    %% Notepad - for GUI specific notes
+    %%% Checks, if Notepad field exists
+    if ~isfield (S, 'Notepad')
+        S.Notepad=[];
+        disp('UserValues.Notepad was incomplete');
     end
-    P.ScrapBook = [];
+    P.Notepad = [];
     
-    if ~isfield (S.ScrapBook, 'BurstBrowser')
-        S.ScrapBook.BurstBrowser='';
-        disp('UserValues.ScrapBook.BurstBrowser was incomplete');
+    if ~isfield (S.Notepad, 'BurstBrowser')
+        S.Notepad.BurstBrowser='';
+        disp('UserValues.Notepad.BurstBrowser was incomplete');
     end
-    P.ScrapBook.BurstBrowser = S.ScrapBook.BurstBrowser;
+    P.Notepad.BurstBrowser = S.Notepad.BurstBrowser;
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
 
     %%% Checks, if Settings field exists
