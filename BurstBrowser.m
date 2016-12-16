@@ -5817,9 +5817,13 @@ if ~colorbyparam
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
     end
-    BurstMeta.Plots.Main_Plot(2).XData = xbins;
-    BurstMeta.Plots.Main_Plot(2).YData = ybins;
-    BurstMeta.Plots.Main_Plot(2).ZData = HH;
+    BurstMeta.Plots.Main_Plot(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+    BurstMeta.Plots.Main_Plot(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+    HHcontour =zeros(size(HH)+2); HHcontour(2:end-1,2:end-1) = HH; 
+    % replicate to fix edges
+    HHcontour(2:end-1,1) = HH(:,1);HHcontour(2:end-1,end) = HH(:,end);HHcontour(1,2:end-1) = HH(1,:);HHcontour(end,2:end-1) = HH(end,:);
+    HHcontour(1,1) = HH(1,1);HHcontour(end,1) = HH(end,1);HHcontour(1,end) = HH(1,end);HHcontour(end,end) = HH(end,end);
+    BurstMeta.Plots.Main_Plot(2).ZData = HHcontour;
     BurstMeta.Plots.Main_Plot(2).LevelList = max(HH(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     %%% Disable ZScale Axis
     h.axes_ZScale.Visible = 'off';
@@ -7963,7 +7967,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     if ~h.MultiselectOnCheckbox.Value
         Valid = UpdateCuts();
 
-        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
+        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
         tauGG = BurstData{file}.DataArray(Valid,indTauGG);
         
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
@@ -8360,7 +8364,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
+        [H,xbins,ybins] = calc2dhist(tauBB,E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -10766,9 +10770,11 @@ nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 %% Plot E vs. tauGG in first plot
 if ~h.MultiselectOnCheckbox.Value
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5])], [-0.05 1]);
+    maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
 else
-    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 BurstData{file}.Corrections.DonorLifetime+1.5], [-0.05 1]});
+    maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
+    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.05 1]});
 end
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
@@ -10778,11 +10784,15 @@ if ~UserValues.BurstBrowser.Display.KDE
 elseif UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
-BurstMeta.Plots.EvsTauGG(2).XData = xbins;
-BurstMeta.Plots.EvsTauGG(2).YData = ybins;
-BurstMeta.Plots.EvsTauGG(2).ZData = H/max(max(H));
+BurstMeta.Plots.EvsTauGG(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+BurstMeta.Plots.EvsTauGG(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+% replicate to fix edges
+Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-axis(h.axes_EvsTauGG,'tight');
+h.axes_EvsTauGG.XLim=[0,maxX];
 ylim(h.axes_EvsTauGG,[-0.05 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
@@ -10790,9 +10800,11 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
 end
 %% Plot E vs. tauRR in second plot
 if ~h.MultiselectOnCheckbox.Value
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5])], [-0.05 1]);
+    maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
 else
-    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 BurstData{file}.Corrections.AcceptorLifetime+1.5], [-0.05 1]});
+    maxX = BurstData{file}.Corrections.AcceptorLifetime+1.5;
+    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.05 1]});
 end
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
@@ -10802,18 +10814,24 @@ if ~UserValues.BurstBrowser.Display.KDE
 elseif UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
-BurstMeta.Plots.EvsTauRR(2).XData = xbins;
-BurstMeta.Plots.EvsTauRR(2).YData = ybins;
-BurstMeta.Plots.EvsTauRR(2).ZData = H/max(max(H));
+BurstMeta.Plots.EvsTauRR(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+BurstMeta.Plots.EvsTauRR(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+% replicate to fix edges
+Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-axis(h.axes_EvsTauRR,'tight');
+h.axes_EvsTauRR.XLim=[0,maxX];
 ylim(h.axes_EvsTauRR,[-0.05 1]);
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
     if ~h.MultiselectOnCheckbox.Value
-        [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5])], [-0.1 0.5]);
+        maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
     else
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 BurstData{file}.Corrections.DonorLifetime+1.5], [-0.1 0.5]});
+        maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
+        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
@@ -10823,17 +10841,23 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
-    BurstMeta.Plots.rGGvsTauGG(2).XData = xbins;
-    BurstMeta.Plots.rGGvsTauGG(2).YData = ybins;
-    BurstMeta.Plots.rGGvsTauGG(2).ZData = H/max(max(H));
+    BurstMeta.Plots.rGGvsTauGG(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+    BurstMeta.Plots.rGGvsTauGG(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    % replicate to fix edges
+    Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+    Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+    BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    axis(h.axes_rGGvsTauGG,'tight');
+    h.axes_rGGvsTauGG.XLim=[0,maxX];
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.Value
-        [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5])], [-0.1 0.5]);
+        maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
     else
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 BurstData{file}.Corrections.AcceptorLifetime+1.5], [-0.1 0.5]});
+        maxX = BurstData{file}.Corrections.AcceptorLifetime+1.5;
+        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
@@ -10843,11 +10867,15 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
-    BurstMeta.Plots.rRRvsTauRR(2).XData = xbins;
-    BurstMeta.Plots.rRRvsTauRR(2).YData = ybins;
-    BurstMeta.Plots.rRRvsTauRR(2).ZData = H/max(max(H));
+    BurstMeta.Plots.rRRvsTauRR(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+    BurstMeta.Plots.rRRvsTauRR(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    % replicate to fix edges
+    Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+    Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+    BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    axis(h.axes_rRRvsTauRR,'tight');
+    h.axes_rRRvsTauRR.XLim=[0,maxX];
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 end
 %% 3cMFD
@@ -10858,9 +10886,11 @@ if any(BurstData{file}.BAMethod == [3,4])
     %% Plot E1A vs. tauBB
     if ~h.MultiselectOnCheckbox.Value
         valid = (datatoplot(:,idx_tauBB) > 0.01);
-        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])], [-0.05 1]);
+        maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
     else
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 BurstData{file}.Corrections.DonorLifetimeBlue+1.5], [-0.05 1]});
+        maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
+        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.05 1]});
     end
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
@@ -10870,21 +10900,23 @@ if any(BurstData{file}.BAMethod == [3,4])
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
-    BurstMeta.Plots.E_BtoGRvsTauBB(2).XData = xbins;
-    BurstMeta.Plots.E_BtoGRvsTauBB(2).YData = ybins;
-    BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = H/max(max(H));
+    BurstMeta.Plots.E_BtoGRvsTauBB(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+    BurstMeta.Plots.E_BtoGRvsTauBB(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    % replicate to fix edges
+    Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+    Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+    BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    axis(h.axes_E_BtoGRvsTauBB,'tight');
+    h.axes_E_BtoGRvsTauBB.XLim=[0,maxX];
     ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
-    %     if strcmp(BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB.Visible,'on')
-    %         %%% replot the static FRET line
-    %         UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
-    %     end
     %% Plot rBB vs tauBB
     if ~h.MultiselectOnCheckbox.Value
-        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])], [-0.1 0.5]);
+        maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
     else
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 BurstData{file}.Corrections.DonorLifetimeBlue+1.5], [-0.1 0.5]});
+        maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
+        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
@@ -10894,11 +10926,15 @@ if any(BurstData{file}.BAMethod == [3,4])
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rBBvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
-    BurstMeta.Plots.rBBvsTauBB(2).XData = xbins;
-    BurstMeta.Plots.rBBvsTauBB(2).YData = ybins;
-    BurstMeta.Plots.rBBvsTauBB(2).ZData = H/max(max(H));
+    BurstMeta.Plots.rBBvsTauBB(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
+    BurstMeta.Plots.rBBvsTauBB(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
+    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    % replicate to fix edges
+    Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
+    Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
+    BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    axis(h.axes_rBBvsTauBB,'tight');
+    h.axes_rBBvsTauBB.XLim=[0,maxX];
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
 end
 
