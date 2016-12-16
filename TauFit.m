@@ -3257,6 +3257,7 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
+        h.Result_Plot.YLim = [min(Aniso_fit),max(Aniso_fit)];
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
