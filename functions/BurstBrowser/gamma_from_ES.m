@@ -57,9 +57,9 @@ xlabel(ax,'E'); ylabel(ax,'1/S');
 if nargin < 4 %%% plot without errorbars
     plot(E,1./S,'+');
     plot(x,y,'-k');
-    text(0.05,0.85*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.2f\n\\beta = %.2f',gamma,beta),'FontSize',14);
+    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.2f\n\\beta = %.2f',gamma,beta),'FontSize',14);
 else
     errorbar(E,S_rec,sS_rec,sS_rec,sE,sE,'.');
     plot(x,y,'-k');
-    text(0.05,0.85*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.2f \\pm %.2f\n\\beta = %.2f \\pm %.2f',gamma,sgamma,beta,sbeta),'FontSize',14);
+    text(0.05,0.9*(ax.YLim(2)-ax.YLim(1))+ax.YLim(1),sprintf('\\gamma = %.2f \\pm %.2f\n\\beta = %.2f \\pm %.2f',gamma,sgamma,beta,sbeta),'FontSize',14);
 end
