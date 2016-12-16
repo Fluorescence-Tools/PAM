@@ -10131,9 +10131,13 @@ else %%% Update UserValues and BurstData with new values
     end
     switch obj
         case h.CorrectionsTable
-            h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
             Data = obj.Data(:,2);
-            
+            if isnan(e.NewData)
+                %%% revert to old data and don't proceed
+                obj.Data{e.Indices(1),e.Indices(2)} = e.PreviousData;
+                return;
+            end
+            h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
             if any(BurstData{file}.BAMethod == [1,2,5]) %%% 2cMFD
                 %%% Update UserValues Structure
                 UserValues.BurstBrowser.Corrections.Gamma_GR = Data{1};
