@@ -3170,6 +3170,7 @@ if isempty(hfig)
         'Position',[0.18 0.6 0.15 0.3],...
         'String',{'-'},...
         'Value',1,...
+        'Callback',@Update_fFCS_GUI,...
         'FontSize',12);
     
     h.fFCS_Species2_text = uicontrol('Style','text',...
@@ -3190,6 +3191,7 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.18 0.1 0.15 0.3],...
         'String',{'-'},...
+        'Callback',@Update_fFCS_GUI,...
         'Value',1,...
         'FontSize',12);
     
@@ -9065,7 +9067,7 @@ end
 %%%%%%% Updates GUI elements in fFCS tab and Lifetime Tab %%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_fFCS_GUI(obj,~,h)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 if nargin == 2
     if isempty(obj)
         h = guidata(findobj('Tag','BurstBrowser'));
@@ -9073,31 +9075,58 @@ if nargin == 2
         h = guidata(obj);
     end
 end
-file = BurstMeta.SelectedFile;
-species = BurstData{file}.SelectedSpecies;
-if all(species == [0,0])
-    num_species = 0;
-else
-    num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
-end
-if num_species > 1
-    h.fFCS_Species1_popupmenu.String = BurstData{file}.SpeciesNames(species(1),2:num_species);
-    h.fFCS_Species1_popupmenu.Value = 1;
-    h.fFCS_Species2_popupmenu.String = BurstData{file}.SpeciesNames(species(1),2:num_species);
-    if num_species > 2
-        h.fFCS_Species2_popupmenu.Value = 2;
+if isempty(obj) || ~any(obj == [h.fFCS_Species1_popupmenu, h.fFCS_Species2_popupmenu])
+    %%% Update the lists
+    file = BurstMeta.SelectedFile;
+    species = BurstData{file}.SelectedSpecies;
+    if all(species == [0,0])
+        num_species = 0;
     else
-        h.fFCS_Species2_popupmenu.Value = 1;
+        num_species = sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
     end
-    h.Plot_Microtimes_button.Enable = 'on';
-else %%% Set to empty
-    h.fFCS_Species1_popupmenu.String = '-';
-    h.fFCS_Species1_popupmenu.Value = 1;
-    h.fFCS_Species2_popupmenu.String = '-';
-    h.fFCS_Species2_popupmenu.Value = 1;
-    h.Plot_Microtimes_button.Enable = 'off';
-    h.Calc_fFCS_Filter_button.Enable = 'off';
-    h.Do_fFCS_button.Enable = 'off';
+    if num_species > 1
+        species_names = BurstData{file}.SpeciesNames(species(1),2:num_species);
+        if isfield(BurstMeta,'fFCS') && isfield(BurstMeta.fFCS,'syntheticpatterns_names')
+            species_names = [species_names,BurstMeta.fFCS.syntheticpatterns_names];
+        end
+        species_names = [species_names,{'Load synthetic pattern...'}];
+        h.fFCS_Species1_popupmenu.String = species_names;
+        h.fFCS_Species1_popupmenu.Value = 1;
+        h.fFCS_Species2_popupmenu.String = species_names;
+        if num_species > 2
+            h.fFCS_Species2_popupmenu.Value = 2;
+        else
+            h.fFCS_Species2_popupmenu.Value = 1;
+        end
+        h.Plot_Microtimes_button.Enable = 'on';
+    else %%% Set to empty
+        h.fFCS_Species1_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species1_popupmenu.Value = 1;
+        h.fFCS_Species2_popupmenu.String = 'Load synthetic pattern...';
+        h.fFCS_Species2_popupmenu.Value = 1;
+        h.Plot_Microtimes_button.Enable = 'off';
+        h.Calc_fFCS_Filter_button.Enable = 'off';
+        h.Do_fFCS_button.Enable = 'off';
+    end
+else
+    %%% popupmenu selection was changed
+    if obj.Value == numel(obj.String) %%% we clicked the last element, which is used to load a synthetic pattern
+        [FileName,PathName] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Choose a synthetic microtime pattern',UserValues.File.BurstBrowserPath);
+        if ~isfield(BurstMeta,'fFCS')
+            BurstMeta.fFCS = [];
+        end
+        if ~isfield(BurstMeta.fFCS,'syntheticpatterns_names')
+            BurstMeta.fFCS.syntheticpatterns_names = [];
+        end
+        BurstMeta.fFCS.syntheticpatterns_names{end+1} = FileName(1:end-3);
+        if ~isfield(BurstMeta.fFCS,'syntheticpatterns')
+            BurstMeta.fFCS.syntheticpatterns = [];
+        end
+        BurstMeta.fFCS.syntheticpatterns{end+1} = load(fullfile(PathName,FileName),'-mat');
+        Update_fFCS_GUI([],[]);
+    else
+        %%% a different pattern was selected, do nothing
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -9113,12 +9142,32 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
 file = BurstMeta.SelectedFile;
 h.Calc_fFCS_Filter_button.Enable = 'off';
 h.Do_fFCS_button.Enable = 'off';
+
+%%% check if a synthetic pattern has been chosen
+if isfield(BurstMeta,'fFCS') && isfield(BurstMeta.fFCS,'syntheticpatterns')
+    synthetic_species1 = find(strcmp(h.fFCS_Species1_popupmenu.String{h.fFCS_Species1_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
+    if isempty(synthetic_species1); synthetic_species1 = false;end;
+    synthetic_species2 = find(strcmp(h.fFCS_Species2_popupmenu.String{h.fFCS_Species2_popupmenu.Value},BurstMeta.fFCS.syntheticpatterns_names));
+    if isempty(synthetic_species2); synthetic_species2 = false;end;
+    use_FRET = false;
+    downsample = false;
+else
+    synthetic_species1 = false;
+    synthetic_species2 = false;
+    use_FRET = UserValues.BurstBrowser.Settings.fFCS_UseFRET;
+    downsample = UserValues.BurstBrowser.Settings.Downsample_fFCS;
+end
+
 %%% Read out the bursts contained in the different species selections
 valid_total = UpdateCuts([BurstData{file}.SelectedSpecies(1),1],file);
-species1 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species1_popupmenu.Value + 1];
-species2 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species2_popupmenu.Value + 1];
-valid_species1 = UpdateCuts(species1,file);
-valid_species2 = UpdateCuts(species2,file);
+if ~synthetic_species1
+    species1 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species1_popupmenu.Value + 1];
+    valid_species1 = UpdateCuts(species1,file);
+end
+if ~synthetic_species2
+    species2 = [BurstData{file}.SelectedSpecies(1),h.fFCS_Species2_popupmenu.Value + 1];
+    valid_species2 = UpdateCuts(species2,file);
+end
 
 Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 if isempty(BurstTCSPCData{file})
@@ -9282,16 +9331,78 @@ if any(UserValues.BurstBrowser.Settings.fFCS_Mode == [1,2])
     CH_total = vertcat(CH_total{:});
     MT_total = vertcat(MT_total{:});
 end
-%MT_species{1} = BurstTCSPCData{file}.Macrotime(valid_species1);MT_species{1} = vertcat(MT_species{1}{:});
-MI_species{1} = BurstTCSPCData{file}.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
-CH_species{1} = BurstTCSPCData{file}.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
-%MT_species{2} = BurstTCSPCData{file}.Macrotime(valid_species2);MT_species{2} = vertcat(MT_species{2}{:});
-MI_species{2} = BurstTCSPCData{file}.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
-CH_species{2} = BurstTCSPCData{file}.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
+if ~synthetic_species1
+    MI_species{1} = BurstTCSPCData{file}.Microtime(valid_species1);MI_species{1} = vertcat(MI_species{1}{:});
+    CH_species{1} = BurstTCSPCData{file}.Channel(valid_species1);CH_species{1} = vertcat(CH_species{1}{:});
+else
+    switch BurstData{file}.BAMethod
+        case {1,2} %%% 2ColorMFD
+            %%% assert that pattern has information for donor channel par
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species1}.MIPattern;
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                disp('Loaded pattern does not contain the required information for parallel channel.');
+                return;
+            end
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}(BurstData{file}.PIE.From(2):BurstData{file}.PIE.To(2))) == 0)
+                disp('Loaded pattern does not contain the required information for perpendicual channel.');
+                return;
+            end
+            MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+            MIPatternPer = MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)};
+            %%% create dummy variable representing the synthetic decay pattern as photon stamps
+            MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+            MIPatternPer = round(1E5*MIPatternPer./sum(MIPatternPer)); %%% 1E5 photons
+            MI_species{1} = [];
+            CH_species{1} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPar),1)];
+            for i = 1:numel(MIPatternPar)
+                MI_species{1} = [MI_species{1}; i*ones(MIPatternPar(i),1)];
+            end
+            for i = 1:numel(MIPatternPer)
+                MI_species{1} = [MI_species{1}; i*ones(MIPatternPer(i),1)];
+            end
+        case {3,4,5}
+            disp('Only implemented for 2color MFD');
+            return;
+    end
+end
+if ~synthetic_species2
+    MI_species{2} = BurstTCSPCData{file}.Microtime(valid_species2);MI_species{2} = vertcat(MI_species{2}{:});
+    CH_species{2} = BurstTCSPCData{file}.Channel(valid_species2);CH_species{2} = vertcat(CH_species{2}{:});
+else
+    switch BurstData{file}.BAMethod
+        case {1,2} %%% 2ColorMFD
+            %%% assert that pattern has information for donor channel par
+            MIPattern = BurstMeta.fFCS.syntheticpatterns{synthetic_species2}.MIPattern;
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)}(BurstData{file}.PIE.From(1):BurstData{file}.PIE.To(1))) == 0)
+                disp('Loaded pattern does not contain the required information for parallel channel.');
+                return;
+            end
+            if isempty(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}) ||  (sum(MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)}(BurstData{file}.PIE.From(2):BurstData{file}.PIE.To(2))) == 0)
+                disp('Loaded pattern does not contain the required information for perpendicual channel.');
+                return;
+            end
+            MIPatternPar = MIPattern{BurstData{file}.PIE.Detector(1),BurstData{file}.PIE.Router(1)};
+            MIPatternPer = MIPattern{BurstData{file}.PIE.Detector(2),BurstData{file}.PIE.Router(2)};
+            %%% create dummy variable representing the synthetic decay pattern as photon stamps
+            MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
+            MIPatternPer = round(1E5*MIPatternPer./sum(MIPatternPer)); %%% 1E5 photons
+            MI_species{2} = [];
+            CH_species{2} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPar),1)];
+            for i = 1:numel(MIPatternPar)
+                MI_species{2} = [MI_species{2}; i*ones(MIPatternPar(i),1)];
+            end
+            for i = 1:numel(MIPatternPer)
+                MI_species{2} = [MI_species{2}; i*ones(MIPatternPer(i),1)];
+            end
+        case {3,4,5}
+            disp('Only implemented for 2color MFD');
+            return;
+    end
+end
 
 switch BurstData{file}.BAMethod
     case {1,2} %%% 2ColorMFD
-        if UserValues.BurstBrowser.Settings.fFCS_UseFRET
+        if use_FRET
             ParChans = [1,3]; %% GG1 and GR1
             PerpChans = [2,4]; %% GG2 and GR2
         else
@@ -9299,7 +9410,7 @@ switch BurstData{file}.BAMethod
             PerpChans = [2]; %% GG2
         end
     case {3,4} %%% 3ColorMFD
-        if UserValues.BurstBrowser.Settings.fFCS_UseFRET
+        if use_FRET
             ParChans = [1 3 5 7 9]; %% BB1, BG1, BR1, GG1, GR1
             PerpChans = [2 4 6 8 10]; %% BB2, BG2, BR2, GG2, GR2
         else
@@ -9424,7 +9535,7 @@ elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4]) % use sorted pho
 end
 %%% Downsampling if checked
 %%% New binwidth in picoseconds
-if UserValues.BurstBrowser.Settings.Downsample_fFCS
+if downsample
     if ~isfield(BurstData{file}.FileInfo,'Resolution')
         TACChannelWidth = BurstData{file}.FileInfo.ClockPeriod*1E9/BurstData{file}.FileInfo.MI_Bins;
     elseif isfield(BurstData{file}.FileInfo,'Resolution') %%% HydraHarp Data
@@ -9459,6 +9570,38 @@ end
 BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par);
 BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
 
+%%% restrict species microtime histograms to valid region if synthetic species is selected
+if synthetic_species1 || synthetic_species2
+    %%% range for par channel
+    valid_range = [1,numel(BurstMeta.fFCS.TAC_par)];
+    if synthetic_species1
+        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'first'));
+        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'last')+1);
+    end
+    if synthetic_species2
+        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'first'));
+        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'last')+1);
+    end
+    valid_par = false(numel(BurstMeta.fFCS.TAC_par),1);
+    valid_par(valid_range(1):valid_range(2)) = true;
+    %%% range for perp channel
+    valid_range = [1,numel(BurstMeta.fFCS.TAC_perp)];
+    if synthetic_species1
+        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'first'));
+        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'last')+1);
+    end
+    if synthetic_species2
+        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'first'));
+        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'last')+1);
+    end
+    valid_perp = false(numel(BurstMeta.fFCS.TAC_perp),1);
+    valid_perp(valid_range(1):valid_range(2)) = true;
+    %%% set invalid region to zero
+    for i = 1:2
+        BurstMeta.fFCS.hist_MIpar_Species{i}(~valid_par) = 0;
+        BurstMeta.fFCS.hist_MIperp_Species{i}(~valid_perp) = 0;
+    end
+end
 %%% Plot the Microtime histograms
 BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par./sum(BurstMeta.fFCS.hist_MItotal_par);
@@ -9496,6 +9639,11 @@ if isfield(BurstData{file},'ScatterPattern') && UserValues.BurstBrowser.Settings
     hScat_par = hScat_par./max(hScat_par).*max(BurstMeta.fFCS.hist_MItotal_par./sum(BurstMeta.fFCS.hist_MItotal_par));
     hScat_perp = hScat_perp./max(hScat_perp).*max(BurstMeta.fFCS.hist_MItotal_perp./sum(BurstMeta.fFCS.hist_MItotal_perp));
     
+    %%% restrict scatter microtime histograms to valid region if synthetic species is selected
+    if synthetic_species1 || synthetic_species2
+        hScat_par(~valid_par) = 0;
+        hScat_perp(~valid_perp) = 0;
+    end
     %%% store in BurstMeta
     BurstMeta.fFCS.hScat_par = hScat_par(1:numel(BurstMeta.fFCS.TAC_par));
     BurstMeta.fFCS.hScat_perp = hScat_perp(1:numel(BurstMeta.fFCS.TAC_perp));
