@@ -1732,7 +1732,7 @@ switch mode
         FontSize = h.Export_Font.UserData.FontSize;
         
         if ~strcmp(FCSMeta.DataType,'FRET')
-            Scale = [floor(log10(h.FCS_Axes.XLim(1))), ceil(h.FCS_Axes.XLim(2))];
+            Scale = [floor(log10(max(h.FCS_Axes.XLim(1),h.FCS_Axes.Children(1).XData(1)))), ceil(h.FCS_Axes.XLim(2))];
             XTicks = zeros(diff(Scale),1);
             XTickLabels = cell(diff(Scale),1);
             j=1;        
