@@ -886,7 +886,7 @@ if exist('bh','var')
             'Tag','TauFit_SpeciesSelect_text',...
             'Parent',h.PIEChannel_Panel,...
             'Units','normalized',...
-            'Position',[0.05 0.55 0.8 0.25],...
+            'Position',[0.025 0.55 0.95 0.28],...
             'HorizontalAlignment','left',...
             'String',sprintf(str),...
             'TooltipString',sprintf(str),...
@@ -1241,16 +1241,17 @@ if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
         UserValues.TauFit.l2 = 0;
     end
 end
-%% Set the FontSize to 12
+% Set the FontSize to 12
 fields = fieldnames(h); %%% loop through h structure
 for i = 1:numel(fields)
     if isprop(h.(fields{i}),'FontSize')
-        h.(fields{i}).FontSize = 12;
+        h.(fields{i}).FontSize = 11;
     end
 end
+h.SpeciesSelect_Text.FontSize = 10;
 %% Mac upscaling of Font Sizes
 if ismac
-    scale_factor = 1.2;
+    scale_factor = 1.15;
     fields = fieldnames(h); %%% loop through h structure
     for i = 1:numel(fields)
         if isprop(h.(fields{i}),'FontSize')
@@ -5091,6 +5092,7 @@ switch obj
                 MIPattern{UserValues.PIE.Detector(PIEchannel2),UserValues.PIE.Router(PIEchannel2)}=mi_pattern2;
             end
             FileName = FileInfo.FileName{1};
+            [~, FileName, ~] = fileparts(FileName);
             Path = FileInfo.Path;
         elseif strcmp(TauFitData.Who,'BurstBrowser')
             % we came here from BurstBrowser
@@ -5135,11 +5137,10 @@ switch obj
             MIPattern{TauFitData.PIE.Detector(Par),TauFitData.PIE.Router(Par)}=mi_pattern1;
             MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             
-            FileName = TauFitData.SpeciesName;
+            FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
             Path = fileparts(TauFitData.FileName);
         end
-        % save
-        [~, FileName, ~] = fileparts(FileName);
+        % save  
         [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
         if all(File==0)
             return

@@ -9353,7 +9353,7 @@ else
             MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
             MIPatternPer = round(1E5*MIPatternPer./sum(MIPatternPer)); %%% 1E5 photons
             MI_species{1} = [];
-            CH_species{1} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPar),1)];
+            CH_species{1} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPer),1)];
             for i = 1:numel(MIPatternPar)
                 MI_species{1} = [MI_species{1}; i*ones(MIPatternPar(i),1)];
             end
@@ -9387,7 +9387,7 @@ else
             MIPatternPar = round(1E5*MIPatternPar./sum(MIPatternPar)); %%% 1E5 photons
             MIPatternPer = round(1E5*MIPatternPer./sum(MIPatternPer)); %%% 1E5 photons
             MI_species{2} = [];
-            CH_species{2} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPar),1)];
+            CH_species{2} = [1*ones(sum(MIPatternPar),1);2*ones(sum(MIPatternPer),1)];
             for i = 1:numel(MIPatternPar)
                 MI_species{2} = [MI_species{2}; i*ones(MIPatternPar(i),1)];
             end
