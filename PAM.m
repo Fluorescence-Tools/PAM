@@ -9270,20 +9270,6 @@ switch mode
         LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
             PamMeta.Database(h.Database.List.Value,1),...   %file
             PamMeta.Database{h.Database.List.Value(1),3});     %type
-        % update file history
-        FileName = PamMeta.Database(h.Database.List.Value,1);
-        PathName = PamMeta.Database(h.Database.List.Value,2);
-        Type = PamMeta.Database(h.Database.List.Value,3);
-        for i = 1:numel(FileName)
-            PamMeta.Database = [{FileName{i},PathName{i},Type{i}}; PamMeta.Database];
-            h.Database.List.String = [{[FileName{i} ' (path:' PathName{i} ')']}; h.Database.List.String];
-        end
-        if size(PamMeta.Database,1) > 20
-            PamMeta.Database = PamMeta.Database(1:20,:);
-            h.Database.List.String = h.Database.List.String(1:20);
-        end
-        % store file history in UserValues
-        UserValues.File.FileHistory.PAM = PamMeta.Database;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

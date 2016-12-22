@@ -66,10 +66,27 @@ if strcmp(Caller.Tag, 'Pam')
         %create database
         PamMeta.Database = cell(0,3);
     end
-     % add new files to database
+    %%% add new files to database
     for i = 1:numel(FileName)
+        %%% check if file already exists in database, if yes, remove
+        if (sum(strcmp(FileName{i},PamMeta.Database(:,1))) > 0) && (sum(strcmp(Path,PamMeta.Database(:,2))) > 0) %%% same filename/path
+            pos = find(strcmp(FileName{i},PamMeta.Database(:,1)) & strcmp(Path,PamMeta.Database(:,2)));
+            del = false(size(pos));
+            for p = 1:numel(pos)
+                % check if filetype is also the same
+                if Type == PamMeta.Database{pos(p),3}
+                    del(pos(p)) = true;
+                end
+            end
+        end
+        PamMeta.Database(del,:) = []; % remove old file listing
+    end
+    for i = 1:numel(FileName) %%% update global variable
         PamMeta.Database = [{FileName{i},Path,Type}; PamMeta.Database];
-        h.Database.List.String = [{[FileName{i} ' (path:' Path ')']}; h.Database.List.String];
+    end
+    h.Database.List.String = [];
+    for i = 1:size(PamMeta.Database,1) %%% update file list
+        h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
     end
     if size(PamMeta.Database,1) > 20
         PamMeta.Database = PamMeta.Database(1:20,:);

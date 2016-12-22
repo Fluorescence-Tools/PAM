@@ -1,6 +1,7 @@
 function [Macrotime, Microtime, SyncRate, ClockRate, Resolution] = Read_T3R(FullFileName)
 Macrotime = cell(10);
 Microtime = cell(10);
+FabSurf = false;
 
 FileID = fopen(FullFileName, 'r');
 
@@ -13,94 +14,108 @@ elseif strncmp(Header.FormatVersion, '6.0', 3)
     Header.CreatorVersion = fread(FileID, 12, 'uchar=>char')';
 elseif strncmp(Header.FormatVersion, '5.3', 3)
     Header.HardwareVersion = fread(FileID, 6, 'uchar=>char')';
-end
-Header.FileTime = fread(FileID, 18, 'uchar=>char')';
-dump = fread(FileID, 2, 'uchar=>char')';
-Header.Comment = fread(FileID, 256, 'uchar=>char')';
-Header.NumberOfChannels = fread(FileID, 1, 'int32=>int32');
-Header.NumberOfCurves = fread(FileID, 1, 'int32=>int32');
-Header.BitsPerChannel = fread(FileID, 1, 'int32=>int32');
-Header.RoutingChannels = fread(FileID, 1, 'int32=>int32');
-Header.NumberOfBoards = fread(FileID, 1, 'int32=>int32');
-Header.ActiveCurve = fread(FileID, 1, 'int32=>int32');
-Header.MeasurementMode = fread(FileID, 1, 'int32=>int32');
-Header.SubMode = fread(FileID, 1, 'int32=>int32');
-Header.RangeNo = fread(FileID, 1, 'int32=>int32');
-Header.Offset = fread(FileID, 1, 'int32=>int32');
-Header.AcquisitionTime = fread(FileID, 1, 'int32=>int32');
-Header.StopAt = fread(FileID, 1, 'int32=>int32');
-Header.StopOnOvfl = fread(FileID, 1, 'int32=>int32');
-Header.Restart = fread(FileID, 1, 'int32=>int32');
-Header.DisplayLinLog = fread(FileID, 1, 'int32=>int32');
-Header.DisplayTimeAxisFrom = fread(FileID, 1, 'int32=>int32');
-Header.DisplayTimeAxisTo = fread(FileID, 1, 'int32=>int32');
-Header.DisplayCountAxisFrom = fread(FileID, 1, 'int32=>int32');
-Header.DisplayCountAxisTo = fread(FileID, 1, 'int32=>int32');
-for i = 1:8
-    Header.DisplayCurve(i).MapTo = fread(FileID, 1, 'int32=>int32');
-    Header.DisplayCurve(i).Show = fread(FileID, 1, 'int32=>int32');
-end
-if strncmp(Header.FormatVersion, '5.0', 3)
-    for i = 1:3
-        Header.Param(i).Start = fread(FileID, 1, 'int32=>int32');
-        Header.Param(i).Step = fread(FileID, 1, 'int32=>int32');
-        Header.Param(i).End = fread(FileID, 1, 'int32=>int32');
-    end
-elseif strncmp(Header.FormatVersion, '6.0', 3)
-    for i = 1:3
-        Header.Param(i).Start = fread(FileID, 1, 'float32=>float32');
-        Header.Param(i).Step = fread(FileID, 1, 'float32=>float32');
-        Header.Param(i).End = fread(FileID, 1, 'float32=>float32');
-    end
-elseif strncmp(Header.FormatVersion, '5.3', 3)
-    for i = 1:3
-        Header.Param(i).Start = fread(FileID, 1, 'int32=>int32');
-        Header.Param(i).Step = fread(FileID, 1, 'int32=>int32');
-        Header.Param(i).End = fread(FileID, 1, 'int32=>int32');
-    end
-end
-Header.RepeatMode = fread(FileID, 1, 'int32=>int32');
-Header.RepeatsPerCurve = fread(FileID, 1, 'int32=>int32');
-Header.RepeatTime = fread(FileID, 1, 'int32=>int32');
-Header.RepeatWaitTime = fread(FileID, 1, 'int32=>int32');
-Header.ScriptName = fread(FileID, 20, 'uchar=>char')';
-for i = 1:Header.NumberOfBoards
-    if strncmp(Header.FormatVersion, '6.0', 3)
-        Header.HardwareIdent = fread(FileID, 16, 'uchar=>char')';
-        Header.HardwareVersion = fread(FileID, 8, 'uchar=>char')';
-    end
-    Header.Board(i).BoardSerial = fread(FileID, 1, 'int32=>int32');
-    Header.Board(i).CFDZeroCross = fread(FileID, 1, 'int32=>int32');
-    Header.Board(i).CFDDiscriminatorMin = fread(FileID, 1, 'int32=>int32');
-    Header.Board(i).SYNCLevel = fread(FileID, 1, 'int32=>int32');
-    Header.Board(i).CurveOffset = fread(FileID, 1, 'int32=>int32');
-    Header.Board(i).Resolution = fread(FileID, 1, 'float32=>float32');
-    Resolution = Header.Board(i).Resolution;
-end
-% From here, the format is different from *.thd files
-Header.TTTRGlobclock = fread(FileID, 1, 'int32=>int32');
-Header.Reserved1 = fread(FileID, 1, 'int32=>int32');
-Header.Reserved2 = fread(FileID, 1, 'int32=>int32');
-Header.Reserved3 = fread(FileID, 1, 'int32=>int32');
-Header.Reserved4 = fread(FileID, 1, 'int32=>int32');
-Header.Reserved5 = fread(FileID, 1, 'int32=>int32');
-Header.Reserved6 = fread(FileID, 1, 'int32=>int32');
-Header.SyncRate = double(fread(FileID, 1, 'int32=>int32'));
-Header.AverageCFDRate = fread(FileID, 1, 'int32=>int32');
-Header.StopAfter = fread(FileID, 1, 'int32=>int32');
-Header.StopReason = fread(FileID, 1, 'int32=>int32');
-Header.NumberOfRecords = fread(FileID, 1, 'int32=>int32');
-Header.SpecHeaderLength = fread(FileID, 1, 'int32=>int32');
-if Header.SpecHeaderLength > 0
-    Header.Reserved = fread(FileID, double(Header.SpecHeaderLength), 'int32=>int32')';
 else
-    Header.Reserved = [];
+    %%% we have FabSurf data, start over again
+    fclose(FileID);
+    FileID = fopen(FullFileName, 'r');
+    FabSurf = true;
 end
+if ~FabSurf %%% recorded with PQ software, header is in file
+    Header.FileTime = fread(FileID, 18, 'uchar=>char')';
+    dump = fread(FileID, 2, 'uchar=>char')';
+    Header.Comment = fread(FileID, 256, 'uchar=>char')';
+    Header.NumberOfChannels = fread(FileID, 1, 'int32=>int32');
+    Header.NumberOfCurves = fread(FileID, 1, 'int32=>int32');
+    Header.BitsPerChannel = fread(FileID, 1, 'int32=>int32');
+    Header.RoutingChannels = fread(FileID, 1, 'int32=>int32');
+    Header.NumberOfBoards = fread(FileID, 1, 'int32=>int32');
+    Header.ActiveCurve = fread(FileID, 1, 'int32=>int32');
+    Header.MeasurementMode = fread(FileID, 1, 'int32=>int32');
+    Header.SubMode = fread(FileID, 1, 'int32=>int32');
+    Header.RangeNo = fread(FileID, 1, 'int32=>int32');
+    Header.Offset = fread(FileID, 1, 'int32=>int32');
+    Header.AcquisitionTime = fread(FileID, 1, 'int32=>int32');
+    Header.StopAt = fread(FileID, 1, 'int32=>int32');
+    Header.StopOnOvfl = fread(FileID, 1, 'int32=>int32');
+    Header.Restart = fread(FileID, 1, 'int32=>int32');
+    Header.DisplayLinLog = fread(FileID, 1, 'int32=>int32');
+    Header.DisplayTimeAxisFrom = fread(FileID, 1, 'int32=>int32');
+    Header.DisplayTimeAxisTo = fread(FileID, 1, 'int32=>int32');
+    Header.DisplayCountAxisFrom = fread(FileID, 1, 'int32=>int32');
+    Header.DisplayCountAxisTo = fread(FileID, 1, 'int32=>int32');
+    for i = 1:8
+        Header.DisplayCurve(i).MapTo = fread(FileID, 1, 'int32=>int32');
+        Header.DisplayCurve(i).Show = fread(FileID, 1, 'int32=>int32');
+    end
+    if strncmp(Header.FormatVersion, '5.0', 3)
+        for i = 1:3
+            Header.Param(i).Start = fread(FileID, 1, 'int32=>int32');
+            Header.Param(i).Step = fread(FileID, 1, 'int32=>int32');
+            Header.Param(i).End = fread(FileID, 1, 'int32=>int32');
+        end
+    elseif strncmp(Header.FormatVersion, '6.0', 3)
+        for i = 1:3
+            Header.Param(i).Start = fread(FileID, 1, 'float32=>float32');
+            Header.Param(i).Step = fread(FileID, 1, 'float32=>float32');
+            Header.Param(i).End = fread(FileID, 1, 'float32=>float32');
+        end
+    elseif strncmp(Header.FormatVersion, '5.3', 3)
+        for i = 1:3
+            Header.Param(i).Start = fread(FileID, 1, 'int32=>int32');
+            Header.Param(i).Step = fread(FileID, 1, 'int32=>int32');
+            Header.Param(i).End = fread(FileID, 1, 'int32=>int32');
+        end
+    end
+    Header.RepeatMode = fread(FileID, 1, 'int32=>int32');
+    Header.RepeatsPerCurve = fread(FileID, 1, 'int32=>int32');
+    Header.RepeatTime = fread(FileID, 1, 'int32=>int32');
+    Header.RepeatWaitTime = fread(FileID, 1, 'int32=>int32');
+    Header.ScriptName = fread(FileID, 20, 'uchar=>char')';
+    for i = 1:Header.NumberOfBoards
+        if strncmp(Header.FormatVersion, '6.0', 3)
+            Header.HardwareIdent = fread(FileID, 16, 'uchar=>char')';
+            Header.HardwareVersion = fread(FileID, 8, 'uchar=>char')';
+        end
+        Header.Board(i).BoardSerial = fread(FileID, 1, 'int32=>int32');
+        Header.Board(i).CFDZeroCross = fread(FileID, 1, 'int32=>int32');
+        Header.Board(i).CFDDiscriminatorMin = fread(FileID, 1, 'int32=>int32');
+        Header.Board(i).SYNCLevel = fread(FileID, 1, 'int32=>int32');
+        Header.Board(i).CurveOffset = fread(FileID, 1, 'int32=>int32');
+        Header.Board(i).Resolution = fread(FileID, 1, 'float32=>float32');
+        Resolution = Header.Board(i).Resolution;
+    end
+    % From here, the format is different from *.thd files
+    Header.TTTRGlobclock = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved1 = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved2 = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved3 = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved4 = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved5 = fread(FileID, 1, 'int32=>int32');
+    Header.Reserved6 = fread(FileID, 1, 'int32=>int32');
+    Header.SyncRate = double(fread(FileID, 1, 'int32=>int32'));
+    Header.AverageCFDRate = fread(FileID, 1, 'int32=>int32');
+    Header.StopAfter = fread(FileID, 1, 'int32=>int32');
+    Header.StopReason = fread(FileID, 1, 'int32=>int32');
+    Header.NumberOfRecords = fread(FileID, 1, 'int32=>int32');
+    Header.SpecHeaderLength = fread(FileID, 1, 'int32=>int32');
+    if Header.SpecHeaderLength > 0
+        Header.Reserved = fread(FileID, double(Header.SpecHeaderLength), 'int32=>int32')';
+    else
+        Header.Reserved = [];
+    end
 
-Header.ClockRate = 10000000; % This value is always constant for TimeHarp 200 measurement card
+    Header.ClockRate = 10000000; % This value is always constant for TimeHarp 200 measurement card
 
-SyncRate = Header.SyncRate;
-ClockRate = Header.ClockRate;
+    SyncRate = Header.SyncRate;
+    ClockRate = Header.ClockRate;
+elseif FabSurf %%% recorded with FabSurf
+    %%% First Record is SyncRate, which is the laser repetition rate
+    SyncRate = 1E10/fread(FileID, 1, 'uint32=>uint32');
+    %%% ClockRate is always 10000000 (100ns)
+    ClockRate = 10000000;
+    Resolution = 1E10/SyncRate/4096;
+    Header.NumberOfRecords = Inf;
+end
 
 %===== Process TTTRRecord =====
 
