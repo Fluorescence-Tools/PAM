@@ -78,8 +78,8 @@ if strcmp(Caller.Tag, 'Pam')
                     del(pos(p)) = true;
                 end
             end
+            PamMeta.Database(del,:) = []; % remove old file listing
         end
-        PamMeta.Database(del,:) = []; % remove old file listing
     end
     for i = 1:numel(FileName) %%% update global variable
         PamMeta.Database = [{FileName{i},Path,Type}; PamMeta.Database];
