@@ -1987,14 +1987,22 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             y=linspace(y(1),y(2),str2double(h.Export_Line_Points.String));
             
             step=1/Pixel;
-            X=-0.1:step:1.2;
-            Y=-0.1:step:1.2;
+            X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
+            Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
+            Z1 = single(reshape(x,[1, 1,numel(x)]));
+            Z2 = single(reshape(y,[1, 1,numel(y)]));
             
-            [X1,Y1,Z1]=meshgrid(X,Y,x);
-            [~,~,Z2]=meshgrid(X,Y,y);
-            Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
-            [Min,Ind]=min(Dist,[],3);
+            Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
+            Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
+%             [X1,Y1,Z1]=meshgrid(X,Y,x);
+%             [~,~,Z2]=meshgrid(X,Y,y);
+%             Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
+            
+
+
+            [Min,Ind]=min(double(Dist),[],3);
             Map=(Ind.*(Min<=Width))';
+            figure; imagesc(Map);
             
             j=1;
             for i=Sel
@@ -2014,9 +2022,13 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 
                 AVG=0;
                 Name=PhasorData.Files{i,1};                
-                while strcmp(Name((end-5):end),' (Avg)')
+                while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
                     AVG=AVG+1;
                     Name=Name(1:end-6);
+                end
+                
+                if ~isstrprop(Name(1), 'alpha')
+                   Name = ['File_' Name]; 
                 end
                 
                 if AVG==0
@@ -2817,12 +2829,17 @@ for i=Images %%% Plots Phasor Data
                 y=linspace(y(1),y(2),16);
                 
                 step=1/Pixel;
-                X=-0.1:step:1.2;
-                Y=-0.1:step:1.2;
+                X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
+                Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
+                Z1 = single(reshape(x,[1, 1,numel(x)]));
+                Z2 = single(reshape(y,[1, 1,numel(y)]));
                 
-                [X1,Y1,Z1]=meshgrid(X,Y,x);
-                [~,~,Z2]=meshgrid(X,Y,y);
-                Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
+                Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
+                Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
+                
+                %                 [X1,Y1,Z1]=meshgrid(X,Y,x);
+                %                 [~,~,Z2]=meshgrid(X,Y,y);
+                %                 Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
                 [Min,Ind]=min(Dist,[],3);
                 Map=(Ind.*(Min<=Width))';
             end
