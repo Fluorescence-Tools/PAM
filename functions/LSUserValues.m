@@ -797,6 +797,146 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Reference_Time = S.Phasor.Reference_Time;
     
+    %%% Checks, if Phasor.Settings subfields exist
+    if ~isfield (S.Phasor,'Settings_THMin')
+        S.Phasor.Settings_THMin='200';
+        disp('UserValues.Phasor.Settings_THMin was incomplete');
+    end
+    P.Phasor.Settings_THMin = S.Phasor.Settings_THMin;
+    
+    if ~isfield (S.Phasor,'Settings_THMax')
+        S.Phasor.Settings_THMax='5000';
+        disp('UserValues.Phasor.Settings_THMax was incomplete');
+    end
+    P.Phasor.Settings_THMax = S.Phasor.Settings_THMax;
+    
+    if ~isfield (S.Phasor,'Settings_Use_AS')
+        S.Phasor.Settings_Use_AS=1;
+        disp('UserValues.Phasor.Settings_Use_AS was incomplete');
+    end
+    P.Phasor.Settings_Use_AS = S.Phasor.Settings_Use_AS;
+    
+    if ~isfield (S.Phasor,'Settings_ASMin')
+        S.Phasor.Settings_ASMin='0';
+        disp('UserValues.Phasor.Settings_ASMin was incomplete');
+    end
+    P.Phasor.Settings_ASMin = S.Phasor.Settings_ASMin;
+    
+    if ~isfield (S.Phasor,'Settings_ASMax')
+        S.Phasor.Settings_ASMax='1000';
+        disp('UserValues.Phasor.Settings_ASMin was incomplete');
+    end
+    P.Phasor.Settings_ASMax = S.Phasor.Settings_ASMax;
+    
+    if ~isfield (S.Phasor,'Settings_ImageColor')
+        S.Phasor.Settings_ImageColor=1;
+        disp('UserValues.Phasor.Settings_ImageColor was incomplete');
+    end
+    P.Phasor.Settings_ImageColor = S.Phasor.Settings_ImageColor;
+    
+    if ~isfield (S.Phasor,'Settings_Resolution')
+        S.Phasor.Settings_Resolution='200';
+        disp('UserValues.Phasor.Settings_Resolution was incomplete');
+    end
+    P.Phasor.Settings_Resolution = S.Phasor.Settings_Resolution;
+    
+    if ~isfield (S.Phasor,'Settings_PhasorColor')
+        S.Phasor.Settings_PhasorColor=1;
+        disp('UserValues.Phasor.Settings_PhasorColor was incomplete');
+    end
+    P.Phasor.Settings_PhasorColor = S.Phasor.Settings_PhasorColor;
+    
+    %%% Checks, if Phasor.ROI subfields exist
+    if ~isfield (S.Phasor,'Settings_ROIColor') || numel(S.Phasor.Settings_ROIColor)<21
+        S.Phasor.Settings_ROIColor=[1 0 0; 0 1 0; 0 0 1; 1 1 0; 1 0 1; 0 1 1; 0 0 0];
+        disp('UserValues.Phasor.Settings_ROIColor was incomplete');
+    end
+    P.Phasor.Settings_ROIColor = S.Phasor.Settings_ROIColor;
+    
+    if ~isfield (S.Phasor,'Settings_ROIWidth') || numel(S.Phasor.Settings_ROIWidth)<7
+        S.Phasor.Settings_ROIWidth=repmat({'2'},7,1);
+        disp('UserValues.Phasor.Settings_ROIWidth was incomplete');
+    end
+    P.Phasor.Settings_ROIWidth = S.Phasor.Settings_ROIWidth;
+    
+    if ~isfield (S.Phasor,'Settings_ROIStyle') || numel(S.Phasor.Settings_ROIStyle)<7
+        S.Phasor.Settings_ROIStyle=repmat({'-'},7,1);
+        disp('UserValues.Phasor.Settings_ROIStyle was incomplete');
+    end
+    P.Phasor.Settings_ROIStyle = S.Phasor.Settings_ROIStyle;
+    
+    if ~isfield (S.Phasor,'Settings_ROISize') || numel(S.Phasor.Settings_ROISize)<7
+        S.Phasor.Settings_ROISize=repmat({'0.02'},6,1);
+        S.Phasor.Settings_ROISize{7} = '0.1';
+        disp('UserValues.Phasor.Settings_ROISize was incomplete');
+    end
+    P.Phasor.Settings_ROISize = S.Phasor.Settings_ROISize;
+    
+    if ~isfield (S.Phasor,'Settings_LineColor')
+        S.Phasor.Settings_LineColor = 1;
+        disp('UserValues.Phasor.Settings_LineColor was incomplete');
+    end
+    P.Phasor.Settings_LineColor = S.Phasor.Settings_LineColor;
+    
+    
+    %%% Checks, if Phasor.Export_Font is complete
+    if ~isfield (S.Phasor,'Export_Font') || ~isfield (S.Phasor.Export_Font,'FontName') || ~isfield (S.Phasor.Export_Font,'FontWeight')...
+            || ~isfield (S.Phasor.Export_Font,'FontAngle') || ~isfield (S.Phasor.Export_Font,'FontUnits') || ~isfield (S.Phasor.Export_Font,'FontSize')...
+            || ~isfield (S.Phasor.Export_Font,'FontString')
+        
+        S.Phasor.Export_Font.FontName = 'Arial';
+        S.Phasor.Export_Font.FontWeight = 'normal';
+        S.Phasor.Export_Font.FontAngle = 'normal';
+        S.Phasor.Export_Font.FontUnits = 'points';
+        S.Phasor.Export_Font.FontSize = 10;
+        S.Phasor.Export_Font.FontString = 'Export Font: Arial, 10';
+        disp('UserValues.Phasor.Export_Font was incomplete');
+    end
+    P.Phasor.Export_Font = S.Phasor.Export_Font;
+    
+    %%% Checks, if Phasor.Export subfields exists
+    if ~isfield (S.Phasor,'Export_SizeX')
+          S.Phasor.Export_SizeX='200';
+        disp('UserValues.Phasor.Export_SizeX was incomplete');
+    end
+    P.Phasor.Export_SizeX = S.Phasor.Export_SizeX;
+    
+    if ~isfield (S.Phasor,'Export_SizeY')
+          S.Phasor.Export_SizeY='200';
+        disp('UserValues.Phasor.Export_SizeY was incomplete');
+    end
+    P.Phasor.Export_SizeY = S.Phasor.Export_SizeY;
+    
+    if ~isfield (S.Phasor,'Export_GMin')
+          S.Phasor.Export_GMin='0.5';
+        disp('UserValues.Phasor.GMin was incomplete');
+    end
+    P.Phasor.Export_GMin = S.Phasor.Export_GMin;
+    
+    if ~isfield (S.Phasor,'Export_GMax')
+          S.Phasor.Export_GMax='1.01';
+        disp('UserValues.Phasor.GMax was incomplete');
+    end
+    P.Phasor.Export_GMax = S.Phasor.Export_GMax;
+    
+    if ~isfield (S.Phasor,'Export_SMin')
+          S.Phasor.Export_SMin='0';
+        disp('UserValues.Phasor.SMin was incomplete');
+    end
+    P.Phasor.Export_SMin = S.Phasor.Export_SMin;
+    
+    if ~isfield (S.Phasor,'Export_SMax')
+          S.Phasor.Export_SMax='0.51';
+        disp('UserValues.Phasor.SMax was incomplete');
+    end
+    P.Phasor.Export_SMax = S.Phasor.Export_SMax;
+    
+    if ~isfield (S.Phasor,'Export_LinePoints')
+          S.Phasor.Export_LinePoints='100';
+        disp('UserValues.Phasor.Export_LinePoints was incomplete');
+    end
+    P.Phasor.Export_LinePoints = S.Phasor.Export_LinePoints;
+    
     %% Burst Search
     %%% Checks, if BurstSearch subfield exists
     if ~isfield (S,'BurstSearch')
