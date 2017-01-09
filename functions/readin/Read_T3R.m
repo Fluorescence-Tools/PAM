@@ -113,7 +113,7 @@ elseif FabSurf %%% recorded with FabSurf
     SyncRate = 1E10/fread(FileID, 1, 'uint32=>uint32');
     %%% ClockRate is always 10000000 (100ns)
     ClockRate = 10000000;
-    Resolution = 1E10/SyncRate/4096;
+    Resolution = 1E12/SyncRate/4096;
     Header.NumberOfRecords = Inf;
 end
 
