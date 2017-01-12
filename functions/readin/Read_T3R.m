@@ -110,7 +110,7 @@ if ~FabSurf %%% recorded with PQ software, header is in file
     ClockRate = Header.ClockRate;
 elseif FabSurf %%% recorded with FabSurf
     %%% First Record is SyncRate, which is the laser repetition rate
-    SyncRate = 1E10/fread(FileID, 1, 'uint32=>uint32');
+    SyncRate = double(1E10/fread(FileID, 1, 'uint32=>uint32'));
     %%% ClockRate is always 10000000 (100ns)
     ClockRate = 10000000;
     Resolution = 1E12/SyncRate/4096;
