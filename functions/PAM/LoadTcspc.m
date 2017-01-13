@@ -67,18 +67,21 @@ if strcmp(Caller.Tag, 'Pam')
         PamMeta.Database = cell(0,3);
     end
     %%% add new files to database
-    for i = 1:numel(FileName)
-        %%% check if file already exists in database, if yes, remove
-        if (sum(strcmp(FileName{i},PamMeta.Database(:,1))) > 0) && (sum(strcmp(Path,PamMeta.Database(:,2))) > 0) %%% same filename/path
-            pos = find(strcmp(FileName{i},PamMeta.Database(:,1)) & strcmp(Path,PamMeta.Database(:,2)));
-            del = false(size(pos));
-            for p = 1:numel(pos)
-                % check if filetype is also the same
-                if Type == PamMeta.Database{pos(p),3}
-                    del(pos(p)) = true;
+    
+    %%% check if file already exists in database, if yes, remove
+    if ~isempty(PamMeta.Database)
+        for i = 1:numel(FileName)
+            if (sum(strcmp(FileName{i},PamMeta.Database(:,1))) > 0) && (sum(strcmp(Path,PamMeta.Database(:,2))) > 0) %%% same filename/path
+                pos = find(strcmp(FileName{i},PamMeta.Database(:,1)) & strcmp(Path,PamMeta.Database(:,2)));
+                del = false(size(pos));
+                for p = 1:numel(pos)
+                    % check if filetype is also the same
+                    if Type == PamMeta.Database{pos(p),3}
+                        del(pos(p)) = true;
+                    end
                 end
+                PamMeta.Database(del,:) = []; % remove old file listing
             end
-            PamMeta.Database(del,:) = []; % remove old file listing
         end
     end
     for i = 1:numel(FileName) %%% update global variable
