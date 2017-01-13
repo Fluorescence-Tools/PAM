@@ -10940,7 +10940,7 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-h.axes_EvsTauGG.XLim=[0,maxX];
+try h.axes_EvsTauGG.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauGG,[-0.05 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
@@ -10970,7 +10970,7 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-h.axes_EvsTauRR.XLim=[0,maxX];
+try h.axes_EvsTauRR.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauRR,[-0.05 1]);
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
@@ -10997,7 +10997,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    h.axes_rGGvsTauGG.XLim=[0,maxX];
+    try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.Value
@@ -11023,7 +11023,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    h.axes_rRRvsTauRR.XLim=[0,maxX];
+    try h.axes_rRRvsTauRR.XLim=[0,maxX]; end
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 end
 %% 3cMFD
@@ -11056,7 +11056,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    h.axes_E_BtoGRvsTauBB.XLim=[0,maxX];
+    try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
     %% Plot rBB vs tauBB
     if ~h.MultiselectOnCheckbox.Value
@@ -11082,7 +11082,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    h.axes_rBBvsTauBB.XLim=[0,maxX];
+    try h.axes_rBBvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
 end
 
