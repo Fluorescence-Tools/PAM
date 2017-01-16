@@ -3142,6 +3142,10 @@ h.Progress.Text.String = 'Updating meta data';
 h.Progress.Axes.Color=[1 0 0];
 drawnow;
 
+
+
+
+
 if PIE==0
     PIE = find(UserValues.PIE.Detector>0);
     if any(mode == 3)
@@ -3324,6 +3328,7 @@ for  i=find(UserValues.PIE.Detector==0)
         PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
     end
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

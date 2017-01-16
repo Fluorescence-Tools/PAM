@@ -1150,4 +1150,7 @@ if strcmp(Caller.Tag, 'Pam')
         sprintf('%.2f',1E12*FileInfo.TACRange/FileInfo.MI_Bins);
         sprintf('%d',FileInfo.NumberOfFiles);...
         get_date_modified(FileInfo.Path,FileInfo.FileName{1})};
+    
+    %%% Updates MI Range in Phasor
+    h.MI.Phasor_TAC.String = num2str(FileInfo.TACRange*10^9);
 end
