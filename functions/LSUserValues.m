@@ -1782,6 +1782,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.E_Aonly_Min was incomplete');
     end
     P.BurstBrowser.Settings.E_Aonly_Min = S.BurstBrowser.Settings.E_Aonly_Min;
+    %%% Check, if BurstBrowser.Settings.Normalize_Multiplot subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Normalize_Multiplot')
+        S.BurstBrowser.Settings.Normalize_Multiplot=true;
+        disp('UserValues.BurstBrowser.Settings.Normalize_Multiplot was incomplete');
+    end
+    P.BurstBrowser.Settings.Normalize_Multiplot = S.BurstBrowser.Settings.Normalize_Multiplot;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser, 'DatabaseString')
         S.BurstBrowser.DatabaseString={};
