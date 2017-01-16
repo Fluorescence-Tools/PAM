@@ -684,6 +684,17 @@ if isempty(hfig)
     set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
     set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
     
+    h.MultiPlotButtonMenu = uicontextmenu;
+    h.MultiPlotButtonMenu_ToggleNormalize = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleNormalize',...
+        'Label','Normalize populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Normalize_Multiplot
+        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
+    end
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
@@ -712,7 +723,8 @@ if isempty(hfig)
         'Value',0,...
         'FontSize',12,...
         'TooltipString','Enable multiselection for plotting',...
-        'Callback',@UpdateOptions);
+        'Callback',@UpdateOptions,...
+        'UIContextMenu', h.MultiPlotButtonMenu);
     
     %define manual cut button
     h.CutButton = uicontrol(...
@@ -1814,7 +1826,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    Colormaps_String = {'jet','jetvar','hot','bone','gray','parula'};
+    Colormaps_String = {'jet','jetvar','parula','hot','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         try
             colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
@@ -5014,6 +5026,18 @@ switch obj
             case 'on'
                 h.ArbitraryCutInvertCheckbox.Checked = 'off';
         end
+    case h.MultiPlotButtonMenu_ToggleNormalize
+        switch h.MultiPlotButtonMenu_ToggleNormalize.Checked
+            case 'off'
+                h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Normalize_Multiplot = true;
+            case 'on'
+                h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Normalize_Multiplot = false;
+        end
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
+        PlotLifetimeInd([],[],h);
 end
 LSUserValues(1);
 
@@ -6622,7 +6646,6 @@ for i = 1:num_species
     [~,datatoplot{i}] = UpdateCuts([species_n(i),subspecies_n(i)],file_n(i));
 end
 
-
 %find data ranges
 minx = zeros(num_species,1);
 miny = zeros(num_species,1);
@@ -6721,6 +6744,14 @@ end
 H = cell(num_species,1);
 for i = 1:num_species
     [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
+end
+
+
+if UserValues.BurstBrowser.Settings.Normalize_Multiplot
+    %%% normalize each histogram to equal proportion
+    for i = 1:num_species
+        H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
+    end
 end
 
 if nargout > 0 %%% we requested the histogram, do not plot!
