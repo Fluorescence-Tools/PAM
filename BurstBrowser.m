@@ -4341,10 +4341,10 @@ for i = 1:numel(FileName)
         switch S.BurstData.BAMethod
             case {1,2,5}
                 %%% FRET efficiency and stoichiometry basic cuts
-                Cut = {{'FRET Efficiency',-0.1,1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
+                Cut = {{'FRET Efficiency',-0.1,1.1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
             case {3,4}
                 %%% 3color, only do FRET GR and Stoichiometry cuts
-                Cut = {{'FRET Efficiency GR',-0.1,1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
+                Cut = {{'FRET Efficiency GR',-0.1,1.1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
                     {'Stoichiometry BG',-0.1,1.1,true,false},{'Stoichiometry BR',-0.1,1.1,true,false}};
         end
         S.BurstData.Cut{1} = Cut;
@@ -5842,6 +5842,7 @@ if ~colorbyparam
         BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
+        ybins = ybins';
     end
     BurstMeta.Plots.Main_Plot(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.Main_Plot(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
