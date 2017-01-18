@@ -13264,6 +13264,10 @@ hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
 global UserValues BurstData BurstMeta
+if isempty(UserValues)
+    delete(hfig);
+    return;
+end
 directly_save = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
 file = BurstMeta.SelectedFile;
 if directly_save
