@@ -1084,7 +1084,7 @@ if isempty(hfig)
         'Position',[0.05 0.79 0.4 0.1],...
         'Style','pushbutton',...
         'Tag','ManualAnisotropyButton',...
-        'String','Manual Perrin Fit',...
+        'String','Manual Perrin line',...
         'TooltipString','<html>Add manual Perrin line to anisotropy plots by clicking species mid-point.<br>r(&tau)=r<sub>0</sub>/(1+&tau/&rho)<br>Left-click adds first line or resets if multiple lines were present.<br>Right-click adds new line (up to three).</html>',...
         'FontSize',12,...
         'Callback',@UpdateLifetimeFits);
@@ -1177,7 +1177,7 @@ if isempty(hfig)
         'Position',[0.05 0.55 0.4 0.1],...
         'Style','pushbutton',...
         'Tag','PlotStaticFRETButton',...
-        'String','Plot Static FRET Line',...
+        'String','Plot static FRET line',...
         'TooltipString','<html>Add static FRET line: E=1-&tau<sub>D,A</sub>/&tau<sub>D,0</sub><br>Includes linker contributions given by F?rster radius and effective linker length.</html>',...
         'FontSize',12,...
         'Callback',@UpdateLifetimeFits);
@@ -5831,6 +5831,9 @@ if ~colorbyparam
     end
     if(get(h.Hist_log10, 'Value'))
         HH = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            HH = real(HH);
+        end
     else
         HH = H;
     end
@@ -5842,7 +5845,6 @@ if ~colorbyparam
         BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
-        ybins = ybins';
     end
     BurstMeta.Plots.Main_Plot(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.Main_Plot(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
@@ -6868,7 +6870,7 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
     BurstMeta.Plots.Multi.Multi_histX(i).YData = hx;
 end
-
+h.axes_1d_x.YTickMode = 'auto';
 yticks = get(h.axes_1d_x,'YTick');
 set(h.axes_1d_x,'YTick',yticks(2:end));
 
@@ -6889,6 +6891,7 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
     BurstMeta.Plots.Multi.Multi_histY(i).YData = hy;
 end
+h.axes_1d_y.YTickMode = 'auto';
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 %%% add legend
@@ -11253,6 +11256,9 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
     switch obj
         case {h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu}
             if obj == h.PlotDynamicFRETButton
+                menu_stored = h.axes_EvsTauGG.UIContextMenu; 
+                h.axes_EvsTauGG.UIContextMenu = []; set(h.axes_EvsTauGG.Children,'UIContextMenu',[]);
+                h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
                 %%% Query Lifetimes using ginput
                 [x,~,button] = ginput(2);
                 if gca == h.axes_lifetime_ind_2d
@@ -11295,12 +11301,14 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                         line = find(vis == 0, 1,'first');
                     end
                 end
+                h.axes_EvsTauGG.UIContextMenu = menu_stored; set(h.axes_EvsTauGG.Children,'UIContextMenu',menu_stored);
+                h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
             elseif obj == h.DynamicFRETManual_Menu
                 %%% Query using edit box
                 %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
                 data = inputdlg({'Line #','tau1 [ns]','tau2 [ns]'},'Enter State Lifetimes',1,{'1','1','3'});
                 data = cellfun(@str2double,data);
-                if any(isnan(data))
+                if any(isnan(data)) || isempty(data)
                     return;
                 end
                 x = data(2:end);
@@ -11354,7 +11362,11 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
     
     BurstData{file}.Parameters.rhoGG = coeffvalues(PerrinFitGG);
-    title(h.axes_rGGvsTauGG,['rhoGG = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoGG) ' ns'],'Color',UserValues.Look.Fore);
+    if any(BurstData{file}.BAMethod == [3,4])
+        title(h.axes_rGGvsTauGG,['\rho_{GG} = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoGG) ' ns'],'Color',UserValues.Look.Fore);
+    else
+        title(h.axes_rGGvsTauGG,['\rho_{D} = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoGG) ' ns'],'Color',UserValues.Look.Fore);
+    end
     %% RR
     fPerrin = @(rho,x) BurstData{file}.Corrections.r0_red./(1+x./rho); %%% x = tau
     if ~h.MultiselectOnCheckbox.Value
@@ -11378,7 +11390,11 @@ if obj == h.FitAnisotropyButton
     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
     BurstData{file}.Parameters.rhoRR = coeffvalues(PerrinFitRR);
-    title(h.axes_rRRvsTauRR,['rhoRR = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoRR) ' ns'],'Color',UserValues.Look.Fore);
+    if any(BurstData{file}.BAMethod == [3,4])
+        title(h.axes_rRRvsTauRR,['\rho_{RR} = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoRR) ' ns'],'Color',UserValues.Look.Fore);
+    else
+        title(h.axes_rRRvsTauRR,['\rho_{A} = ' sprintf('%2.2f',BurstData{file}.Parameters.rhoRR) ' ns'],'Color',UserValues.Look.Fore);
+    end
     if any(BurstData{file}.BAMethod == [3,4])
         %% BB
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData{file}.NameArray);
@@ -11402,7 +11418,7 @@ if obj == h.FitAnisotropyButton
         BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
         BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
         BurstData{file}.Parameters.rhoBB = coeffvalues(PerrinFitBB);
-        title(h.axes_rBBvsTauBB,['rhoBB = ' num2str(BurstData{file}.Parameters.rhoBB) ' ns'],'Color',UserValues.Look.Fore);
+        title(h.axes_rBBvsTauBB,['\rho_{BB} = ' num2str(BurstData{file}.Parameters.rhoBB) ' ns'],'Color',UserValues.Look.Fore);
     end
 end
 %% Manual Perrin plots
@@ -11411,7 +11427,7 @@ if obj == h.ManualAnisotropyButton
     BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu =[];BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = [];
     BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu =[];BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = [];
     BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =[];BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = [];
-    
+    h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
     [x,y,button] = ginput(1);
     %%% Lifetime Ind plot: If it was selected, check what plot is active
     %%% and set gca accordingly
@@ -11468,7 +11484,11 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinGG(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinGG(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinGG(3).Visible = 'off';
-                    title(['rhoGG = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    if any(BurstData{file}.BAMethod == [3,4])
+                        title(['\rho_{GG} = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    else
+                        title(['\rho_{D} = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    end
                     BurstData{file}.Parameters.rhoGG = rho;
                 case h.axes_rRRvsTauRR
                     BurstMeta.Plots.Fits.PerrinRR(1).Visible = 'on';
@@ -11476,7 +11496,11 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinRR(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinRR(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinRR(3).Visible = 'off';
-                    title(['rhoRR = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    if any(BurstData{file}.BAMethod == [3,4])
+                        title(['\rho_{RR} = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    else
+                        title(['\rho_{A} = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    end
                     BurstData{file}.Parameters.rhoRR = rho;
                 case h.axes_rBBvsTauBB
                     BurstMeta.Plots.Fits.PerrinBB(1).Visible = 'on';
@@ -11484,7 +11508,7 @@ if obj == h.ManualAnisotropyButton
                     BurstMeta.Plots.Fits.PerrinBB(1).YData = fitPerrin(tau);
                     BurstMeta.Plots.Fits.PerrinBB(2).Visible = 'off';
                     BurstMeta.Plots.Fits.PerrinBB(3).Visible = 'off';
-                    title(['rhoBB = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
+                    title(['\rho_{BB} = ' sprintf('%2.2f',rho) ' ns'],'Color',UserValues.Look.Fore);
                     BurstData{file}.Parameters.rhoBB = rho;
             end
         end
@@ -11506,7 +11530,11 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinGG(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinGG(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoGG = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    if any(BurstData{file}.BAMethod == [3,4])
+                        title(haxes,['\rho_{GG} = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    else
+                        title(haxes,['\rho_{D} = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    end
                 else
                     %%% add rho2 to title
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
@@ -11530,7 +11558,11 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinRR(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinRR(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoRR = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    if any(BurstData{file}.BAMethod == [3,4])
+                        title(haxes,['\rho_{RR} = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    else
+                        title(haxes,['\rho_{A} = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    end
                 else
                     %%% add rho2 to title
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
@@ -11554,7 +11586,7 @@ if obj == h.ManualAnisotropyButton
                 BurstMeta.Plots.Fits.PerrinBB(vis+1).XData = tau;
                 BurstMeta.Plots.Fits.PerrinBB(vis+1).YData = fitPerrin(tau);
                 if vis == 0
-                    title(haxes,['rhoBB = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
+                    title(haxes,['\rho_{BB} = ' sprintf('%2.2f',rho)],'Color',UserValues.Look.Fore);
                 else
                     %%% add rho2 to title
                     new_title = [haxes.Title.String ' and ' sprintf('%2.2f',rho) ' ns'];
@@ -11565,10 +11597,10 @@ if obj == h.ManualAnisotropyButton
         end
     end
     %%% reenable right-click callbacks
-    %%% disable right-click callbacks
     BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
     BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu =h.LifeTime_Menu;BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
     BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =h.LifeTime_Menu;BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
+    h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
 end
 PlotLifetimeInd([],[],h);
 
@@ -12641,46 +12673,44 @@ switch obj
                 case 'Axes_1D_Y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-                    %if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
-                    %    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
-                    %else
-                        lim = 0;
-                        for j = 1:numel(panel_copy.Children(i).Children)
-                            if strcmp(panel_copy.Children(i).Children(j).Type,'text')
-                                delete(panel_copy.Children(i).Children(j));
-                                continue;
-                            end
-                            if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
-                                lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
-                            end
+                    lim = 0;
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'text')
+                            delete(panel_copy.Children(i).Children(j));
+                            continue;
                         end
-                        panel_copy.Children(i).YLim = [0, lim];
-                            % change the grayscale of the bars and remove the line
-                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
-                        panel_copy.Children(i).Children(9).LineStyle = 'none';
-                    %end
+                        if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
+                            lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
+                        end
+                    end
+                    panel_copy.Children(i).YLim = [0, lim];
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    % change the grayscale of the bars and remove the line
+                    panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                    panel_copy.Children(i).Children(9).LineStyle = 'none';
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
-                    %if strcmp(panel_copy.Children(i).Children(4).Visible,'on')
-                    %    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(4).YData)*1.05];
-                    %else
-                        lim = 0;
-                        for j = 1:numel(panel_copy.Children(i).Children)
-                            if strcmp(panel_copy.Children(i).Children(j).Type,'text')
-                                delete(panel_copy.Children(i).Children(j));
-                                continue;
-                            end
-                            if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
-                                lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
-                            end
+                    lim = 0;
+                    for j = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(j).Type,'text')
+                            delete(panel_copy.Children(i).Children(j));
+                            continue;
                         end
-                        panel_copy.Children(i).YLim = [0, lim];
-                        %end
-                        panel_copy.Children(i).XTickLabelMode = 'auto';
-                        % change the grayscale of the bars and remove the line
-                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
-                        panel_copy.Children(i).Children(9).LineStyle = 'none';
+                        if strcmp(panel_copy.Children(i).Children(j).Visible,'on')
+                            lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
+                        end
+                    end
+                    panel_copy.Children(i).YLim = [0, lim];
+                    panel_copy.Children(i).YTickMode = 'auto';
+                    yticks = get(panel_copy.Children(i),'YTick');
+                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    panel_copy.Children(i).XTickLabelMode = 'auto';
+                    % change the grayscale of the bars and remove the line
+                    panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                    panel_copy.Children(i).Children(9).LineStyle = 'none';
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -12723,18 +12753,6 @@ switch obj
                 cbar = colorbar('peer', panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
-%                 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-%                     labels = cellfun(@str2double,cbar.TickLabels);
-%                     %%% find maximum number of bursts
-%                     for k=1:numel(BurstMeta.Plots.Main_Plot)
-%                         if strcmp(BurstMeta.Plots.Main_Plot(k).Type,'image')
-%                             maxZ = max(BurstMeta.Plots.Main_Plot(k).CData(:));
-%                         end
-%                     end
-%                     for i = 1:numel(labels)
-%                         cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
-%                     end
-%                 end
             end
         else %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
@@ -13508,6 +13526,7 @@ elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
     H(end-1,:) = H(end-1,:) + H(end,:); H(end,:) = [];
     xbins = xbins_hist(1:end-1);% + diff(xbins_hist)/2;
     ybins = ybins_hist(1:end-1);% + diff(ybins_hist)/2;
+    ybins = ybins';
 end
 
 function Calculate_Settings(obj,~)
