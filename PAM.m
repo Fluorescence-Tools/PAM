@@ -478,7 +478,7 @@ h.Cor.Type = uicontrol(...
     'FontWeight','bold',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String',{'Point';'Pair';'Microtime';'Microtime (linear)'},...
+    'String',{'Point';'Pair (Line)';'Pair (Circular)';'Microtime';'Microtime (linear)'},...
     'Position',[0.5 0 0.17 0.09],...
     'Style','popupmenu',...
     'Callback',@Calculate_Settings,...
@@ -3501,7 +3501,7 @@ elseif obj == h.Burst.NirFilter_Checkbox
 elseif obj == h.Burst.BurstLifetime_Checkbox
     UserValues.BurstSearch.FitLifetime = h.Burst.BurstLifetime_Checkbox.Value;
 elseif obj == h.Cor.Type
-    if h.Cor.Type.Value == 2 %%% PairCorrelation was selected
+    if any(h.Cor.Type.Value == [2,3]) %%% PairCorrelation was selected
         set([h.Cor.Pair_Bins,h.Cor.Pair_Dist,findobj('Tag','PairCorDistance'),findobj('Tag','PairCorBins')],'Visible','on');
     else %%% turn GUI elements off
         set([h.Cor.Pair_Bins,h.Cor.Pair_Dist,findobj('Tag','PairCorDistance'),findobj('Tag','PairCorBins')],'Visible','off');
@@ -5267,7 +5267,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     [Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
     %%% Calculates the maximum inter-photon time in clock ticks
     Maxtime=ceil(max(diff(PamMeta.MT_Patch_Times))/FileInfo.ClockPeriod)/UserValues.Settings.Pam.Cor_Divider;
-    if any(h.Cor.Type.Value == [3,4]) %%% Microtime Correlation
+    if any(h.Cor.Type.Value == [4,5]) %%% Microtime Correlation
         Maxtime = Maxtime.*FileInfo.MI_Bins;
     end
     %%% Calculates the photon start times in clock ticks
@@ -5335,7 +5335,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
 
         Cor_Type = h.Cor.Type.Value;
         switch Cor_Type %%% Assigns photons and does correlation
-            case {1,3,4} %%% Point correlation
+            case {1,4,5} %%% Point correlation
                 %%% Initializes data cells
                 Data1=cell(sum(PamMeta.Selected_MT_Patches),1); MI1 = cell(sum(PamMeta.Selected_MT_Patches),1);
                 Data2=cell(sum(PamMeta.Selected_MT_Patches),1); MI2 = cell(sum(PamMeta.Selected_MT_Patches),1);
@@ -5363,7 +5363,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
                                 end
-                            elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
+                            elseif any(Cor_Type == [4,5]) %%% Microtime Correlation, add microtimes
                                 Data_dummy = TcspcData.MT{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
@@ -5404,7 +5404,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                         TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                         TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))];
                                     end
-                                elseif any(Cor_Type == [3,4]) %%% Microtime Correlation, add microtimes
+                                elseif any(Cor_Type == [4,5]) %%% Microtime Correlation, add microtimes
                                     Data_dummy = TcspcData.MT{Det2(l),Rout2(l)}(...
                                         TcspcData.MI{Det2(l),Rout2(l)}>=From2(l) &...
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
@@ -5481,9 +5481,9 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             %%% Do the autocorrelation with weights
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
                         end
-                    case {2,3}
-                        [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                     case 4
+                        [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                    case 5
                         time_unit = FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                         limit = round(10E-6/time_unit); %%% only calculate from -10mus to 10mus
                         resolution = ceil(100E-12/time_unit); %%% set to 100 ps
@@ -5491,7 +5491,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 end
                 if h.Cor.Type.Value == 1
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
-                elseif any(h.Cor.Type.Value == [3,4])
+                elseif any(h.Cor.Type.Value == [4,5])
                     Cor_Times=Cor_Times*FileInfo.ClockPeriod*UserValues.Settings.Pam.Cor_Divider/FileInfo.MI_Bins;
                 end
                 %%% Calculates average and standard error of mean (without tinv_table yet
@@ -5520,7 +5520,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if any(h.Cor.Format.Value == [1 3])
                     %%% Generates filename
                     Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
-                    if Cor_Type == 4 %%% linear microtime correlation
+                    if Cor_Type == 5 %%% linear microtime correlation
                         Current_FileName = [Current_FileName(1:end-5) '_nsFCS.mcor'];
                     end
                     %%% Checks, if file already exists
@@ -5590,7 +5590,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 h.Cor.Individual_Axes{i}.UserData = {Current_FileName,Header,Counts,Valid,Cor_Times,Cor_Average,Cor_SEM,Cor_Array};
                 h.Cor.Individual_Axes{i}.UIContextMenu = h.Cor.Individual_Menu;
                 Progress((i)/numel(Cor_A),h.Progress.Axes,h.Progress.Text,'Correlating :')
-            case 2 %%% Pair correlation
+            case {2,3} %%% Pair correlation
                 Bins=str2double(h.Cor.Pair_Bins.String);
                 Dist=[0,str2num(h.Cor.Pair_Dist.String)]; %#ok<ST2NM>
                 Dist= Dist(Dist<Bins);
@@ -5690,7 +5690,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 for j=1:Bins %%% Goes through every bin
                     for l=Dist %%% Goes through every selected bin distance
-                        if (l+j)<=Bins %%% Checks if bin distance is valid
+                        if (l+j)<=Bins %%% Checks if bin distance goes across the end of line
                             %%% Ch1xCh2
                             [Cor_Array,Cor_Times] = CrossCorrelation(Data1{j},Data2{j+l},Maxtime);
                             %%% Adjusts correlation times to longest
@@ -5708,6 +5708,21 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                 if numel(PairInfo.Time) < numel(Cor_Times)
                                     PairInfo.Time = Cor_Times;
                                 end
+                            end
+                        elseif Cor_Type == 3 %%% Does all correlations for circular scans
+                            %%% Ch1xCh2
+                            [Cor_Array,Cor_Times] = CrossCorrelation(Data1{j},Data2{j+l-Bins},Maxtime);
+                            %%% Adjusts correlation times to longest
+                            PairCor{j,l+1,1} = mean(Cor_Array,2);
+                            if numel(PairInfo.Time) < numel(Cor_Times)
+                                PairInfo.Time = Cor_Times;
+                            end
+                            %%% Ch2xCh1
+                            [Cor_Array,Cor_Times] = CrossCorrelation(Data1{j+l},Data2{j},Maxtime);
+                            %%% Adjusts correlation times to longest
+                            PairCor{j,l+1,2} = mean(Cor_Array,2);
+                            if numel(PairInfo.Time) < numel(Cor_Times)
+                                PairInfo.Time = Cor_Times;
                             end
                         end
                     end
