@@ -11691,13 +11691,14 @@ htauGG(end-1) = htauGG(end-1)+htauGG(end);
 htauGG(end) = [];
 BurstMeta.Plots.histE_donly.XData = x_axis;
 BurstMeta.Plots.histE_donly.YData = htauGG;
-axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
 h.Corrections.TwoCMFD.axes_crosstalk.XLabel.String = 'Lifetime D [ns]';
 h.Corrections.TwoCMFD.axes_crosstalk.Title.String = 'Lifetime of Donor only';
+axis(h.Corrections.TwoCMFD.axes_crosstalk,'tight');
 %%% fit
 [DonorOnlyLifetime, GaussFit] = GaussianFit(x_axis',htauGG);
 BurstMeta.Plots.Fits.histE_donly(1).XData = x_axis;
 BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFit;
+h.Corrections.TwoCMFD.axes_crosstalk.XLim = [0, DonorOnlyLifetime+3*sqrt(sum((x_axis'-DonorOnlyLifetime).^2.*GaussFit)./sum(GaussFit))];
 %%% Update GUI
 h.DonorLifetimeEdit.String = num2str(DonorOnlyLifetime);
 UserValues.BurstBrowser.Corrections.DonorLifetime = DonorOnlyLifetime;
@@ -11723,12 +11724,13 @@ htauRR(end-1) = htauRR(end-1)+htauRR(end);
 htauRR(end) = [];
 BurstMeta.Plots.histS_aonly.XData = x_axis;
 BurstMeta.Plots.histS_aonly.YData = htauRR;
-axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
 h.Corrections.TwoCMFD.axes_direct_excitation.XLabel.String = 'Lifetime A [ns]';
 h.Corrections.TwoCMFD.axes_direct_excitation.Title.String = 'Lifetime of Acceptor only';
+axis(h.Corrections.TwoCMFD.axes_direct_excitation,'tight');
 [AcceptorOnlyLifetime, GaussFit] = GaussianFit(x_axis',htauRR);
 BurstMeta.Plots.Fits.histS_aonly(1).XData = x_axis;
 BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFit;
+h.Corrections.TwoCMFD.axes_direct_excitation.XLim = [0, AcceptorOnlyLifetime+3*sqrt(sum((x_axis'-AcceptorOnlyLifetime).^2.*GaussFit)./sum(GaussFit))];
 %%% Update GUI
 h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
 UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
