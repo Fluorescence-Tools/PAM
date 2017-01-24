@@ -4353,8 +4353,8 @@ for i = 1:numel(FileName)
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
-        S.BurstData.SpeciesNames{2} = 'Subspecies 1';
-        S.BurstData.SpeciesNames{3} = 'Subspecies 2';
+        S.BurstData.SpeciesNames{2} = 'Species 1';
+        S.BurstData.SpeciesNames{3} = 'Species 2';
         S.BurstData.SelectedSpecies = [1,1];
     elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
         if isfield(S.BurstData,'SelectedSpecies')
@@ -5278,7 +5278,7 @@ switch level
         if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
             % find out number of existing species for species group
             num_species= sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
-            name = ['Subspecies ' num2str(num_species)];
+            name = ['Species ' num2str(num_species)];
             BurstData{file}.SpeciesNames{species(1),num_species+1} = name;
             BurstData{file}.Cut{species(1),num_species+1} = BurstData{file}.Cut{species(1),1};
             BurstData{file}.SelectedSpecies(2) = num_species+1;
@@ -6750,7 +6750,7 @@ for i = 1:num_species
 end
 
 
-if UserValues.BurstBrowser.Settings.Normalize_Multiplot
+if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
         H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
