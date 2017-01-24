@@ -635,6 +635,12 @@ if Mode==0 %%% Loads user values
     end
     P.FCSFit.Export_Legend = S.FCSFit.Export_Legend;
     
+    if ~isfield (S.FCSFit,'Export_Residuals')
+        S.FCSFit.Export_Residuals = 0;
+        disp('UserValues.FCSFit.Export_Residuals was incomplete');
+    end
+    P.FCSFit.Export_Residuals = S.FCSFit.Export_Residuals;
+    
     %% MIAFit
     %%% Checks, if MIAFit subfield exists
     if ~isfield (S, 'MIAFit')
