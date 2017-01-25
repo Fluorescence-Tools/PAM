@@ -1,0 +1,21 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+4 component Beta distribution fit for FRET data. Note that the beta
+distribution is only defined on the interval [0,1].
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): A1            = 0.5;     LB = 0;      UB = 1;
+Param(2): a1           = 1;     LB = 0;	UB = Inf;   
+Param(3): b1            = 1;     LB = Inf;      UB = 0.25;
+Param(4): A2            = 0.5;     LB = 0;      UB = 1;
+Param(5): a2          = 1;     LB = 0;   UB = Inf;
+Param(6): b2            = 1;     LB = 0;      UB = Inf;
+Param(7): A3            = 0;       LB = 0;      UB = 1;f
+Param(8): a3           = 1;     LB = 0;   UB = Inf;f
+Param(9): b3            = 1;     LB = 0;      UB = Inf;f
+Param(10): A4            = 0;       LB = 0;      UB = 1;f
+Param(11): a4          = 1;     LB = 0;   UB = Inf;f
+Param(12): b4            = 1;     LB = 0;      UB = Inf;f
+Param(13): offset         = 0;      LB = 0;      UB = 1;f
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1; 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT= P(13)+P(1).*x.^(P(2)-1).*(1-x).^(P(3)-1)./beta(P(2),P(3))+P(4).*x.^(P(5)-1).*(1-x).^(P(6)-1)./beta(P(5),P(6))+P(7).*x.^(P(8)-1).*(1-x).^(P(9)-1)./beta(P(8),P(9))+P(10).*x.^(P(11)-1).*(1-x).^(P(12)-1)./beta(P(11),P(12));

@@ -1,7 +1,5 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 3 component Gaussian distribution fit for FRET data.
-
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A1            = 0.5;     LB = 0;      UB = 1;
 Param(2): mu1           = 0.2;     LB = -0.1;	UB = 1;   
