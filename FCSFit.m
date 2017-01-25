@@ -2247,14 +2247,14 @@ for i=1:numel(FCSData.Data)
     %%% Reads data
     E = FCSData.Data{i}.E;
     Data.E = E;
-    Data.Cor_Times = x;
-    his = histcounts(E,x); his = [his'; his(end)];
+    his = histcounts(E,x)'; %his = [his'; his(end)];
     Data.Cor_Average = his./sum(his)./min(diff(x));
     error = sqrt(his)./sum(his)./min(diff(x));
     Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
     Data.Cor_Array = [];
     Data.Valid = [];
     Data.Counts = [numel(E), numel(E)];
+    Data.Cor_Times = x(1:end-1)+bin/2;
     FCSData.Data{i} = Data;
 
     %%% Updates global parameters
@@ -2270,7 +2270,7 @@ for i=1:numel(FCSData.Data)
     FCSMeta.Plots{i,1}.LData = error;
     FCSMeta.Plots{i,1}.UData = error;
 
-    FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1};
+    FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1}-bin/2;
     FCSMeta.Plots{i,4}.YData = FCSMeta.Data{i,2};       
 end
 Update_Plots;
