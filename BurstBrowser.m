@@ -1468,11 +1468,6 @@ if isempty(hfig)
     h.Secondary_Tab_Correlation_Menu = uicontextmenu;
     
     %%% Sets a divider for correlation
-    h.Secondary_Tab_Correlation_Divider_Menu = uimenu(...
-        'Parent',h.Secondary_Tab_Correlation_Menu,...
-        'Label',['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)],...
-        'Tag','Secondary_Tab_Correlation_Divider_Menu',...
-        'Callback',@Calculate_Settings);
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu = uimenu(...
         'Parent',h.Secondary_Tab_Correlation_Menu,...
         'Label','FRET FCCS selection',...
@@ -1484,6 +1479,12 @@ if isempty(hfig)
         'Label','Reset',...
         'Tag','Secondary_Tab_Correlation_Reset_Menu',...
         'Callback',@Calculate_Settings);
+    h.Secondary_Tab_Correlation_Divider_Menu = uimenu(...
+        'Parent',h.Secondary_Tab_Correlation_Menu,...
+        'Label',['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)],...
+        'Tag','Secondary_Tab_Correlation_Divider_Menu',...
+        'Callback',@Calculate_Settings,...
+        'Separator','on');
     
     Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
     h.Correlation_Table = uitable(...
@@ -9225,7 +9226,11 @@ end
 
 if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
     if isempty(PhotonStream{file})
-        Load_Photons('aps');
+        success = Load_Photons('aps');
+        if ~success
+            Progress(1,h.Progress_Axes,h.Progress_Text);
+            return;
+        end
     end
     start = PhotonStream{file}.start(valid_total);
     stop = PhotonStream{file}.stop(valid_total);
@@ -9352,7 +9357,11 @@ elseif any(UserValues.BurstBrowser.Settings.fFCS_Mode == [3,4])
     %%% Load total stream and also include a donor only species
     %%% later (automatically)
     if isempty(PhotonStream{file})
-        Load_Photons('aps');
+        success=Load_Photons('aps');
+        if ~success
+            Progress(1,h.Progress_Axes,h.Progress_Text);
+            return;
+        end
     end
     MT_total = PhotonStream{file}.Macrotime;
     MI_total = PhotonStream{file}.Microtime;
@@ -12074,7 +12083,11 @@ switch obj
         
     case h.CorrelateWindow_Button
         if isempty(PhotonStream{file})
-            Load_Photons('aps');
+            success = Load_Photons('aps');
+            if ~success
+                Progress(1,h.Progress_Axes,h.Progress_Text);
+                return;
+            end
         end
         
         start = PhotonStream{file}.start(BurstData{file}.Selected);
@@ -12252,7 +12265,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load Photon Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Load_Photons(mode)
+function success = Load_Photons(mode)
 global PhotonStream BurstData UserValues BurstTCSPCData BurstMeta
 h = guidata(findobj('Tag','BurstBrowser')); 
 if nargin == 0
@@ -12262,6 +12275,7 @@ file = BurstMeta.SelectedFile;
 filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
 prev_string = h.Progress_Text.String;
 h.Progress_Text.String = 'Loading Photon Data';
+success = true;
 switch mode
     case 'aps'
         if isempty(PhotonStream)
@@ -12273,12 +12287,16 @@ switch mode
                 %%% load if it exists
                 S = load([filename(1:end-3) 'aps'],'-mat');
             else
+                disp('No *.aps file found.'); 
+                h.Progress_Text.String = prev_string; 
+                success = false;
+                return;
                 %%% else ask for the file
-                [FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
-                if FileName == 0
-                    return;
-                end
-                S = load('-mat',fullfile(PathName,FileName));
+                %[FileName,PathName] = uigetfile({'*.aps'}, 'Choose the associated *.aps file', UserValues.File.BurstBrowserPath, 'MultiSelect', 'off');
+                %if FileName == 0
+                %    return;
+                %end
+                %S = load('-mat',fullfile(PathName,FileName));
             end
             % transfer to global array
             PhotonStream{file}.start = S.PhotonStream.start;
