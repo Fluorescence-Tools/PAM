@@ -1473,6 +1473,17 @@ if isempty(hfig)
         'Label',['Divider: ' num2str(UserValues.Settings.Pam.Cor_Divider)],...
         'Tag','Secondary_Tab_Correlation_Divider_Menu',...
         'Callback',@Calculate_Settings);
+    h.Secondary_Tab_Correlation_Standard2CMFD_Menu = uimenu(...
+        'Parent',h.Secondary_Tab_Correlation_Menu,...
+        'Label','FRET FCCS selection',...
+        'Tag','Secondary_Tab_Correlation_Standard2CMFD_Menu',...
+        'Callback',@Calculate_Settings,...
+        'Visible','off');
+    h.Secondary_Tab_Correlation_Reset_Menu = uimenu(...
+        'Parent',h.Secondary_Tab_Correlation_Menu,...
+        'Label','Reset',...
+        'Tag','Secondary_Tab_Correlation_Reset_Menu',...
+        'Callback',@Calculate_Settings);
     
     Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
     h.Correlation_Table = uitable(...
@@ -12415,6 +12426,7 @@ if BAMethod == 3
     h.Correlation_Table.RowName = Names;
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
+    h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'off';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
     if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{2}))
@@ -12487,6 +12499,7 @@ elseif BAMethod == 2
     h.Correlation_Table.RowName = Names;
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
+    h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'on';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
     if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{1}))
@@ -13546,6 +13559,16 @@ if obj == h.Secondary_Tab_Correlation_Divider_Menu
         end
         UserValues.Settings.Pam.Cor_Divider=round(str2double(Divider));
     end
+elseif obj == h.Secondary_Tab_Correlation_Standard2CMFD_Menu
+    h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
+    h.Correlation_Table.Data(1,2) = true;
+    h.Correlation_Table.Data(3,4) = true;
+    h.Correlation_Table.Data(5,6) = true;
+    h.Correlation_Table.Data(7,8) = true;
+    h.Correlation_Table.Data(9,12) = true;
+    h.Correlation_Table.Data(10,11) = true;
+elseif obj == h.Secondary_Tab_Correlation_Reset_Menu
+    h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
 end
 %%% Saves UserValues
 LSUserValues(1);
