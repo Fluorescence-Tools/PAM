@@ -1,19 +1,20 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 4 component Beta distribution fit for FRET data. Note that the beta
 distribution is only defined on the interval [0,1].
+
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A1            = 0.5;     LB = 0;      UB = 1;
-Param(2): a1           = 1;     LB = 0;	UB = Inf;   
-Param(3): b1            = 1;     LB = Inf;      UB = 0.25;
+Param(2): a1           = 20;     LB = 0;	UB = Inf;   
+Param(3): b1            = 10;     LB = 0;      UB = Inf;
 Param(4): A2            = 0.5;     LB = 0;      UB = 1;
-Param(5): a2          = 1;     LB = 0;   UB = Inf;
-Param(6): b2            = 1;     LB = 0;      UB = Inf;
+Param(5): a2          = 10;     LB = 0;   UB = Inf;
+Param(6): b2            = 20;     LB = 0;      UB = Inf;
 Param(7): A3            = 0;       LB = 0;      UB = 1;f
-Param(8): a3           = 1;     LB = 0;   UB = Inf;f
-Param(9): b3            = 1;     LB = 0;      UB = Inf;f
+Param(8): a3           = 10;     LB = 0;   UB = Inf;f
+Param(9): b3            = 30;     LB = 0;      UB = Inf;f
 Param(10): A4            = 0;       LB = 0;      UB = 1;f
-Param(11): a4          = 1;     LB = 0;   UB = Inf;f
-Param(12): b4            = 1;     LB = 0;      UB = Inf;f
+Param(11): a4          = 30;     LB = 0;   UB = Inf;f
+Param(12): b4            = 10;     LB = 0;      UB = Inf;f
 Param(13): offset         = 0;      LB = 0;      UB = 1;f
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1; 

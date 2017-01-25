@@ -1523,8 +1523,14 @@ if isnan(Max)
     Max = UserValues.FCSFit.Fit_Max;
     h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
 end
-if (Min < 0)
-    Min = 0;
+if ~strcmp(FCSMeta.DataType,'FRET')
+    if (Min < 0)
+        Min = 0;
+    end
+else
+    if (Min < -0.1)
+        Min = -0.1;
+    end
 end
 if (Max < 0)
     Max = 1;
@@ -2232,8 +2238,8 @@ function rebinFRETdata(obj,~)
 global UserValues FCSData FCSMeta
 h = guidata(obj);
 bin = str2double(obj.String);
-%%% round to multiples of 0.01
-bin = ceil(bin/0.01)*0.01;
+%%% round to multiples of 0.005
+bin = ceil(bin/0.005)*0.005;
 x = (-0.1:bin:ceil(1.1/bin)*bin)';
 UserValues.FCSFit.FRETbin = bin;
 obj.String = num2str(bin);
