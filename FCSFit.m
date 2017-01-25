@@ -506,7 +506,11 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'HighlightColor', Look.Control,...
         'ShadowColor', Look.Shadow,...
         'Position',[0 0 1 1]);
+    
     %%% Fitting table
+    h.Style_Table_Menu = uicontextmenu;
+    h.Style_Table_Rainbow = uimenu('Parent',h.Style_Table_Menu,'Label','Use Rainbow',...
+        'Callback',{@Update_Style,3});
     h.Style_Table = uitable(...
         'Parent',h.Style_Panel,...
         'Tag','Fit_Table',...
@@ -516,7 +520,8 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'FontSize',8,...
         'Position',[0 0 1 1],...
         'CellEditCallback',{@Update_Style,2},...
-        'CellSelectionCallback',{@Update_Style,2});
+        'CellSelectionCallback',{@Update_Style,2},...
+        'UIContextMenu',h.Style_Table_Menu);
     %%% Button for exporting excel sheet of results
     h.Export_Clipboard = uicontrol(...
         'Parent',h.Setting_Panel,...
@@ -1498,6 +1503,20 @@ switch mode
                     FCSData.FileName{File} = NewName{1};
                     Update_Plots;
                 end                  
+        end
+    case 3 %%% rainbow button
+        %%% make rainbow for all plots
+        if size(h.Style_Table.Data,1) == 1
+            return;
+        end
+        num_plots = size(h.Style_Table.Data,1) -1;
+        colors = jet(num_plots);
+        for i = 1:num_plots
+            h.Style_Table.Data{i,1} = num2str(colors(i,:));
+            FCSMeta.Plots{i,1}.Color=colors(i,:);
+            FCSMeta.Plots{i,2}.Color=colors(i,:);
+            FCSMeta.Plots{i,3}.Color=colors(i,:);
+            FCSMeta.Plots{i,4}.Color=colors(i,:);
         end
 end
 %%% Save Updated UiTableData to UserValues.FCSFit.PlotStyles

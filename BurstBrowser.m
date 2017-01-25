@@ -3845,6 +3845,8 @@ if obj ~= h.DatabaseBB.List
                 return;
             end
             FilterIndex = 1; %%% Only bur files supported
+        case 'FileHistory'
+            pathname = fileparts(filenames{1});
         otherwise
             pathname = UserValues.File.BurstBrowserPath;
     end
@@ -5150,7 +5152,7 @@ UpdatePlot([],[],h);
 %%%%%%% Right-click: Open menu                      %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function SpeciesList_ButtonDownFcn(hTree,eventData)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 if isempty(BurstData)
     return;
 end
@@ -5232,6 +5234,7 @@ switch clicked.getLevel
         BurstMeta.SelectedFile = file;
         BurstData{file}.SelectedSpecies = [group,subspecies];
 end
+UserValues.File.BurstBrowserPath = BurstData{file}.PathName;
 
 UpdateCorrections([],[],h);
 UpdateCutTable(h);
@@ -12212,7 +12215,11 @@ for i=1:NumChans
             %%% Save the correlation file
             %%% Generates filename
             filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-            Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
+            if obj == h.CorrelateWindow_Button
+                Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize*10) 'ms' '.mcor'];
+            else
+                Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
+            end
             %%% Checks, if file already exists
             if  exist(Current_FileName,'file')
                 k=1;
