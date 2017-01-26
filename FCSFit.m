@@ -509,6 +509,8 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
     
     %%% Fitting table
     h.Style_Table_Menu = uicontextmenu;
+    h.Style_Table_Autocolor = uimenu('Parent',h.Style_Table_Menu,'Label','Autocolor',...
+        'Callback',{@Update_Style,3});
     h.Style_Table_Rainbow = uimenu('Parent',h.Style_Table_Menu,'Label','Use Rainbow',...
         'Callback',{@Update_Style,3});
     h.Style_Table = uitable(...
@@ -1334,7 +1336,7 @@ Update_Plots;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Changes plotting style %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_Style(~,e,mode) 
+function Update_Style(obj,e,mode) 
 global FCSMeta FCSData UserValues
 h = guidata(findobj('Tag','FCSFit'));
 LSUserValues(0);
@@ -1510,7 +1512,16 @@ switch mode
             return;
         end
         num_plots = size(h.Style_Table.Data,1) -1;
-        colors = jet(num_plots);
+        switch obj
+            case h.Style_Table_Rainbow
+                if num_plots < 7
+                    colors = flipud(prism(num_plots));
+                else
+                    colors = jet(num_plots);
+                end
+            case h.Style_Table_Autocolor
+                colors = lines(num_plots);
+        end
         for i = 1:num_plots
             h.Style_Table.Data{i,1} = num2str(colors(i,:));
             FCSMeta.Plots{i,1}.Color=colors(i,:);
