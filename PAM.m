@@ -7336,7 +7336,20 @@ PhotonsFileName = [BurstFileName(1:end-3) 'bps']; %%% .bps is burst-photon-strea
 Macrotime = cellfun(@uint64,Macrotime,'UniformOutput',false);
 Microtime = cellfun(@uint16,Microtime,'UniformOutput',false);
 Channel = cellfun(@uint8,Channel,'UniformOutput',false);
-save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7');
+
+%%% set file size warning on saving to be an error so we can catch it
+warning('error','MATLAB:save:sizeTooBigForMATFile');
+try
+    save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7');
+catch
+    %%% error means the file size exceeds the 2GB limit of save -v7
+    %%% we have to use -v7.3 version, which can save larger files
+    %%% however, -v7.3 produces very large files out of cell arrays, so it
+    %%% is really not an optimal solution...
+    save(PhotonsFileName,'Macrotime','Microtime','Channel','-v7.3');
+end
+%%% change the warning back to NOT raise an error
+warning('on','MATLAB:save:sizeTooBigForMATFile');
 
 %%% Save the whole photon stream for fFCS with Donor-Only inclusion or
 %%% purified FCS (inclusion of time window around burst)
