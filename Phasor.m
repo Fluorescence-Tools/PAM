@@ -452,7 +452,7 @@ end
         'Value', UserValues.Phasor.Settings_PhasorColor,...
         'Callback',{@Plot_Phasor,1,[]},...
         'Style', 'popupmenu',...
-        'ToolTipString', ['<html>Select colormap for phasor histogram' ],...
+        'ToolTipString', '<html>Select colormap for phasor histogram',...
         'String',{'Jet';'Hot';'Gray';'HSV'});
     
     h.List_Menu = uicontextmenu;
@@ -472,6 +472,61 @@ end
         'Label','Export Fraction',...
         'Tag','ExportROIs',...
         'Callback',@List_Callback);
+    
+    
+    
+    %%% Center of Mass display controls
+    h.Phasor_Center = uicontrol(...
+        'Parent',h.Settings_Panel,...
+        'Units','normalized',...
+        'Position',[0.01 0.07 0.21 0.1],...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Tag','PhasorColor',...
+        'FontSize',10,...
+        'Value', 1,...
+        'Style', 'popupmenu',...
+        'Callback',{@Update_CoM,0,1:2},...
+        'ToolTipString', 'Toggle display of the center of mean in the phasor plot',...
+        'String',{'No CoM display';'Photon weighted CoM';'Pixel weighted CoM'});
+    
+    h.Phasor_CoM_Menu = uicontextmenu;
+    h.Phasor_CoM_Size = uimenu(...
+        'Parent',h.Phasor_CoM_Menu,...
+        'Label','Set Marker Size',...
+        'Callback',{@Update_CoM,0,4});
+    h.Phasor_CoM_Line = uimenu(...
+        'Parent',h.Phasor_CoM_Menu,...
+        'Label','Set LineWidth',...
+        'Callback',{@Update_CoM,0,5});
+    h.Phasor_CoM_LineColor = uimenu(...
+        'Parent',h.Phasor_CoM_Menu,...
+        'Label','Set Marker Color',...
+        'Callback',{@Update_CoM,0,6});
+    h.Phasor_CoM_FillColor = uimenu(...
+        'Parent',h.Phasor_CoM_Menu,...
+        'Label','Set Marker Fill Color',...
+        'Callback',{@Update_CoM,0,7});
+    h.Phasor_CoM_FillTransparent = uimenu(...
+        'Parent',h.Phasor_CoM_Menu,...
+        'Label','Set Marker Fill Transparent',...
+        'Callback',{@Update_CoM,0,8});
+    
+    h.Phasor_CoM_Marker = uicontrol(...
+        'Parent',h.Settings_Panel,...
+        'Units','normalized',...
+        'Position',[0.23 0.07 0.16 0.1],...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Tag','PhasorColor',...
+        'FontSize',10,...
+        'Value', 1,...
+        'Style', 'popupmenu',...
+        'UIContextMenu',h.Phasor_CoM_Menu,...
+        'Callback',{@Update_CoM,0,3},...
+        'Visible','off',...
+        'ToolTipString', 'Select Center of Mass marker type. <br> Rightlick: change marker properties',...
+        'String',{'+','none','o','*','.','x','square','diamond','v','^','<','>','pentagram','hexagram'});
     
     %%% Listbox of all loaded files
     h.List = uicontrol(...
@@ -1697,6 +1752,9 @@ for i=1:numel(FileName)
         %%% Changes filename to red, if no free plots are available
         PhasorData.List{end+1}=['<HTML><FONT color="red">' FileName{i} '</Font></html>'];
     end
+    %%% Create a Center of Mass entry
+    PhasorData.CoM{numel(PhasorData.List)} = scatter(0.5,0.5,'+','Parent',h.Phasor_Plot,'CData',[1 1 1], 'LineWidth',3','SizeData',200);
+    Update_CoM([],[],numel(PhasorData.List),1:2);
 end
 %%% Updates list
 h.List.String=PhasorData.List;
@@ -1750,6 +1808,8 @@ if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rig
                 PhasorData.Selected_Region(i)=[];
                 %%% Changes plot pointer to new file list
                 PhasorData.Plot(PhasorData.Plot>i)=PhasorData.Plot(PhasorData.Plot>i)-1;
+                delete(PhasorData.CoM{i});
+                PhasorData.CoM(i)=[];
             case 'rightarrow'
                 %% Plots file
                 PhasorData.Selected(i)=1;
@@ -1800,7 +1860,7 @@ if ~isempty(h.List.String) && isprop(e,'Key') && any(strcmp(e.Key,{'delete','rig
     end
     
     %%% Starts plotting; plots phasor and the new images (free)
-    Plot_Phasor([],[],1,[free 10]);    
+    Plot_Phasor(h.List,[],1,[free 10]);   
 elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
     switch Obj
         case h.Average_Data %%% Moving average of phasor data
@@ -1850,8 +1910,11 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 h.List.String=PhasorData.List;
                 %%% Selects the last enty in list
                 h.List.Value=size(PhasorData.Files,1);
+                
+                %%% Create a Center of Mass entry
+                PhasorData.CoM{numel(PhasorData.List)} = scatter(0.5,0.5,'+','Parent',h.Phasor_Plot,'CData',[1 1 1], 'LineWidth',3','SizeData',200);
                 %%% Starts plotting; plots phasor and the new images (free)
-                Plot_Phasor([],[],1,[free 10]);
+                Plot_Phasor(h.List,[],1,[free 10]);
             end
         case h.Export_ROIs %%% Reloads raw data and saves the selected ROI photons
             %%% Finds first selected file
@@ -2169,6 +2232,7 @@ end
 %%% 4: Left mouse click for ROI rectangles
 %%% 5: Right mous clock for ellipoidal ROIs
 %%% 6: Fraction line selection
+%%% 7: Selection/Deselection of regions in the single image plot
 function Phasor_Move(~,e,mode,Start,Key)
 global PhasorData
 %%% Only executes, if Phasor is the current figure
@@ -2346,7 +2410,7 @@ if strcmp('Phasor',get(gcf,'Tag'));
                X=max([Pos(1)-Size,1]):min([Pos(1)+Size,size(PhasorData.Selected_Region{h.List.Value(1)},1)]);
                Y=max([Pos(2)-Size,1]):min([Pos(2)+Size,size(PhasorData.Selected_Region{h.List.Value(1)},2)]);
                PhasorData.Selected_Region{h.List.Value(1)}(Y,X)=Key;
-               Plot_Phasor([],[],1,10);
+               Plot_Phasor(h.Image_Plot(10,1),[],1,10);
             end
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,7,[],Key};
     end
@@ -2591,17 +2655,17 @@ if ~isempty(h.List.String)
                 PhasorData.Selected_Region{h.List.Value(1)}=~PhasorData.Selected_Region{h.List.Value(1)};
             end
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,7,[],false};
-            Plot_Phasor([],[],1,10);
+            Plot_Phasor(h.Image_Plot(10,1),[],1,10);
         case 'alt'
             %% Opens context menu (see Plots_Menu_Callback)
         case 'extend'
             %% Starts region deselection
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,7,[],true};
-            Plot_Phasor([],[],1,10);
+            Plot_Phasor(h.Image_Plot(10,1),[],1,10);
         case 'open'
             %% Selects everything
             PhasorData.Selected_Region{h.List.Value(1)}=false(size(PhasorData.Selected_Region{h.List.Value(1)}));
-            Plot_Phasor([],[],1,10);
+            Plot_Phasor(h.Image_Plot(10,1),[],1,10);
     end
 end
 
@@ -2612,7 +2676,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates all plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Plot_Phasor(~,~,Main,Images)
+function Plot_Phasor(Obj,~,Main,Images)
 h = guidata(findobj('Tag','Phasor'));
 global PhasorData UserValues
 
@@ -2625,7 +2689,18 @@ else
     PhasorData.Plot(10)=0;
 end
 %% Calculates and plots phasor histogram
-if Main 
+if Main
+    
+    %%% Updates Center of Mass cursor positions
+    if ~isempty(Obj)
+        if any(Obj == [h.THmin, h.THmax])
+            Update_CoM([],[],1:numel(PhasorData.CoM),1)
+        elseif Obj==h.Image_Plot(10,1)
+            Update_CoM([],[],h.List.Value(1),1);
+        elseif Obj==h.List || Obj==h.Main_Tab
+            Update_CoM([],[],0,0:2);
+        end
+    end
     
     %%% Defines phasor colormap
     switch h.PhasorColor.Value
@@ -3342,11 +3417,156 @@ switch mode
 end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Recalculates the center of mean of a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_CoM(~,~,File,mode)
+global PhasorData
+h=guidata(findobj('Tag','Phasor'));
+
+if isempty(PhasorData.Data)
+    return;
+end
+if h.Phasor_Center.Value == 1
+    h.Phasor_CoM_Marker.Visible = 'off';
+else
+    h.Phasor_CoM_Marker.Visible = 'on';
+end
+
+%%% Updates settings
+if any(mode == 0)
+    Marker = 2;
+    for i=1:numel(h.Phasor_CoM_Marker.String)
+        if strcmp(h.Phasor_CoM_Marker.String{i},PhasorData.CoM{h.List.Value(1)}.Marker)
+            Marker = i;
+            break;
+        end
+    end
+    h.Phasor_CoM_Marker.Value = Marker;
+    h.Phasor_CoM_Marker.ForegroundColor = PhasorData.CoM{h.List.Value(1)}.CData;
+end
+
+%%% Calculates position
+if any(mode == 1)
+    if File == 0
+        File = 1:numel(PhasorData.CoM);
+    end
+    
+    switch h.Phasor_Center.Value
+        
+        case 1 %%% Do not show
+            
+        case 2 %%% Photon weighted CoM
+            TH_Max = str2double(h.THmax.String);
+            TH_Min = str2double(h.THmin.String);
+            for i=File
+                g = PhasorData.Data{i}.g(:);
+                s = PhasorData.Data{i}.s(:);
+                Int = PhasorData.Data{i}.Intensity(:);
+                s(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                g(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                Int(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                x=nanmean(g(:).*Int(:))/nanmean(Int(:));
+                y=nanmean(s(:).*Int(:))/nanmean(Int(:));
+                PhasorData.CoM{i}.XData=x;
+                PhasorData.CoM{i}.YData=y;
+            end
+        case 3 %%% Pixel Weighted CoM
+            TH_Max = str2double(h.THmax.String);
+            TH_Min = str2double(h.THmin.String);
+            for i=File
+                g = PhasorData.Data{i}.g(:);
+                s = PhasorData.Data{i}.s(:);
+                s(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                g(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                x=nanmean(g(:));
+                y=nanmean(s(:));
+                PhasorData.CoM{i}.XData=x;
+                PhasorData.CoM{i}.YData=y;
+            end
+    end
+end
+
+%%% Updates visibility
+if any(mode == 2)
+    if File == 0
+        File = 1:numel(PhasorData.CoM);
+    end
+    for i = File
+        if h.Phasor_Center.Value == 1 || ((h.Main_Tab.SelectedTab == h.Single_Tab) && (i ~= h.List.Value(1))) || ((h.Main_Tab.SelectedTab ~= h.Single_Tab) && (PhasorData.Selected(i) == 0))
+            PhasorData.CoM{i}.Visible = 'off';
+        else
+            PhasorData.CoM{i}.Visible = 'on';
+        end
+    end
+    
+end
+
+%%% Updates marker type
+if any(mode == 3)
+    for i = h.List.Value
+        PhasorData.CoM{i}.Marker = h.Phasor_CoM_Marker.String{h.Phasor_CoM_Marker.Value}; 
+    end
+end
+%%% Updates marker size
+if any(mode == 4)
+   
+        Size = inputdlg('Set Marker Size','Marker Size',1,{num2str(PhasorData.CoM{h.List.Value(1)}.SizeData)});
+        for i = h.List.Value
+            PhasorData.CoM{i}.SizeData = str2double(Size);
+        end
+end
+%%% Updates line width
+if any(mode == 5)
+    Width = inputdlg('Set Line Width','Line Width',1,{num2str(PhasorData.CoM{h.List.Value(1)}.LineWidth)});
+    for i = h.List.Value
+        PhasorData.CoM{i}.LineWidth = str2double(Width);
+    end
+end
+
+%%% Updates line color
+if any(mode == 6)
+    Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.CData);
+    if numel(Color)==3
+        for i = h.List.Value
+            PhasorData.CoM{i}.CData = Color;
+            h.Phasor_CoM_Marker.ForegroundColor = PhasorData.CoM{h.List.Value(1)}.CData;
+        end
+    else
+        for i = h.List.Value
+            PhasorData.CoM{i}.CData = 'none';
+            h.Phasor_CoM_Marker.ForegroundColor = [1 1 1];
+        end
+        
+    end
+end
+
+%%% Updates line color
+if any(mode == 7)
+    Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.MarkerFaceColor);
+    if numel(Color)==3
+        for i = h.List.Value
+            PhasorData.CoM{i}.MarkerFaceColor = Color;
+        end
+    else
+        for i = h.List.Value
+            PhasorData.CoM{i}.MarkerFaceColor = 'none';
+        end
+    end
+end
+%%% Make fill transparent
+if any(mode == 8)
+    for i = h.List.Value
+        PhasorData.CoM{i}.MarkerFaceColor = 'none';
+    end
+end
+
+
 function Misc(obj,e,mode)
 global UserValues
 h = guidata(findobj('Tag','Phasor'));
 
-if nargin<3
+if nargin<3 %%% Single source functions
    switch obj %%% Export Font Selection
        case h.Export_Font
            f = uisetfont;
@@ -3372,7 +3592,6 @@ if nargin<3
            UserValues.Phasor.Export_Font = f;
            LSUserValues(1);
    end
-    
 end
 
 
