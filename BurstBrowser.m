@@ -5917,16 +5917,6 @@ if size(CutState,2) > 0
     end
 end
 
-%%% set limits of axes
-if ~(xlimits(1) == xlimits(2))
-    h.axes_general.XLim = xlimits;
-    h.axes_1d_x.XLim = xlimits;
-end
-if ~(ylimits(1) == ylimits(2))
-    h.axes_general.YLim = ylimits;
-    h.axes_1d_y.XLim = ylimits;
-end
-
 %%% check what plot type to use
 colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value;
 if ~colorbyparam
@@ -6009,8 +5999,8 @@ if ~colorbyparam
             end
             color = lines(numel(n_per_species));
             for i = 1:numel(hx)
-                BurstMeta.Plots.MultiScatter.h1dx(i) = stairs(binsx(1:end-1),hx{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x);
-                BurstMeta.Plots.MultiScatter.h1dy(i) = stairs(binsy(1:end-1),hy{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y);
+                BurstMeta.Plots.MultiScatter.h1dx(i) = stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x);
+                BurstMeta.Plots.MultiScatter.h1dy(i) = stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y);
             end
             %%% hide normal 1d plots
             BurstMeta.Plots.Main_histX.Visible = 'off';
@@ -6149,6 +6139,16 @@ else
 end
 
 %% plotting of 1d hists
+
+%%% set limits of axes
+if ~(xlimits(1) == xlimits(2))
+    h.axes_general.XLim = xlimits;
+    h.axes_1d_x.XLim = xlimits;
+end
+if ~(ylimits(1) == ylimits(2))
+    h.axes_general.YLim = ylimits;
+    h.axes_1d_y.XLim = ylimits;
+end
 %%% Update Labels
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
@@ -11634,8 +11634,8 @@ if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple speci
     end
     color = lines(numel(n_per_species));
     for i = 1:numel(hx)
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = stairs(binsx(1:end-1),hx{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x);
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = stairs(binsy(1:end-1),hy{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y);
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x);
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y);
     end
     %%% hide normal 1d plots
     BurstMeta.Plots.LifetimeInd_histX.Visible = 'off';
@@ -13025,7 +13025,7 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
-        if strcmp(axes_copy.Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13044,7 +13044,7 @@ switch obj
                 hl.FontSize = 12;
                 hfig.Position(4) = hfig.Position(4) + 75;
                 hl.Position(2) =  hl.Position(2)+75;                
-                hl.Position(1) = 15;
+                hl.Position(1) = 75;
             end
         end
     case h.Export1DY_Menu
@@ -13086,7 +13086,7 @@ switch obj
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
         
-        if strcmp(axes_copy.Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13105,7 +13105,7 @@ switch obj
                 hl.FontSize = 12;
                 hfig.Position(4) = hfig.Position(4) + 75;
                 hl.Position(2) =  hl.Position(2)+75;                
-                hl.Position(1) = 15;
+                hl.Position(1) = 75;
             end
         end
     case h.Export2D_Menu
@@ -13197,6 +13197,7 @@ switch obj
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
                         panel_copy.Children(i).Children(9).LineStyle = 'none';
                     end
+                    ax1dx = i;
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -13207,8 +13208,7 @@ switch obj
                     end
             end
         end
-
-        if strcmp(panel_copy.Children(3).Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
@@ -13235,7 +13235,7 @@ switch obj
             if strcmp(panel_copy.Children(leg).Visible,'on')
                 hfig.Position(4) = 650;
                 panel_copy.Position(4) = 650;
-                panel_copy.Children(leg).Position(1) = 10;
+                panel_copy.Children(leg).Position(1) = 75;
                 panel_copy.Children(leg).Position(2) = 590;
             end
         else
@@ -13968,6 +13968,7 @@ if obj == h.MarkerColor_button
             end
         end
     end
+    PlotLifetimeInd([],[],h);
     return;
 end
 %%% Change Color of Line Plots
@@ -14551,7 +14552,6 @@ if obj == h.MarkerSize_edit
     if ~isnan(markersize)
         UserValues.BurstBrowser.Display.MarkerSize = markersize;
         fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
-        %%% Make Image Plots Visible, Hide Contourf Plots
         for i = 1:numel(fields)
             if ~isempty(BurstMeta.Plots.(fields{i}))
                 if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
@@ -14566,6 +14566,7 @@ if obj == h.MarkerSize_edit
     else
         h.MarkerSize_edit.String = num2str(UserValues.BurstBrowser.Display.MarkerSize);
     end
+    PlotLifetimeInd([],[],h);
 end
 LSUserValues(1);
 
