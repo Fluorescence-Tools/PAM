@@ -1600,6 +1600,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotContourLines was incomplete');
     end
     P.BurstBrowser.Display.PlotContourLines = S.BurstBrowser.Display.PlotContourLines;
+    %%% Checks, if BurstBrowser.Display.MarkerSize subfield exists
+    if ~isfield (S.BurstBrowser.Display,'MarkerSize')
+        S.BurstBrowser.Display.MarkerSize=36;
+        disp('UserValues.BurstBrowser.Display.MarkerSize was incomplete');
+    end
+    P.BurstBrowser.Display.MarkerSize = S.BurstBrowser.Display.MarkerSize;
+    %%% Checks, if BurstBrowser.Display.MarkerColor subfield exists
+    if ~isfield (S.BurstBrowser.Display,'MarkerColor')
+        S.BurstBrowser.Display.MarkerColor=[0,0,0];
+        disp('UserValues.BurstBrowser.Display.MarkerColor was incomplete');
+    end
+    P.BurstBrowser.Display.MarkerColor = S.BurstBrowser.Display.MarkerColor;
      %%% Checks, if BurstBrowser.Display.ZScale_Intensity subfield exists
     if ~isfield (S.BurstBrowser.Display,'ZScale_Intensity')
         S.BurstBrowser.Display.ZScale_Intensity=1;
