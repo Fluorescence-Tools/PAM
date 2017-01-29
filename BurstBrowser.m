@@ -3700,6 +3700,8 @@ switch mode
         %%% Individual Lifetime Tab
         BurstMeta.Plots.LifetimeInd_histX = bar(h.axes_lifetime_ind_1d_x,0.5,1,'FaceColor',[0.6 0.6 0.6],'BarWidth',1);BurstMeta.Plots.LifetimeInd_histX.UIContextMenu = h.ExportGraphLifetime_Menu;
         BurstMeta.Plots.LifetimeInd_histY = bar(h.axes_lifetime_ind_1d_y,0.5,1,'FaceColor',[0.6 0.6 0.6],'BarWidth',1);BurstMeta.Plots.LifetimeInd_histY.UIContextMenu = h.ExportGraphLifetime_Menu;
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime = [];
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime = [];
         %%% fFCS Tab
         BurstMeta.Plots.fFCS.IRF_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','r','LineStyle','-','LineWidth',1);
         BurstMeta.Plots.fFCS.Microtime_Species1_par = plot(h.axes_fFCS_DecayPar,[0 1],[0 0],'Color','b','LineStyle','-','LineWidth',1);
@@ -5830,8 +5832,9 @@ BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
 set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
-delete(BurstMeta.Plots.MultiScatter.h1dx);
-delete(BurstMeta.Plots.MultiScatter.h1dy);
+try;delete(BurstMeta.Plots.MultiScatter.h1dx);end;
+try;delete(BurstMeta.Plots.MultiScatter.h1dy);end;
+legend(h.axes_1d_x,'off');
 %%% only hide fit plots if selection of parameter or species has changed,
 %%% or if we switched on KDE
 obj = gcbo;
@@ -6012,6 +6015,23 @@ if ~colorbyparam
             %%% hide normal 1d plots
             BurstMeta.Plots.Main_histX.Visible = 'off';
             BurstMeta.Plots.Main_histY.Visible = 'off';
+            %%% add legend
+            [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
+            num_species = numel(file_n);
+            str = cell(num_species,1);
+            for i = 1:num_species
+                %%% extract name
+                name = BurstData{file_n(i)}.FileName;
+                if (species_n(i) ~= 0)
+                    if (subspecies_n(i) ~= 1) %%% we have a subspecies selected
+                        name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
+                    else %%% we have a species selected 
+                        name = [name,'/', char(sel(i).getName)];
+                    end
+                end
+                str{i} = strrep(name,'_',' ');  
+            end
+            legend(h.axes_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
         else
             datapoints = [datatoplot(:,x),datatoplot(:,y)];
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
@@ -6129,8 +6149,6 @@ else
 end
 
 %% plotting of 1d hists
-legend(h.axes_1d_x,'off');
-
 %%% Update Labels
 xlabel(h.axes_general,h.ParameterListX.String{x},'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,h.ParameterListY.String{y},'Color',UserValues.Look.Fore);
@@ -6953,10 +6971,14 @@ if ~exist('limits','var')
     y_boundaries(2) = max([y_boundaries(2) max(ylimits(:,2))]);
 elseif exist('limits','var') %%% called with absolute limits
     %%% obey specified limits!
-    x_boundaries(1) = max([x_boundaries(1) limits{1}(1)]);
-    x_boundaries(2) = min([x_boundaries(2) limits{1}(2)]);
-    y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
-    y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
+    x_boundaries(1) = limits{1}(1);
+    x_boundaries(2) = limits{1}(2);
+    y_boundaries(1) = limits{2}(1);
+    y_boundaries(2) = limits{2}(2);
+%     x_boundaries(1) = max([x_boundaries(1) limits{1}(1)]);
+%     x_boundaries(2) = min([x_boundaries(2) limits{1}(2)]);
+%     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
+%     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
 
     
@@ -7052,8 +7074,8 @@ for i = 1:3
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'off';
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'off';
 end
-delete(BurstMeta.Plots.MultiScatter.h1dx);
-delete(BurstMeta.Plots.MultiScatter.h1dy);
+try;delete(BurstMeta.Plots.MultiScatter.h1dx);end;
+try;delete(BurstMeta.Plots.MultiScatter.h1dy);end;
 BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
@@ -11516,30 +11538,54 @@ switch BurstData{file}.BAMethod
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
+                paramX = 'Lifetime D [ns]';
+                paramY = 'FRET Efficiency';
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
+                paramX = 'Lifetime A [ns]';
+                paramY = 'FRET Efficiency';
             case 3 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
+                paramX = 'Lifetime D [ns]';
+                paramY = 'Anisotropy D';
             case 4 %rRR vs tauRR
                 origin = h.axes_rRRvsTauRR;
+                paramX = 'Lifetime A [ns]';
+                paramY = 'Anisotropy A';
         end
     case {3,4}
         switch h.lifetime_ind_popupmenu.Value
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
+                paramX = 'Lifetime GG [ns]';
+                paramY = 'FRET Efficiency';
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
-            case 3 %E1A vs tauVV
+                paramX = 'Lifetime RR [ns]';
+                paramY = 'FRET Efficiency';
+            case 3 %E1A vs tauBB
                 origin = h.axes_E_BtoGRvsTauBB;
+                paramX = 'Lifetime BB [ns]';
+                paramY = 'FRET Efficiency B->G+R';
             case 4 %rGG vs tauGG
                 origin = h.axes_rGGvsTauGG;
+                paramX = 'Lifetime GG [ns]';
+                paramY = 'Anisotropy GG';
             case 5 %rRR vs tauRR
                 origin = h.axes_rRRvsTauRR;
+                paramX = 'Lifetime RR [ns]';
+                paramY = 'Anisotropy RR';
             case 6 %rBB vs tauBB
                 origin = h.axes_rBBvsTauBB;
+                paramX = 'Lifetime BB [ns]';
+                paramY = 'Anisotropy BB';
         end
 end
-
+BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
+BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
+try;delete(BurstMeta.Plots.MultiScatter.h1dx_lifetime);end;
+try;delete(BurstMeta.Plots.MultiScatter.h1dy_lifetime);end;
+legend(h.axes_lifetime_ind_1d_x,'off');
 cla(h.axes_lifetime_ind_2d);
 plots =origin.Children;
 for i = numel(plots):-1:1
@@ -11575,6 +11621,45 @@ h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
 h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
 h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
 
+[H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h);
+if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+    [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h,paramX,paramY,{origin.XLim,origin.YLim});
+    %%% prepare 1d hists
+    binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
+    binsy = linspace(ylimits(1),ylimits(2),numel(ybins)+1);
+    n_per_species = cumsum([1,(n_per_species-1)]);
+    for i = 1:numel(n_per_species)-1
+        hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); hx{i} = hx{i}./sum(hx{i});
+        hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); hy{i} = hy{i}./sum(hy{i});
+    end
+    color = lines(numel(n_per_species));
+    for i = 1:numel(hx)
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = stairs(binsx(1:end-1),hx{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x);
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = stairs(binsy(1:end-1),hy{i},'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y);
+    end
+    %%% hide normal 1d plots
+    BurstMeta.Plots.LifetimeInd_histX.Visible = 'off';
+    BurstMeta.Plots.LifetimeInd_histY.Visible = 'off';
+    %%% add legend
+    [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
+    num_species = numel(file_n);
+    str = cell(num_species,1);
+    for i = 1:num_species
+        %%% extract name
+        name = BurstData{file_n(i)}.FileName;
+        if (species_n(i) ~= 0)
+            if (subspecies_n(i) ~= 1) %%% we have a subspecies selected
+                name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
+            else %%% we have a species selected 
+                name = [name,'/', char(sel(i).getName)];
+            end
+        end
+        str{i} = strrep(name,'_',' ');  
+    end
+    legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    h.axes_lifetime_ind_1d_x.YLimMode = 'auto';
+    h.axes_lifetime_ind_1d_y.YLimMode = 'auto';
+end
 h.axes_lifetime_ind_1d_x.YTickMode = 'auto';
 yticks= get(h.axes_lifetime_ind_1d_x,'YTick');
 set(h.axes_lifetime_ind_1d_x,'YTick',yticks(2:end));
@@ -12940,7 +13025,8 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
-        if strcmp(axes_copy.Children(8).Visible,'on') %% Multiplot is used (first stair plot is visible)
+        if strcmp(axes_copy.Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+            %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
             for i = 1:numel(axes_copy.Children);
@@ -12949,14 +13035,17 @@ switch obj
                 end
             end
             delete(axes_copy.Children(del));
-            legend('show');
-            hl = hfig.Children(1);
-            
-            hfig.Units = 'pixel';
-            axes_copy.Units = 'pixel';
-            hl.Units = 'pixel';
-            hfig.Position(4) = hfig.Position(4) + 75;
-            hl.Position(2) =  hl.Position(2)+75;
+            if numel(axes_copy.Children)>1
+                hl = legend('show');
+                hl.Box = 'off';
+                hfig.Units = 'pixel';
+                axes_copy.Units = 'pixel';
+                hl.Units = 'pixel';
+                hl.FontSize = 12;
+                hfig.Position(4) = hfig.Position(4) + 75;
+                hl.Position(2) =  hl.Position(2)+75;                
+                hl.Position(1) = 15;
+            end
         end
     case h.Export1DY_Menu
         AspectRatio = 0.7;
@@ -12997,7 +13086,8 @@ switch obj
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
         
-        if strcmp(axes_copy.Children(8).Visible,'on') %% Multiplot is used (first stair plot is visible)
+        if strcmp(axes_copy.Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+            %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
             for i = 1:numel(axes_copy.Children);
@@ -13006,14 +13096,17 @@ switch obj
                 end
             end
             delete(axes_copy.Children(del));
-            legend('show');
-            hl = hfig.Children(1);
-            
-            hfig.Units = 'pixel';
-            axes_copy.Units = 'pixel';
-            hl.Units = 'pixel';
-            hfig.Position(4) = hfig.Position(4) + 75;
-            hl.Position(2) =  hl.Position(2)+75;
+            if numel(axes_copy.Children)>1
+                hl = legend(h.axes_1d_x.Legend.String);
+                hl.Box = 'off';
+                hfig.Units = 'pixel';
+                axes_copy.Units = 'pixel';
+                hl.Units = 'pixel';
+                hl.FontSize = 12;
+                hfig.Position(4) = hfig.Position(4) + 75;
+                hl.Position(2) =  hl.Position(2)+75;                
+                hl.Position(1) = 15;
+            end
         end
     case h.Export2D_Menu
         AspectRatio = 1;
@@ -13077,8 +13170,10 @@ switch obj
                     yticks = get(panel_copy.Children(i),'YTick');
                     set(panel_copy.Children(i),'YTick',yticks(2:end));
                     % change the grayscale of the bars and remove the line
-                    panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
-                    panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
+                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                        panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
                 case 'Axes_1D_X'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
@@ -13098,8 +13193,10 @@ switch obj
                     set(panel_copy.Children(i),'YTick',yticks(2:end));
                     panel_copy.Children(i).XTickLabelMode = 'auto';
                     % change the grayscale of the bars and remove the line
-                    panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
-                    panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
+                        panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
+                        panel_copy.Children(i).Children(9).LineStyle = 'none';
+                    end
                 case 'Axes_General'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -13110,8 +13207,40 @@ switch obj
                     end
             end
         end
-        %%% Update Colorbar by plotting it anew
-        if ~strcmp(panel_copy.Children(3).Children(8).Visible,'on') %%% check that multiplot is NOT used (if multi plot is used, first stair plot is visible)
+
+        if strcmp(panel_copy.Children(3).Children(8).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+            %%% (if multi plot is used, first stair plot is visible)
+            %%% if multiplot, extend figure and shift legend upstairs
+            %%% delete the zscale axis
+            for i = 1:numel(hfig.Children(end).Children)
+                if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
+                    del = i;
+                end
+            end
+            delete(hfig.Children(end).Children(del));
+            %%% Set all units to pixels for easy editing without resizing
+            hfig.Units = 'pixels';
+            panel_copy.Units = 'pixels';
+            for i = 1:numel(panel_copy.Children)
+                if isprop(panel_copy.Children(i),'Units');
+                    panel_copy.Children(i).Units = 'pixels';
+                end
+            end
+            %%% refind legend item
+            for i = 1:numel(panel_copy.Children)
+                if strcmp(panel_copy.Children(i).Type,'legend')
+                    leg = i;
+                end
+            end
+            if strcmp(panel_copy.Children(leg).Visible,'on')
+                hfig.Position(4) = 650;
+                panel_copy.Position(4) = 650;
+                panel_copy.Children(leg).Position(1) = 10;
+                panel_copy.Children(leg).Position(2) = 590;
+            end
+        else
+            %%% Update Colorbar by plotting it anew
+            %%% multiplot is NOT used
             if any(cell2mat(h.CutTable.Data(:,6)))  %%% colored by parameter
                 cbar = colorbar(panel_copy.Children(4),'Location','north','Color',[0 0 0],'FontSize',fontsize-8); 
                 %panel_copy.Children(3).XTickLabel(end) = {' '};
@@ -13143,32 +13272,6 @@ switch obj
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
             end
-        else %%% if multiplot, extend figure and shift legend upstairs
-            %%% delete the zscale axis
-            for i = 1:numel(hfig.Children(end).Children)
-                if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
-                    del = i;
-                end
-            end
-            delete(hfig.Children(end).Children(del));
-            %%% Set all units to pixels for easy editing without resizing
-            hfig.Units = 'pixels';
-            panel_copy.Units = 'pixels';
-            for i = 1:numel(panel_copy.Children)
-                if isprop(panel_copy.Children(i),'Units');
-                    panel_copy.Children(i).Units = 'pixels';
-                end
-            end
-            %%% refind legend item
-            for i = 1:numel(panel_copy.Children)
-                if strcmp(panel_copy.Children(i).Type,'legend')
-                    leg = i;
-                end
-            end
-            hfig.Position(4) = 650;
-            panel_copy.Position(4) = 650;
-            panel_copy.Children(leg).Position(1) = 10;
-            panel_copy.Children(leg).Position(2) = 590;
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -13414,11 +13517,16 @@ switch obj
         del = zeros(numel(panel_copy.Children),1);
         for i = 1:numel(panel_copy.Children)
             if ~strcmp(panel_copy.Children(i).Type,'axes')
-                del(i) = 1;
+                if ~strcmp(panel_copy.Children(i).Type,'legend')
+                    del(i) = 1;
+                end
             end
         end
         delete(panel_copy.Children(logical(del)));
         for i = 1:numel(panel_copy.Children)
+            if strcmp(panel_copy.Children(i).Type,'legend')
+                continue;
+            end
             %%% Set the Color of Axes to white
             panel_copy.Children(i).Color = [1 1 1];
             %%% change X/YColor Color Color
@@ -13434,17 +13542,23 @@ switch obj
                     panel_copy.Children(i).YTickLabelRotation = 270;
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
                     % change the grayscale of the bars and remove the line
-                    panel_copy.Children(i).Children.FaceColor = [0.7 0.7 0.7];
-                    panel_copy.Children(i).Children.LineStyle = 'none';
-                    
+                    for k = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
+                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        end
+                    end
                 case 'axes_lifetime_ind_1d_x'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
                     % change the grayscale of the bars and remove the line
-                    panel_copy.Children(i).Children.FaceColor = [0.7 0.7 0.7];
-                    panel_copy.Children(i).Children.LineStyle = 'none';
-                    
+                    for k = 1:numel(panel_copy.Children(i).Children)
+                        if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
+                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            panel_copy.Children(i).Children(k).LineStyle = 'none';
+                        end
+                    end
                 case 'axes_lifetime_ind_2d'
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
@@ -13465,25 +13579,49 @@ switch obj
                     end
             end
         end
-        cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
-        cbar.Position = [0.8,0.85,0.18,0.025];
-        cbar.Label.String = 'Occurrence';
-        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
-            labels = cellfun(@str2double,cbar.TickLabels);
-            %%% find maximum number of bursts
-            for j = 1:numel(panel_copy.Children)
-                if strcmp(panel_copy.Children(j).Tag,'axes_lifetime_ind_2d')
-                    for k=1:numel(panel_copy.Children(j).Children)
-                        if strcmp(panel_copy.Children(j).Children(k).Type,'image')
-                            maxZ = max(panel_copy.Children(j).Children(k).CData(:));
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+            cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
+            cbar.Position = [0.8,0.85,0.18,0.025];
+            cbar.Label.String = 'Occurrence';
+            if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+                labels = cellfun(@str2double,cbar.TickLabels);
+                %%% find maximum number of bursts
+                for j = 1:numel(panel_copy.Children)
+                    if strcmp(panel_copy.Children(j).Tag,'axes_lifetime_ind_2d')
+                        for k=1:numel(panel_copy.Children(j).Children)
+                            if strcmp(panel_copy.Children(j).Children(k).Type,'image')
+                                maxZ = max(panel_copy.Children(j).Children(k).CData(:));
+                            end
                         end
                     end
                 end
+                for i = 1:numel(labels)
+                    cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                end
+            end      
+        end
+        if h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+            %%% Set all units to pixels for easy editing without resizing
+            hfig.Units = 'pixels';
+            panel_copy.Units = 'pixels';
+            for i = 1:numel(panel_copy.Children)
+                if isprop(panel_copy.Children(i),'Units');
+                    panel_copy.Children(i).Units = 'pixels';
+                end
             end
-            for i = 1:numel(labels)
-                cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+            %%% refind legend item
+            for i = 1:numel(panel_copy.Children)
+                if strcmp(panel_copy.Children(i).Type,'legend')
+                    leg = i;
+                end
             end
-        end      
+            if strcmp(panel_copy.Children(leg).Visible,'on')
+                hfig.Position(4) = 650;
+                panel_copy.Position(4) = 650;
+                panel_copy.Children(leg).Position(1) = 10;
+                panel_copy.Children(leg).Position(2) = 590;
+            end
+        end
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
     case h.ExportCorrections_Menu
         fontsize = 22;
