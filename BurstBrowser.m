@@ -1762,7 +1762,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    PlotType_String = {'Image','Contour'};
+    PlotType_String = {'Image','Contour','Scatter','Hex'};
     h.PlotTypePopumenu = uicontrol(...
         'Style','popupmenu',...
         'Parent',h.DisplayOptionsPanel,...
@@ -3553,6 +3553,8 @@ switch mode
         %%% Initialize both image AND contour plots in array
         BurstMeta.Plots.Main_Plot(1) = imagesc(linspace(0,1,10),linspace(0,1,10),zeros(10),'Parent',h.axes_general,'UIContextMenu',h.ExportGraph_Menu);axis(h.axes_general,'tight');
         [~,BurstMeta.Plots.Main_Plot(2)] = contourf(linspace(0,1,10),linspace(0,1,10),zeros(10),10,'Parent',h.axes_general,'Visible','off');BurstMeta.Plots.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
+        BurstMeta.HexPlot.MainPlot_hex = [];
+        BurstMeta.Plots.Main_Plot(3) = scatter([0,1],[0,1],'.','Parent',h.axes_general,'CData',[0,0,0]);
         %%% Main Tab multiple species (consider up to three)
         BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off','UIContextMenu',h.ExportGraph_Menu);
         BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
@@ -3599,6 +3601,8 @@ switch mode
         BurstMeta.Plots.EvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauGG);axis(h.axes_EvsTauGG,'tight');
         [~,BurstMeta.Plots.EvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauGG,'Visible','off');
         BurstMeta.Plots.EvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.EvsTauGG = [];
+        BurstMeta.Plots.EvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauGG,'CData',[0,0,0]);
         BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','--','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--','LineWidth',3,'Visible','off');
@@ -3606,10 +3610,14 @@ switch mode
         BurstMeta.Plots.EvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_EvsTauRR);axis(h.axes_EvsTauRR,'tight');
         [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
         BurstMeta.Plots.EvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.EvsTauRR = [];
+        BurstMeta.Plots.EvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauRR,'CData',[0,0,0]);
         BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rGGvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_rGGvsTauGG);axis(h.axes_rGGvsTauGG,'tight');
         [~,BurstMeta.Plots.rGGvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
         BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.rGGvsTauGG = [];
+        BurstMeta.Plots.rGGvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rGGvsTauGG,'CData',[0,0,0]);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -3617,6 +3625,8 @@ switch mode
         BurstMeta.Plots.rRRvsTauRR(1) = imagesc(zeros(2),'Parent',h.axes_rRRvsTauRR);axis(h.axes_rRRvsTauRR,'tight');
         [~,BurstMeta.Plots.rRRvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_rRRvsTauRR,'Visible','off');axis(h.axes_rRRvsTauRR,'tight');
         BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.rRRvsTauRR = [];
+        BurstMeta.Plots.rRRvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rRRvsTauRR,'CData',[0,0,0]);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -3625,10 +3635,14 @@ switch mode
         BurstMeta.Plots.E_BtoGRvsTauBB(1) = imagesc(zeros(2),'Parent',h.axes_E_BtoGRvsTauBB);axis(h.axes_E_BtoGRvsTauBB,'tight');
         [~,BurstMeta.Plots.E_BtoGRvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_E_BtoGRvsTauBB,'Visible','off');
         BurstMeta.Plots.E_BtoGRvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.E_BtoGRvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.E_BtoGRvsTauBB = [];
+        BurstMeta.Plots.E_BtoGRvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_E_BtoGRvsTauBB,'CData',[0,0,0]);
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rBBvsTauBB(1) = imagesc(zeros(2),'Parent',h.axes_rBBvsTauBB);axis(h.axes_rBBvsTauBB,'tight');
         [~,BurstMeta.Plots.rBBvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_rBBvsTauBB,'Visible','off');
         BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
+        BurstMeta.HexPlot.rBBvsTauBB = [];
+        BurstMeta.Plots.rBBvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rBBvsTauBB,'CData',[0,0,0]);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinBB(1) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinBB(2) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -5726,7 +5740,7 @@ if nargin == 2
         h = guidata(obj);
     end
 end
-
+drawnow limitrate;
 %%% If a display option was changed, update the UserValues!
 UpdateGUIOptions(obj,[],h);
 
@@ -5742,6 +5756,16 @@ y = get(h.ParameterListY,'Value');
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
+%%% Update ColorMap
+if ischar(UserValues.BurstBrowser.Display.ColorMap)
+    eval(['colormap(h.BurstBrowser,' UserValues.BurstBrowser.Display.ColorMap ')']);
+else
+    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+end
+if UserValues.BurstBrowser.Display.ColorMapInvert
+    colormap(flipud(colormap));
+end
+h.colorbar.Visible = 'on';
 %%% Disable/Enable respective plots
 switch UserValues.BurstBrowser.Display.PlotType
     case 'Image'
@@ -5835,6 +5859,17 @@ if size(CutState,2) > 0
         ylimits = [0 1];
     end
 end
+
+%%% set limits of axes
+if ~(xlimits(1) == xlimits(2))
+    h.axes_general.XLim = xlimits;
+    h.axes_1d_x.XLim = xlimits;
+end
+if ~(ylimits(1) == ylimits(2))
+    h.axes_general.YLim = ylimits;
+    h.axes_1d_y.XLim = ylimits;
+end
+
 %%% check what plot type to use
 colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value;
 if ~colorbyparam
@@ -5842,7 +5877,7 @@ if ~colorbyparam
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     else
         %%% call MultiPlot for superposition of all histograms
-        [H,xbins,ybins,xlimits,ylimits] = MultiPlot([],[],h);
+        [H,xbins,ybins,xlimits,ylimits,datapoints] = MultiPlot([],[],h);
     end
     if(get(h.Hist_log10, 'Value'))
         HH = log10(H);
@@ -5879,6 +5914,35 @@ if ~colorbyparam
     h.colorbar.TickLabelsMode = 'auto';
     pause(0.1)
     h.colorbar.TicksMode = 'auto';
+    %%% update hex plot if selected
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+        delete(BurstMeta.HexPlot.MainPlot_hex);
+        %%% hide all other plots
+        set(BurstMeta.Plots.Main_Plot,'Visible','off');
+        %%% we need to choose one binning, choose x binning
+        nbins = nbinsX;
+        UserValues.BurstBrowser.Display.NumberOfBinsX = nbins;
+        UserValues.BurstBrowser.Display.NumberOfBinsY = nbins;
+        h.NumberOfBinsXEdit.String = num2str(nbins);
+        h.NumberOfBinsYEdit.String = num2str(nbins);
+        %%% get data
+        if ~h.MultiselectOnCheckbox.Value
+            datapoints = [datatoplot(:,x),datatoplot(:,y)];
+        end
+        %%% make hexplot
+        axes(h.axes_general);
+        BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        %%% get data
+        if ~h.MultiselectOnCheckbox.Value
+            datapoints = [datatoplot(:,x),datatoplot(:,y)];
+        end
+        BurstMeta.Plots.Main_Plot(3).XData = datapoints(:,1);
+        BurstMeta.Plots.Main_Plot(3).YData = datapoints(:,2);
+        BurstMeta.Plots.Main_Plot(3).CData = [0,0,0];
+        h.colorbar.Visible = 'off';
+    end
 else
     % histogram X vs Y parameter
     [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
@@ -5891,6 +5955,7 @@ else
     param = param(23:end-18);
     z = find(strcmp(param,BurstData{file}.NameArray)); 
     z = datatoplot(:,z);
+
     % sort all selected bursts into the Mask
     for i = 1:size(bin,1) %bin in a list of X and Y bins of all selected bursts
         if ~isnan(z(i))
@@ -5943,12 +6008,7 @@ else
     BurstMeta.Plots.Main_Plot(1).YData = ybins;
     BurstMeta.Plots.Main_Plot(1).CData = Image;
     BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);
-    %     AlphaData = H./max(max(H));
-    %     offset = 0.25;
-    %     AlphaData = (AlphaData*(1-offset)+offset);
-    %     AlphaData(AlphaData < (offset+0.01)) = 0;
-    %     BurstMeta.Plots.Main_Plot(1).AlphaData = AlphaData;
-
+    
     %%% Enable ZScale Axis
     h.axes_ZScale.Visible = 'on';
     BurstMeta.Plots.ZScale_hist.Visible = 'on';
@@ -5967,13 +6027,30 @@ else
     h.colorbar.Ticks = [0,1/2,1];
     h.colorbar.TickLabels = {sprintf('%.2f',(zlim(1)));sprintf('%.2f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.2f',zlim(2))};
     h.colorbar.AxisLocation='out';
+    
+    if any(strcmp(UserValues.BurstBrowser.Display.PlotType,{'Contour','Hex'}))
+        %%% Change plot type to image
+        h.PlotTypePopumenu.Value = 1;
+        UserValues.BurstBrowser.Display.PlotType = 'Image';
+        ChangePlotType(h.PlotTypePopumenu,[]);
+    end
+    
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,{'Scatter'})
+        %%% simply use z-paramter as color
+        BurstMeta.Plots.Main_Plot(3).XData = datatoplot(:,x);
+        BurstMeta.Plots.Main_Plot(3).YData = datatoplot(:,y);
+        %%% map z value to colormap
+        cmap = colormap;
+        z_to_color = ceil((z-min(z))./(max(z)-min(z)).*size(cmap,1));
+        z_to_color(z_to_color == 0) = 1;
+        z_color = cmap(z_to_color,:);
+        BurstMeta.Plots.Main_Plot(3).CData = z_color;
+    end
 
     HH = H;
 end
 
-
 %% plotting of 1d hists
-h.colorbar.Visible = 'on';
 legend(h.axes_1d_x,'off');
 
 %%% Update Labels
@@ -5996,16 +6073,6 @@ h.axes_1d_y.YTickMode = 'auto';
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
 
-%%% set limits of axes
-if ~(xlimits(1) == xlimits(2))
-    h.axes_general.XLim = xlimits;
-    h.axes_1d_x.XLim = xlimits;
-end
-if ~(ylimits(1) == ylimits(2))
-    h.axes_general.YLim = ylimits;
-    h.axes_1d_y.XLim = ylimits;
-end
-
 if (h.axes_1d_x.XLim(2) - h.axes_1d_x.XTick(end))/(h.axes_1d_x.XLim(2)-h.axes_1d_x.XLim(1)) < 0.02
     %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
     h.axes_1d_x.XTickLabel{end} = '';
@@ -6013,18 +6080,6 @@ else
     h.axes_1d_x.XTickLabel = h.axes_general.XTickLabel;
 end
 
-%%% Update ColorMap
-if ischar(UserValues.BurstBrowser.Display.ColorMap)
-    eval(['colormap(h.BurstBrowser,' UserValues.BurstBrowser.Display.ColorMap ')']);
-else
-    colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
-end
-if UserValues.BurstBrowser.Display.ColorMapInvert
-    colormap(flipud(colormap));
-end
-
-% update plot type
-% ChangePlotType([],[]);
 % Update no. bursts
 set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts (' num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
 if h.DisplayAverage.Value == 1
@@ -6527,45 +6582,105 @@ switch obj
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Image')
             %%% Make Image Plots Visible, Hide Contourf Plots
             for i = 1:numel(fields)
-                if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
-                    if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
-                        BurstMeta.Plots.(fields{i})(1).Visible = 'on';
-                        BurstMeta.Plots.(fields{i})(2).Visible = 'off';
-                        %BurstMeta.Plots.gamma_lifetime(1).Visible = 'on';
-                        %BurstMeta.Plots.gamma_lifetime(2).Visible = 'off';
-                        %BurstMeta.Plots.gamma_fit(1).Visible = 'on';
-                        %BurstMeta.Plots.gamma_fit(2).Visible = 'off';
+                if ~isempty(BurstMeta.Plots.(fields{i}))
+                    if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                        if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                            BurstMeta.Plots.(fields{i})(1).Visible = 'on';
+                            BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+                            if numel(BurstMeta.Plots.(fields{i}))>2
+                                BurstMeta.Plots.(fields{i})(3).Visible = 'off';
+                            end
+                        end
                     end
                 end
             end
         end
         
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            delete(BurstMeta.HexPlot.MainPlot_hex);
             %%% Make Image Plots Visible, Hide Contourf Plots
             for i = 1:numel(fields)
-                if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
-                    if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
-                        BurstMeta.Plots.(fields{i})(1).Visible = 'off';
-                        BurstMeta.Plots.(fields{i})(2).Visible = 'on';
-                        BurstMeta.Plots.gamma_lifetime(1).Visible = 'off';
-                        BurstMeta.Plots.gamma_lifetime(2).Visible = 'on';
-                        BurstMeta.Plots.gamma_fit(1).Visible = 'off';
-                        BurstMeta.Plots.gamma_fit(2).Visible = 'on';
+                if ~isempty(BurstMeta.Plots.(fields{i}))
+                    if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                        if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                            BurstMeta.Plots.(fields{i})(1).Visible = 'off';
+                            BurstMeta.Plots.(fields{i})(2).Visible = 'on';
+                            if numel(BurstMeta.Plots.(fields{i}))>2
+                                BurstMeta.Plots.(fields{i})(3).Visible = 'off';
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+            delete(BurstMeta.HexPlot.MainPlot_hex);
+            %%% Make Image Plots Visible, Hide Contourf Plots
+            for i = 1:numel(fields)
+                if ~isempty(BurstMeta.Plots.(fields{i}))
+                    if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                        if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                            if numel(BurstMeta.Plots.(fields{i}))>2
+                                BurstMeta.Plots.(fields{i})(1).Visible = 'off';
+                                BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+                                BurstMeta.Plots.(fields{i})(3).Visible = 'on';
+                            end
+                        end
                     end
                 end
             end
             UpdatePlot([],[],h);
         end
+        if any(strcmp(UserValues.BurstBrowser.Display.PlotType,{'Image','Contour','Scatter'}))
+            fields = fieldnames(BurstMeta.HexPlot);
+            for i = 1:numel(fields)
+                delete(BurstMeta.HexPlot.(fields{i}));
+            end
+        end
+        if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+            %%% Make Image Plots Visible, Hide Contourf Plots
+            for i = 1:numel(fields)
+                if ~isempty(BurstMeta.Plots.(fields{i}))
+                    if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                        if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                            BurstMeta.Plots.(fields{i})(1).Visible = 'off';
+                            BurstMeta.Plots.(fields{i})(2).Visible = 'off';
+                            if numel(BurstMeta.Plots.(fields{i}))>2
+                                BurstMeta.Plots.(fields{i})(3).Visible = 'off';
+                            end
+                        end
+                    end
+                end
+            end
+            %%% Update Plots
+            %%% To speed up, find out which tab is visible and only update the respective tab
+            switch h.Main_Tab.SelectedTab
+                case h.Main_Tab_General
+                    %%% we switched to the general tab
+                    UpdatePlot([],[],h);
+                case h.Main_Tab_Lifetime
+                    %%% we switched to the lifetime tab
+                    %%% figure out what subtab is selected
+                    UpdateLifetimePlots([],[],h);
+                    switch h.LifetimeTabgroup.SelectedTab
+                        case h.LifetimeTabAll
+                        case h.LifetimeTabInd
+                            PlotLifetimeInd([],[],h);
+                    end     
+            end
+        end
     case h.PlotContourLines
         UserValues.BurstBrowser.Display.PlotContourLines = h.PlotContourLines.Value;
         fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
         for i = 1:numel(fields)
-            if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
-                if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
-                    if UserValues.BurstBrowser.Display.PlotContourLines == 0
-                        BurstMeta.Plots.(fields{i})(2).LineStyle = 'none';
-                    elseif UserValues.BurstBrowser.Display.PlotContourLines == 1
-                        BurstMeta.Plots.(fields{i})(2).LineStyle = '-';
+            if ~isempty(BurstMeta.Plots.(fields{i}))
+                if isprop(BurstMeta.Plots.(fields{i})(1),'Type')
+                    if strcmp(BurstMeta.Plots.(fields{i})(1).Type,'image')
+                        if UserValues.BurstBrowser.Display.PlotContourLines == 0
+                            BurstMeta.Plots.(fields{i})(2).LineStyle = 'none';
+                        elseif UserValues.BurstBrowser.Display.PlotContourLines == 1
+                            BurstMeta.Plots.(fields{i})(2).LineStyle = '-';
+                        end
                     end
                 end
             end
@@ -6577,7 +6692,7 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [HistOut,xbins,ybins,x_boundaries,y_boundaries] = MultiPlot(obj,~,h,paramX,paramY,limits)
+function [HistOut,xbins,ybins,x_boundaries,y_boundaries,datapoints] = MultiPlot(obj,~,h,paramX,paramY,limits)
 %%% limits is optional global max and min boundaries for x and y
 if nargin < 3
     if ishandle(obj)
@@ -6765,7 +6880,7 @@ for i = 1:num_species
 end
 
 
-if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1
+if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
         H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
@@ -6778,6 +6893,13 @@ if nargout > 0 %%% we requested the histogram, do not plot!
         Hcum = Hcum + H{k};
     end
     HistOut = Hcum;
+    
+    datapoints = [];
+    if nargout == 6 %%% return raw data points for scatter/hex plot
+        for i = 1:num_species
+            datapoints = [datapoints; [datatoplot{i}(:,x{i}),datatoplot{i}(:,y{i})]];
+        end
+    end
     return;
 end
 
@@ -10978,9 +11100,10 @@ nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 if ~h.MultiselectOnCheckbox.Value
     maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
     [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+    datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.05 1]});
+    [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.05 1]});
 end
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
@@ -10998,6 +11121,15 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+BurstMeta.Plots.EvsTauGG(3).XData = datapoints(:,1);
+BurstMeta.Plots.EvsTauGG(3).YData = datapoints(:,2);
+%%% update hex plot if selected
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+    delete(BurstMeta.HexPlot.EvsTauGG);
+    %%% make hexplot
+    axes(h.axes_EvsTauGG);
+    BurstMeta.HexPlot.EvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauGG,[-0.05 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
@@ -11008,9 +11140,10 @@ end
 if ~h.MultiselectOnCheckbox.Value
     maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
     [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+    datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+1.5;
-    [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.05 1]});
+    [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.05 1]});
 end
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
@@ -11028,6 +11161,15 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+BurstMeta.Plots.EvsTauRR(3).XData = datapoints(:,1);
+BurstMeta.Plots.EvsTauRR(3).YData = datapoints(:,2);
+%%% update hex plot if selected
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+    delete(BurstMeta.HexPlot.EvsTauRR);
+    %%% make hexplot
+    axes(h.axes_EvsTauRR);
+    BurstMeta.HexPlot.EvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauRR,[-0.05 1]);
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
@@ -11035,9 +11177,10 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     if ~h.MultiselectOnCheckbox.Value
         maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
+        datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)];
     else
         maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
+        [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
@@ -11055,15 +11198,25 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    BurstMeta.Plots.rGGvsTauGG(3).XData = datapoints(:,1);
+    BurstMeta.Plots.rGGvsTauGG(3).YData = datapoints(:,2);
+    %%% update hex plot if selected
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+        delete(BurstMeta.HexPlot.rGGvsTauGG);
+        %%% make hexplot
+        axes(h.axes_rGGvsTauGG);
+        BurstMeta.HexPlot.rGGvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 0.5],'res',nbinsX);
+    end
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.Value
         maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
+        datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)];
     else
         maxX = BurstData{file}.Corrections.AcceptorLifetime+1.5;
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
+        [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
@@ -11081,6 +11234,15 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    BurstMeta.Plots.rRRvsTauRR(3).XData = datapoints(:,1);
+    BurstMeta.Plots.rRRvsTauRR(3).YData = datapoints(:,2);
+    %%% update hex plot if selected
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+        delete(BurstMeta.HexPlot.rRRvsTauRR);
+        %%% make hexplot
+        axes(h.axes_rRRvsTauRR);
+        BurstMeta.HexPlot.rRRvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 0.5],'res',nbinsX);
+    end
     try h.axes_rRRvsTauRR.XLim=[0,maxX]; end
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
 end
@@ -11094,9 +11256,10 @@ if any(BurstData{file}.BAMethod == [3,4])
         valid = (datatoplot(:,idx_tauBB) > 0.01);
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+        datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A)];
     else
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.05 1]});
+        [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.05 1]});
     end
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
@@ -11114,15 +11277,25 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    BurstMeta.Plots.E_BtoGRvsTauBB(3).XData = datapoints(:,1);
+    BurstMeta.Plots.E_BtoGRvsTauBB(3).YData = datapoints(:,2);
+    %%% update hex plot if selected
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+        delete(BurstMeta.HexPlot.E_BtoGRvsTauBB);
+        %%% make hexplot
+        axes(h.axes_E_BtoGRvsTauBB);
+        BurstMeta.HexPlot.E_BtoGRvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+    end
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
     %% Plot rBB vs tauBB
     if ~h.MultiselectOnCheckbox.Value
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
+        datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB)];
     else
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
-        [H,xbins,ybins] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 maxX], [-0.1 0.5]});
+        [H,xbins,ybins,~,~,datapoints] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 maxX], [-0.1 0.5]});
     end
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
@@ -11140,6 +11313,15 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    BurstMeta.Plots.rBBvsTauBB(3).XData = datapoints(:,1);
+    BurstMeta.Plots.rBBvsTauBB(3).YData = datapoints(:,2);
+    %%% update hex plot if selected
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+        delete(BurstMeta.HexPlot.rBBvsTauBB);
+        %%% make hexplot
+        axes(h.axes_rBBvsTauBB);
+        BurstMeta.HexPlot.rBBvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 0.5],'res',nbinsX);
+    end
     try h.axes_rBBvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
 end
@@ -13951,7 +14133,7 @@ if obj == h.NumberOfBinsXEdit
         end
     else
         h.NumberOfBinsXEdit.String = num2str(UserValues.BurstBrowser.Display.NumberOfBinsX);
-    end
+    end        
     UpdateLifetimePlots(obj,[]);
 end
 if obj == h.NumberOfBinsYEdit
