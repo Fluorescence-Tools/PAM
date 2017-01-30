@@ -4038,13 +4038,8 @@ UpdateSpeciesList(h);
 UpdateCutTable(h);
 UpdateCuts();
 
-UpdatePlot([],[],h);
-UpdateLifetimePlots([],[],h);
-PlotLifetimeInd([],[],h);
-
 ChangePlotType(h.PlotTypePopumenu) %to make the display correct at initial
 ChangePlotType(h.PlotContourLines) %to make the display correct at initial
-%DonorOnlyLifetimeCallback(h.DonorLifetimeFromDataCheckbox,[]);
 Update_fFCS_GUI(gcbo,[]);
 
 function Load_BurstFile(PathName,FileName,FilterIndex,append)
