@@ -5975,6 +5975,7 @@ if ~colorbyparam
         %%% make hexplot
         axes(h.axes_general);
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
+        uistack(BurstMeta.HexPlot.MainPlot_hex,'bottom');
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         %%% get data
