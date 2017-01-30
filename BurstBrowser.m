@@ -13071,6 +13071,14 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListX.Value};
+        %%%remove text
+        del = false(numel(axes_copy.Children),1);
+        for i = 1:numel(axes_copy.Children)
+            if strcmp(axes_copy.Children(i).Type,'text')
+                del(i) = true;
+            end
+        end
+        delete(axes_copy.Children(del));
         if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
@@ -13131,7 +13139,14 @@ switch obj
         axes_copy.XTickLabelMode = 'auto';
         %%% Construct Name
         FigureName = BurstData{file}.NameArray{h.ParameterListY.Value};
-        
+        %%%remove text
+        del = false(numel(axes_copy.Children),1);
+        for i = 1:numel(axes_copy.Children)
+            if strcmp(axes_copy.Children(i).Type,'text')
+                del(i) = true;
+            end
+        end
+        delete(axes_copy.Children(del));
         if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
