@@ -3545,6 +3545,7 @@ if isempty(hfig)
     Initialize_Plots(1);
     UpdateOptions(h.Fit_NGaussian_Popupmenu,[],h);
     UpdateGUIOptions(h.PlotGridAboveDataCheckbox,[],h);
+    ChangePlotType([],[],h);
     %% set UserValues in GUI
     UpdateCorrections([],[],h);
     %%% Update ColorMap
@@ -6663,16 +6664,23 @@ UpdateSpeciesList(h);
 
 %%%%%%% Changes PlotType  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ChangePlotType(obj,~)
+function ChangePlotType(obj,~,h)
 global UserValues BurstMeta
-h = guidata(obj);
-
-if isempty(obj)
-    obj = h.PlotTypePopumenu;
+if nargin < 3
+    if isempty(obj)
+        h = guidata(findobj('Tag','BurstBrowser'));
+        obj = h.PlotTypePopumenu;
+    else
+        h = guidata(obj);
+    end
+else
+    if isempty(obj)
+        obj = h.PlotTypePopumenu;
+    end
 end
 
 set([h.MarkerSize_edit,h.MarkerSize_text,h.MarkerColor_button,h.MarkerColor_text,...
-    h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.ContourOffset_edit,h.ContourOffset_text],...
+    h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.ContourOffset_edit,h.ContourOffset_text,h.PlotContourLines],...
     'Visible','off');
 
 switch obj
@@ -6712,7 +6720,7 @@ switch obj
                     end
                 end
             end
-            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.ContourOffset_edit,h.ContourOffset_text],...
+            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.ContourOffset_edit,h.ContourOffset_text,h.PlotContourLines],...
              'Visible','on');
         end
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
