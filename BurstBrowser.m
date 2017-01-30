@@ -7032,7 +7032,7 @@ if nargout > 0 %%% we requested the histogram, do not plot!
     end
     return;
 end
-
+delete(BurstMeta.HexPlot.MainPlot_hex);
 %%% prepare image plot
 white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
 axes(h.axes_general);
