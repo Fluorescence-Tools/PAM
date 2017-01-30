@@ -117,6 +117,12 @@ if isempty(hfig)
         'Label','<html><b>Change</b> Export Path<html>',...
         'Callback',@Choose_PrintPath_Menu,...
         'Tag','Choose_PrintPath_Menu',...
+        'Separator','off');
+    h.Autoset_PrintPath_Menu = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','<html><b>Change</b> Export Path to Current File Path<html>',...
+        'Callback',@Choose_PrintPath_Menu,...
+        'Tag','Autoset_PrintPath_Menu',...
         'Separator','on');
     h.Current_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
@@ -4649,19 +4655,23 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 %%%%%%% Update the print path %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Choose_PrintPath_Menu(obj,~)
-global UserValues
+global UserValues BurstData BurstMeta
 h = guidata(obj);
-try
-    PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
-catch
-    path = pwd;
-    PathName = uigetdir(path, 'Choose a folder to place files into');
-end
+switch obj
+    case h.Choose_PrintPath_Menu
+        try
+            PathName = uigetdir(UserValues.BurstBrowser.PrintPath, 'Choose a folder to place files into');
+        catch
+            path = pwd;
+            PathName = uigetdir(path, 'Choose a folder to place files into');
+        end
 
-if PathName == 0
-    return;
+        if PathName == 0
+            return;
+        end
+    case h.Autoset_PrintPath_Menu
+        PathName = BurstData{BurstMeta.SelectedFile}.PathName;
 end
-
 UserValues.BurstBrowser.PrintPath = PathName;
 h.Current_PrintPath_Text.Label = UserValues.BurstBrowser.PrintPath;
 LSUserValues(1);
@@ -5465,6 +5475,7 @@ for file = files
     Progress(k/numel(files),h.Progress_Axes,h.Progress_Text,'Exporting...');
     
     SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+    SelectedSpeciesName = strrep(strrep(SelectedSpeciesName,'/','-'),':','');
     %% Export FRET Species
     %%% find selected bursts
     MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
@@ -5765,6 +5776,7 @@ end
 % save
 SpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
 SpeciesName = strrep(SpeciesName,' ','_');
+SpeciesName = strrep(strrep(SpeciesName,'/','-'),':','');
 Path = BurstData{file}.PathName;
 FileName = [BurstData{file}.FileName(1:end-4) '_' SpeciesName];
 [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
@@ -11057,6 +11069,7 @@ else
     end
     SelectedSpeciesName = strrep(SelectedSpeciesName,' ','_');
     filename = [BurstData{file}.FileName(1:end-4) '_' SelectedSpeciesName '.his'];
+    filename = strrep(strrep(filename,'/','-'),':','');
     obj = gcbo;
     switch obj.Label
         case 'Export FRET Histogram'

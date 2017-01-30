@@ -1641,6 +1641,14 @@ switch mode
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
         minGaussSum = 0;
         maxGaussSum = 0;
+        %%% if the single tab is selected, only fit this dataset!
+        if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
+            Active(:) = false;
+            %%% find which is selected
+            selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+            Active(selected) = true;
+            Active = find(Active);
+        end
         for i = Active
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
@@ -1739,7 +1747,7 @@ switch mode
             end
             
             %%% Update Single Plot
-            if i == Active(h.SingleTab.Popup.Value)
+            if i == find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}))%Active(h.SingleTab.Popup.Value)
                 set(PDAMeta.Plots.Fit_Single{1,1},...
                     'Visible', 'on',...
                     'YData', ydatafit);
@@ -1995,7 +2003,14 @@ NobinsE = str2double(h.SettingsTab.NumberOfBinsE_Edit.String);
 % Store active globally at this point. Do not access it globally from
 % anywhere else to avoid confusion!
 PDAMeta.Active = cell2mat(h.FitTab.Table.Data(1:end-3,1));
-
+%%% if the single tab is selected, only fit this dataset!
+if h.Tabgroup_Up.SelectedTab == h.SingleTab.Tab
+    PDAMeta.Active(:) = false;
+    %%% find which is selected
+    selected = find(strcmp(PDAData.FileName,h.SingleTab.Popup.String{h.SingleTab.Popup.Value}));
+    PDAMeta.Active(selected) = true;
+end
+    
 %%% Read fit settings and store in UserValues
 %% Prepare Fit Inputs
 if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
