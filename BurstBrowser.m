@@ -5998,6 +5998,10 @@ if ~colorbyparam
                 BurstMeta.Plots.MultiScatter.h1dx(i) = stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x);
                 BurstMeta.Plots.MultiScatter.h1dy(i) = stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y);
             end
+            %%% permute data points randomly to avoid hiding populations below another
+            perm = randperm(size(colordata,1));
+            colordata = colordata(perm,:);
+            datapoints = datapoints(perm,:);
             %%% hide normal 1d plots
             BurstMeta.Plots.Main_histX.Visible = 'off';
             BurstMeta.Plots.Main_histY.Visible = 'off';
@@ -11235,8 +11239,6 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-BurstMeta.Plots.EvsTauGG(3).XData = datapoints(:,1);
-BurstMeta.Plots.EvsTauGG(3).YData = datapoints(:,2);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
         color = [];
@@ -11245,11 +11247,18 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         end
         colors = lines(numel(n_per_species));
         colordata = colors(color,:);
+        %%% permute data points randomly to avoid hiding populations below another
+        perm = randperm(size(colordata,1));
+        colordata = colordata(perm,:);
+        datapoints = datapoints(perm,:);
     else
         colordata = UserValues.BurstBrowser.Display.MarkerColor;
     end
+    BurstMeta.Plots.EvsTauGG(3).XData = datapoints(:,1);
+    BurstMeta.Plots.EvsTauGG(3).YData = datapoints(:,2);
     BurstMeta.Plots.EvsTauGG(3).CData = colordata;
 end
+
 %%% update hex plot if selected
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     delete(BurstMeta.HexPlot.EvsTauGG);
@@ -11288,8 +11297,6 @@ Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-BurstMeta.Plots.EvsTauRR(3).XData = datapoints(:,1);
-BurstMeta.Plots.EvsTauRR(3).YData = datapoints(:,2);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
         color = [];
@@ -11298,9 +11305,15 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         end
         colors = lines(numel(n_per_species));
         colordata = colors(color,:);
+        %%% permute data points randomly to avoid hiding populations below another
+        perm = randperm(size(colordata,1));
+        colordata = colordata(perm,:);
+        datapoints = datapoints(perm,:);
     else
         colordata = UserValues.BurstBrowser.Display.MarkerColor;
     end
+    BurstMeta.Plots.EvsTauRR(3).XData = datapoints(:,1);
+    BurstMeta.Plots.EvsTauRR(3).YData = datapoints(:,2);
     BurstMeta.Plots.EvsTauRR(3).CData = colordata;
 end
 %%% update hex plot if selected
@@ -11338,8 +11351,6 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    BurstMeta.Plots.rGGvsTauGG(3).XData = datapoints(:,1);
-    BurstMeta.Plots.rGGvsTauGG(3).YData = datapoints(:,2);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
             color = [];
@@ -11348,9 +11359,15 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
             end
             colors = lines(numel(n_per_species));
             colordata = colors(color,:);
+            %%% permute data points randomly to avoid hiding populations below another
+            perm = randperm(size(colordata,1));
+            colordata = colordata(perm,:);
+            datapoints = datapoints(perm,:);
         else
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
         end
+        BurstMeta.Plots.rGGvsTauGG(3).XData = datapoints(:,1);
+        BurstMeta.Plots.rGGvsTauGG(3).YData = datapoints(:,2);
         BurstMeta.Plots.rGGvsTauGG(3).CData = colordata;
     end
     %%% update hex plot if selected
@@ -11387,8 +11404,6 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    BurstMeta.Plots.rRRvsTauRR(3).XData = datapoints(:,1);
-    BurstMeta.Plots.rRRvsTauRR(3).YData = datapoints(:,2);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
             color = [];
@@ -11397,9 +11412,15 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
             end
             colors = lines(numel(n_per_species));
             colordata = colors(color,:);
+            %%% permute data points randomly to avoid hiding populations below another
+            perm = randperm(size(colordata,1));
+            colordata = colordata(perm,:);
+            datapoints = datapoints(perm,:);
         else
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
         end
+        BurstMeta.Plots.rRRvsTauRR(3).XData = datapoints(:,1);
+        BurstMeta.Plots.rRRvsTauRR(3).YData = datapoints(:,2);
         BurstMeta.Plots.rRRvsTauRR(3).CData = colordata;
     end
     %%% update hex plot if selected
@@ -11443,8 +11464,6 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    BurstMeta.Plots.E_BtoGRvsTauBB(3).XData = datapoints(:,1);
-    BurstMeta.Plots.E_BtoGRvsTauBB(3).YData = datapoints(:,2);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
             color = [];
@@ -11453,9 +11472,15 @@ if any(BurstData{file}.BAMethod == [3,4])
             end
             colors = lines(numel(n_per_species));
             colordata = colors(color,:);
+            %%% permute data points randomly to avoid hiding populations below another
+            perm = randperm(size(colordata,1));
+            colordata = colordata(perm,:);
+            datapoints = datapoints(perm,:);
         else
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
         end
+        BurstMeta.Plots.E_BtoGRvsTauBB(3).XData = datapoints(:,1);
+        BurstMeta.Plots.E_BtoGRvsTauBB(3).YData = datapoints(:,2);
         BurstMeta.Plots.E_BtoGRvsTauBB(3).CData = colordata;
     end
     %%% update hex plot if selected
@@ -11492,8 +11517,6 @@ if any(BurstData{file}.BAMethod == [3,4])
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
     BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
-    BurstMeta.Plots.rBBvsTauBB(3).XData = datapoints(:,1);
-    BurstMeta.Plots.rBBvsTauBB(3).YData = datapoints(:,2);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
         if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
             color = [];
@@ -11502,9 +11525,15 @@ if any(BurstData{file}.BAMethod == [3,4])
             end
             colors = lines(numel(n_per_species));
             colordata = colors(color,:);
+            %%% permute data points randomly to avoid hiding populations below another
+            perm = randperm(size(colordata,1));
+            colordata = colordata(perm,:);
+            datapoints = datapoints(perm,:);
         else
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
         end
+        BurstMeta.Plots.rBBvsTauBB(3).XData = datapoints(:,1);
+        BurstMeta.Plots.rBBvsTauBB(3).YData = datapoints(:,2);
         BurstMeta.Plots.rBBvsTauBB(3).CData = colordata;
     end
     %%% update hex plot if selected
@@ -14414,7 +14443,7 @@ for f = 1:numel(BurstData)
     %end
 end
 
-guidata(findobj('Tag','BurstBrowser'),h);
+guidata(h.BurstBrowser,h);
 
 set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
 %%% set selected node according to Stored Selection
