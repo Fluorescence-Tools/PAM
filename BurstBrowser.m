@@ -5896,8 +5896,10 @@ BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
 set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
-try;delete(BurstMeta.Plots.MultiScatter.h1dx);end;
-try;delete(BurstMeta.Plots.MultiScatter.h1dy);end;
+for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
+    try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end;
+    try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end;
+end
 legend(h.axes_1d_x,'off');
 %%% only hide fit plots if selection of parameter or species has changed,
 %%% or if we switched on KDE
@@ -6059,14 +6061,21 @@ if ~colorbyparam
             binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
             n_per_species = cumsum([1,(n_per_species-1)]);
             for i = 1:numel(n_per_species)-1
-                hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); hx{i} = hx{i}./sum(hx{i});
-                hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); hy{i} = hy{i}./sum(hy{i});
+                hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx);
+                hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
+                if obj ~= h.Fit_Gaussian_Button
+                    hx{i} = hx{i}./sum(hx{i});
+                    hy{i} = hy{i}./sum(hy{i});
+                end
             end
             color = lines(numel(n_per_species));
             for i = 1:numel(hx)
-                BurstMeta.Plots.MultiScatter.h1dx(i) = stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x);
-                BurstMeta.Plots.MultiScatter.h1dy(i) = stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y);
+                BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
+                BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
             end
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
             %%% permute data points randomly to avoid hiding populations below another
             perm = randperm(size(colordata,1));
             colordata = colordata(perm,:);
@@ -6090,7 +6099,7 @@ if ~colorbyparam
                 end
                 str{i} = strrep(name,'_',' ');  
             end
-            legend(h.axes_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+            legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
         else
             datapoints = [datatoplot(:,x),datatoplot(:,y)];
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
@@ -7064,7 +7073,7 @@ for i = 1:num_species
 end
 
 
-if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
+if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
         H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
@@ -7150,8 +7159,10 @@ for i = 1:3
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'off';
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'off';
 end
-try;delete(BurstMeta.Plots.MultiScatter.h1dx);end;
-try;delete(BurstMeta.Plots.MultiScatter.h1dy);end;
+for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
+    try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end;
+    try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end;
+end
 BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
