@@ -137,17 +137,17 @@ if isempty(hfig)
         'Callback',@Export_To_PDA,...
         'Enable','on');
      %%% Choose print path
+    h.Autoset_PrintPath_Menu = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','<html>Export to <b>Current</b> File Path<html>',...
+        'Callback',@Choose_PrintPath_Menu,...
+        'Tag','Autoset_PrintPath_Menu',...
+        'Separator','on');
     h.Choose_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
         'Label','<html><b>Change</b> Export Path<html>',...
         'Callback',@Choose_PrintPath_Menu,...
         'Tag','Choose_PrintPath_Menu',...
-        'Separator','on');
-    h.Autoset_PrintPath_Menu = uimenu(...
-        'Parent',h.Export_Menu,...
-        'Label','<html><b>Change</b> Export Path to <b>Current</b> File Path<html>',...
-        'Callback',@Choose_PrintPath_Menu,...
-        'Tag','Autoset_PrintPath_Menu',...
         'Separator','off');
     h.Current_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
@@ -161,7 +161,15 @@ if isempty(hfig)
         'Callback',[],...
         'Tag','Current_PrintPath_Text',...
         'Separator','off');
-    
+    if UserValues.BurstBrowser.Settings.UseFilePathForExport
+        h.Autoset_PrintPath_Menu.Checked = 'on';
+        h.Choose_PrintPath_Menu.Enable = 'off';
+        h.Current_PrintPath_Menu.Enable = 'off';
+    else
+        h.Autoset_PrintPath_Menu.Checked = 'off';
+        h.Choose_PrintPath_Menu.Enable = 'on';
+        h.Current_PrintPath_Menu.Enable = 'on';
+    end
     %%% "Parameter Comparison" Menu
     h.Parameter_Comparison_Menu = uimenu(....
         'Parent',h.BurstBrowser,...
@@ -4694,11 +4702,25 @@ switch obj
         if PathName == 0
             return;
         end
+        UserValues.BurstBrowser.PrintPath = PathName;
     case h.Autoset_PrintPath_Menu
-        PathName = BurstData{BurstMeta.SelectedFile}.PathName;
+        switch obj.Checked
+            case 'off'
+                if ~isempty(BurstData)
+                    PathName = BurstData{BurstMeta.SelectedFile}.PathName;
+                end
+                obj.Checked = 'on';
+                UserValues.BurstBrowser.Settings.UseFilePathForExport = 1;
+                h.Choose_PrintPath_Menu.Enable = 'off';
+                h.Current_PrintPath_Menu.Enable = 'off';
+            case 'on'
+                obj.Checked = 'off';
+                UserValues.BurstBrowser.Settings.UseFilePathForExport = 0;
+                PathName = UserValues.BurstBrowser.PrintPath;
+                h.Choose_PrintPath_Menu.Enable = 'on';
+                h.Current_PrintPath_Menu.Enable = 'on';
+        end
 end
-UserValues.BurstBrowser.PrintPath = PathName;
-h.Current_PrintPath_Text.Label = UserValues.BurstBrowser.PrintPath;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4710,10 +4732,10 @@ h = guidata(obj);
 if obj == h.FRET_comp_File_Menu
     %%% Load *.his files (assume they are in one folder)
     try
-        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',getPrintPath(),'Multiselect','on');
     catch
         Choose_PrintPath_Menu([],[]);
-        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',UserValues.BurstBrowser.PrintPath,'Multiselect','on');
+        [FileNames,PathName] = uigetfile('*.his','Choose *.his files',getPrintPath(),'Multiselect','on');
     end
     if ~iscell(FileNames)
         return;
@@ -11169,13 +11191,13 @@ else
                 case {1,2}
                     E = BurstData{file}.DataCut(:,1);
                     %%% Save E array in *.his file
-                    save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'E');
+                    save(fullfile(getPrintPath(),filename),'E');
                 case {3,4}
                     EGR = BurstData{file}.DataCut(:,1);
                     EBG = BurstData{file}.DataCut(:,2);
                     EBR = BurstData{file}.DataCut(:,3);
                     %%% Save E array in *.his file
-                    save(fullfile(UserValues.BurstBrowser.PrintPath,filename),'EGR','EBG','EBR');
+                    save(fullfile(getPrintPath(),filename),'EGR','EBG','EBR');
             end
         case 'Export FRET Histogram (Time Series)'
             %%% export a time series in specific binnig
@@ -11191,7 +11213,7 @@ else
                 % generate name
                 name = [filename(1:end-4) '_' num2str(round(times(i)/60)) 'to' num2str(round(times(i+1)/60)) 'min.his'];
                 %%% Save E array in *.his file
-                save(fullfile(UserValues.BurstBrowser.PrintPath,name),'E');
+                save(fullfile(getPrintPath(),name),'E');
             end
             m = msgbox('Done exporting time series.');
             pause(1);
@@ -13182,15 +13204,17 @@ switch obj
             end
             delete(axes_copy.Children(del));
             if numel(axes_copy.Children)>1
-                hl = legend('show');
-                hl.Box = 'off';
-                hfig.Units = 'pixel';
-                axes_copy.Units = 'pixel';
-                hl.Units = 'pixel';
-                hl.FontSize = 12;
-                hfig.Position(4) = hfig.Position(4) + 75;
-                hl.Position(2) =  hl.Position(2)+75;                
-                hl.Position(1) = 75;
+                if ~isempty(h.axes_1d_x.Legend)
+                    hl = legend(h.axes_1d_x.Legend.String);
+                    hl.Box = 'off';
+                    hfig.Units = 'pixel';
+                    axes_copy.Units = 'pixel';
+                    hl.Units = 'pixel';
+                    hl.FontSize = 12;
+                    hfig.Position(4) = hfig.Position(4) + 75;
+                    hl.Position(2) =  hl.Position(2)+75;                
+                    hl.Position(1) = 40;
+                end
             end
         end
     case h.Export1DY_Menu
@@ -13250,15 +13274,17 @@ switch obj
             end
             delete(axes_copy.Children(del));
             if numel(axes_copy.Children)>1
-                hl = legend(h.axes_1d_x.Legend.String);
-                hl.Box = 'off';
-                hfig.Units = 'pixel';
-                axes_copy.Units = 'pixel';
-                hl.Units = 'pixel';
-                hl.FontSize = 12;
-                hfig.Position(4) = hfig.Position(4) + 75;
-                hl.Position(2) =  hl.Position(2)+75;                
-                hl.Position(1) = 75;
+                if ~isempty(h.axes_1d_x.Legend)
+                    hl = legend(h.axes_1d_x.Legend.String);
+                    hl.Box = 'off';
+                    hfig.Units = 'pixel';
+                    axes_copy.Units = 'pixel';
+                    hl.Units = 'pixel';
+                    hl.FontSize = 12;
+                    hfig.Position(4) = hfig.Position(4) + 75;
+                    hl.Position(2) =  hl.Position(2)+75;                
+                    hl.Position(1) = 40;
+                end
             end
         end
     case h.Export2D_Menu
@@ -13380,16 +13406,19 @@ switch obj
                 end
             end
             %%% refind legend item
+            leg = [];
             for i = 1:numel(panel_copy.Children)
                 if strcmp(panel_copy.Children(i).Type,'legend')
                     leg = i;
                 end
             end
-            if strcmp(panel_copy.Children(leg).Visible,'on')
-                hfig.Position(4) = 650;
-                panel_copy.Position(4) = 650;
-                panel_copy.Children(leg).Position(1) = 75;
-                panel_copy.Children(leg).Position(2) = 590;
+            if ~isempty(leg)
+                if strcmp(panel_copy.Children(leg).Visible,'on')
+                    hfig.Position(4) = 650;
+                    panel_copy.Position(4) = 650;
+                    panel_copy.Children(leg).Position(1) = 40;
+                    panel_copy.Children(leg).Position(2) = 590;
+                end
             end
         else
             %%% Update Colorbar by plotting it anew
@@ -13976,18 +14005,20 @@ if directly_save
     if ask_file
         %%% Get Path to save File
         FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
-        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
-        %[FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(UserValues.BurstBrowser.PrintPath,FigureName));
+        [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(getPrintPath(),FigureName));       
         if FileName == 0
             delete(hfig);
             return;
         end
-        UserValues.BurstBrowser.PrintPath = PathName;
+        if ~UserValues.BurstBrowser.Settings.UseFilePathForExport
+            UserValues.BurstBrowser.PrintPath = PathName;
+            h.Current_PrintPath_Text.Label = PathName;
+        end
         LSUserValues(1);
     else
         FilterIndex = 1; %%% Save as png
         FileName = [FigureName '.png'];
-        PathName = BurstData{file}.PathName;
+        PathName = getPrintPath();
     end
     
     %%% print figure
@@ -14896,4 +14927,12 @@ if size(data,2) < 4 %%% no error specified
     gamma_from_ES(data(:,1),data(:,2));
 else
     gamma_from_ES(data(:,1),data(:,2),data(:,3),data(:,4));
+end
+
+function path = getPrintPath()
+global UserValues BurstData BurstMeta
+if UserValues.BurstBrowser.Settings.UseFilePathForExport
+    path = BurstData{BurstMeta.SelectedFile}.PathName;
+else
+    path = UserValues.BurstBrowser.PrintPath;
 end

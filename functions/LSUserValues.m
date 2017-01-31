@@ -1806,6 +1806,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Normalize_Multiplot was incomplete');
     end
     P.BurstBrowser.Settings.Normalize_Multiplot = S.BurstBrowser.Settings.Normalize_Multiplot;
+    %%% Check, if BurstBrowser.Settings.UseFilePathForExport subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'UseFilePathForExport')
+        S.BurstBrowser.Settings.UseFilePathForExport=true;
+        disp('UserValues.BurstBrowser.Settings.UseFilePathForExport was incomplete');
+    end
+    P.BurstBrowser.Settings.UseFilePathForExport = S.BurstBrowser.Settings.UseFilePathForExport;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser, 'DatabaseString')
         S.BurstBrowser.DatabaseString={};
