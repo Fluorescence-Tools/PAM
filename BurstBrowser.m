@@ -4832,7 +4832,7 @@ switch mode
         end
         
         color = lines(numel(H));
-        figure('Color',[1 1 1],'Position',[100 100 600 400]);
+        f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
         stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
         hold on
         for i = 2:numel(H)
@@ -4848,8 +4848,11 @@ switch mode
         xlabel('FRET efficiency');
         ylabel('probability');
         legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
-        legend(legend_entries,'fontsize',14);
-        
+        hl = legend(legend_entries,'fontsize',12,'Box','off');
+        set([f,ax,hl],'Units','pixel');
+        f.Position(4) = f.Position(4)+hl.Position(4);
+        hl.Position(1) = 40;
+        hl.Position(2) = 390;
         if UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall
             %%% waterfall or image/contour plot
             %%% constuct time series histogram
@@ -4858,7 +4861,7 @@ switch mode
                 H{i} = smooth(H{i},3); H{i} = H{i}';
             end
             H = vertcat(H{:}); H = H';
-            figure('Color',[1 1 1],'Position',[700 100 600 400]);
+            f = figure('Color',[1 1 1],'Position',[700 100 600 400]);
             contourf(1:1:size(H,2),xE(1:end),H);
             colormap(jet);
             ax = gca;
@@ -4894,7 +4897,7 @@ switch mode
                 xE = xEBR;
             end
             H = H_all{j};
-            figure('Color',[1 1 1],'Position',[100+600*(j-1) 100 600 400],'name',xlb{j});
+            f = figure('Color',[1 1 1],'Position',[100+600*(j-1) 100 600 400],'name',xlb{j});
             stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
             hold on
             for i = 2:numel(H)
@@ -4913,7 +4916,11 @@ switch mode
             xlabel(xlb{j});
             ylabel('probability');
             legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
-            legend(legend_entries,'fontsize',14);
+            hl = legend(legend_entries,'fontsize',12,'Box','off');
+            set([f,ax,hl],'Units','pixel');
+            f.Position(4) = f.Position(4)+hl.Position(4);
+            hl.Position(1) = 40;
+            hl.Position(2) = 390;
         end
         
         if UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall
@@ -4964,7 +4971,7 @@ switch mode
         end
         
         color = lines(numel(H));
-        figure('Color',[1 1 1],'Position',[100 100 600 400]);
+        f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
         hold on
         for i = 1:numel(H)
             if valid(i)
@@ -4982,9 +4989,13 @@ switch mode
         ylabel('probability');
         legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
         legend_entries = legend_entries(valid);
-        legend(legend_entries,'fontsize',14);
+        hl = legend(legend_entries,'fontsize',12,'Box','off');
+        set([f,ax,hl],'Units','pixel');
+        f.Position(4) = f.Position(4)+hl.Position(4);
+        hl.Position(1) = 40;
+        hl.Position(2) = 390;
 end
-UpdatePlot([],[],h);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -13393,6 +13404,9 @@ switch obj
                 cbar = colorbar('peer', panel_copy.Children(ax2d),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
                 cbar.Position = [0.8,0.85,0.18,0.025];
                 cbar.Label.String = 'Occurrence';
+                cbar.Limits(1) = 0;
+                cbar.TicksMode = 'auto';
+                cbar.TickLabelsMode = 'auto';
             end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
