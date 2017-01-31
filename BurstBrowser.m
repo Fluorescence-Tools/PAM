@@ -101,7 +101,7 @@ if isempty(hfig)
     %%% Export FRET histograms for all loaded measurements
     h.FRET_Export_Top_Menu = uimenu(...
         'Parent',h.Export_Menu,...
-        'Label','<html>Export <b>FRET histograms</b>...</html>',...
+        'Label','<html>Export <b>FRET efficiency histograms</b>...</html>',...
         'Callback',[],...
         'Tag','FRET_Export_Top_Menu',...
         'Separator','off');
@@ -185,7 +185,7 @@ if isempty(hfig)
     %%% FRET Comparions plot of loaded files
     h.FRET_comp_Loaded_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
-        'Label','<html>Compare <b>FRET histograms</b> of loaded files</html>',...
+        'Label','<html>Compare <b>FRET efficiency histograms</b> of loaded files</html>',...
         'Callback',@Compare_FRET_Hist,...
         'Tag','FRET_comp_Loaded_Menu',...
         'Separator','on');
@@ -200,7 +200,7 @@ if isempty(hfig)
     %%% FRET Comparions plot from *.his files
     h.FRET_comp_File_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
-        'Label','<html>Compare <b>FRET histograms</b> from <i>*.his</i>-files</html>',...
+        'Label','<html>Compare <b>FRET efficiency histograms</b> from <i>*.his</i>-files</html>',...
         'Callback',@Compare_FRET_Hist,...
         'Tag','FRET_comp_File_Menu',...
         'Separator','on');
@@ -508,8 +508,8 @@ if isempty(hfig)
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
-    h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Histogram');
-    h.Export_FRET_Hist_Timeseries_Menu = javax.swing.JMenuItem('Export FRET Histogram (Time Series)');
+    h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram');
+    h.Export_FRET_Hist_Timeseries_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram (Time Series)');
     h.SendToTauFit = javax.swing.JMenuItem('Send Selected Species to TauFit');
     h.DisplayFileInfo = javax.swing.JMenuItem('Display File Info');
     % set callbacks
@@ -1677,7 +1677,7 @@ if isempty(hfig)
     h.GUIData.ColumnEditableMLE = false(1,6);
     h.GUIData.ColumnWidthMLE = {100,100,100,100,100,100,100};
     h.GUIData.ColumnFormatMLE = repmat({'numeric'},1,7);
-    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0,Inf,false,0.05,0,Inf,false,0,-Inf,Inf,false],[4,1]));
+    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0.01,Inf,false,0.05,0.01,Inf,false,0,-Inf,Inf,false],[4,1]));
     for i =1:4
         h.GUIData.TableDataLSQ(i,4:4:end) = {false,false,false,false,false,false};
     end
@@ -4122,6 +4122,7 @@ for i = 1:numel(FileName)
             case {1,2} %%% 2 Color MFD
                 %%% Convert NameArray
                 S.NameArray{strcmp(S.NameArray,'TFRET - TR')} = '|TDX-TAA| Filter';
+                S.NameArray{strcmp(S.NameArray,'Stochiometry')} = 'Stoichiometry';
                 S.NameArray{strcmp(S.NameArray,'Number of Photons (green)')} = 'Number of Photons (DD)';
                 S.NameArray{strcmp(S.NameArray,'Number of Photons (fret)')} = 'Number of Photons (DA)';
                 S.NameArray{strcmp(S.NameArray,'Number of Photons (red)')} = 'Number of Photons (AA)';
@@ -4142,8 +4143,8 @@ for i = 1:numel(FileName)
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                     S.DataArray(:,end+1) = zeros(size(S.DataArray,1),1);
                 end
-                S.NameArray{end+1} = 'Anisotropy DD';
-                S.NameArray{end+1} = 'Anisotropy AA';
+                S.NameArray{end+1} = 'Anisotropy D';
+                S.NameArray{end+1} = 'Anisotropy A';
                 %%% Caculate Anisotropies
                 S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')))./...
                     (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')));
@@ -6917,45 +6918,9 @@ if nargin < 3
     end 
 end
 global BurstData UserValues BurstMeta
-%%% special case for when this function is called from UpdatePlot()
-%if nargout > 1
-%    BurstMeta.MultiPlotMode = 1;
-    %%% just get the histogram data
-%end
-% %%% find which species were clicked
-% if ~isfield(BurstMeta,'MultiPlotMode')
-%     % first time this button is clicked, set to 0
-%     BurstMeta.MultiPlotMode = 0;
-% end
-% if BurstMeta.MultiPlotMode == 0
-%     % disable callback
-%     set(h.SpeciesList.Tree,'NodeSelectedCallback',[]);
-%     % set multiselect of species list to on
-%     h.SpeciesList.Tree.setMultipleSelectionEnabled(true);
-%     % disable right click
-%     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', []);
-%     obj.ForegroundColor = [1 0 0];
-%     BurstMeta.MultiPlotMode = 1;
-%     return;
-% elseif BurstMeta.MultiPlotMode == 1
 
 %%% get selection of species list
 [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
-
-% if obj == h.MultiPlotButton
-%     % reset multiselect
-%     h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
-%     h.SpeciesList.Tree.setSelectedNode(sel(1));
-%     % reenable right click
-%     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
-%     % reenable callback
-%     set(h.SpeciesList.Tree,'NodeSelectedCallback',@SpeciesList_ButtonDownFcn);
-% 
-%     obj.ForegroundColor = UserValues.Look.Fore;
-% end
-%BurstMeta.MultiPlotMode = 0;
-
-%end
 
 num_species = numel(file_n);
 
@@ -7991,9 +7956,22 @@ end
 UpdateCutTable(h);
 UpdateCuts();
 
-UpdatePlot([],[],h);
-UpdateLifetimePlots(hObject,[],h);
-PlotLifetimeInd([],[],h);
+%%% Update Plots
+%%% To speed up, find out which tab is visible and only update the respective tab
+switch h.Main_Tab.SelectedTab
+    case h.Main_Tab_General
+        %%% we switched to the general tab
+        UpdatePlot([],[],h);
+    case h.Main_Tab_Lifetime
+        %%% we switched to the lifetime tab
+        %%% figure out what subtab is selected
+        UpdateLifetimePlots([],[],h);
+        switch h.LifetimeTabgroup.SelectedTab
+            case h.LifetimeTabAll
+            case h.LifetimeTabInd
+                PlotLifetimeInd([],[],h);
+        end     
+end
 
 function AddDerivedParameters(~,~,h)
 global BurstData BurstMeta

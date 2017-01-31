@@ -51,6 +51,11 @@ function h = hexscatter( xdata, ydata, varargin )
         ec = 'none';
     end
     
+    %% Check that data is valid
+    if all(xdata == 0) || all(ydata == 0)
+        h = [];
+        return;
+    end
     %% Determine grid
     xl = params.xlim;
     yl = params.ylim;
