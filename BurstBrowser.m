@@ -4759,6 +4759,9 @@ elseif obj == h.FRET_comp_Loaded_Menu
         %%% read fret values
         file = i;
         SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+        if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected
+            SelectedSpeciesName = [BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1} '/' SelectedSpeciesName];
+        end
         FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
         switch mode
             case 2
@@ -4784,6 +4787,9 @@ elseif  obj == h.Param_comp_Loaded_Menu
         file = i;
         try
             SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+            if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected
+                SelectedSpeciesName = [BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1} '/' SelectedSpeciesName];
+            end
             FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
         catch
             FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
@@ -4808,6 +4814,9 @@ elseif obj == h.Param_comp_selected_Menu
         %%% read parmeter values
         try
             SelectedSpeciesName = BurstData{file}.SpeciesNames{species(i),subspecies(i)};
+            if subspecies(i) > 1 %%% subspecies selected
+                SelectedSpeciesName = [BurstData{file}.SpeciesNames{species(i),1} '/' SelectedSpeciesName];
+            end
             FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
         catch
             FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
@@ -4846,7 +4855,7 @@ switch mode
         ax.XLim = [-0.05,1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
-        ylabel('probability');
+        ylabel('occurrence (norm.)');
         legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
         hl = legend(legend_entries,'fontsize',12,'Box','off');
         set([f,ax,hl],'Units','pixel');
@@ -4914,7 +4923,7 @@ switch mode
             end
             ax.Units = 'pixels';
             xlabel(xlb{j});
-            ylabel('probability');
+            ylabel('occurrence (norm.)');
             legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
             hl = legend(legend_entries,'fontsize',12,'Box','off');
             set([f,ax,hl],'Units','pixel');
@@ -4986,7 +4995,7 @@ switch mode
         ax.XLim = xlim;
         ax.Units = 'pixels';
         xlabel(param);
-        ylabel('probability');
+        ylabel('occurrence (norm.)');
         legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
         legend_entries = legend_entries(valid);
         hl = legend(legend_entries,'fontsize',12,'Box','off');
