@@ -3521,9 +3521,17 @@ if any(mode == 1)
                 g = PhasorData.Data{i}.g(:);
                 s = PhasorData.Data{i}.s(:);
                 Int = PhasorData.Data{i}.Intensity(:);
-                s(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
-                g(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                    
+                %%% Remove unselected pixels and pixels outside of
+                %%% threshold
                 Int(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                %%% Remove pixels as (0,0), usually 0 photon pixel or from
+                %%% particle selection
+                Int(g==0 & s==0)=NaN;
+                
+                g(isnan(Int))=NaN;
+                s(isnan(Int))=NaN;
+                
                 x=nanmean(g(:).*Int(:))/nanmean(Int(:));
                 y=nanmean(s(:).*Int(:))/nanmean(Int(:));
                 PhasorData.CoM{i}.XData=x;
@@ -3535,8 +3543,15 @@ if any(mode == 1)
             for i=File
                 g = PhasorData.Data{i}.g(:);
                 s = PhasorData.Data{i}.s(:);
-                s(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                
+                %%% Remove unselected pixels and pixels outside of
+                %%% threshold
                 g(PhasorData.Data{i}.Intensity<TH_Min | PhasorData.Data{i}.Intensity>TH_Max | PhasorData.Selected_Region{i})=NaN;
+                %%% Remove pixels as (0,0), usually 0 photon pixel or from
+                %%% particle selection                
+                g(g==0 & s==0)=NaN;
+                s(isnan(g))=NaN;
+                
                 x=nanmean(g(:));
                 y=nanmean(s(:));
                 PhasorData.CoM{i}.XData=x;

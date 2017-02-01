@@ -1360,6 +1360,10 @@ switch mode
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 if h.Omit_Center_Line.Value
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                elseif h.Omit_Center.Value
+                                    Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
+                                        (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
+                                         Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
                                 end
                             case 8 %%% Fit image
                                 P=MIAFitMeta.Params(:,File);
@@ -1445,6 +1449,10 @@ switch mode
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 if h.Omit_Center_Line.Value
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                elseif h.Omit_Center.Value
+                                    Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
+                                        (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
+                                        Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
                                 end
                             case 11 %%% Fit surf
                                 P=MIAFitMeta.Params(:,File);
@@ -1460,7 +1468,7 @@ switch mode
                                 end
                                 Data = real(OUT)/B;
                             case 12 %%% Residuals surf
-                                P=MIAFitMeta.Params(:,File); %#ok<NASGU>
+                                P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
                                 if h.Omit_Center.Value
