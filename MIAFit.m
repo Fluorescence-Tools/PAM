@@ -1403,9 +1403,9 @@ switch mode
                                     Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =inf;
                                 end
                                 if h.Fit_Weights.Value
-                                    Data = ((Data-Out)./Weights)^2;
+                                    Data = ((Data-Out)./Weights);
                                 else
-                                    Data = (Data-Out)^2;
+                                    Data = (Data-Out);
                                 end                                   
                         end
                         
@@ -1492,9 +1492,9 @@ switch mode
                                     Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =inf;
                                 end
                                 if h.Fit_Weights.Value
-                                    Data = ((Data-Out)./Weights)^2;
+                                    Data = ((Data-Out)./Weights);
                                 else
-                                    Data = (Data-Out)^2;
+                                    Data = (Data-Out);
                                 end                                   
                         end
                         Data2 = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
@@ -1567,7 +1567,7 @@ switch mode
                             'FaceColor','Flat',...
                             'XData',x(1,:),...
                             'YData',y(:,1),...
-                            'ZData',OUT,...
+                            'ZData',OUT/B,...
                             'CData',Data2,...
                             'FaceAlpha', Alpha);
                         colormap(H.Axes{i,j},Color);
@@ -1803,8 +1803,8 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,5}.YData=OUT(:,1-min(min(x)))/B;
         %% Calculates weighted residuals and plots them
         if h.Fit_Weights.Value
-            ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)./MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;   
-            ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'/B;
+            ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)./MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))*B;   
+            ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'*B;
             if h.Omit_Center.Value
                 ResidualsX((floor((X+1)/2))) = 0;
                 ResidualsY((floor((Y+1)/2))) = 0;
