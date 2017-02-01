@@ -2376,7 +2376,16 @@ if sum(PDAMeta.Global) == 0
             case 'MLE'
                 %msgbox('doesnt work yet')
                 %return
-                fitfun = @(x) PDA_MLE_Fit_Single(x);
+                fitfun = @(x) PDA_MLE_Fit_Single(x,h);
+                if strcmp(h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value},'Gradient-based (lsqnonlin)')
+                    disp('Gradient-based (lsqnonlin) does not work for MLE. Choose fmincon instead.');
+                    Progress(1, h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Done');
+                    Progress(1, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Done');
+                    %%% re-enable Fit Menu
+                    h.FitTab.Table.Enable='on';
+                    PDAMeta.FitInProgress = 0;
+                    return;
+                end
             case 'MonteCarlo'
                 %msgbox('doesnt work yet')
                 %return
@@ -2549,7 +2558,7 @@ else
         case 'Histogram Library'
             fitfun = @(x) PDAHistogramFit_Global(x);
         case 'MLE'
-            fitfun = @(x) PDAMLEFit_Global(x);
+            fitfun = @(x) PDAMLEFit_Global(x,h);
         otherwise
             msgbox('Use Histogram Library, others dont work yet for global')
             return
@@ -2565,7 +2574,7 @@ else
                     %%% For Updating the Result Plot, use MC sampling
                     PDAMonteCarloFit_Global(fitpar);
                 case 'Histogram Library'
-                    PDAHistogramFit_Global(fitpar);
+                    PDAHistogramFit_Global(fitpar,h);
             end
         case h.Menu.StartFit
             %% Do Fit
@@ -2743,7 +2752,7 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
     fitpar_dummy = PDAMeta.FitParams(i,:);
-    fitpar_dummy(~PDAMeta.Fixed) = fitpar;
+    fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
     fitpar = fitpar_dummy;
 end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
@@ -2920,9 +2929,8 @@ end
 %Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % model for normal histogram library fitting (global)
-function [mean_chi2] = PDAHistogramFit_Global(fitpar)
+function [mean_chi2] = PDAHistogramFit_Global(fitpar,h)
 global PDAMeta PDAData UserValues
-h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% Aborts Fit
 drawnow;
@@ -3187,7 +3195,7 @@ Pe(~isfinite(Pe)) = 0;
 Pe = Pe./sum(Pe); %area-normalized Pe
 
 % model for MLE fitting (not global)
-function logL = PDA_MLE_Fit_Single(fitpar)
+function logL = PDA_MLE_Fit_Single(fitpar,h)
 global PDAMeta PDAData
 
 %%% Aborts Fit
@@ -3197,8 +3205,14 @@ if ~PDAMeta.FitInProgress
     return;
 end
 
-h = guidata(findobj('Tag','GlobalPDAFit'));
-
+file = PDAMeta.file;
+if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+    % only the non-fixed parameters are passed, reconstruct total fitpar
+    % array from dummy data
+    fitpar_dummy = PDAMeta.FitParams(file,:);
+    fitpar_dummy(~PDAMeta.Fixed(file,:)) = fitpar;
+    fitpar = fitpar_dummy;
+end
 %%% if sigma is fixed at fraction of, read value here before reshape
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
@@ -3206,13 +3220,11 @@ end
 %%% remove donor only fraction, not implemented here
 fitpar= fitpar(1:end-1);
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
-
 %%% if sigma is fixed at fraction of, change its value here
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(:,3) = fraction.*fitpar(:,2);
 end
 
-file = PDAMeta.file;
 % Parameters
 cr = PDAMeta.crosstalk(file);
 R0 = PDAMeta.R0(file);
@@ -3290,9 +3302,8 @@ logL = sum(L);
 logL = -logL;
 
 % model for MLE fitting (global)
-function [mean_logL] = PDAMLEFit_Global(fitpar)
+function [mean_logL] = PDAMLEFit_Global(fitpar,h)
 global PDAMeta
-h = guidata(findobj('Tag','GlobalPDAFit'));
 
 %%% Aborts Fit
 drawnow;
@@ -3324,7 +3335,7 @@ for i=find(PDAMeta.Active)'
     P(3*PDAMeta.Comp{i}-2) = P(3*PDAMeta.Comp{i}-2)./sum(P(1:3:end));
     
     %%% calculate individual likelihoods
-    PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P);   
+    PDAMeta.chi2(i) = PDA_MLE_Fit_Single(P,h);   
 end
 mean_logL = mean(PDAMeta.chi2);
 
@@ -3357,7 +3368,13 @@ if ~PDAMeta.FitInProgress
 end
 
 file = PDAMeta.file;
-
+if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
+    % only the non-fixed parameters are passed, reconstruct total fitpar
+    % array from dummy data
+    fitpar_dummy = PDAMeta.FitParams(file,:);
+    fitpar_dummy(~PDAMeta.Fixed(file,:)) = fitpar;
+    fitpar = fitpar_dummy;
+end
 %%% if sigma is fixed at fraction of, read value here before reshape
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fraction = fitpar(end);fitpar(end) = [];
@@ -4015,7 +4032,7 @@ switch mode
         Data{end} = [];
         %Data=cellfun(@num2str,Data,'UniformOutput',false);
         h.ParametersTab.Table.Data=Data;
-        h.ParametersTab.Table.ColumnEditable = true(1,numel(Columns));
+        h.ParametersTab.Table.ColumnEditable = [true(1,numel(Columns)-1), false];
     case 1 %%% Updates tables when new data is loaded
         h.ParametersTab.Table.CellEditCallback=[];
         %%% Sets row names to file names
