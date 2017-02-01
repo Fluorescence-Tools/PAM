@@ -135,6 +135,8 @@ function h = hexscatter( xdata, ydata, varargin )
     
     if nargout == 0
         clear h;
+    else
+        uistack(h,'bottom');
     end
     
     %% Function: default_param

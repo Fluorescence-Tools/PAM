@@ -2453,7 +2453,7 @@ if isempty(hfig)
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Load_Button',...
         'Units','normalized',...
-        'FontSize',10,...
+        'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Load database',...
@@ -2465,7 +2465,7 @@ if isempty(hfig)
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Save_Button',...
         'Units','normalized',...
-        'FontSize',10,...
+        'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Save Database',...
@@ -2478,7 +2478,7 @@ if isempty(hfig)
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_Correlate_Button',...
         'Units','normalized',...
-        'FontSize',10,...
+        'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Add files to database',...
@@ -2492,7 +2492,7 @@ if isempty(hfig)
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_AppendLoadedFiles',...
         'Units','normalized',...
-        'FontSize',10,...
+        'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Append loaded files to database',...
@@ -2507,7 +2507,7 @@ if isempty(hfig)
         'Parent',h.DatabaseBB.Panel,...
         'Tag','DatabaseBB_DatbaseFromFolder',...
         'Units','normalized',...
-        'FontSize',10,...
+        'FontSize',12,...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'String','Create database from folder',...
@@ -6070,8 +6070,49 @@ if ~colorbyparam
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
         uistack(BurstMeta.HexPlot.MainPlot_hex,'bottom');
     end
-    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        %%% get data
+    if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
+         %%% prepare 1d hists
+        binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
+        binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
+        n_per_species = cumsum([1,(n_per_species-1)]);
+        for i = 1:numel(n_per_species)-1
+            hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx);
+            hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
+            if obj ~= h.Fit_Gaussian_Button
+                hx{i} = hx{i}./sum(hx{i});
+                hy{i} = hy{i}./sum(hy{i});
+            end
+        end
+        color = lines(numel(n_per_species));
+        for i = 1:numel(hx)
+            BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
+        end
+        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+        BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
+        BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        %%% hide normal 1d plots
+        BurstMeta.Plots.Main_histX.Visible = 'off';
+        BurstMeta.Plots.Main_histY.Visible = 'off';
+        %%% add legend
+        [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
+        num_species = numel(file_n);
+        str = cell(num_species,1);
+        for i = 1:num_species
+            %%% extract name
+            name = BurstData{file_n(i)}.FileName;
+            if (species_n(i) ~= 0)
+                if (subspecies_n(i) ~= 1) %%% we have a subspecies selected
+                    name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
+                else %%% we have a species selected 
+                    name = [name,'/', char(sel(i).getName)];
+                end
+            end
+            str{i} = strrep(name,'_',' ');  
+        end
+        legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
         if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
             color = [];
             for i = 1:numel(n_per_species)
@@ -6079,50 +6120,10 @@ if ~colorbyparam
             end
             colors = lines(numel(n_per_species));
             colordata = colors(color,:);
-            %%% prepare 1d hists
-            binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
-            binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
-            n_per_species = cumsum([1,(n_per_species-1)]);
-            for i = 1:numel(n_per_species)-1
-                hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx);
-                hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
-                if obj ~= h.Fit_Gaussian_Button
-                    hx{i} = hx{i}./sum(hx{i});
-                    hy{i} = hy{i}./sum(hy{i});
-                end
-            end
-            color = lines(numel(n_per_species));
-            for i = 1:numel(hx)
-                BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
-                BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
-            end
-            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-            BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
-            BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
             %%% permute data points randomly to avoid hiding populations below another
             perm = randperm(size(colordata,1));
             colordata = colordata(perm,:);
             datapoints = datapoints(perm,:);
-            %%% hide normal 1d plots
-            BurstMeta.Plots.Main_histX.Visible = 'off';
-            BurstMeta.Plots.Main_histY.Visible = 'off';
-            %%% add legend
-            [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
-            num_species = numel(file_n);
-            str = cell(num_species,1);
-            for i = 1:num_species
-                %%% extract name
-                name = BurstData{file_n(i)}.FileName;
-                if (species_n(i) ~= 0)
-                    if (subspecies_n(i) ~= 1) %%% we have a subspecies selected
-                        name = [name,'/', char(sel(i).getParent.getName),'/',char(sel(i).getName)];
-                    else %%% we have a species selected 
-                        name = [name,'/', char(sel(i).getName)];
-                    end
-                end
-                str{i} = strrep(name,'_',' ');  
-            end
-            legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
         else
             datapoints = [datatoplot(:,x),datatoplot(:,y)];
             colordata = UserValues.BurstBrowser.Display.MarkerColor;
@@ -9482,6 +9483,9 @@ else
     %%% popupmenu selection was changed
     if obj.Value == numel(obj.String) %%% we clicked the last element, which is used to load a synthetic pattern
         [FileName,PathName] = uigetfile({'*.mi','Microtime pattern (*.mi)'},'Choose a synthetic microtime pattern',UserValues.File.BurstBrowserPath);
+        if FileName == 0
+            return;
+        end
         if ~isfield(BurstMeta,'fFCS')
             BurstMeta.fFCS = [];
         end
@@ -11016,8 +11020,8 @@ Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
-xProx = linspace(0,1,51);
-timebin = {3E-3,2E-3,1.5E-3,1E-3,0.75E-3,0.5E-3,0.3E-3};
+xProx = linspace(-0.1,1.1,61);
+timebin = {3E-3,2.5E-3,2E-3,1.5E-3,1E-3,0.5E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
@@ -11056,53 +11060,65 @@ for t = 1:numel(timebin)
             NGS = cellfun(@(x) sum((x==2)),PDAdata);
             NFP = cellfun(@(x) sum((x==3)),PDAdata);
             NFS = cellfun(@(x) sum((x==4)),PDAdata);
+            NRP = cellfun(@(x) sum((x==5)),PDAdata);
+            NRS = cellfun(@(x) sum((x==6)),PDAdata);
         case {3,4}
             NGP = cellfun(@(x) sum((x==7)),PDAdata);
             NGS = cellfun(@(x) sum((x==8)),PDAdata);
             NFP = cellfun(@(x) sum((x==9)),PDAdata);
             NFS = cellfun(@(x) sum((x==10)),PDAdata);
+            NRP = cellfun(@(x) sum((x==11)),PDAdata);
+            NRS = cellfun(@(x) sum((x==12)),PDAdata);
+        case {5}
+            NG = cellfun(@(x) sum((x==1)),PDAdata);
+            NF = cellfun(@(x) sum((x==2)),PDAdata);
+            NR = cellfun(@(x) sum((x==3)),PDAdata);
     end
-    
-    NG = NGP + NGS;
-    NF = NFP + NFS;
-    
-    Prox = NF./(NG+NF);
+    if ~(BurstData{file}.BAMethod == 5)
+        NG = NGP + NGS;
+        NF = NFP + NFS;
+        NR = NRP + NRS;
+    end
+    NG = NG - timebin{t}.*(BurstData{file}.Background.Background_GGpar+BurstData{file}.Background.Background_GGperp);
+    NF = NF - timebin{t}.*(BurstData{file}.Background.Background_GRpar+BurstData{file}.Background.Background_GRperp);
+    NR = NR - timebin{t}.*(BurstData{file}.Background.Background_RRpar+BurstData{file}.Background.Background_RRperp);
+    NF = NF - BurstData{1, 1}.Corrections.CrossTalk_GR.*NG - BurstData{1, 1}.Corrections.DirectExcitation_GR.*NR;
+    Prox = NF./(BurstData{1, 1}.Corrections.Gamma_GR.*NG+NF);
     
     Hist{t} = histcounts(Prox,xProx); Hist{t} = Hist{t}./sum(Hist{t});
     Progress(t/numel(timebin),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 end
 
 
-figure;hold on;
+f1 = figure('Color',[1,1,1]);hold on;
 a = 3;
 for i = 1:numel(timebin)
-    x = xProx(1:end-1);
-    % slightly modify x-axis for each following dataset, to
-    % allow better visualization of the different datasets.
-    if i ~= 1
-        % i = 1: do nothing
-        % i = 2: shift each x value +5% of the x bin size
-        % i = 3: shift each x value -5% of the x bin size
-        % i = 4: shift each x value +10% of the x bin size
-        % i = 5: shift each x value -10% of the x bin size
-        % ...
-        diffx = mean(diff(x))/20;
-        if mod(i,2) == 0 %i = 2, 4, 6...
-            x = x + diffx*i/2;
-        else %i = 3, 5, 7...
-            x = x - diffx*(i-1)/2;
-        end
-    end
-    ha = stairs(x,Hist{i});
+    ha = stairs(xProx,[Hist{i},Hist{i}(end)]);
     set(ha, 'Linewidth', a)
     a = a-0.33;
 end
-
+ax = gca;
+ax.Color = [1,1,1];
+ax.LineWidth = 1.5;
+ax.FontSize = 20;
+xlabel('FRET efficiency');
+ylabel('occurrence (norm.)');
+xlim([-0.1,1.1]);
 for i = 1:numel(timebin)
     leg{i} = [num2str(timebin{i}*1000) ' ms'];
 end
-legend(leg);
+legend(leg,'Box','off');
 
+%%% also make image plot
+Hist = flipud(vertcat(Hist{:}));
+f2 = figure('Color',[1,1,1]);
+f2.Position(1) = f1.Position(1) +  f1.Position(3);
+im = imagesc(xProx,fliplr(horzcat(timebin{:}))*1000,Hist);
+ax = gca;
+ax.YDir = 'normal';
+ax.FontSize = 20;
+xlabel('FRET efficiency');
+ylabel('time bin [ms]');
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -11696,11 +11712,11 @@ switch BurstData{file}.BAMethod
             case 1 %E vs tauGG
                 origin = h.axes_EvsTauGG;
                 paramX = 'Lifetime GG [ns]';
-                paramY = 'FRET Efficiency';
+                paramY = 'FRET Efficiency GR';
             case 2 %E vs tauRR
                 origin = h.axes_EvsTauRR;
                 paramX = 'Lifetime RR [ns]';
-                paramY = 'FRET Efficiency';
+                paramY = 'FRET Efficiency GR';
             case 3 %E1A vs tauBB
                 origin = h.axes_E_BtoGRvsTauBB;
                 paramX = 'Lifetime BB [ns]';
@@ -11772,9 +11788,12 @@ if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple speci
     end
     color = lines(numel(n_per_species));
     for i = 1:numel(hx)
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x);
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y);
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
     end
+    hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+    BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+    BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
     %%% hide normal 1d plots
     BurstMeta.Plots.LifetimeInd_histX.Visible = 'off';
     BurstMeta.Plots.LifetimeInd_histY.Visible = 'off';
