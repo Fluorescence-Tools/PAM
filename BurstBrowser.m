@@ -2203,7 +2203,7 @@ if isempty(hfig)
     
     h.ExportAllGraphs_Button = uicontrol('Style','pushbutton',...
         'Parent',h.DisplayOptionsPanel,...
-        'String','Export all graphs...',...
+        'String','Export all graphs',...
         'Tag','ExportAllGraphs_Button',...
         'Units','normalized',...
         'Position',[0.6 0.01 0.35 0.07],...
@@ -2229,7 +2229,7 @@ if isempty(hfig)
     %%% Option to enable/disable save dialog on closing
     h.SaveOnClose = uicontrol('Style','checkbox',...
         'Parent',h.DataProcessingPanel,...
-        'String','Ask for saving when closing window',...
+        'String','Ask for saving when closing program',...
         'Tag','SaveOnClose',...
         'Value', UserValues.BurstBrowser.Settings.SaveOnClose,...
         'Units','normalized',...
@@ -6074,10 +6074,10 @@ if ~colorbyparam
          %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
         binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
-        n_per_species = cumsum([1,(n_per_species-1)]);
-        for i = 1:numel(n_per_species)-1
-            hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx);
-            hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
+        n_per_species_cum = cumsum([1,(n_per_species-1)]);
+        for i = 1:numel(n_per_species_cum)-1
+            hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
+            hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
             if obj ~= h.Fit_Gaussian_Button
                 hx{i} = hx{i}./sum(hx{i});
                 hy{i} = hy{i}./sum(hy{i});
@@ -11009,6 +11009,14 @@ global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 
 file = BurstMeta.SelectedFile;
+
+%%% query photon threshold
+threshold = inputdlg({'Minimum number of photons'},'Set threshold',1,{'50'})
+if isempty(threshold)
+    return;
+else
+    threshold = str2double(threshold{1});
+end
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
 Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
@@ -11079,6 +11087,7 @@ for t = 1:numel(timebin)
         NF = NFP + NFS;
         NR = NRP + NRS;
     end
+    valid = (NG+NF+NR) > threshold; NG = NG(valid); NF = NF(valid); NR = NR(valid);
     NG = NG - timebin{t}.*(BurstData{file}.Background.Background_GGpar+BurstData{file}.Background.Background_GGperp);
     NF = NF - timebin{t}.*(BurstData{file}.Background.Background_GRpar+BurstData{file}.Background.Background_GRperp);
     NR = NR - timebin{t}.*(BurstData{file}.Background.Background_RRpar+BurstData{file}.Background.Background_RRperp);
@@ -13805,6 +13814,11 @@ switch obj
             end
         end
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
+        %%% remove html formatting
+        origStr = {'<html>','</html>','&',';','<sub>','</sub>'}; repStr = {'','','','','',''};
+        for i = 1:numel(origStr)
+            FigureName = strrep(FigureName,origStr{i},repStr{i});
+        end
     case h.ExportCorrections_Menu
         fontsize = 22;
         if ispc
@@ -14017,7 +14031,7 @@ if directly_save
         FileName = [FigureName '.png'];
         PathName = getPrintPath();
     end
-    
+    FileName = strrep(FileName,'/','-');
     %%% print figure
     hfig.PaperPositionMode = 'auto';
     dpi = 300;
@@ -14056,52 +14070,48 @@ end
 %%%%%%% Export All Graphs at once %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportAllGraphs(obj,~)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 h = guidata(obj);
 
-% file and species that is currently selected
+%%% enable saving
+prev_setting = UserValues.BurstBrowser.Settings.SaveFileExportFigure;
+UserValues.BurstBrowser.Settings.SaveFileExportFigure = 1;
 file = BurstMeta.SelectedFile;
-species = BurstData{file}.SelectedSpecies;
+UpdateCorrections([],[],h);
+UpdateCutTable(h);
+UpdateCuts();
+%Update_fFCS_GUI([],[],h);
+%update all plots, cause that's what we'll be copying
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 
-for i = 1:numel(BurstData) %loop through all files
-    BurstMeta.SelectedFile = i;
-    % select the same species for all files as for the currently selected file
-    BurstData{i}.SelectedSpecies = species;
-   
-    UpdateCorrections([],[],h);
-    UpdateCutTable(h);
-    UpdateCuts();
-    %Update_fFCS_GUI([],[],h);
-    %update all plots, cause that's what we'll be copying
-    UpdatePlot([],[],h);
-    UpdateLifetimePlots([],[],h);
-    PlotLifetimeInd([],[],h);
-    
-    if any(BurstData{i}.BAMethod == [3,4])
-        disp('Not implemented for three color.');
-        return;
-    end
-    % 2D E-S 
-    h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{i}.NameArray));
-    h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{i}.NameArray));
-    UpdatePlot([],[],h);
-    [hfig, FigureName] = ExportGraphs(h.Export2D_Menu,[],0);
-    ExportGraph_CloseFunction(hfig,[],0,FigureName)
-    % 1D E
-    [hfig, FigureName] = ExportGraphs(h.Export1DX_Menu,[],0);
-    ExportGraph_CloseFunction(hfig,[],0,FigureName) 
-    % all lifetime & anisotropy plots
-    [hfig, FigureName] = ExportGraphs(h.ExportLifetime_Menu,[],0);
-    ExportGraph_CloseFunction(hfig,[],0,FigureName)
-    % 2D E-tau
-    h.lifetime_ind_popupmenu.Value = 1;
-    PlotLifetimeInd([],[]);
-    [hfig, FigureName] = ExportGraphs(h.Export2DLifetime_Menu,[],0);
-    ExportGraph_CloseFunction(hfig,[],0,FigureName)
-    % Corrections
-    [hfig, FigureName] = ExportGraphs(h.ExportCorrections_Menu,[],0);
-    ExportGraph_CloseFunction(hfig,[],0,FigureName)
+if any(BurstData{file}.BAMethod == [3,4])
+    disp('Not implemented for three color.');
+    return;
 end
+% 2D E-S 
+h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
+h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
+UpdatePlot([],[],h);
+[hfig, FigureName] = ExportGraphs(h.Export2D_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
+% 1D E
+[hfig, FigureName] = ExportGraphs(h.Export1DX_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName) 
+% all lifetime & anisotropy plots
+[hfig, FigureName] = ExportGraphs(h.ExportLifetime_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
+% 2D E-tau
+h.lifetime_ind_popupmenu.Value = 1;
+PlotLifetimeInd([],[]);
+[hfig, FigureName] = ExportGraphs(h.Export2DLifetime_Menu,[],0);
+ExportGraph_CloseFunction(hfig,[],0,FigureName)
+% Corrections
+% [hfig, FigureName] = ExportGraphs(h.ExportCorrections_Menu,[],0);
+% ExportGraph_CloseFunction(hfig,[],0,FigureName)
+
+UserValues.BurstBrowser.Settings.SaveFileExportFigure = prev_setting;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
