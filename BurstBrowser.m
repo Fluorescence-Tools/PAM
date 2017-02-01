@@ -6068,7 +6068,7 @@ if ~colorbyparam
         %%% make hexplot
         axes(h.axes_general);
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
-        uistack(BurstMeta.HexPlot.MainPlot_hex,'bottom');
+        set(BurstMeta.HexPlot.MainPlot_hex,'UIContextMenu',h.ExportGraph_Menu);
     end
     if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
          %%% prepare 1d hists
@@ -13148,9 +13148,9 @@ if nargin < 3
     ask_file = 1;
 end
 h = guidata(obj);
-fontsize = 22;
+fontsize = 20;
 if ispc
-    fontsize = fontsize/1.2;
+    fontsize = fontsize/1.3;
 end
 
 size_pixels = 500;
@@ -13350,10 +13350,13 @@ switch obj
                             lim = max([lim,max(panel_copy.Children(i).Children(j).YData)*1.05]);
                         end
                     end
+                    set(panel_copy.Children(i),'YTickLabelRotation',0);
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    yticks = get(panel_copy.Children(i),'YTick');
-                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    panel_copy.Children(i).YTickLabel = [];
+                    panel_copy.Children(i).YLabel.String = '';
+                    %yticks = get(panel_copy.Children(i),'YTick');
+                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
                         panel_copy.Children(i).Children(9).FaceColor = [0.7 0.7 0.7];
@@ -13374,8 +13377,10 @@ switch obj
                     end
                     panel_copy.Children(i).YLim = [0, lim];
                     panel_copy.Children(i).YTickMode = 'auto';
-                    yticks = get(panel_copy.Children(i),'YTick');
-                    set(panel_copy.Children(i),'YTick',yticks(2:end));
+                    panel_copy.Children(i).YTickLabel = [];
+                    panel_copy.Children(i).YLabel.String = '';
+                    %yticks = get(panel_copy.Children(i),'YTick');
+                    %set(panel_copy.Children(i),'YTick',yticks(2:end));
                     panel_copy.Children(i).XTickLabelMode = 'auto';
                     % change the grayscale of the bars and remove the line
                     if strcmp(panel_copy.Children(i).Children(9).Type,'bar')
@@ -13466,7 +13471,7 @@ switch obj
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
-        fontsize = 22;
+        fontsize = 20;
         if ispc
             fontsize = fontsize/1.3;
         end
@@ -13732,6 +13737,8 @@ switch obj
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    panel_copy.Children(i).YTickLabel = [];
+                    panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
@@ -13743,6 +13750,8 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
                     panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    panel_copy.Children(i).YTickLabel = [];
+                    panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
