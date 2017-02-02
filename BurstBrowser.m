@@ -175,6 +175,13 @@ if isempty(hfig)
         'Parent',h.BurstBrowser,...
         'Label','Compare',...
         'Tag','Parameter_Comparison_Menu');
+    h.FRET_comp_selected_Menu = uimenu(...
+        'Parent',h.Parameter_Comparison_Menu,...
+        'Label','<html>Compare <b>FRET efficiency histograms</b> of selected species</html>',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_selected_Menu',...
+        'Enable','off',...
+        'Separator','off');
     h.Param_comp_selected_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>current parameter</b> of selected species</html>',...
@@ -3867,7 +3874,8 @@ PCF=findobj('Tag','PCF');
 TauFit=findobj('Tag','TauFit');
 PhasorTIFF = findobj('Tag','PhasorTIFF');
 PDA = findobj('Tag','GlobalPDAFit');
-if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit) && isempty(PDA)
+tcPDA = findobj('Tag','tcPDA');
+if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit) && isempty(PDA) && isempty(tcPDA)
     clear global -regexp UserValues
 end
 
@@ -4767,7 +4775,7 @@ if obj == h.FRET_comp_File_Menu
             EBR{i} = data.EBR;
         end
     end
-elseif obj == h.FRET_comp_Loaded_Menu
+elseif any(obj == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
     file = BurstMeta.SelectedFile;
     switch BurstData{file}.BAMethod
         case {1,2,5}
@@ -4776,30 +4784,61 @@ elseif obj == h.FRET_comp_Loaded_Menu
             mode = 3;
     end
     
-    sel_file = BurstMeta.SelectedFile;
-    for i = 1:numel(BurstData);
-        BurstMeta.SelectedFile = i;
-        %%% Make sure to apply corrections
-        ApplyCorrections(obj,[],h,0);
-        %%% read fret values
-        file = i;
-        SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
-        if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected
-            SelectedSpeciesName = [BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1} '/' SelectedSpeciesName];
-        end
-        FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
-        switch mode
-            case 2
-                E{i} = BurstData{file}.DataCut(:,1);
-            case 3
-                EGR{i} = BurstData{file}.DataCut(:,1);
-                EBG{i} = BurstData{file}.DataCut(:,2);
-                EBR{i} = BurstData{file}.DataCut(:,3);
-        end
+    switch obj
+        case h.FRET_comp_Loaded_Menu
+            sel_file = BurstMeta.SelectedFile;
+            for i = 1:numel(BurstData);
+                BurstMeta.SelectedFile = i;
+                %%% Make sure to apply corrections
+                ApplyCorrections(obj,[],h,0);
+                %%% read fret values
+                file = i;
+                SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
+                if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected
+                    SelectedSpeciesName = [BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1} '/' SelectedSpeciesName];
+                end
+                FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
+                switch mode
+                    case 2
+                        E{i} = BurstData{file}.DataCut(:,1);
+                    case 3
+                        EGR{i} = BurstData{file}.DataCut(:,1);
+                        EBG{i} = BurstData{file}.DataCut(:,2);
+                        EBR{i} = BurstData{file}.DataCut(:,3);
+                end
+            end
+            BurstMeta.SelectedFile = sel_file;
+        case h.FRET_comp_selected_Menu
+            sel_file = BurstMeta.SelectedFile;
+            [files,species,subspecies] = get_multiselection(h);
+            for i = 1:numel(files)
+                file = files(i);
+                BurstMeta.SelectedFile = file;
+                %%% Make sure to apply corrections
+                ApplyCorrections(obj,[],h,0);
+                %%% read fret values
+                try
+                    SelectedSpeciesName = BurstData{file}.SpeciesNames{species(i),subspecies(i)};
+                    if subspecies(i) > 1 %%% subspecies selected
+                        SelectedSpeciesName = [BurstData{file}.SpeciesNames{species(i),1} '/' SelectedSpeciesName];
+                    end
+                    FileNames{i} = [BurstData{file}.FileName(1:end-4) '/' SelectedSpeciesName '.his'];
+                catch
+                    FileNames{i} = [BurstData{file}.FileName(1:end-4) '.his'];
+                end
+                [~, Data] = UpdateCuts([species(i),subspecies(i)],file);
+                switch mode
+                    case 2
+                        E{i} = Data(:,1);
+                    case 3
+                        EGR{i} = Data(:,1);
+                        EBG{i} = Data(:,2);
+                        EBR{i} = Data(:,3);
+                end
+            end
+            BurstMeta.SelectedFile = sel_file;
     end
-    BurstMeta.SelectedFile = sel_file;
 elseif  obj == h.Param_comp_Loaded_Menu
-    file = BurstMeta.SelectedFile;
     mode = 0;
     param = h.ParameterListX.String{h.ParameterListX.Value};
     sel_file = BurstMeta.SelectedFile;
@@ -4808,7 +4847,7 @@ elseif  obj == h.Param_comp_Loaded_Menu
         BurstMeta.SelectedFile = i;
         %%% Make sure to apply corrections
         ApplyCorrections(obj,[],h,0);
-        %%% read fret values
+        %%% read parameter values
         file = i;
         try
             SelectedSpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)};
@@ -4856,6 +4895,10 @@ elseif obj == h.Param_comp_selected_Menu
 end
 
 N_bins = UserValues.BurstBrowser.Display.NumberOfBinsX;
+
+if numel(FileNames) == 1
+    return;
+end
 
 switch mode
     case 2 % 2ColorMFD
@@ -4911,7 +4954,7 @@ switch mode
             xlabel('File Number');
             text(1.02,ax.YLim(2),legend_entries);
         end
-    case 3
+    case 3 
         xE = linspace(-0.1,1,ceil(N_bins*1.1)+1);
         xEBR = linspace(-0.2,1,ceil(N_bins*1.2)+1);
         for i = 1:numel(EGR)
@@ -5125,6 +5168,7 @@ switch obj
                 h.Export_To_PDA_Button.Visible = 'off';
                 h.Send_to_TauFit_Button.Visible = 'off';
                 h.Param_comp_selected_Menu.Enable = 'on';
+                h.FRET_comp_selected_Menu.Enable = 'on';
             case 0
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -5139,6 +5183,7 @@ switch obj
                 h.Export_To_PDA_Button.Visible = 'on';
                 h.Send_to_TauFit_Button.Visible = 'on';
                 h.Param_comp_selected_Menu.Enable = 'off';
+                h.FRET_comp_selected_Menu.Enable = 'off';
          end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
@@ -5881,7 +5926,7 @@ if nargin == 2
         h = guidata(obj);
     end
 end
-drawnow limitrate;
+
 %%% If a display option was changed, update the UserValues!
 UpdateGUIOptions(obj,[],h);
 
@@ -6150,7 +6195,7 @@ else
 
     % sort all selected bursts into the Mask
     for i = 1:size(bin,1) %bin in a list of X and Y bins of all selected bursts
-        if ~isnan(z(i))
+        if ~isnan(z(i)) && ~isnan(bin(i,1)) && ~isnan(bin(i,2))
             Mask(bin(i,1),bin(i,2)) = Mask(bin(i,1),bin(i,2)) + z(i);
             counter(bin(i,1),bin(i,2)) = counter(bin(i,1),bin(i,2)) + 1;
         end
@@ -6243,6 +6288,7 @@ else
         z(z<zlim(1)) = zlim(1); z(z>zlim(2)) = zlim(2);
         z_to_color = ceil((z-min(z))./(max(z)-min(z)).*size(cmap,1));
         z_to_color(z_to_color == 0) = 1;
+        z_to_color(isnan(z_to_color)) = size(cmap,1);
         z_color = cmap(z_to_color,:);
         BurstMeta.Plots.Main_Plot(3).CData = z_color;
     end
@@ -13419,7 +13465,7 @@ switch obj
             end
         end
         
-        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        if any(strcmp(UserValues.BurstBrowser.Display.PlotType,{'Image','Scatter'}))
             %%% Update Colorbar by plotting it anew
             %%% multiplot is NOT used
             if any(cell2mat(h.CutTable.Data(:,6)))  %%% colored by parameter
@@ -13439,7 +13485,7 @@ switch obj
                 if (panel_copy.Children(3).XLim(2) - panel_copy.Children(3).XTick(end))/(panel_copy.Children(3).XLim(2)-panel_copy.Children(3).XLim(1)) < 0.05 %%% Last XTick Label is at the end of the axis and thus overlaps with colorbar
                     panel_copy.Children(3).XTickLabel{end} = '';
                 end
-            else %%% only occurence
+            elseif ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% only occurence
                 for n = 1:numel(panel_copy.Children)
                     if strcmp(panel_copy.Children(n).Tag,'Axes_General')
                         ax2d = n;
