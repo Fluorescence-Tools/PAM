@@ -3642,7 +3642,7 @@ switch mode
         BurstMeta.Plots.Main_Plot(1) = imagesc(linspace(0,1,10),linspace(0,1,10),zeros(10),'Parent',h.axes_general,'UIContextMenu',h.ExportGraph_Menu);axis(h.axes_general,'tight');
         [~,BurstMeta.Plots.Main_Plot(2)] = contourf(linspace(0,1,10),linspace(0,1,10),zeros(10),10,'Parent',h.axes_general,'Visible','off');BurstMeta.Plots.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
         BurstMeta.HexPlot.MainPlot_hex = [];
-        BurstMeta.Plots.Main_Plot(3) = scatter([0,1],[0,1],'.','Parent',h.axes_general,'CData',[0,0,0]);
+        BurstMeta.Plots.Main_Plot(3) = scatter([0,1],[0,1],'.','Parent',h.axes_general,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         %%% Main Tab multiple species (consider up to three)
         BurstMeta.Plots.Multi.Main_Plot_multiple = imagesc(zeros(2),'Parent',h.axes_general,'Visible','off','UIContextMenu',h.ExportGraph_Menu);
         BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
@@ -3692,7 +3692,7 @@ switch mode
         [~,BurstMeta.Plots.EvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauGG,'Visible','off');
         BurstMeta.Plots.EvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.EvsTauGG = [];
-        BurstMeta.Plots.EvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauGG,'CData',[0,0,0]);
+        BurstMeta.Plots.EvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauGG,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         BurstMeta.Plots.Fits.staticFRET_EvsTauGG = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(1) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','--','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2) = plot(h.axes_EvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--','LineWidth',3,'Visible','off');
@@ -3701,13 +3701,13 @@ switch mode
         [~,BurstMeta.Plots.EvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_EvsTauRR,'Visible','off');
         BurstMeta.Plots.EvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.EvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.EvsTauRR = [];
-        BurstMeta.Plots.EvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauRR,'CData',[0,0,0]);
+        BurstMeta.Plots.EvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_EvsTauRR,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         BurstMeta.Plots.Fits.AcceptorLifetime_EvsTauRR = plot(h.axes_EvsTauGG,[0],[1],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rGGvsTauGG(1) = imagesc(zeros(2),'Parent',h.axes_rGGvsTauGG);axis(h.axes_rGGvsTauGG,'tight');
         [~,BurstMeta.Plots.rGGvsTauGG(2)] = contourf(zeros(2),10,'Parent',h.axes_rGGvsTauGG,'Visible','off');
         BurstMeta.Plots.rGGvsTauGG(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rGGvsTauGG(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.rGGvsTauGG = [];
-        BurstMeta.Plots.rGGvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rGGvsTauGG,'CData',[0,0,0]);
+        BurstMeta.Plots.rGGvsTauGG(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rGGvsTauGG,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinGG(1) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinGG(2) = plot(h.axes_rGGvsTauGG,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -3716,7 +3716,7 @@ switch mode
         [~,BurstMeta.Plots.rRRvsTauRR(2)] = contourf(zeros(2),10,'Parent',h.axes_rRRvsTauRR,'Visible','off');axis(h.axes_rRRvsTauRR,'tight');
         BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.rRRvsTauRR = [];
-        BurstMeta.Plots.rRRvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rRRvsTauRR,'CData',[0,0,0]);
+        BurstMeta.Plots.rRRvsTauRR(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rRRvsTauRR,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinRR(1) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinRR(2) = plot(h.axes_rRRvsTauRR,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -3726,13 +3726,13 @@ switch mode
         [~,BurstMeta.Plots.E_BtoGRvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_E_BtoGRvsTauBB,'Visible','off');
         BurstMeta.Plots.E_BtoGRvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.E_BtoGRvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.E_BtoGRvsTauBB = [];
-        BurstMeta.Plots.E_BtoGRvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_E_BtoGRvsTauBB,'CData',[0,0,0]);
+        BurstMeta.Plots.E_BtoGRvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_E_BtoGRvsTauBB,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         BurstMeta.Plots.Fits.staticFRET_E_BtoGRvsTauBB = plot(h.axes_E_BtoGRvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.rBBvsTauBB(1) = imagesc(zeros(2),'Parent',h.axes_rBBvsTauBB);axis(h.axes_rBBvsTauBB,'tight');
         [~,BurstMeta.Plots.rBBvsTauBB(2)] = contourf(zeros(2),10,'Parent',h.axes_rBBvsTauBB,'Visible','off');
         BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu = h.LifeTime_Menu;BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = h.LifeTime_Menu;
         BurstMeta.HexPlot.rBBvsTauBB = [];
-        BurstMeta.Plots.rBBvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rBBvsTauBB,'CData',[0,0,0]);
+        BurstMeta.Plots.rBBvsTauBB(3) = scatter([0,1],[0,1],'.','Parent',h.axes_rBBvsTauBB,'CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
         %%% Consider up to three Perrin lines
         BurstMeta.Plots.Fits.PerrinBB(1) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         BurstMeta.Plots.Fits.PerrinBB(2) = plot(h.axes_rBBvsTauBB,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','-','LineWidth',3,'Visible','off');
@@ -3807,8 +3807,9 @@ switch mode
         [~,BurstMeta.Plots.gamma_threecolor_lifetime(2)] = contourf(zeros(2),'Parent',h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,'Visible','off');
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime = plot(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[0 1],[0 0],'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineStyle','-','LineWidth',3,'Visible','off');
         
-        ChangePlotType(h.PlotTypePopumenu,[]);
         ChangePlotType(h.PlotContourLines,[]);
+        ChangePlotType(h.PlotTypePopumenu,[]);
+
         %%% Force switchgui to 2color to update axis label positions and
         %%% axis locations
         if isempty(BurstData)
@@ -4077,8 +4078,9 @@ UpdateSpeciesList(h);
 UpdateCutTable(h);
 UpdateCuts();
 
-ChangePlotType(h.PlotTypePopumenu) %to make the display correct at initial
-ChangePlotType(h.PlotContourLines) %to make the display correct at initial
+ChangePlotType(h.PlotContourLines) 
+ChangePlotType(h.PlotTypePopumenu) 
+
 Update_fFCS_GUI(gcbo,[]);
 
 function Load_BurstFile(PathName,FileName,FilterIndex,append)
@@ -6007,7 +6009,7 @@ if size(CutState,2) > 0
 end
 
 %%% check what plot type to use
-colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value;
+colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value && ~h.SmoothKDE.Value;
 if ~colorbyparam
     if ~h.MultiselectOnCheckbox.Value
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
@@ -6203,7 +6205,14 @@ else
     h.axes_ZScale.Visible = 'on';
     BurstMeta.Plots.ZScale_hist.Visible = 'on';
     %%% Plot histogram of average Z paramter
-    [Z,xZ] = histcounts(zParam(zParam>0),linspace(zlim(1),zlim(2),26));
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        %%% use non-averaged parameter
+        zData = z;
+    else
+        %%% image plot, show histogram of pixel wise average
+        zData = zParam(zParam>0);
+    end
+    [Z,xZ] = histcounts(zData,linspace(zlim(1),zlim(2),26));
     Z(end-1) = Z(end-1)+Z(end); Z(end) = [];
     BurstMeta.Plots.ZScale_hist.XData = xZ;
     BurstMeta.Plots.ZScale_hist.YData = Z;
@@ -6231,6 +6240,7 @@ else
         BurstMeta.Plots.Main_Plot(3).YData = datatoplot(:,y);
         %%% map z value to colormap
         cmap = colormap;
+        z(z<zlim(1)) = zlim(1); z(z>zlim(2)) = zlim(2);
         z_to_color = ceil((z-min(z))./(max(z)-min(z)).*size(cmap,1));
         z_to_color(z_to_color == 0) = 1;
         z_color = cmap(z_to_color,:);
@@ -6899,7 +6909,9 @@ switch obj
             end
         end
 end
-PlotLifetimeInd([],[]);
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
+PlotLifetimeInd([],[],h);
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -7073,7 +7085,11 @@ if nargout > 0 %%% we requested the histogram, do not plot!
     for k = 2:numel(H)
         Hcum = Hcum + H{k};
     end
-    HistOut = Hcum;
+    if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
+        HistOut = Hcum./max(Hcum(:));
+    else
+        HistOut = Hcum;
+    end
     
     datapoints = [];
     n_per_species = [];
@@ -11746,8 +11762,12 @@ switch BurstData{file}.BAMethod
 end
 BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
 BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
-try;delete(BurstMeta.Plots.MultiScatter.h1dx_lifetime);end;
-try;delete(BurstMeta.Plots.MultiScatter.h1dy_lifetime);end;
+for i=1:numel(BurstMeta.Plots.MultiScatter.h1dx_lifetime)
+    try;delete(BurstMeta.Plots.MultiScatter.h1dx_lifetime(i));end;
+end
+for i=1:numel(BurstMeta.Plots.MultiScatter.h1dy_lifetime)
+    try;delete(BurstMeta.Plots.MultiScatter.h1dy_lifetime(i));end;
+end
 legend(h.axes_lifetime_ind_1d_x,'off');
 cla(h.axes_lifetime_ind_2d);
 plots =origin.Children;
@@ -11822,7 +11842,7 @@ if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple speci
         end
         str{i} = strrep(name,'_',' ');  
     end
-    legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     h.axes_lifetime_ind_1d_x.YLimMode = 'auto';
     h.axes_lifetime_ind_1d_y.YLimMode = 'auto';
 end
@@ -13398,40 +13418,8 @@ switch obj
                     end
             end
         end
-        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
-            %%% (if multi plot is used, first stair plot is visible)
-            %%% if multiplot, extend figure and shift legend upstairs
-            %%% delete the zscale axis
-            for i = 1:numel(hfig.Children(end).Children)
-                if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
-                    del = i;
-                end
-            end
-            delete(hfig.Children(end).Children(del));
-            %%% Set all units to pixels for easy editing without resizing
-            hfig.Units = 'pixels';
-            panel_copy.Units = 'pixels';
-            for i = 1:numel(panel_copy.Children)
-                if isprop(panel_copy.Children(i),'Units');
-                    panel_copy.Children(i).Units = 'pixels';
-                end
-            end
-            %%% refind legend item
-            leg = [];
-            for i = 1:numel(panel_copy.Children)
-                if strcmp(panel_copy.Children(i).Type,'legend')
-                    leg = i;
-                end
-            end
-            if ~isempty(leg)
-                if strcmp(panel_copy.Children(leg).Visible,'on')
-                    hfig.Position(4) = 650;
-                    panel_copy.Position(4) = 650;
-                    panel_copy.Children(leg).Position(1) = 40;
-                    panel_copy.Children(leg).Position(2) = 590;
-                end
-            end
-        else
+        
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
             %%% Update Colorbar by plotting it anew
             %%% multiplot is NOT used
             if any(cell2mat(h.CutTable.Data(:,6)))  %%% colored by parameter
@@ -13467,6 +13455,45 @@ switch obj
                 cbar.Limits(1) = 0;
                 cbar.TicksMode = 'auto';
                 cbar.TickLabelsMode = 'auto';
+            end
+        end
+        for n = 1:numel(panel_copy.Children)
+            if strcmp(panel_copy.Children(n).Tag,'Axes_1D_X')
+                ax1dx = n;
+            end
+        end
+        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
+            %%% (if multi plot is used, first stair plot is visible)
+            %%% if multiplot, extend figure and shift legend upstairs
+            %%% delete the zscale axis
+            for i = 1:numel(hfig.Children(end).Children)
+                if strcmp(hfig.Children(end).Children(i).Tag,'axes_ZScale')
+                    del = i;
+                end
+            end
+            delete(hfig.Children(end).Children(del));
+            %%% Set all units to pixels for easy editing without resizing
+            hfig.Units = 'pixels';
+            panel_copy.Units = 'pixels';
+            for i = 1:numel(panel_copy.Children)
+                if isprop(panel_copy.Children(i),'Units');
+                    panel_copy.Children(i).Units = 'pixels';
+                end
+            end
+            %%% refind legend item
+            leg = [];
+            for i = 1:numel(panel_copy.Children)
+                if strcmp(panel_copy.Children(i).Type,'legend')
+                    leg = i;
+                end
+            end
+            if ~isempty(leg)
+                if strcmp(panel_copy.Children(leg).Visible,'on')
+                    hfig.Position(4) = 650;
+                    panel_copy.Position(4) = 650;
+                    panel_copy.Children(leg).Position(1) = 40;
+                    panel_copy.Children(leg).Position(2) = 590;
+                end
             end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
@@ -13780,9 +13807,11 @@ switch obj
             end
         end
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-            cbar = colorbar(panel_copy.Children(3),'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
+            cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
+                'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
             cbar.Position = [0.8,0.85,0.18,0.025];
             cbar.Label.String = 'Occurrence';
+            cbar.TickLabelsMode = 'auto';
             if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
                 labels = cellfun(@str2double,cbar.TickLabels);
                 %%% find maximum number of bursts
@@ -13798,9 +13827,10 @@ switch obj
                 for i = 1:numel(labels)
                     cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
                 end
-            end      
+            end
+            cbar.Units = 'pixels';drawnow;
         end
-        if h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        if (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
             %%% Set all units to pixels for easy editing without resizing
             hfig.Units = 'pixels';
             panel_copy.Units = 'pixels';
@@ -14010,7 +14040,7 @@ else
 end
 FigureName = [FileName SpeciesName '_' FigureName];
 %%% remove spaces
-FigureName = strrep(FigureName,' ','_');
+FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
