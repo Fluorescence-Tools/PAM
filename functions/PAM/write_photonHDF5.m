@@ -21,11 +21,36 @@ if status ~= 0
     
     %%% add conda path to system path
     setenv('PATH', [getenv('PATH') ':' conda_path]);
+    
+    success = false;
     %%% try again
     [status,cmdout] = system('phforge');
     if status == 0
         disp('phforge is installed.');
+        success = true;
     else
+        %%% get installed anaconda environments, check if one of those has it installed
+        [status,cmdout] = system('conda env list');
+        if ispc
+            pattern = '(\\\w*)+';
+        else
+            pattern = '(/\w*)+';
+        end
+        envs = regexp(cmdout,pattern,'match');
+        idx = 1;
+        while ~success
+            %%% add env path to system path
+            setenv('PATH', [getenv('PATH') ':' [envs{idx} filesep 'bin']]);
+            %%% try again
+            [status,cmdout] = system('phforge');
+            if status == 0
+                success = true;
+                disp('phforge is installed.');
+            end
+            idx = idx + 1;
+        end
+    end
+    if ~success
         disp(cmdout);
         disp('Please install phforge! For instructions vist http://photon-hdf5.github.io/phforge/');
         return;
