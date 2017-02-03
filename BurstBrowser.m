@@ -10167,6 +10167,7 @@ TauFitData.FileInfo = BurstData{file}.FileInfo;
 TauFitData.PIE = BurstData{file}.PIE;
 TauFitData.SpeciesName = BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies};
 TauFitData.FileName = BurstData{file}.FileName;
+TauFitData.Path = BurstData{file}.PathName;
 %%% Read out the bursts contained in the different species selections
 valid = UpdateCuts([BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)],file);
 
@@ -10790,30 +10791,30 @@ else %%% Update UserValues and BurstData with new values
                     switch e.Indices(1)
                         case 3 %%% crosstalk was changed, update the Gauss fit plot
                             crosstalk_new = e.NewData;
-                            mean_new = crosstalk_new/(crosstalk_new+1);
-                            if BurstMeta.Plots.histE_donly.YData == 1
-                                % correction histograms don't exist yet
-                                DetermineCorrections(h.DetermineCorrectionsButton,[]); 
-                            end
-                            obj.Data{e.Indices(1),2} = crosstalk_new; %update the value in the table
-                            [~, GaussFun] = GaussianFit(BurstMeta.Plots.histE_donly.XData',...
-                                                        BurstMeta.Plots.histE_donly.YData',...
-                                                        mean_new); %create the new red line
-                            BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFun;
+%                             mean_new = crosstalk_new/(crosstalk_new+1);
+%                             if BurstMeta.Plots.histE_donly.YData == 1
+%                                 % correction histograms don't exist yet
+%                                 DetermineCorrections(h.DetermineCorrectionsButton,[]); 
+%                             end
+%                             obj.Data{e.Indices(1),2} = crosstalk_new; %update the value in the table
+%                             [~, GaussFun] = GaussianFit(BurstMeta.Plots.histE_donly.XData',...
+%                                                         BurstMeta.Plots.histE_donly.YData',...
+%                                                         mean_new); %create the new red line
+%                             BurstMeta.Plots.Fits.histE_donly(1).YData = GaussFun;
                             UserValues.BurstBrowser.Corrections.CrossTalk_GR = crosstalk_new;
                             BurstData{file}.Corrections.CrossTalk_GR = crosstalk_new;
                         case 4 %%% direct exc. was changed, update the Gauss fit plot
                             directexc_new = e.NewData;
-                            mean_new = directexc_new/(directexc_new+1);
-                            if BurstMeta.Plots.histS_aonly.YData == 1
-                                % correction histograms don't exist yet
-                                DetermineCorrections(h.DetermineCorrectionsButton,[]); %generate the directexc histogram if it isn't there already
-                            end
-                            obj.Data{e.Indices(1),2} = directexc_new; %update the value in the table
-                            [~, GaussFun] = GaussianFit(BurstMeta.Plots.histS_aonly.XData',...
-                                                        BurstMeta.Plots.histS_aonly.YData',...
-                                                        mean_new); %create the new red line
-                            BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFun;
+%                             mean_new = directexc_new/(directexc_new+1);
+%                             if BurstMeta.Plots.histS_aonly.YData == 1
+%                                 % correction histograms don't exist yet
+%                                 DetermineCorrections(h.DetermineCorrectionsButton,[]); %generate the directexc histogram if it isn't there already
+%                             end
+%                             obj.Data{e.Indices(1),2} = directexc_new; %update the value in the table
+%                             [~, GaussFun] = GaussianFit(BurstMeta.Plots.histS_aonly.XData',...
+%                                                         BurstMeta.Plots.histS_aonly.YData',...
+%                                                         mean_new); %create the new red line
+%                             BurstMeta.Plots.Fits.histS_aonly(1).YData = GaussFun;
                             UserValues.BurstBrowser.Corrections.DirectExcitation_GR = directexc_new;
                             BurstData{file}.Corrections.DirectExcitation_GR = directexc_new;
                     end

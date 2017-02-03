@@ -2075,6 +2075,11 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
 else
     chan = TauFitData.chan;
 end
+if gcbo == h.Menu.Export_MIPattern
+    save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
+else
+    save_fix = true;
+end
 h.Result_Plot_Text.Visible = 'off';
 h.Output_Text.String = '';
 h.Plots.Residuals.Visible = 'on';
@@ -2209,10 +2214,12 @@ switch obj
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(6) = fix(2);
                 UserValues.TauFit.FitFix{chan}(8) = fix(3);
                 UserValues.TauFit.FitFix{chan}(10) = fix(4);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(6) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(8) = FitResult{3};
@@ -2288,12 +2295,14 @@ switch obj
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
                 UserValues.TauFit.FitFix{chan}(4) = fix(3);
                 UserValues.TauFit.FitFix{chan}(6) = fix(4);
                 UserValues.TauFit.FitFix{chan}(8) = fix(5);
                 UserValues.TauFit.FitFix{chan}(10) = fix(6);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
@@ -2383,6 +2392,7 @@ switch obj
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
                 UserValues.TauFit.FitFix{chan}(3) = fix(3);
@@ -2391,6 +2401,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(6) = fix(6);
                 UserValues.TauFit.FitFix{chan}(8) = fix(7);
                 UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(3) = FitResult{3};
@@ -2459,6 +2470,7 @@ switch obj
                 FitResult{6} = FitResult{6}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(19) = fix(1);
                 UserValues.TauFit.FitFix{chan}(20) = fix(2);
                 UserValues.TauFit.FitFix{chan}(6) = fix(3);
@@ -2466,6 +2478,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(11) = fix(5);
                 UserValues.TauFit.FitFix{chan}(12) = fix(6);
                 UserValues.TauFit.FitFix{chan}(10) = fix(7);
+                end
                 UserValues.TauFit.FitParams{chan}(19) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(20) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(6) = FitResult{3};
@@ -2533,6 +2546,7 @@ switch obj
                 FitResult{7} = FitResult{7}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(19) = fix(1);
                 UserValues.TauFit.FitFix{chan}(20) = fix(2);
                 UserValues.TauFit.FitFix{chan}(21) = fix(3);
@@ -2541,6 +2555,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(11) = fix(6);
                 UserValues.TauFit.FitFix{chan}(12) = fix(7);
                 UserValues.TauFit.FitFix{chan}(10) = fix(8);
+                end
                 UserValues.TauFit.FitParams{chan}(19) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(20) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(21) = FitResult{3};
@@ -2629,6 +2644,7 @@ switch obj
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(15) = fix(2);
                 UserValues.TauFit.FitFix{chan}(17) = fix(3);
@@ -2640,6 +2656,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(13) = fix(9);
                 UserValues.TauFit.FitFix{chan}(14) = fix(10);
                 UserValues.TauFit.FitFix{chan}(10) = fix(11);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(15) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(17) = FitResult{3};
@@ -2749,6 +2766,7 @@ switch obj
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
                 UserValues.TauFit.FitFix{chan}(4) = fix(3);
@@ -2762,6 +2780,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(13) = fix(11);
                 UserValues.TauFit.FitFix{chan}(14) = fix(12);
                 UserValues.TauFit.FitFix{chan}(10) = fix(13);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
@@ -2861,6 +2880,7 @@ switch obj
                 FitResult{3} = FitResult{3}.*TauFitData.TACChannelWidth;
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(15) = fix(2);
                 UserValues.TauFit.FitFix{chan}(16) = fix(3);
@@ -2873,6 +2893,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(13) = fix(10);
                 UserValues.TauFit.FitFix{chan}(14) = fix(11);
                 UserValues.TauFit.FitFix{chan}(10) = fix(12);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(15) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(16) = FitResult{3};
@@ -2986,6 +3007,7 @@ switch obj
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
                 fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
                 UserValues.TauFit.FitFix{chan}(1) = fix(1);
                 UserValues.TauFit.FitFix{chan}(2) = fix(2);
                 UserValues.TauFit.FitFix{chan}(4) = fix(3);
@@ -3000,6 +3022,7 @@ switch obj
                 UserValues.TauFit.FitFix{chan}(13) = fix(12);
                 UserValues.TauFit.FitFix{chan}(14) = fix(13);
                 UserValues.TauFit.FitFix{chan}(10) = fix(14);
+                end
                 UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
                 UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
                 UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
@@ -3651,6 +3674,7 @@ else
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
                 end
+                ax(i).YTickLabels{1} = '';
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.86 0.875 .13];
                 ax(i).YTickLabelMode = 'auto';
@@ -5138,7 +5162,7 @@ switch obj
             MIPattern{TauFitData.PIE.Detector(Per),TauFitData.PIE.Router(Per)}=mi_pattern2;
             
             FileName = matlab.lang.makeValidName(TauFitData.SpeciesName);
-            Path = fileparts(TauFitData.FileName);
+            Path = TauFitData.Path;
         end
         % save  
         [File, Path] = uiputfile('*.mi', 'Save Microtime Pattern', fullfile(Path,FileName));
