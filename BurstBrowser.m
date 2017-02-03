@@ -7562,6 +7562,9 @@ if ~isempty(eventdata.Modifier)
                 case 'space'
                     %%% Manual Cut
                      ManualCut(h.CutButton,[])
+                case 't'
+                    %%% open notepad
+                    Open_Notepad([],[])
             end
     end
 else
@@ -14638,6 +14641,9 @@ switch mode
     case 4 %% Save complete database
         Path = UserValues.File.BurstBrowserDatabasePath;
         [File, Path] = uiputfile({'*.bdb', 'Database file (*.bdb)'}, 'Save database', Path);
+        if File == 0
+            return;
+        end
         s = struct;
         s.database = BurstMeta.Database;
         s.str = h.DatabaseBB.List.String;
