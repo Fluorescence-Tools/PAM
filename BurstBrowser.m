@@ -8178,14 +8178,14 @@ if isfield(BurstData{file},'AdditionalParameters')
             BurstData{file}.NameArray{end+1} = 'Diffusion time [ms]';
             BurstData{file}.DataArray(:,end+1) = 0;
         end
-        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion time [ms]')) = BurstData{1, 1}.AdditionalParameters.tauD./1E-3;
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion time [ms]')) = BurstData{file}.AdditionalParameters.tauD./1E-3;
     end
     if isfield(BurstData{file}.AdditionalParameters,'DiffusionCoefficient')
         if ~sum(strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]'))
             BurstData{file}.NameArray{end+1} = 'Diffusion coefficient [mum2/s]';
             BurstData{file}.DataArray(:,end+1) = 0;
         end
-        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]')) = BurstData{1, 1}.AdditionalParameters.DiffusionCoefficient;
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]')) = BurstData{file}.AdditionalParameters.DiffusionCoefficient;
     end
 end
 
@@ -12679,6 +12679,7 @@ h = guidata(obj);
 %%% Set Up Progress Bar
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
 file = BurstMeta.SelectedFile;
+UpdateCuts();
 %%% Read out the species name
 if (BurstData{file}.SelectedSpecies(1) == 0)
     species = 'total';
@@ -12993,11 +12994,16 @@ for i=1:NumChans
                     end
 
                     %%% store in BurstData as extra field
+                    if ~isfield(BurstData{file},'AdditionalParameters')
+                        BurstData{file}.AdditionalParameters = [];
+                    end
                     if ~isfield(BurstData{file}.AdditionalParameters,'tauD')
                         BurstData{file}.AdditionalParameters.tauD = NaN(size(BurstData{file}.DataArray,1),1);
                     end
-                    %%% fix the sorting into the burst-array!!!!
-                    BurstData{file}.AdditionalParameters.tauD(logical(use)) = tauD;
+                    %%% assign back to bursts
+                    tauD_temp = NaN(size(use,1),1); 
+                    tauD_temp(logical(use)) = tauD;
+                    BurstData{file}.AdditionalParameters.tauD(BurstData{file}.Selected) = tauD_temp;
                     %%% ask for omega_r
                     omega_r = inputdlg('Specify focus size in nm:','Focus size?',1,{'600'});
                     omega_r = str2num(omega_r{1});
@@ -13006,12 +13012,18 @@ for i=1:NumChans
                         disp('Setting default value omega_r = 600 nm');
                     end
                     D = (omega_r./1000).^2./4./(tauD);
-                    BurstData{file}.AdditionalParameters.DiffusionCoefficient = NaN(numel(use),1);
-                    BurstData{file}.AdditionalParameters.DiffusionCoefficient(logical(use)) = D;
+                    if ~isfield(BurstData{file}.AdditionalParameters,'DiffusionCoefficient')
+                        BurstData{file}.AdditionalParameters.DiffusionCoefficient = NaN(size(BurstData{file}.DataArray,1),1);
+                    end
+                    %%% assign back to bursts
+                    D_temp = NaN(size(use,1),1); 
+                    D_temp(logical(use)) = D;
+                    BurstData{file}.AdditionalParameters.DiffusionCoefficient(BurstData{file}.Selected) = D_temp;
+                    %%% Add parameters to list
                     AddDerivedParameters([],[],h);
                     set(h.ParameterListX, 'String', BurstData{file}.NameArray);
                     set(h.ParameterListY, 'String', BurstData{file}.NameArray);
-                    UpdateCuts([],[],h);
+                    UpdateCuts();
             end
             Progress(count/NCor,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
