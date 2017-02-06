@@ -33,7 +33,7 @@ end
 %%% [1:21 20:2:41 45:4:81 ....]
 if mode == 1
     Timeaxis_Exponent=floor(log2(Maxtime/10));
-elseif mode == 2
+elseif any(mode == [2,3]);
     MaxMaxtime = max(Maxtime);
     Timeaxis_Exponent=floor(log2(double(MaxMaxtime)/10));
 end
@@ -104,7 +104,7 @@ if mode == 1
     %     Cor_Array{i}=Cor_Array{i}(1:find(Cor_Array{i}~=-1,1,'last'));
     % end
     Timeaxis=Timeaxis(1:max(Array_Length));
-elseif mode == 2
+elseif any(mode == [2,3])
     %%% Does additional normalizing
 %     Norm = cell(numel(Cor_Array),1);
 %     Countrate1 = cell(numel(Cor_Array),1); 
@@ -147,31 +147,36 @@ elseif mode == 2
     %         Countrate2(j) = sum(Weights2{i}(Data2{i} >= (Timeaxis(j))))./(Maxtime-Timeaxis(j));
         end 
     end
-    %%% Bootstrapping
-    %%% 1) Select Nbursts times out of pool (may select double)
-    bootstrap = 50;
-    selected = randi(numel(Data1),numel(Data1),bootstrap);
-    
-    Cor_Res = cell(1,bootstrap);
-    for i = 1:bootstrap
-        sel = selected(:,i);
-        norm_temp = Norm(sel); norm_temp = sum(horzcat(norm_temp{:}),2);
-        Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1);%./sum(Maxtime(sel));
-        Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1);%./sum(Maxtime(sel));
-        Cor_Total_temp = Cor_Array(sel);Cor_Total_temp = sum(horzcat(Cor_Total_temp{:}),2);
-        Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
-        %Cor_Res{i} = Cor_Total_temp./norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+    if mode == 2
+        %%% Bootstrapping
+        %%% 1) Select Nbursts times out of pool (may select double)
+        bootstrap = 50;
+        selected = randi(numel(Data1),numel(Data1),bootstrap);
+
+        Cor_Res = cell(1,bootstrap);
+        for i = 1:bootstrap
+            sel = selected(:,i);
+            norm_temp = Norm(sel); norm_temp = sum(horzcat(norm_temp{:}),2);
+            Countrate1_temp = Countrate1(sel);Countrate1_temp = sum(vertcat(Countrate1_temp{:}),1);%./sum(Maxtime(sel));
+            Countrate2_temp = Countrate2(sel);Countrate2_temp = sum(vertcat(Countrate2_temp{:}),1);%./sum(Maxtime(sel));
+            Cor_Total_temp = Cor_Array(sel);Cor_Total_temp = sum(horzcat(Cor_Total_temp{:}),2);
+            Cor_Res{i} = Cor_Total_temp.*norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+            %Cor_Res{i} = Cor_Total_temp./norm_temp./Divisor./Countrate1_temp'./Countrate2_temp'-1;
+        end
+
+        for i = 1:numel(Cor_Res)
+            Cor_Res{i}(~isfinite(Cor_Res{i})) = -1;
+            %Cor_Res{i}(find(Cor_Res{i}(~isnan(Cor_Res{i}))==-1,1,'first'):end) = 0;
+            %Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
+            Cor_Res{i}((find(Cor_Res{i}~=-1,1,'last')+1):end) = 0;
+        end
+        Cor_Array = cell2mat(Cor_Res);
+        Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
+        Timeaxis = Timeaxis(1:size(Cor_Array,1));
+    elseif mode == 3
+        %%% return the burstwise correlation functions instead of averaging
+        Cor_Array = cellfun(@(x,y,z,u) x.*y./Divisor./z'./u'-1,Cor_Array,Norm,Countrate1,Countrate2,'Uniformoutput',false);
     end
-    
-    for i = 1:numel(Cor_Res)
-        Cor_Res{i}(~isfinite(Cor_Res{i})) = -1;
-        %Cor_Res{i}(find(Cor_Res{i}(~isnan(Cor_Res{i}))==-1,1,'first'):end) = 0;
-        %Cor_Res{i}=Cor_Res{i}(1:find(Cor_Res{i}(~isnan(Cor_Res{i}))~=-1,1,'last'));
-        Cor_Res{i}((find(Cor_Res{i}~=-1,1,'last')+1):end) = 0;
-    end
-    Cor_Array = cell2mat(Cor_Res);
-    Cor_Array = Cor_Array(1:find(sum(Cor_Array,2),1,'last'),:);
-    Timeaxis = Timeaxis(1:size(Cor_Array,1));
 end
 Timeaxis(22:end) = Timeaxis(22:end)-1;
 % %% Shift timeaxis to center of bins

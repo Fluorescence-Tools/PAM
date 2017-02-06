@@ -1573,7 +1573,11 @@ if isempty(hfig)
 %         'String','Load All Photons (*.aps)',...
 %         'FontSize',12,...
 %         'Callback',@Load_Photons);
-    
+    h.CorrelateWindow_Menu = uicontextmenu;
+    h.BurstwiseDiffusionTime_Menu = uimenu(...
+        'Parent',h.CorrelateWindow_Menu,...
+        'Label','Fit burst wise diffusion time',...
+        'Callback',@Correlate_Bursts);
     h.CorrelateWindow_Button = uicontrol(...
         'Style','pushbutton',...
         'Parent',h.Correlation_Panel,...
@@ -1585,7 +1589,8 @@ if isempty(hfig)
         'BackgroundColor',Look.Control,...
         'Callback',@Correlate_Bursts,...
         'FontSize',12,...
-        'Enable','on');
+        'Enable','on',...
+        'UIContextMenu',h.CorrelateWindow_Menu);
     
     h.CorrelateWindow_Edit = uicontrol(...
         'Style','edit',...
@@ -4507,6 +4512,9 @@ for i = 1:numel(FileName)
     end
     if isfield(S,'ArbitraryCut')
         S.BurstData.ArbitraryCut = S.ArbitraryCut;
+    end
+    if isfield(S,'AdditionalParameters')
+        S.BurstData.AdditionalParameters = S.AdditionalParameters;
     end
     %%% initialize DataCut
     S.BurstData.DataCut = S.BurstData.DataArray;
@@ -8163,6 +8171,23 @@ elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
     R0 = BurstData{file}.Corrections.FoersterRadiusBR;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance BR (from intensity) [A]')) = ((1./EBR-1).*R0^6).^(1/6);
 end
+if isfield(BurstData{file},'AdditionalParameters')
+    %%% Add diffusion time/diffusion coefficient
+    if isfield(BurstData{file}.AdditionalParameters,'tauD')
+        if ~sum(strcmp(BurstData{file}.NameArray,'Diffusion time [ms]'))
+            BurstData{file}.NameArray{end+1} = 'Diffusion time [ms]';
+            BurstData{file}.DataArray(:,end+1) = 0;
+        end
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion time [ms]')) = BurstData{1, 1}.AdditionalParameters.tauD./1E-3;
+    end
+    if isfield(BurstData{file}.AdditionalParameters,'DiffusionCoefficient')
+        if ~sum(strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]'))
+            BurstData{file}.NameArray{end+1} = 'Diffusion coefficient [mum2/s]';
+            BurstData{file}.DataArray(:,end+1) = 0;
+        end
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]')) = BurstData{1, 1}.AdditionalParameters.DiffusionCoefficient;
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Determine Corrections (alpha, beta, gamma from intensity) %%%%%%%%%
@@ -11316,7 +11341,7 @@ if all(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'bur')) 
         SpeciesNames = BurstData{i}.SpeciesNames;
         SelectedSpecies = BurstData{i}.SelectedSpecies;
         Background = BurstData{i}.Background;
-        Corrections = BurstData{i}.Corrections; 
+        Corrections = BurstData{i}.Corrections;
         %%% New: Cuts stored in Additional Variables (first happens when
         %%% saved in BurstBrowser)
         save(filename{i},'Cut','SpeciesNames','SelectedSpecies',...
@@ -11328,6 +11353,10 @@ if all(strcmp(cellfun(@(x) x(end-2:end),filename,'UniformOutput',false),'bur')) 
         if isfield(BurstData{i},'ArbitraryCut')
             ArbitraryCut = BurstData{i}.ArbitraryCut;
             save(filename{i},'ArbitraryCut','-append');
+        end
+        if isfield(BurstData{i},'AdditionalParameters')
+            AdditionalParameters = BurstData{i}.AdditionalParameters;
+            save(filename{i},'AdditionalParameters','-append');
         end
         Progress(i/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Saving...');
     end
@@ -12751,7 +12780,7 @@ switch obj
         %             end
         %         end
         
-    case h.CorrelateWindow_Button
+    case {h.CorrelateWindow_Button, h.BurstwiseDiffusionTime_Menu}
         if isempty(PhotonStream{file})
             success = Load_Photons('aps');
             if ~success
@@ -12759,9 +12788,10 @@ switch obj
                 return;
             end
         end
-        
+        % use selected only
         start = PhotonStream{file}.start(BurstData{file}.Selected);
         stop = PhotonStream{file}.stop(BurstData{file}.Selected);
+
         
         use_time = 1; %%% use time or photon window
         if use_time
@@ -12863,6 +12893,17 @@ switch obj
         end
 end
 
+if obj == h.BurstwiseDiffusionTime_Menu
+    %%% use all channels for the correlation function
+    NumChans = 1;
+    CorrMat = 1;
+    switch BurstData{file}.BAMethod
+        case {1,2}
+            Chan = {[1 2 3 4 5 6]};
+        case {3,4}
+            Chan = {[1 2 3 4 5 6 7 8 9 10 11 12]};
+    end
+end
 %%% Apply different correlation algorithm
 %%% (Burstwise correlation with correct summation and normalization)
 Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
@@ -12882,45 +12923,96 @@ for i=1:NumChans
             MT1 = MT1(~inval); MT2 = MT2(~inval);
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
-            %%% Do Correlation
-            [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-            Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
-            
-            %%% Calculates average and standard error of mean (without tinv_table yet
-            if size(Cor_Array,2)>1
-                Cor_Average=mean(Cor_Array,2);
-                Cor_SEM=std(Cor_Array,0,2);
-            else
-                Cor_Average=Cor_Array{1};
-                Cor_SEM=Cor_Array{1};
+            switch obj
+                case {h.Correlate_Button,h.CorrelateWindow_Button}
+                    %%% Do Correlation
+                    [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
+                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
+
+                    %%% Calculates average and standard error of mean (without tinv_table yet
+                    if size(Cor_Array,2)>1
+                        Cor_Average=mean(Cor_Array,2);
+                        Cor_SEM=std(Cor_Array,0,2);
+                    else
+                        Cor_Average=Cor_Array{1};
+                        Cor_SEM=Cor_Array{1};
+                    end
+
+                    %%% Save the correlation file
+                    %%% Generates filename
+                    filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
+                    if obj == h.CorrelateWindow_Button
+                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize*10) 'ms' '.mcor'];
+                    else
+                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
+                    end
+                    %%% Checks, if file already exists
+                    if  exist(Current_FileName,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
+                        %%% Increases counter, until no file is found
+                        while exist(Current_FileName,'file')
+                            k=k+1;
+                            Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
+                        end
+                    end
+
+                    Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
+                    %Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
+                    Counts = [0 ,0];
+                    Valid = 1:size(Cor_Array,2);
+                    save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
+                    count = count+1;
+                case h.BurstwiseDiffusionTime_Menu
+                    %%% Do Correlation
+                    [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],3);
+                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
+                    %%% remove everything below 1E-6 s
+                    Cor_Array = cellfun(@(x) x(Cor_Times>1e-6),Cor_Array,'Uniformoutput',false);
+                    Cor_Times = Cor_Times(Cor_Times>1e-6);
+                    %%% estimate G0 from first 10 time bins
+                    G0 = cellfun(@(x) mean(x(x~=-1)),cellfun(@(x) x(1:10),Cor_Array,'Uniformoutput',false),'Uniformoutput',false);
+                    %%% divide by G0
+                    Cor_Array = cellfun(@(x,y) x./y,Cor_Array,G0,'Uniformoutput',false);
+                    %%% define model
+                    model = @(x,xdata) 1./(1+xdata./x(1));
+                    %%% fit the diffusion time
+                    tauD = NaN(numel(Cor_Array),1);
+                    options = optimoptions('lsqcurvefit','Display','none','FunctionTolerance',1E-3);
+                    for i = 1:numel(Cor_Array)
+                        y = Cor_Array{i};
+                        valid = isfinite(y) & (y > -1);
+                        if sum(valid) > 10 %%% require at least 10 data points
+                            res = lsqcurvefit(model,[2e-3],Cor_Times(valid),y(valid),[1E-4],[Inf],options);
+                            tauD(i) = res(1);
+                        end
+                        if mod(i,floor(numel(Cor_Array)/100)) == 0
+                            Progress(i/numel(Cor_Array),h.Progress_Axes,h.Progress_Text,'Fitting diffusion time...');
+                        end
+                    end
+
+                    %%% store in BurstData as extra field
+                    if ~isfield(BurstData{file}.AdditionalParameters,'tauD')
+                        BurstData{file}.AdditionalParameters.tauD = NaN(size(BurstData{file}.DataArray,1),1);
+                    end
+                    %%% fix the sorting into the burst-array!!!!
+                    BurstData{file}.AdditionalParameters.tauD(logical(use)) = tauD;
+                    %%% ask for omega_r
+                    omega_r = inputdlg('Specify focus size in nm:','Focus size?',1,{'600'});
+                    omega_r = str2num(omega_r{1});
+                    if isnan(omega_r)
+                        omega_r = 600;
+                        disp('Setting default value omega_r = 600 nm');
+                    end
+                    D = (omega_r./1000).^2./4./(tauD);
+                    BurstData{file}.AdditionalParameters.DiffusionCoefficient = NaN(numel(use),1);
+                    BurstData{file}.AdditionalParameters.DiffusionCoefficient(logical(use)) = D;
+                    AddDerivedParameters([],[],h);
+                    set(h.ParameterListX, 'String', BurstData{file}.NameArray);
+                    set(h.ParameterListY, 'String', BurstData{file}.NameArray);
+                    UpdateCuts([],[],h);
             end
-            
-            %%% Save the correlation file
-            %%% Generates filename
-            filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-            if obj == h.CorrelateWindow_Button
-                Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize*10) 'ms' '.mcor'];
-            else
-                Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
-            end
-            %%% Checks, if file already exists
-            if  exist(Current_FileName,'file')
-                k=1;
-                %%% Adds 1 to filename
-                Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-                %%% Increases counter, until no file is found
-                while exist(Current_FileName,'file')
-                    k=k+1;
-                    Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-                end
-            end
-            
-            Header = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-            %Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
-            Counts = [0 ,0];
-            Valid = 1:size(Cor_Array,2);
-            save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-            count = count+1;
             Progress(count/NCor,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
     end
