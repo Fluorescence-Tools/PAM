@@ -1823,6 +1823,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.UseFilePathForExport was incomplete');
     end
     P.BurstBrowser.Settings.UseFilePathForExport = S.BurstBrowser.Settings.UseFilePathForExport;
+    %%% Check, if BurstBrowser.Settings.FocusSize subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FocusSize')
+        S.BurstBrowser.Settings.FocusSize=600;
+        disp('UserValues.BurstBrowser.Settings.FocusSize was incomplete');
+    end
+    P.BurstBrowser.Settings.FocusSize = S.BurstBrowser.Settings.FocusSize;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser, 'DatabaseString')
         S.BurstBrowser.DatabaseString={};

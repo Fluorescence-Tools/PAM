@@ -12991,7 +12991,7 @@ for i=1:NumChans
                     %%% Generates filename
                     filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
                     if obj == h.CorrelateWindow_Button
-                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize*10) 'ms' '.mcor'];
+                        Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_tw' num2str(UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
                     else
                         Current_FileName=[filename(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '_bw' '.mcor'];
                     end
@@ -13040,7 +13040,7 @@ for i=1:NumChans
                             res = lsqcurvefit(model,[2e-3],Cor_Times(valid{i}),y(valid{i}),[1E-4],[Inf],options);
                             tauD(i) = res(1);
                         end
-                        if mod(i,floor(numel(Cor_Array)/100)) == 0
+                        if mod(i,floor(numel(Cor_Array)/20)) == 0
                             Progress(i/numel(Cor_Array),h.Progress_Axes,h.Progress_Text,'Fitting diffusion time...');
                         end
                     end
@@ -13057,12 +13057,17 @@ for i=1:NumChans
                     tauD_temp(logical(use)) = tauD;
                     BurstData{file}.AdditionalParameters.tauD(BurstData{file}.Selected) = tauD_temp;
                     %%% ask for omega_r
-                    omega_r = inputdlg('Specify focus size in nm:','Focus size?',1,{'600'});
+                    omega_r = inputdlg('Specify focus size in nm:','Focus size?',1,{num2str(UserValues.BurstBrowser.Settings.FocusSize)});
+                    if isempty(omega_r)
+                        omega_r{1} = num2str(UserValues.BurstBrowser.Settings.FocusSize);
+                        disp('Setting default value omega_r from UserValues.');
+                    end
                     omega_r = str2num(omega_r{1});
                     if isnan(omega_r)
-                        omega_r = 600;
-                        disp('Setting default value omega_r = 600 nm');
+                        omega_r = UserValues.BurstBrowser.Settings.FocusSize;
+                        disp('Setting default value omega_r from UserValues.');
                     end
+                    UserValues.BurstBrowser.Settings.FocusSize = omega_r;
                     D = (omega_r./1000).^2./4./(tauD);
                     if ~isfield(BurstData{file}.AdditionalParameters,'DiffusionCoefficient')
                         BurstData{file}.AdditionalParameters.DiffusionCoefficient = NaN(size(BurstData{file}.DataArray,1),1);
@@ -13076,6 +13081,7 @@ for i=1:NumChans
                     set(h.ParameterListX, 'String', BurstData{file}.NameArray);
                     set(h.ParameterListY, 'String', BurstData{file}.NameArray);
                     UpdateCuts();
+                    UpdatePlot([],[],h);
             end
             Progress(count/NCor,h.Progress_Axes,h.Progress_Text,'Correlating...');
         end
