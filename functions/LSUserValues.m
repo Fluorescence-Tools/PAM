@@ -1678,7 +1678,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotGridAboveData was incomplete');
     end
     P.BurstBrowser.Display.PlotGridAboveData = S.BurstBrowser.Display.PlotGridAboveData;
-
+    %%% Checks, if BurstBrowser.Display.logX subfield exists
+    if ~isfield (S.BurstBrowser.Display,'logX')
+        S.BurstBrowser.Display.logX=0;
+        disp('UserValues.BurstBrowser.Display.logX was incomplete');
+    end
+    P.BurstBrowser.Display.logX = S.BurstBrowser.Display.logX;
+    %%% Checks, if BurstBrowser.Display.logY subfield exists
+    if ~isfield (S.BurstBrowser.Display,'logY')
+        S.BurstBrowser.Display.logY=0;
+        disp('UserValues.BurstBrowser.Display.logY was incomplete');
+    end
+    P.BurstBrowser.Display.logY = S.BurstBrowser.Display.logY;
     %%% Checks, if BurstBrowser.Settings subfield exists
     if ~isfield (S.BurstBrowser,'Settings')
         S.BurstBrowser.Settings=[];
