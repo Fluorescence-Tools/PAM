@@ -1611,11 +1611,11 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.6 0.035 0.265 0.08],...
         'Tag','CorrelateWindow_Text',...
-        'String','Time window [ms]',...
+        'String','Time window [ms]:',...
         'Callback',@UpdateOptions,...
         'BackgroundColor',Look.Back,...
         'ForegroundColor',Look.Fore,...
-        'HorizontalAlignment','left',...
+        'HorizontalAlignment','right',...
         'FontSize',12,...
         'Enable','on');
     
@@ -7070,6 +7070,22 @@ for i = 1:num_species
     [~,datatoplot{i}] = UpdateCuts([species_n(i),subspecies_n(i)],file_n(i));
 end
 
+%%% logarithmic plot option
+if UserValues.BurstBrowser.Display.logX
+    for i = 1:num_species
+        val = datatoplot{i}(:,x{i}) > 0; % avoid complex numbers
+        datatoplot{i}(val,x{i}) = log10(datatoplot{i}(val,x{i}));
+        datatoplot{i}(~val,x{i}) = NaN;
+    end
+end
+if UserValues.BurstBrowser.Display.logY
+    for i = 1:num_species
+        val = datatoplot{i}(:,y{i}) > 0; % avoid complex numbers
+        datatoplot{i}(val,y{i}) = log10(datatoplot{i}(val,y{i}));
+        datatoplot{i}(~val,y{i}) = NaN;
+    end
+end
+
 %find data ranges
 minx = zeros(num_species,1);
 miny = zeros(num_species,1);
@@ -7293,6 +7309,16 @@ end
 
 xlabel(h.axes_general,paramX,'Color',UserValues.Look.Fore);
 ylabel(h.axes_general,paramY,'Color',UserValues.Look.Fore);
+
+% Update axis labels if log option is used
+%%% logarithmic plot option
+if UserValues.BurstBrowser.Display.logX
+    h.axes_general.XLabel.String = [h.axes_general.XLabel.String ' log'];
+    h.axes_1d_x.XLabel.String = [h.axes_1d_x.XLabel.String ' log'];
+end
+if UserValues.BurstBrowser.Display.logY
+    h.axes_general.YLabel.String = [h.axes_general.YLabel.String ' log'];
+end
 
 %plot first histogram
 hx = sum(H{1},1);
