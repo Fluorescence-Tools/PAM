@@ -12787,74 +12787,12 @@ switch obj
         Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
         %%% find selected bursts
         MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
-        %MT = vertcat(MT{:});
         CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
-        %CH = vertcat(CH{:});
         
         for k = 1:numel(MT)
             MT{k} = MT{k}-MT{k}(1) +1;
         end
-        %        waitbar(0,h_waitbar,'Correlating...');
-        %        count = 0;
-        %         for i=1:NumChans
-        %             for j=1:NumChans
-        %                 if CorrMat(i,j)
-        %                     MT1 = MT(ismember(CH,Chan{i}));
-        %                     MT2 = MT(ismember(CH,Chan{j}));
-        %                     %%% Split Data in 10 time bins for errorbar calculation
-        %                     Times = ceil(linspace(0,max([MT1;MT2]),11));
-        %                     %%% Calculates the maximum inter-photon time in clock ticks
-        %                     Maxtime=max(diff(Times))/UserValues.Settings.Pam.Cor_Divider;
-        %                     Data1 = cell(10,1);
-        %                     Data2 = cell(10,1);
-        %                     for k = 1:10
-        %                         Data1{k} = MT1( MT1 > Times(k) &...
-        %                             MT1 <= Times(k+1)) - Times(k);
-        %                         Data2{k} = MT2( MT2 > Times(k) &...
-        %                             MT2 <= Times(k+1)) - Times(k);
-        %                         Data1{k} = Data1{k}/UserValues.Settings.Pam.Cor_Divider;
-        %                         Data2{k} = Data2{k}/UserValues.Settings.Pam.Cor_Divider;
-        %                     end
-        %                     %%% Do Correlation
-        %                     [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-        %                     Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
-        %                     %%% Calculates average and standard error of mean (without tinv_table yet
-        %                     if numel(Cor_Array)>1
-        %                         Cor_Average=mean(Cor_Array,2);
-        %                         %Cor_SEM=std(Cor_Array,0,2)/sqrt(size(Cor_Array,2));
-        %                         %%% Averages files before saving to reduce errorbars
-        %                         Amplitude=sum(Cor_Array,1);
-        %                         Cor_Norm=Cor_Array./repmat(Amplitude,[size(Cor_Array,1),1])*mean(Amplitude);
-        %                         Cor_SEM=std(Cor_Norm,0,2)/sqrt(size(Cor_Array,2));
-        %
-        %                     else
-        %                         Cor_Average=Cor_Array{1};
-        %                         Cor_SEM=Cor_Array{1};
-        %                     end
-        %                     %%% Save the correlation file
-        %                     %%% Generates filename
-        %                     Current_FileName=[BurstData{file}.FileName(1:end-4) '_' species '_' Name{i} '_x_' Name{j} '.mcor'];
-        %                     %%% Checks, if file already exists
-        %                     if  exist(Current_FileName,'file')
-        %                         k=1;
-        %                         %%% Adds 1 to filename
-        %                         Current_FileName=[Current_FileName(1:end-5) '_' num2str(k) '.mcor'];
-        %                         %%% Increases counter, until no file is found
-        %                         while exist(Current_FileName,'file')
-        %                             k=k+1;
-        %                             Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
-        %                         end
-        %                     end
-        %
-        %                     Header = ['Correlation file for: ' strrep(fullfile(BurstData{file}.FileName),'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
-        %                     Counts = [numel(MT1) numel(MT2)]/(BurstData{file}.ClockPeriod*max([MT1;MT2]))/1000;
-        %                     Valid = 1:10;
-        %                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
-        %                     count = count+1;waitbar(count/NCor);
-        %                 end
-        %             end
-        %         end
-        
+          
     case {h.CorrelateWindow_Button, h.BurstwiseDiffusionTime_Menu}
         if isempty(PhotonStream{file})
             success = Load_Photons('aps');
@@ -12895,40 +12833,55 @@ switch obj
             
             tw = UserValues.BurstBrowser.Settings.Corr_TimeWindowSize; %%% photon window of (2*tw+1)*10ms
             
-            start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
-            stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
-            
-            for i = 1:numel(start_tw)
-                %%% Check if ANY burst falls into the time window
-                val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
-                %%% Check if they are of the same species
-                inval = val & (~BurstData{file}.Selected);
-                %%% if there are bursts of another species in the timewindow,
-                %%% --> remove it
-                if sum(inval) > 0
-                    use(i) = 0;
+            if tw > 0
+                start_tw = start_bin - tw;start_tw(start_tw < 1) = 1;
+                stop_tw = stop_bin + tw;stop_tw(stop_tw > (numel(bins_time) -1)) = numel(bins_time)-1;
+
+                for i = 1:numel(start_tw)
+                    %%% Check if ANY burst falls into the time window
+                    val = (start_all_bin < stop_tw(i)) & (stop_all_bin > start_tw(i));
+                    %%% Check if they are of the same species
+                    inval = val & (~BurstData{file}.Selected);
+                    %%% if there are bursts of another species in the timewindow,
+                    %%% --> remove it
+                    if sum(inval) > 0
+                        use(i) = 0;
+                    end
+                    %Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
                 end
-                %Progress(i/numel(start),h.Progress_Axes,h.Progress_Text,'Including Time Window...');
-            end
-            
-            %%% Construct reduced Macrotime and Channel vector
-            Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
-            MT = cell(sum(use),1);
-            CH = cell(sum(use),1);
-            k=1;
-            for i = 1:numel(start_tw)
-                if use(i)
-                    range = PhotonStream{file}.first_idx(start_tw(i)):(PhotonStream{file}.first_idx(stop_tw(i)+1)-1);
-                    MT{k} = PhotonStream{file}.Macrotime(range);
+
+                %%% Construct reduced Macrotime and Channel vector
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
+                MT = cell(sum(use),1);
+                CH = cell(sum(use),1);
+                k=1;
+                for i = 1:numel(start_tw)
+                    if use(i)
+                        range = PhotonStream{file}.first_idx(start_tw(i)):(PhotonStream{file}.first_idx(stop_tw(i)+1)-1);
+                        MT{k} = PhotonStream{file}.Macrotime(range);
+                        MT{k} = MT{k}-MT{k}(1) +1;
+                        CH{k} = PhotonStream{file}.Channel(range);
+                        %val = (PhotonStream{file}.MT_bin > start_tw(i)) & (PhotonStream{file}.MT_bin < stop_tw(i) );
+                        %MT{k} = PhotonStream{file}.Macrotime(val);
+                        %MT{k} = MT{k}-MT{k}(1) +1;
+                        %CH{k} = PhotonStream{file}.Channel(val);
+                        k = k+1;
+                    end
+                    %Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
+                end
+            else
+                % default to burst-wise
+                if isempty(BurstTCSPCData{file})
+                    Load_Photons();
+                end
+                Progress(0,h.Progress_Axes,h.Progress_Text,'Correlating...');
+                %%% find selected bursts
+                MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
+                CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
+
+                for k = 1:numel(MT)
                     MT{k} = MT{k}-MT{k}(1) +1;
-                    CH{k} = PhotonStream{file}.Channel(range);
-                    %val = (PhotonStream{file}.MT_bin > start_tw(i)) & (PhotonStream{file}.MT_bin < stop_tw(i) );
-                    %MT{k} = PhotonStream{file}.Macrotime(val);
-                    %MT{k} = MT{k}-MT{k}(1) +1;
-                    %CH{k} = PhotonStream{file}.Channel(val);
-                    k = k+1;
                 end
-                %Progress(i/numel(start_tw),h.Progress_Axes,h.Progress_Text,'Preparing Photon Stream...');
             end
         else
             use = ones(numel(start),1);
