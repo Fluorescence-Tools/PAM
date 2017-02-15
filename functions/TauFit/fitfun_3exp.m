@@ -43,6 +43,8 @@ bg = param(7);
 tau = param(1:3);
 tau(tau==0) = 1; %%% set minimum lifetime to TACbin width
 x = exp(-(tp-1)*(1./tau))*diag(1./(1-exp(-p./tau)));
+%%% combine the three exponentials
+x = A1*x(:,1) + A2*x(:,2) + (1-A1-A2)*x(:,3);
 switch conv_type
     case 'linear'
         z = zeros(size(x,1)+size(irf,1)-1,size(x,2));
@@ -54,8 +56,6 @@ switch conv_type
         z = convol(irf,x(1:n));
 end
 z = z./repmat(sum(z,1),size(z,1),1);
-%%% combine the two exponentials
-z = A1*z(:,1) + A2*z(:,2) + (1-A1-A2)*z(:,3);
 z = (1-sc).*z + sc*Scatter;
 z = z./sum(z);
 z = z(ignore:end);
