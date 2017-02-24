@@ -12624,7 +12624,12 @@ if nargin < 4
 else
     %%% return distance at specified intensity-weighted lifetimes (used for calculation of dynamic FRET lines)
     xval = xval_in;
-    xval(xval > BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
+    if xval > tauf(end)
+        out = R(end); return;
+    end
+    if xval < tauf(1);
+        out = tauf(1); return;
+    end
     %%% find nearest neighbours
     dif = tauf-xval; neg = find(dif < 0,1,'last'); pos = find(dif > 0,1,'first');
     %%% interpolate to zero crossing
