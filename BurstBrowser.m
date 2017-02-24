@@ -4097,16 +4097,6 @@ set(h.ParameterListX, 'Value', posE);
 set(h.ParameterListY, 'String', BurstData{1}.NameArray);
 set(h.ParameterListY, 'Value', posS);
 
-%%% Apply correction on load
-if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
-    for i = 1:numel(BurstData)
-        BurstMeta.SelectedFile = i;
-        ApplyCorrections([],[],h,0);
-    end
-else %%% indicate that no corrections are applied
-    h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
-end
-
 if isfield(BurstMeta,'fFCS')
     BurstMeta = rmfield(BurstMeta,'fFCS');
 end
@@ -4116,6 +4106,16 @@ end
 
 %%% Update Species List
 UpdateSpeciesList(h);
+
+%%% Apply correction on load
+if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
+    for i = 1:numel(BurstData)
+        BurstMeta.SelectedFile = i;
+        ApplyCorrections([],[],h,0);
+    end
+else %%% indicate that no corrections are applied
+    h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
+end
 
 UpdateCutTable(h);
 UpdateCuts();
@@ -5403,6 +5403,7 @@ switch clicked.getLevel
         elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
             h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
         end
+        return;
     case 1
         % file was clicked
         % which one?
