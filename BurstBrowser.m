@@ -4106,6 +4106,7 @@ end
 
 %%% Update Species List
 UpdateSpeciesList(h);
+h = guidata(h.BurstBrowser);drawnow;
 
 %%% Apply correction on load
 if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
