@@ -12579,7 +12579,7 @@ ApplyCorrections([],[],h);
 function [out, func, xval] = conversion_tau(tauD,R0,s,xval_in)
 global BurstData BurstMeta
 % s = 6;
-res = 1000;
+res = 100;
 
 %range of RDA center values, i.e. 1000 values in 0*R0 to 3*R0
 R = linspace(0*R0,3*R0,res);
@@ -12625,9 +12625,11 @@ else
     %%% return distance at specified intensity-weighted lifetimes (used for calculation of dynamic FRET lines)
     xval = xval_in;
     xval(xval > BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
-    %%% find nearest neighbour
+    %%% find nearest neighbours
     dif = tauf-xval; neg = find(dif < 0,1,'last'); pos = find(dif > 0,1,'first');
-    out = R(neg)+(dif(pos)-dif(neg))./(R(pos)-R(neg));
+    %%% interpolate to zero crossing
+    m = (dif(pos)-dif(neg))./(R(pos)-R(neg));
+    out = R(neg)-dif(neg)./m;
 end
 %%% legacy code:
 %%% fix for display
