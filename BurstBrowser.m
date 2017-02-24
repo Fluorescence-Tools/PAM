@@ -12579,7 +12579,7 @@ ApplyCorrections([],[],h);
 function [out, func, xval] = conversion_tau(tauD,R0,s,xval_in)
 global BurstData BurstMeta
 % s = 6;
-res = 100;
+res = 1000;
 
 %range of RDA center values, i.e. 1000 values in 0*R0 to 3*R0
 R = linspace(0*R0,3*R0,res);
