@@ -12578,15 +12578,9 @@ function [out, func, xval] = conversion_tau(tauD,R0,s,xval_in)
 global BurstData BurstMeta
 % s = 6;
 res = 1000;
-if nargin < 4
-    xval = linspace(0,tauD,100); %%% general static FRET line requested
-else
-    %%% only evaluation at specific points requested
-    xval = xval_in;
-    xval(xval > BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
-end
-%range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
-R = linspace(0*R0,5*R0,res);
+
+%range of RDA center values, i.e. 1000 values in 0*R0 to 3*R0
+R = linspace(0*R0,3*R0,res);
 
 %for every R calculate gaussian distribution
 p = zeros(numel(R),res);
@@ -12619,12 +12613,29 @@ for j = 1:numel(R)
 end
 
 %coefficients = polyfit(tauf,taux,3);
-
 %out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
-out = 1-interp1(tauf,taux,xval)./tauD; 
+
+if nargin < 4
+    %%% no interpolation, just return data
+    out = 1-taux./tauD;
+    xval = tauf;
+else
+    %%% return distance at specified intensity-weighted lifetimes (used for calculation of dynamic FRET lines)
+    xval = xval_in;
+    xval(xval > BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime;
+    %%% find nearest neighbour
+    dif = tauf-xval; neg = find(dif < 0,1,'last'); pos = find(dif > 0,1,'first');
+    out = R(neg)+(dif(pos)-dif(neg))./(R(pos)-R(neg));
+end
+%%% legacy code:
+%%% fix for display
 %%% set tau=0 to E=1
-out(xval == 0) = 1; % lifetime zero is E = 1
-out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = 0; % lifetime = tauD is E = 0
+% out(xval == 0) = 1; % lifetime zero is E = 1
+% out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetime) = 0; % lifetime = tauD is E = 0
+% valid = ~isnan(out);
+% out = out(valid); %%% remove NaNs for E -> 1
+% xval = xval(valid);
+
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
@@ -12696,20 +12707,22 @@ if tau1 > tau2
 else
     xval  = linspace(tau1,tau2,1000);
 end
-% if E1 > E2
-%     xval  = linspace((1-E1)*tauD,(1-E2)*tauD,1000);
-% else
-%     xval  = linspace((1-E2)*tauD,(1-E1)*tauD,1000);
-% end
 %%% Calculate two distance distribution for two states
+%%% convert input lifetime (intensity-weighted) to center distance given sigmaR
+
+
+%%% legacy:
 %RDA1 = R0*((tauD/tau1)-1)^(-1/6);
 %RDA2 = R0*((tauD/tau2)-1)^(-1/6);
 %%% convert to intensity weighted lifetime
-E1 = conversion_tau(tauD,R0,s,tau1);
-E2 = conversion_tau(tauD,R0,s,tau2);
-RDA1 = R0.*(1/E1-1)^(1/6);if E1 == 0;RDA1 = 5*R0-2*s;end;
-RDA2 = R0.*(1/E2-1)^(1/6);if E2 == 0;RDA2 = 5*R0-2*s;end;
-r = linspace(0*R0,5*R0,res);
+%E1 = conversion_tau(tauD,R0,s,tau1);
+%E2 = conversion_tau(tauD,R0,s,tau2);
+%RDA1 = R0.*(1/E1-1)^(1/6);if E1 == 0;RDA1 = 5*R0-2*s;end;
+%RDA2 = R0.*(1/E2-1)^(1/6);if E2 == 0;RDA2 = 5*R0-2*s;end;
+
+RDA1 = conversion_tau(tauD,R0,s,tau1);
+RDA2 = conversion_tau(tauD,R0,s,tau2);
+r = linspace(0*R0,3*R0,res);
 p1 = exp(-((r-RDA1).^2)./(2*s^2));p1 = p1./sum(p1);
 p2 = exp(-((r-RDA2).^2)./(2*s^2));p2 = p2./sum(p2);
 %%% Generate mixed distributions
