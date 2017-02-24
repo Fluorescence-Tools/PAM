@@ -8504,7 +8504,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     if ~h.MultiselectOnCheckbox.Value
         Valid = UpdateCuts();
 
-        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime GG [ns]'));
+        indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
         tauGG = BurstData{file}.DataArray(Valid,indTauGG);
         
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct

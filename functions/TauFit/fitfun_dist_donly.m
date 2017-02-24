@@ -31,13 +31,16 @@ tauD0 = param(7);
 tauD0(tauD0==0) = 1; %%% set minimum lifetime to TACbin width
 
 %%% Determine distribution of lifetimes
-xR = floor(meanR-5*sigmaR):0.1:ceil(meanR+5*sigmaR);
+dR = 0.1;
+xR = floor(meanR-5*sigmaR):dR:ceil(meanR+5*sigmaR);
+xR = xR(xR > 0);
 c_gauss = zeros(numel(xR),n);
 for i = 1:numel(xR)
-    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((1:n)./tauD0).*(1+(R0./xR(i)).^6));
+    c_gauss(i,:) = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR(i)-meanR).^2)./(2*sigmaR.^2)).*exp(-((0:n-1)./tauD0).*(1+(R0./xR(i)).^6));
 end
-xdist = sum(c_gauss,1);xdist = xdist./sum(xdist);
-xDonly = exp(-(1:n)./tauD0); xDonly = xDonly./sum(xDonly);
+pR = (1/(sqrt(2*pi())*sigmaR))*exp(-((xR-meanR).^2)./(2*sigmaR.^2));
+xdist = sum(c_gauss,1);xdist = xdist./sum(pR);
+xDonly = exp(-(0:n-1)./tauD0); 
 x = fraction_donly.*xDonly + (1-fraction_donly).*xdist;
 switch conv_type
     case 'linear'
