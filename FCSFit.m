@@ -1573,6 +1573,14 @@ end
 if (Min == Max)
     Max = Min+1;
 end
+%%% get maximum x value
+maxTime = 0;
+for i = 1:numel(FCSData.Data)
+    maxTime = max([maxTime,FCSData.Data{i}.Cor_Times(end)]);
+end
+if (Max > maxTime)
+    Max = maxTime;
+end
 h.Fit_Min.String = num2str(Min);
 h.Fit_Max.String = num2str(Max);
 UserValues.FCSFit.Fit_Min = Min;
