@@ -5534,6 +5534,7 @@ switch level
 end
         
 UpdateSpeciesList(h);
+h = guidata(gcf);drawnow;
 UpdateCutTable(h);
 UpdateCuts();
 Update_fFCS_GUI([],[]);
