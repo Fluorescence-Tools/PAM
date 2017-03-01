@@ -4992,6 +4992,7 @@ switch mode
             xlabel('File Number');
             text(1.02,ax.YLim(2),legend_entries);
         end
+        FigureName = 'Comp_FRETefficiency';
     case 3 
         xE = linspace(-0.1,1,ceil(N_bins*1.1)+1);
         xEBR = linspace(-0.2,1,ceil(N_bins*1.2)+1);
@@ -5109,8 +5110,14 @@ switch mode
         f.Position(4) = f.Position(4)+hl.Position(4);
         hl.Position(1) = 40;
         hl.Position(2) = 390;
+        FigureName = ['Comp_' h.ParameterListX.String{h.ParameterListX.Value}];
+        FigureName = strrep(FigureName,' ','_');
 end
-
+%%% add close request function
+if any(mode == [0,2])
+    ask_file = 1;
+    f.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Options in UserValues Structure %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -14061,8 +14068,8 @@ switch obj
                 end
             end
             if strcmp(panel_copy.Children(leg).Visible,'on')
-                hfig.Position(4) = 650;
-                panel_copy.Position(4) = 650;
+                hfig.Position(4) = 660;
+                panel_copy.Position(4) = 660;
                 panel_copy.Children(leg).Position(1) = 10;
                 panel_copy.Children(leg).Position(2) = 590;
             end
