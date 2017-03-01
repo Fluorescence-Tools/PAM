@@ -8433,12 +8433,14 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     end
     E_raw = NGR./(NGR+NGG);
     S_raw = (NGG+NGR)./(NGG+NGR+NRR);
-    switch obj
-        case h.FitGammaButton
-            [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 quantile(1./S_raw,0.99)]);
-        case h.DetermineGammaManuallyButton
-            [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
-    end
+    % switch obj
+    %     case h.FitGammaButton
+    %         [H,xbins,ybins] = calc2dhist(E_raw,1./S_raw,[51 51],[0 1], [1 quantile(1./S_raw,0.99)]);
+    %     case h.DetermineGammaManuallyButton
+    %         [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
+    % end
+    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
+    
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
     BurstMeta.Plots.gamma_fit(1).CData= H;
@@ -8451,27 +8453,26 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
         case h.FitGammaButton
             %%% Update/Reset Axis Labels
             xlabel(h.Corrections.TwoCMFD.axes_gamma,'FRET Efficiency','Color',UserValues.Look.Fore);
-            ylabel(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry','Color',UserValues.Look.Fore);
-            title(h.Corrections.TwoCMFD.axes_gamma,'1/Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
+            ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.Fore);
+            title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
             %%% store for later use
             BurstMeta.Data.E_raw = E_raw;
             BurstMeta.Data.S_raw = S_raw;
-            %%% Fit linearly
-            fitGamma = fit(E_raw,1./S_raw,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
-            %b) fitGamma = fitlm(E_raw,1./S_raw,'linear','RobustOpts','on');
-            %fitGamma = fit(E_raw,S_raw,@(g,b,x) (1+(g-1).*x)./(1+g*b+(g-1).*x),'StartPoint',[1 1],'Robust','LAR');
+            %%% Fit using E S relation (x is E)
+            funS = @(b,g,x) (1+g*b+(1-g)*b*x).^(-1);
+            %fitGamma = fit(E_raw,1./S_raw,@(m,b,x) m*x+b,'StartPoint',[1,1],'Robust','LAR');
+            fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
             BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
             BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
-            ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
+            %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
             %%% Determine Gamma and Beta
-            coeff = coeffvalues(fitGamma); m = coeff(1); b = coeff(2);
-            %coeff = coeffvalues(fitGamma); g = coeff(1); b = coeff(2);
-            %b) m = fitGamma.Coefficients{2,1}; b = fitGamma.Coefficients{1,1}; 
+            coeff = coeffvalues(fitGamma); %m = coeff(1); b = coeff(2);
+            beta = coeff(1); gamma = coeff(2);
         case h.DetermineGammaManuallyButton
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
             %%% Update Axis Labels
@@ -8489,10 +8490,13 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             s = 1./s;
             m = (s(2)-s(1))./(e(2)-e(1));
             b = s(2) - m.*e(2);
+            
+            gamma = (b - 1)/(b + m - 1);
+            beta = b+m-1;
     end
     
-    UserValues.BurstBrowser.Corrections.Gamma_GR = (b - 1)/(b + m - 1);
-    UserValues.BurstBrowser.Corrections.Beta_GR = b+m-1;
+    UserValues.BurstBrowser.Corrections.Gamma_GR = gamma;
+    UserValues.BurstBrowser.Corrections.Beta_GR = beta;
             
     if ~h.MultiselectOnCheckbox.Value
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
