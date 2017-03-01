@@ -741,7 +741,7 @@ end
         'Style', 'popupmenu',...
         'Value', UserValues.Phasor.Settings_LineColor,...
         'ToolTipString', '<html>Colormap used to indicate position of pixels on line <br>',...
-        'String',{'Jet';'Hot';'HSV';'GreenRed'});      
+        'String',{'Jet';'Hot';'HSV';'GreenRed';'Custom'});      
     
     %%% Text for ROI linestyle
     uicontrol(...
@@ -1154,7 +1154,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'popupmenu',...
-        'String',{'Jet';'Hot';'HSV'},...
+        'String',{'Jet';'Hot';'HSV';'Custom'},...
         'Callback',{@Calc_FRET,8});
     %%% Determins minimum and maximum for FRET colormap
     uicontrol(...
@@ -2933,6 +2933,16 @@ for i=Images %%% Plots Phasor Data
                     FractionColor(1:17,1) = [0; linspace(0,1,8)';ones(8,1) ];
                     FractionColor(1:17,2) = [0; ones(8,1); linspace(1,0,8)'];
                     FractionColor(1:17,3) = zeros(17,1);
+                case 5
+                    global Phasor_Colormap %#ok<TLEV>
+                    if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
+                        FractionColor=[0 0 0; Phasor_Colormap];
+                        UserValues.Phasor.Colormap = Phasor_Colormap;
+                        LSUserValues(1);
+                        Phasor_Colormap = [];
+                    else%%% Uses saved colormap
+                        FractionColor=[0 0 0; UserValues.Phasor.Colormap];
+                    end
             end
             
             if isempty(Z1)
@@ -2940,8 +2950,8 @@ for i=Images %%% Plots Phasor Data
                 Width=str2double(h.ROI_Size{7}.String);
                 x=h.Phasor_Fraction.XData;
                 y=h.Phasor_Fraction.YData;
-                x=linspace(x(1),x(2),16);
-                y=linspace(y(1),y(2),16);
+                x=linspace(x(1),x(2),size(FractionColor,1)-1);
+                y=linspace(y(1),y(2),size(FractionColor,1)-1);
                 
                 step=1/Pixel;
                 X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
@@ -2981,6 +2991,16 @@ for i=Images %%% Plots Phasor Data
                     FractionColor=[0 0 0; hot(20)];
                 case 3
                     FractionColor=[0 0 0; hsv(20)];
+                case 4 %%% Custom Colormap
+                    global Phasor_Colormap %#ok<TLEV>
+                    if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
+                        FractionColor=[0 0 0; Phasor_Colormap];
+                        UserValues.Phasor.Colormap = Phasor_Colormap;
+                        LSUserValues(1);
+                        Phasor_Colormap = [];
+                    else%%% Uses saved colormap
+                        FractionColor=[0 0 0; UserValues.Phasor.Colormap];
+                    end
             end
             
             %%% Determines which FRET range to use
@@ -2989,7 +3009,7 @@ for i=Images %%% Plots Phasor Data
             y=h.Phasor_FRET(2,1).YData;
 
             %%% Reduces number of points to 20 for the colormap
-            while numel(x)>20
+            while numel(x)>(size(FractionColor,1)-1)
                dist=diff(x).^2+diff(y).^2;
                x(find(dist==min(dist),1,'last')+1)=[];
                y(find(dist==min(dist),1,'last')+1)=[];

@@ -3979,11 +3979,13 @@ if any(mode==6)
     %%% Plots Reference histogram
     Ref=circshift(UserValues.Phasor.Reference(Det,:),[0 round(Shift)]);Ref=Ref(From:To);
     h.Plots.PhasorRef.XData=From:To;
-    h.Plots.PhasorRef.YData=(Ref-min(Ref))/(max(Ref)-min(Ref));
+    %h.Plots.PhasorRef.YData=(Ref-min(Ref))/(max(Ref)-min(Ref));
+    h.Plots.PhasorRef.YData=Ref/max(Ref);
     %%% Plots Phasor microtime
     h.Plots.Phasor.XData=From:To;
     Pha=PamMeta.MI_Hist{Det}(From:To);
-    h.Plots.Phasor.YData=(Pha-min(Pha))/(max(Pha)-min(Pha));
+    %h.Plots.Phasor.YData=(Pha-min(Pha))/(max(Pha)-min(Pha));
+    h.Plots.Phasor.YData=Pha/max(Pha);
     h.MI.Phasor_Axes.XLim=[From To];
 end
 
@@ -4897,9 +4899,13 @@ if any(mode==2)
     end
     h.MI.Channels_List.Data = Data;
     h.MI.Phasor_Det.String = {Data{:,1}};
-    h.MI.Phasor_Det.Value=1;
+    if h.MI.Phasor_Det.Value>numel(h.MI.Phasor_Det.String)
+            h.MI.Phasor_Det.Value=1;
+    end
     h.MI.Calib_Det.String = {Data{:,1}};
-    h.MI.Calib_Det.Value=1;
+    if h.MI.Calib_Det.Value > numel(h.MI.Calib_Det.String)
+        h.MI.Calib_Det.Value=1;
+    end
     %%% Updates plot selection lists
     for i=1:NTabs
         for j=1:NPlots

@@ -938,10 +938,16 @@ if Mode==0 %%% Loads user values
     P.Phasor.Export_SMax = S.Phasor.Export_SMax;
     
     if ~isfield (S.Phasor,'Export_LinePoints')
-          S.Phasor.Export_LinePoints='100';
+        S.Phasor.Export_LinePoints='100';
         disp('UserValues.Phasor.Export_LinePoints was incomplete');
     end
     P.Phasor.Export_LinePoints = S.Phasor.Export_LinePoints;
+    
+    if ~isfield (S.Phasor,'Colormap') || size(S.Phasor.Colormap,1)<2 || size(S.Phasor.Colormap,2)~=3
+        S.Phasor.Colormap = flip(jet(32));
+        disp('UserValues.Phasor.Colormap was incomplete');
+    end
+    P.Phasor.Colormap = S.Phasor.Colormap;
     
     %% Burst Search
     %%% Checks, if BurstSearch subfield exists

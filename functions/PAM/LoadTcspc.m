@@ -601,11 +601,12 @@ switch (Type)
                end
             end            
             for j = 1:Header.Frames
-                FileInfo.LineTimes(:,end+1)=linspace(0,Header.FrameTime,FileInfo.Lines+1)+Totaltime;
+                FileInfo.LineTimes(end+1,:)=linspace(0,Header.FrameTime,FileInfo.Lines+1)+Totaltime;
                 Totaltime = Totaltime + Header.FrameTime;
             end            
         end  
         FileInfo.MeasurementTime = Totaltime/Header.Freq;
+        FileInfo.LineTimes = FileInfo.LineTimes/Header.Freq;
         FileInfo.HeaderSim = Header;
     case 5 %%% Pam Photon File
         if strcmp(UserValues.Detector.Auto,'off')
