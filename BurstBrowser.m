@@ -12983,14 +12983,21 @@ for i=1:NumChans
             %%% find empty bursts
             inval = cellfun(@isempty,MT1) | cellfun(@isempty,MT2);
             %%% exclude empty bursts
-            MT1 = MT1(~inval); MT2 = MT2(~inval);
+            MT1 = MT1(~inval); MT2 = MT2(~inval);            
+            %%% Applies divider to data
+            if UserValues.Settings.Pam.Cor_Divider > 1
+                for k=1:numel(MT1)
+                    MT1{k}=floor(MT1{k}/UserValues.Settings.Pam.Cor_Divider);
+                    MT2{k}=floor(MT2{k}/UserValues.Settings.Pam.Cor_Divider);
+                end
+            end
             %%% Calculates the maximum inter-photon time in clock ticks
             Maxtime=cellfun(@(x,y) max([x(end) y(end)]),MT1,MT2);
             switch obj
                 case {h.Correlate_Button,h.CorrelateWindow_Button}
                     %%% Do Correlation
                     [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],2);
-                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
+                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
 
                     %%% Calculates average and standard error of mean (without tinv_table yet
                     if size(Cor_Array,2)>1
@@ -13030,7 +13037,7 @@ for i=1:NumChans
                 case h.BurstwiseDiffusionTime_Menu
                     %%% Do Correlation
                     [Cor_Array,Cor_Times]=CrossCorrelation(MT1,MT2,Maxtime,[],[],3);
-                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod;
+                    Cor_Times = Cor_Times*BurstData{file}.ClockPeriod*UserValues.Settings.Pam.Cor_Divider;
                     %%% remove everything below 1E-6 s
                     threshold_low = 1E-5;
                     threshold_high = Cor_Times(end)/10; %%% only consider up to 10%

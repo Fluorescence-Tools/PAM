@@ -35,7 +35,7 @@ if mode == 1
     Timeaxis_Exponent=floor(log2(Maxtime/10));
 elseif any(mode == [2,3]);
     MaxMaxtime = max(Maxtime);
-    Timeaxis_Exponent=floor(log2(double(MaxMaxtime)/10));
+    Timeaxis_Exponent=ceil(log2(double(MaxMaxtime)));
 end
 Timeaxis=ones(10*(Timeaxis_Exponent+1),1);
 Timeaxis=Timeaxis.*2.^floor(((1:numel(Timeaxis))-1)/10-1)';
