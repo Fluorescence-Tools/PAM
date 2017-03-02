@@ -5593,6 +5593,7 @@ switch level
 end
 
 UpdateSpeciesList(h);
+h = guidata(gcf);drawnow;
 Update_fFCS_GUI([],[]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
