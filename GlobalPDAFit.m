@@ -2556,7 +2556,7 @@ else
     
     switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
         case 'Histogram Library'
-            fitfun = @(x) PDAHistogramFit_Global(x);
+            fitfun = @(x) PDAHistogramFit_Global(x,h);
         case 'MLE'
             fitfun = @(x) PDAMLEFit_Global(x,h);
         otherwise
@@ -3065,12 +3065,13 @@ for j=1:sum(PDAMeta.Active)
         PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
     end
 
-    
-    %%% Add donor only species
-    PDAMeta.hFit_Donly = fraction_Donly*PDAMeta.P_donly{i}';
-    hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
-    for k = 1:numel(hFit_Ind)
-        hFit_Ind{k} = hFit_Ind{k}*(1-fitpar(end));
+    if fraction_Donly > 0
+        %%% Add donor only species
+        PDAMeta.hFit_Donly = fraction_Donly*PDAMeta.P_donly{i}';
+        hFit = (1-fraction_Donly)*hFit + fraction_Donly*PDAMeta.P_donly{i}';
+        for k = 1:numel(hFit_Ind)
+            hFit_Ind{k} = hFit_Ind{k}*(1-fraction_Donly);
+        end
     end
 
     %%% correct for slight number deviations between hFit and hMeasured

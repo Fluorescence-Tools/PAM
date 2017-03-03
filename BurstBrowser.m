@@ -12847,11 +12847,20 @@ switch obj
             bw = ceil(1E-3./BurstData{file}.ClockPeriod);
             bins_time = bw.*(0:1:ceil(PhotonStream{file}.Macrotime(end)./bw));
             if ~isfield(PhotonStream{file},'MT_bin')
+                %%% find the first photon belonging to a time window
                 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
                 [~, PhotonStream{file}.MT_bin] = histc(PhotonStream{file}.Macrotime,bins_time);
                 [PhotonStream{file}.unique,PhotonStream{file}.first_idx,~] = unique(PhotonStream{file}.MT_bin);
+                %%% store starting macrotime for populated time windows
                 used_tw = zeros(numel(bins_time),1);
                 used_tw(PhotonStream{file}.unique) = PhotonStream{file}.first_idx;
+                %%% some time windows are emtpy 
+                %%% if the first time window is empty, use the start value of the first non-empty time window
+                if used_tw(1) == 0
+                    first_non_empty = find(used_tw > 0,1,'first');
+                    used_tw(1:(first_non_empty-1)) = used_tw(first_non_empty);
+                end
+                %%% fill the restwith start from previous time window
                 while sum(used_tw == 0) > 0
                     used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
                 end
