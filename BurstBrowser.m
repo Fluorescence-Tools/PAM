@@ -12854,15 +12854,15 @@ switch obj
                 %%% store starting macrotime for populated time windows
                 used_tw = zeros(numel(bins_time),1);
                 used_tw(PhotonStream{file}.unique) = PhotonStream{file}.first_idx;
-                %%% some time windows are emtpy 
-                %%% if the first time window is empty, use the start value of the first non-empty time window
-                if used_tw(1) == 0
-                    first_non_empty = find(used_tw > 0,1,'first');
-                    used_tw(1:(first_non_empty-1)) = used_tw(first_non_empty);
+                %%% some time windows are emtpy
+                %%% if the last time window is empty, use the maximum macrotime
+                if used_tw(end) == 0
+                    last_non_empty = find(used_tw > 0,1,'last');
+                    used_tw((last_non_empty+1):end) = numel(PhotonStream{file}.Macrotime);
                 end
-                %%% fill the restwith start from previous time window
+                %%% fill the rest with start from next non-empty time window
                 while sum(used_tw == 0) > 0
-                    used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
+                    used_tw(used_tw == 0) = used_tw(find(used_tw == 0)+1);
                 end
                 PhotonStream{file}.first_idx = used_tw;
             end
