@@ -9741,7 +9741,7 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
     use_time = 1; %%% use time or photon window
     if use_time
         %%% histogram the Macrotimes in bins of 10 ms
-        bw = ceil(10E-3./BurstData{file}.ClockPeriod);
+        bw = ceil(1E-3./BurstData{file}.ClockPeriod);
         bins_time = bw.*(0:1:ceil(PhotonStream{file}.Macrotime(end)./bw));
         if ~isfield(PhotonStream,'MT_bin')
             %%% finds the PHOTON index of the first photon in each
@@ -9752,12 +9752,15 @@ if UserValues.BurstBrowser.Settings.fFCS_Mode == 2 %include timewindow
             Progress(0.4,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
             used_tw = zeros(numel(bins_time),1);
             used_tw(PhotonStream{file}.unique) = PhotonStream{file}.first_idx;
-            %%% fill zeros with previous value
-            if used_tw(1) == 0
-                used_tw(1) = 1;
+            %%% fill empty time windows with starting index from next non-empty
+            %%% if the last time window is empty, use the maximum macrotime
+            if used_tw(end) == 0
+                last_non_empty = find(used_tw > 0,1,'last');
+                used_tw((last_non_empty+1):end) = numel(PhotonStream{file}.Macrotime);
             end
+            %%% fill the rest with start from next non-empty time window
             while sum(used_tw == 0) > 0
-                used_tw(used_tw == 0) = used_tw(find(used_tw == 0)-1);
+                used_tw(used_tw == 0) = used_tw(find(used_tw == 0)+1);
             end
             Progress(0.6,h.Progress_Axes,h.Progress_Text,'Preparing Data...');
             PhotonStream{file}.first_idx = used_tw;
