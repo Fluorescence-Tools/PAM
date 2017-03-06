@@ -425,7 +425,6 @@ switch (Type)
             FileInfo.MI_Bins = MI_Bins;
         else %%% Reads highest used MI and usen 2^n bins
             usedMI = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-            % usedMI = max(cellfun(@numel,cellfun(@unique,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)),'UniformOutput',false)));  
             FileInfo.MI_Bins = 2^(ceil(log2(usedMI)));
         end
         
