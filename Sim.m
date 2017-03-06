@@ -1037,7 +1037,7 @@ for i=1:3
    for j=1:3
        if j<=i
            %%% F?rster radius
-           h.Sim_R0{i+1,j} = uicontrol(...
+           h.Sim_R0{3*(j-1)+i} = uicontrol(...
                'Parent',h.Sim_FRET_General_Panel,...
                'Units','normalized',...
                'FontSize',12,...
@@ -1115,7 +1115,7 @@ for i=1:3
    for j=1:3
        if j<=i
            %%% Dye distances radius
-           h.Sim_R{i+1,j} = uicontrol(...
+           h.Sim_R{3*(j-1)+i} = uicontrol(...
                'Parent',h.Sim_FRET_Static_Panel,...
                'Units','normalized',...
                'FontSize',12,...
@@ -1194,7 +1194,7 @@ for i=1:3
    for j=1:3
        if j<=i
            %%% Dye distances radius
-           h.Sim_sigma{i+1,j} = uicontrol(...
+           h.Sim_sigma{3*(j-1)+i} = uicontrol(...
                'Parent',h.Sim_FRET_Width_Panel,...
                'Units','normalized',...
                'FontSize',12,...
@@ -1863,7 +1863,7 @@ switch Obj
         for i=1:3
             for j=1:3   
                 if j<=i
-                    SimData.Species(Sel).R0(i+1,j) = str2double(h.Sim_R0{i+1,j}.String);
+                    SimData.Species(Sel).R0(i+1,j) = str2double(h.Sim_R0{3*(j-1)+i}.String);
                 end
             end
         end
@@ -1871,7 +1871,7 @@ switch Obj
         for i=1:3
             for j=1:3   
                 if j<=i
-                    SimData.Species(Sel).R(i+1,j) = str2double(h.Sim_R{i+1,j}.String);
+                    SimData.Species(Sel).R(i+1,j) = str2double(h.Sim_R{3*(j-1)+i}.String);
                 end
             end
         end
@@ -1879,7 +1879,7 @@ switch Obj
         for i=1:3
             for j=1:3   
                 if j<=i
-                    SimData.Species(Sel).DistanceWidth(i+1,j) = str2double(h.Sim_sigma{i+1,j}.String);
+                    SimData.Species(Sel).DistanceWidth(i+1,j) = str2double(h.Sim_sigma{3*(j-1)+i}.String);
                 end
             end
         end
@@ -1989,7 +1989,7 @@ switch mode
         for i=1:3
             for j=1:3
                 if j<=i
-                    h.Sim_R0{i+1,j}.String = num2str(SimData.General(File).Species(Sel).R0(i+1,j));
+                    h.Sim_R0{3*(j-1)+i}.String = num2str(SimData.General(File).Species(Sel).R0(i+1,j));
                 end
             end
         end
@@ -1998,7 +1998,7 @@ switch mode
         for i = 1:3
             for j=1:3
                 if j<=i
-                    h.Sim_R{i+1,j}.String = num2str(SimData.General(File).Species(Sel).R(i+1,j));
+                    h.Sim_R{3*(j-1)+i}.String = num2str(SimData.General(File).Species(Sel).R(i+1,j));
                 end
             end
         end
@@ -2008,7 +2008,7 @@ switch mode
         for i = 1:3
             for j=1:3
                 if j<=i
-                    h.Sim_sigma{i+1,j}.String = num2str(SimData.General(File).Species(Sel).DistanceWidth(i+1,j));
+                    h.Sim_sigma{3*(j-1)+i}.String = num2str(SimData.General(File).Species(Sel).DistanceWidth(i+1,j));
                 end
             end
         end
