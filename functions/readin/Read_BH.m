@@ -113,6 +113,7 @@ switch Card
         end
         Header.SyncRate = Header.ClockRate; %only true if the laser is the MT clock
         % If SyncRate ~= ClockRate, hardcode it in a custom read-in routine!
+        
     case 'SPC-630 256chs'
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%% Data is arranged per 4 bytes
@@ -147,7 +148,7 @@ switch Card
             %the Header.ClockRate is contained in the first 3 bytes of the first
             %record in units of 100 ps
             Header.ClockRate = 1E10/double(bitand(ByteRecord(1), bin2dec('00000000111111111111111111111111')));
-            Header.SyncRate = []; %SPC-630 cards cannot use the laser as sync rate!
+            Header.SyncRate = 1; %SPC-630 cards cannot use the laser as sync rate!
             
             ByteRecord(1)=[]; %%% Delete Header entry
             % Non macro/microtime information
@@ -206,7 +207,7 @@ switch Card
         % ByteRecord(1) is bytes 0 and 1;
         % ByteRecord(2) is bytes 2 and 3 and thus contains the Header.ClockRate;
         Header.ClockRate = 1E10/double(ByteRecord(2));  
-        Header.SyncRate = []; %SPC-630 cards cannot use the laser as sync rate!
+        Header.SyncRate = 1; %SPC-630 cards cannot use the laser as sync rate!
         InvalidFirstPhoton = isequal(double(bitand(ByteRecord(1), 4096)), 4096); % is byte 1 bit 4 = 1 ?
         % cut ByteRecord(1) at 8bit and put the top 4 bits to 0:
         NumberOfRoutingBits = uint8(bitand(bitshift(ByteRecord(1), -8), 15))+1; %00001111
