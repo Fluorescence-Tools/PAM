@@ -4575,6 +4575,7 @@ function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
 count = 0;
 PathName= fullfile(PathName,'..',filesep);%%% go one layer above since .*bur files are nested
+Files = [];
 while FileName ~= 0
     [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
     if ~iscell(FileName)
@@ -14711,6 +14712,9 @@ switch mode
                     Path = BurstMeta.Database{h.DatabaseBB.List.Value,2};
                 end
                 Files = GetMultipleFiles({'*.bur','*.bur files'},'Choose files to add to DataBase',Path);
+                if isempty(Files)
+                    return;
+                end
             case h.DatabaseBB.AppendLoadedFiles %% Add loaded files to database
                 for i = 1:numel(BurstData) %%% loop over loaded files
                     Files{i,1} = BurstData{i}.FileName;

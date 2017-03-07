@@ -9585,7 +9585,7 @@ switch mode
             try
                 % Path is unique per file in the database, so we have to store
                 % it globally in UserValues each time
-                UserValues.File.Path = PamMeta.Database{i,2};
+                UserValues.File.Path = PamMeta.Export{i,2};
                 LSUserValues(1);
                 LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
                     PamMeta.Export{i,1},...   %file
@@ -9602,7 +9602,7 @@ switch mode
                     String(19:24)='00FF00';
                     h.Export.List.String{i} = String;
                 end
-            catch
+            catch exception
                 String = h.Export.List.String{i};
                 if size(String,2)<25 || ~strcmp(String(1:6),'<HTML>')
                     h.Export.List.String{i} = ['<HTML><FONT color=FF0000>' String '</Font></html>'];
