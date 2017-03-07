@@ -28,7 +28,7 @@ for i = 1:numel(Mac)
     hRR{i} = hist(mRRt{i},0:1:maxi(i));
 end
 
-i=2;t
+i=2;
 figure;plot(hGG{i},'g');hold on;plot(hGR{i},'r');plot(hRR{i},'k')
 figure;plot(hGR{i}./(hGG{i}+hGR{i}),'b');hold on;plot((hGG{i}+hGR{i})./(hRR{i}+hGG{i}+hGR{i}),'r');
 
