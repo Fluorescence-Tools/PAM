@@ -1,6 +1,9 @@
 global BurstTCSPCData
 global BurstData
 
+hGG = [];
+hGR = [];
+hRR = [];
 selected = BurstData{1}.Selected;
 Mac = BurstTCSPCData{1}.Macrotime(selected);
 Chan = BurstTCSPCData{1}.Channel(selected);
@@ -25,7 +28,7 @@ for i = 1:numel(Mac)
     hRR{i} = hist(mRRt{i},0:1:maxi(i));
 end
 
-i=1;
+i=12;
 figure;plot(hGG{i},'g');hold on;plot(hGR{i},'r');plot(hRR{i},'k')
 figure;plot(hGR{i}./(hGG{i}+hGR{i}),'b');hold on;plot((hGG{i}+hGR{i})./(hRR{i}+hGG{i}+hGR{i}),'r');
 
