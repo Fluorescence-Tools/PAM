@@ -23,11 +23,11 @@ for i = 1:numel(Mac)
     mGRt{i} = mGRt{i}-start{i};
     mRRt{i} = mRRt{i}-start{i};
 
-    %histogram in steps of 1 ms
+    %histogram in steps of binning
     maxi(i)=max([max(mGGt{i}) max(mGRt{i}) max(mRRt{i})]);
-    hGG{i} = hist(mGGt{i},0:1:maxi(i));
-    hGR{i} = hist(mGRt{i},0:1:maxi(i));
-    hRR{i} = hist(mRRt{i},0:1:maxi(i));
+    hGG{i} = hist(mGGt{i},0:binning:maxi(i));
+    hGR{i} = hist(mGRt{i},0:binning:maxi(i));
+    hRR{i} = hist(mRRt{i},0:binning:maxi(i));
 end
 
 %% save for tracy
