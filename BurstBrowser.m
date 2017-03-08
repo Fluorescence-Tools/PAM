@@ -170,6 +170,12 @@ if isempty(hfig)
         h.Choose_PrintPath_Menu.Enable = 'on';
         h.Current_PrintPath_Menu.Enable = 'on';
     end
+    h.ExportToTracy = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','Export burst-wise traces',...
+        'Callback',@Export_to_Tracy,...
+        'Tag','ExportToTracy',...
+        'Separator','on');
     %%% "Parameter Comparison" Menu
     h.Parameter_Comparison_Menu = uimenu(....
         'Parent',h.BurstBrowser,...
@@ -15243,3 +15249,16 @@ if UserValues.BurstBrowser.Settings.UseFilePathForExport
 else
     path = UserValues.BurstBrowser.PrintPath;
 end
+
+function Export_to_Tracy(obj,~)
+global BurstTCSPCData BurstMeta
+answer = inputdlg('Time resolution [ms]:','Specify binning',1,{'1'});
+answer = str2double(answer{1});
+if ~isfinite(answer)
+    disp('Invalid binning.');
+    return;
+end
+if isempty(BurstTCSPCData{BurstMeta.SelectedFile})
+    Load_Photons();
+end
+export_to_tracy(answer);
