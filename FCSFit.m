@@ -225,7 +225,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
-        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset'},...
+        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset';'Fit N 3D * brightness'},...
         'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
@@ -585,7 +585,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'XScale','log',...
-        'XLim',[10^-6,1],...
+        'XLim',[10^-7,1],...
         'LineWidth', Look.AxWidth,...
         'YColor',Look.Fore,...
         'UIContextMenu',h.FCS_Plot_Menu,...
@@ -1612,7 +1612,7 @@ for i=1:size(FCSMeta.Plots,1)
             case 1
                 %% No normalization
                 B=1;
-            case {2,7}
+            case {2,7,8}
                 %% Normalizes to number of particles 3D (defined in model)
                 P=FCSMeta.Params(:,i);
                 eval(FCSMeta.Model.Brightness);
@@ -1646,6 +1646,8 @@ for i=1:size(FCSMeta.Plots,1)
                 h.Norm_Time.Visible='on';
                 T=find(FCSMeta.Data{i,1}>=str2double(h.Norm_Time.String),1,'first');
                 B=FCSMeta.Data{i,2}(T);
+            case 8
+                
         end      
         %% Updates data plot y values
         if Normalization_Method ~= 7 && Normalization_Method ~= 3 
@@ -1686,8 +1688,15 @@ for i=1:size(FCSMeta.Plots,1)
         %% Calculates limits to autoscale plot 
         XMin=find(FCSMeta.Data{i,1}>=str2double(h.Fit_Min.String),1,'first');
         XMax=find(FCSMeta.Data{i,1}<=str2double(h.Fit_Max.String),1,'last');
-        YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-        YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3
+            %max(data+error bar)
+            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            %min(data-error bar)
+            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+        else % substract offset
+            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+        end
         RMax=max([RMax, max(Residuals(XMin:XMax))]);
         RMin=min([RMin, min(Residuals(XMin:XMax))]);        
         %% Calculates Chi^2 and updates table
