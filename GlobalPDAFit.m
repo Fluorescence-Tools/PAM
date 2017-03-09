@@ -673,7 +673,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'String','Minimum Number of Photons per Burst',...
+        'String','Minimum Number of Photons per Bin',...
         'Position',[0.02 0.575 0.175 0.2],...
         'HorizontalAlignment','right',...
         'Tag','NumberOfPhotMin_Text');
@@ -695,7 +695,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'FontSize',12,...
-        'String','Maximum Number of Photons per Burst',...
+        'String','Maximum Number of Photons per Bin',...
         'Position',[0.02 0.375 0.175 0.2],...
         'HorizontalAlignment','right',...
         'Tag','NumberOfPhotMax_Text');
@@ -1237,7 +1237,7 @@ if nargin < 4
 end
 %%% reset resets the PDAMeta.PreparationDone variable
 if reset == 1
-    PDAMeta.PreparationDone = 0;
+    PDAMeta.PreparationDone(:) = 0;
 end
 
 % check if plot is active
@@ -1936,7 +1936,7 @@ UserValues.PDA.IgnoreOuterBins = h.SettingsTab.OuterBins_Fix.Value;
 UserValues.PDA.HalfGlobal = h.SettingsTab.HalfGlobal.Value;
 UserValues.PDA.DeconvoluteBackground =  h.SettingsTab.DeconvoluteBackground.Value;
 if obj == h.SettingsTab.DeconvoluteBackground
-    PDAMeta.PreparationDone = 0;
+    PDAMeta.PreparationDone(:) = 0;
     
     if h.SettingsTab.DeconvoluteBackground.Value == 1 %%% disable other methods that are not supported
         h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
@@ -2013,8 +2013,7 @@ end
     
 %%% Read fit settings and store in UserValues
 %% Prepare Fit Inputs
-if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
-    PDAMeta.P = cell(numel(PDAData.FileName),NobinsE+1);
+if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
     counter = 1;
     maxN = 0;
     for i  = find(PDAMeta.Active)'
@@ -2036,12 +2035,17 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
         if ~PDAMeta.FitInProgress
             break;
         end
+        if PDAMeta.PreparationDone(i) == 1
+            %disp(sprintf('skipping file %i',i));
+            continue; %skip this file
+        end
         if counter > 1
             if allsame
                 %calculate some things only once
                 calc = 0;
             end
         end
+        PDAMeta.P(i,:) = cell(1,NobinsE+1);
         if calc
             %%% evaluate the background probabilities
             BGgg = poisspdf(0:1:maxN,PDAMeta.BGdonor(i)*PDAData.timebin(i)*1E3);
@@ -2282,7 +2286,7 @@ if (PDAMeta.PreparationDone == 0) || ~isfield(PDAMeta,'eps_grid')
             % different Ps = different columns
             PDAMeta.P(i,:) = P;
             PDAMeta.P_donly{i} = P_donly;
-            PDAMeta.PreparationDone = 1;
+            PDAMeta.PreparationDone(i) = 1;
         end
         counter = counter + 1;
     end
@@ -2406,10 +2410,18 @@ if sum(PDAMeta.Global) == 0
                         PDAHistogramFit_Single(fitpar,h);
                 end
             case h.Menu.StartFit
+                %% evaluate once to make plots available
+                switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+                    case {'MLE','MonteCarlo'}
+                        %%% For Updating the Result Plot, use MC sampling
+                        PDAMonteCarloFit_Single(fitpar);
+                    case 'Histogram Library'
+                        PDAHistogramFit_Single(fitpar,h);
+                end
                 %% Do Fit
                 Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
-
+                
                 switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                     case 'Simplex'
                         fitopts = optimset('MaxFunEvals', 1E4,'Display','iter','TolFun',1E-6,'TolX',1E-3);%,'PlotFcns',@optimplotfvalPDA);
@@ -2499,7 +2511,11 @@ if sum(PDAMeta.Global) == 0
             fitpar(3:3:end) = fraction.*fitpar(2:3:end);
         end
         % put optimized values back in table
-        h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([fitpar PDAMeta.chi2(i)]),'Uniformoutput',false);
+        try
+            h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([fitpar PDAMeta.chi2(i)]),'Uniformoutput',false);
+        catch
+            h.FitTab.Table.Data(i,2:3:end) = cellfun(@num2str, num2cell([fitpar NaN]),'Uniformoutput',false);
+        end
     end
 else
     %% Global fitting
@@ -3885,7 +3901,7 @@ switch mode
         h.FitTab.Table.Data=Data;
         %%% Enables cell callback again
         h.FitTab.Table.CellEditCallback={@Update_FitTable,3};
-        PDAMeta.PreparationDone = 0;
+        PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
     case 2 %%% Re-loads table from loaded data upon File menu - load fit parameters
         for i = 1:numel(PDAData.FileName)
             h.FitTab.Table.Data(i,:) = PDAData.FitTable{i};
@@ -4078,7 +4094,7 @@ switch mode
         Data(end,1:end-1) = num2cell(mean(cell2mat(Data(1:end-1,1:end-1)),1));
         %%% Adds new files
         h.ParametersTab.Table.Data = Data;
-        PDAMeta.PreparationDone = 0;
+        PDAMeta.PreparationDone = zeros(numel(PDAData.Data),1);
     case 2 %%% Loading params again from data
         h.ParametersTab.Table.CellEditCallback=[];
         for i = 1:numel(PDAData.FileName)
@@ -4095,7 +4111,7 @@ switch mode
             tmp(i,7) = PDAData.timebin(i)*1000;
         end
         h.ParametersTab.Table.Data(1:end-1,:) = num2cell(tmp);
-        PDAMeta.PreparationDone = 0;
+        PDAMeta.PreparationDone = zeros(numel(PDAData.FileName),1);
     case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
         % touching a ALL value cell applies that value everywhere
@@ -4119,9 +4135,12 @@ switch mode
             if e.Indices(2) ~= 7 % do not do for the Bin column
                 %% ALL row was used => Applies to all files
                 h.ParametersTab.Table.Data(:,e.Indices(2))=deal({NewData});
-            end 
+            end
+            PDAMeta.PreparationDone(:) = 0;
+        else
+            PDAMeta.PreparationDone(e.Indices(1)) = 0;
         end
-        PDAMeta.PreparationDone = 0;
+        
         
         %%% Values were changed, store this in PDAData structure so it is
         %%% saved with the files
