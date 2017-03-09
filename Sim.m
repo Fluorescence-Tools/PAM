@@ -2964,7 +2964,7 @@ if advanced
             if str2double(h.Sim_Noise{ix}.String) > 0 && ~isempty(Sim_Photons{ix})
                AIPT = Freq/(str2double(h.Sim_Noise{ix}.String)*1000);
                Noise = [];
-               while (isempty(Noise) || numel(Noise) < 1E6) %Noise(end)<Simtime)
+               while (isempty(Noise) || Noise(end)<Simtime)% numel(Noise) < 1E6)
                    if isempty(Noise)
                        Noise = cumsum(exprnd(AIPT,[10000 1]));
                    else
