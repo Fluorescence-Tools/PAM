@@ -948,6 +948,10 @@ switch (Type)
             end
             
         end
+        %%% correct microtime offset
+        mi_offset = min(cellfun(@min,TcspcData.MI(~cellfun(@isempty,TcspcData.MI))));
+        TcspcData.MI(~cellfun(@isempty,TcspcData.MI)) =cellfun(@(x) x-mi_offset+1,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)),'UniformOutput',false);
+        
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  FileInfo.MeasurementTime;
@@ -1141,6 +1145,12 @@ if strcmp(Caller.Tag, 'Pam')
     h.BurstLifetime_Button.ForegroundColor = [1 1 1];
     h.NirFilter_Button.Enable = 'off';
     h.NirFilter_Button.ForegroundColor = [1 1 1];
+    %%% get TCSPC resolution
+    if isfield(FileInfo,'Resolution')
+        TCSPCResolution = FileInfo.Resolution;
+    else
+        TCSPCResolution = 1E12*FileInfo.TACRange/FileInfo.MI_Bins; % in ps
+    end
     %%% Update FileInfo Table
     h.PIE.FileInfoTable.Data(:,2) = {...
         sprintf('%.0f',FileInfo.MeasurementTime);...
@@ -1148,7 +1158,7 @@ if strcmp(Caller.Tag, 'Pam')
         sprintf('%.2f',1E-6/FileInfo.SyncPeriod);...
         sprintf('%.2f',1E9*FileInfo.TACRange);...
         sprintf('%d',FileInfo.MI_Bins);...
-        sprintf('%.2f',1E12*FileInfo.TACRange/FileInfo.MI_Bins);
+        sprintf('%.2f',TCSPCResolution);
         sprintf('%d',FileInfo.NumberOfFiles);...
         get_date_modified(FileInfo.Path,FileInfo.FileName{1})};
     

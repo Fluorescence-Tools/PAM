@@ -10345,12 +10345,11 @@ for chan = 1:size(c,2)
 end
 TauFitData.TACRange = BurstData{file}.FileInfo.TACRange; % in seconds
 TauFitData.MI_Bins = double(BurstData{file}.FileInfo.MI_Bins); %Anders, why double
-if ~isfield(BurstData{file},'Resolution')
+if ~isfield(BurstData{file}.FileInfo,'Resolution')
     % in nanoseconds/microtime bin
     TauFitData.TACChannelWidth = TauFitData.TACRange*1E9/TauFitData.MI_Bins;
-elseif isfield(FileInfo,'Resolution') %%% HydraHarp Data
-    TauFitData.TACChannelWidth = BurstData{file}.Resolution/1000;
-    %Anders, does BurstData{file}.Resolution ever exist?
+elseif isfield(BurstData{file}.FileInfo,'Resolution') %%% HydraHarp Data
+    TauFitData.TACChannelWidth = BurstData{file}.FileInfo.Resolution/1000;
 end
 TauFit(obj,[]);
 Progress(1,h.Progress_Axes,h.Progress_Text);
