@@ -2532,9 +2532,9 @@ else
         PDAMeta.SecondHalf = 5; %index of the first file of the second part of the dataset
         %define which parameters are partly global
         PDAMeta.HalfGlobal = false(1,16); 
-        PDAMeta.HalfGlobal(1) = true; %half globally link k12
-        PDAMeta.HalfGlobal(4) = true; %half globally link k21
-        PDAMeta.HalfGlobal(7) = true; %half globally link Area3
+        %PDAMeta.HalfGlobal(1) = true; %half globally link k12
+        %PDAMeta.HalfGlobal(4) = true; %half globally link k21
+        %PDAMeta.HalfGlobal(7) = true; %half globally link Area3
         %PDAMeta.HalfGlobal(2) = true; %half globally link R1
         %PDAMeta.HalfGlobal(5) = true; %half globally link R2
         %PDAMeta.HalfGlobal(3) = true; %half globally link sigma1
