@@ -5293,11 +5293,11 @@ switch obj
         
         if strcmp(type,'tau') %%% normalize and shift if tau data
             for i = 1:numel(data)
-                data{i} = data{i}./max(smooth(data{i}));
+                data{i} = data{i}./max(smooth(data{i},10));
             end
             
             %%% for shift, take first measurement as reference
-            [~,peakPosition] = max(smooth(data{1}));
+            [~,peakPosition] = max(smooth(data{1},10));
             shift_left = 0;
             shift_right = 0;
             for i = 2:numel(data)
