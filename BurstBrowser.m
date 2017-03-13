@@ -4038,6 +4038,8 @@ switch obj
             end
             Load_BurstFile(PathName,FileName,1);
         end
+        %%% Enable append file
+        h.Append_File.Enable = 'on';
 end
 if isempty(BurstData)
     Progress(1,h.Progress_Axes,h.Progress_Text);
