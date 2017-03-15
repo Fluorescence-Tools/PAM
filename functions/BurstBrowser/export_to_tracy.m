@@ -63,10 +63,12 @@ T.range(:,1) = 1;T.range(:,2) = T.frames; T.range(:,3) = T.frames; % bleachsteps
 T.peak_id = (1:N)';
 T.gain = ones(N,1);
 T.freq = 10*ones(N,1); % no idea what this is
-T.acq_time = repmat({'today'},N,1);
-T.movie_name = repmat({'dummy'},N,1);
+T.acq_time = repmat({'0'},N,1);
+T.movie_name = repmat({BurstData{file}.FileName(1:end-4)},N,1);
 T.movie_mode = 2*ones(N,1); % 2 means alex mode
-T.exposure = binning*ones(N,1); % this is the exposure time in milliseconds
+T.exposure = binning*ones(N,1)/2; % this is the exposure time in milliseconds
+% We divide the exposure by 2 here since it will be multiplied in tracy due
+% to interpretation as ALEX trace!
 
 [FileName,PathName] = uiputfile('*.mat','Choose location',fullfile(BurstData{file}.PathName,[BurstData{file}.FileName(1:end-4) '_traces.mat']));
 save(fullfile(PathName,FileName),'-struct','T');
