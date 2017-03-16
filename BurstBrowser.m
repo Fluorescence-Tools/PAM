@@ -11220,7 +11220,7 @@ MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
 xProx = linspace(-0.1,1.1,61);
-timebin = {3E-3,2.5E-3,2E-3,1.5E-3,1E-3,0.5E-3};
+timebin = {3E-3,2.5E-3,2E-3,1.5E-3,1E-3,0.5E-3,0.3E-3,0.2E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
@@ -11310,10 +11310,10 @@ end
 legend(leg,'Box','off');
 
 %%% also make image plot
-Hist = flipud(vertcat(Hist{:}));
+Hist = flipud(vertcat(Hist{1:6}));
 f2 = figure('Color',[1,1,1]);
 f2.Position(1) = f1.Position(1) +  f1.Position(3);
-im = imagesc(xProx,fliplr(horzcat(timebin{:}))*1000,Hist);
+im = imagesc(xProx,fliplr(horzcat(timebin{1:6}))*1000,Hist);
 ax = gca;
 ax.YDir = 'normal';
 ax.FontSize = 20;
