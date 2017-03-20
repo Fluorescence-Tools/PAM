@@ -1600,6 +1600,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ContourOffset was incomplete');
     end
     P.BurstBrowser.Display.ContourOffset = S.BurstBrowser.Display.ContourOffset;
+    %%% Checks, if BurstBrowser.Display.ImageOffset subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ImageOffset')
+        S.BurstBrowser.Display.ImageOffset=1;
+        disp('UserValues.BurstBrowser.Display.ImageOffset was incomplete');
+    end
+    P.BurstBrowser.Display.ImageOffset = S.BurstBrowser.Display.ImageOffset;
     %%% Checks, if BurstBrowser.Display.PlotContourLines subfield exists
     if ~isfield (S.BurstBrowser.Display,'PlotContourLines')
         S.BurstBrowser.Display.PlotContourLines=1;

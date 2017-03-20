@@ -1888,7 +1888,7 @@ if isempty(hfig)
         'Callback',@UpdatePlot...
         );
     
-    h.ContourOffset_text = uicontrol(...
+    h.PlotOffset_text = uicontrol(...
         'Style','text',...
         'Parent',h.DisplayOptionsPanel,...
         'BackgroundColor', Look.Back,...
@@ -1896,11 +1896,11 @@ if isempty(hfig)
         'Units','normalized',...
         'Position',[0.62 0.65 0.28 0.07],...
         'FontSize',12,...
-        'Tag','NumberOfContourLevels_edit',...
-        'String','Contour Plot Offset [%]'...
+        'Tag','ContourOffset_text',...
+        'String','Plot Offset [%]'...
         );
     
-    h.ContourOffset_edit = uicontrol(...
+    h.PlotOffset_edit = uicontrol(...
         'Style','edit',...
         'Parent',h.DisplayOptionsPanel,...
         'BackgroundColor', Look.Control,...
@@ -6142,9 +6142,9 @@ if ~colorbyparam
     BurstMeta.Plots.Main_Plot(1).YData = ybins;
     BurstMeta.Plots.Main_Plot(1).CData = HH;
     if ~UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.Main_Plot(1).AlphaData = (HH > 0);
+        BurstMeta.Plots.Main_Plot(1).AlphaData = HH./max(max(HH)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.Main_Plot(1).AlphaData = (HH./max(max(HH)) > 0.01);%ones(size(H,1),size(H,2));
+        BurstMeta.Plots.Main_Plot(1).AlphaData = HH./max(max(HH)) > UserValues.BurstBrowser.Display.ImageOffset/100;%(HH./max(max(HH)) > 0.01);
     end
     BurstMeta.Plots.Main_Plot(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.Main_Plot(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
@@ -6311,7 +6311,7 @@ else
     BurstMeta.Plots.Main_Plot(1).XData = xbins;
     BurstMeta.Plots.Main_Plot(1).YData = ybins;
     BurstMeta.Plots.Main_Plot(1).CData = Image;
-    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > 0.01);
+    BurstMeta.Plots.Main_Plot(1).AlphaData = (H./max(max(H)) > offset);
     
     %%% Enable ZScale Axis
     h.axes_ZScale.Visible = 'on';
@@ -6912,12 +6912,14 @@ else
     end
 end
 
-set([h.MarkerSize_edit,h.MarkerSize_text,h.MarkerColor_button,h.MarkerColor_text,...
-    h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.ContourOffset_edit,h.ContourOffset_text,h.PlotContourLines],...
-    'Visible','off');
+
 
 switch obj
     case h.PlotTypePopumenu
+        set([h.MarkerSize_edit,h.MarkerSize_text,h.MarkerColor_button,h.MarkerColor_text,...
+        h.NumberOfContourLevels_text,h.NumberOfContourLevels_edit,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines],...
+        'Visible','off');
+            
         UserValues.BurstBrowser.Display.PlotType = obj.String{obj.Value};
         fields = fieldnames(BurstMeta.Plots); %%% loop through h structure
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Image')
@@ -6935,6 +6937,10 @@ switch obj
                     end
                 end
             end
+            set([h.PlotOffset_edit,h.PlotOffset_text],...
+             'Visible','on');
+            h.PlotOffset_text.String = 'Plot Offset [%]';
+            h.PlotOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ImageOffset);
         end
         
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
@@ -6953,8 +6959,10 @@ switch obj
                     end
                 end
             end
-            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.ContourOffset_edit,h.ContourOffset_text,h.PlotContourLines],...
+            set([h.NumberOfContourLevels_edit,h.NumberOfContourLevels_text,h.PlotOffset_edit,h.PlotOffset_text,h.PlotContourLines],...
              'Visible','on');
+            h.PlotOffset_text.String = 'Plot Offset [%]';
+            h.PlotOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
         end
         if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
             delete(BurstMeta.HexPlot.MainPlot_hex);
@@ -14992,16 +15000,30 @@ end
 if obj == h.ZScale_Intensity
     UserValues.BurstBrowser.Display.ZScale_Intensity = obj.Value;
 end
-if obj == h.ContourOffset_edit
-    ContourOffset = str2double(h.ContourOffset_edit.String);
-    if ~isnan(ContourOffset)
-        if ContourOffset >=0 && ContourOffset<=100
-            UserValues.BurstBrowser.Display.ContourOffset = ContourOffset;
-        else
-            h.ContourOffset_edit.String = UserValues.BurstBrowser.Display.ContourOffset;
-        end
-    else
-        h.ContourOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
+if obj == h.PlotOffset_edit
+    switch UserValues.BurstBrowser.Display.PlotType
+        case 'Contour'
+            ContourOffset = str2double(h.PlotOffset_edit.String);
+            if ~isnan(ContourOffset)
+                if ContourOffset >=0 && ContourOffset<=100
+                    UserValues.BurstBrowser.Display.ContourOffset = ContourOffset;
+                else
+                    h.PlotOffset_edit.String = UserValues.BurstBrowser.Display.ContourOffset;
+                end
+            else
+                h.PlotOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ContourOffset);
+            end
+        case 'Image'
+            ImageOffset = str2double(h.PlotOffset_edit.String);
+            if ~isnan(ImageOffset)
+                if ImageOffset >=0 && ImageOffset<=100
+                    UserValues.BurstBrowser.Display.ImageOffset = ImageOffset;
+                else
+                    h.PlotOffset_edit.String = UserValues.BurstBrowser.Display.ImageOffset;
+                end
+            else
+                h.PlotOffset_edit.String = num2str(UserValues.BurstBrowser.Display.ImageOffset);
+            end
     end
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
