@@ -733,6 +733,10 @@ if exist('ph','var')
                     'Label','2 exponentials',...
                     'Checked','off',...
                     'Callback',@Start_Fit);
+                h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
+                    'Label','"Dip and rise"',...
+                    'Checked','off',...
+                    'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
             case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}
                 TauFitData.Who = 'Burstwise';
@@ -3262,7 +3266,7 @@ switch obj
             %%% "dip and rise model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
             lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
-            param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
+            param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
         end
         
@@ -3295,16 +3299,17 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
-        h.Result_Plot.YLim = [min(Aniso_fit),max(Aniso_fit)];
+        h.Result_Plot.YLim = [min([0,min(Aniso)]),min([0.8,max(Aniso)])];
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
         elseif number_of_exponentials == 2
             str = sprintf('rho_f = %1.2f ns\nrho_p = %1.2f ns\nr_0 = %2.4f\nr_{p} = %3.4f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
         elseif number_of_exponentials == 0
-            str = sprintf('F1 = %1.2f\ntau_1 = %1.2f ns\ntau_2 = %1.2f ns\nrho_1 = %1.2f ns\nrho_2= %1.2f ns\nr_0 = %2.4f\nr_{inf,1} = %3.4f\nr_{inf,2} = %3.4f',...
+            str = sprintf('F_1 = %1.2f\ntau_1 = %1.2f ns\ntau_2 = %1.2f ns\nrho_1 = %1.2f ns\nrho_2= %1.2f ns\nr_0 = %2.4f\nr_{inf,1} = %3.4f\nr_{inf,2} = %3.4f',...
                 1/(1+param(1)),param(2)*TACtoTime,param(3)*TACtoTime,param(6)*TACtoTime,param(8)*TACtoTime,param(4),param(5),param(7));
         end
+        str = strrep(strrep(str,'rho','\rho'),'tau','\tau');
         h.Result_Plot_Text.String = str;
         h.Result_Plot_Text.Position = [0.8 0.9];
         
@@ -3729,7 +3734,7 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% get name of file
     %%% Make table from fittable and save as txt
     tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
-    writetable(tab,GenerateName([TauFitData.FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
+    writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
