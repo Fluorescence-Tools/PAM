@@ -3699,7 +3699,9 @@ else
         end
     end
 end
-
+for i = 1:numel(ax)
+    ax(i).Units = 'pixels';
+end
 if strcmp(TauFitData.Who, 'TauFit')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
         '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
@@ -3715,11 +3717,13 @@ end
 if strcmp(TauFitData.Who,'BurstBrowser')
     Species = strsplit(h.SpeciesSelect_Text.String(2,:),': ');
     c  =  ['_' strjoin(strsplit(Species{2},' '),'')];
+    FileName = fullfile(TauFitData.Path,TauFitData.FileName);
 else
     c = '';
+    FileName = TauFitData.FileName;
 end
 f.PaperPositionMode = 'auto';
-print(f, '-dtiff', '-r150', GenerateName([TauFitData.FileName(1:end-4) a c b],1))
+print(f, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c b],1))
 
 if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% get name of file
