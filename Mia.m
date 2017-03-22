@@ -3640,6 +3640,8 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             X=MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).XLabel.String='Brightness [kHz]';
     end
+    h.Mia_NB.Axes(5).XColor = UserValues.Look.Fore;
+    h.Mia_NB.Axes(5).XLabel.Color = UserValues.Look.Fore;
     %%% Scales x data into bins
     X=floor(BinX*(X-MinX)/(MaxX-MinX));
     
@@ -3659,6 +3661,8 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             Y=MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).YLabel.String='Brightness [kHz]';
     end
+    h.Mia_NB.Axes(5).YColor = UserValues.Look.Fore;
+    h.Mia_NB.Axes(5).YLabel.Color = UserValues.Look.Fore;
     %%% Scales y data into bins
     Y=floor(BinY*(Y-MinY)/(MaxY-MinY));
     
