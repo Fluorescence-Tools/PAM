@@ -1164,4 +1164,8 @@ if strcmp(Caller.Tag, 'Pam')
     
     %%% Updates MI Range in Phasor
     h.MI.Phasor_TAC.String = num2str(FileInfo.TACRange*10^9);
+
+    %%% Fix situation where the PIE channel range is larger than the number
+    %%% of microtime bins
+    UserValues.PIE.To(UserValues.PIE.To > FileInfo.MI_Bins) = FileInfo.MI_Bins;
 end

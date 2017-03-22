@@ -150,7 +150,7 @@ end
 
 %%% Assign values from header to output variables
 Header.SyncRate = 1/MeasDesc_GlobalResolution;
-Header.Resolution = MeasDesc_Resolution./HW_BaseResolution;
+Header.Resolution = MeasDesc_Resolution./1E-12; % give in picoseconds
 Header.MeasurementTime = MeasDesc_AcquisitionTime;
 nRecords = TTResult_NumberOfRecords;
 %%% check for file type

@@ -1461,7 +1461,11 @@ else %%% clicked Load Data button, load from PAM
     end
 
     TauFitData.FileName = fullfile(FileInfo.Path, FileInfo.FileName{1}); %only the first filename is stored!
-
+    
+    %%% Update PIEchannelSelection
+    UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+    UserValues.TauFit.PIEChannelSelection{2} = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
+    
     %%% Cases to consider:
     %%% obj is empty or is Button for LoadData/LoadIRF
     %%% Data has been changed (PIE Channel changed, IRF loaded...)
@@ -1501,6 +1505,8 @@ else %%% clicked Load Data button, load from PAM
             else %%% Set channel to 4 if no MFD channel was selected
                 chan = 4;
             end
+        elseif UserValues.BurstSearch.Method == 5
+            chan = 4;
         end
         % old method:
     %     % PIE Channels have to be ordered correctly 
@@ -1561,6 +1567,16 @@ else %%% clicked Load Data button, load from PAM
         TauFitData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
         TauFitData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
     end 
+end
+%%% disable reconvolution fitting if no IRF is defined
+if all(isnan(TauFitData.hIRF_Par{chan})) ||?all(isnan(TauFitData.hIRF_Per{chan}))
+    disp('IRF undefined, disabling reconvolution fitting.');
+    h.Fit_Button.Enable = 'off';
+elseif all(isnan(TauFitData.hScat_Par{chan})) ||?all(isnan(TauFitData.hScat_Per{chan}))
+    disp('IRF undefined, disabling reconvolution fitting.');
+    h.Fit_Button.Enable = 'off';
+else
+    h.Fit_Button.Enable = 'on';
 end
 %%% disable some GUI elements of the same channel is used twice, i.e. no
 %%% polarized detection
@@ -1797,7 +1813,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
-    h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
+    h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
     if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.Ignore{chan};
     else

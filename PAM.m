@@ -4227,8 +4227,8 @@ switch e.Key
         UserValues.PIE.To(end+1)=4096;
         UserValues.PIE.Name{end+1}='PIE Channel';
         UserValues.PIE.Duty_Cycle(end+1)=0;
-        UserValues.PIE.IRF{end+1} = [];
-        UserValues.PIE.ScatterPattern{end+1} = [];
+        UserValues.PIE.IRF{end+1} = zeros(1,4096);
+        UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
@@ -9519,20 +9519,18 @@ switch mode
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 return
             end
-            try
-                % Path is unique per file in the database, so we have to store
-                % it globally in UserValues each time
-                UserValues.File.Path = PamMeta.Export{i,2};
-                LSUserValues(1);
-                LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
-                    PamMeta.Export{i,1},...   %file
-                    PamMeta.Export{i,3});     %type
-                Pam_Export([],event,Sel,1)
-                % set filename color to green
-                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
-            catch
-                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
-            end
+
+            % Path is unique per file in the database, so we have to store
+            % it globally in UserValues each time
+            UserValues.File.Path = PamMeta.Export{i,2};
+            LSUserValues(1);
+            LoadTcspc([],[],@Update_Data,@Update_Display,@Shift_Detector,@Update_Detector_Channels,h.Pam,...
+                PamMeta.Export{i,1},...   %file
+                PamMeta.Export{i,3});     %type
+            Pam_Export([],event,Sel,1)
+            % set filename color to green
+            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
         end
@@ -9891,14 +9889,23 @@ switch e.Key
         %%% store in format:
         %%% channel
         %%% Decay IRF scatter
+        
+        if any(isempty(UserValues.PIE.IRF(Sel))) %%% check that IRF is not empty for selected PIE channels
+            disp('IRF not defined for at least one selected PIE channel.');
+            return;
+        end
+        if any(isempty(UserValues.PIE.ScatterPattern(Sel))) %%% check that ScatterPattern is not empty for selected PIE channels
+            disp('Scatter pattern not defined for at least one selected PIE channel.');
+            return;
+        end
         microtimeHistograms = zeros(FileInfo.MI_Bins,3*numel(Sel));
         for i = 1:numel(Sel)
             MI = histc( TcspcData.MI{UserValues.PIE.Detector(Sel(i)),UserValues.PIE.Router(Sel(i))},...
                 1:FileInfo.MI_Bins);
             PIErange = max([UserValues.PIE.From(Sel(i)),1]):min([UserValues.PIE.To(Sel(i)) numel(MI)]);
             microtimeHistograms(PIErange,3*(i-1)+1) = MI(PIErange);
-            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.IRF{Sel(i)};
-            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.ScatterPattern{Sel(i)};
+            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.IRF{Sel(i)}(1:FileInfo.MI_Bins);
+            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.ScatterPattern{Sel(i)}(1:FileInfo.MI_Bins);
             Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         %%% create filename
