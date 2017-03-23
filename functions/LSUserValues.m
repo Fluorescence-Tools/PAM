@@ -71,8 +71,8 @@ if Mode==0 %%% Loads user values
         S.PIE.Color=[1 0 0];
         S.PIE.Combined={[]};
         S.PIE.Duty_Cycle=0;
-        S.PIE.IRF = {[]};
-        S.PIE.ScatterPattern = {[]};
+        S.PIE.IRF = {zeros(1,4096)};
+        S.PIE.ScatterPattern = {zeros(1,4096)};
         disp('UserValues.PIE was incomplete');
     end
     P.PIE = [];

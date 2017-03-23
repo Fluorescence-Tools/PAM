@@ -1549,7 +1549,24 @@ end
         'Position',[0.01 0.105 0.22 0.025]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
 
-    
+%% Mac upscaling of Font Sizes
+if ismac
+    scale_factor = 1.3;
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if numel(h.(fields{i})) == 1
+            if isprop(h.(fields{i}),'FontSize')
+                h.(fields{i}).FontSize = (h.(fields{i}).FontSize)*scale_factor;
+            end
+        else
+            for j = 1:numel(h.(fields{i}))
+                 if isprop(h.(fields{i})(j),'FontSize')
+                h.(fields{i})(j).FontSize = (h.(fields{i})(j).FontSize)*scale_factor;
+            end
+            end
+        end
+    end
+end
 %% Initializes global Variables and setting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 PhasorData=[];

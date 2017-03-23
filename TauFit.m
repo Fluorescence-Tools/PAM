@@ -51,7 +51,7 @@ h.TauFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.TauFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 13:17]));
+delete(toolbar_items([2:7 9 14:17]));
     
 %%% menu
 h.Menu.File = uimenu(h.TauFit,'Label','File');
@@ -181,6 +181,7 @@ h.Result_Plot_Text = text(...
     'BackgroundColor','none',...
     'Units','normalized',...
     'Color',Look.AxesFore,...
+    'BackgroundColor',Look.Axes,...
     'VerticalAlignment','top','HorizontalAlignment','left');
 
 h.Result_Plot.XLim = [0 1];
@@ -732,6 +733,10 @@ if exist('ph','var')
                     'Label','2 exponentials',...
                     'Checked','off',...
                     'Callback',@Start_Fit);
+                h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
+                    'Label','"Dip and rise"',...
+                    'Checked','off',...
+                    'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
             case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}
                 TauFitData.Who = 'Burstwise';
@@ -944,6 +949,10 @@ if exist('bh','var')
         h.Fit_Aniso_Menu = uicontextmenu;
         h.Fit_Aniso_2exp = uimenu('Parent',h.Fit_Aniso_Menu,...
             'Label','2 exponentials',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
+            'Label','"Dip and rise"',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -1452,7 +1461,11 @@ else %%% clicked Load Data button, load from PAM
     end
 
     TauFitData.FileName = fullfile(FileInfo.Path, FileInfo.FileName{1}); %only the first filename is stored!
-
+    
+    %%% Update PIEchannelSelection
+    UserValues.TauFit.PIEChannelSelection{1} = h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value};
+    UserValues.TauFit.PIEChannelSelection{2} = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
+    
     %%% Cases to consider:
     %%% obj is empty or is Button for LoadData/LoadIRF
     %%% Data has been changed (PIE Channel changed, IRF loaded...)
@@ -1492,6 +1505,8 @@ else %%% clicked Load Data button, load from PAM
             else %%% Set channel to 4 if no MFD channel was selected
                 chan = 4;
             end
+        elseif UserValues.BurstSearch.Method == 5
+            chan = 4;
         end
         % old method:
     %     % PIE Channels have to be ordered correctly 
@@ -1552,6 +1567,16 @@ else %%% clicked Load Data button, load from PAM
         TauFitData.XData_Par{chan} = (UserValues.PIE.From(PIEChannel_Par):UserValues.PIE.To(PIEChannel_Par)) - UserValues.PIE.From(PIEChannel_Par);
         TauFitData.XData_Per{chan} = (UserValues.PIE.From(PIEChannel_Per):UserValues.PIE.To(PIEChannel_Per)) - UserValues.PIE.From(PIEChannel_Per);
     end 
+end
+%%% disable reconvolution fitting if no IRF is defined
+if all(isnan(TauFitData.hIRF_Par{chan})) ||?all(isnan(TauFitData.hIRF_Per{chan}))
+    disp('IRF undefined, disabling reconvolution fitting.');
+    h.Fit_Button.Enable = 'off';
+elseif all(isnan(TauFitData.hScat_Par{chan})) ||?all(isnan(TauFitData.hScat_Per{chan}))
+    disp('IRF undefined, disabling reconvolution fitting.');
+    h.Fit_Button.Enable = 'off';
+else
+    h.Fit_Button.Enable = 'on';
 end
 %%% disable some GUI elements of the same channel is used twice, i.e. no
 %%% polarized detection
@@ -1788,7 +1813,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
-    h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/10);
+    h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
     if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.Ignore{chan};
     else
@@ -3232,11 +3257,13 @@ switch obj
 
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
-    case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp}
+    case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
         if obj == h.Fit_Aniso_2exp
             number_of_exponentials = 2;
-        else
+        elseif obj == h.Fit_Aniso_Button
             number_of_exponentials = 1;
+        elseif obj == h.Fit_DipAndRise
+            number_of_exponentials = 0;
         end
         %%% construct Anisotropy
         Aniso = (G*TauFitData.FitData.Decay_Par - TauFitData.FitData.Decay_Per)./Decay;
@@ -3251,6 +3278,12 @@ switch obj
             tres_aniso = @(x,xdata) ((x(2)-x(4)).*exp(-xdata./x(1)) + x(4)).*exp(-xdata./x(3));
             param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,8/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
+        elseif number_of_exponentials == 0
+            %%% "dip and rise model" with two components of different lifetimes
+            tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
+            lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
+            param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
         end
         
         x_fitres = ignore:numel(Aniso);
@@ -3282,13 +3315,17 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
-        h.Result_Plot.YLim = [min(Aniso_fit),max(Aniso_fit)];
+        h.Result_Plot.YLim = [min([0,min(Aniso)]),min([0.8,max(Aniso)])];
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
         elseif number_of_exponentials == 2
             str = sprintf('rho_f = %1.2f ns\nrho_p = %1.2f ns\nr_0 = %2.4f\nr_{p} = %3.4f',param(1)*TACtoTime,param(3)*TACtoTime,param(2),param(4));
+        elseif number_of_exponentials == 0
+            str = sprintf('F_1 = %1.2f\ntau_1 = %1.2f ns\ntau_2 = %1.2f ns\nrho_1 = %1.2f ns\nrho_2= %1.2f ns\nr_0 = %2.4f\nr_{inf,1} = %3.4f\nr_{inf,2} = %3.4f',...
+                1/(1+param(1)),param(2)*TACtoTime,param(3)*TACtoTime,param(6)*TACtoTime,param(8)*TACtoTime,param(4),param(5),param(7));
         end
+        str = strrep(strrep(str,'rho','\rho'),'tau','\tau');
         h.Result_Plot_Text.String = str;
         h.Result_Plot_Text.Position = [0.8 0.9];
         
@@ -3645,8 +3682,9 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
             case 'Microtime_Plot'
                 ax(i).Position = [0.1 0.15 0.875 0.70];
                 if ~isequal(obj, h.Microtime_Plot_Export)
-                    ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
+                    ax(i).Children(end).FontSize = 16; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
+                    ax(i).Children(end).BackgroundColor = 'none';
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
@@ -3668,8 +3706,9 @@ else
                 ax(i).XTickLabels = [];
                 ax(i).XLabel.String = '';
                 if ~isequal(obj, h.Microtime_Plot_Export)
-                    ax(i).Children(end).FontSize = 20; %resize the chi^2 thing
+                    ax(i).Children(end).FontSize = 16; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
+                    ax(i).Children(end).BackgroundColor = 'none';
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
@@ -3681,7 +3720,9 @@ else
         end
     end
 end
-
+for i = 1:numel(ax)
+    ax(i).Units = 'pixels';
+end
 if strcmp(TauFitData.Who, 'TauFit')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
         '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
@@ -3697,17 +3738,19 @@ end
 if strcmp(TauFitData.Who,'BurstBrowser')
     Species = strsplit(h.SpeciesSelect_Text.String(2,:),': ');
     c  =  ['_' strjoin(strsplit(Species{2},' '),'')];
+    FileName = fullfile(TauFitData.Path,TauFitData.FileName);
 else
     c = '';
+    FileName = TauFitData.FileName;
 end
 f.PaperPositionMode = 'auto';
-print(f, '-dtiff', '-r150', GenerateName([TauFitData.FileName(1:end-4) a c b],1))
+print(f, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c b],1))
 
 if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% get name of file
     %%% Make table from fittable and save as txt
     tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
-    writetable(tab,GenerateName([TauFitData.FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
+    writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
