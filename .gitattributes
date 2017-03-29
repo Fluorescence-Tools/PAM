@@ -1,5 +1,11 @@
 # Set the default behavior
 text eol=lf
 
-# Explicitly declare for .m files
+# Explicitly declare for text files
 *.m text
+*.md text
+*.txt text
+*.rst text
+*.html text
+*.c text
+*.cpp text
