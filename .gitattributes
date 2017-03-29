@@ -22,3 +22,7 @@
 *.tif binary
 *.docx binary
 *.pdf binary
+*.mexmaci64 binary
+*.fig binary
+*.doctree binary
+*.pptx binary
