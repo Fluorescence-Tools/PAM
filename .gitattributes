@@ -2,13 +2,15 @@
 * text eol=lf
 
 # Explicitly declare for text files
-*.m text
-*.md text
-*.txt text
-*.rst text
-*.html text
-*.c text
-*.cpp text
+*.m text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.rst text eol=lf
+*.html text eol=lf
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.cu text eol=lf
 
 # Denote all files that are truly binary and should not be modified.
 *.mexw64 binary
