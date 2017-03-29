@@ -1,5 +1,5 @@
 # Set the default behavior
-text eol=lf
+* text eol=lf
 
 # Explicitly declare for text files
 *.m text
