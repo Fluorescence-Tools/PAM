@@ -1653,10 +1653,10 @@ else %%% clicked Load Data button, load from PAM
     end 
 end
 %%% disable reconvolution fitting if no IRF is defined
-if all(isnan(TauFitData.hIRF_Par{chan})) ||?all(isnan(TauFitData.hIRF_Per{chan}))
+if all(isnan(TauFitData.hIRF_Par{chan})) || all(isnan(TauFitData.hIRF_Per{chan}))
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
-elseif all(isnan(TauFitData.hScat_Par{chan})) ||?all(isnan(TauFitData.hScat_Per{chan}))
+elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{chan}))
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
 else
@@ -1743,7 +1743,11 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else
+        return;
+    end
 end
 
 G = str2double(h.G_factor_edit.String);
@@ -2250,7 +2254,11 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else
+        return;
+    end
 end
 if gcbo == h.Menu.Export_MIPattern
     save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
