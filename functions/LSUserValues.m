@@ -1171,13 +1171,20 @@ if Mode==0 %%% Loads user values
     end
     P.TauFit.l2 = S.TauFit.l2;
     %%% Checks, if TauFit.ConvolutionType exists
-    %%% (Options: lijnear and circular == periodic convolution)
+    %%% (Options: linear and circular == periodic convolution)
     if ~isfield (S.TauFit,'ConvolutionType')
         S.TauFit.ConvolutionType='linear';
         disp('UserValues.TauFit.ConvolutionType was incomplete');
     end
     P.TauFit.ConvolutionType = S.TauFit.ConvolutionType;
-
+    %%% Checks, if TauFit.LineStyle exists
+    %%% (Options: line and dot)
+    if ~isfield (S.TauFit,'LineStyle')
+        S.TauFit.LineStyle='line';
+        disp('UserValues.TauFit.LineStyle was incomplete');
+    end
+    P.TauFit.LineStyle = S.TauFit.LineStyle;
+    
     %%% Checks, if TauFit.use_weighted_residuals exists
     if ~isfield (S.TauFit,'use_weighted_residuals')
         S.TauFit.use_weighted_residuals=1;
