@@ -3472,11 +3472,11 @@ switch obj
         if number_of_exponentials == 1
             str = sprintf('I_0 = %1.2f \n\\tau = %2.2f ns\noffset = %3.2f',param(1),param(2)*TACtoTime,param(3));
         elseif number_of_exponentials == 2
-            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\namplitude 1 = %3.2f\namplitude 2 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',...
-                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4),1-param(4),param(5),meanTau);
+            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\namplitude 1 = %3.2f\namplitude 2 = %3.2f\noffset = %3.2f',...
+                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4),1-param(4),param(5));
         elseif number_of_exponentials == 3
-            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\n\\tau_3 = %2.2f ns\namplitude 1 = %3.2f\namplitude 2 = %3.2f\namplitude 3 = %3.2f\noffset = %3.2f\nmean \\tau = %2.2f ns',...
-                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4)*TACtoTime,param(5),param(6),1-param(5)-param(6),param(7),meanTau);
+            str = sprintf('I_0 = %1.2f \n\\tau_1 = %1.2f ns\n\\tau_2 = %2.2f ns\n\\tau_3 = %2.2f ns\namplitude 1 = %3.2f\namplitude 2 = %3.2f\namplitude 3 = %3.2f\noffset = %3.2f',...
+                param(1),param(2)*TACtoTime,param(3)*TACtoTime,param(4)*TACtoTime,param(5),param(6),1-param(5)-param(6),param(7));
         end
         h.Result_Plot_Text.String = [str_gof,str];
         h.Result_Plot_Text.Position = [0.85 0.99];

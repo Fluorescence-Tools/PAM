@@ -11368,6 +11368,9 @@ if ~isempty(obj)
             end
             BurstMeta.SelectedFile = sel_file;
     end
+    %%% set FCSFit path to the current print path
+    UserValues.File.FCSPath = getPrintPath();
+    LSUserValues(1);
 else
     file = BurstMeta.SelectedFile;
     if BurstData{file}.SelectedSpecies(2) == 0 %%% total measurement is selected

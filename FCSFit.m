@@ -863,7 +863,12 @@ switch Type
         x = (-0.1:bin:ceil(1.1/bin)*bin)';
         for i=1:numel(FileName)
             %%% Reads files
-            E = load(fullfile(PathName{i},FileName{i}),'-mat'); E = E.E;
+            E = load(fullfile(PathName{i},FileName{i}),'-mat'); 
+            if isfield(E,'E')
+                E = E.E;
+            elseif isfield(E,'EGR') % three color data
+                E = E.EGR;
+            end
             Data.E = E;
             Data.Cor_Times = x;
             his = histcounts(E,x); his = [his'; his(end)];
@@ -1573,7 +1578,7 @@ end
 if (Min == Max)
     Max = Min+1;
 end
-if ~isempty(FCSData.Data)
+if ~isempty(FCSData.Data) && ~strcmp(FCSMeta.DataType,'FRET')
     %%% get maximum x value
     maxTime = 0;
     for i = 1:numel(FCSData.Data)
