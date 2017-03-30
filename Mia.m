@@ -843,17 +843,17 @@ h.Mia_Image.Settings.ROI_Frames = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.62 0.76, 0.25 0.06],...
     'String','1');
-%%%Button to Load ROI settings from info file
-%h.Mia_Image.Settings.Load_ROI = uicontrol(...
-%    'Parent', h.Mia_Image.Settings.ROI_Tab,...
-%    'Style','push',...
-%    'Units','normalized',...
-%    'FontSize',12,...
-%    'BackgroundColor', Look.Control,...
-%    'ForegroundColor', Look.Fore,...
-%    'Position',[0.02 0.02, 0.8 0.06],...
-%    'Callback',{@MIA_Various,5},...
-%    'String','Load ROI from File');
+%%%Button to Import ROI from file
+h.Mia_Image.Settings.Load_ROI = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Tab,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.02, 0.8 0.06],...
+    'Callback',{@Import_ROI},...
+    'String','Import ROI from .mat File');
 
 %%% Select unselection criteria
 h.Mia_Image.Settings.ROI_FramesUse = uicontrol(...
@@ -2759,7 +2759,19 @@ for i=1:3;
         'Position',[0.63 0.66-0.08*i, 0.18 0.06],...
         'String','Use TH');
 end
-    
+
+%%Button for ROI mask generation
+h.Mia_NB.Image.Mask = uicontrol(...
+    'Parent',h.Mia_NB.Image.Panel,...
+    'Style','push',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.2 0.2, 0.6 0.10],...
+    'Callback',{@Export_ROI, 1},...
+    'String','Export Threshold as ROI');
+
 %% Initializes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 MIAData=[];
@@ -3571,7 +3583,7 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
 
     %% Plots 1D histogram of selected parameter
     %%% Removes pixel determined by thresholds
-    Use=((MIAData.NB.Int{i}/str2double(h.Mia_NB.Image.Pixel.String)*10^3>=str2double(h.Mia_NB.Image.Hist(1,1).String) &... %%% Lower int TH
+    MIAData.NB.Use=((MIAData.NB.Int{i}/str2double(h.Mia_NB.Image.Pixel.String)*10^3>=str2double(h.Mia_NB.Image.Hist(1,1).String) &... %%% Lower int TH
         MIAData.NB.Int{i}/str2double(h.Mia_NB.Image.Pixel.String)*10^3<=str2double(h.Mia_NB.Image.Hist(2,1).String)) |... %%% Upper in TH
         repmat(~h.Mia_NB.Image.UseTH(1).Value,size(MIAData.NB.Int{i}))) &... %%% Do not apply if checked
         ((MIAData.NB.Num{i}>=str2double(h.Mia_NB.Image.Hist(1,2).String) &... %%% Lower number TH
@@ -3589,19 +3601,19 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             h.Mia_NB.Hist1D_Text.String='';
         case 2 %%% Intensity histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,1).String),str2double(h.Mia_NB.Image.Hist(2,1).String),str2double(h.Mia_NB.Image.Hist(3,1).String));
-            h.Plots.NB(4).YData=histc(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
+            h.Plots.NB(4).YData=histc(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Intensity [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
         case 3 %%% Number histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,2).String),str2double(h.Mia_NB.Image.Hist(2,2).String),str2double(h.Mia_NB.Image.Hist(3,2).String));
-            h.Plots.NB(4).YData=histc(MIAData.NB.Num{i}(Use),h.Plots.NB(4).XData);
+            h.Plots.NB(4).YData=histc(MIAData.NB.Num{i}(MIAData.NB.Use),h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Number';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(Use)),'%6.3f') '?' num2str(std(MIAData.NB.Num{i}(Use)),'%6.3f')];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f') '?' num2str(std(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f')];
         case 4 %%% Brightness histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,3).String),str2double(h.Mia_NB.Image.Hist(2,3).String),str2double(h.Mia_NB.Image.Hist(3,3).String));
-            h.Plots.NB(4).YData=histc(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
+            h.Plots.NB(4).YData=histc(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Brightness [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
     end
     h.Mia_NB.Hist1D_Text.Position(1)=0.99-h.Mia_NB.Hist1D_Text.Extent(3);
     %%% Set X-Limit; uses 1/2 of binsize to not cut first and last bar
@@ -3631,13 +3643,13 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
     %%% Determins parameter for x axis
     switch h.Mia_NB.Hist2D(2).Value
         case 1
-            X=MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
+            X=MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).XLabel.String='Intensity [kHz]';
         case 2
-            X=MIAData.NB.Num{i}(Use);
+            X=MIAData.NB.Num{i}(MIAData.NB.Use);
             h.Mia_NB.Axes(5).XLabel.String='Number';
         case 3
-            X=MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
+            X=MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).XLabel.String='Brightness [kHz]';
     end
     h.Mia_NB.Axes(5).XColor = UserValues.Look.Fore;
@@ -3652,13 +3664,13 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
     %%% Determins parameter for y axis
     switch h.Mia_NB.Hist2D(1).Value
         case 1
-            Y=MIAData.NB.Int{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
+            Y=MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).YLabel.String='Intensity [kHz]';
         case 2
-            Y=MIAData.NB.Num{i}(Use);
+            Y=MIAData.NB.Num{i}(MIAData.NB.Use);
             h.Mia_NB.Axes(5).YLabel.String='Number';
         case 3
-            Y=MIAData.NB.Eps{i}(Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
+            Y=MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3;
             h.Mia_NB.Axes(5).YLabel.String='Brightness [kHz]';
     end
     h.Mia_NB.Axes(5).YColor = UserValues.Look.Fore;
@@ -6451,6 +6463,56 @@ h.Mia_NB.Hist2D(3).BackgroundColor=1-h.Mia_NB.Hist2D(3).BackgroundColor;
 h.Mia_NB.Hist2D(3).ForegroundColor=1-h.Mia_NB.Hist2D(3).ForegroundColor;
 Update_Plots([],[],3,1:3)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Export ROI as Binary Mask %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Export_ROI(~,~,mode)
+global MIAData UserValues
+h = guidata(findobj('Tag','Mia'));
+ch = h.Mia_NB.Image.Channel.Value;
+
+ROI=[str2num(h.Mia_Image.Settings.ROI_SizeX.String)...
+    str2num(h.Mia_Image.Settings.ROI_SizeY.String)...
+    str2num(h.Mia_Image.Settings.ROI_PosX.String)...
+    str2num(h.Mia_Image.Settings.ROI_PosY.String)];
+switch mode
+    case 1
+        Mask=MIAData.NB.Use;
+end
+
+%Dialog for saving file
+[FileName,Path] = uiputfile('*.mat', 'Save ROI as...', UserValues.File.MIAPath);
+if ~(isequal(FileName,0) || isequal(Path,0))
+   f = strcat(Path,FileName);
+   save(f,'ch', 'ROI','Mask');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Import ROI exported with Export_ROI function%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Import_ROI(~,~)
+global MIAData UserValues
+h = guidata(findobj('Tag','Mia'));
+[FileName,Path] = uigetfile('*.mat', 'Load ROI', UserValues.File.MIAPath);
+if ~(isequal(FileName,0) || isequal(Path,0))
+    info = load(strcat(Path,FileName));
+    %Set ROI size and position
+    h.Mia_Image.Settings.ROI_SizeX.String = num2str(info.ROI(1,1));
+    h.Mia_Image.Settings.ROI_SizeY.String = num2str(info.ROI(1,2));
+    h.Mia_Image.Settings.ROI_PosX.String = num2str(info.ROI(1,3));
+    h.Mia_Image.Settings.ROI_PosY.String = num2str(info.ROI(1,4));
+    %Update ROI
+    Mia_ROI([],[],1)
+    %Merge loaded ROI with existing arbitrary region
+    if prod(size(MIAData.MS{1}) == size(info.Mask))&(info.ch==1)
+        MIAData.MS{1} = MIAData.MS{1} & info.Mask;
+    end
+    if prod(size(MIAData.MS{2}) == size(info.Mask))&(info.ch==3)
+        MIAData.MS{2} = MIAData.MS{2} & info.Mask;
+    end
+    %Update images
+    Mia_Correct([],[],0);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Collection of small callbacks and functions %%%%%%%%%%%%%%%%%%%%%%%%%%%

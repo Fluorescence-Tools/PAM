@@ -1578,7 +1578,7 @@ end
 if (Min == Max)
     Max = Min+1;
 end
-if ~isempty(FCSData.Data)
+if ~isempty(FCSData.Data) && ~strcmp(FCSMeta.DataType,'FRET')
     %%% get maximum x value
     maxTime = 0;
     for i = 1:numel(FCSData.Data)
