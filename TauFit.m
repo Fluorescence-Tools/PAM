@@ -1671,7 +1671,8 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
         h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
         h.G_factor_edit,h.G_factor_text,...
         h.l1_edit,h.l1_text,...
-        h.l2_edit,h.l2_text],'Visible','off'); 
+        h.l2_edit,h.l2_text,...
+        h.ShowAniso_radiobutton,h.ShowDecay_radiobutton,h.ShowDecaySum_radiobutton],'Visible','off'); 
     %%% set l1 and l2 to zero
     h.l1_edit.String = '0';
     h.l2_edit.String = '0';
