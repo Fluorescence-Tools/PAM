@@ -3781,6 +3781,11 @@ end
 %% Individual microtime plots update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==4)
     %%% Plots individual microtime histograms
+    if any(~cellfun(@ishandle,h.Plots.MI_Ind))
+        %%% something went wrong, replot
+        Update_Detector_Channels([],[],1);
+        h = guidata(gcbo);
+    end
     for i=1:numel(UserValues.Detector.Plots)
         if UserValues.Detector.Plots(i)<=numel(PamMeta.MI_Hist)
             h.Plots.MI_Ind{i}.XData=1:numel(PamMeta.MI_Hist{UserValues.Detector.Plots(i)});
