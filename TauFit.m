@@ -3830,7 +3830,7 @@ for i = 1:numel(ax)
     ax(i).Layer = 'top';
     for j = 1:numel(ax(i).Children)
         if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 1.5;
+            ax(i).Children(j).LineWidth = 2;
         end
     end
 end
