@@ -2004,7 +2004,7 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             Mask_MI = cell(numel(TcspcData.MI),6);
             for i=1:numel(TcspcData.MT)
                 if ~isempty(TcspcData.MT{i})
-                    [~,~,Bin] = CalculateImage(TcspcData.MT{i}.*FileInfo.ClockPeriod,2);
+                    [~,Bin] = CalculateImage(TcspcData.MT{i}.*FileInfo.ClockPeriod,2);
                     for k=1:6
                         if ~isempty(Mask{k})
                             Bin_ROI = Bin;

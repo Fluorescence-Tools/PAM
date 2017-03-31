@@ -621,6 +621,7 @@ switch (Type)
         if isempty(FileInfo.ClockPeriod)
             FileInfo.ClockPeriod = FileInfo.SyncPeriod;
         end
+        FileInfo.Path = Path;
         TcspcData.MT(1:size(Loaded.MT,1),1:size(Loaded.MT,2)) = Loaded.MT;
         TcspcData.MI(1:size(Loaded.MT,1),1:size(Loaded.MT,2)) = Loaded.MI;
         for i = 2:numel(FileName)
@@ -635,6 +636,7 @@ switch (Type)
             FileInfo.MeasurementTime = FileInfo.MeasurementTime + Loaded.Info.MeasurementTime;
             FileInfo.NumberOfFiles = FileInfo.NumberOfFiles + Loaded.Info.NumberOfFiles;
         end
+        FileInfo.FileName = FileName;
     case 6 %%% .PTU files from HydraHarp Software V3.0
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
@@ -1159,7 +1161,7 @@ if strcmp(Caller.Tag, 'Pam')
         sprintf('%.2f',1E9*FileInfo.TACRange);...
         sprintf('%d',FileInfo.MI_Bins);...
         sprintf('%.2f',TCSPCResolution);
-        sprintf('%d',FileInfo.NumberOfFiles);...
+        sprintf('%d',FileInfo.NumberOfFiles);...        
         get_date_modified(FileInfo.Path,FileInfo.FileName{1})};
     
     %%% Updates MI Range in Phasor
