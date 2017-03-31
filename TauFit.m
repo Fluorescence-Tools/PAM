@@ -1662,6 +1662,28 @@ elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{
 else
     h.Fit_Button.Enable = 'on';
 end
+%%% fix wrong length of IRF or Scatter pattern
+len = numel(TauFitData.hMI_Par{chan});
+if numel(TauFitData.hIRF_Par{chan}) < len
+    TauFitData.hIRF_Par{chan} = [TauFitData.hIRF_Par{chan},zeros(1,len-numel(TauFitData.hIRF_Par{chan}))];
+elseif numel(TauFitData.hIRF_Par{chan}) > len
+    TauFitData.hIRF_Par{chan} = TauFitData.hIRF_Par{chan}(1:len);
+end
+if numel(TauFitData.hIRF_Per{chan}) < len
+    TauFitData.hIRF_Per{chan} = [TauFitData.hIRF_Per{chan},zeros(1,len-numel(TauFitData.hIRF_Per{chan}))];
+elseif numel(TauFitData.hIRF_Per{chan}) > len
+    TauFitData.hIRF_Per{chan} = TauFitData.hIRF_Per{chan}(1:len);
+end
+if numel(TauFitData.hScat_Par{chan}) < len
+    TauFitData.hScat_Par{chan} = [TauFitData.hScat_Par{chan},zeros(1,len-numel(TauFitData.hScat_Par{chan}))];
+elseif numel(TauFitData.hScat_Par{chan}) > len
+    TauFitData.hScat_Par{chan} = TauFitData.hScat_Par{chan}(1:len);
+end
+if numel(TauFitData.hScat_Per{chan}) < len
+    TauFitData.hScat_Per{chan} = [TauFitData.hScat_Per{chan},zeros(1,len-numel(TauFitData.hScat_Per{chan}))];
+elseif numel(TauFitData.hScat_Per{chan}) > len
+    TauFitData.hScat_Per{chan} = TauFitData.hScat_Per{chan}(1:len);
+end
 %%% disable some GUI elements of the same channel is used twice, i.e. no
 %%% polarized detection
 if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelSelection{2})
@@ -1704,7 +1726,8 @@ else
         h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
         h.G_factor_edit,h.G_factor_text,...
         h.l1_edit,h.l1_text,...
-        h.l2_edit,h.l2_text],'Visible','on'); 
+        h.l2_edit,h.l2_text,...
+        h.ShowAniso_radiobutton,h.ShowDecay_radiobutton,h.ShowDecaySum_radiobutton],'Visible','on'); 
     %%% reenable polarization correction factors
     h.l1_edit.String = num2str(UserValues.TauFit.l1);
     h.l2_edit.String = num2str(UserValues.TauFit.l2);
@@ -2094,6 +2117,7 @@ if h.NormalizeScatter_Menu.Value
     tmp = (tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end)));
     tmp = tmp/max(tmp)*maxscat;
     %tmp(tmp < 0) = 0;
+    tmp(isnan(tmp)) = 0;
 end
 h.Plots.Scat_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the perpendicular Scat channel
@@ -2105,6 +2129,7 @@ if h.NormalizeScatter_Menu.Value
     maxscat = max(tmp);
     tmp = tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end));
     tmp = tmp/max(tmp)*maxscat;
+    tmp(isnan(tmp)) = 0;
     %tmp(tmp < 0) = 0;
 end
 h.Plots.Scat_Per.YData = tmp;
