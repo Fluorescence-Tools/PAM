@@ -3346,7 +3346,7 @@ switch obj
             
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(ignore:end)) min(Decay_per(ignore:end))]);
-            h.Result_Plot.YLim(2) = 1.1*max([max(Decay_par(ignore:end)) max(Decay_per(ignore:end))]);
+            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -3404,7 +3404,8 @@ switch obj
             h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
             h.Plots.FitResult_ignore.YData = FitFun_ignore;
             axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim = [min([min(Decay) min(Decay_ignore)]) 1.05*max(Decay)];
+            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
             
             h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
             h.Plots.Residuals.YData = wres;
@@ -3475,7 +3476,7 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
-        h.Result_Plot.YLim = [min([0,min(Aniso)]),min([0.8,max(Aniso)])];
+        h.Result_Plot.YLim = [min([0,min(Aniso)-0.02]),min([0.8,max(Aniso)+0.02])];
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
@@ -3593,6 +3594,7 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
+        h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
         h.Result_Plot_Text.Visible = 'on';
         
         %%% update output text
