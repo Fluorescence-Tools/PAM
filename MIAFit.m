@@ -1062,6 +1062,9 @@ global MIAFitMeta MIAFitData UserValues
 FileName=[];
 if mode %% Select a new model to load
     [FileName,PathName]= uigetfile('.miafit', 'Choose a fit model', [pwd filesep 'Models']);
+    if all(FileName==0)
+       return; 
+    end
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.MIAFit_Standard) || ~exist(UserValues.File.MIAFit_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
@@ -1080,65 +1083,65 @@ else
     FileName=UserValues.File.MIAFit_Standard;
 end
 
-if ~isempty(FileName)
-    UserValues.File.MIAFit_Standard=FileName;
-    LSUserValues(1);
-    
-    %%% Reads in the selected fit function file
-    fid = fopen(FileName);
-    Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
-    fclose(fid);
-    Text=Text{1};
-    
-    %%% Finds line, at which parameter definition starts
-    Param_Start=find(~cellfun(@isempty,strfind(Text,'-PARAMETER DEFINITION-')),1);
-    %%% Finds line, at which function definition starts
-    Fun_Start=find(~cellfun(@isempty,strfind(Text,'-FIT FUNCTION-')),1);
-    B_Start=find(~cellfun(@isempty,strfind(Text,'-BRIGHTNESS DEFINITION-')),1);
-    %%% Defines the number of parameters
-    NParams=B_Start-Param_Start-1;
-    MIAFitMeta.Model=[];
-    MIAFitMeta.Model.Name=FileName;
-    MIAFitMeta.Model.Brightness=Text{B_Start+1};
-    %%% Concaternates the function string
-    MIAFitMeta.Model.Function=[];
-    for i=Fun_Start+1:numel(Text)
-        MIAFitMeta.Model.Function=[MIAFitMeta.Model.Function Text(i)];
-    end
-    MIAFitMeta.Model.Function=cell2mat(MIAFitMeta.Model.Function);
-    %%% Convert to function handle
-    FunctionStart = strfind(MIAFitMeta.Model.Function,'=');
-    eval(['MIAFitMeta.Model.Function = @(P,x,y,i) ' MIAFitMeta.Model.Function((FunctionStart(1)+1):end)]);
-    %%% Extracts parameter names, initial values and bounds
-    MIAFitMeta.Model.Params=cell(NParams,1);
-    MIAFitMeta.Model.Value=zeros(NParams,1);
-    MIAFitMeta.Model.LowerBoundaries = zeros(NParams,1);
-    MIAFitMeta.Model.UpperBoundaries = zeros(NParams,1);
-    MIAFitMeta.Model.State = zeros(NParams,1);
-    %%% Reads parameters and values from file
-    for i=1:NParams
-        %%% Reads parameter name
-        Param_Pos=strfind(Text{i+Param_Start},' ');
-        MIAFitMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
-        
-        Start = strfind(Text{i+Param_Start},'=');
-        Stop = strfind(Text{i+Param_Start},';');
-        
-        %%% Reads starting value    
-        MIAFitMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
-        MIAFitMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
-        MIAFitMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
-        if numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'g'))
-            MIAFitMeta.Model.State(i) = 2;
-        elseif numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'f'))
-            MIAFitMeta.Model.State(i) = 1;
-        end
-    end    
-    MIAFitMeta.Params=repmat(MIAFitMeta.Model.Value,[1,size(MIAFitData.Data,1)]);
-    
-    %%% Updates table to new model
-    Update_Table([],[],0);
+
+UserValues.File.MIAFit_Standard=FileName;
+LSUserValues(1);
+
+%%% Reads in the selected fit function file
+fid = fopen(FileName);
+Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
+fclose(fid);
+Text=Text{1};
+
+%%% Finds line, at which parameter definition starts
+Param_Start=find(~cellfun(@isempty,strfind(Text,'-PARAMETER DEFINITION-')),1);
+%%% Finds line, at which function definition starts
+Fun_Start=find(~cellfun(@isempty,strfind(Text,'-FIT FUNCTION-')),1);
+B_Start=find(~cellfun(@isempty,strfind(Text,'-BRIGHTNESS DEFINITION-')),1);
+%%% Defines the number of parameters
+NParams=B_Start-Param_Start-1;
+MIAFitMeta.Model=[];
+MIAFitMeta.Model.Name=FileName;
+MIAFitMeta.Model.Brightness=Text{B_Start+1};
+%%% Concaternates the function string
+MIAFitMeta.Model.Function=[];
+for i=Fun_Start+1:numel(Text)
+    MIAFitMeta.Model.Function=[MIAFitMeta.Model.Function Text(i)];
 end
+MIAFitMeta.Model.Function=cell2mat(MIAFitMeta.Model.Function);
+%%% Convert to function handle
+FunctionStart = strfind(MIAFitMeta.Model.Function,'=');
+eval(['MIAFitMeta.Model.Function = @(P,x,y,i) ' MIAFitMeta.Model.Function((FunctionStart(1)+1):end)]);
+%%% Extracts parameter names, initial values and bounds
+MIAFitMeta.Model.Params=cell(NParams,1);
+MIAFitMeta.Model.Value=zeros(NParams,1);
+MIAFitMeta.Model.LowerBoundaries = zeros(NParams,1);
+MIAFitMeta.Model.UpperBoundaries = zeros(NParams,1);
+MIAFitMeta.Model.State = zeros(NParams,1);
+%%% Reads parameters and values from file
+for i=1:NParams
+    %%% Reads parameter name
+    Param_Pos=strfind(Text{i+Param_Start},' ');
+    MIAFitMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
+    
+    Start = strfind(Text{i+Param_Start},'=');
+    Stop = strfind(Text{i+Param_Start},';');
+    
+    %%% Reads starting value
+    MIAFitMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
+    MIAFitMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));
+    MIAFitMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
+    if numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'g'))
+        MIAFitMeta.Model.State(i) = 2;
+    elseif numel(Text{i+Param_Start})>Stop(3) && any(strfind(Text{i+Param_Start}(Stop(3):end),'f'))
+        MIAFitMeta.Model.State(i) = 1;
+    end
+end
+MIAFitMeta.Params=repmat(MIAFitMeta.Model.Value,[1,size(MIAFitData.Data,1)]);
+
+%%% Updates table to new model
+Update_Table([],[],0);
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
