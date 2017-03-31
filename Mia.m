@@ -4485,16 +4485,25 @@ for i=Channel
 end
 
 switch h.Mia_Image.Settings.ROI_AR_Same.Value
-    case 1 %%% Individual channels      
+    case 1 %%% Individual channels 
+        MIAData.MS{1,1} = MIAData.MS{1,2};
+        if size(MIAData.Data,1)>1
+            MIAData.MS{2,1} = MIAData.MS{2,2};
+        end
     case 2 %%% Channel 1
         if size(MIAData.Data,1)>1
             MIAData.AR{2,1} = MIAData.AR{1,1};
             MIAData.AR{2,2} = MIAData.AR{1,2};
+            MIAData.MS{2,1} = MIAData.MS{1,2};
         end  
+        MIAData.MS{1,1} = MIAData.MS{1,2};
+        
     case 3 %%% Channel 2
         if size(MIAData.Data,1)>1
             MIAData.AR{1,1} = MIAData.AR{2,1};
             MIAData.AR{1,2} = MIAData.AR{2,2};
+            MIAData.MS{1,1} = MIAData.MS{2,2};
+            MIAData.MS{2,1} = MIAData.MS{2,2};
         end   
     case 4 %%% Both channels
         if size(MIAData.Data,1)>1
@@ -4502,8 +4511,8 @@ switch h.Mia_Image.Settings.ROI_AR_Same.Value
             MIAData.AR{1,2} = MIAData.AR{1,2} & MIAData.AR{2,2};
             MIAData.AR{2,1} = MIAData.AR{1,1} & MIAData.AR{2,1};
             MIAData.AR{2,2} = MIAData.AR{1,2} & MIAData.AR{2,2};
-            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
-            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{1,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+            MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
         end
 end
 
@@ -4526,21 +4535,52 @@ switch mode
         delete(ROI);        
         switch gca
             case h.Mia_Image.Axes(1,2)
-                if any(~MIAData.MS{1}(:))
-                    MIAData.MS{1} = MIAData.MS{1} | Mask;
+                if any(~MIAData.MS{1,2}(:))
+                    MIAData.MS{1,2} = MIAData.MS{1,2} | Mask;
+                    if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
+                        MIAData.MS{2,2} = MIAData.MS{2,2} | Mask;
+                    end
                 else
-                    MIAData.MS{1} = Mask;
+                    MIAData.MS{1,2} = Mask;
+                    if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
+                        MIAData.MS{2,2} = Mask;
+                    end
                 end
             case h.Mia_Image.Axes(2,2)
-                if any(~MIAData.MS{2}(:))
-                    MIAData.MS{2} = MIAData.MS{2} | Mask;
+                if any(~MIAData.MS{2,2}(:))
+                    MIAData.MS{2,2} = MIAData.MS{2,2} | Mask;
+                    MIAData.MS{1,2} = MIAData.MS{1,2} | Mask;
                 else
-                    MIAData.MS{2} = Mask;
+                    MIAData.MS{2,2} = Mask;
+                    MIAData.MS{1,2} = Mask;
                 end
         end  
         if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
-            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
-            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+            MIAData.MS{2,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+        end
+        
+        switch h.Mia_Image.Settings.ROI_AR_Same.Value
+            case 1 %%% Individual channels
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 2 %%% Channel 1
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{1,2};
+                end
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+            case 3 %%% Channel 2
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 4 %%% Both channels
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                end
         end
         Mia_Correct([],[],0);
     case 2 %%% Unselect Region for general manual seletion
@@ -4550,22 +4590,68 @@ switch mode
         
         switch gca
             case h.Mia_Image.Axes(1,2)
-                MIAData.MS{1} = MIAData.MS{1} & ~Mask;
+                MIAData.MS{1,2} = MIAData.MS{1,2} & ~Mask;
             case h.Mia_Image.Axes(2,2)
-                MIAData.MS{2} = MIAData.MS{2} & ~Mask;
+                MIAData.MS{2,2} = MIAData.MS{2,2} & ~Mask;
         end      
         if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
-            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
-            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+            MIAData.MS{2,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+        end
+        
+        switch h.Mia_Image.Settings.ROI_AR_Same.Value
+            case 1 %%% Individual channels
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 2 %%% Channel 1
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{1,2};
+                end
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+            case 3 %%% Channel 2
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 4 %%% Both channels
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                end
         end
         Mia_Correct([],[],0);
     case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
-            MIAData.MS{i} = true(str2double(h.Mia_Image.Settings.ROI_SizeY.String),str2double(h.Mia_Image.Settings.ROI_SizeX.String));
+            MIAData.MS{i,2} = true(str2double(h.Mia_Image.Settings.ROI_SizeY.String),str2double(h.Mia_Image.Settings.ROI_SizeX.String));
         end 
         if h.Mia_Image.Settings.ROI_AR_Same.Value == 4 && size(MIAData.Data,1)>1
-            MIAData.MS{1} = MIAData.MS{1} & MIAData.MS{2};
-            MIAData.MS{2} = MIAData.MS{1} & MIAData.MS{2};
+            MIAData.MS{1,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+            MIAData.MS{2,2} = MIAData.MS{1,2} & MIAData.MS{2,2};
+        end
+        
+        switch h.Mia_Image.Settings.ROI_AR_Same.Value
+            case 1 %%% Individual channels
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 2 %%% Channel 1
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{2,1} = MIAData.MS{1,2};
+                end
+                MIAData.MS{1,1} = MIAData.MS{1,2};
+            case 3 %%% Channel 2
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{2,2};
+                end
+            case 4 %%% Both channels
+                if size(MIAData.Data,1)>1
+                    MIAData.MS{1,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                    MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+                end
         end
         if nargin<4 || Correct~=0
             Mia_Correct([],[],0);
@@ -4597,6 +4683,31 @@ switch mode
         Update_Plots([],[],5,1:size(MIAData.Data,1));
         
 end
+
+switch h.Mia_Image.Settings.ROI_AR_Same.Value
+    case 1 %%% Individual channels 
+        MIAData.MS{1,1} = MIAData.MS{1,2};
+        if size(MIAData.Data,1)>1
+            MIAData.MS{2,1} = MIAData.MS{2,2};
+        end
+    case 2 %%% Channel 1
+        if size(MIAData.Data,1)>1
+            MIAData.MS{2,1} = MIAData.MS{1,2};
+        end  
+        MIAData.MS{1,1} = MIAData.MS{1,2};        
+    case 3 %%% Channel 2
+        if size(MIAData.Data,1)>1
+            MIAData.MS{1,1} = MIAData.MS{2,2};
+            MIAData.MS{2,1} = MIAData.MS{2,2};
+        end   
+    case 4 %%% Both channels
+        if size(MIAData.Data,1)>1
+            MIAData.MS{1,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+            MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
+        end
+end
+
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Funtion to update ROI position and size %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
