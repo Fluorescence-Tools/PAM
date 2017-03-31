@@ -3595,19 +3595,19 @@ if any(mode==1)
         h.PIE.From.Enable='inactive';
         h.PIE.To.Enable='inactive';
         
-        h.PIE.Name.BackgroundColor=UserValues.Look.Back;
+        %h.PIE.Name.BackgroundColor=UserValues.Look.Back;
         %h.PIE.Detector.BackgroundColor=UserValues.Look.Back;
         %h.PIE.Routing.BackgroundColor=UserValues.Look.Back;
-        h.PIE.DetectionChannel.BackgroundColor = UserValues.Look.Back;
-        h.PIE.From.BackgroundColor=UserValues.Look.Back;
-        h.PIE.To.BackgroundColor=UserValues.Look.Back;
+        %h.PIE.DetectionChannel.BackgroundColor = UserValues.Look.Back;
+        %h.PIE.From.BackgroundColor=UserValues.Look.Back;
+        %h.PIE.To.BackgroundColor=UserValues.Look.Back;
         
-        h.PIE.Name.ForegroundColor=UserValues.Look.Disabled;
+        %h.PIE.Name.ForegroundColor=UserValues.Look.Disabled;
         %h.PIE.Detector.ForegroundColor=UserValues.Look.Disabled;
         %h.PIE.Routing.ForegroundColor=UserValues.Look.Disabled;
-        h.PIE.DetectionChannel.ForegroundColor = UserValues.Look.Disabled;
-        h.PIE.From.ForegroundColor=UserValues.Look.Disabled;
-        h.PIE.To.ForegroundColor=UserValues.Look.Disabled;
+        %h.PIE.DetectionChannel.ForegroundColor = UserValues.Look.Disabled;
+        %h.PIE.From.ForegroundColor=UserValues.Look.Disabled;
+        %h.PIE.To.ForegroundColor=UserValues.Look.Disabled;
     else
         h.PIE.Name.Enable='on';
         %h.PIE.Detector.Enable='on';
@@ -3617,19 +3617,19 @@ if any(mode==1)
         h.PIE.From.Enable='on';
         h.PIE.To.Enable='on';
         
-        h.PIE.Name.BackgroundColor=UserValues.Look.Control;
+        %h.PIE.Name.BackgroundColor=UserValues.Look.Control;
         %h.PIE.Detector.BackgroundColor=UserValues.Look.Control;
         %h.PIE.Routing.BackgroundColor=UserValues.Look.Control;
-        h.PIE.DetectionChannel.BackgroundColor = [1 1 1];
-        h.PIE.From.BackgroundColor=UserValues.Look.Control;
-        h.PIE.To.BackgroundColor=UserValues.Look.Control;
+        %h.PIE.DetectionChannel.BackgroundColor = [1 1 1];
+        %h.PIE.From.BackgroundColor=UserValues.Look.Control;
+        %h.PIE.To.BackgroundColor=UserValues.Look.Control;
         
-        h.PIE.Name.ForegroundColor=UserValues.Look.Fore;
+        %h.PIE.Name.ForegroundColor=UserValues.Look.Fore;
         %h.PIE.Detector.ForegroundColor=UserValues.Look.Fore;
         %h.PIE.Routing.ForegroundColor=UserValues.Look.Fore;
-        h.PIE.DetectionChannel.ForegroundColor = [0 0 0];
-        h.PIE.From.ForegroundColor=UserValues.Look.Fore;
-        h.PIE.To.ForegroundColor=UserValues.Look.Fore;
+        %h.PIE.DetectionChannel.ForegroundColor = [0 0 0];
+        %h.PIE.From.ForegroundColor=UserValues.Look.Fore;
+        %h.PIE.To.ForegroundColor=UserValues.Look.Fore;
     end
     
 end
@@ -3991,39 +3991,60 @@ end
 
 %% Detector Calibration plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==7)
-    if isfield(PamMeta.Det_Calib,'Hist') && ~isempty(PamMeta.Det_Calib.Shift)
-        % uncorrected MI histogram (blue)
-        h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
-        h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
-        
-        % corrected MI histogram (red)
-        Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
-        maxtick = str2double(h.MI.Calib_Single_Max.String);
-        h.MI.Calib_Single.Max = maxtick;
-        for i=1:maxtick
-            Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
-        end
-        h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
-        h.Plots.Calib.XData=1:FileInfo.MI_Bins;
-        
-        % slider
-        h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
-        MIN=max([1 h.MI.Calib_Single.Value]);
-        MAX=min([maxtick, MIN]);%+str2double(h.MI.Calib_Single_Range.String)-1]);
-        h.MI.Calib_Single_Text.String=num2str(MIN);
-        
-        % interphoton time selected MI histogram (green)
-        h.Plots.Calib_Sel.YData=sum(PamMeta.Det_Calib.Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
-        h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
-        
-        % smoothing
-        smoothing = str2double(h.MI.Calib_Single_Range.String);
-        if smoothing > 1
-            h.Plots.Calib_Shift_Smoothed.Visible = 'on';
-            h.Plots.Calib_Shift_Smoothed.XData = 1:1:numel(PamMeta.Det_Calib.Shift);
-            h.Plots.Calib_Shift_Smoothed.YData = smooth(PamMeta.Det_Calib.Shift,smoothing,'rloess');
+    if gcbo == h.MI.Calib_Det % detector selection was changed
+        %%% hide plots (only show after calculation)
+        h.Plots.Calib_No.Visible = 'off';
+        h.Plots.Calib.Visible = 'off';
+        h.Plots.Calib_Sel.Visible = 'off';
+        h.Plots.Calib_Shift_Smoothed.Visible = 'off';
+        %%% clear previous data
+        PamMeta.Det_Calib.Hist = [];
+        PamMeta.Det_Calib.Shift = [];
+        %%% if there is a shift stored for the detector, plot it
+        if (numel(UserValues.Detector.Shift) >= h.MI.Calib_Det.Value) && ~isempty(UserValues.Detector.Shift{h.MI.Calib_Det.Value})
+            h.Plots.Calib_Shift_New.Visible = 'on';
+            h.Plots.Calib_Shift_New.XData = 1:numel(UserValues.Detector.Shift{h.MI.Calib_Det.Value});
+            h.Plots.Calib_Shift_New.YData = UserValues.Detector.Shift{h.MI.Calib_Det.Value};
+            h.Plots.Calib_Shift_New.Parent.XLim(2) = numel(UserValues.Detector.Shift{h.MI.Calib_Det.Value});
         else
-            h.Plots.Calib_Shift_Smoothed.Visible = 'off';
+            h.Plots.Calib_Shift_New.Visible = 'off';
+        end
+    else
+        %%% some of the sliders were changed
+        if isfield(PamMeta.Det_Calib,'Hist') && ~isempty(PamMeta.Det_Calib.Shift)
+            % uncorrected MI histogram (blue)
+            h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
+            h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
+
+            % corrected MI histogram (red)
+            Cor_Hist=zeros(size(PamMeta.Det_Calib.Hist));
+            maxtick = str2double(h.MI.Calib_Single_Max.String);
+            h.MI.Calib_Single.Max = maxtick;
+            for i=1:maxtick
+                Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
+            end
+            h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
+            h.Plots.Calib.XData=1:FileInfo.MI_Bins;
+
+            % slider
+            h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
+            MIN=max([1 h.MI.Calib_Single.Value]);
+            MAX=min([maxtick, MIN]);%+str2double(h.MI.Calib_Single_Range.String)-1]);
+            h.MI.Calib_Single_Text.String=num2str(MIN);
+
+            % interphoton time selected MI histogram (green)
+            h.Plots.Calib_Sel.YData=sum(PamMeta.Det_Calib.Hist(:,MIN:MAX),2)/max(smooth(sum(Cor_Hist(:,MIN:MAX),2),5));
+            h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
+
+            % smoothing
+            smoothing = str2double(h.MI.Calib_Single_Range.String);
+            if smoothing > 1
+                h.Plots.Calib_Shift_Smoothed.Visible = 'on';
+                h.Plots.Calib_Shift_Smoothed.XData = 1:1:numel(PamMeta.Det_Calib.Shift);
+                h.Plots.Calib_Shift_Smoothed.YData = smooth(PamMeta.Det_Calib.Shift,smoothing,'rloess');
+            else
+                h.Plots.Calib_Shift_Smoothed.Visible = 'off';
+            end
         end
     end
 end
@@ -9139,10 +9160,13 @@ if nargin<3 % calculate the shift
         PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
         PamMeta.Det_Calib.Shift(1:2)=PamMeta.Det_Calib.Shift(3);
         PamMeta.Det_Calib.Shift=PamMeta.Det_Calib.Shift-max(PamMeta.Det_Calib.Shift);
-        
+        if size(PamMeta.Det_Calib.Shift,1) > size(PamMeta.Det_Calib.Shift,2)
+            PamMeta.Det_Calib.Shift = PamMeta.Det_Calib.Shift';
+        end
         clear Counts Index
         
         % uncorrected MI histogram (blue)
+        h.Plots.Calib_No.Visible = 'on';
         h.Plots.Calib_No.YData=sum(PamMeta.Det_Calib.Hist,2)/max(smooth(sum(PamMeta.Det_Calib.Hist,2),5));
         h.Plots.Calib_No.XData=1:FileInfo.MI_Bins;
         
@@ -9151,6 +9175,7 @@ if nargin<3 % calculate the shift
         for i=1:maxtick
             Cor_Hist(:,i)=circshift(PamMeta.Det_Calib.Hist(:,i),[-PamMeta.Det_Calib.Shift(i),0]);
         end
+        h.Plots.Calib.Visible = 'on';
         h.Plots.Calib.YData=sum(Cor_Hist,2)/max(smooth(sum(Cor_Hist,2),5));
         h.Plots.Calib.XData=1:FileInfo.MI_Bins;
         
@@ -9158,6 +9183,7 @@ if nargin<3 % calculate the shift
         h.MI.Calib_Single.Value=round(h.MI.Calib_Single.Value);
         
         % interphoton time selected MI histogram (green)
+        h.Plots.Calib_Sel.Visible = 'on';
         h.Plots.Calib_Sel.YData=PamMeta.Det_Calib.Hist(:,h.MI.Calib_Single.Value)/max(smooth(Cor_Hist(:,h.MI.Calib_Single.Value),5));
         h.Plots.Calib_Sel.XData=1:FileInfo.MI_Bins;
         
@@ -9209,7 +9235,7 @@ h=guidata(findobj('Tag','Pam'));
 if isfield(PamMeta.Det_Calib, 'Shift')
     smoothing = str2double(h.MI.Calib_Single_Range.String);
     if smoothing > 1
-        PamMeta.Det_Calib.Shift = smooth(PamMeta.Det_Calib.Shift,smoothing);
+        PamMeta.Det_Calib.Shift = smooth(PamMeta.Det_Calib.Shift,smoothing)';
     end
     UserValues.Detector.Shift{h.MI.Calib_Det.Value}=PamMeta.Det_Calib.Shift;
     Shift_Detector([],[],'save');
