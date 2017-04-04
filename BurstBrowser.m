@@ -11002,9 +11002,8 @@ else %%% Update UserValues and BurstData with new values
                     switch e.Indices(1)
                         case 1
                             BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-                        case 2
+                        case {2,3} %%% Update both gamma_BG and gamma_BR if either one is changed
                             BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
-                        case 3
                             BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
                         case 4
                             BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
