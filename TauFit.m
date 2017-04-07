@@ -3498,9 +3498,16 @@ switch obj
             param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,8/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         elseif number_of_exponentials == 0
+            %%% ask to fix the lifetimes
+            lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; lifetimes = sort(lifetimes);
+            answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:'},'Fix lifetimes?',2,{num2str(lifetimes(1)),num2str(lifetimes(2))});
             %%% "dip and rise model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
             lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
+            if ~isempty(answer)
+                lb(2) = str2double(answer{1})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(2) = lb(2);
+                lb(3) = str2double(answer{2})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(3) = lb(3);
+            end
             param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
         end
