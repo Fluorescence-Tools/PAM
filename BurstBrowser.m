@@ -705,7 +705,8 @@ if isempty(hfig)
         'Style','listbox',...
         'Tag','ParameterListX',...
         'Enable','on',...
-        'FontSize',12);%,...
+        'FontSize',12,...
+        'KeyPressFcn',@BurstBrowser_KeyPress);%,...
         %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
         %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
@@ -3615,6 +3616,15 @@ if isempty(hfig)
                     h.(fields{i}).BackgroundColor = [1 1 1];
                     h.(fields{i}).ForegroundColor = [0 0 0];
                 end
+            end
+        end
+    end
+    %% add keypress function to all gui elements
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if isprop(h.(fields{i}),'KeyPressFcn')
+            if isempty(h.(fields{i}).KeyPressFcn)
+                h.(fields{i}).KeyPressFcn = @BurstBrowser_KeyPress;
             end
         end
     end
@@ -7675,6 +7685,9 @@ if ~isempty(eventdata.Modifier)
                 case 't'
                     %%% open notepad
                     Open_Notepad([],[])
+                case 'c'
+                    %%% Copy currently selected x-parameter to clipboard
+                    Param_to_clip([],[]);
             end
     end
 else
@@ -15287,3 +15300,11 @@ if isempty(BurstTCSPCData{BurstMeta.SelectedFile})
     Load_Photons();
 end
 export_to_tracy(answer);
+
+function Param_to_clip(~,~)
+global BurstData BurstMeta
+%%% copy the currently selected x-parameter to clipboard
+h = guidata(gcbo);
+%%% get the parameter
+data = BurstData{BurstMeta.SelectedFile}.DataArray(BurstData{BurstMeta.SelectedFile}.Selected,strcmp(h.ParameterListX.String{h.ParameterListX.Value},BurstData{BurstMeta.SelectedFile}.NameArray));
+Mat2clip(data);
