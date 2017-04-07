@@ -9338,8 +9338,8 @@ switch mode
         end
         % add new files to database
         for i = 1:numel(FileName)
-            PamMeta.Database = [{FileName{i},Path,Type}; PamMeta.Database];
-            h.Database.List.String = [{[FileName{i} ' (path:' Path ')']}; h.Database.List.String];
+            PamMeta.Database = [{FileName{numel(FileName)-i+1},Path,Type}; PamMeta.Database];
+            h.Database.List.String = [{[FileName{numel(FileName)-i+1} ' (path:' Path ')']}; h.Database.List.String];
         end
         if size(PamMeta.Database,1) > 20
             PamMeta.Database = PamMeta.Database(1:20,:);

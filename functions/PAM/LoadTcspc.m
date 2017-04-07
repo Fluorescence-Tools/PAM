@@ -89,7 +89,7 @@ if strcmp(Caller.Tag, 'Pam')
     end
     h.Database.List.String = [];
     for i = 1:size(PamMeta.Database,1) %%% update file list
-        h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
+        h.Database.List.String = [{[PamMeta.Database{size(PamMeta.Database,1)-i+1,1} ' (path:' PamMeta.Database{size(PamMeta.Database,1)-i+1,2} ')']}; h.Database.List.String];
     end
     if size(PamMeta.Database,1) > 20
         PamMeta.Database = PamMeta.Database(1:20,:);
