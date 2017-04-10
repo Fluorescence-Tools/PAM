@@ -5106,7 +5106,7 @@ switch e.Key
             Profile=h.Profiles.List.String{Sel};
             save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
-            LSUserValues(0);
+            LSUserValues(0);          
             %%% Changes color to indicate current profile
             h.Profiles.List.String{Sel}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{Sel} '</Font></html>'];
             
@@ -10590,35 +10590,65 @@ if obj == h.Profiles.SaveProfile_Auto
     return
 end
 
-if strcmp(FileInfo.FileName{1},'Nothing loaded')
-    return;
-end
-
 switch obj
     case h.Profiles.SaveProfile_Button
-        % Copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
-        for i = 1:FileInfo.NumberOfFiles
-            [~,FileName,~] = fileparts(FileInfo.FileName{i});
-            FullFileName = [FileInfo.Path filesep FileName '.pro'];
-            if ~strcmp(FullFileName, GenerateName(FullFileName,1));
-                %%% filename already existed
-                tmp = dir(FullFileName);
-                if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
-                    %%% if date is the same, overwrite old file
-                    FullFileName = [FileInfo.Path filesep FileName '.pro'];
-                end
-            else
-                %%% generate index to the filename
-                FullFileName = GenerateName(FullFileName,1);
-            end
-            save(FullFileName,'-struct','UserValues');
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            return;
         end
+        % Copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
+        [~,FileName,~] = fileparts(FileInfo.FileName{1});
+        FullFileName = [FileInfo.Path filesep FileName '.pro'];
+        if ~strcmp(FullFileName, GenerateName(FullFileName,1))
+            %%% filename already existed
+            tmp = dir(FullFileName);
+            if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
+                %%% if date is the same, overwrite old file
+                FullFileName = [FileInfo.Path filesep FileName '.pro'];
+            end
+        else
+            %%% generate index to the filename
+            FullFileName = GenerateName(FullFileName,1);
+        end
+        save(FullFileName,'-struct','UserValues');
     case h.Profiles.LoadProfile_Button
-        msgbox('doesn"t work yet, manually copy the file to the profiles folder and change the extension to .mat')
-        %%% Button for Loading the profile from the folder of the
-        %%% currently opened TCSPC file
-        %'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
+        [File,Path,~] = uigetfile({'*pro','PAM profile file'},...
+            'Choose profile to load...',UserValues.File.Path,'Multiselect','off');
+        
+        if all (File==0)
+            return;
+        end
+        ProfileData = load(fullfile(Path,File),'-mat');
+        ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
+        save(fullfile([pwd filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
+        
+        Current_Exists = 0;
+        %%% Checks position of the "Current" profile in the list
+        for i=1:numel(h.Profiles.List.String)
+                if~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
+                    Line = h.Profiles.List.String{i}(26:(end-14));
+                else
+                    Line = h.Profiles.List.String{i};
+                end
+                if strcmp(Line,'Current.mat')
+                    Current_Exists = 1;
+                    break;
+                end
+        end
+        %%% Sets selected profile to "Current" or creates the "Current"
+        %%% profile entry and selects it
+        if Current_Exists
+            h.Profiles.List.Value = i;
+        else
+            h.Profiles.List.String{end+1} = 'Current.mat';
+            h.Profiles.List.Value = i+1;
+        end
+        ed.EventName ='KeyPress';
+        ed.Key='return';
+        Update_Profiles(h.Profiles.List,ed)
 end
+        
+
+
 
 function Open_Doc(~,~)
 if isunix
