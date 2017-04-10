@@ -1542,8 +1542,8 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
     TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
     %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar);
-    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer);
+    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar)';
+    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer)';
     %%% Normalize Scatter for better Visibility
     if ~(sum(TauFitData.hScat_Par{chan})==0)
         TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
@@ -5313,6 +5313,9 @@ UserValues.TauFit.LineStyle = h.LineStyle_Menu.String{h.LineStyle_Menu.Value};
 
 if obj == h.LineStyle_Menu
     ChangeLineStyle(h);
+end
+if h.ShowAniso_radiobutton.Value == 1
+    Update_Plots(h.ShowAniso_radiobutton,[]);
 end
 
 function ChangeLineStyle(h)
