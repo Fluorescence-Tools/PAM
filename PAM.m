@@ -9488,17 +9488,17 @@ switch mode
         s.str = h.Export.List.String;
         save(fullfile(Path,File),'s');
     case 5 %% Export PIE channels as TIFF
-        if h.Export.TIFF.UserData == 0
-            h.Export.TIFF.UserData = 1;
-            h.Export.TIFF.String = 'Stop';
-        elseif h.Export.TIFF.UserData == 1
-            h.Export.TIFF.UserData = 0;
-        end
         Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
         elseif size(Sel,1)>1
             Sel=Sel';
+        end
+        if h.Export.TIFF.UserData == 0
+            h.Export.TIFF.UserData = 1;
+            h.Export.TIFF.String = 'Stop';
+        elseif h.Export.TIFF.UserData == 1
+            h.Export.TIFF.UserData = 0;
         end
         event.Key = 'Export_Image_Tiff';
         for i = h.Export.List.Value
@@ -9529,18 +9529,18 @@ switch mode
         h.Export.TIFF.UserData = 0;
         h.Export.TIFF.String = 'Export TIFFs';
     case 6 %% Export PIE channels as microtime histograms to *.txt file
-        if h.Export.MicrotimePattern.UserData == 0
-            h.Export.MicrotimePattern.UserData = 1;
-            h.Export.MicrotimePattern.String = 'Stop';
-        elseif h.Export.MicrotimePattern.UserData == 1
-            h.Export.MicrotimePattern.UserData = 0;
-        end
         Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
         elseif size(Sel,1)>1
             Sel=Sel';
         end
+        if h.Export.MicrotimePattern.UserData == 0
+            h.Export.MicrotimePattern.UserData = 1;
+            h.Export.MicrotimePattern.String = 'Stop';
+        elseif h.Export.MicrotimePattern.UserData == 1
+            h.Export.MicrotimePattern.UserData = 0;
+        end        
         event.Key = 'Export_MicrotimePattern';
         for i = h.Export.List.Value
             pause(0.01)
@@ -9565,8 +9565,8 @@ switch mode
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
         end
-        h.Export.TIFF.UserData = 0;
-        h.Export.TIFF.String = 'Export TIFFs';
+        h.Export.MicrotimePattern.UserData = 0;
+        h.Export.MicrotimePattern.String = 'Export Microtime Histogram';
     case 7 %% Correlate active ones in database
         if h.Export.Correlate.UserData == 0
             h.Export.Correlate.UserData = 1;
@@ -9960,6 +9960,7 @@ switch e.Key
         fprintf(fid,'\n');
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
+        UserValues.File.TauFitPath = FileInfo.Path;
         Progress(1,h.Progress.Axes,h.Progress.Text);
     case 'Eport_RLICS_TIFF' %%% Eports image stack as Lifetime Filtered TIFF
         
