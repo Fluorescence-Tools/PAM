@@ -1154,7 +1154,12 @@ h.FitPar_Table = uitable(...
     'ForegroundColor', Look.TableFore);
 %%% Get the values of the table and the RowNames from UserValues
 [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(1, 1);
-
+h.FitResultToClip_Menu = uicontextmenu;
+h.FitResultToClip = uimenu(...
+    'Parent',h.FitResultToClip_Menu,...
+    'Label','Copy Fit Result to Clipboard',...
+    'Callback',@Export);
+h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -1512,7 +1517,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
 
         %%% mark TauFit mode as external
         TauFitData.Who = 'External';
-
+        TauFitData.FileName = fullfile(PathName,FileName);
         if numel(PIEchans) == 1
             PIEChannel_Par = 1; PIEChannel_Per = 1;
         else
@@ -2049,7 +2054,7 @@ if isobject(obj) % check if matlab object
             if obj == h.Ignore_Slider
                 TauFitData.Ignore{chan} = floor(obj.Value);
             elseif obj == h.Ignore_Edit
-                if obj.Value <  1
+                if str2double(obj.String) <  1
                     TauFitData.Ignore{chan} = 1;
                     obj.String = '1';
                 else
@@ -3499,14 +3504,21 @@ switch obj
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         elseif number_of_exponentials == 0
             %%% ask to fix the lifetimes
-            lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; lifetimes = sort(lifetimes);
-            answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:'},'Fix lifetimes?',2,{num2str(lifetimes(1)),num2str(lifetimes(2))});
+            lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
+            [lifetimes,order] = sort(lifetimes);
+            fraction = UserValues.TauFit.FitParams{chan}(4);
+            if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
+                fraction = 1-fraction;
+            end
+            answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:','Fraction free:'},'Fix lifetimes?',3,{num2str(lifetimes(1)),num2str(lifetimes(2)),num2str(fraction)});
             %%% "dip and rise model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
             lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
             if ~isempty(answer)
+                lb(1) = 1/str2double(answer{3})-1; ub(1) = lb(1);
                 lb(2) = str2double(answer{1})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(2) = lb(2);
                 lb(3) = str2double(answer{2})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(3) = lb(3);
+                
             end
             param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
@@ -3789,6 +3801,7 @@ FitFun = Fit_Exp(x,x_ax);
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 h.Plots.IRFResult.Visible = 'off';
+h.Plots.FitResult_ignore.Visible = 'off';
 %TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 h.Plots.DecayResult.XData = MI(ignore:end);%*TACtoTime;
 h.Plots.DecayResult.YData = Anisotropy_fit;
@@ -3890,14 +3903,14 @@ for i = 1:numel(ax)
     ax(i).Color = [1 1 1];
     ax(i).XColor = [0 0 0];
     ax(i).YColor = [0 0 0];
-    ax(i).LineWidth = 3;
+    ax(i).LineWidth = 1.5;
     ax(i).FontSize = 18;
     ax(i).XLabel.Color = [0,0,0];
     ax(i).YLabel.Color = [0,0,0];
     ax(i).Layer = 'top';
     for j = 1:numel(ax(i).Children)
         if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 2;
+            ax(i).Children(j).LineWidth = 1.5;
         end
     end
 end
@@ -3950,7 +3963,7 @@ end
 for i = 1:numel(ax)
     ax(i).Units = 'pixels';
 end
-if strcmp(TauFitData.Who, 'TauFit')
+if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'External')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
         '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
 else% if strcmp(TauFitData.Who, 'Burstwise') or strcmp(TauFitData.Who, 'BurstBrowser')
@@ -5475,18 +5488,18 @@ switch obj
         %%% data
         %%% fit function
         %%%
-        %%% Considers only the valid region outside of ignore
-        
+        %%% Exports the total region of the data, but only the non-ignore
+        %%% region of the fit
         if h.Result_Plot.Parent == h.HidePanel % no fit has been performed
             disp('Fit the data first');
             return;
         end
-       
-        if (h.Result_Plot_Aniso.Parent == h.HidePanel) %%% no anistropy reconvolution fit
-            time = h.Plots.DecayResult.XData; time = time-time(1);
-            data = h.Plots.DecayResult.YData;
-            fit =  h.Plots.FitResult.YData;
-            res = h.Plots.Residuals.YData;
+            
+        if (h.Result_Plot_Aniso.Parent == h.HidePanel) %%% no anisotropy reconvolution fit
+            time = [h.Plots.DecayResult_ignore.XData, h.Plots.DecayResult.XData]; %time = time-time(1);
+            data = [h.Plots.DecayResult_ignore.YData,h.Plots.DecayResult.YData];
+            fit =  [NaN(1,numel(h.Plots.DecayResult_ignore.XData)),h.Plots.FitResult.YData];
+            res = [NaN(1,numel(h.Plots.DecayResult_ignore.XData)),h.Plots.Residuals.YData];
             if strcmp(h.Result_Plot.YLabel.String,'Anisotropy')
                 names = {'time_ns','anisotropy','fit','wres'};
                 ext = '_aniso';
@@ -5497,7 +5510,7 @@ switch obj
             tab = table(time',data',fit',res','VariableNames',names);
         else
             %%% anisotropy reconvolution fit
-            time = h.Plots.DecayResult.XData; time = time-time(1);
+            time = h.Plots.DecayResult.XData; %time = time-time(1);
             data_par = h.Plots.DecayResult.YData;
             data_per = h.Plots.DecayResult_Perp.YData;
             fit_par =  h.Plots.FitResult.YData;
@@ -5598,16 +5611,16 @@ switch obj
             end
             %%% adjust range
             range = (shift_right+1):(minLength+shift_left);
-            t = (1:numel(range))*dT;
+            t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
             end
         elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
             for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i},10));
+                [~,peakPos(i)] = max(smooth(data{i}(2:floor(numel(data{i})/4)),20));
             end
-            range = min(peakPos):minLength;
-            t = (1:numel(range))*dT;
+            range = max([1,min(peakPos)-10]):minLength;
+            t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
             end
@@ -5644,4 +5657,9 @@ switch obj
         ax.Layer = 'top';
         ax.Units = 'pixels';
         l.Units = 'pixels';
+    case h.FitResultToClip
+        %%% get fit result from table, concatenate with parameter names and
+        %%% copy to clipboard using Mat2clip function
+        res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
+        Mat2clip(res);
 end
