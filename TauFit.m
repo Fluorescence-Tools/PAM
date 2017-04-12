@@ -3513,15 +3513,15 @@ switch obj
             answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:','Fraction free:'},'Fix lifetimes?',3,{num2str(lifetimes(1)),num2str(lifetimes(2)),num2str(fraction)});
             %%% "dip and rise model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
-            lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
+            lb = [0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
             if ~isempty(answer)
                 lb(1) = 1/str2double(answer{3})-1; ub(1) = lb(1);
                 lb(2) = str2double(answer{1})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(2) = lb(2);
                 lb(3) = str2double(answer{2})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(3) = lb(3);
-                
             end
+            opt = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E4);
             param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
-            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub,opt);
         end
         
         x_fitres = ignore:numel(Aniso);
@@ -5524,7 +5524,12 @@ switch obj
             ext = '_tau_aniso';
         end
         %%% get path
-        [path,filename,~] = fileparts(TauFitData.FileName);
+        if ~strcmp(TauFitData.Who,'BurstBrowser')
+            [path,filename,~] = fileparts(TauFitData.FileName);
+        else
+            path = fullfile(TauFitData.Path,'..');
+            filename = strsplit(TauFitData.FileName,'.'); filename = filename{1};
+        end
         if isfield(TauFitData,'SpeciesName')
             filename = [filename '_' TauFitData.SpeciesName];
         end
@@ -5540,12 +5545,17 @@ switch obj
             filename = [filename(1:end-4) ext '.txt'];
         end
         writetable(tab,fullfile(pathname,filename));
+        UserValues.File.TauFitPath = pathname;
     case h.Compare_Result
         %%% load data and make comparison plot
         try
-            [pathname,~,~] = fileparts(TauFitData.FileName);
+            if ~strcmp(TauFitData.Who,'BurstBrowser')
+                [pathname,~,~] = fileparts(TauFitData.FileName);
+            else
+                pathname = fullfile(TauFitData.Path,'..');
+            end
         catch
-            pathname = UserValues.File.Path;
+            pathname = UserValues.File.TauFitPath;
         end
         [filename, pathname, FilterIndex] = uigetfile('*.txt','Load lifetime data...',pathname,...
             'MultiSelect','on');
@@ -5585,18 +5595,22 @@ switch obj
         for i = 1:numel(filename)
             dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
             data{i} = dummy(:,2);
+            fit{i} = dummy(:,3);
         end
         dT = mean(diff(dummy(:,1)));  
         %%% if different lengths have been loaded, truncate to shortest
         minLength = min(cellfun(@numel,data));
         for i = 1:numel(data)
             data{i} = data{i}(1:minLength);
+            fit{i} = fit{i}(1:minLength);
         end
         t = (1:minLength)*dT;
         
         if strcmp(type,'tau') %%% normalize and shift if tau data
             for i = 1:numel(data)
-                data{i} = data{i}./max(smooth(data{i},10));
+                norm = max(smooth(data{i},10));
+                data{i} = data{i}./norm;
+                fit{i} = fit{i}./norm;
             end
             
             %%% for shift, take first measurement as reference
@@ -5608,21 +5622,24 @@ switch obj
                 shift_left = min([shift_left, peakPosition-peakPos]);
                 shift_right = max([shift_right, peakPosition-peakPos]);
                 data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+                fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
             end
             %%% adjust range
             range = (shift_right+1):(minLength+shift_left);
             t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
+                fit{i} = fit{i}(range);
             end
         elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
             for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i}(2:floor(numel(data{i})/4)),20));
+                [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
             end
             range = max([1,min(peakPos)-10]):minLength;
             t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
+                fit{i} = fit{i}(range);
             end
         end
         
@@ -5634,9 +5651,20 @@ switch obj
         %%% plot data
         hfig = figure('Units','pixels','Position',[100,100,600,400],'Color',[1,1,1]);
         ax = axes('Color',[1,1,1],'LineWidth',1,'Box','on','XGrid','on','YGrid','on','FontSize',20);
+        colors = lines(numel(data));
         hold on;
         for i = 1:numel(data)
-            plot(t,data{i},'LineWidth',1);
+            plot(t,fit{i},'LineWidth',2,'Color',colors(i,:));
+        end
+        for i = 1:numel(filename)
+            % remove extension
+            filename{i} = filename{i}(1:end-4);
+            % replace underscore with space
+            filename{i} = strrep(filename{i},'_',' ');
+        end
+        l = legend(filename);
+        for i = 1:numel(data)
+            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
         end 
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
@@ -5647,13 +5675,7 @@ switch obj
         else
             ylabel('Anisotropy');
         end
-        for i = 1:numel(filename)
-            % remove extension
-            filename{i} = filename{i}(1:end-4);
-            % replace underscore with space
-            filename{i} = strrep(filename{i},'_',' ');
-        end
-        l = legend(filename);
+        
         ax.Layer = 'top';
         ax.Units = 'pixels';
         l.Units = 'pixels';
