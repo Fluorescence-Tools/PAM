@@ -5533,6 +5533,12 @@ switch obj
         if isfield(TauFitData,'SpeciesName')
             filename = [filename '_' TauFitData.SpeciesName];
         end
+        if strcmp(TauFitData.Who,'BurstBrowser')
+            filename = [filename '_' h.ChannelSelect_Popupmenu.String{h.ChannelSelect_Popupmenu.Value}];
+        else
+            %%% add PIE channel names
+            filename = [filename '_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value} '-' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
+        end
         filename = strrep(filename,' - ','-');
         filename = strrep(filename,' ','_');
         [filename, pathname, FilterIndex] = uiputfile('*.txt','Save *.txt file',[path filesep filename ext '.txt']);
