@@ -6128,6 +6128,14 @@ if size(CutState,2) > 0
     if sum(ylimits == [0,0]) == 2
         ylimits = [0 1];
     end
+    %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+    %%% efficiency parameter if the cut limits fall within that range
+    if contains(NameArray{x},'Stoichiometry') || contains(NameArray{x},'Efficiency')
+        xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
+    end
+    if contains(NameArray{y},'Stoichiometry') || contains(NameArray{y},'Efficiency')
+        ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
+    end
 end
 
 %%% check what plot type to use
@@ -7221,7 +7229,14 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
-
+%%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+%%% efficiency parameter if the cut limits fall within that range
+if contains(paramX,'Stoichiometry') || contains(paramX,'Efficiency')
+    x_boundaries = [min(x_boundaries(1),-0.1) max(x_boundaries(2),1.1)];
+end
+if contains(paramY,'Stoichiometry') || contains(paramY,'Efficiency')
+    y_boundaries = [min(y_boundaries(1),-0.1) max(y_boundaries(2),1.1)];
+end
     
 H = cell(num_species,1);
 for i = 1:num_species
