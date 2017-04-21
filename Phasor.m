@@ -2827,6 +2827,7 @@ end
 function Plot_Phasor(Obj,~,Main,Images)
 h = guidata(findobj('Tag','Phasor'));
 global PhasorData UserValues
+global Phasor_Colormap
 
 Pixel=str2double(h.Phasor_Res.String);
 THmin=str2double(h.THmin.String);
@@ -3024,7 +3025,6 @@ for i=Images %%% Plots Phasor Data
                     FractionColor(1:17,2) = [0; ones(8,1); linspace(1,0,8)'];
                     FractionColor(1:17,3) = zeros(17,1);
                 case 5
-                    global Phasor_Colormap %#ok<TLEV>
                     if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
                         FractionColor=[0 0 0; Phasor_Colormap];
                         UserValues.Phasor.Colormap = Phasor_Colormap;
@@ -3082,7 +3082,6 @@ for i=Images %%% Plots Phasor Data
                 case 3
                     FractionColor=[0 0 0; hsv(20)];
                 case 4 %%% Custom Colormap
-                    global Phasor_Colormap %#ok<TLEV>
                     if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
                         FractionColor=[0 0 0; Phasor_Colormap];
                         UserValues.Phasor.Colormap = Phasor_Colormap;

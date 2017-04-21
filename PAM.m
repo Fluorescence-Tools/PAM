@@ -1534,7 +1534,7 @@ h.MI.Phasor_Particles = uicontrol(...
     'Style','popupmenu',...
     'Units','normalized',...
     'FontSize',12,...
-    'String',{'Use Individual Pixels','Use Particles+Pixels','Use Particles Only' },...
+    'String',{'Use Single Frame','Framewise Phasor','Use Particles+Pixels','Use Particles Only' },...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.885 0.30 0.025]);
@@ -6182,6 +6182,11 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
         UseParticles = h.MI.Phasor_Particles.Value;
+        if UseParticles ==2
+            Frames = size(FileInfo.LineTimes,1);
+        else
+            Frames = 1;
+        end
         
         %%% Extract Background and converts it to counts per pixel
         Background_ref = str2num(h.MI.Phasor_BG_Ref.String);
@@ -6224,7 +6229,11 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
         %%% Creates image and generates photon to pixel index
         Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        [Intensity, Bin] = CalculateImage(PIE_MT, 2);
+        if UseParticles ==2
+            [Intensity, Bin] = CalculateImage(PIE_MT, 4);
+        else
+            [Intensity, Bin] = CalculateImage(PIE_MT, 2);
+        end
         clear PIE_MT;
         Progress(0.55,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Sorting Photons):');
         %%% Extracts microtimes
@@ -6234,15 +6243,15 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Bin=Bin(Bin~=0);
         Pixel= cumsum(Intensity(:));
         
-        Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines]));
-        Intensity=flip(Intensity',1);
+        Intensity=double(reshape(Intensity,[FileInfo.Pixels,FileInfo.Lines,Frames]));
+        Intensity=flip(permute(Intensity,[2 1 3]),1);
         
         
         G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
         %% Actual Calculation
-        if UseParticles>1
+        if UseParticles>2
             BitImage = (Intensity>str2double(h.MI.Phasor_ParticleTH.String));
             Regions = regionprops(flip(BitImage',2),flip(Intensity',2),'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
             
@@ -6295,10 +6304,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
             
             %%% Reshapes data to images
-            g=reshape(g,FileInfo.Lines,[]);
-            s=reshape(s,FileInfo.Lines,[]);
-            Mean_LT=reshape(Mean_LT,FileInfo.Lines,[]);
-            g=flip(g',1);s=flip(s',1);
+            g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
+            s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
+            Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
+            g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
             
         end
         
@@ -6313,7 +6322,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         s(isnan(s))=0;
         
         %%% Correction for particle phasors
-        if UseParticles>1
+        if UseParticles>2
             for i=1:numel(Regions)
                 g(Regions(i).PixelIdxList) = (Regions(i).g - G*(Afterpulsing + Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts))...
                     ./(1-(Afterpulsing+Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts)*sum(Use));
@@ -6323,7 +6332,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         end
         
         %%% Sets non-particle pixels to zero
-        if UseParticles==3
+        if UseParticles==4
             Particle=flip(reshape(Particle,FileInfo.Lines,[])',1);
             
             g(Particle==0)=0;
@@ -6338,12 +6347,12 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Progress(0.90,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Saving Data):');
         %% Saves data
         %%% Calculates additional data
-        PamMeta.Fi=atan(s./g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
-        PamMeta.M=sqrt(s.^2+g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
+        PamMeta.g=squeeze(sum(g.*Intensity,3)./sum(Intensity,3));
+        PamMeta.s=squeeze(sum(s.*Intensity,3)./sum(Intensity,3));
+        PamMeta.Fi=atan(PamMeta.s./PamMeta.g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
+        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
         PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
-        PamMeta.TauM=real(sqrt((1./(s.^2+g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
-        PamMeta.g=g;
-        PamMeta.s=s;
+        PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
         
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
@@ -6359,10 +6368,16 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
         
-        if UseParticles>1
-            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
-        else
+        if UseParticles==1
+            g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+        elseif UseParticles == 2
+            save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+            g = PamMeta.g; s= PamMeta.s; Intensity =squeeze(sum(Intensity,3));
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+        else
+            g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
         end
         
         h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
