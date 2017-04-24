@@ -2831,10 +2831,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
                 %%% Convert Lifetimes
                 x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
                 lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
@@ -2939,9 +2942,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
                 
                 %%% Convert Lifetimes
                 x0([1,2,4]) = round(x0([1,2,4])/TauFitData.TACChannelWidth);
@@ -3065,10 +3072,14 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                 
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
+                
                 %%% Convert Lifetimes
                 x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
                 lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
@@ -3178,10 +3189,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                 
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end 
                 %%% Convert Lifetimes
                 x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
                 lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
