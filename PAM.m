@@ -7429,9 +7429,10 @@ h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
 h.Burst.NirFilter_Button.Enable = 'on';
 h.Burst.NirFilter_Button.ForegroundColor = [1 0 0];
 
-[~,h.Burst.LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
-[~,h.Burst.LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
-
+[~,str,~] = fileparts(BurstData.FileName);
+str = ['Loaded file: ' str];
+h.Burst.LoadedFile_Text.String = str;
+h.Burst.LoadedFile_Text.TooltipString = str;
 % Perform 2CDE filter calculation directly after burst search
 if h.Burst.NirFilter_Checkbox.Value
     NirFilter
@@ -7695,8 +7696,10 @@ elseif any(BurstData.BAMethod == [3,4])
         h.Burst.NirFilter_Button.ForegroundColor = [0 0.8 0];
     end
 end
-[~,h.Burst.LoadedFile_Text.String,~] = fileparts(BurstData.FileName);
-[~,h.Burst.LoadedFile_Text.TooltipString,~] = fileparts(BurstData.FileName);
+[~,str,~] = fileparts(BurstData.FileName);
+str = ['Loaded file: ' str];
+h.Burst.LoadedFile_Text.String = str;
+h.Burst.LoadedFile_Text.TooltipString = str;
 %%% store in PamMeta
 PamMeta.BurstData = BurstData;
 
