@@ -6471,7 +6471,7 @@ if obj == h.Fit_Gaussian_Button
                 BurstMeta.Fitting.FitType = '1D';
                 
                 GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
                 p = pdf(GModel,xbins_fit');
                 Res = zeros(1,3*nG);
                 Res(1:3:end) = GModel.ComponentProportion;
@@ -6536,8 +6536,8 @@ if obj == h.Fit_Gaussian_Button
                 end
                 % prepare fit data
                 if h.Hist_log10.Value; HH = 10.^(HH);end;
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
-                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
+                ybins_fit = linspace(ybins(1)-min(diff(ybins)),ybins(end)+min(diff(ybins)),1000);
                 [X,Y] = meshgrid(xbins_fit,ybins_fit);
                 p = reshape(pdf(GModel,[X(:) Y(:)]),[1000,1000]);
                 pX = sum(p,1);pX = pX./sum(pX).*sum(sum(HH))*1000/nbinsX;
@@ -6592,7 +6592,7 @@ if obj == h.Fit_Gaussian_Button
             if x == y %%% same data selected, 1D fitting
                 BurstMeta.Fitting.FitType = '1D';
                 
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
                 x_start = mean(datatoplot(isfinite(datatoplot(:,x)),x));
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
@@ -6758,8 +6758,8 @@ if obj == h.Fit_Gaussian_Button
                 end
 
                 % prepare fit data
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
-                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
+                ybins_fit = linspace(ybins(1)-min(diff(ybins)),ybins(end)+min(diff(ybins)),1000);
                 p = MultiGaussFit(x,{xbins_fit,ybins_fit,sum(sum(HH)),fixed,nG,0});
                 pX = sum(p,1);
                 pY = sum(p,2);
