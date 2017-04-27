@@ -1697,6 +1697,14 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.PlotGridAboveData was incomplete');
     end
     P.BurstBrowser.Display.PlotGridAboveData = S.BurstBrowser.Display.PlotGridAboveData;
+    
+    %%% Checks, if BurstBrowser.Display.Restrict_EandS_Range subfield exists
+    if ~isfield (S.BurstBrowser.Display,'Restrict_EandS_Range')
+        S.BurstBrowser.Display.Restrict_EandS_Range=0;
+        disp('UserValues.BurstBrowser.Display.Restrict_EandS_Range was incomplete');
+    end
+    P.BurstBrowser.Display.Restrict_EandS_Range = S.BurstBrowser.Display.Restrict_EandS_Range;
+    
     %%% Checks, if BurstBrowser.Display.logX subfield exists
     if ~isfield (S.BurstBrowser.Display,'logX')
         S.BurstBrowser.Display.logX=0;

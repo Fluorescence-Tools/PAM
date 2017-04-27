@@ -1838,6 +1838,22 @@ if isempty(hfig)
         'TooltipStr','Choose to overlay grid lines on data, or to plot grid lines behind data.',...
         'Callback',@UpdateGUIOptions...
         );
+    %%% Plot grid lines above data
+    h.Restrict_EandS_Range = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.7 0.85 0.3 0.07],...
+        'FontSize',12,...
+        'Tag','Restrict_EandS_Range',...
+        'Value',UserValues.BurstBrowser.Display.Restrict_EandS_Range,...
+        'String','Restrict E and S range',...
+        'TooltipStr','Restrict Efficiency and Stoichiometry plot ranges to [0,1].',...
+        'Callback',@UpdatePlot...
+        );
+    
     %%% Specify the Plot Type
     h.PlotTypeText = uicontrol('Style','text',...
         'Parent',h.DisplayOptionsPanel,...
@@ -6128,13 +6144,15 @@ if size(CutState,2) > 0
     if sum(ylimits == [0,0]) == 2
         ylimits = [0 1];
     end
-    %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
-    %%% efficiency parameter if the cut limits fall within that range
-    if contains(NameArray{x},'Stoichiometry') || contains(NameArray{x},'Efficiency')
-        xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
-    end
-    if contains(NameArray{y},'Stoichiometry') || contains(NameArray{y},'Efficiency')
-        ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
+    if UserValues.BurstBrowser.Display.Restrict_EandS_Range
+        %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+        %%% efficiency parameter if the cut limits fall within that range
+        if contains(NameArray{x},'Stoichiometry') || contains(NameArray{x},'Efficiency')
+            xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
+        end
+        if contains(NameArray{y},'Stoichiometry') || contains(NameArray{y},'Efficiency')
+            ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
+        end
     end
 end
 
@@ -7229,15 +7247,17 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
-%%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
-%%% efficiency parameter if the cut limits fall within that range
-if contains(paramX,'Stoichiometry') || contains(paramX,'Efficiency')
-    x_boundaries = [min(x_boundaries(1),-0.1) max(x_boundaries(2),1.1)];
+if UserValues.BurstBrowser.Display.Restrict_EandS_Range
+    %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+    %%% efficiency parameter if the cut limits fall within that range
+    if contains(paramX,'Stoichiometry') || contains(paramX,'Efficiency')
+        x_boundaries = [min(x_boundaries(1),-0.1) max(x_boundaries(2),1.1)];
+    end
+    if contains(paramY,'Stoichiometry') || contains(paramY,'Efficiency')
+        y_boundaries = [min(y_boundaries(1),-0.1) max(y_boundaries(2),1.1)];
+    end
 end
-if contains(paramY,'Stoichiometry') || contains(paramY,'Efficiency')
-    y_boundaries = [min(y_boundaries(1),-0.1) max(y_boundaries(2),1.1)];
-end
-    
+
 H = cell(num_species,1);
 for i = 1:num_species
     [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
@@ -14879,6 +14899,7 @@ switch mode
         db.str = db.str(valid); db.database=db.database(valid,:);
         BurstMeta.Database = db.database;
         h.DatabaseBB.List.String = db.str;
+        h.DatabaseBB.List.Value = 1;
         clear db;
         
         if size(BurstMeta.Database, 1) > 0
@@ -15099,6 +15120,9 @@ if obj == h.PlotGridAboveDataCheckbox
     end
     set([h.axes_general,h.axes_EvsTauGG,h.axes_EvsTauRR,h.axes_rGGvsTauGG,h.axes_rRRvsTauRR,...
         h.axes_E_BtoGRvsTauBB,h.axes_rBBvsTauBB,h.axes_lifetime_ind_2d],'Layer',layer);
+end
+if obj == h.Restrict_EandS_Range
+    UserValues.BurstBrowser.Display.Restrict_EandS_Range = obj.Value;
 end
 if obj == h.MarkerSize_edit
     markersize = str2double(h.MarkerSize_edit.String);
