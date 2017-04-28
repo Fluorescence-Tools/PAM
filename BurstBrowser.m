@@ -14137,8 +14137,10 @@ switch obj
                         end
                     end
                 end
-                for i = 1:numel(labels)
-                    cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                if maxZ > 1 %%% ensure that the plot is not normalized
+                    for i = 1:numel(labels)
+                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                    end
                 end
             end
             cbar.Units = 'pixels';drawnow;
