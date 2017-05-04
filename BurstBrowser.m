@@ -3984,17 +3984,43 @@ if obj ~= h.DatabaseBB.List
     end
     switch obj
         case {h.Load_Bursts, h.Append_File}
-            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
-            if FilterIndex == 0
-                return;
+            switch obj
+                case h.Load_Bursts %%% load once from one folder
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if FilterIndex == 0
+                        return;
+                    end
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                case h.Append_File
+                    %%% query multiple files (only allow  *.bur files)
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                    while FilterIndex ~= 0 %%% query for more files until cancel is selected
+                        [fn,pn,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                        if FilterIndex ~= 0
+                            if ischar(fn)
+                                fn = {fn};
+                            end
+                            FileName = [FileName;fn];
+                            for i = 1:numel(fn)
+                                PathName{end+1} = pn;
+                            end
+                        end
+                    end
             end
-            if ischar(FileName)
-                FileName = {FileName};
-            end
-            %%% make pathname to cell array
-            for i = 1:numel(FileName)
-                PathName{i} = pathname;
-            end
+            
         case h.Load_Bursts_From_Folder
             %%% Choose a folder and load files from all subfolders
             %%% only consider one level downwards
