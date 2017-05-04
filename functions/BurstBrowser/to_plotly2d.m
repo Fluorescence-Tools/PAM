@@ -19,7 +19,7 @@ x = strcmp(BurstData{file}.NameArray,x);
 y = strcmp(BurstData{file}.NameArray,y);
 bins = [UserValues.BurstBrowser.Display.NumberOfBinsX,UserValues.BurstBrowser.Display.NumberOfBinsY];
 lim = {h.axes_general.XLim,h.axes_general.YLim};
-plotly_burst(BurstData{file}.DataArray(:,x),BurstData{file}.DataArray(:,y),names, bins, lim, mode);
+plotly_burst(BurstData{file}.DataCut(:,x),BurstData{file}.DataCut(:,y),names, bins, lim, mode);
 
 function plotly_burst(x_data,y_data, names, bins, lim,type)
 %signin('anders.barth', 'api_key')
