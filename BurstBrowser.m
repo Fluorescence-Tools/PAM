@@ -13834,6 +13834,10 @@ switch obj
                     panel_copy.Children(leg).Position(2) = 590;
                 end
             end
+            %%% hide colorbar if it exists
+            if exist('cbar','var')
+                cbar.Visible = 'off';
+            end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -14386,7 +14390,7 @@ hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
 global UserValues BurstData BurstMeta
-if isempty(UserValues)
+if isempty(UserValues) || isempty(BurstData)
     delete(hfig);
     return;
 end
