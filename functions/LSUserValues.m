@@ -1233,6 +1233,8 @@ if Mode==0 %%% Loads user values
     % 19 R
     % 20 sigR
     % 21 FD0
+    % 22 rinf2 (used for "Dip and Rise" model)
+    
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield (S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
         params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
