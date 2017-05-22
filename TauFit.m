@@ -675,7 +675,7 @@ if exist('ph','var')
                 h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
                 'Distribution','Distribution plus Donor only','Fit Anisotropy',...
                 'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
-                'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independt anisotropy)'};
+                'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
                 %%% Button for loading the selected PIE Channels
                 h.LoadData_Button = uicontrol(...
                     'Parent',h.PIEChannel_Panel,...
@@ -736,7 +736,7 @@ if exist('ph','var')
                     'Checked','off',...
                     'Callback',@Start_Fit);
                 h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-                    'Label','"Fit Anisotropy (2 exp lifetime with independt anisotropy)"',...
+                    'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
                     'Checked','off',...
                     'Callback',@Start_Fit);
                 h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -968,7 +968,7 @@ if exist('bh','var')
             'Distribution','Distribution plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
-            'Fit Anisotropy (2 exp lifetime with independt anisotropy)'};
+            'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
         %%% Button to start fitting
         h.Fit_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -1018,7 +1018,7 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-            'Label','"Fit Anisotropy (2 exp lifetime with independt anisotropy)"',...
+            'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -3330,7 +3330,7 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{14};
                 h.l1_edit.String = num2str(FitResult{12});
                 h.l2_edit.String = num2str(FitResult{13});
-            case 'Fit Anisotropy (2 exp lifetime with independt anisotropy)'
+            case 'Fit Anisotropy (2 exp lifetime with independent anisotropy)'
                 %%% Parameter
                 %%% Lifetime 1 and 2
                 %%% Fraction 1
@@ -3512,7 +3512,7 @@ switch obj
             h.Plots.Residuals_ignore.Visible = 'off';
             h.Plots.FitResult_ignore.Visible = 'off';
         end
-        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independt anisotropy)'}))
+        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
             % Unhide plots
             h.Plots.IRFResult_Perp.Visible = 'on';
             h.Plots.FitResult_Perp.Visible = 'on';
@@ -3698,7 +3698,7 @@ switch obj
                 fraction = 1-fraction;
             end
             answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:','Fraction free:'},'Fix lifetimes?',3,{num2str(lifetimes(1)),num2str(lifetimes(2)),num2str(fraction)});
-            %%% "Fit Anisotropy (2 exp lifetime with independt anisotropy) model" with two components of different lifetimes
+            %%% "Fit Anisotropy (2 exp lifetime with independent anisotropy) model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
             lb = [0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
             if ~isempty(answer)
@@ -4102,7 +4102,7 @@ for i = 1:numel(ax)
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independt anisotropy)'}))
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
