@@ -2396,6 +2396,8 @@ ignore = TauFitData.Ignore{chan};
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
 MI_Bins = TauFitData.MI_Bins;
+
+opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
     case h.Fit_Button
         %%% Read out parameters
@@ -2434,7 +2436,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2499,7 +2501,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2585,7 +2587,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2688,7 +2690,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2765,7 +2767,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2870,7 +2872,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2989,7 +2991,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3126,7 +3128,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3249,7 +3251,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3391,7 +3393,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
