@@ -9934,8 +9934,9 @@ switch e.Key
                     end
                 end
             end
-            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
+            Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
+        Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting Finished')
     case 'Export_MicrotimePattern'
         h.Progress.Text.String = 'Exporting';
         h.Progress.Axes.Color=[1 0 0];
