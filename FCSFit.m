@@ -1894,11 +1894,16 @@ switch mode
         end
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
-        UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
+        if h.Fit_Errorbars.Value
+            UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1]);
+        else
+            UseCurves = reshape(flip(sort(numel(h.FCS_Axes.Children)+1-[3*Active 3*Active-1;],1)',1),[],1);
+        end
+        %UseCurves = sort(numel(h.FCS_Axes.Children)+1-[3*Active-2; 3*Active-1; 3*Active]);
         
         H.FCS_Plots=copyobj(h.FCS_Axes.Children(UseCurves),H.FCS);
         if h.Export_FitsLegend.Value
-            H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none');
+               H.FCS_Legend=legend(H.FCS,h.FCS_Legend.String,'Interpreter','none'); 
         else
             if isfield(h,'FCS_Legend')
                 if h.FCS_Legend.isvalid
@@ -1907,10 +1912,11 @@ switch mode
                         LegendString{i} = LegendString{i}(7:end);
                     end
                     if h.Fit_Errorbars.Value
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-3:3),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end-1:-2:1),LegendString,'Interpreter','none');
                     else
-                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end-2:-3:1),LegendString,'Interpreter','none');
+                        H.FCS_Legend=legend(H.FCS,H.FCS_Plots(end:-2:1),LegendString,'Interpreter','none');
                     end
+
                 end
             end
         end
