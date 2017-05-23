@@ -686,6 +686,7 @@ if isempty(hfig)
         'UserData',0,...
         'UIContextMenu', h.MultiPlotButtonMenu);
     iconbutton(h.MultiselectOnCheckbox,'images/BurstBrowser/multiselection.png');
+    h.MultiselectOnCheckbox.CData(:,:,[2,3]) = 0;
     
     %%% Cut Table right click menu
     h.CutTable_Menu = uicontextmenu;
@@ -5282,6 +5283,7 @@ switch obj
                 h.Param_comp_selected_Menu.Enable = 'on';
                 h.FRET_comp_selected_Menu.Enable = 'on';
                 obj.UserData = 1;
+                obj.CData = circshift(obj.CData,[0,0,1]);
             case 1
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
@@ -5298,6 +5300,7 @@ switch obj
                 h.Param_comp_selected_Menu.Enable = 'off';
                 h.FRET_comp_selected_Menu.Enable = 'off';
                 obj.UserData = 0;
+                obj.CData = circshift(obj.CData,[0,0,-1]);
          end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
