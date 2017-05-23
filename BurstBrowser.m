@@ -572,7 +572,7 @@ if isempty(hfig)
     % Set the tree mouse-click callback
     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
-    button_posX = 0.7*h.figure_size(3);
+    button_posX = (h.SpeciesList.container.Position(1)+0.5*h.SpeciesList.container.Position(3))*h.figure_size(3);
     button_posY = 0.2375*h.figure_size(4)-20;
     buttonsize = 20;
     %%% add buttons to species list
@@ -3984,17 +3984,43 @@ if obj ~= h.DatabaseBB.List
     end
     switch obj
         case {h.Load_Bursts, h.Append_File}
-            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
-            if FilterIndex == 0
-                return;
+            switch obj
+                case h.Load_Bursts %%% load once from one folder
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if FilterIndex == 0
+                        return;
+                    end
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                case h.Append_File
+                    %%% query multiple files (only allow  *.bur files)
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                    while FilterIndex ~= 0 %%% query for more files until cancel is selected
+                        [fn,pn,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                        if FilterIndex ~= 0
+                            if ischar(fn)
+                                fn = {fn};
+                            end
+                            FileName = [FileName;fn];
+                            for i = 1:numel(fn)
+                                PathName{end+1} = pn;
+                            end
+                        end
+                    end
             end
-            if ischar(FileName)
-                FileName = {FileName};
-            end
-            %%% make pathname to cell array
-            for i = 1:numel(FileName)
-                PathName{i} = pathname;
-            end
+            
         case h.Load_Bursts_From_Folder
             %%% Choose a folder and load files from all subfolders
             %%% only consider one level downwards
@@ -13808,6 +13834,10 @@ switch obj
                     panel_copy.Children(leg).Position(2) = 590;
                 end
             end
+            %%% hide colorbar if it exists
+            if exist('cbar','var')
+                cbar.Visible = 'off';
+            end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -14137,8 +14167,10 @@ switch obj
                         end
                     end
                 end
-                for i = 1:numel(labels)
-                    cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                if maxZ > 1 %%% ensure that the plot is not normalized
+                    for i = 1:numel(labels)
+                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                    end
                 end
             end
             cbar.Units = 'pixels';drawnow;
@@ -14358,7 +14390,7 @@ hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
 global UserValues BurstData BurstMeta
-if isempty(UserValues)
+if isempty(UserValues) || isempty(BurstData)
     delete(hfig);
     return;
 end
