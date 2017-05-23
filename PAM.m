@@ -3546,8 +3546,6 @@ end
 
 
 %% PIE List update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Updates DetectectionChannel List
-h.PIE.DetectionChannel.String = color_string(UserValues.Detector.Name,UserValues.Detector.Color);
 %%% Uses HTML to set color of each channel to selected color
 List=cell(numel(UserValues.PIE.Name),1);
 for i=1:numel(List)
@@ -3566,13 +3564,16 @@ drawnow;
 %%% Finds currently selected PIE channel
 Sel=h.PIE.List.Value(1);
 
+%%% Updates DetectectionChannel List
+h.PIE.DetectionChannel.String = color_string(UserValues.Detector.Name,UserValues.Detector.Color);
+
 %% PIE info update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if any(mode==1)
     %%% Updates PIE channel settings to current PIE channel
     h.PIE.Name.String=UserValues.PIE.Name{Sel};
     if UserValues.PIE.Detector(Sel) ~= 0 %%% only if no combined channel is selected
         h.PIE.DetectionChannel.Value = find((UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) &...
-            (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)));
+            (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)),1);
     end
     %h.PIE.Detector.String=num2str(UserValues.PIE.Detector(Sel));
     %h.PIE.Routing.String=num2str(UserValues.PIE.Router(Sel));
@@ -4572,6 +4573,8 @@ LSUserValues(1);
 function MI_Channels_Functions(obj,ed)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
+
+
 if obj == h.MI.Auto
     switch obj.Checked
         case 'off'
@@ -4612,8 +4615,10 @@ if obj == h.MI.Channels_List
                 UserValues.Detector.Name{Sel} = ed.NewData;
             case 2 %%% Detector was changed
                 UserValues.Detector.Det(Sel) = ed.NewData;
+                action = 'detector';
             case 3 %%% Rout was changed
                 UserValues.Detector.Rout(Sel) = ed.NewData;
+                action = 'detector';
             case 5 %%% Filter was changed
                 UserValues.Detector.Filter{Sel} = ed.NewData;
             case 6 %%% Pol was changed
@@ -4683,7 +4688,7 @@ if Update
     %%% Updates channels
     Update_Detector_Channels([],[],0:2)
     %%% Updates plots
-    if strcmp(action,'add') || strcmp(action,'delete')
+    if strcmp(action,'add') || strcmp(action,'delete') || strcmp(action,'detector')
         Update_Data([],[],0,0);
     end
     %%% reenable callbacks
@@ -4820,7 +4825,7 @@ else
     h.MI.NPlots.String=num2str(NPlots);
 end
 %% Creates individual microtime channels
-if any(mode==1);
+if any(mode==1)
     %%% Deletes existing microtime tabs
     if isfield(h.MI, 'Individual')
         cellfun(@delete,h.MI.Individual(:,1))
@@ -4942,7 +4947,7 @@ if any(mode==2)
 end
 %% Saves new tabs in guidata
 guidata(h.Pam,h)
-Update_Display([],[],[4, 5, 8]);
+Update_Display([],[],[1, 4, 5, 8]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for extracting Macro- and Microtimes of PIE channels  %%%%%%%%
@@ -5116,6 +5121,7 @@ switch e.Key
                     h.Profiles.Filetype.Value = i;
                 end
             end
+            
             %%% Resets applied shift to zero; might lead to overcorrection
             Update_to_UserValues;
             Update_Data([],[],0,0);
