@@ -1,5 +1,5 @@
 function TauFit(obj,~)
-global UserValues
+global UserValues TauFitData PamMeta
 h.TauFit = findobj('Tag','TauFit');
 addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
@@ -18,7 +18,6 @@ if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit
 end
-global TauFitData PamMeta
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
 end
