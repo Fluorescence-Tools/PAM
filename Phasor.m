@@ -2367,7 +2367,7 @@ end
 function Phasor_Move(~,e,mode,Start,Key)
 global PhasorData
 %%% Only executes, if Phasor is the current figure
-if strcmp('Phasor',get(gcf,'Tag'));
+if strcmp('Phasor',get(gcf,'Tag'))
     h=guidata(gcf);
     Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
     switch mode
@@ -3166,8 +3166,8 @@ for i=Images %%% Plots Phasor Data
         
         %%% Update images
         h.Image_Plot(i,2).CData=Image;
-        h.Image_Plot(i,1).XLim=[0,size(Image,1)]+0.5;
-        h.Image_Plot(i,1).YLim=[0,size(Image,2)]+0.5;
+        h.Image_Plot(i,1).XLim=[0,size(Image,2)]+0.5;
+        h.Image_Plot(i,1).YLim=[0,size(Image,1)]+0.5;
     else
         if i<10
            h.Image_Panel(i).Title=num2str(i); 

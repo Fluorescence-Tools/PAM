@@ -192,27 +192,6 @@ h.Particle_ScaleMax = uicontrol(...
     'Position',[0.49 0.72, 0.1 0.12],...
     'String','100');
 
-%%% Starts Calculation
-h.Particle_DoCalculation = uicontrol(...
-    'Parent',h.Plot_Control_Panel,...
-    'Style','pushbutton',...
-    'Units','normalized',...
-    'FontSize',15,...
-    'BackgroundColor', Look.Control,...
-    'ForegroundColor', Look.Fore,...
-    'Callback',{@Method_Update,1},...
-    'Position',[0.15 0.03, 0.3 0.2],...
-    'String','Calculate');
-h.Particle_Save = uicontrol(...
-    'Parent',h.Plot_Control_Panel,...
-    'Style','pushbutton',...
-    'Units','normalized',...
-    'FontSize',15,...
-    'BackgroundColor', Look.Control,...
-    'ForegroundColor', Look.Fore,...
-    'Callback',{@Method_Update,2},...
-    'Position',[0.55 0.03, 0.3 0.2],...
-    'String','Save');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle detection selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -238,8 +217,8 @@ h.Particle_Method = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Callback',{@Method_Update,0},...
     'Position',[0.01 0.93, 0.98 0.06],...
-    'String',{'Simple threshold and regionprops method',...
-              'Threshold and Regionprops with shape method'});
+    'String',{'Simple threshold method',...
+    'Simple wavelet method'});
 
 h.Particle_Method_Description = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -254,7 +233,7 @@ h.Particle_Method_Description = uicontrol(...
 
 %%% Method settings Table
 TableData = {   'Pixel Threshold [Counts]',150;...
-                'Use Non-Particle',0};
+    'Use Non-Particle',0};
 ColumnNames = {'Parameter Name', 'Value'};
 ColumnEditable = [false,true];
 ColumnFormat = {'char','numeric'};
@@ -264,12 +243,107 @@ h.Particle_Method_Settings = uitable(...
     'Parent',h.Detection_Panel,...
     'Units','normalized',...
     'FontSize',12,...
-    'Position',[0.01 0.01 0.98 0.7],...
+    'Position',[0.01 0.16 0.98 0.55],...
     'Data',TableData,...
     'ColumnName',ColumnNames,...
     'RowName',RowNames,...
     'ColumnEditable',ColumnEditable,...
     'ColumnFormat',ColumnFormat);
+
+%%% Frames to use
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.13, 0.3 0.02],...
+    'String','Use Frames:');
+h.Particle_Frames_Start = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','1',...
+    'Position',[0.35 0.13, 0.15 0.02]);
+h.Particle_Frames_Stop = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','999',...
+    'Position',[0.55 0.13, 0.15 0.02]);
+h.Particle_Use_NonParticle = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Use non-detected pixels',...
+    'Position',[0.01 0.1, 0.8 0.02]);
+
+%%% Starts Calculation
+h.Particle_DoCalculation = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',15,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback',{@Method_Update,1},...
+    'Position',[0.01 0.05, 0.4 0.04],...
+    'String','Calculate');
+h.Particle_Save = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',15,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback',{@Particle_Save},...
+    'Position',[0.45 0.05, 0.4 0.04],...
+    'String','Save');
+h.Particle_Save_Method = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.01, 0.5 0.03],...
+    'Callback',{@Misc},...
+    'String',{'Save Average';...
+    'Save FLIM Trace'});
+%%% Frames to use
+h.Particle_Frames_Sum_Text = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'Visible','off',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.53 0.01, 0.3 0.02],...
+    'String','Sum Frames:');
+h.Particle_Frames_Sum = uicontrol(...
+    'Parent',h.Detection_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Visible','off',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','1',...
+    'Position',[0.83 0.01, 0.15 0.02]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle detection display %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -306,13 +380,13 @@ h.Particle_Disply_Type = uicontrol(...
     'Callback',{@Plot_Particle,2},...
     'Position',[0.02 0.26, 0.96 0.05],...
     'String',{  'Mask only',...
-                'Mask overlay',...
-                'Mask gray/red',...
-                'Mask magenta/green',...
-                'Particles only',...
-                'Particles overlay',...
-                'Particles gray/jet'});
-            
+    'Mask overlay',...
+    'Mask gray/red',...
+    'Mask magenta/green',...
+    'Particles only',...
+    'Particles overlay',...
+    'Particles gray/jet'});
+
 h.Particle_Number = uicontrol(...
     'Parent',h.Display_Panel,...
     'Style','text',...
@@ -322,9 +396,11 @@ h.Particle_Number = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.21, 0.96 0.04],...
-    'String','Particle detected: 0 '); 
+    'String','Particle detected: 0 ');
 %% Stores Info in guidata
-guidata(h.Particle,h); 
+guidata(h.Particle,h);
+%%% Updated method table
+Method_Update([],[],0);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Closes Particle window and clears variables %%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -371,7 +447,7 @@ ParticleData.PathName = PathName;
 
 %%% Removed detected particle data
 if isfield(ParticleData,'Regions')
-ParticleData = rmfield(ParticleData,'Regions');
+    ParticleData = rmfield(ParticleData,'Regions');
 end
 if isfield(ParticleData,'Mask')
     ParticleData = rmfield(ParticleData,'Mask');
@@ -446,7 +522,7 @@ end
 if any(mode==1)
     if Frame == 0 %%% Summed up intensity
         %%% Extracts right data
-        Int = sum(ParticleData.Data.Intensity,3);        
+        Int = sum(ParticleData.Data.Intensity,3);
         %%% Adjusts to range
         if h.Particle_ManualScale.Value
             Int(Int < str2double(h.Particle_ScaleMin.String))=NaN;
@@ -487,12 +563,12 @@ end
 if any(mode==2)
     if isfield(ParticleData,'Regions')
         
-        if Frame == 0 || size(ParticleData.Mask,3)==1
-           Mask = logical(sum(ParticleData.Mask,3));
+        if Frame == 0 || size(ParticleData.Mask,3)<Frame
+            Mask = logical(sum(ParticleData.Mask,3));
         else
-           Mask = ParticleData.Mask(:,:,Frame);
+            Mask = ParticleData.Mask(:,:,Frame);
         end
-        if Frame == 0 || size(ParticleData.Particle,3)==1
+        if Frame == 0 || size(ParticleData.Particle,3)<Frame
             Particle = ceil(mean(ParticleData.Particle,3));
         else
             Particle = ParticleData.Particle(:,:,Frame);
@@ -518,7 +594,7 @@ if any(mode==2)
                 Int=(Int-min(min(Int)))/(max(max(Int))-min(min(Int)));
                 
                 %%% Grayscale Image with red homogeneous particles
-                Image = repmat(Int,[1 1 3]);           
+                Image = repmat(Int,[1 1 3]);
                 Image(Mask) = 1;
                 Image(:,:,2) = Image(:,:,2).*~Mask;
                 Image(:,:,3) = Image(:,:,3).*~Mask;
@@ -561,7 +637,7 @@ if any(mode==2)
                 Color = [1 1 1 ; jet(max(Particle(:)))];
                 Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3).* repmat(Int,[1 1 3]);
         end
-
+        
         h.Particle_Display_Image.CData = Image;
         h.Particle_Display.XLim = [0.5 size(Image,2)+0.5];
         h.Particle_Display.YLim = [0.5 size(Image,1)+0.5];
@@ -614,14 +690,11 @@ h = guidata(findobj('Tag','Particle'));
 LSUserValues(0);
 
 switch h.Particle_Method.Value
-    case 1 %%% Simple regionprops
-        Method_Regionprops([],[],mode);
-    case 2 %%% Regionprops with some shape detection
+    case 1 %%% Regionprops with some shape detection
         Method_Regionprops_Shape([],[],mode);
+    case 2 %%% Wavelets and Regionprops
+        Method_Wavelets_Simple([],[],mode);
 end
-
-
-
 
 
 
@@ -629,132 +702,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Here are all the different methods collected in separate functions %%%%
-%%% General shape: 
-%%% mode == 0 to update settings 
+%%% General shape:
+%%% mode == 0 to update settings
 %%% mode == 1 calculating the detection
-%%% mode == 2 for saving. Can also be included in mode == 1
+%%% Note: The particle detection can be both full stack and frame by frame
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Simple regionprops with thresholding
-function Method_Regionprops(~,~,mode)
-h = guidata(findobj('Tag','Particle'));
-global ParticleData
-LSUserValues(0);
-
-%%% Is only called for updating the table/info
-if mode == 0
-    
-    %%% Updates Table
-    TableData = {   'Pixel Threshold [Counts]',150;...
-                    'Use Non-Particle',0};
-    ColumnNames = {'Parameter Name', 'Value'};
-    
-    h.Particle_Method_Settings.ColumnName = ColumnNames;
-    h.Particle_Method_Settings.Data = TableData;
-    
-    %%% Updates Method information
-    h.Particle_Method_Description.String =['This method uses a full stack threshold to calculate a binary map'....
-        'Based on this map it uses the matlab "regionprops" function to detect particles. Always works with full stack.'];
-    %%% Removed detected particle data
-    if isfield(ParticleData,'Regions')
-        ParticleData = rmfield(ParticleData,'Regions');
-    end
-    if isfield(ParticleData,'Mask')
-        ParticleData = rmfield(ParticleData,'Mask');
-    end
-    if isfield(ParticleData,'Particle')
-        ParticleData = rmfield(ParticleData,'Particle');
-    end
-    Plot_Particle([],[],2)
-    return;
-end
-
-%%% Actual particle detection and averaging
-if mode == 1
-    Int = sum(ParticleData.Data.Intensity,3);
-    TH = h.Particle_Method_Settings.Data{1,2};
-    BitImage = Int > TH;
-    Regions = regionprops(BitImage,Int,'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
-    
-    %%% Aborts calculation when no particles were detected
-    if isempty(Regions)
-        msgbox('No particles detected! Please change threshold.');
-        return;
-    end
-    ParticleData.Regions = Regions;
-    ParticleData.Mask = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
-    ParticleData.Particle = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
-    %%% Reformats particle information for Phasor calculation
-    for i=1:numel(Regions)
-        ParticleData.Mask(Regions(i).PixelIdxList) = true;
-        ParticleData.Particle(Regions(i).PixelIdxList) = i;
-        ParticleData.Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
-    end
-    Plot_Particle([],[],2)
- return;
-end
-
-%%% Applies particle averaging and saves it
-if mode == 2
-    %%% Stops execution if data is not complete
-    if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
-        return;
-    end
-    %%% Select file names for saving
-    [FileName,PathName] = uiputfile('*.phr','Save Phasor Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
-    %%% Checks, if selection was cancled
-    if all(FileName == 0)
-        return;
-    end
-    
-    %%% Uses summed up Image and Phasor
-    g = sum(ParticleData.Data.g.*ParticleData.Data.Intensity,3)./sum(ParticleData.Data.Intensity,3);
-    s = sum(ParticleData.Data.s.*ParticleData.Data.Intensity,3)./sum(ParticleData.Data.Intensity,3);
-    Intensity = sum(ParticleData.Data.Intensity,3);
-    
-    %%% Applies particle averaging
-    for i=1:numel(ParticleData.Regions)
-        %%% Calculates mean particle phasor
-        ParticleData.Regions(i).g = sum(g(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
-                                  ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
-        ParticleData.Regions(i).s = sum(s(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
-                                  ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
-        %%% Applies particle phasor to pixels
-        g(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).g;
-        s(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).s;
-    end
-    
-    %%% Sets non-particle pixels to 0
-    if ~h.Particle_Method_Settings.Data{2,2}
-        g(~Mask) = 0;
-        s(~Mask) = 0;
-        Mean_LT(~Mask) = 0;
-    end
-    
-    %%% Updates secondary parameters
-    Freq = ParticleData.Data.Freq;
-    Fi = atan(s./g); Fi(isnan(Fi)) = 0;
-    M = sqrt(s.^2+g.^2);Fi(isnan(M)) = 0;
-    TauP = real(tan(Fi)./(2*pi*Freq/10^9)); TauP(isnan(TauP)) = 0; %#ok<*NASGU>
-    TauM = real(sqrt((1./(s.^2+g.^2))-1)/(2*pi*Freq/10^9)); TauM(isnan(TauM)) = 0;
-    Mean_LT = sum(ParticleData.Data.Mean_LT.*ParticleData.Data.Intensity,3)./sum(ParticleData.Data.Intensity,3);
-    Lines = ParticleData.Data.Lines;
-    Pixels = ParticleData.Data.Pixels;
-    Imagetime = ParticleData.Data.Imagetime;
-    Frames = ParticleData.Data.Frames;
-    FileNames = ParticleData.Data.FileNames;
-    Type = ParticleData.Data.Type;
-    Regions =ParticleData.Regions;
-    Path = ParticleData.Data.Path;
-    
-    save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
-
-    
-end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Regionprops with thresholding and shape
@@ -766,16 +720,13 @@ LSUserValues(0);
 %%% Is only called for updating the table/info
 if mode == 0
     
-   
+    
     %%% Updates Table
     TableData = {   'Pixel Threshold [Counts]',150;...
-                    'Frame from:',1;...
-                    'Frame to:', 100;...
-                    'Min Size [px]:', 10;...
-                    'Max Size [px]:', 100;...
-                    'Gauss. Filter [Px]' ,2;...
-                    'Eccentricity', 0.7;...
-                    'Use Non-Particle',0};
+        'Min Size [px]:', 10;...
+        'Max Size [px]:', 100;...
+        'Gauss. Filter [Px]' ,2;...
+        'Eccentricity', 0.7};
     ColumnNames = {'Parameter Name', 'Value'};
     
     h.Particle_Method_Settings.ColumnName = ColumnNames;
@@ -805,21 +756,22 @@ end
 if mode == 1
     %%% Extracts parameters
     TH = h.Particle_Method_Settings.Data{1,2};
-    From = h.Particle_Method_Settings.Data{2,2};
-    To = h.Particle_Method_Settings.Data{3,2};
-    MinSize = h.Particle_Method_Settings.Data{4,2};
-    MaxSize = h.Particle_Method_Settings.Data{5,2};
-    Gaus = h.Particle_Method_Settings.Data{6,2};
-    Eccent = h.Particle_Method_Settings.Data{7,2};
+    MinSize = h.Particle_Method_Settings.Data{2,2};
+    MaxSize = h.Particle_Method_Settings.Data{3,2};
+    Gaus = h.Particle_Method_Settings.Data{4,2};
+    Eccent = h.Particle_Method_Settings.Data{5,2};
+    
+    From = str2double(h.Particle_Frames_Start.String);
+    To = str2double(h.Particle_Frames_Stop.String);
     
     %%% Adjusts frame range to data
     if To>size(ParticleData.Data.Intensity,3)
         To = size(ParticleData.Data.Intensity,3);
-        h.Particle_Method_Settings.Data{3,2} = size(ParticleData.Data.Intensity,3);
+        h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
     end
     if From > To
         From = 1;
-        h.Particle_Method_Settings.Data{3,2} = 1;
+        h.Particle_Frames_Start.String = 1;
     end
     
     %%% Averages image
@@ -836,7 +788,7 @@ if mode == 1
     BitImage = Int > TH;
     
     %%% Calculates regionprops
-    Regions = regionprops(BitImage,Int,'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues'); 
+    Regions = regionprops(BitImage,Int,'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
     
     %%% Aborts calculation when no particles were detected
     if isempty(Regions)
@@ -844,6 +796,13 @@ if mode == 1
         return;
     end
     
+    
+    if MinSize<1
+        MinSize =1;
+    end
+    if MaxSize<MinSize || MaxSize>numel(BitImage)
+        MaxSize = numel(BitImage);
+    end
     %%% Removes small regions
     Regions(cat(1, Regions.Area)<MinSize)=[];
     %%% Removes large regions
@@ -860,8 +819,148 @@ if mode == 1
         ParticleData.Particle(Regions(i).PixelIdxList) = i;
         ParticleData.Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
     end
+    ParticleData.Particle = repmat(ParticleData.Particle,1,1,To-From+1);
     Plot_Particle([],[],2)
- return;
+    return;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Regionprops with thresholding and shape
+function Method_Wavelets_Simple(~,~,mode)
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Is only called for updating the table/info
+if mode == 0
+    
+    
+    %%% Updates Table
+    TableData = {   'Threshold Significance [0-1]',0.8;...
+        'Min Photons',500;...
+        'Max Photons',3000;...
+        'Min Size [px]:', 10;...
+        'Max Size [px]:', 100;...
+        'Wavelet depth' ,3;...
+        'Eccentricity', 0.7};
+    ColumnNames = {'Parameter Name', 'Value'};
+    
+    h.Particle_Method_Settings.ColumnName = ColumnNames;
+    h.Particle_Method_Settings.Data = TableData;
+    
+    %%% Updates Method information
+    h.Particle_Method_Description.String =['This method uses wavelets to calculate a binary map. '...
+        'Gaussian filtering is applied before thresholding. '....
+        'Based on this map it uses the matlab "regionprops" function to detect particles. '...
+        'It uses eccentricity filtering for shape detection. ',...
+        'The data defined with the frame range in used. '];
+    %%% Removed detected particle data
+    if isfield(ParticleData,'Regions')
+        ParticleData = rmfield(ParticleData,'Regions');
+    end
+    if isfield(ParticleData,'Mask')
+        ParticleData = rmfield(ParticleData,'Mask');
+    end
+    if isfield(ParticleData,'Particle')
+        ParticleData = rmfield(ParticleData,'Particle');
+    end
+    Plot_Particle([],[],2)
+    return;
+end
+
+%%% Actual particle detection and averaging
+if mode == 1
+    %% Extracts parameters
+    TH = h.Particle_Method_Settings.Data{1,2};
+    MinP = h.Particle_Method_Settings.Data{2,2};
+    MaxP = h.Particle_Method_Settings.Data{3,2};
+    MinSize = h.Particle_Method_Settings.Data{4,2};
+    MaxSize = h.Particle_Method_Settings.Data{5,2};
+    Wavelet = h.Particle_Method_Settings.Data{6,2};
+    Eccent = h.Particle_Method_Settings.Data{7,2};
+    
+    From = str2double(h.Particle_Frames_Start.String);
+    To = str2double(h.Particle_Frames_Stop.String);
+    
+    %%% Adjusts frame range to data
+    if To>size(ParticleData.Data.Intensity,3)
+        To = size(ParticleData.Data.Intensity,3);
+        h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+    end
+    if From > To
+        From = 1;
+        h.Particle_Frames_Start.String = 1;
+    end
+    
+    %% Extracts regions
+    %%% Averages image
+    Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+    
+    %%% Wavelet filter ® P. Messer, 2016
+    w(:,:,1)=Int;
+    for i = 1:Wavelet-1
+        kern = [1/16,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),3/8,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),1/16]; % Convolution Kernel (a trous)
+        kernsize = numel(kern);
+        t = conv2(kern,kern,padarray(Int(:,:,i),[kernsize kernsize],'symmetric'),'same'); % Image gets symmetrical padded to prevent edge effects
+        Int(:,:,i+1) = t(kernsize+1:end-kernsize,kernsize+1:end-kernsize); % Crop image to original size
+        tw = Int(:,:,i)- Int(:,:,i+1); % Get Wavelet
+        tw2 = abs(tw - median(tw(:))); % Calculate Median Absolute Deviation (MAD)
+        %sig = 2*median(tw2(:)); % Estimate std from MAD with k==3
+        tw(tw<0) = 0; % Remove unsignificant wavelet coefficients
+        w(:,:,i+1) = tw; % Create Wavelet Array
+    end
+    Int=w(:,:,Wavelet);
+    
+    %%% Calculates relative threshold
+    TH=round(TH.*numel(Int));
+    Sorted=sort(Int(:));
+    TH=Sorted(TH)+1;
+    
+    %%% Applies threshold
+    BitImage = Int > TH;
+    
+    %%% Calculates regionprops
+    Regions = regionprops(BitImage,Int,'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
+    
+    %%% Aborts calculation when no particles were detected
+    if isempty(Regions)
+        msgbox('No particles detected! Please change threshold.');
+        return;
+    end
+    
+    %% Applies region criteria
+    %%% Removes small regions
+    Regions(cat(1, Regions.Area)<MinSize)=[];
+    %%% Removes large regions
+    if MaxSize<MinSize || MaxSize>numel(BitImage)
+        MaxSize = numel(BitImage);
+    end
+    Regions(cat(1, Regions.Area)>MaxSize)=[];
+    
+    %%% Removes dark particles
+    Regions(cat(1, Regions.Area).*cat(1,Regions.MeanIntensity)<MinP)=[];
+    %%% Removes bright particles
+    if MaxP<MinP || MaxP==0
+        MaxP = sum(Int(:));
+    end
+    Regions(cat(1, Regions.Area).*cat(1,Regions.MeanIntensity)>MaxP)=[];
+    
+    %%% Removes eccentric regions
+    Regions(cat(1, Regions.Eccentricity)>Eccent)=[];
+    
+    %% Applies particle selection
+    ParticleData.Regions = Regions;
+    ParticleData.Mask = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
+    ParticleData.Particle = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
+    %%% Reformats particle information for Phasor calculation
+    for i=1:numel(Regions)
+        ParticleData.Mask(Regions(i).PixelIdxList) = true;
+        ParticleData.Particle(Regions(i).PixelIdxList) = i;
+        ParticleData.Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
+    end
+    Plot_Particle([],[],2)
+    return;
 end
 
 %%% Applies particle averaging and saves it
@@ -894,14 +993,14 @@ if mode == 2
     s = sum(ParticleData.Data.s(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
     Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
     
-   
+    
     %%% Applies particle averaging
     for i=1:numel(ParticleData.Regions)
         %%% Calculates mean particle phasor
         ParticleData.Regions(i).g = sum(g(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
-                                  ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+            ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
         ParticleData.Regions(i).s = sum(s(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
-                                  ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+            ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
         %%% Applies particle phasor to pixels
         g(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).g;
         s(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).s;
@@ -930,6 +1029,203 @@ if mode == 2
     Path = ParticleData.Data.Path;
     
     save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
-
     
+    
+end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Here are all the different methods for applying ROI and saving the data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Particle_Save(~,~)
+h = guidata(findobj('Tag','Particle'));
+switch h.Particle_Save_Method.Value
+    case 1 %%% Save time sum
+        Save_Averaged
+    case 2 %%% Save FLIM trace
+        Save_FLIM_Trace
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Averages the selected regions and frames and saves the FLIM image
+function Save_Averaged
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.phr','Save Phasor Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+
+Mask = logical(squeeze(sum(ParticleData.Mask,3)));
+g = sum(ParticleData.Data.g(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+s = sum(ParticleData.Data.s(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+
+%%% Applies particle averaging
+for i=1:numel(ParticleData.Regions)
+    %%% Calculates mean particle phasor
+    ParticleData.Regions(i).g = sum(g(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+    ParticleData.Regions(i).s = sum(s(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+    %%% Applies particle phasor to pixels
+    g(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).g;
+    s(ParticleData.Regions(i).PixelIdxList) = ParticleData.Regions(i).s;
+end
+
+%%% Sets non-particle pixels to 0
+if ~h.Particle_Use_NonParticle.Value
+    g(~Mask) = 0;
+    s(~Mask) = 0;
+    Mean_LT(~Mask) = 0;
+end
+
+%%% Updates secondary parameters
+Freq = ParticleData.Data.Freq;
+Fi = atan(s./g); Fi(isnan(Fi)) = 0;
+M = sqrt(s.^2+g.^2);Fi(isnan(M)) = 0;
+TauP = real(tan(Fi)./(2*pi*Freq/10^9)); TauP(isnan(TauP)) = 0; %#ok<*NASGU>
+TauM = real(sqrt((1./(s.^2+g.^2))-1)/(2*pi*Freq/10^9)); TauM(isnan(TauM)) = 0;
+Mean_LT = sum(ParticleData.Data.Mean_LT(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Lines = ParticleData.Data.Lines;
+Pixels = ParticleData.Data.Pixels;
+Imagetime = ParticleData.Data.Imagetime;
+Frames = To-From+1;
+FileNames = ParticleData.Data.FileNames;
+Type = ParticleData.Data.Type;
+Regions =ParticleData.Regions;
+Path = ParticleData.Data.Path;
+
+save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Save the FLIM data as a trace for each (static) region over time
+function Save_FLIM_Trace
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.phr','Save Phasor Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+Frames_Sum = str2double(h.Particle_Frames_Sum.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+
+%%% Applies particle averaging
+Int = ParticleData.Data.Intensity(:,:,From:To);
+G = ParticleData.Data.g(:,:,From:To).*Int; %%%unnormalized g
+S = ParticleData.Data.s(:,:,From:To).*Int; %%%unnormalized s
+
+%%% Creates arrays with size(Particle,Frames)
+g=zeros(numel(ParticleData.Regions),To-From+1);
+s=zeros(numel(ParticleData.Regions),To-From+1);
+Intensity=zeros(numel(ParticleData.Regions),To-From+1);
+
+%%%Calculates frame-wise average for each particle
+for i=1:max(ParticleData.Particle(:)) 
+    %%% Extends PixelId for every frame
+    PixelId = repmat((0:(size(g,2)-1))*numel(Int(:,:,1)),numel(ParticleData.Regions(i).PixelIdxList),1);
+    PixelId = PixelId + repmat(ParticleData.Regions(i).PixelIdxList,1,size(g,2));
+    %%% 
+    Intensity(i,:)=sum(Int(PixelId),1);
+    g(i,:)=sum(G(PixelId),1); %%%unnormalized g
+    s(i,:)=sum(S(PixelId),1); %%%unnormalized s
+    
+    %Intensity(i,:)= squeeze(sum(sum(Int(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
+    %g(i,:)= squeeze(sum(sum(G(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
+    %s(i,:)= squeeze(sum(sum(S(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
+end
+
+%%% Cuts size to a multiple of the Frames_Sum
+Intensity= Intensity(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
+g= g(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
+s= s(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
+%%% Summs up frame range
+Intensity = squeeze(sum(reshape(Intensity,size(Intensity,1),Frames_Sum,[]),2));
+g = squeeze(sum(reshape(g,size(g,1),Frames_Sum,[]),2))./Intensity; %%% normalized g
+s = squeeze(sum(reshape(s,size(s,1),Frames_Sum,[]),2))./Intensity; %%% normalized s
+g(isnan(g))=0;
+s(isnan(s))=0;
+
+%%% Updates secondary parameters
+Freq = ParticleData.Data.Freq;
+Fi = atan(s./g); Fi(isnan(Fi)) = 0;
+M = sqrt(s.^2+g.^2);Fi(isnan(M)) = 0;
+TauP = real(tan(Fi)./(2*pi*Freq/10^9)); TauP(isnan(TauP)) = 0; %#ok<*NASGU>
+TauM = real(sqrt((1./(s.^2+g.^2))-1)/(2*pi*Freq/10^9)); TauM(isnan(TauM)) = 0;
+Mean_LT = sum(ParticleData.Data.Mean_LT(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Lines = ParticleData.Data.Lines;
+Pixels = ParticleData.Data.Pixels;
+Imagetime = ParticleData.Data.Imagetime;
+Frames = Frames_Sum;
+FileNames = ParticleData.Data.FileNames;
+Type = ParticleData.Data.Type;
+Regions =ParticleData.Regions;
+Path = ParticleData.Data.Path;
+
+save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Collection of various small functions
+function Misc(Obj,~)
+h = guidata(findobj('Tag','Particle'));
+
+switch Obj
+    case h.Particle_Save_Method %%% Toggle frame summing visibility
+        if h.Particle_Save_Method.Value == 2
+            h.Particle_Frames_Sum.Visible = 'on';
+            h.Particle_Frames_Sum_Text.Visible = 'on';
+        else
+            h.Particle_Frames_Sum.Visible = 'off';
+            h.Particle_Frames_Sum_Text.Visible = 'off';
+        end
 end
