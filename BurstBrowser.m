@@ -572,9 +572,9 @@ if isempty(hfig)
     % Set the tree mouse-click callback
     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
-    buttonsize = 25;
+    buttonsize = 20;
     offset = 5;
-    button_posX = (h.SpeciesList.container.Position(1)+0.4*h.SpeciesList.container.Position(3))*h.figure_size(3);
+    button_posX = (h.SpeciesList.container.Position(1)+0.5*h.SpeciesList.container.Position(3))*h.figure_size(3);
     button_posY = 0.2375*h.figure_size(4)-buttonsize;
 
     %%% add buttons to species list
