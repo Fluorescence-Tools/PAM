@@ -90,7 +90,7 @@ if Fraction>=1
     Lastupdate=[];    
     
     %%% Added: Reset Mouse Pointer to Arrow
-    set(gcf, 'pointer', 'arrow'); drawnow;
+    set(gcbf, 'pointer', 'arrow'); drawnow;
 else
     %% Updates patch and text
     Progresspatch.XData([2 3])=Fraction;
@@ -99,7 +99,7 @@ else
     TimeLeftStr = sec2timestr(TimeLeft);
     Progress_Text.String = sprintf([TypeString ' %2d%%    %s remaining'],floor(100*Fraction),TimeLeftStr);
     %%% Added: Change Mouse Pointer to Wheel
-    set(gcf, 'pointer', 'watch'); drawnow;
+    set(gcbf, 'pointer', 'watch'); drawnow;
 end
 drawnow
 
