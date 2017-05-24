@@ -9961,7 +9961,7 @@ switch e.Key
             PIErange = max([UserValues.PIE.From(Sel(i)),1]):min([UserValues.PIE.To(Sel(i)) numel(MI)]);
             microtimeHistograms(PIErange,3*(i-1)+1) = MI(PIErange);
             microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.IRF{Sel(i)}(1:FileInfo.MI_Bins);
-            microtimeHistograms(:,3*(i-1)+2) = UserValues.PIE.ScatterPattern{Sel(i)}(1:FileInfo.MI_Bins);
+            microtimeHistograms(:,3*(i-1)+3) = UserValues.PIE.ScatterPattern{Sel(i)}(1:FileInfo.MI_Bins);
             Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         %%% create filename
