@@ -1027,6 +1027,9 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 if mode ~= 3
     %% Load or Add data
     Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.File.PDAPath);
+    if isempty(Files)
+        return;
+    end
     FileName = Files(:,1);
     PathName = Files(:,2);
     %%% Only executes, if at least one file was selected
@@ -4664,6 +4667,7 @@ ceq = sum(x) - 1;
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
 count = 0;
+Files = [];
 while FileName ~= 0
     [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
     if ~iscell(FileName)
