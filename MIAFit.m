@@ -2020,10 +2020,15 @@ end
 Active=find(Active);
 LegendString=cell(numel(Active)*2,1);
 LegendUse=h.X_Axes.Children(1:numel(Active)*2);
+
 for i=1:numel(Active)
     LegendString{2*i-1}=['Data: ' MIAFitData.FileName{Active(i)}];
     LegendString{2*i}  =['Fit:  ' MIAFitData.FileName{Active(i)}];
-    LegendUse(2*i-1)=MIAFitMeta.Plots{Active(i),1};
+    if Plot_Errorbars
+        LegendUse(2*i-1)=MIAFitMeta.Plots{Active(i),1};
+    else
+        LegendUse(2*i-1)=MIAFitMeta.Plots{Active(i),4};    
+    end
     LegendUse(2*i)=MIAFitMeta.Plots{Active(i),2};
 end
 if ~isempty(LegendString) && h.Hide_Legend.Value == 0

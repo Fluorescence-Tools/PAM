@@ -197,6 +197,11 @@ h.Menu.OpenPhasor = uimenu(...
     'Tag','OpenPhasor',...
     'Label','Phasor',...
     'Callback',@Phasor);
+h.Menu.OpenPhasorParticle = uimenu(...
+    'Parent', h.Menu.AdvancedAnalysis,...
+    'Tag','OpenPhasorParticle',...
+    'Label','Phasor particle detection',...
+    'Callback',@ParticleDetection);
 h.Menu.OpenPhasorTIFF = uimenu(...
     'Parent', h.Menu.AdvancedAnalysis,...
     'Tag','OpenPhasorTIFF',...
@@ -1534,7 +1539,7 @@ h.MI.Phasor_Particles = uicontrol(...
     'Style','popupmenu',...
     'Units','normalized',...
     'FontSize',12,...
-    'String',{'Use Single Frame','Framewise Phasor','Use Particles+Pixels','Use Particles Only' },...
+    'String',{'Use Single Frame','Framewise Phasor'},...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.885 0.30 0.025]);
@@ -6257,66 +6262,16 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
         Progress(0.75,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Phasor):');
         %% Actual Calculation
-        if UseParticles>2
-            BitImage = (Intensity>str2double(h.MI.Phasor_ParticleTH.String));
-            Regions = regionprops(flip(BitImage',2),flip(Intensity',2),'Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues');
-            
-            %%% Aborts calculation when no particles were detected
-            if isempty(Regions)
-                msgbox('No particles detected! Please change threshold.');
-                Progress(1,h.Progress.Axes, h.Progress.Text,FileInfo.FileName{1});
-                h.Progress.Text.String = FileInfo.FileName{1};
-                h.Progress.Axes.Color=UserValues.Look.Control;
-                return
-            end
-            
-            %%% Reformats particle information for Phasor calculation
-            ParticleIndex = [];
-            ParticleNumber = [];
-            for i=1:numel(Regions)
-                ParticleIndex((end+1):(end+numel(Regions(i).PixelIdxList)))= Regions(i).PixelIdxList;
-                ParticleNumber((end+1):(end+numel(Regions(i).PixelIdxList))) = i;
-                Regions(i).TotalCounts = Regions(i).MeanIntensity.*Regions(i).Area;
-                ParticleFirst(i) = uint32(Regions(i).PixelIdxList(1)); %#ok<AGROW>
-            end
-            [ParticleIndex,i] = sort(ParticleIndex);
-            ParticleIndex = uint32(ParticleIndex);
-            ParticleNumber = uint16(ParticleNumber(i));
-            Particle = uint16(zeros(numel(Pixel),1));
-            Particle(ParticleIndex)=ParticleNumber;
-            clear ParticleIndex ParticleNumber
-            
-            %%% Actual calculation in C++
-            [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 1, Particle, ParticleFirst-1);
-            
-            %%% Sets pixels to particle value
-            for i=1:numel(Regions)
-                g(Regions(i).PixelIdxList) = g(ParticleFirst(i));
-                s(Regions(i).PixelIdxList) = s(ParticleFirst(i));
-                Mean_LT(Regions(i).PixelIdxList) = Mean_LT(ParticleFirst(i));
-                Regions(i).Mean_LT=Mean_LT(ParticleFirst(i));
-                Regions(i).g=g(ParticleFirst(i));
-                Regions(i).s=s(ParticleFirst(i));
-            end
-            
-            %%% Reshapes data to images
-            g=reshape(g,FileInfo.Lines,[]);
-            s=reshape(s,FileInfo.Lines,[]);
-            Mean_LT=reshape(Mean_LT,FileInfo.Lines,[]);
-            g=flip(g',1);s=flip(s',1);
-            
-        else
-            %%% Actual calculation in C++
-            [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
-            
-            %%% Reshapes data to images
-            g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
-            s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
-            Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
-            g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
-            
-        end
+
+        %%% Actual calculation in C++
+        [Mean_LT, g,s] =DoPhasor(PIE_MI, (Bin-1), numel(PIE_MI), numel(Pixel), G, S, 0, [], []);
         
+        %%% Reshapes data to images
+        g=reshape(g,FileInfo.Pixels,FileInfo.Lines,[]);
+        s=reshape(s,FileInfo.Pixels,FileInfo.Lines,[]);
+        Mean_LT=reshape(Mean_LT,FileInfo.Pixels,FileInfo.Lines,[]);
+        g=flip(permute(g,[2 1 3]),1);s=flip(permute(s,[2 1 3]),1);
+                   
         %%% Background and Afterpulsing correction
         Use = zeros(1,MI_Bins);
         Use(From:To) = 1/MI_Bins;
@@ -6326,26 +6281,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         g(isnan(g))=0;
         s = (s - S*(Afterpulsing + Background./Intensity))./(1-(Afterpulsing+Background./Intensity).*sum(Use));
         s(isnan(s))=0;
-        
-        %%% Correction for particle phasors
-        if UseParticles>2
-            for i=1:numel(Regions)
-                g(Regions(i).PixelIdxList) = (Regions(i).g - G*(Afterpulsing + Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts))...
-                    ./(1-(Afterpulsing+Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts)*sum(Use));
-                s(Regions(i).PixelIdxList) = (Regions(i).s - S*(Afterpulsing + Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts))...
-                    ./(1-(Afterpulsing+Background.*numel(Regions(i).PixelIdxList)/Regions(i).TotalCounts)*sum(Use));
-            end
-        end
-        
-        %%% Sets non-particle pixels to zero
-        if UseParticles==4
-            Particle=flip(reshape(Particle,FileInfo.Lines,[])',1);
-            
-            g(Particle==0)=0;
-            s(Particle==0)=0;
-            Mean_LT(Particle==0)=0;
-        end
-        
+                       
         %% Data Formating
         neg=find(g<0 & s<0);
         g(neg)=-g(neg);
@@ -6381,9 +6317,6 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
             save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
             g = PamMeta.g; s= PamMeta.s; Intensity =squeeze(sum(Intensity,3));
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
-        else
-            g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
-            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
         end
         
         h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};

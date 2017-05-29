@@ -1,4 +1,4 @@
-function ParticleDetection
+function ParticleDetection(~,~)
 global UserValues
 h.Particle=findobj('Tag','Particle');
 
