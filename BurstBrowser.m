@@ -6194,9 +6194,9 @@ if size(CutState,2) > 0
 end
 
 %%% check what plot type to use
-colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value && ~h.SmoothKDE.Value;
+colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.UserData && ~h.SmoothKDE.Value;
 if ~colorbyparam
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     else
         %%% call MultiPlot for superposition of all histograms
@@ -6249,7 +6249,7 @@ if ~colorbyparam
         h.NumberOfBinsXEdit.String = num2str(nbins);
         h.NumberOfBinsYEdit.String = num2str(nbins);
         %%% get data
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             datapoints = [datatoplot(:,x),datatoplot(:,y)];
         end
         %%% make hexplot
@@ -6257,7 +6257,7 @@ if ~colorbyparam
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
         set(BurstMeta.HexPlot.MainPlot_hex,'UIContextMenu',h.ExportGraph_Menu);
     end
-    if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
+    if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
          %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
         binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
@@ -6300,7 +6300,7 @@ if ~colorbyparam
         legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
-        if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+        if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -6511,7 +6511,7 @@ if obj == h.Fit_Gaussian_Button
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
     %%% update datatoplot if multiselection is enabled
-    if h.MultiselectOnCheckbox.Value
+    if h.MultiselectOnCheckbox.UserData
         datatoplot = get_multiselection_data(h);
     end
     %%% we need to adjust the number of xbins/ybins of KDE has been used
@@ -6871,7 +6871,7 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
-    if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.Value
+    if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.UserData
         BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
         BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
         BurstMeta.Fitting.BurstCount = H;
@@ -6898,7 +6898,7 @@ function SpeciesFromGaussianFit(obj,~)
 global BurstData BurstMeta
 file = BurstMeta.SelectedFile;
 h = guidata(obj);
-if h.MultiselectOnCheckbox.Value
+if h.MultiselectOnCheckbox.UserData
     disp('Disable multiplot mode and fit a single file!');
     return;
 end
@@ -7894,7 +7894,7 @@ switch obj
         switch obj
             case h.ApplyCutDatabase
                 %%% apply to selected species
-                if ~h.MultiselectOnCheckbox.Value
+                if ~h.MultiselectOnCheckbox.UserData
                     file_n = BurstMeta.SelectedFile;
                     species_n = BurstData{file_n}.SelectedSpecies(1);
                     subspecies_n = BurstData{file_n}.SelectedSpecies(2);
@@ -8421,7 +8421,7 @@ end
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
     %%% read raw data
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         data_for_corrections = BurstData{file}.DataArray;
     else
         Files = get_multiselection(h);
@@ -8461,7 +8461,7 @@ if obj == h.DetermineCorrectionsButton
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
     end
     
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8497,7 +8497,7 @@ if obj == h.DetermineCorrectionsButton
     if ~isnan(de) && (de > 0)
         UserValues.BurstBrowser.Corrections.DirectExcitation_GR = de;
     end
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8509,7 +8509,7 @@ end
 if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     %% plot gamma plot for two populations (or lifetime versus E)
     % use the user selected species
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
         %%% excitation,crosstalk, and background corrections!
@@ -8601,7 +8601,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     UserValues.BurstBrowser.Corrections.Gamma_GR = gamma;
     UserValues.BurstBrowser.Corrections.Beta_GR = beta;
             
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
         BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
     else %%% Update for all files contributing
@@ -8618,7 +8618,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
 end
 if obj == h.DetermineGammaLifetimeTwoColorButton
     % use the user selected species
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
 
         indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
@@ -8670,7 +8670,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8720,7 +8720,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(ct) && (ct > 0)
             UserValues.BurstBrowser.Corrections.CrossTalk_BG = ct;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8747,7 +8747,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(ct) && (ct > 0)
             UserValues.BurstBrowser.Corrections.CrossTalk_BR = ct;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8779,7 +8779,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(de) && (de > 0)
             UserValues.BurstBrowser.Corrections.DirectExcitation_BG = de;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8811,7 +8811,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(de) && (de > 0)
             UserValues.BurstBrowser.Corrections.DirectExcitation_BR = de;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8965,7 +8965,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     if obj == h.DetermineGammaLifetimeThreeColorButton
         % use the user selected species
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
             data_for_corrections = BurstData{file}.DataArray;
             %%% use selected species
@@ -9036,7 +9036,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
         
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
             BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
         else %%% Update for all files contributing
@@ -9319,7 +9319,7 @@ if obj == h.ApplyCorrectionsAll_Menu
     end
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
 
-    %if ~h.MultiselectOnCheckbox.Value
+    %if ~h.MultiselectOnCheckbox.UserData
         files = 1:numel(BurstData);
     %else %%% only loop over selected foles
     %    files = get_multiselection(h);
@@ -9347,10 +9347,10 @@ if obj == h.ApplyCorrectionsAll_Menu
     %%% Apply with display update
     ApplyCorrections([],[],h);
 end
-if h.MultiselectOnCheckbox.Value
+if h.MultiselectOnCheckbox.UserData
     %%% disable callback and disable checkbox
     h.MultiselectOnCheckbox.Callback = [];
-    h.MultiselectOnCheckbox.Value = 0;
+    h.MultiselectOnCheckbox.UserData = 0;
     
     %%% apply corrections to all selected files
     sel_file = BurstMeta.SelectedFile;
@@ -9367,7 +9367,7 @@ if h.MultiselectOnCheckbox.Value
     
     %%% reenable callback and checkbox
     h.MultiselectOnCheckbox.Callback = @UpdateOptions;
-    h.MultiselectOnCheckbox.Value = 1;
+    h.MultiselectOnCheckbox.UserData = 1;
 end
 file = BurstMeta.SelectedFile;
 %% 2colorMFD
@@ -10941,7 +10941,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
     end
 else %%% Update UserValues and BurstData with new values
     LSUserValues(0);
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
        files = BurstMeta.SelectedFile;
     else %%% loop over selected files
        files = get_multiselection(h);
@@ -11599,7 +11599,7 @@ end
 file = BurstMeta.SelectedFile;
 NameArray = BurstData{file}.NameArray;
 %%% Use the current cut Data (of the selected species) for plots
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     datatoplot = BurstData{file}.DataCut;
 else
     %%% get average dye only lifetimes from selected files
@@ -11636,7 +11636,7 @@ end
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 %% Plot E vs. tauGG in first plot
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
     [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
     datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
@@ -11661,7 +11661,7 @@ Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hco
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-    if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+    if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
         for i = 1:numel(n_per_species)
             color = [color; i*ones(n_per_species(i),1)];
@@ -11694,7 +11694,7 @@ if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
     [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
     datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idxE)];
@@ -11719,7 +11719,7 @@ Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hco
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-    if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+    if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
         for i = 1:numel(n_per_species)
             color = [color; i*ones(n_per_species(i),1)];
@@ -11748,7 +11748,7 @@ try h.axes_EvsTauRR.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauRR,[-0.05 1]);
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)];
@@ -11773,7 +11773,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11801,7 +11801,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)];
@@ -11826,7 +11826,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11860,7 +11860,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     idx_rBB = strcmp('Anisotropy BB',NameArray);
     idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
     %% Plot E1A vs. tauBB
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         valid = (datatoplot(:,idx_tauBB) > 0.01);
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
@@ -11886,7 +11886,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11914,7 +11914,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
     %% Plot rBB vs tauBB
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB)];
@@ -11939,7 +11939,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -12079,7 +12079,7 @@ h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
 h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
 
 [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h);
-if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
     [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h,paramX,paramY,{origin.XLim,origin.YLim});
     %%% prepare 1d hists
     binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
@@ -12257,7 +12257,7 @@ if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %% GG
     fPerrin = @(rho,x) BurstData{file}.Corrections.r0_green./(1+x./rho); %%% x = tau
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         tauGG = datatoplot(:,idx_tauGG);
         rGG = datatoplot(:,idx_rGG);
     else
@@ -12286,7 +12286,7 @@ if obj == h.FitAnisotropyButton
     end
     %% RR
     fPerrin = @(rho,x) BurstData{file}.Corrections.r0_red./(1+x./rho); %%% x = tau
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         tauRR = datatoplot(:,idx_tauRR);
         rRR = datatoplot(:,idx_rRR);
     else
@@ -12316,7 +12316,7 @@ if obj == h.FitAnisotropyButton
         %% BB
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData{file}.NameArray);
         idx_rBB = strcmp('Anisotropy BB',BurstData{file}.NameArray);
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             tauBB = datatoplot(:,idx_tauBB);
             rBB = datatoplot(:,idx_rBB);
         else
@@ -12566,7 +12566,7 @@ file = BurstMeta.SelectedFile;
 
 LSUserValues(0);
 
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     data = BurstData{file}.DataArray;
 else
     files = get_multiselection(h);
@@ -12652,7 +12652,7 @@ h.Corrections.TwoCMFD.axes_direct_excitation.XLim = [0, AcceptorOnlyLifetime+3*s
 h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
 UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
 
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
     BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
 else
@@ -12677,7 +12677,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
 
     UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
     else
         for i = 1:numel(files)
@@ -13569,7 +13569,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13639,7 +13639,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13812,7 +13812,7 @@ switch obj
                 ax1dx = n;
             end
         end
-        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
+        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
@@ -14186,7 +14186,7 @@ switch obj
             end
             cbar.Units = 'pixels';drawnow;
         end
-        if (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
+        if (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% Set all units to pixels for easy editing without resizing
             hfig.Units = 'pixels';
             panel_copy.Units = 'pixels';
