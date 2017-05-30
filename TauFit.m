@@ -3586,13 +3586,15 @@ switch obj
             wres_par = wres(1:numel(Decay)/2);
             wres_per = wres(numel(Decay)/2+1:end);
             
-            IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
             IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
             h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
             h.Plots.IRFResult.YData = IRFPat_Par;
             
-            IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Perp = shift_by_fraction(IRFPattern{2},UserValues.TauFit.IRFShift{chan});
             IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
             h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
@@ -4127,7 +4129,7 @@ function f = ExportGraph(obj,~)
 global TauFitData
 % anders, in Burstbrowser there was code to plot fit parameters on graph.
 h = guidata(findobj('tag','TauFit'));
-f = figure('Position',[100,100,700,500],'color',[1 1 1]);
+f = figure('Position',[100,100,800,550],'color',[1 1 1]);
 panel_copy = copyobj(h.TauFit_Panel,f);
 panel_copy.Position = [0 0 1 1];
 panel_copy.ShadowColor = [1 1 1];
@@ -4166,6 +4168,7 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.85 0.875 .12];
@@ -4175,12 +4178,12 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.1 0.13 0.875 0.15];
+                ax(i).Position = [0.125 0.13 0.845 0.15];
                 if strcmp(h.Microtime_Plot.YScale,'log')
-                    ax(i).YScale = 'log';
+                    %ax(i).YScale = 'log';
                 end
             case 'Microtime_Plot'
-                ax(i).Position = [0.1 0.28 0.875 0.58];
+                ax(i).Position = [0.125 0.28 0.845 0.58];
                 ax(i).XTickLabels = [];
                 ax(i).XLabel.String = '';
                 if ~isequal(obj, h.Microtime_Plot_Export)
@@ -4190,10 +4193,12 @@ else
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
+                ax(i).YTickLabelMode = 'auto';
                 ax(i).YTickLabels{1} = '';
             case 'Residuals_Plot'
-                ax(i).Position = [0.1 0.86 0.875 .13];
+                ax(i).Position = [0.125 0.86 0.845 .13];
                 ax(i).YTickLabelMode = 'auto';
         end
     end
