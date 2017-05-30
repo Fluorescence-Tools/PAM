@@ -4212,6 +4212,7 @@ for i = 1:numel(FileName)
     Progress((i-1)/numel(FileName),h.Progress_Axes,h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
     if ~exist(fullfile(PathName{i},FileName{i}),'file')
         disp(['File ' fullfile(PathName{i},FileName{i}) ' does not exist.']);
+        h.Progress_Text.String = 'Error - File not found.';
         return;
     end
     S = load('-mat',fullfile(PathName{i},FileName{i}));
