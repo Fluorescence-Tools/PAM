@@ -1886,6 +1886,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% channel and should not assume larger values
     h.Length_Slider.Min = 1;
     h.Length_Slider.Max = TauFitData.MaxLength{chan};
+    h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
     if UserValues.TauFit.Length{chan} > 0 && UserValues.TauFit.Length{chan} < TauFitData.MaxLength{chan}+1
         tmp = UserValues.TauFit.Length{chan};
     else
@@ -1899,6 +1900,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
     h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
+    h.StartPar_Slider.SliderStep =[1, 10]*(1/(h.StartPar_Slider.Max-h.StartPar_Slider.Min));
     if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.StartPar{chan};
     else
@@ -1914,6 +1916,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% of the perpendicular channel
     h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ShiftPer_Slider.SliderStep =[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
     if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ShiftPer{chan};
@@ -1927,6 +1930,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF Length has the same limits as the Length property
     h.IRFLength_Slider.Min = 1;
     h.IRFLength_Slider.Max = TauFitData.MaxLength{chan};
+    h.IRFLength_Slider.SliderStep =[1, 10]*(1/(h.IRFLength_Slider.Max-h.IRFLength_Slider.Min));
     if UserValues.TauFit.IRFLength{chan} >= 0 && UserValues.TauFit.IRFLength{chan} <= TauFitData.MaxLength{chan}
         tmp = UserValues.TauFit.IRFLength{chan};
     else
@@ -1939,6 +1943,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF Shift has the same limits as the perp shift property
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFShift_Slider.Max-h.IRFShift_Slider.Min));
     if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFShift{chan};
@@ -1952,6 +1957,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF rel. Shift has the same limits as the perp shift property
     h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFrelShift_Slider.Max-h.IRFrelShift_Slider.Min));
     if UserValues.TauFit.IRFrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFrelShift{chan};
@@ -1965,6 +1971,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat Shift has the same limits as the perp shift property
     h.ScatShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatShift_Slider.Max-h.ScatShift_Slider.Min));
     if UserValues.TauFit.ScatShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatShift{chan};
@@ -1978,6 +1985,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat rel. Shift has the same limits as the perp shift property
     h.ScatrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatrelShift_Slider.Max-h.ScatrelShift_Slider.Min));
     if UserValues.TauFit.ScatrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatrelShift{chan};
@@ -1991,6 +1999,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
     h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
+    h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
     if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.Ignore{chan};
     else
