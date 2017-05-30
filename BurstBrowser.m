@@ -8282,6 +8282,14 @@ if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
     end
     El(El<0 | El>1) = NaN;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
+    
+    %FRET from sensitized acceptor emission
+    if ~sum(strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)'))
+        BurstData{file}.NameArray{end+1} = 'FRET efficiency (sens. Acc. Em.)';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    E_A = BurstData{file}.Corrections.Beta_GR*BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'))./BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (AA)'));
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = E_A;
 elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
      %No. of Photons (GX) and Countrate (GX)
     if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (GX)'))
@@ -9437,7 +9445,9 @@ end
 BurstData{file}.DataArray(:,indE) = E;
 BurstData{file}.DataArray(:,indS) = S;
 %BurstData{file}.DataArray(:,indEPR) = EPR;
-
+if any(BurstData{file}.BAMethod == [1,2,5])
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = beta_gr*NGR./NRR;
+end
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
     %%% Read out indices of parameters
