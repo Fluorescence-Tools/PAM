@@ -6146,6 +6146,10 @@ if size(CutState,2) > 0
             %%% Set x-axis limits according to cut boundaries of selected parameter
             xlimits = [CutState{strcmp(NameArray{x},CutParameters),2},...
                 CutState{strcmp(NameArray{x},CutParameters),3}];
+            if UserValues.BurstBrowser.Display.logX
+                xlimits(xlimits <= 0) = 1e-2;
+                xlimits = log10(xlimits);
+            end
         else
             %%% set to min max
             xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
@@ -6160,6 +6164,10 @@ if size(CutState,2) > 0
             %%% Set x-axis limits according to cut boundaries of selected parameter
             ylimits = [CutState{strcmp(NameArray{y},CutParameters),2},...
                 CutState{strcmp(NameArray{y},CutParameters),3}];
+            if UserValues.BurstBrowser.Display.logY
+                ylimits(ylimits <= 0) = 1e-2;
+                ylimits = log10(ylimits);
+            end
         else
             %%% set to min max
             ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)), max(datatoplot(isfinite(datatoplot(:,y)),y))];
@@ -6187,9 +6195,21 @@ if size(CutState,2) > 0
         %%% efficiency parameter if the cut limits fall within that range
         if contains(NameArray{x},'Stoichiometry') || contains(NameArray{x},'Efficiency')
             xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
+            if UserValues.BurstBrowser.Display.logX
+                if xlimits(1) <= 0
+                    xlimits(1) = 1E-2;
+                end
+                xlimits = log10(xlimits);
+            end
         end
         if contains(NameArray{y},'Stoichiometry') || contains(NameArray{y},'Efficiency')
             ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
+            if UserValues.BurstBrowser.Display.logY
+                if ylimits(1) <= 0
+                    ylimits(1) = 1E-2;
+                end
+                ylimits = log10(ylimits);
+            end
         end
     end
 end
