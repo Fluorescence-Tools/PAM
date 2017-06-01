@@ -4213,6 +4213,7 @@ for i = 1:numel(FileName)
     if ~exist(fullfile(PathName{i},FileName{i}),'file')
         disp(['File ' fullfile(PathName{i},FileName{i}) ' does not exist.']);
         h.Progress_Text.String = 'Error - File not found.';
+        uiwait(h.BurstBrowser,1);
         return;
     end
     S = load('-mat',fullfile(PathName{i},FileName{i}));

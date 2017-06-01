@@ -2000,7 +2000,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.Ignore_Slider.Min = 1;
     h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
     h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
-    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.Ignore{chan};
     else
         tmp = 1;
