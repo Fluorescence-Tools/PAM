@@ -5491,9 +5491,11 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Actually calculates the crosscorrelation
                 switch Cor_Type
                     case 1
-                        if ~(UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i)))
+                        remove_aggregates = false;
+                        if ~(UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) && ~(remove_aggregates && (Cor_A(i) == Cor_B(i)))
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                        else %%% do after pulse correction if same detector is selected
+                        elseif (UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) 
+                            %%% do after pulse correction if same detector is selected
                             %%% suppress afterpulsing by FLCS
                             %%% get microtime hist of PIE channel
                             det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Cor_A(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Cor_A(i))));
@@ -5523,6 +5525,55 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             end
                             %%% Do the autocorrelation with weights
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                        elseif (remove_aggregates && (Cor_A(i) == Cor_B(i)))
+                            %%% do inverse burst search to remove aggrates
+                            %%% simply erase regions of aggregates for now
+                            
+                            % get the average countrate of the measurement
+                            cr = sum(cellfun(@numel,Data1))./sum(cell2mat(cellfun(@(x) x(end),Data1,'UniformOutput',false)))./FileInfo.ClockPeriod;
+                            
+                            T = 1000; % time window in microseconds
+                            M = T*1E-6*cr;% minimum number of photons in time window
+                            M = round(M + 5*sqrt(M)); %%% add 3 sigma
+                            L = 1; % minimum number of photons per burst, find all
+                            for k = 1:numel(Data1)
+                                [start, stop] = APBS(Data1{k},T,M,L,1);
+                                for l = 1:numel(start)
+                                    start(l) = find(Data1{k} > (Data1{k}(start(l)) - 2*T*1E-6/FileInfo.ClockPeriod),1,'first');
+                                    stop(l) = find(Data1{k} < (Data1{k}(stop(l)) + 2*T*1E-6/FileInfo.ClockPeriod),1,'last') + 1;
+                                    if stop(l) >= numel(Data1{k}) % we reached the end
+                                        stop(l) = numel(Data1{k});
+                                        if l < numel(start)
+                                            stop((l+1):end) = [];
+                                            start((l+1):end) = [];
+                                            break;
+                                        end
+                                    end
+                                    if l > 1
+                                        if start(l) < stop(l-1)
+                                            start(l) = stop(l-1)+1;
+                                        end
+                                    end
+                                end
+                                start_times = Data1{k}(start);
+                                stop_times = Data1{k}(stop);
+                                inval = [];
+                                for l = 1:numel(start)
+                                    inval = [inval,start(l):stop(l)];
+                                end
+                                Data1{k}(inval) = [];
+                                % fill with poisson noise
+                                for l = 1:numel(start_times)
+                                    %%% generate noise
+                                    t = start_times(l);
+                                    while t(end) < stop_times(l);
+                                        t(end+1) = t(end) + exprnd(1/(cr*FileInfo.ClockPeriod));
+                                    end
+                                    idx = find(Data1{k} < start_times(l),1,'last');
+                                    Data1{k} = [Data1{k}(1:idx); t';Data1{k}((idx+1):end)];
+                                end
+                            end
+                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data1,Maxtime);
                         end
                     case 4
                         [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
@@ -7757,10 +7808,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Subroutine a for All-Photon BurstSearch  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L)
+function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L,BurstIdentification)
 global FileInfo
-h = guidata(findobj('Tag','Pam'));
-BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+if nargin < 5
+    h = guidata(findobj('Tag','Pam'));
+    BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+end
 if BurstIdentification == 1
     %All-Photon Burst Search based on Nir Paper (2006)
     valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.ClockPeriod;
