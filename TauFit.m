@@ -1169,7 +1169,7 @@ h.FitPar_Table = uitable(...
     'ColumnFormat',{'numeric','numeric','numeric','logical'},...
     'RowName',{'Test'},...
     'ColumnEditable',[true true true true],...
-    'ColumnWidth',{50,50,50,40},...
+    'ColumnWidth',{100,50,50,40},...
     'Tag','FitPar_Table',...
     'CellEditCallBack',@Update_Plots,...
     'BackgroundColor', [Look.Table1;Look.Table2],...
@@ -1425,7 +1425,7 @@ for i = 1:3 %max number of pairs for fitting
 end
 TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
 TauFitData.FitMethods = h.FitMethods;
-
+h.subresolution = 10;
 guidata(gcf,h);
 
 ChangeLineStyle(h);
@@ -1886,6 +1886,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% channel and should not assume larger values
     h.Length_Slider.Min = 1;
     h.Length_Slider.Max = TauFitData.MaxLength{chan};
+    h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
     if UserValues.TauFit.Length{chan} > 0 && UserValues.TauFit.Length{chan} < TauFitData.MaxLength{chan}+1
         tmp = UserValues.TauFit.Length{chan};
     else
@@ -1899,6 +1900,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
     h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
+    h.StartPar_Slider.SliderStep =[1, 10]*(1/(h.StartPar_Slider.Max-h.StartPar_Slider.Min));
     if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.StartPar{chan};
     else
@@ -1914,6 +1916,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% of the perpendicular channel
     h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ShiftPer_Slider.SliderStep =[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
     if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ShiftPer{chan};
@@ -1923,10 +1926,11 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.ShiftPer_Slider.Value = tmp;
     TauFitData.ShiftPer{chan} = tmp;
     h.ShiftPer_Edit.String = num2str(tmp);
-    
+
     %%% IRF Length has the same limits as the Length property
     h.IRFLength_Slider.Min = 1;
     h.IRFLength_Slider.Max = TauFitData.MaxLength{chan};
+    h.IRFLength_Slider.SliderStep =[1, 10]*(1/(h.IRFLength_Slider.Max-h.IRFLength_Slider.Min));
     if UserValues.TauFit.IRFLength{chan} >= 0 && UserValues.TauFit.IRFLength{chan} <= TauFitData.MaxLength{chan}
         tmp = UserValues.TauFit.IRFLength{chan};
     else
@@ -1939,6 +1943,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF Shift has the same limits as the perp shift property
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFShift_Slider.Max-h.IRFShift_Slider.Min));
     if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFShift{chan};
@@ -1952,6 +1957,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF rel. Shift has the same limits as the perp shift property
     h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFrelShift_Slider.Max-h.IRFrelShift_Slider.Min));
     if UserValues.TauFit.IRFrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFrelShift{chan};
@@ -1965,6 +1971,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat Shift has the same limits as the perp shift property
     h.ScatShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatShift_Slider.Max-h.ScatShift_Slider.Min));
     if UserValues.TauFit.ScatShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatShift{chan};
@@ -1978,6 +1985,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat rel. Shift has the same limits as the perp shift property
     h.ScatrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatrelShift_Slider.Max-h.ScatrelShift_Slider.Min));
     if UserValues.TauFit.ScatrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatrelShift{chan};
@@ -1991,6 +1999,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
     h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
+    h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
     if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
         tmp = UserValues.TauFit.Ignore{chan};
     else
@@ -2014,32 +2023,38 @@ if isobject(obj) % check if matlab object
             if obj == h.StartPar_Slider
                 TauFitData.StartPar{chan} = floor(obj.Value);
             elseif obj == h.StartPar_Edit
-                TauFitData.StartPar{chan} = str2double(obj.String);
+                TauFitData.StartPar{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.StartPar{chan});
             end
         case {h.Length_Slider, h.Length_Edit}
             %%% Update Value
             if obj == h.Length_Slider
                 TauFitData.Length{chan} = floor(obj.Value);
             elseif obj == h.Length_Edit
-                TauFitData.Length{chan} = str2double(obj.String);
+                TauFitData.Length{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.Length{chan});
             end
             %%% Correct if IRFLength exceeds the Length
             if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
                 TauFitData.IRFLength{chan} = TauFitData.Length{chan};
+                h.IRFLength_Edit.String = num2str(TauFitData.IRFLength{chan});
+                h.IRFLength_Slider.Value = TauFitData.IRFLength{chan};
             end
         case {h.ShiftPer_Slider, h.ShiftPer_Edit}
             %%% Update Value
             if obj == h.ShiftPer_Slider
-                TauFitData.ShiftPer{chan} = floor(obj.Value);
+                TauFitData.ShiftPer{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ShiftPer_Edit
-                TauFitData.ShiftPer{chan} = str2double(obj.String);
+                TauFitData.ShiftPer{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ShiftPer{chan});
             end
         case {h.IRFLength_Slider, h.IRFLength_Edit}
             %%% Update Value
             if obj == h.IRFLength_Slider
                 TauFitData.IRFLength{chan} = floor(obj.Value);
             elseif obj == h.IRFLength_Edit
-                TauFitData.IRFLength{chan} = str2double(obj.String);
+                TauFitData.IRFLength{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.IRFLength{chan});
             end
             %%% Correct if IRFLength exceeds the Length
             if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
@@ -2048,30 +2063,34 @@ if isobject(obj) % check if matlab object
         case {h.IRFShift_Slider, h.IRFShift_Edit}
             %%% Update Value
             if obj == h.IRFShift_Slider
-                TauFitData.IRFShift{chan} = floor(obj.Value);
+                TauFitData.IRFShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFShift_Edit
-                TauFitData.IRFShift{chan} = str2double(obj.String);
+                TauFitData.IRFShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.IRFShift{chan});
             end
         case {h.IRFrelShift_Slider, h.IRFrelShift_Edit}
             %%% Update Value
             if obj == h.IRFrelShift_Slider
-                TauFitData.IRFrelShift{chan} = floor(obj.Value);
+                TauFitData.IRFrelShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFrelShift_Edit
-                TauFitData.IRFrelShift{chan} = str2double(obj.String);
+                TauFitData.IRFrelShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.IRFrelShift{chan});
             end
         case {h.ScatShift_Slider, h.ScatShift_Edit}
             %%% Update Value
             if obj == h.ScatShift_Slider
-                TauFitData.ScatShift{chan} = floor(obj.Value);
+                TauFitData.ScatShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatShift_Edit
-                TauFitData.ScatShift{chan} = str2double(obj.String);
+                TauFitData.ScatShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ScatShift{chan});
             end
         case {h.ScatrelShift_Slider, h.ScatrelShift_Edit}
             %%% Update Value
             if obj == h.ScatrelShift_Slider
-                TauFitData.ScatrelShift{chan} = floor(obj.Value);
+                TauFitData.ScatrelShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatrelShift_Edit
-                TauFitData.ScatrelShift{chan} = str2double(obj.String);
+                TauFitData.ScatrelShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ScatrelShift{chan});
             end
         case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
             if obj == h.Ignore_Slider
@@ -2081,11 +2100,12 @@ if isobject(obj) % check if matlab object
                     TauFitData.Ignore{chan} = 1;
                     obj.String = '1';
                 else
-                    TauFitData.Ignore{chan} = str2double(obj.String);
+                    TauFitData.Ignore{chan} = floor(str2double(obj.String));
+                    obj.String = num2str(TauFitData.Ignore{chan});
                 end
             end
         case {h.FitPar_Table}
-            TauFitData.IRFShift{chan} = obj.Data{end,1};
+            TauFitData.IRFShift{chan} = round(obj.Data{end,1}*h.subresolution)/h.subresolution;
             %%% Update Edit Box and Slider when user changes value in the table
             h.IRFShift_Edit.String = num2str(TauFitData.IRFShift{chan});
             h.IRFShift_Slider.Value = TauFitData.IRFShift{chan}; 
@@ -2158,19 +2178,23 @@ h.Plots.Decay_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1
 h.Plots.Decay_Par.YData = TauFitData.hMI_Par{chan}((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
 %%% Apply the shift to the perpendicular channel
 h.Plots.Decay_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
+%tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
+tmp = shift_by_fraction(TauFitData.hMI_Per{chan}, TauFitData.ShiftPer{chan});
 h.Plots.Decay_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the parallel IRF channel
 h.Plots.IRF_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+%tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
 h.Plots.IRF_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the perpendicular IRF channel
 h.Plots.IRF_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+%tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
 h.Plots.IRF_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the parallel Scat channel
 h.Plots.Scat_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
+%tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hScat_Par{chan},TauFitData.ScatShift{chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
@@ -2183,7 +2207,8 @@ end
 h.Plots.Scat_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the perpendicular Scat channel
 h.Plots.Scat_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
+%tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hScat_Per{chan},TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan});
 tmp = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
@@ -2383,7 +2408,8 @@ else
 end
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
-IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
+%IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
+IRFPer = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
 IRFPattern = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan}) + 2*IRFPer(1:TauFitData.Length{chan});
 IRFPattern = IRFPattern'./sum(IRFPattern);
 
@@ -2409,7 +2435,7 @@ if h.FitPar_Table.Data{end,4} == 0
     %%% IRF is not fixed
     irf_lb = h.FitPar_Table.Data{end,2};
     irf_ub = h.FitPar_Table.Data{end,3};
-    shift_range = floor(TauFitData.IRFShift{chan} + irf_lb):ceil(TauFitData.IRFShift{chan} + irf_ub);%irf_lb:irf_ub; 
+    shift_range = floor(TauFitData.IRFShift{chan} + irf_lb):(1/h.subresolution):ceil(TauFitData.IRFShift{chan} + irf_ub);%irf_lb:irf_ub; 
 elseif h.FitPar_Table.Data{end,4} == 1
     shift_range = TauFitData.IRFShift{chan};
 end
@@ -3560,13 +3586,15 @@ switch obj
             wres_par = wres(1:numel(Decay)/2);
             wres_per = wres(numel(Decay)/2+1:end);
             
-            IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
             IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
             h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
             h.Plots.IRFResult.YData = IRFPat_Par;
             
-            IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Perp = shift_by_fraction(IRFPattern{2},UserValues.TauFit.IRFShift{chan});
             IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
             h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
@@ -3656,7 +3684,8 @@ switch obj
             h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
             h.Result_Plot_Aniso.Parent = h.HidePanel;
             
-            IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
             IRFPat = IRFPat./max(IRFPat).*max(Decay);
             h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
@@ -4100,7 +4129,7 @@ function f = ExportGraph(obj,~)
 global TauFitData
 % anders, in Burstbrowser there was code to plot fit parameters on graph.
 h = guidata(findobj('tag','TauFit'));
-f = figure('Position',[100,100,700,500],'color',[1 1 1]);
+f = figure('Position',[100,100,800,550],'color',[1 1 1]);
 panel_copy = copyobj(h.TauFit_Panel,f);
 panel_copy.Position = [0 0 1 1];
 panel_copy.ShadowColor = [1 1 1];
@@ -4139,6 +4168,7 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.85 0.875 .12];
@@ -4148,12 +4178,12 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.1 0.13 0.875 0.15];
+                ax(i).Position = [0.125 0.13 0.845 0.15];
                 if strcmp(h.Microtime_Plot.YScale,'log')
-                    ax(i).YScale = 'log';
+                    %ax(i).YScale = 'log';
                 end
             case 'Microtime_Plot'
-                ax(i).Position = [0.1 0.28 0.875 0.58];
+                ax(i).Position = [0.125 0.28 0.845 0.58];
                 ax(i).XTickLabels = [];
                 ax(i).XLabel.String = '';
                 if ~isequal(obj, h.Microtime_Plot_Export)
@@ -4163,10 +4193,12 @@ else
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
+                ax(i).YTickLabelMode = 'auto';
                 ax(i).YTickLabels{1} = '';
             case 'Residuals_Plot'
-                ax(i).Position = [0.1 0.86 0.875 .13];
+                ax(i).Position = [0.125 0.86 0.845 .13];
                 ax(i).YTickLabelMode = 'auto';
         end
     end

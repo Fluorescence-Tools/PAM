@@ -13,7 +13,8 @@ IRF = cell(1,2);
 %Scatter = cell(1,2); 
 for i = 1:2
     irf = [];
-    irf = circshift(IRFPattern{i},[c, 0]);
+    %irf = circshift(IRFPattern{i},[c, 0]);
+    irf = shift_by_fraction(IRFPattern{i},c);
     irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
     irf = irf-min(irf(irf~=0));
     irf = irf./sum(irf);

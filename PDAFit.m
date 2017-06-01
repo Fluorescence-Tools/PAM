@@ -1,4 +1,4 @@
-function GlobalPDAFit(~,~)
+function PDAFit(~,~)
 % GlobalPDAFit Global Analysis of PDA data
 %
 %      This is a beta version!
@@ -1018,6 +1018,19 @@ end
 function Close_PDA(~,~)
 clearvars -global PDAData PDAMeta
 delete(findobj('Tag','GlobalPDAFit'));
+Phasor=findobj('Tag','Phasor');
+Pam=findobj('Tag','Pam');
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+BurstBrowser=findobj('Tag','BurstBrowser');
+TauFit=findobj('Tag','TauFit');
+PhasorTIFF = findobj('Tag','PhasorTIFF');
+FCSFit = findobj('Tag','FCSFit');
+if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF) && isempty(FCSFit)
+    clear global -regexp UserValues
+end
 
 % Load data that was exported in BurstBrowser
 function Load_PDA(~,~,mode)
@@ -1027,6 +1040,9 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 if mode ~= 3
     %% Load or Add data
     Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.File.PDAPath);
+    if isempty(Files)
+        return;
+    end
     FileName = Files(:,1);
     PathName = Files(:,2);
     %%% Only executes, if at least one file was selected
@@ -4664,6 +4680,7 @@ ceq = sum(x) - 1;
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
 count = 0;
+Files = [];
 while FileName ~= 0
     [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
     if ~iscell(FileName)
