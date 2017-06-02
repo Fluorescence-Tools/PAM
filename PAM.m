@@ -11020,9 +11020,12 @@ stop_times = Data(stop);
 % count rate trace in units of the time bin
 [Trace,x] = histcounts(Data*FileInfo.ClockPeriod,0:T*1E-6:(Data(end)*FileInfo.ClockPeriod));
 plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
+scale = h.Cor.Remove_Aggregates_Axes.YScale;
+h.Cor.Remove_Aggregates_Axes.YScale = 'log';
 h.Cor.Remove_Aggregates_Axes.YLimMode = 'auto';
 minY = h.Cor.Remove_Aggregates_Axes.YLim(1);
 maxY = h.Cor.Remove_Aggregates_Axes.YLim(2);
+h.Cor.Remove_Aggregates_Axes.YScale = scale;
 for i = 1:numel(start_times)
     patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times(i),stop_times(i),stop_times(i),start_times(i)],...
         [minY,minY,maxY,maxY],'r','FaceAlpha',0.3,'EdgeColor','none');
