@@ -420,12 +420,31 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
     P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;
-    %%% Checks, if Pam.Cor_AfterPulsing subfield exists
-    if ~isfield (S.Settings.Pam, 'Cor_AfterPulsing')
-        S.Settings.Pam.Cor_AfterPulsing=0;
-        disp('UserValues.Settings.Pam.Cor_AfterPulsing was incomplete');
+    %%% Checks if Pam.Cor_Remove_Aggregates subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Remove_Aggregates')
+        S.Settings.Pam.Cor_Remove_Aggregates=false;
+        disp('UserValues.Settings.Pam.Cor_Remove_Aggregates was incomplete');
     end
-    P.Settings.Pam.Cor_AfterPulsing = S.Settings.Pam.Cor_AfterPulsing;
+    P.Settings.Pam.Cor_Remove_Aggregates = S.Settings.Pam.Cor_Remove_Aggregates;
+    %%% Checks if Pam.Cor_Aggregate_Threshold subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_Threshold')
+        S.Settings.Pam.Cor_Aggregate_Threshold=3;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_Threshold was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_Threshold = S.Settings.Pam.Cor_Aggregate_Threshold;
+    %%% Checks if Pam.Cor_Aggregate_Timewindow subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_Timewindow')
+        S.Settings.Pam.Cor_Aggregate_Timewindow=1;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_Timewindow was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_Timewindow = S.Settings.Pam.Cor_Aggregate_Timewindow;
+    %%% Checks if Pam.Cor_Aggregate_TimewindowAdd subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_TimewindowAdd')
+        S.Settings.Pam.Cor_Aggregate_TimewindowAdd=0;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_TimewindowAdd was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_TimewindowAdd = S.Settings.Pam.Cor_Aggregate_TimewindowAdd;
+
     %%% Checks if Pam.PlotIRF subfield exists
     if ~isfield (S.Settings.Pam, 'PlotIRF')
         S.Settings.Pam.PlotIRF='off';
