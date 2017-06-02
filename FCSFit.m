@@ -1490,7 +1490,7 @@ switch mode
                     FCSMeta.Data(i,:)=[];
                     FCSMeta.Params(:,i)=[];
                     FCSMeta.Plots(i,:)=[];
-                    h.Fit_Table.RowName(i)=[];
+                    %h.Fit_Table.RowName(i)=[];
                     h.Fit_Table.Data(i,:)=[];
                     h.Style_Table.RowName(i)=[];
                     h.Style_Table.Data(i,:)=[];

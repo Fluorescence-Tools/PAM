@@ -5785,6 +5785,11 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     inval = [inval,start(l):stop(l)];
                                 end
                                 Data1{k}(inval) = [];
+                                
+                                valid_times = (start_times < Data1{k}(end)) & (start_times > Data1{k}(1));
+                                start_times = start_times(valid_times);
+                                stop_times = stop_times(valid_times);
+                                stop_times(stop_times > Data1{k}(end)) = Data1{k}(end);
                                 % fill with poisson noise
                                 for l = 1:numel(start_times)
                                     %%% generate noise
@@ -10950,6 +10955,7 @@ global FileInfo
 %%% use minimum number of photons per time window also as minimum number of
 %%% photons per burst total (i.e. L=M)
 [start, stop] = APBS(Data,T,M,M,1);
+inval = false(numel(start),1);
 for l = 1:numel(start)
     start(l) = find(Data > (Data(start(l)) - A*T*1E-6/FileInfo.ClockPeriod),1,'first');
     stop(l) = find(Data < (Data(stop(l)) + A*T*1E-6/FileInfo.ClockPeriod),1,'last') + 1;
@@ -10966,8 +10972,12 @@ for l = 1:numel(start)
             start(l) = stop(l-1)+1;
         end
     end
+    if start(l) >= stop(l)
+        inval(l) = true;
+    end
 end
-
+start = start(~inval(1:numel(start)));
+stop = stop(~inval(1:numel(stop)));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback to plot preview of aggregate search %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -11020,6 +11030,7 @@ stop_times = Data(stop);
 % count rate trace in units of the time bin
 [Trace,x] = histcounts(Data*FileInfo.ClockPeriod,0:T*1E-6:(Data(end)*FileInfo.ClockPeriod));
 plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
+%h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
 scale = h.Cor.Remove_Aggregates_Axes.YScale;
 h.Cor.Remove_Aggregates_Axes.YScale = 'log';
 h.Cor.Remove_Aggregates_Axes.YLimMode = 'auto';
@@ -11046,7 +11057,11 @@ if h.Cor.Preview_Correlation_Checkbox.Value
         inval = [inval,start(l):stop(l)];
     end
     Data(inval) = [];
-
+    
+    valid_times = (start_times < Data(end)) & (start_times > Data(1));
+    start_times = start_times(valid_times);
+    stop_times = stop_times(valid_times);
+    stop_times(stop_times > Data(end)) = Data(end);
     % fill with poisson noise
     for l = 1:numel(start_times)
         %%% generate noise
@@ -11062,7 +11077,7 @@ if h.Cor.Preview_Correlation_Checkbox.Value
     [Cor_After,Cor_Times]=CrossCorrelation({Data},{Data},Data(end));                 
     Cor_Times = Cor_Times*FileInfo.ClockPeriod;
     average_window = find(Cor_Times > 1e-6,1,'first'); 
-    average_window = (average_window-5):(average_window+10);
+    average_window = max([1,(average_window-5)]):min([(average_window+10),numel(Cor_Times)]);
     semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_Before./mean(Cor_Before(average_window)),'r');
     semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_After./mean(Cor_After(average_window)),'b');
     legend(h.Cor.Remove_Aggregates_FCS_Axes,'before','after');
@@ -11075,3 +11090,4 @@ else
     legend(h.Cor.Remove_Aggregates_FCS_Axes,'off');
 end
 Progress(1);
+Update_Display([],[],1);
