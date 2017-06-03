@@ -5769,7 +5769,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             
                             T = str2double(h.Cor.Remove_Aggregate_Timewindow_Edit.String)*1000; % time window in microseconds
                             timebin_add = str2double(h.Cor.Remove_Aggregate_TimeWindowAdd_Edit.String);
-                            Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String); 
+                            Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String);
+                            correlating_signal = 0;
                             for k = 1:numel(Data1)
                                 % get the average countrate of the block
                                 cr = numel(Data1{k})./Data1{k}(end)./FileInfo.ClockPeriod;
@@ -5785,6 +5786,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     inval = [inval,start(l):stop(l)];
                                 end
                                 Data1{k}(inval) = [];
+                                correlating_signal = correlating_signal + numel(Data1{k});
                                 
                                 valid_times = (start_times < Data1{k}(end)) & (start_times > Data1{k}(1));
                                 start_times = start_times(valid_times);
@@ -5802,6 +5804,9 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                 end
                             end
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data1,Maxtime);
+                            %%% correct amplitude for addition of
+                            %%% non-correlating signal
+                            Cor_Array = Cor_Array.*(sum(cellfun(@numel,Data1))./correlating_signal)^2;
                         end
                     case 4
                         [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
