@@ -49,6 +49,7 @@ classdef FileHistory < handle
             'String',filenamestring,...
             'BackgroundColor', UserValues.Look.List,...
             'ForegroundColor', UserValues.Look.ListFore,...
+            'Callback',{@Database,obj},...
             'KeyPressFcn',{@Database,obj},...
             'Tooltipstring', ['<html>'...
                           'File history<br>',...
@@ -98,8 +99,16 @@ classdef FileHistory < handle
 end
 
 function Database(hList,e,obj)
-    switch e.Key
-        case 'return'
-            obj.load_function(obj.FileList(hList.Value));
-    end
+switch e.EventName
+    case 'KeyPress' %%% key press
+        switch e.Key
+            case 'return'
+                obj.load_function(obj.FileList(hList.Value));
+        end
+    case 'Action' %%% mouse-click
+        switch get(gcf,'SelectionType')
+            case 'open' %%% double click
+                obj.load_function(obj.FileList(hList.Value));
+        end
+end
 end
