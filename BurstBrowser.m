@@ -136,6 +136,12 @@ if isempty(hfig)
         'Tag','Export_PDA_All_Menu',...
         'Callback',@Export_To_PDA,...
         'Enable','on');
+    h.ExportAllGraphs_Menu = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','<html>Export all graphs</html>',...
+        'Tag','ExportAllGraphs_Menu',...
+        'Callback',@ExportAllGraphs,...
+        'Separator','on');
      %%% Choose print path
     h.Autoset_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
@@ -2271,18 +2277,7 @@ if isempty(hfig)
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
-    
-    h.ExportAllGraphs_Button = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','Export all graphs',...
-        'Tag','ExportAllGraphs_Button',...
-        'Units','normalized',...
-        'Position',[0.6 0.01 0.35 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', Look.Control,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@ExportAllGraphs);
-   
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Data Processing Options Panel
@@ -14249,15 +14244,19 @@ switch obj
                 case 'axes_lifetime_ind_1d_y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-                    if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                    if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
                     else
-                         maxY = 0;
-                         for k = 1:numel(panel_copy.Children(i).Children)-1
-                             maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
-                         end
-                         panel_copy.Children(i).YLim = [0, maxY*1.05];
-                         color_bar = false;
+                        if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                            panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                        else
+                             maxY = 0;
+                             for k = 1:numel(panel_copy.Children(i).Children)-1
+                                 maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                             end
+                             panel_copy.Children(i).YLim = [0, maxY*1.05];
+                             color_bar = false;
+                        end
                     end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
@@ -14271,14 +14270,18 @@ switch obj
                 case 'axes_lifetime_ind_1d_x'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
-                    if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                    if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
                         panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
                     else
-                        maxY = 0;
-                        for k = 1:numel(panel_copy.Children(i).Children)-1
-                            maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                        if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                            panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                        else
+                            maxY = 0;
+                            for k = 1:numel(panel_copy.Children(i).Children)-1
+                                maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                            end
+                            panel_copy.Children(i).YLim = [0, maxY*1.05];
                         end
-                        panel_copy.Children(i).YLim = [0, maxY*1.05];
                     end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
