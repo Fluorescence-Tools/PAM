@@ -106,7 +106,7 @@ switch e.EventName
                 obj.load_function(obj.FileList(hList.Value));
         end
     case 'Action' %%% mouse-click
-        switch get(gcf,'SelectionType')
+        switch get(gcbf,'SelectionType')
             case 'open' %%% double click
                 obj.load_function(obj.FileList(hList.Value));
         end
