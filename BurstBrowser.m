@@ -2517,6 +2517,7 @@ if isempty(hfig)
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
         'KeyPressFcn',{@Database,0},...
+        'Callback',{@Database,0},...
         'Tooltipstring', ['<html>'...
                           'List of files in database <br>',...
                           '<i>"return"</i>: Loads selected files<br>',...
@@ -14967,11 +14968,19 @@ global UserValues BurstMeta BurstData
 h = guidata(obj);
 
 if mode == 0 %%% Checks, which key was pressed
-    switch e.Key
-        case 'delete'
-            mode = 2;
-        case 'return'
-            mode =5;
+    switch e.EventName
+        case 'KeyPress'
+            switch e.Key
+                case 'delete'
+                    mode = 2;
+                case 'return'
+                    mode =5;
+            end
+        case 'Action' %%% mouse-click
+            switch get(gcf,'SelectionType')
+                case 'open' %%% double click
+                    mode =5;
+            end
     end
 end
 
