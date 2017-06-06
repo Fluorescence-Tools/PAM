@@ -14209,6 +14209,9 @@ switch obj
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         panel_copy.HighlightColor = [1 1 1];
+        
+        color_bar = true;
+        
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -14240,12 +14243,22 @@ switch obj
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
             %panel_copy.Children(i).Layer = 'bottom';
+            
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    else
+                         maxY = 0;
+                         for k = 1:numel(panel_copy.Children(i).Children)-1
+                             maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                         end
+                         panel_copy.Children(i).YLim = [0, maxY*1.05];
+                         color_bar = false;
+                    end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
@@ -14258,7 +14271,15 @@ switch obj
                 case 'axes_lifetime_ind_1d_x'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    else
+                        maxY = 0;
+                        for k = 1:numel(panel_copy.Children(i).Children)-1
+                            maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                        end
+                        panel_copy.Children(i).YLim = [0, maxY*1.05];
+                    end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
@@ -14288,7 +14309,7 @@ switch obj
                     end
             end
         end
-        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
                 'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
             cbar.Position = [0.8,0.85,0.18,0.025];
