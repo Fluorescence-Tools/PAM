@@ -14974,12 +14974,12 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
-                    mode =5;
+                    mode = 5;
             end
         case 'Action' %%% mouse-click
-            switch get(gcf,'SelectionType')
+            switch get(gcbf,'SelectionType')
                 case 'open' %%% double click
-                    mode =5;
+                    mode = 5;
             end
     end
 end
