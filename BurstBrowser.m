@@ -6279,15 +6279,16 @@ if ~colorbyparam
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
         set(BurstMeta.HexPlot.MainPlot_hex,'UIContextMenu',h.ExportGraph_Menu);
     end
-    if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
-         %%% prepare 1d hists
+    if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists
+        normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button);
+        %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
         binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
         n_per_species_cum = cumsum([1,(n_per_species-1)]);
         for i = 1:numel(n_per_species_cum)-1
             hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
             hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
-            if obj ~= h.Fit_Gaussian_Button
+            if normalize %obj ~= h.Fit_Gaussian_Button
                 hx{i} = hx{i}./sum(hx{i});
                 hy{i} = hy{i}./sum(hy{i});
             end
@@ -7156,7 +7157,11 @@ if nargin < 3
     end 
 end
 global BurstData UserValues BurstMeta
-
+%%% special case when lifetime_ind tab is selected
+if (nargout == 0) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
+    PlotLifetimeInd(obj,[],h);
+    return;
+end
 %%% get selection of species list
 [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
 
@@ -7322,8 +7327,8 @@ for i = 1:num_species
     [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
 end
 
-
-if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
+normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button);
+if normalize
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
         H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
@@ -7331,14 +7336,18 @@ if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~s
 end
 
 if nargout > 0 %%% we requested the histogram, do not plot!
-    Hcum = H{1};
-    for k = 2:numel(H)
-        Hcum = Hcum + H{k};
-    end
-    if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
-        HistOut = Hcum./max(Hcum(:));
+    if (gcbo == h.MultiPlotButton) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
+        HistOut = H; %%% just return the cell array
     else
-        HistOut = Hcum;
+        Hcum = H{1};
+        for k = 2:numel(H)
+            Hcum = Hcum + H{k};
+        end
+        if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
+            HistOut = Hcum./max(Hcum(:));
+        else
+            HistOut = Hcum;
+        end
     end
     
     datapoints = [];
@@ -7355,54 +7364,9 @@ delete(BurstMeta.HexPlot.MainPlot_hex);
 %%% prepare image plot
 white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
 axes(h.axes_general);
-color = zeros(3,1,3);
-color(1,1,:) = [0    0.4471    0.7412];
-color(2,1,:) = [0.8510    0.3255    0.0980];
-color(3,1,:) = [0.4667    0.6745    0.1882];
-if num_species == 2
-    H{1}(isnan(H{1})) = 0;
-    H{2}(isnan(H{2})) = 0;
-    if white == 0
-        zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
-        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
-    elseif white == 1
-        %%% sub
-        zz = ones(size(H{1},1),size(H{1},2),3);
-        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
-    end
-elseif num_species == 3
-    H{1}(isnan(H{1})) = 0;
-    H{2}(isnan(H{2})) = 0;
-    H{3}(isnan(H{3})) = 0;
-    if white == 0
-        zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
-        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
-        zz(:,:,:) = zz(:,:,:) + repmat(H{3}/max(max(H{3})),1,1,3).*repmat(color(3,1,:),size(H{3},1),size(H{3},2),1); %%% color3
-    elseif white == 1
-        zz = ones(size(H{1},1),size(H{1},2),3);
-        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,1) = zz(:,:,1) - H{3}./max(max(H{3})); %%% green
-        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% green
-    end
-else
-    return;
-end
-if white == 0
-    beta = UserValues.BurstBrowser.Display.BrightenColorMap;
-    if beta > 0
-        zz = zz.^(1-beta);
-    elseif beta <= 0
-        zz = zz.^(1/(1+beta));
-    end
-end
+
+%%% mix histograms
+[zz,color] = overlay_colored(H);
 
 %%% plot
 set(BurstMeta.Plots.Main_Plot,'Visible','off');
@@ -7455,7 +7419,10 @@ end
 %plot first histogram
 hx = sum(H{1},1);
 %normalize
-hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
+if normalize
+    hx = hx./sum(hx);
+end
+hx = hx'; hx = [hx; hx(end)];
 xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
 BurstMeta.Plots.Multi.Multi_histX(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histX(1).XData = xbins;
@@ -7465,7 +7432,10 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'on';
     hx = sum(H{i},1);
     %normalize
-    hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
+    if normalize
+        hx = hx./sum(hx);
+    end
+    hx = hx'; hx = [hx; hx(end)];
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
     BurstMeta.Plots.Multi.Multi_histX(i).YData = hx;
 end
@@ -7476,7 +7446,10 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 %plot first histogram
 hy = sum(H{1},2);
 %normalize
-hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
+if normalize
+    hy = hy./sum(hy);
+end
+hy = hy'; hy = [hy, hy(end)];
 ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
 BurstMeta.Plots.Multi.Multi_histY(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histY(1).XData = ybins;
@@ -7486,7 +7459,10 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'on';
     hy = sum(H{i},2);
     %normalize
-    hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
+    if normalize
+        hy = hy./sum(hy);
+    end
+    hy = hy'; hy = [hy, hy(end)];
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
     BurstMeta.Plots.Multi.Multi_histY(i).YData = hy;
 end
@@ -7512,6 +7488,61 @@ legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','Font
 h.colorbar.Visible = 'off';
 h.axes_ZScale.Visible = 'off';
 set(h.axes_ZScale.Children,'Visible','off');
+
+function [zz,color] = overlay_colored(H)
+global UserValues
+%%% H is a Nx1 cell array of the individual histograms
+%%% white specifies the mode
+white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+num_species = numel(H);
+color = zeros(3,1,3);
+color(1,1,:) = [0    0.4471    0.7412];
+color(2,1,:) = [0.8510    0.3255    0.0980];
+color(3,1,:) = [0.4667    0.6745    0.1882];
+if num_species == 2
+    H{1}(isnan(H{1})) = 0;
+    H{2}(isnan(H{2})) = 0;
+    if white == 0
+        zz = zeros(size(H{1},1),size(H{1},2),3);
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
+    elseif white == 1
+        %%% sub
+        zz = ones(size(H{1},1),size(H{1},2),3);
+        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
+    end
+elseif num_species == 3
+    H{1}(isnan(H{1})) = 0;
+    H{2}(isnan(H{2})) = 0;
+    H{3}(isnan(H{3})) = 0;
+    if white == 0
+        zz = zeros(size(H{1},1),size(H{1},2),3);
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
+        zz(:,:,:) = zz(:,:,:) + repmat(H{3}/max(max(H{3})),1,1,3).*repmat(color(3,1,:),size(H{3},1),size(H{3},2),1); %%% color3
+    elseif white == 1
+        zz = ones(size(H{1},1),size(H{1},2),3);
+        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,1) = zz(:,:,1) - H{3}./max(max(H{3})); %%% green
+        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% green
+    end
+else
+    return;
+end
+if white == 0
+    beta = UserValues.BurstBrowser.Display.BrightenColorMap;
+    if beta > 0
+        zz = zz.^(1-beta);
+    elseif beta <= 0
+        zz = zz.^(1/(1+beta));
+    end
+end
 
 function [file_n,species_n,subspecies_n,sel] = get_multiselection(h)
 %%% get the selection of species list
@@ -12110,28 +12141,89 @@ h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
 h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
 h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
 
-[H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h);
-if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% multiple species selected, color automatically
     [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h,paramX,paramY,{origin.XLim,origin.YLim});
-    %%% prepare 1d hists
-    binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
-    binsy = linspace(ylimits(1),ylimits(2),numel(ybins)+1);
-    n_per_species = cumsum([1,(n_per_species-1)]);
-    for i = 1:numel(n_per_species)-1
-        hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); hx{i} = hx{i}./sum(hx{i});
-        hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); hy{i} = hy{i}./sum(hy{i});
+    normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex');
+    if gcbo ~= h.MultiPlotButton
+        %%% prepare 1d hists
+        binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
+        binsy = linspace(ylimits(1),ylimits(2),numel(ybins)+1);
+        n_per_species = cumsum([1,(n_per_species-1)]);
+        for i = 1:numel(n_per_species)-1
+            hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); 
+            if normalize;hx{i} = hx{i}./sum(hx{i});end;
+            hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
+            if normalize;hy{i} = hy{i}./sum(hy{i});end;
+        end
+        color = lines(numel(n_per_species));
+        for i = 1:numel(hx)
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
+        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+    elseif gcbo == h.MultiPlotButton
+        [zz,color] = overlay_colored(H);
+        del = false(numel(h.axes_lifetime_ind_2d.Children),1);
+        for k = 1:numel(h.axes_lifetime_ind_2d.Children)
+            if ~strcmp(h.axes_lifetime_ind_2d.Children(k).Type,'line')
+                del(k) = true;
+            end
+        end
+        delete(h.axes_lifetime_ind_2d.Children(del));
+        
+        normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot;
+        
+        multiplot = imagesc(h.axes_lifetime_ind_2d,xbins,ybins,zz);
+        uistack(multiplot,'bottom'); multiplot.UIContextMenu = h.ExportGraphLifetime_Menu;
+        white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+        %%% set alpha property
+        if white == 0
+            multiplot.AlphaData = sum(zz,3)>0;
+        else
+            multiplot.AlphaData = 1-(sum(zz,3)==3);
+        end
+        %plot first histogram
+        hx = sum(H{1},1);
+        if normalize
+            hx = hx./sum(hx);
+        end
+        hx = hx'; hx = [hx; hx(end)];
+        xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(1) = handle(stairs(xbins,hx,'Color',color(1,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        %plot rest of histograms
+        for i = 2:numel(H)
+            hx = sum(H{i},1);
+            if normalize
+                hx = hx./sum(hx);
+            end
+            hx = hx'; hx = [hx; hx(end)];
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(xbins,hx,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        end
+        
+        %plot first histogram
+        hy = sum(H{1},2);
+        if normalize
+            hy = hy./sum(hy);
+        end
+        hy = [hy; hy(end)];
+        ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(1) = handle(stairs(ybins,hy,'Color',color(1,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        %plot rest of histograms
+        for i = 2:numel(H)
+            hy = sum(H{i},2);
+            if normalize
+                hy = hy./sum(hy);
+            end
+            hy = [hy; hy(end)];
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(ybins,hy,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
     end
-    color = lines(numel(n_per_species));
-    for i = 1:numel(hx)
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
-    end
-    hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-    BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-    BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
     %%% hide normal 1d plots
     BurstMeta.Plots.LifetimeInd_histX.Visible = 'off';
     BurstMeta.Plots.LifetimeInd_histY.Visible = 'off';
+    
     %%% add legend
     [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
     num_species = numel(file_n);
@@ -12148,7 +12240,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple sp
         end
         str{i} = strrep(name,'_',' ');  
     end
-    legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    if gcbo ~= h.MultiPlotButton
+        legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    elseif gcbo ==  h.MultiPlotButton
+        legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    end
     h.axes_lifetime_ind_1d_x.YLimMode = 'auto';
     h.axes_lifetime_ind_1d_y.YLimMode = 'auto';
 end
