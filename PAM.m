@@ -261,7 +261,10 @@ h.Menu.Manual = uimenu(...
     'Separator','on',...
     'Label','PAM Manual',...
     'Callback',@Open_Doc);
-
+h.Menu.NotePad = uimenu(...
+    'Parent',h.Pam,...
+    'Label','Notepad',...
+    'Callback',@Open_Notepad);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -11098,3 +11101,12 @@ else
 end
 Progress(1);
 Update_Display([],[],1);
+
+function Open_Notepad(~,~)
+%%% Check whether notepad is open
+notepad = findobj('Tag','PAM_Notepad');
+if isempty(notepad)
+    Notepad('PAM');
+else
+    figure(notepad);
+end

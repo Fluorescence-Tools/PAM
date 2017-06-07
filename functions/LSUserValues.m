@@ -328,6 +328,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Notepad.BurstBrowser was incomplete');
     end
     P.Notepad.BurstBrowser = S.Notepad.BurstBrowser;
+    
+    if ~isfield (S.Notepad, 'PAM')
+        S.Notepad.PAM='';
+        disp('UserValues.Notepad.PAM was incomplete');
+    end
+    P.Notepad.PAM = S.Notepad.PAM;
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
 
     %%% Checks, if Settings field exists
