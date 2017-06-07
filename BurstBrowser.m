@@ -1703,14 +1703,14 @@ if isempty(hfig)
     h.FitTable_ContextMenu = uicontextmenu;
     h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Copy fit result to clipboard','Callback',@CopyFitresultToClipboard);
     h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Define Species from Fit','Callback',@SpeciesFromGaussianFit,'Separator','on');
-    h.GUIData.TableDataMLE = cell(7,6);
+    h.GUIData.TableDataMLE = cell(8,6);
     h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
     h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
     h.GUIData.ColumnEditableMLE = false(1,6);
     h.GUIData.ColumnWidthMLE = {100,100,100,100,100,100,100};
     h.GUIData.ColumnFormatMLE = repmat({'numeric'},1,7);
-    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0.01,Inf,false,0.05,0.01,Inf,false,0,-Inf,Inf,false],[4,1]));
-    for i =1:4
+    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0.01,Inf,false,0.05,0.01,Inf,false,0,-Inf,Inf,false],[5,1]));
+    for i =1:5
         h.GUIData.TableDataLSQ(i,4:4:end) = {false,false,false,false,false,false};
     end
     h.GUIData.ColumnEditableLSQ = true(1,24);
@@ -5255,7 +5255,7 @@ switch obj
         if strcmp(UserValues.BurstBrowser.Settings.GaussianFitMethod,'LSQ')
             %%% change fixed values in table
             nG = obj.Value;
-            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG,1/nG};
+            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG,1/nG,1/nG};
             for i = 1:nG           
                 h.Fit_Gaussian_Text.Data(i,4:4:end) = {false,false,false,false,false,false};
             end
