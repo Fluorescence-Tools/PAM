@@ -10431,7 +10431,7 @@ switch obj
                 det = find((UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)));
                 if ~isempty(PamMeta.MI_Hist{det})
                     % there is data in the corresponding detector/router channel
-                    if sum(PamMeta.MI_Hist{det}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                    if sum(PamMeta.MI_Hist{det}(max([1,UserValues.PIE.From(i)]):min([UserValues.PIE.To(i),end]))) > 0
                         % there is data in the PIE channel range
                         valid(i) = 1;
                     end
