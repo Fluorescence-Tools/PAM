@@ -866,14 +866,14 @@ switch Type
                 E = E.EGR;
             end
             Data.E = E;
-            Data.Cor_Times = x;
-            his = histcounts(E,x); his = [his'; his(end)];
+            his = histcounts(E,x);
             Data.Cor_Average = his./sum(his)./min(diff(x));
             error = sqrt(his)./sum(his)./min(diff(x));
             Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
             Data.Cor_Array = [];
             Data.Valid = [];
             Data.Counts = [numel(E), numel(E)];
+            Data.Cor_Times = x(1:end-1)+bin/2;
             FCSData.Data{end+1} = Data;
 
             %%% Updates global parameters
@@ -898,7 +898,7 @@ switch Type
                 'XData',FCSMeta.Data{end,1},...
                 'YData',zeros(numel(FCSMeta.Data{end,1}),1));
             FCSMeta.Plots{end,4} = stairs(...
-                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,1}-bin/2,...
                 FCSMeta.Data{end,2},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
