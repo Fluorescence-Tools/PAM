@@ -8561,14 +8561,16 @@ switch obj
         h.Progress.Axes.Color=[1 0 0];
         %%% Find selected channels
         Sel=h.PIE.List.Value;
-        if isempty(UserValues.PIE.Combined{Sel})
-            %%% Update IRF of selected channel
-            det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)) );
-            UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{det(1)}';
-            %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 1:FileInfo.MI_Bins))';
-        else
-            uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
-            return
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update IRF of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.IRF{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+                %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 1:FileInfo.MI_Bins))';
+            else
+                uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
         end
         h.MI.IRF.Checked = 'on';
         UserValues.Settings.Pam.PlotIRF = 'on';
