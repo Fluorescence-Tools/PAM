@@ -4,8 +4,8 @@ h.TauFit = findobj('Tag','TauFit');
 addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
 method = '';
-%%% If called from command line
-if nargin < 1 && isempty(gcbo)
+%%% If called from command line, or from Launcher
+if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'TauFit_Launcher'))
     Close_TauFit
     %disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     %return;
