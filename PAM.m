@@ -9753,6 +9753,11 @@ switch mode
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 return
             end
+            if ~iscell(PamMeta.Export{i,1}{1})
+                num_files = 1;
+            else
+                num_files = numel(PamMeta.Export{i,1}{1});
+            end
             try
                 % Path is unique per file in the database, so we have to store
                 % it globally in UserValues each time
@@ -9763,16 +9768,16 @@ switch mode
                     PamMeta.Export{i,3});     %type
                 Pam_Export([],event,Sel,1)
                 % set filename color to green
-                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             catch
-                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             end
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
         end
         h.Export.TIFF.UserData = 0;
         h.Export.TIFF.String = 'Export TIFFs';
-    case 6 %% Export PIE channels as microtime histograms to *.txt file
+    case 6 %% Export PIE channels as microtime histograms to *.dec file
         Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
@@ -9804,7 +9809,12 @@ switch mode
                 PamMeta.Export{i,3});     %type
             Pam_Export([],event,Sel,1)
             % set filename color to green
-            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            if ~iscell(PamMeta.Export{i,1}{1})
+                num_files = 1;
+            else
+                num_files = numel(PamMeta.Export{i,1}{1});
+            end
+            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
 
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
