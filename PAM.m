@@ -6123,6 +6123,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Progress(1);
     Update_Display([],[],1);
 end
+%%% reorder tabs in correlation preview (move aggregate window to the back)
+h.Cor.Correlations_Tabs.Children = h.Cor.Correlations_Tabs.Children([1, (2:numel(h.Cor.Correlations_Tabs.Children)-1)+1, 2]);
 
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
