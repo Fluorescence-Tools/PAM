@@ -37,7 +37,9 @@ warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
 %%% Loads user profile
 Profiles=LSUserValues(0);
-Profiles = cellfun(@fileparts,Profiles); % remove extension
+for i = 1:numel(Profiles)
+    [~, Profiles{i}, ~] = fileparts(Profiles{i});
+end
 %%% To save typing
 Look=UserValues.Look;
 %%% Generates the Pam figure
@@ -5258,10 +5260,10 @@ global UserValues PamMeta
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
-    load([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'profile.mat']);
+    load([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat']);
     for i=1:numel(h.Profiles.List.String)
         %%% Looks for current profile in profiles list
-        if strcmp(h.Profiles.List.String{i}, Profile) %#ok<NODEF>
+        if strcmp([h.Profiles.List.String{i} '.mat'], Profile) %#ok<NODEF>
             %%% Changes color to indicate current profile
             h.Profiles.List.String{i}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{i} '</Font></html>'];
             return
