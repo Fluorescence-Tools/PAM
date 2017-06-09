@@ -1093,7 +1093,7 @@ switch (Type)
                     Custom = str2func(UserValues.File.Custom_Filetype);
                 end
             end
-            if ~exist('Custom','var') %%% Aborts is file does not exist anymore
+            if ~exist('Custom','var') %%% Aborts if file does not exist anymore
                 return;
             end
         end  
