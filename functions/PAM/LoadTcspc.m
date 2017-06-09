@@ -1084,7 +1084,7 @@ switch (Type)
         %%% The User can select which Read-Ins to display an use
         %%% This will allow easier, modular implementation of custom file types (esp. for scanning) 
         if ~exist('Custom','var') %%% If it was called from the database etc.
-            Customdir = [fileparts(mfilename('fullpath')) filesep '..' filesep '..' filesep 'functions' filesep 'Custom_Read_Ins']; %%% two up from current .m file
+            Customdir = [fileparts(mfilename('fullpath')) filesep '..' filesep 'Custom_Read_Ins']; %%% one up from current .m file
             %%% Finds all matlab files in profiles directory
             Custom_Methods = what(Customdir);
             Custom_Methods = Custom_Methods.m(:);
