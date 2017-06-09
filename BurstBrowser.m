@@ -4274,7 +4274,14 @@ for i = 1:numel(FileName)
                 S.BurstData.NameArray = S.NameArray;
                 S.BurstData.DataArray = S.DataArray;
                 S.BurstData.BAMethod = S.Data.BAMethod;
-                S.BurstData.FileType = S.Data.Filetype;
+                if isfield(S.Data,'Filetype')
+                    S.BurstData.FileType = S.Data.Filetype;
+                else
+                    S.BurstData.FileType = 'SPC';
+                end
+                if ~isfield(S.Data,'SyncRate')
+                    S.Data.SyncRate = round(1/37.5E-9);
+                end
                 if isfield(S.Data,'TACrange')
                     S.BurstData.TACRange = S.Data.TACrange;
                 else
@@ -4305,13 +4312,14 @@ for i = 1:numel(FileName)
                     end
                     S.BurstData.ScatterPattern = S.BurstData.IRF;
                 end
-
-                S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
-                S.BurstTCSPCData.Microtime = S.Data.Microtime;
-                S.BurstTCSPCData.Channel = S.Data.Channel;
-                S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
-                S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
-                S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                if isfield(S.Data,'Macrotime')
+                    S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
+                    S.BurstTCSPCData.Microtime = S.Data.Microtime;
+                    S.BurstTCSPCData.Channel = S.Data.Channel;
+                    S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
+                    S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
+                    S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                end
             case {3,4} %%% 3Color MFD
                 %%% Convert NameArray
                 S.NameArray{strcmp(S.NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
