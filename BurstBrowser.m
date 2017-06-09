@@ -4365,19 +4365,20 @@ for i = 1:numel(FileName)
                 if isfield(S.Data,'Filetype')
                     S.BurstData.FileType = S.Data.Filetype;
                 end
-                if isfield(S.Data,'SyncRate')
-                    if isfield(S.Data,'TACrange')
-                        S.BurstData.TACRange = S.Data.TACrange;
-                        S.BurstData.FileInfo.TACRange = S.Data.TACrange;
-                    else
-                        S.BurstData.TACRange =  1E9./S.Data.SyncRate;
-                        S.BurstData.FileInfo.TACRange =  1E9./S.Data.SyncRate;
-                        % this will not work if the syncrate and clockrate are
-                        % different
-                    end
-                    S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
-                    S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;  %kba file from old pam
+                if ~isfield(S.Data,'SyncRate')
+                    S.Data.SyncRate = round(1/37.5E-9);
                 end
+                if isfield(S.Data,'TACrange')
+                    S.BurstData.TACRange = S.Data.TACrange;
+                    S.BurstData.FileInfo.TACRange = S.Data.TACrange;
+                else
+                    S.BurstData.TACRange =  1E9./S.Data.SyncRate;
+                    S.BurstData.FileInfo.TACRange =  1E9./S.Data.SyncRate;
+                    % this will not work if the syncrate and clockrate are
+                    % different
+                end
+                S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
+                S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;  %kba file from old pam
                 S.BurstData.FileInfo.MI_Bins = 4096;
 
                 if isfield(S.Data,'PIEChannels')
