@@ -2,7 +2,7 @@ function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
 global UserValues FileInfo
 
 %%% get path to profile dir (i.e. on up from the location of LSUserValues.m)
-Profiledir=[fileparts(mfilename('fullpath')), '/../profiles'];
+Profiledir=[fileparts(mfilename('fullpath')) filesep '..' filesep 'profiles'];
 
 if Mode==0 %%% Loads user values
     %% Identifying current profile

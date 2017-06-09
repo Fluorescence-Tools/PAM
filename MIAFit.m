@@ -1070,18 +1070,18 @@ global MIAFitMeta MIAFitData UserValues
 
 FileName=[];
 if mode %% Select a new model to load
-    [FileName,PathName]= uigetfile('.miafit', 'Choose a fit model', [pwd filesep 'Models']);
+    [FileName,PathName]= uigetfile('.miafit', 'Choose a fit model', [fileparts(mfilename('fullpath')) filesep 'Models']);
     if all(FileName==0)
        return; 
     end
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.MIAFit_Standard) || ~exist(UserValues.File.MIAFit_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
-    Models=dir([pwd filesep 'Models']);
+    Models=dir([fileparts(mfilename('fullpath')) filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-6:end),'.miafit')
-           FileName=[pwd filesep 'Models' filesep Models(1).name];
+           FileName=[fileparts(mfilename('fullpath')) filesep 'Models' filesep Models(1).name];
            UserValues.File.MIAFit_Standard=FileName;
        else
            Models(1)=[];

@@ -37,6 +37,7 @@ warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
 warning('off','MATLAB:uigridcontainer:MigratingFunction');
 %%% Loads user profile
 Profiles=LSUserValues(0);
+Profiles = cellfun(@fileparts,Profiles); % remove extension
 %%% To save typing
 Look=UserValues.Look;
 %%% Generates the Pam figure
@@ -3038,10 +3039,10 @@ h.MI.Auto = uimenu(...
 %%% Following is alternate implementation using a table instead of a
 %%% list
 if ispc
-    trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
     trash_image = strrep(trash_image,'\','/');
 else
-    trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
 end
 TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on',0};
 ColumnNames = {'<html><font size=4><b>Name</b></font></html>','<html><font size=4><b>Det#</b></font></html>','<html><font size=4><b>Rout#</b></font></html>','<html><font size=4><b>Color</b></font></html>','<html><font size=4><b>Filter</b></font></html>','<html><font size=4><b>Pol</b></font></html>','<html><font size=4><b>BS</b></font></html>','<html><font size=4><b>Enabled</b></font></html>',trash_image};
@@ -3152,7 +3153,7 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
 
 %%% Allows custom Filetype selection
-Customdir = [pwd filesep 'functions' filesep 'Custom_Read_Ins'];
+Customdir = [fileparts(mfilename('fullpath')) filesep 'functions' filesep 'Custom_Read_Ins'];
 %%% Finds all matlab files in profiles directory
 Custom_Methods = what(Customdir);
 Custom_Methods = ['none'; Custom_Methods.m(:)];
@@ -5257,7 +5258,7 @@ global UserValues PamMeta
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
-    load([pwd filesep 'profiles' filesep 'profile.mat']);
+    load([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'profile.mat']);
     for i=1:numel(h.Profiles.List.String)
         %%% Looks for current profile in profiles list
         if strcmp(h.Profiles.List.String{i}, Profile) %#ok<NODEF>
@@ -5293,8 +5294,8 @@ switch e.Key
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
             PIE=[];
-            save([pwd filesep 'profiles' filesep Name{1} '.mat'],'PIE');
-            h.Profiles.List.String{end+1}=[Name{1} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'PIE');
+            h.Profiles.List.String{end+1} = Name{1};
         end
     case {'delete';'subtract'}
         %% Deletes selected profile
@@ -5302,15 +5303,15 @@ switch e.Key
             %%% If selected profile is not the current profile
             if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
                 %%% Deletes profile file and list entry
-                delete([pwd filesep 'profiles' filesep h.Profiles.List.String{Sel}])
+                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
                 h.Profiles.List.String(Sel)=[];
             else
                 %%% Deletes profile file and list entry
-                delete([pwd filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14))])
+                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
                 h.Profiles.List.String(Sel)=[];
                 %%% Selects first profile as current profile
-                Profile=h.Profiles.List.String{1};
-                save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
+                Profile= [h.Profiles.List.String{1} '.mat'];
+                save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
                 %%% Updates UserValues
                 LSUserValues(1);
                 %%% Changes color to indicate current profile
@@ -5329,14 +5330,14 @@ switch e.Key
         %%% Only executes if
         if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
             for i=1:numel(h.Profiles.List.String)
-                if~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
+                if ~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
                     h.Profiles.List.String{i}=h.Profiles.List.String{i}(26:(end-14));
                     break;
                 end
             end
             %%% Makes selected profile the current profile
-            Profile=h.Profiles.List.String{Sel};
-            save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
+            Profile= [h.Profiles.List.String{Sel} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
             LSUserValues(0);          
             %%% Changes color to indicate current profile
@@ -5370,8 +5371,8 @@ switch e.Key
         Name=inputdlg('Enter profile name:');
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
-            save([pwd filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
-            h.Profiles.List.String{end+1}=[Name{1} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
+            h.Profiles.List.String{end+1} = Name{1};
         end
 end
 
@@ -10810,7 +10811,7 @@ end
 
 fprintf(fid,'\n');
 %%% profile name
-s = load(fullfile(pwd,'profiles','Profile.mat'));
+s = load(fullfile(fileparts(mfilename('fullpath')),'profiles','Profile.mat'));
 fprintf(fid,'Profile name:\t%s\n\n',s.Profile(1:end-4));
 %%% PIE channel information
 fprintf(fid,'PIE Channel Information\n');
@@ -10876,7 +10877,7 @@ switch obj
         end
         ProfileData = load(fullfile(Path,File),'-mat');
         ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
-        save(fullfile([pwd filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
+        save(fullfile([fileparts(mfilename('fullpath')) filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
         
         Current_Exists = 0;
         %%% Checks position of the "Current" profile in the list
@@ -10911,7 +10912,7 @@ function Open_Doc(~,~)
 if isunix
     [status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
 elseif ispc
-    command = [pwd,'\doc\sphinx_docs\build\html\index.html'];
+    command = [fileparts(mfilename('fullpath')),'\doc\sphinx_docs\build\html\index.html'];
     [status,cmdout] = system(command);
 end
 if ~isempty(cmdout)

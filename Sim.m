@@ -2340,7 +2340,7 @@ if ~advanced
         Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
         Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
 
-        fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
+        fid = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'timing.txt'],'w');
         fclose(fid);
         if fid == -1
             return;
@@ -2421,7 +2421,7 @@ if ~advanced
                 MI4{j} = [MI4{j}; uint16(MI(bitand(Channel,3)==3))];
             end
 
-            FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
+            FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'Timing.txt'],'a');
             fprintf(FID,['Particle' num2str(j) '\n']);
             fclose(FID);
         end
@@ -2804,7 +2804,7 @@ if advanced
             Photons3s = cell(NoP,1); MI3s = cell(NoP,1);
             Photons4s = cell(NoP,1); MI4s = cell(NoP,1);
         end
-        fid = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'w');
+        fid = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'timing.txt'],'w');
         fclose(fid);
         if fid == -1
             return;
@@ -2909,7 +2909,7 @@ if advanced
                 end
             end
 
-            FID = fopen([pwd,filesep,'Profiles',filesep,'Timing.txt'],'a');
+            FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'Timing.txt'],'a');
             fprintf(FID,['Particle' num2str(j) '\n']);
             fclose(FID);
         end
@@ -3545,7 +3545,7 @@ switch mode
     case 1 %%% Simulation starts
         Progress(0,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);
     case 2 %%% Simulation progress update
-        FID = fopen([pwd,filesep,'Profiles',filesep,'timing.txt'],'r');
+        FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'timing.txt'],'r');
         Text = fread(FID);
         fclose(FID);
         Progress(sum(Text==10)/NoP,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);

@@ -710,16 +710,16 @@ if isempty(hfig)
     
     %define the cut table
     if ispc
-        trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+        trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
         trash_image = strrep(trash_image,'\','/');
-        circle_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        circle_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
         circle_image = strrep(circle_image,'\','/');
-        zscale_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+        zscale_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
         zscale_image = strrep(zscale_image,'\','/');
     else
-        trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
-        circle_image = ['<html><img src="file://' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
-        zscale_image = ['<html><img src="file://' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+        trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
+        circle_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        zscale_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
     end
     cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'char','numeric','numeric','logical','logical','logical'};

@@ -1042,15 +1042,15 @@ FileName=[];
 FilterIndex = 1;
 if mode
     %% Select a new model to load
-    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [pwd filesep 'Models']);
+    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [fileparts(mfilename('fullpath')) filesep 'Models']);
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
-    Models=dir([pwd filesep 'Models']);
+    Models=dir([fileparts(mfilename('fullpath')) filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-3:end),'.txt') 
-           FileName=[pwd filesep 'Models' filesep Models(1).name];
+           FileName=[fileparts(mfilename('fullpath')) filesep 'Models' filesep Models(1).name];
            UserValues.File.FCS_Standard=FileName;
        else
            Models(1)=[];
