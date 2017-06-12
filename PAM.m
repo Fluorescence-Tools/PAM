@@ -9518,7 +9518,7 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
-                    mode =7;
+                    %mode =7;
             end
         case 'Action' %%% mouse-click
             switch get(gcbf,'SelectionType')
@@ -9624,7 +9624,7 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
-                    mode =9;
+                    %mode =9;
             end
         case 'Action' %%% mouse-click
             switch get(gcbf,'SelectionType')

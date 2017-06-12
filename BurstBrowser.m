@@ -4265,12 +4265,18 @@ for i = 1:numel(FileName)
                 end
                 S.NameArray{end+1} = 'Anisotropy D';
                 S.NameArray{end+1} = 'Anisotropy A';
-                %%% Caculate Anisotropies
+                %%% Calculate Anisotropies
                 S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')))./...
                     (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')));
                 S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')))./...
                     (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')));
-
+                
+                if sum(strcmp(S.NameArray,'Proximity Ratio')) == 0
+                    S.NameArray{end+1} = 'Proximity Ratio';
+                    S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA perp)')))./...
+                        (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')) +...
+                         S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA perp)')));
+                end
                 S.BurstData.NameArray = S.NameArray;
                 S.BurstData.DataArray = S.DataArray;
                 S.BurstData.BAMethod = S.Data.BAMethod;
@@ -8031,7 +8037,8 @@ switch obj
         UpdateCuts();
         
         %%% Update Plot
-        UpdatePlot([],[],h);        
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
     case h.RemoveCutDatabase_Menu
         %%% check if cuts are available
         if isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{BAMethod}))
@@ -14983,7 +14990,7 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
-                    mode = 5;
+                    %mode = 5;
             end
         case 'Action' %%% mouse-click
             switch get(gcbf,'SelectionType')

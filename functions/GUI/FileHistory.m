@@ -115,7 +115,7 @@ switch e.EventName
     case 'KeyPress' %%% key press
         switch e.Key
             case 'return'
-                obj.load_function(obj.FileList(hList.Value));
+                %obj.load_function(obj.FileList(hList.Value));
             case 'delete'
                 obj.remove_items();
         end
