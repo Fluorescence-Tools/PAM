@@ -15409,7 +15409,7 @@ if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray) || any(~st
     end
 end
 
-if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
+if numel(h.ParameterListY.String) ~= numel(BurstData{file}.NameArray)
     paramY = h.ParameterListY.String{h.ParameterListY.Value};
     h.ParameterListY.String = BurstData{file}.NameArray;
     val = find(strcmp(BurstData{file}.NameArray,paramY));
