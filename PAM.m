@@ -5721,7 +5721,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Actually calculates the crosscorrelation
                 switch Cor_Type
                     case 1
-                        if ~(h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) && ~(h.Cor.AggregateCorrection.Value && (Cor_A(i) == Cor_B(i)))
+                        if ~(h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) && ~(h.Cor.AggregateCorrection.Value)
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
                         elseif (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) 
                             %%% do after pulse correction if same detector is selected
@@ -5754,7 +5754,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             end
                             %%% Do the autocorrelation with weights
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
-                        elseif (h.Cor.AggregateCorrection.Value && (Cor_A(i) == Cor_B(i)))
+                        elseif h.Cor.AggregateCorrection.Value
                             %%% do inverse burst search to remove aggrates
                             %%% simply erase regions of aggregates for now
                             
@@ -5796,10 +5796,54 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     Data1{k} = [Data1{k}(1:idx); t';Data1{k}((idx+1):end)];
                                 end
                             end
-                            [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data1,Maxtime);
-                            %%% correct amplitude for addition of
-                            %%% non-correlating signal
-                            Cor_Array = Cor_Array.*(sum(cellfun(@numel,Data1))./correlating_signal)^2;
+                            if (Cor_A(i) == Cor_B(i)) %%% autocorrelation
+                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data1,Maxtime);
+                                %%% correct amplitude for addition of
+                                %%% non-correlating signal
+                                Cor_Array = Cor_Array.*(sum(cellfun(@numel,Data1))./correlating_signal)^2;
+                            else %%% cross-correlation
+                                %%% remove aggregates in second channel
+                                correlating_signal2 = 0;
+                                for k = 1:numel(Data2)
+                                    % get the average countrate of the block
+                                    cr = numel(Data2{k})./Data2{k}(end)./FileInfo.ClockPeriod;
+                                    M = T*1E-6*cr;% minimum number of photons in time window
+                                    M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+                                    
+                                    [start, stop] = find_aggregates(Data2{k},T,M,timebin_add);
+                                    start_times = Data2{k}(start);
+                                    stop_times = Data2{k}(stop);
+                                    
+                                    inval = [];
+                                    for l = 1:numel(start)
+                                        inval = [inval,start(l):stop(l)];
+                                    end
+                                    Data2{k}(inval) = [];
+                                    correlating_signal2 = correlating_signal2 + numel(Data2{k});
+                                    
+                                    valid_times = (start_times < Data2{k}(end)) & (start_times > Data2{k}(1));
+                                    start_times = start_times(valid_times);
+                                    stop_times = stop_times(valid_times);
+                                    stop_times(stop_times > Data2{k}(end)) = Data2{k}(end);
+                                    % determine the count rate over the filtered signal
+                                    cr = numel(Data2{k})./(Data2{k}(end)-sum(start_times-stop_times));
+                                    % fill with poisson noise
+                                    for l = 1:numel(start_times)
+                                        %%% generate noise
+                                        t = start_times(l);
+                                        while t(end) < stop_times(l);
+                                            t(end+1) = t(end) + exprnd(1/cr);
+                                        end
+                                        idx = find(Data2{k} < start_times(l),1,'last');
+                                        Data2{k} = [Data2{k}(1:idx); t';Data2{k}((idx+1):end)];
+                                    end
+                                end
+                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                                %%% correct amplitude for addition of
+                                %%% non-correlating signal
+                                correction_factor  = (sum(cellfun(@numel,Data1)).*sum(cellfun(@numel,Data2)))./(correlating_signal.*correlating_signal2);
+                                Cor_Array = Cor_Array.*correction_factor;
+                            end
                         end
                     case 4
                         [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
@@ -11016,48 +11060,63 @@ Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Aggregate Removal Previ
 
 cla(h.Cor.Remove_Aggregates_Axes);
 [Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
-valid = Cor_A == Cor_B;
-Cor = Cor_A(valid);
-if isempty(Cor)
-    Progress(1);
-    return;
-end
-if numel(Cor) > 1
-    Cor = Cor(1);
+%valid = Cor_A == Cor_B;
+%Cor = Cor_A(valid);
+% if isempty(Cor)
+%     Progress(1,h.Progress.Axes, h.Progress.Text);
+%     return;
+% end
+if numel(Cor_A) > 1
+    Cor_A = Cor_A(1);
+    Cor_B = Cor_B(1);
 end
 
 Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
 
-Det1=UserValues.PIE.Detector(Cor);
-Rout1=UserValues.PIE.Router(Cor);
-To1=UserValues.PIE.To(Cor);
-From1=UserValues.PIE.From(Cor);
-Name = UserValues.PIE.Name{Cor};
+Det1=UserValues.PIE.Detector(Cor_A);
+Rout1=UserValues.PIE.Router(Cor_A);
+To1=UserValues.PIE.To(Cor_A);
+From1=UserValues.PIE.From(Cor_A);
+Name1 = UserValues.PIE.Name{Cor_A};
 
 j = round(str2double(h.Cor.Remove_Aggregate_Block_Edit.String));
 
-Data=[TcspcData.MT{Det1,Rout1}(...
+Data1=[TcspcData.MT{Det1,Rout1}(...
 TcspcData.MI{Det1,Rout1}>=From1 &...
 TcspcData.MI{Det1,Rout1}<=To1 &...
 TcspcData.MT{Det1,Rout1}>=Times(j) &...
 TcspcData.MT{Det1,Rout1}<Times(j+1))-Times(j)];
+
+if Cor_B ~= Cor_A
+    Det2=UserValues.PIE.Detector(Cor_B);
+    Rout2=UserValues.PIE.Router(Cor_B);
+    To2=UserValues.PIE.To(Cor_B);
+    From2=UserValues.PIE.From(Cor_B);
+    Name2 = UserValues.PIE.Name{Cor_B};
+    
+    Data2=[TcspcData.MT{Det2,Rout2}(...
+    TcspcData.MI{Det2,Rout2}>=From2 &...
+    TcspcData.MI{Det2,Rout2}<=To2 &...
+    TcspcData.MT{Det2,Rout2}>=Times(j) &...
+    TcspcData.MT{Det2,Rout2}<Times(j+1))-Times(j)];
+end
 
 T = str2double(h.Cor.Remove_Aggregate_Timewindow_Edit.String)*1000;%in mus
 timebin_add = str2double(h.Cor.Remove_Aggregate_TimeWindowAdd_Edit.String);
 Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String);
 
 % get the average countrate of the block
-cr = numel(Data)./Data(end)./FileInfo.ClockPeriod;
+cr = numel(Data1)./Data1(end)./FileInfo.ClockPeriod;
 M = T*1E-6*cr;% minimum number of photons in time window
 M = round(M + Nsigma*sqrt(M)); %%% add N sigma
                                 
-[start, stop] = find_aggregates(Data,T,M,timebin_add);
-start_times = Data(start);
-stop_times = Data(stop);
+[start1, stop1] = find_aggregates(Data1,T,M,timebin_add);
+start_times1 = Data1(start1);
+stop_times1 = Data1(stop1);
 
 % count rate trace in units of the time bin
-[Trace,x] = histcounts(Data*FileInfo.ClockPeriod,0:T*1E-6:(Data(end)*FileInfo.ClockPeriod));
-plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
+[Trace,x] = histcounts(Data1*FileInfo.ClockPeriod,0:T*1E-6:(Data1(end)*FileInfo.ClockPeriod));
+trace1 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
 %h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
 scale = h.Cor.Remove_Aggregates_Axes.YScale;
 h.Cor.Remove_Aggregates_Axes.YScale = 'log';
@@ -11067,11 +11126,49 @@ h.Cor.Remove_Aggregates_Axes.YScale = scale;
 if strcmp(scale,'linear')
     h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
 end
-for i = 1:numel(start_times)
-    patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times(i),stop_times(i),stop_times(i),start_times(i)],...
-        [minY,minY,maxY,maxY],'r','FaceAlpha',0.3,'EdgeColor','none');
+for i = 1:numel(start_times1)
+    patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times1(i),stop_times1(i),stop_times1(i),start_times1(i)],...
+        [minY,minY,maxY,maxY],'b','FaceAlpha',0.3,'EdgeColor','none');
 end
-legend(h.Cor.Remove_Aggregates_Axes,Name);
+
+%%% plot second channel
+if Cor_B ~= Cor_A
+    % get the average countrate of the block
+    cr = numel(Data2)./Data2(end)./FileInfo.ClockPeriod;
+    M = T*1E-6*cr;% minimum number of photons in time window
+    M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+    
+    [start2, stop2] = find_aggregates(Data2,T,M,timebin_add);
+    start_times2 = Data2(start2);
+    stop_times2 = Data2(stop2);
+    
+    % count rate trace in units of the time bin
+    [Trace,x] = histcounts(Data2*FileInfo.ClockPeriod,0:T*1E-6:(Data2(end)*FileInfo.ClockPeriod));
+    trace2 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-r');
+    %h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
+    scale = h.Cor.Remove_Aggregates_Axes.YScale;
+    h.Cor.Remove_Aggregates_Axes.YScale = 'log';
+    minY = h.Cor.Remove_Aggregates_Axes.YLim(1);
+    maxY = h.Cor.Remove_Aggregates_Axes.YLim(2);
+    h.Cor.Remove_Aggregates_Axes.YScale = scale;
+    if strcmp(scale,'linear')
+        h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
+    end
+    for i = 1:numel(start_times2)
+        patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times2(i),stop_times2(i),stop_times2(i),start_times2(i)],...
+            [minY,minY,maxY,maxY],'r','FaceAlpha',0.3,'EdgeColor','none');
+    end
+end
+if (Cor_B == Cor_A)
+    legend(trace1,Name1);
+else
+    legend([trace1,trace2],{Name1,Name2});
+end
+
+if (Cor_B == Cor_A)
+    Data2 = Data1;
+end
+
 if h.Cor.Preview_Correlation_Checkbox.Value
     Progress(0.5,h.Progress.Axes, h.Progress.Text,'Calculating Aggregate Removal Preview...');
     h.Cor.Remove_Aggregates_FCS_Axes.Visible = 'on';
@@ -11079,34 +11176,62 @@ if h.Cor.Preview_Correlation_Checkbox.Value
     cla(h.Cor.Remove_Aggregates_FCS_Axes);
     
     %%% do correlation before correction
-    [Cor_Before,Cor_Times]=CrossCorrelation({Data},{Data},Data(end));                                        
-
+    MaxTime = max([Data1(end),Data2(end)]);
+    [Cor_Before,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                                        
+    
     %%% correct for aggregates
     inval = [];
-    for l = 1:numel(start)
-        inval = [inval,start(l):stop(l)];
+    for l = 1:numel(start1)
+        inval = [inval,start1(l):stop1(l)];
     end
-    Data(inval) = [];
+    Data1(inval) = [];
     
-    valid_times = (start_times < Data(end)) & (start_times > Data(1));
-    start_times = start_times(valid_times);
-    stop_times = stop_times(valid_times);
-    stop_times(stop_times > Data(end)) = Data(end);
+    valid_times = (start_times1 < Data1(end)) & (start_times1 > Data1(1));
+    start_times1 = start_times1(valid_times);
+    stop_times1 = stop_times1(valid_times);
+    stop_times1(stop_times1 > Data1(end)) = Data1(end);
     % determine the count rate over the filtered signal
-    cr = numel(Data)./(Data(end)-sum(start_times-stop_times));
+    cr = numel(Data1)./(Data1(end)-sum(start_times1-stop_times1));
     % fill with poisson noise
-    for l = 1:numel(start_times)
+    for l = 1:numel(start_times1)
         %%% generate noise
-        t = start_times(l);
-        while t(end) < stop_times(l);
+        t = start_times1(l);
+        while t(end) < stop_times1(l);
             t(end+1) = t(end) + exprnd(1/cr);
         end
-        idx = find(Data < start_times(l),1,'last');
-        Data = [Data(1:idx); t';Data((idx+1):end)];
+        idx = find(Data1 < start_times1(l),1,'last');
+        Data1 = [Data1(1:idx); t';Data1((idx+1):end)];
     end
-
+    
+    if Cor_B == Cor_A
+        Data2 = Data1;
+    else %%% do correction for second channel as well
+        inval = [];
+        for l = 1:numel(start2)
+            inval = [inval,start2(l):stop2(l)];
+        end
+        Data2(inval) = [];
+        
+        valid_times = (start_times2 < Data2(end)) & (start_times2 > Data2(1));
+        start_times2 = start_times2(valid_times);
+        stop_times2 = stop_times2(valid_times);
+        stop_times2(stop_times2 > Data2(end)) = Data2(end);
+        % determine the count rate over the filtered signal
+        cr = numel(Data2)./(Data2(end)-sum(start_times2-stop_times2));
+        % fill with poisson noise
+        for l = 1:numel(start_times2)
+            %%% generate noise
+            t = start_times2(l);
+            while t(end) < stop_times2(l);
+                t(end+1) = t(end) + exprnd(1/cr);
+            end
+            idx = find(Data2 < start_times2(l),1,'last');
+            Data2 = [Data2(1:idx); t';Data2((idx+1):end)];
+        end
+    end
     %%% do correlation after correction
-    [Cor_After,Cor_Times]=CrossCorrelation({Data},{Data},Data(end));                 
+    MaxTime = max([Data1(end),Data2(end)]);
+    [Cor_After,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                 
     Cor_Times = Cor_Times*FileInfo.ClockPeriod;
     average_window = find(Cor_Times > 1e-6,1,'first'); 
     average_window = max([1,(average_window-5)]):min([(average_window+10),numel(Cor_Times)]);
@@ -11114,7 +11239,7 @@ if h.Cor.Preview_Correlation_Checkbox.Value
     semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_After./mean(Cor_After(average_window)),'b');
     legend(h.Cor.Remove_Aggregates_FCS_Axes,'before','after');
     axis(h.Cor.Remove_Aggregates_FCS_Axes,'tight');
-    h.Cor.Remove_Aggregates_FCS_Axes.XLim = [1E-6,Data(end)*FileInfo.ClockPeriod/10];
+    h.Cor.Remove_Aggregates_FCS_Axes.XLim = [1E-6,MaxTime*FileInfo.ClockPeriod/10];
 else
     cla(h.Cor.Remove_Aggregates_FCS_Axes);
     h.Cor.Remove_Aggregates_FCS_Axes.Visible = 'off';
