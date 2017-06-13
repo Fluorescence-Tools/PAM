@@ -3793,6 +3793,11 @@ if any(mode==1)
     if UserValues.PIE.Detector(Sel) ~= 0 %%% only if no combined channel is selected
         h.PIE.DetectionChannel.Value = find((UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) &...
             (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)),1);
+        if isempty(h.PIE.DetectionChannel.Value) %%% catch case where default value was set to 1,1, but the setup has no detector channel one
+            h.PIE.DetectionChannel.Value = 1;
+            UserValues.PIE.Detector(Sel) = UserValues.Detector.Det(1);
+            UserValues.PIE.Router(Sel) = UserValues.Detector.Rout(1);
+        end
     end
     %h.PIE.Detector.String=num2str(UserValues.PIE.Detector(Sel));
     %h.PIE.Routing.String=num2str(UserValues.PIE.Router(Sel));
