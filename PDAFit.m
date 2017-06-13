@@ -2893,6 +2893,8 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
+        hFit_Ind{1} = hFit_Ind{1}./norm;
+        hFit_Ind{2} = hFit_Ind{2}./norm;
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
     
