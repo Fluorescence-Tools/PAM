@@ -11117,13 +11117,12 @@ stop_times1 = Data1(stop1);
 % count rate trace in units of the time bin
 [Trace,x] = histcounts(Data1*FileInfo.ClockPeriod,0:T*1E-6:(Data1(end)*FileInfo.ClockPeriod));
 trace1 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
-%h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
+%h.Cor.Remove_Aggregates_Axes.YLimMode = 'auto';
 scale = h.Cor.Remove_Aggregates_Axes.YScale;
-h.Cor.Remove_Aggregates_Axes.YScale = 'log';
-minY = h.Cor.Remove_Aggregates_Axes.YLim(1);
-maxY = h.Cor.Remove_Aggregates_Axes.YLim(2);
-h.Cor.Remove_Aggregates_Axes.YScale = scale;
+minY = min(Trace);
+maxY = 10*max(Trace);
 if strcmp(scale,'linear')
+    minY = 0;
     h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
 end
 for i = 1:numel(start_times1)
@@ -11147,11 +11146,10 @@ if Cor_B ~= Cor_A
     trace2 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-r');
     %h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
     scale = h.Cor.Remove_Aggregates_Axes.YScale;
-    h.Cor.Remove_Aggregates_Axes.YScale = 'log';
-    minY = h.Cor.Remove_Aggregates_Axes.YLim(1);
-    maxY = h.Cor.Remove_Aggregates_Axes.YLim(2);
-    h.Cor.Remove_Aggregates_Axes.YScale = scale;
+    minY = min([min(Trace) minY]);
+    maxY = 10*max(Trace);
     if strcmp(scale,'linear')
+        minY = 0;
         h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
     end
     for i = 1:numel(start_times2)
