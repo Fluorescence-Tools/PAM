@@ -6080,7 +6080,8 @@ end
 %% Update Main Plot
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
-
+x_name = h.ParameterListX.String{x};
+y_name = h.ParameterListY.String{y};
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
@@ -6237,8 +6238,8 @@ if size(CutState,2) > 0
 end
 
 %%% check what plot type to use
-colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.UserData && ~h.SmoothKDE.Value;
-if ~colorbyparam
+advanced = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.UserData && ~h.SmoothKDE.Value;
+if ~advanced
     if ~h.MultiselectOnCheckbox.UserData
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     else
@@ -6555,8 +6556,23 @@ if obj == h.Fit_Gaussian_Button
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
     %%% update datatoplot if multiselection is enabled
-    if h.MultiselectOnCheckbox.UserData
-        datatoplot = get_multiselection_data(h);
+    if h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1
+        data_x = get_multiselection_data(h,x_name);
+        data_y = get_multiselection_data(h,y_name);
+        %%% logarithmic plot option
+        if UserValues.BurstBrowser.Display.logX
+            val = data_x > 0; % avoid complex numbers
+            data_x(val) = log10(data_x(val));
+            data_x(~val) = NaN;
+        end
+        if UserValues.BurstBrowser.Display.logY
+            val = data_y > 0; % avoid complex numbers
+            data_y(val) = log10(data_y(val));
+            data_y(~val) = NaN;
+        end
+    else
+        data_x = datatoplot(:,x);
+        data_y = datatoplot(:,y);
     end
     %%% we need to adjust the number of xbins/ybins of KDE has been used
     if UserValues.BurstBrowser.Display.KDE
@@ -6569,7 +6585,7 @@ if obj == h.Fit_Gaussian_Button
             if x == y %%% same data selected, 1D fitting
                 BurstMeta.Fitting.FitType = '1D';
                 
-                GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
+                GModel = fitgmdist(data_x,nG,'Options',statset('MaxIter',1000));
                 xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
                 p = pdf(GModel,xbins_fit');
                 Res = zeros(1,3*nG);
@@ -6602,17 +6618,17 @@ if obj == h.Fit_Gaussian_Button
             else
                 BurstMeta.Fitting.FitType = '2D';
                 
-                valid = isfinite(datatoplot(:,x)) & isfinite(datatoplot(:,y));
+                valid = isfinite(data_x) & isfinite(data_y);
                 if h.Fit_Gaussian_Pick.Value
-                    cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
+                    cov = [std(data_x),0; 0,std(data_y)];
                     [x_start,y_start] = ginput(nG);
                     start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([data_x(valid),data_y(valid)],nG,'Start',start,'Options',statset('MaxIter',1000));
                 else
                     %[~,ix_max] = max(HH(:));
                     %[y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
                     %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([data_x(valid),data_y(valid)],nG,'Start','plus','Options',statset('MaxIter',1000));
                 end
                 Res = zeros(1,6*nG);
                 Res(1:6:end) = GModel.ComponentProportion;
@@ -6692,7 +6708,7 @@ if obj == h.Fit_Gaussian_Button
                 BurstMeta.Fitting.FitType = '1D';
                 
                 xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
-                x_start = mean(datatoplot(isfinite(datatoplot(:,x)),x));
+                x_start = mean(data_x(isfinite(data_x)));
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
                 x0 = zeros(1,12);
@@ -6762,7 +6778,7 @@ if obj == h.Fit_Gaussian_Button
             else
                 BurstMeta.Fitting.FitType = '2D';
                 
-                cov = [std(datatoplot(:,x)).^2,std(datatoplot(:,y)).^2,0];
+                cov = [std(data_x).^2,std(data_y).^2,0];
                 if h.Fit_Gaussian_Pick.Value
                     [x_start,y_start] = ginput(nG);
                     x0_input = zeros(1,18);
@@ -6778,10 +6794,10 @@ if obj == h.Fit_Gaussian_Button
                 lb = zeros(1,24);
                 ub = inf(1,24);
                 fixed = false(1,24);
-                lowerx = min(datatoplot(:,x));
-                lowery = min(datatoplot(:,y));
-                upperx = max(datatoplot(:,x));
-                uppery = max(datatoplot(:,y));
+                lowerx = min(data_x);
+                lowery = min(data_y);
+                upperx = max(data_x);
+                uppery = max(data_y);
                 for i = 1:5
                     x0((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,1:4:end));
                     lb((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,2:4:end));
@@ -6922,7 +6938,7 @@ if obj == h.Fit_Gaussian_Button
         BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
         BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
     end
-    if colorbyparam
+    if advanced
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
     h.Progress_Text.String = 'Done';
@@ -7504,7 +7520,7 @@ for i = 1:num_species
     end
     str{i} = strrep(name,'_',' ');  
 end
-
+legend(BurstMeta.Plots.Multi.Multi_histX(1:num_species),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 h.colorbar.Visible = 'off';
 h.axes_ZScale.Visible = 'off';
