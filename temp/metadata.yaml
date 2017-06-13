@@ -1,0 +1,11 @@
+description: Photon data from PAM 
+
+setup: 
+    num_pixels: 4                # number single-pixel detectors 
+    num_spots: 1                 # number of confocal excitation spots 
+    num_spectral_ch: 2           # 2 for donor and acceptor detection 
+    num_polarization_ch: 2       # 1 = no polarization selection 
+    num_split_ch: 1              # 1 = no beam splitting 
+    modulated_excitation: True   # us-ALEX alternation requires True here 
+    lifetime: True               # False = no TCSPC in detection 
+
