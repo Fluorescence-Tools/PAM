@@ -2352,7 +2352,9 @@ PDAMeta.MCMC_mean = [];
 
 if sum(PDAMeta.Global) == 0
     %% One-curve-at-a-time fitting
+    fit_counter = 0;
     for i = find(PDAMeta.Active)'
+        fit_counter = fit_counter + 1;
         LB = PDAMeta.LB;
         UB = PDAMeta.UB;
         h.SingleTab.Popup.Value = i;
@@ -2416,8 +2418,8 @@ if sum(PDAMeta.Global) == 0
             case h.Menu.ViewFit
                 %% Check if View_Curve was pressed
                 %%% Only Update Plot and break
-                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                     case {'MLE','MonteCarlo'}
                         %%% For Updating the Result Plot, use MC sampling
@@ -2435,8 +2437,8 @@ if sum(PDAMeta.Global) == 0
                         PDAHistogramFit_Single(fitpar,h);
                 end
                 %% Do Fit
-                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
                 
                 switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                     case 'Simplex'
@@ -2599,8 +2601,8 @@ else
     switch obj
         case h.Menu.ViewFit
              %%% Only Update Plot and break
-            Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
+            Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+            Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
@@ -2783,8 +2785,15 @@ end
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
-    fitpar_dummy = PDAMeta.FitParams(i,:);
-    fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        %%% add sigma fraction to end
+        fitpar_dummy = [PDAMeta.FitParams(i,:), str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        fixed = [PDAMeta.Fixed(i,:), h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+        fitpar_dummy(~fixed) = fitpar;
+    else
+        fitpar_dummy = PDAMeta.FitParams(i,:);
+        fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
+    end
     fitpar = fitpar_dummy;
 end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
@@ -2884,6 +2893,8 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
+        hFit_Ind{1} = hFit_Ind{1}./norm;
+        hFit_Ind{2} = hFit_Ind{2}./norm;
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
     

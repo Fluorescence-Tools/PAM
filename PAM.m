@@ -34,8 +34,12 @@ s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 %%% Disables negative values for log plot warning
 warning('off','MATLAB:Axes:NegativeDataInLogAxis');
 warning('off','MATLAB:handle_graphics:exceptions:SceneNode');
+warning('off','MATLAB:uigridcontainer:MigratingFunction');
 %%% Loads user profile
 Profiles=LSUserValues(0);
+for i = 1:numel(Profiles)
+    [~, Profiles{i}, ~] = fileparts(Profiles{i});
+end
 %%% To save typing
 Look=UserValues.Look;
 %%% Generates the Pam figure
@@ -260,7 +264,10 @@ h.Menu.Manual = uimenu(...
     'Separator','on',...
     'Label','PAM Manual',...
     'Callback',@Open_Doc);
-
+h.Menu.NotePad = uimenu(...
+    'Parent',h.Pam,...
+    'Label','Notepad',...
+    'Callback',@Open_Notepad);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -492,6 +499,20 @@ if ismac
     h.Cor.Type.ForegroundColor = [0 0 0];
     h.Cor.Type.BackgroundColor = [1 1 1];
 end
+
+h.Cor.AggregateCorrection = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Cor.Panel,...
+    'Units','normalized',...
+    'FontSize',10,...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.67 0.05 0.3 0.05],...
+    'Callback',@Calculate_Settings,...
+    'String','Remove aggregates',...
+    'Value',0,...
+    'TooltipString','Removes aggregates. Set parameters in the tab below. Only works for autocorrelation.');
+
 h.Cor.AfterPulsingCorrection = uicontrol(...
     'Style','checkbox',...
     'Parent',h.Cor.Panel,...
@@ -499,12 +520,12 @@ h.Cor.AfterPulsingCorrection = uicontrol(...
     'FontSize',10,...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.67 0.02 0.3 0.09],...
+    'Position',[0.67 0 0.3 0.05],...
     'Callback',@Calculate_Settings,...
     'String','Correct for afterpulsing',...
-    'Value',UserValues.Settings.Pam.Cor_AfterPulsing,...
-    'TooltipString','Enables afterpulsing correction based on FLCS');
-    
+    'Value',0,...
+    'TooltipString','Enables afterpulsing correction based on FLCS.');
+
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.Cor.Panel,...
@@ -602,6 +623,146 @@ h.Cor.Individual_UnSelect_All = uimenu(...
     'Label','Save selected correlations',...
     'Tag','Save_Selected',...
     'Callback',{@Cor_Selection,4});
+
+%%% Tab for the removal of aggregates
+h.Cor.Remove_Aggregates_Tab = uitab(...
+    'Parent',h.Cor.Correlations_Tabs,...
+    'Tag','Cor_Remove_Aggregates_Tab',...
+    'BackgroundColor',Look.Back,...
+    'Title','Remove aggregates');
+
+h.Cor.Remove_Aggregates_Axes = axes(...
+    'Parent',h.Cor.Remove_Aggregates_Tab,...
+    'Tag','Remove_Aggregates_Axes',...
+    'Units','normalized',...
+    'NextPlot','add',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'LineWidth', Look.AxWidth,...
+    'Position',[0.075 0.25 0.9 0.72],...
+    'Box','on');
+h.Cor.Remove_Aggregates_Axes.XLabel.String='Time [s]';
+h.Cor.Remove_Aggregates_Axes.XLabel.Color=Look.Fore;
+h.Cor.Remove_Aggregates_Axes.YLabel.String='Count rate [kHz]';
+h.Cor.Remove_Aggregates_Axes.YLabel.Color=Look.Fore;
+h.Cor.Remove_Aggregates_Axes_Menu = uicontextmenu;
+h.Cor.Remove_Aggregates_Axes_Log = uimenu('Parent',h.Cor.Remove_Aggregates_Axes_Menu,...
+    'Label','Y-scale log',...
+    'Checked','off',...
+    'Callback',@Calculate_Settings);
+h.Cor.Remove_Aggregates_Axes.UIContextMenu = h.Cor.Remove_Aggregates_Axes_Menu;
+
+h.Cor.Remove_Aggregates_FCS_Axes = axes(...
+    'Parent',h.Cor.Remove_Aggregates_Tab,...
+    'Tag','Remove_Aggregates_FCS_Axes',...
+    'Units','normalized',...
+    'NextPlot','add',...
+    'XColor',Look.Fore,...
+    'YColor',Look.Fore,...
+    'XScale','log',...
+    'LineWidth', Look.AxWidth,...
+    'Position',[0.635 0.25 0.35 0.72],...
+    'Box','on',...
+    'Visible','off');
+h.Cor.Remove_Aggregates_FCS_Axes.XLabel.String='Lag Time [s]';
+h.Cor.Remove_Aggregates_FCS_Axes.XLabel.Color=Look.Fore;
+h.Cor.Remove_Aggregates_FCS_Axes.YLabel.String='G(\tau) norm.';
+h.Cor.Remove_Aggregates_FCS_Axes.YLabel.Color=Look.Fore;
+
+h.Cor.Aggregate_GridContainer = uigridcontainer(...
+    'Parent',h.Cor.Remove_Aggregates_Tab,...
+    'GridSize',[2,5],...
+    'Units','norm',...
+    'Position',[0,0,1,0.125],...
+    'BackgroundColor',Look.Back);
+
+h.Cor.Remove_Aggregate_Block_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Macrotime block:',...
+    'TooltipString','Select which macrotime block to use for preview.');
+h.Cor.Remove_Aggregate_Nsigma_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Threshold [STDEV]:',...
+    'TooltipString','Set the threshold in units of the signal standard deviation.');
+h.Cor.Remove_Aggregate_Timewindow_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Time window [ms]:',...
+    'TooltipString','Set the time window in units of milliseconds.');
+h.Cor.Remove_Aggregate_TimeWindowAdd_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','Add window:',...
+    'TooltipString','Add a time frame around detected bursts in units of the selected time window.');
+h.Cor.Replot_Aggregate_Plot_Button = uicontrol(...
+    'Style','pushbutton',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Plot preview',...
+    'Callback',@Remove_Aggregates_Preview);
+
+h.Cor.Remove_Aggregate_Block_Edit = uicontrol(...
+    'Style','edit',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','1',...
+    'Callback',@Calculate_Settings,...
+    'TooltipString','Select which macrotime block to use for preview.');
+h.Cor.Remove_Aggregate_Nsigma_Edit = uicontrol(...
+    'Style','edit',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',num2str(UserValues.Settings.Pam.Cor_Aggregate_Threshold),...
+    'Callback',@Calculate_Settings,...
+    'TooltipString','Set the threshold in units of the signal standard deviation.');
+h.Cor.Remove_Aggregate_Timewindow_Edit = uicontrol(...
+    'Style','edit',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String',num2str(UserValues.Settings.Pam.Cor_Aggregate_Timewindow),...
+    'Callback',@Calculate_Settings,...
+    'TooltipString','Set the time window in units of milliseconds.');
+h.Cor.Remove_Aggregate_TimeWindowAdd_Edit = uicontrol(...
+    'Style','edit',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'TooltipString','Add a time frame around detected bursts in units of the selected time window.',...
+    'String',num2str(UserValues.Settings.Pam.Cor_Aggregate_TimewindowAdd),...
+    'Callback',@Calculate_Settings);
+h.Cor.Preview_Correlation_Checkbox = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Cor.Aggregate_GridContainer,...
+    'FontSize',10,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String','FCS preview',...
+    'Callback',[],...
+    'Value',0,...
+    'Callback',@Calculate_Settings);
 %% Burst tab
 s.ProgressRatio = 0.5;
 
@@ -2581,6 +2742,7 @@ h.Database.List = uicontrol(...
     'BackgroundColor', Look.List,...
     'ForegroundColor', Look.ListFore,...
     'KeyPressFcn',{@Database,0},...
+    'Callback',{@Database,0},...
     'Tooltipstring', ['<html>'...
     'List of recently loaded files<br>',...
     '<i>"return"</i>: Loads selected files<br>',...
@@ -2879,10 +3041,10 @@ h.MI.Auto = uimenu(...
 %%% Following is alternate implementation using a table instead of a
 %%% list
 if ispc
-    trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
     trash_image = strrep(trash_image,'\','/');
 else
-    trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
 end
 TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on',0};
 ColumnNames = {'<html><font size=4><b>Name</b></font></html>','<html><font size=4><b>Det#</b></font></html>','<html><font size=4><b>Rout#</b></font></html>','<html><font size=4><b>Color</b></font></html>','<html><font size=4><b>Filter</b></font></html>','<html><font size=4><b>Pol</b></font></html>','<html><font size=4><b>BS</b></font></html>','<html><font size=4><b>Enabled</b></font></html>',trash_image};
@@ -2993,7 +3155,7 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
 
 %%% Allows custom Filetype selection
-Customdir = [pwd filesep 'functions' filesep 'Custom_Read_Ins'];
+Customdir = [fileparts(mfilename('fullpath')) filesep 'functions' filesep 'Custom_Read_Ins'];
 %%% Finds all matlab files in profiles directory
 Custom_Methods = what(Customdir);
 Custom_Methods = ['none'; Custom_Methods.m(:)];
@@ -3339,7 +3501,7 @@ end
 %%% Determines settings for various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Calculate_Settings(obj,~)
-global UserValues
+global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 Display=0;
 %%% If use_image was clicked
@@ -3513,11 +3675,63 @@ elseif obj == h.Cor.Type
     end
     if h.Cor.Type.Value == 1 %%% Point Correlation selected
         h.Cor.AfterPulsingCorrection.Visible = 'on';
+        h.Cor.AggregateCorrection.Visible = 'on';
     else
         h.Cor.AfterPulsingCorrection.Visible = 'off';
+        h.Cor.AggregateCorrection.Visible = 'off';
     end
+elseif obj == h.Cor.Remove_Aggregates_Axes_Log
+    switch obj.Checked
+        case 'on'
+            obj.Checked = 'off';
+            h.Cor.Remove_Aggregates_Axes.YScale = 'lin';
+        case 'off'
+            obj.Checked = 'on';
+            h.Cor.Remove_Aggregates_Axes.YScale = 'log';
+    end
+elseif obj == h.Cor.Preview_Correlation_Checkbox
+    UserValues.Settings.Pam.Cor_Remove_Aggregates = obj.Value;
+elseif obj == h.Cor.Remove_Aggregate_Block_Edit
+    val = round(str2double(obj.String))
+    if val < 1
+        val = 1;
+    end
+    if val > (numel(PamMeta.MT_Patch_Times)-1)
+        val = numel(PamMeta.MT_Patch_Times)-1;
+    end
+    obj.String = num2str(val);
+elseif obj == h.Cor.Remove_Aggregate_Nsigma_Edit
+    val = str2double(obj.String);
+    if val < 1
+        val = 1;
+    end
+    obj.String = num2str(val);
+    UserValues.Settings.Pam.Cor_Aggregate_Threshold = val;
+elseif obj == h.Cor.Remove_Aggregate_Timewindow_Edit
+    val = str2double(obj.String);
+    if val < 0
+        val = 0.1;
+    end
+    obj.String = num2str(val);
+    UserValues.Settings.Pam.Cor_Aggregate_Timewindow = val;
+elseif obj == h.Cor.Remove_Aggregate_TimeWindowAdd_Edit
+    val = str2double(obj.String);
+    if val < 0
+        val = 0;
+    end
+    obj.String = num2str(val);
+    UserValues.Settings.Pam.Cor_Aggregate_TimewindowAdd = val;
 elseif obj == h.Cor.AfterPulsingCorrection
-    UserValues.Settings.Pam.Cor_AfterPulsing = h.Cor.AfterPulsingCorrection.Value;
+    %%% disable aggregate removal
+    if obj.Value == 1
+        h.Cor.AggregateCorrection.Value = 0;
+    end
+elseif obj == h.Cor.AggregateCorrection
+    %%% disable afterpulsing removal
+    if obj.Value == 1
+        h.Cor.AfterPulsingCorrection.Value = 0;
+    end
+
 end
 %%% Saves UserValues
 LSUserValues(1);
@@ -3579,6 +3793,11 @@ if any(mode==1)
     if UserValues.PIE.Detector(Sel) ~= 0 %%% only if no combined channel is selected
         h.PIE.DetectionChannel.Value = find((UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) &...
             (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)),1);
+        if isempty(h.PIE.DetectionChannel.Value) %%% catch case where default value was set to 1,1, but the setup has no detector channel one
+            h.PIE.DetectionChannel.Value = 1;
+            UserValues.PIE.Detector(Sel) = UserValues.Detector.Det(1);
+            UserValues.PIE.Router(Sel) = UserValues.Detector.Rout(1);
+        end
     end
     %h.PIE.Detector.String=num2str(UserValues.PIE.Detector(Sel));
     %h.PIE.Routing.String=num2str(UserValues.PIE.Router(Sel));
@@ -5046,10 +5265,10 @@ global UserValues PamMeta
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
-    load([pwd filesep 'profiles' filesep 'profile.mat']);
+    load([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat']);
     for i=1:numel(h.Profiles.List.String)
         %%% Looks for current profile in profiles list
-        if strcmp(h.Profiles.List.String{i}, Profile) %#ok<NODEF>
+        if strcmp([h.Profiles.List.String{i} '.mat'], Profile) %#ok<NODEF>
             %%% Changes color to indicate current profile
             h.Profiles.List.String{i}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{i} '</Font></html>'];
             return
@@ -5082,8 +5301,8 @@ switch e.Key
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
             PIE=[];
-            save([pwd filesep 'profiles' filesep Name{1} '.mat'],'PIE');
-            h.Profiles.List.String{end+1}=[Name{1} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'PIE');
+            h.Profiles.List.String{end+1} = Name{1};
         end
     case {'delete';'subtract'}
         %% Deletes selected profile
@@ -5091,15 +5310,15 @@ switch e.Key
             %%% If selected profile is not the current profile
             if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
                 %%% Deletes profile file and list entry
-                delete([pwd filesep 'profiles' filesep h.Profiles.List.String{Sel}])
+                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
                 h.Profiles.List.String(Sel)=[];
             else
                 %%% Deletes profile file and list entry
-                delete([pwd filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14))])
+                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
                 h.Profiles.List.String(Sel)=[];
                 %%% Selects first profile as current profile
-                Profile=h.Profiles.List.String{1};
-                save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
+                Profile= [h.Profiles.List.String{1} '.mat'];
+                save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
                 %%% Updates UserValues
                 LSUserValues(1);
                 %%% Changes color to indicate current profile
@@ -5118,14 +5337,14 @@ switch e.Key
         %%% Only executes if
         if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
             for i=1:numel(h.Profiles.List.String)
-                if~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
+                if ~isempty(strfind(h.Profiles.List.String{i},'<HTML><FONT color=FF0000>'))
                     h.Profiles.List.String{i}=h.Profiles.List.String{i}(26:(end-14));
                     break;
                 end
             end
             %%% Makes selected profile the current profile
-            Profile=h.Profiles.List.String{Sel};
-            save([pwd filesep 'profiles' filesep 'Profile.mat'],'Profile');
+            Profile= [h.Profiles.List.String{Sel} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
             LSUserValues(0);          
             %%% Changes color to indicate current profile
@@ -5159,8 +5378,8 @@ switch e.Key
         Name=inputdlg('Enter profile name:');
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
-            save([pwd filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
-            h.Profiles.List.String{end+1}=[Name{1} '.mat'];
+            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
+            h.Profiles.List.String{end+1} = Name{1};
         end
 end
 
@@ -5409,7 +5628,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                     TcspcData.MI{Det1(l),Rout1(l)}<=To1(l) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}>=Times(j) &...
                                     TcspcData.MT{Det1(l),Rout1(l)}<Times(j+1))-Times(j)];
-                                if (UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
+                                if (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
                                     MI1{k}=[MI1{k};...
                                     TcspcData.MI{Det1(l),Rout1(l)}(...
                                     TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
@@ -5450,7 +5669,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                                         TcspcData.MI{Det2(l),Rout2(l)}<=To2(l) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}>=Times(j) &...
                                         TcspcData.MT{Det2(l),Rout2(l)}<Times(j+1))-Times(j)];
-                                    if (UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
+                                    if (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) %%% read out microtimes as well
                                         MI2{k}=[MI2{k};...
                                         TcspcData.MI{Det1(l),Rout1(l)}(...
                                         TcspcData.MI{Det1(l),Rout1(l)}>=From1(l) &...
@@ -5502,9 +5721,10 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 %%% Actually calculates the crosscorrelation
                 switch Cor_Type
                     case 1
-                        if ~(UserValues.Settings.Pam.Cor_AfterPulsing && (Cor_A(i) == Cor_B(i)))
+                        if ~(h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) && ~(h.Cor.AggregateCorrection.Value)
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
-                        else %%% do after pulse correction if same detector is selected
+                        elseif (h.Cor.AfterPulsingCorrection.Value && (Cor_A(i) == Cor_B(i))) 
+                            %%% do after pulse correction if same detector is selected
                             %%% suppress afterpulsing by FLCS
                             %%% get microtime hist of PIE channel
                             det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Cor_A(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Cor_A(i))));
@@ -5534,6 +5754,96 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             end
                             %%% Do the autocorrelation with weights
                             [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime,Weights1,Weights2);
+                        elseif h.Cor.AggregateCorrection.Value
+                            %%% do inverse burst search to remove aggrates
+                            %%% simply erase regions of aggregates for now
+                            
+                            T = str2double(h.Cor.Remove_Aggregate_Timewindow_Edit.String)*1000; % time window in microseconds
+                            timebin_add = str2double(h.Cor.Remove_Aggregate_TimeWindowAdd_Edit.String);
+                            Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String);
+                            correlating_signal = 0;
+                            for k = 1:numel(Data1)
+                                % get the average countrate of the block
+                                cr = numel(Data1{k})./Data1{k}(end)./FileInfo.ClockPeriod;
+                                M = T*1E-6*cr;% minimum number of photons in time window
+                                M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+                                
+                                [start, stop] = find_aggregates(Data1{k},T,M,timebin_add);
+                                start_times = Data1{k}(start);
+                                stop_times = Data1{k}(stop);
+                                
+                                inval = [];
+                                for l = 1:numel(start)
+                                    inval = [inval,start(l):stop(l)];
+                                end
+                                Data1{k}(inval) = [];
+                                correlating_signal = correlating_signal + numel(Data1{k});
+                                
+                                valid_times = (start_times < Data1{k}(end)) & (start_times > Data1{k}(1));
+                                start_times = start_times(valid_times);
+                                stop_times = stop_times(valid_times);
+                                stop_times(stop_times > Data1{k}(end)) = Data1{k}(end);
+                                % determine the count rate over the filtered signal
+                                cr = numel(Data1{k})./(Data1{k}(end)-sum(start_times-stop_times));
+                                % fill with poisson noise
+                                for l = 1:numel(start_times)
+                                    %%% generate noise
+                                    t = start_times(l);
+                                    while t(end) < stop_times(l);
+                                        t(end+1) = t(end) + exprnd(1/cr);
+                                    end
+                                    idx = find(Data1{k} < start_times(l),1,'last');
+                                    Data1{k} = [Data1{k}(1:idx); t';Data1{k}((idx+1):end)];
+                                end
+                            end
+                            if (Cor_A(i) == Cor_B(i)) %%% autocorrelation
+                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data1,Maxtime);
+                                %%% correct amplitude for addition of
+                                %%% non-correlating signal
+                                Cor_Array = Cor_Array.*(sum(cellfun(@numel,Data1))./correlating_signal)^2;
+                            else %%% cross-correlation
+                                %%% remove aggregates in second channel
+                                correlating_signal2 = 0;
+                                for k = 1:numel(Data2)
+                                    % get the average countrate of the block
+                                    cr = numel(Data2{k})./Data2{k}(end)./FileInfo.ClockPeriod;
+                                    M = T*1E-6*cr;% minimum number of photons in time window
+                                    M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+                                    
+                                    [start, stop] = find_aggregates(Data2{k},T,M,timebin_add);
+                                    start_times = Data2{k}(start);
+                                    stop_times = Data2{k}(stop);
+                                    
+                                    inval = [];
+                                    for l = 1:numel(start)
+                                        inval = [inval,start(l):stop(l)];
+                                    end
+                                    Data2{k}(inval) = [];
+                                    correlating_signal2 = correlating_signal2 + numel(Data2{k});
+                                    
+                                    valid_times = (start_times < Data2{k}(end)) & (start_times > Data2{k}(1));
+                                    start_times = start_times(valid_times);
+                                    stop_times = stop_times(valid_times);
+                                    stop_times(stop_times > Data2{k}(end)) = Data2{k}(end);
+                                    % determine the count rate over the filtered signal
+                                    cr = numel(Data2{k})./(Data2{k}(end)-sum(start_times-stop_times));
+                                    % fill with poisson noise
+                                    for l = 1:numel(start_times)
+                                        %%% generate noise
+                                        t = start_times(l);
+                                        while t(end) < stop_times(l);
+                                            t(end+1) = t(end) + exprnd(1/cr);
+                                        end
+                                        idx = find(Data2{k} < start_times(l),1,'last');
+                                        Data2{k} = [Data2{k}(1:idx); t';Data2{k}((idx+1):end)];
+                                    end
+                                end
+                                [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
+                                %%% correct amplitude for addition of
+                                %%% non-correlating signal
+                                correction_factor  = (sum(cellfun(@numel,Data1)).*sum(cellfun(@numel,Data2)))./(correlating_signal.*correlating_signal2);
+                                Cor_Array = Cor_Array.*correction_factor;
+                            end
                         end
                     case 4
                         [Cor_Array,Cor_Times]=CrossCorrelation(Data1,Data2,Maxtime);
@@ -5862,6 +6172,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
     Progress(1);
     Update_Display([],[],1);
 end
+%%% reorder tabs in correlation preview (move aggregate window to the back)
+h.Cor.Correlations_Tabs.Children = h.Cor.Correlations_Tabs.Children([1, (2:numel(h.Cor.Correlations_Tabs.Children)-1)+1, 2]);
 
 %%% Set FCSFit Path to FilePath
 UserValues.File.FCSPath = FileInfo.Path;
@@ -7610,7 +7922,7 @@ h.Burst.Button.ForegroundColor = [0 0.8 0];
 h.Burst.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
 if any(BurstData.BAMethod == [1,2])
-    if (sum(BurstData.DataArray(:,strcmp('Lifetime GG [ns]',BurstData.NameArray))) == 0 )
+    if (sum(BurstData.DataArray(:,strcmp('Lifetime D [ns]',BurstData.NameArray))) == 0 )
         %%% no lifetime fit
         h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
     else
@@ -7768,10 +8080,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Subroutine a for All-Photon BurstSearch  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L)
+function [start, stop, Number_of_Photons] = APBS(Photons,T,M,L,BurstIdentification)
 global FileInfo
-h = guidata(findobj('Tag','Pam'));
-BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+if nargin < 5
+    h = guidata(findobj('Tag','Pam'));
+    BurstIdentification = h.Burst.BurstSearchSmoothing_Popupmenu.Value;
+end
 if BurstIdentification == 1
     %All-Photon Burst Search based on Nir Paper (2006)
     valid=(Photons(1+M:end)-Photons(1:end-M)) < T*1e-6/FileInfo.ClockPeriod;
@@ -8301,14 +8615,16 @@ switch obj
         h.Progress.Axes.Color=[1 0 0];
         %%% Find selected channels
         Sel=h.PIE.List.Value;
-        if isempty(UserValues.PIE.Combined{Sel})
-            %%% Update IRF of selected channel
-            det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel)) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel)) );
-            UserValues.PIE.IRF{Sel} = PamMeta.MI_Hist{det(1)}';
-            %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 1:FileInfo.MI_Bins))';
-        else
-            uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
-            return
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update IRF of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.IRF{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+                %UserValues.PIE.IRF{Sel} = (histc( TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}, 1:FileInfo.MI_Bins))';
+            else
+                uiwait(msgbox('IRF cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
         end
         h.MI.IRF.Checked = 'on';
         UserValues.Settings.Pam.PlotIRF = 'on';
@@ -9245,11 +9561,19 @@ global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 
 if mode == 0 %%% Checks, which key was pressed
-    switch e.Key
-        case 'delete'
-            mode = 2;
-        case 'return'
-            mode =7;
+    switch e.EventName
+        case 'KeyPress'
+            switch e.Key
+                case 'delete'
+                    mode = 2;
+                case 'return'
+                    %mode =7;
+            end
+        case 'Action' %%% mouse-click
+            switch get(gcbf,'SelectionType')
+                case 'open' %%% double click
+                    mode = 7;
+            end
     end
 end
 
@@ -9343,11 +9667,19 @@ global UserValues PamMeta FileInfo
 h = guidata(findobj('Tag','Pam'));
 
 if mode == 0 %%% Checks, which key was pressed
-    switch e.Key
-        case 'delete'
-            mode = 2;
-        case 'return'
-            mode =9;
+    switch e.EventName
+        case 'KeyPress'
+            switch e.Key
+                case 'delete'
+                    mode = 2;
+                case 'return'
+                    %mode =9;
+            end
+        case 'Action' %%% mouse-click
+            switch get(gcbf,'SelectionType')
+                case 'open' %%% double click
+                    mode = 9;
+            end
     end
 end
 
@@ -9477,6 +9809,11 @@ switch mode
                 h.Progress.Axes.Color=UserValues.Look.Control;
                 return
             end
+            if ~iscell(PamMeta.Export{i,1}{1})
+                num_files = 1;
+            else
+                num_files = numel(PamMeta.Export{i,1}{1});
+            end
             try
                 % Path is unique per file in the database, so we have to store
                 % it globally in UserValues each time
@@ -9487,16 +9824,16 @@ switch mode
                     PamMeta.Export{i,3});     %type
                 Pam_Export([],event,Sel,1)
                 % set filename color to green
-                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+                h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             catch
-                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+                h.Export.List.String{i}=['<HTML><FONT color=FF0000>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
             end
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
         end
         h.Export.TIFF.UserData = 0;
         h.Export.TIFF.String = 'Export TIFFs';
-    case 6 %% Export PIE channels as microtime histograms to *.txt file
+    case 6 %% Export PIE channels as microtime histograms to *.dec file
         Sel = find(h.Export.PIE.Data);
         if numel(Sel)==0
             return;
@@ -9528,7 +9865,12 @@ switch mode
                 PamMeta.Export{i,3});     %type
             Pam_Export([],event,Sel,1)
             % set filename color to green
-            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(numel(PamMeta.Export{i,1}{1})) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
+            if ~iscell(PamMeta.Export{i,1}{1})
+                num_files = 1;
+            else
+                num_files = numel(PamMeta.Export{i,1}{1});
+            end
+            h.Export.List.String{i} = ['<HTML><FONT color=00FF00>' num2str(num_files) ' Files: ' PamMeta.Export{i,1}{1} ' (path:' PamMeta.Export{i,2} ')</Font></html>'];
 
             h.Progress.Text.String = FileInfo.FileName{1};
             h.Progress.Axes.Color = UserValues.Look.Control;
@@ -10158,7 +10500,7 @@ switch obj
                 det = find((UserValues.Detector.Det == UserValues.PIE.Detector(i)) & (UserValues.Detector.Rout == UserValues.PIE.Router(i)));
                 if ~isempty(PamMeta.MI_Hist{det})
                     % there is data in the corresponding detector/router channel
-                    if sum(PamMeta.MI_Hist{det}(UserValues.PIE.From(i):UserValues.PIE.To(i))) > 0
+                    if sum(PamMeta.MI_Hist{det}(max([1,UserValues.PIE.From(i)]):min([UserValues.PIE.To(i),end]))) > 0
                         % there is data in the PIE channel range
                         valid(i) = 1;
                     end
@@ -10522,7 +10864,7 @@ end
 
 fprintf(fid,'\n');
 %%% profile name
-s = load(fullfile(pwd,'profiles','Profile.mat'));
+s = load(fullfile(fileparts(mfilename('fullpath')),'profiles','Profile.mat'));
 fprintf(fid,'Profile name:\t%s\n\n',s.Profile(1:end-4));
 %%% PIE channel information
 fprintf(fid,'PIE Channel Information\n');
@@ -10588,7 +10930,7 @@ switch obj
         end
         ProfileData = load(fullfile(Path,File),'-mat');
         ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
-        save(fullfile([pwd filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
+        save(fullfile([fileparts(mfilename('fullpath')) filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
         
         Current_Exists = 0;
         %%% Checks position of the "Current" profile in the list
@@ -10623,7 +10965,7 @@ function Open_Doc(~,~)
 if isunix
     [status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
 elseif ispc
-    command = [pwd,'\doc\sphinx_docs\build\html\index.html'];
+    command = [fileparts(mfilename('fullpath')),'\doc\sphinx_docs\build\html\index.html'];
     [status,cmdout] = system(command);
 end
 if ~isempty(cmdout)
@@ -10668,4 +11010,248 @@ if nargin <3
             h.Image.Axes.CLimMode = 'auto';
     end
     
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to find aggregates in FCS measurement %%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [start,stop] = find_aggregates(Data,T,M,A)
+global FileInfo
+% Data: photon time stamps
+% T:    Time window in microseconds
+% M:    Number of photons per time window
+% A:    enlarge time window (in units of T)
+% return: start/stop indices in Data
+
+%%% perform burst search
+%%% use minimum number of photons per time window also as minimum number of
+%%% photons per burst total (i.e. L=M)
+[start, stop] = APBS(Data,T,M,M,1);
+inval = false(numel(start),1);
+for l = 1:numel(start)
+    start(l) = find(Data > (Data(start(l)) - A*T*1E-6/FileInfo.ClockPeriod),1,'first');
+    stop(l) = find(Data < (Data(stop(l)) + A*T*1E-6/FileInfo.ClockPeriod),1,'last') + 1;
+    if stop(l) >= numel(Data) % we reached the end
+        stop(l) = numel(Data);
+        if l < numel(start)
+            stop((l+1):end) = [];
+            start((l+1):end) = [];
+            break;
+        end
+    end
+    if l > 1
+        if start(l) < stop(l-1)
+            start(l) = stop(l-1)+1;
+        end
+    end
+    if start(l) >= stop(l)
+        inval(l) = true;
+    end
+end
+start = start(~inval(1:numel(start)));
+stop = stop(~inval(1:numel(stop)));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Callback to plot preview of aggregate search %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Remove_Aggregates_Preview(obj,~)
+global UserValues PamMeta FileInfo TcspcData
+h = guidata(obj);
+Progress(0,h.Progress.Axes, h.Progress.Text,'Calculating Aggregate Removal Preview...');
+
+cla(h.Cor.Remove_Aggregates_Axes);
+[Cor_A,Cor_B]=find(h.Cor.Table.Data(1:end-1,1:end-1));
+%valid = Cor_A == Cor_B;
+%Cor = Cor_A(valid);
+% if isempty(Cor)
+%     Progress(1,h.Progress.Axes, h.Progress.Text);
+%     return;
+% end
+if numel(Cor_A) > 1
+    Cor_A = Cor_A(1);
+    Cor_B = Cor_B(1);
+end
+
+Times=ceil(PamMeta.MT_Patch_Times/FileInfo.ClockPeriod);
+
+Det1=UserValues.PIE.Detector(Cor_A);
+Rout1=UserValues.PIE.Router(Cor_A);
+To1=UserValues.PIE.To(Cor_A);
+From1=UserValues.PIE.From(Cor_A);
+Name1 = UserValues.PIE.Name{Cor_A};
+
+j = round(str2double(h.Cor.Remove_Aggregate_Block_Edit.String));
+
+Data1=[TcspcData.MT{Det1,Rout1}(...
+TcspcData.MI{Det1,Rout1}>=From1 &...
+TcspcData.MI{Det1,Rout1}<=To1 &...
+TcspcData.MT{Det1,Rout1}>=Times(j) &...
+TcspcData.MT{Det1,Rout1}<Times(j+1))-Times(j)];
+
+if Cor_B ~= Cor_A
+    Det2=UserValues.PIE.Detector(Cor_B);
+    Rout2=UserValues.PIE.Router(Cor_B);
+    To2=UserValues.PIE.To(Cor_B);
+    From2=UserValues.PIE.From(Cor_B);
+    Name2 = UserValues.PIE.Name{Cor_B};
+    
+    Data2=[TcspcData.MT{Det2,Rout2}(...
+    TcspcData.MI{Det2,Rout2}>=From2 &...
+    TcspcData.MI{Det2,Rout2}<=To2 &...
+    TcspcData.MT{Det2,Rout2}>=Times(j) &...
+    TcspcData.MT{Det2,Rout2}<Times(j+1))-Times(j)];
+end
+
+T = str2double(h.Cor.Remove_Aggregate_Timewindow_Edit.String)*1000;%in mus
+timebin_add = str2double(h.Cor.Remove_Aggregate_TimeWindowAdd_Edit.String);
+Nsigma = str2double(h.Cor.Remove_Aggregate_Nsigma_Edit.String);
+
+% get the average countrate of the block
+cr = numel(Data1)./Data1(end)./FileInfo.ClockPeriod;
+M = T*1E-6*cr;% minimum number of photons in time window
+M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+                                
+[start1, stop1] = find_aggregates(Data1,T,M,timebin_add);
+start_times1 = Data1(start1);
+stop_times1 = Data1(stop1);
+
+% count rate trace in units of the time bin
+[Trace,x] = histcounts(Data1*FileInfo.ClockPeriod,0:T*1E-6:(Data1(end)*FileInfo.ClockPeriod));
+trace1 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-b');
+%h.Cor.Remove_Aggregates_Axes.YLimMode = 'auto';
+scale = h.Cor.Remove_Aggregates_Axes.YScale;
+minY = min(Trace);
+maxY = 10*max(Trace);
+if strcmp(scale,'linear')
+    minY = 0;
+    h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
+end
+for i = 1:numel(start_times1)
+    patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times1(i),stop_times1(i),stop_times1(i),start_times1(i)],...
+        [minY,minY,maxY,maxY],'b','FaceAlpha',0.3,'EdgeColor','none');
+end
+
+%%% plot second channel
+if Cor_B ~= Cor_A
+    % get the average countrate of the block
+    cr = numel(Data2)./Data2(end)./FileInfo.ClockPeriod;
+    M = T*1E-6*cr;% minimum number of photons in time window
+    M = round(M + Nsigma*sqrt(M)); %%% add N sigma
+    
+    [start2, stop2] = find_aggregates(Data2,T,M,timebin_add);
+    start_times2 = Data2(start2);
+    stop_times2 = Data2(stop2);
+    
+    % count rate trace in units of the time bin
+    [Trace,x] = histcounts(Data2*FileInfo.ClockPeriod,0:T*1E-6:(Data2(end)*FileInfo.ClockPeriod));
+    trace2 = plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),Trace,'-r');
+    %h.Cor.Remove_Aggregates_Axes.XLimMode = 'auto';
+    scale = h.Cor.Remove_Aggregates_Axes.YScale;
+    minY = min([min(Trace) minY]);
+    maxY = 10*max(Trace);
+    if strcmp(scale,'linear')
+        minY = 0;
+        h.Cor.Remove_Aggregates_Axes.YLim = [0,max(Trace)];
+    end
+    for i = 1:numel(start_times2)
+        patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times2(i),stop_times2(i),stop_times2(i),start_times2(i)],...
+            [minY,minY,maxY,maxY],'r','FaceAlpha',0.3,'EdgeColor','none');
+    end
+end
+if (Cor_B == Cor_A)
+    legend(trace1,Name1);
+else
+    legend([trace1,trace2],{Name1,Name2});
+end
+
+if (Cor_B == Cor_A)
+    Data2 = Data1;
+end
+
+if h.Cor.Preview_Correlation_Checkbox.Value
+    Progress(0.5,h.Progress.Axes, h.Progress.Text,'Calculating Aggregate Removal Preview...');
+    h.Cor.Remove_Aggregates_FCS_Axes.Visible = 'on';
+    h.Cor.Remove_Aggregates_Axes.Position(3) = 0.5;
+    cla(h.Cor.Remove_Aggregates_FCS_Axes);
+    
+    %%% do correlation before correction
+    MaxTime = max([Data1(end),Data2(end)]);
+    [Cor_Before,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                                        
+    
+    %%% correct for aggregates
+    inval = [];
+    for l = 1:numel(start1)
+        inval = [inval,start1(l):stop1(l)];
+    end
+    Data1(inval) = [];
+    
+    valid_times = (start_times1 < Data1(end)) & (start_times1 > Data1(1));
+    start_times1 = start_times1(valid_times);
+    stop_times1 = stop_times1(valid_times);
+    stop_times1(stop_times1 > Data1(end)) = Data1(end);
+    % determine the count rate over the filtered signal
+    cr = numel(Data1)./(Data1(end)-sum(start_times1-stop_times1));
+    % fill with poisson noise
+    for l = 1:numel(start_times1)
+        %%% generate noise
+        t = start_times1(l);
+        while t(end) < stop_times1(l);
+            t(end+1) = t(end) + exprnd(1/cr);
+        end
+        idx = find(Data1 < start_times1(l),1,'last');
+        Data1 = [Data1(1:idx); t';Data1((idx+1):end)];
+    end
+    
+    if Cor_B == Cor_A
+        Data2 = Data1;
+    else %%% do correction for second channel as well
+        inval = [];
+        for l = 1:numel(start2)
+            inval = [inval,start2(l):stop2(l)];
+        end
+        Data2(inval) = [];
+        
+        valid_times = (start_times2 < Data2(end)) & (start_times2 > Data2(1));
+        start_times2 = start_times2(valid_times);
+        stop_times2 = stop_times2(valid_times);
+        stop_times2(stop_times2 > Data2(end)) = Data2(end);
+        % determine the count rate over the filtered signal
+        cr = numel(Data2)./(Data2(end)-sum(start_times2-stop_times2));
+        % fill with poisson noise
+        for l = 1:numel(start_times2)
+            %%% generate noise
+            t = start_times2(l);
+            while t(end) < stop_times2(l);
+                t(end+1) = t(end) + exprnd(1/cr);
+            end
+            idx = find(Data2 < start_times2(l),1,'last');
+            Data2 = [Data2(1:idx); t';Data2((idx+1):end)];
+        end
+    end
+    %%% do correlation after correction
+    MaxTime = max([Data1(end),Data2(end)]);
+    [Cor_After,Cor_Times]=CrossCorrelation({Data1},{Data2},MaxTime);                 
+    Cor_Times = Cor_Times*FileInfo.ClockPeriod;
+    average_window = find(Cor_Times > 1e-6,1,'first'); 
+    average_window = max([1,(average_window-5)]):min([(average_window+10),numel(Cor_Times)]);
+    semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_Before./mean(Cor_Before(average_window)),'r');
+    semilogx(h.Cor.Remove_Aggregates_FCS_Axes,Cor_Times,Cor_After./mean(Cor_After(average_window)),'b');
+    legend(h.Cor.Remove_Aggregates_FCS_Axes,'before','after');
+    axis(h.Cor.Remove_Aggregates_FCS_Axes,'tight');
+    h.Cor.Remove_Aggregates_FCS_Axes.XLim = [1E-6,MaxTime*FileInfo.ClockPeriod/10];
+else
+    cla(h.Cor.Remove_Aggregates_FCS_Axes);
+    h.Cor.Remove_Aggregates_FCS_Axes.Visible = 'off';
+    h.Cor.Remove_Aggregates_Axes.Position(3) = 0.9;
+    legend(h.Cor.Remove_Aggregates_FCS_Axes,'off');
+end
+Progress(1);
+Update_Display([],[],1);
+
+function Open_Notepad(~,~)
+%%% Check whether notepad is open
+notepad = findobj('Tag','PAM_Notepad');
+if isempty(notepad)
+    Notepad('PAM');
+else
+    figure(notepad);
 end

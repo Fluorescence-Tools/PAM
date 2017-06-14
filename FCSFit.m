@@ -866,14 +866,14 @@ switch Type
                 E = E.EGR;
             end
             Data.E = E;
-            Data.Cor_Times = x;
-            his = histcounts(E,x); his = [his'; his(end)];
+            his = histcounts(E,x);
             Data.Cor_Average = his./sum(his)./min(diff(x));
             error = sqrt(his)./sum(his)./min(diff(x));
             Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
             Data.Cor_Array = [];
             Data.Valid = [];
             Data.Counts = [numel(E), numel(E)];
+            Data.Cor_Times = x(1:end-1)+bin/2;
             FCSData.Data{end+1} = Data;
 
             %%% Updates global parameters
@@ -898,7 +898,7 @@ switch Type
                 'XData',FCSMeta.Data{end,1},...
                 'YData',zeros(numel(FCSMeta.Data{end,1}),1));
             FCSMeta.Plots{end,4} = stairs(...
-                FCSMeta.Data{end,1},...
+                FCSMeta.Data{end,1}-bin/2,...
                 FCSMeta.Data{end,2},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
@@ -1042,15 +1042,15 @@ FileName=[];
 FilterIndex = 1;
 if mode
     %% Select a new model to load
-    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [pwd filesep 'Models']);
+    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [fileparts(mfilename('fullpath')) filesep 'Models']);
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
-    Models=dir([pwd filesep 'Models']);
+    Models=dir([fileparts(mfilename('fullpath')) filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-3:end),'.txt') 
-           FileName=[pwd filesep 'Models' filesep Models(1).name];
+           FileName=[fileparts(mfilename('fullpath')) filesep 'Models' filesep Models(1).name];
            UserValues.File.FCS_Standard=FileName;
        else
            Models(1)=[];
@@ -1490,7 +1490,7 @@ switch mode
                     FCSMeta.Data(i,:)=[];
                     FCSMeta.Params(:,i)=[];
                     FCSMeta.Plots(i,:)=[];
-                    h.Fit_Table.RowName(i)=[];
+                    %h.Fit_Table.RowName(i)=[];
                     h.Fit_Table.Data(i,:)=[];
                     h.Style_Table.RowName(i)=[];
                     h.Style_Table.Data(i,:)=[];

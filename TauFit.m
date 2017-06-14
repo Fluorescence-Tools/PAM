@@ -4,8 +4,8 @@ h.TauFit = findobj('Tag','TauFit');
 addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
 method = '';
-%%% If called from command line
-if nargin < 1 && isempty(gcbo)
+%%% If called from command line, or from Launcher
+if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'TauFit_Launcher'))
     Close_TauFit
     %disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     %return;
@@ -2000,7 +2000,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.Ignore_Slider.Min = 1;
     h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
     h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
-    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.Ignore{chan};
     else
         tmp = 1;
@@ -4887,11 +4887,13 @@ switch TauFitData.BAMethod
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
                 %%% Apply the shift to the parallel IRF channel
-                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                hIRF_par = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
                 %%% Apply the shift to the perpendicular IRF channel
-                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                %hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                hIRF_per = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-                IRFPattern = IRFPattern'./sum(IRFPattern);
+                IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
                 Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
@@ -4963,7 +4965,7 @@ switch TauFitData.BAMethod
                 Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
                 %%% Shift Microtimes
                 Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = circshift(Per1,[0,round(TauFitData.ShiftPer{1})]); %%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});                
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
                 clear Par1 Per1
@@ -4997,7 +4999,7 @@ switch TauFitData.BAMethod
                 
                 %%% Shift Microtimes
                 Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = circshift(Per2,[0,round(TauFitData.ShiftPer{2})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
                 clear Par2 Per2
@@ -5141,11 +5143,13 @@ switch TauFitData.BAMethod
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
                 %%% Apply the shift to the parallel IRF channel
-                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                hIRF_par = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
                 %%% Apply the shift to the perpendicular IRF channel
-                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                %hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                hIRF_per = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-                IRFPattern = IRFPattern'./sum(IRFPattern);
+                IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
                 Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
@@ -5206,7 +5210,7 @@ switch TauFitData.BAMethod
                 Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
                 %%% Shift Microtimes
                 Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = circshift(Per1,[0,round(TauFitData.ShiftPer{1})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
                 
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
@@ -5230,7 +5234,7 @@ switch TauFitData.BAMethod
                 Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
                 %%% Shift Microtimes
                 Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = circshift(Per2,[0,round(TauFitData.ShiftPer{2})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
@@ -5254,7 +5258,7 @@ switch TauFitData.BAMethod
                 
                 %%% Shift Microtimes
                 Par3 = Par3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
-                Per3 = circshift(Per3,[0,TauFitData.ShiftPer{3}]);
+                Per3 = circshift(Per3,[0,round(TauFitData.ShiftPer{3})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per3 = Per3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
                 
                 Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;

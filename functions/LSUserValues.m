@@ -1,11 +1,11 @@
 function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
 global UserValues FileInfo
 
+%%% get path to profile dir (i.e. on up from the location of LSUserValues.m)
+Profiledir=[fileparts(mfilename('fullpath')) filesep '..' filesep 'profiles'];
 
 if Mode==0 %%% Loads user values
     %% Identifying current profile
-    %%% Current profiles directory
-    Profiledir = [pwd filesep 'profiles'];
     %%% Finds all matlab files in profiles directory
     Profiles = what(Profiledir);
     try
@@ -328,6 +328,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Notepad.BurstBrowser was incomplete');
     end
     P.Notepad.BurstBrowser = S.Notepad.BurstBrowser;
+    
+    if ~isfield (S.Notepad, 'PAM')
+        S.Notepad.PAM='';
+        disp('UserValues.Notepad.PAM was incomplete');
+    end
+    P.Notepad.PAM = S.Notepad.PAM;
     %% Settings: All values of popupmenues, checkboxes etc. that need to be persistent
 
     %%% Checks, if Settings field exists
@@ -420,12 +426,31 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Cor_Selection was incomplete');
     end
     P.Settings.Pam.Cor_Selection = S.Settings.Pam.Cor_Selection;
-    %%% Checks, if Pam.Cor_AfterPulsing subfield exists
-    if ~isfield (S.Settings.Pam, 'Cor_AfterPulsing')
-        S.Settings.Pam.Cor_AfterPulsing=0;
-        disp('UserValues.Settings.Pam.Cor_AfterPulsing was incomplete');
+    %%% Checks if Pam.Cor_Remove_Aggregates subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Remove_Aggregates')
+        S.Settings.Pam.Cor_Remove_Aggregates=false;
+        disp('UserValues.Settings.Pam.Cor_Remove_Aggregates was incomplete');
     end
-    P.Settings.Pam.Cor_AfterPulsing = S.Settings.Pam.Cor_AfterPulsing;
+    P.Settings.Pam.Cor_Remove_Aggregates = S.Settings.Pam.Cor_Remove_Aggregates;
+    %%% Checks if Pam.Cor_Aggregate_Threshold subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_Threshold')
+        S.Settings.Pam.Cor_Aggregate_Threshold=3;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_Threshold was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_Threshold = S.Settings.Pam.Cor_Aggregate_Threshold;
+    %%% Checks if Pam.Cor_Aggregate_Timewindow subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_Timewindow')
+        S.Settings.Pam.Cor_Aggregate_Timewindow=1;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_Timewindow was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_Timewindow = S.Settings.Pam.Cor_Aggregate_Timewindow;
+    %%% Checks if Pam.Cor_Aggregate_TimewindowAdd subfield exists
+    if ~isfield (S.Settings.Pam, 'Cor_Aggregate_TimewindowAdd')
+        S.Settings.Pam.Cor_Aggregate_TimewindowAdd=0;
+        disp('UserValues.Settings.Pam.Cor_Aggregate_TimewindowAdd was incomplete');
+    end
+    P.Settings.Pam.Cor_Aggregate_TimewindowAdd = S.Settings.Pam.Cor_Aggregate_TimewindowAdd;
+
     %%% Checks if Pam.PlotIRF subfield exists
     if ~isfield (S.Settings.Pam, 'PlotIRF')
         S.Settings.Pam.PlotIRF='off';
@@ -1681,6 +1706,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorLine5 was incomplete');
     end
     P.BurstBrowser.Display.ColorLine5 = S.BurstBrowser.Display.ColorLine5;
+    %%% Checks, if BurstBrowser.Display.ColorLine6 subfield exists
+    if ~isfield (S.BurstBrowser.Display,'ColorLine6')
+        S.BurstBrowser.Display.ColorLine6=[0 1 1];
+        disp('UserValues.BurstBrowser.Display.ColorLine6 was incomplete');
+    end
+    P.BurstBrowser.Display.ColorLine6 = S.BurstBrowser.Display.ColorLine6;
     %%% Checks, if BurstBrowser.Display.BrightenColorMap subfield exists
     if ~isfield (S.BurstBrowser.Display,'BrightenColorMap')
         S.BurstBrowser.Display.BrightenColorMap=0;
@@ -2274,10 +2305,6 @@ else
 end
 
 %%% Saves user values
-Path=mfilename('fullpath');
-Folder=strfind(Path,filesep);
-Path=Path(1:(Folder(end-1)));
-Profiledir = [Path 'profiles'];
 if ~isempty(Current) %% Saves loaded profile
     Profile=Current;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
