@@ -6216,7 +6216,7 @@ if size(CutState,2) > 0
     if UserValues.BurstBrowser.Display.Restrict_EandS_Range
         %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
         %%% efficiency parameter if the cut limits fall within that range
-        if contains(NameArray{x},'Stoichiometry') || contains(NameArray{x},'Efficiency')
+        if ~isempty(strfind(NameArray{x},'Stoichiometry')) || ~isempty(strfind(NameArray{x},'Efficiency'))
             xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
             if UserValues.BurstBrowser.Display.logX
                 if xlimits(1) <= 0
@@ -6225,7 +6225,7 @@ if size(CutState,2) > 0
                 xlimits = log10(xlimits);
             end
         end
-        if contains(NameArray{y},'Stoichiometry') || contains(NameArray{y},'Efficiency')
+        if ~isempty(strfind(NameArray{y},'Stoichiometry')) || ~isempty(strfind(NameArray{y},'Efficiency'))
             ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
             if UserValues.BurstBrowser.Display.logY
                 if ylimits(1) <= 0
@@ -7351,10 +7351,10 @@ end
 if UserValues.BurstBrowser.Display.Restrict_EandS_Range
     %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
     %%% efficiency parameter if the cut limits fall within that range
-    if contains(paramX,'Stoichiometry') || contains(paramX,'Efficiency')
+    if ~isempty(strfind(paramX,'Stoichiometry')) || ~isempty(strfind(paramX,'Efficiency'))
         x_boundaries = [min(x_boundaries(1),-0.1) max(x_boundaries(2),1.1)];
     end
-    if contains(paramY,'Stoichiometry') || contains(paramY,'Efficiency')
+    if ~isempty(strfind(paramY,'Stoichiometry')) || ~isempty(strfind(paramY,'Efficiency'))
         y_boundaries = [min(y_boundaries(1),-0.1) max(y_boundaries(2),1.1)];
     end
 end
