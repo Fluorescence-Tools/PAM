@@ -6805,8 +6805,8 @@ if any(FileName~=0)
     UserValues.File.ExportPath=PathName;
     LSUserValues(1)
     Image=single(obj.CData);
-    if size(Image,3)==3
-        Image=Image/max(Image(:))*255;
+    if size(Image,3)==3       
+        Image=Image/max(Image(:))*255;     
     else
         cmap=colormap(obj.Parent);
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
@@ -6814,6 +6814,12 @@ if any(FileName~=0)
         Image(:,:,1) = reshape(r(CData),size(CData));
         Image(:,:,2) = reshape(g(CData),size(CData));
         Image(:,:,3) = reshape(b(CData),size(CData));
+        
+        if numel(obj.AlphaData)>1 %%% When transparency is used to show unselected regions
+            Image(:,:,1) = Image(:,:,1).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(1);
+            Image(:,:,2) = Image(:,:,2).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(2);
+            Image(:,:,3) = Image(:,:,3).*obj.AlphaData + 255*(1-obj.AlphaData)*obj.Parent.Color(3);
+        end
     end
     
     imwrite(uint8(Image),fullfile(PathName,FileName));

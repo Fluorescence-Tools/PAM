@@ -530,7 +530,7 @@ h.Export_ErrorLim = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Style','edit',...
     'String',UserValues.MIAFit.Export_Error,...
-    'Callback', @(src,event) LSUserValues(1,src,{'String','MIAFit','Export_Error'}),...
+    'Callback', @Update_Plots,...  %%%% @(src,event) LSUserValues(1,src,{'String','MIAFit','Export_Error'}),...
     'Position',[0.86 0.75 0.035 0.1]);
 
 %%% Text for transparency
@@ -640,8 +640,7 @@ h.Main_Tab = uitabgroup(...
         'Label','Export to clipboard',...
         'Checked','off',...
         'Tag','MIAFit_Plot_Export2Clip',...
-        'Callback',{@Plot_Menu_Callback,4});
-    
+        'Callback',{@Plot_Menu_Callback,4});   
     %% On axis plots
 %%% On axis plots tab
 h.On_Axis_Tab= uitab(...
@@ -1732,6 +1731,7 @@ UserValues.MIAFit.NormalizationMethod = Normalization_Method;
 UserValues.MIAFit.Omit = h.Omit_Center.Value;
 UserValues.MIAFit.Omit_Center_Line = h.Omit_Center_Line.Value;
 UserValues.MIAFit.Hide_Legend = h.Hide_Legend.Value;
+UserValues.MIAFit.Export_Error = h.Export_ErrorLim.String;
 LSUserValues(1);
 
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
@@ -1992,12 +1992,21 @@ for i=1:size(MIAFitMeta.Plots,1)
                         Data((floor((Y+1)/2)),:) = 0;
                     end
                     if h.Fit_Weights.Value
-                       Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))))^2;                    
-                    else
-                       Data = Data^2;
+                       Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))));                    
                     end
                     Data = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
-                    Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+                    
+                    %%% Scales errors to range
+                    ErrorLim = str2double(h.Export_ErrorLim.String);
+                    Data(Data < -ErrorLim) = -ErrorLim;
+                    Data(Data >  ErrorLim) =  ErrorLim;
+                    
+                    if numel(unique(Data(:)))>1
+                       Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+                    else
+                       Data(:) = 64; 
+                    end
+                    
                     Data = Color(Data(:),:);
                     Data = reshape(Data,[size(x,1),size(x,2),3]);
                     h.Plots.Fit.CData = Data;
