@@ -8641,7 +8641,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     %     case h.DetermineGammaManuallyButton
     %         [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
     % end
-    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
+    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[-0.1 1], [min(S_raw) max(S_raw)]);
     
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
@@ -8666,10 +8666,10 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
-            BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
-            BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
+            BurstMeta.Plots.Fits.gamma.XData = linspace(-0.1,1,1100);
+            BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(-0.1,1,1100));
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
-            xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
+            xlim(h.Corrections.TwoCMFD.axes_gamma,[-0.1,1]);
             %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
             %%% Determine Gamma and Beta
