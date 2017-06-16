@@ -1833,7 +1833,7 @@ for i=1:size(MIAFitMeta.Plots,1)
         %% Calculates weighted residuals and plots them
         if h.Fit_Weights.Value
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)./MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))*B;   
-            ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'*B;
+            ResidualsY = (MIAFitMeta.Plots{i,5}.YData-MIAFitMeta.Plots{i,6}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'*B;
             if h.Omit_Center.Value
                 ResidualsX((floor((X+1)/2))) = 0;
                 ResidualsY((floor((Y+1)/2))) = 0;
