@@ -360,6 +360,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.Use_PCH was incomplete');
     end
     P.Settings.Pam.Use_PCH = S.Settings.Pam.Use_PCH;
+        %%% Checks, if Pam.PCH_2D subfield exists
+    if ~isfield(S.Settings.Pam, 'PCH_2D')
+        S.Settings.Pam.PCH_2D=0;
+        disp('UserValues.Settings.Pam.PCH_2D was incomplete');
+    end
+    P.Settings.Pam.PCH_2D = S.Settings.Pam.PCH_2D;
     %%% Checks, if Pam.Use_Image subfield exists
     if ~isfield(S.Settings.Pam, 'Use_Image')
         S.Settings.Pam.Use_Image=0;

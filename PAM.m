@@ -2052,6 +2052,12 @@ h.Plots.Trace{1}=handle(plot([0 1],[0 0],'b'));
 if ~UserValues.Settings.Pam.Use_TimeTrace
     h.Trace.Tab.Parent = [];
 end
+h.Trace.Menu = uicontextmenu;
+h.Trace.Trace_Export_Menu = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Export',...
+    'Callback',{@Update_Display,2});
+h.Trace.Axes.UIContextMenu = h.Trace.Menu;
 %% Plot and functions for PCH trace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Intensity trace tab
 h.PCH.Tab= uitab(...
@@ -2090,6 +2096,22 @@ h.PCH.Axes.YLabel.Color=Look.Fore;
 h.Plots.PCH{1}=handle(plot([0 1],[0 0],'b'));
 if ~UserValues.Settings.Pam.Use_PCH
     h.PCH.Tab.Parent = [];
+end
+% add context menu
+h.PCH.Menu = uicontextmenu;
+h.PCH.PCH_2D_Menu = uimenu(...
+    'Parent',h.PCH.Menu,...
+    'Label','2D PCH',...
+    'checked','off',...
+    'Callback',{@Update_Display,10});
+h.PCH.PCH_Export_Menu = uimenu(...
+    'Parent',h.PCH.Menu,...
+    'Label','Export',...
+    'Callback',{@Update_Display,10});
+h.PCH.Axes.UIContextMenu = h.PCH.Menu;
+h.PCH.Panel.UIContextMenu = h.PCH.Menu;
+if UserValues.Settings.Pam.PCH_2D
+    h.PCH.PCH_2D_Menu.Checked = 'on';
 end
 %% Plot and functions for image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Image tab
@@ -3376,9 +3398,9 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         if h.MT.Use_PCH.Value
                             TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
                             if ~isempty(PIE_MT)
-                                trace_ms = histc(PIE_MT,TimeBinsPCH);
-                                PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
-                                PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
+                                PamMeta.TracePCH{i} = histc(PIE_MT,TimeBinsPCH);
+                                PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
+                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
                             else
                                 PamMeta.BinsPCH{i} = 0:1:10;
                                 PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
@@ -3898,6 +3920,28 @@ if any(mode==2)
     end
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
+    if gcbo == h.Trace.Trace_Export_Menu
+        hfig = figure('Visible','on','Units','pixel',...
+            'Position',[100,100,500*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
+            'Name',FileInfo.FileName{1});
+        ax = copyobj(h.Trace.Axes,hfig);
+        %%% delete patches
+        del = false(numel(ax.Children),1);
+        for i = 1:numel(ax.Children)
+            if strcmp(ax.Children(i).Type,'patch')
+                del(i) = true;
+            end
+        end
+        delete(ax.Children(del));
+        hfig.Color = [1,1,1];
+        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
+            'FontSize',h.Progress.Text.FontSize,'Layer','top');
+        colormap(h.Pam.Colormap);
+        ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
+        hfig.Position(4) = hfig.Position(4)+25;
+        ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
+        legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
+    end
 end
 %% PCH plot update
 if any(mode == 10)
@@ -3911,12 +3955,60 @@ if any(mode == 10)
     end
     delete(h.PCH.Axes.Children(logical(del)));
     h.Plots.PCH = {};
-    for t = h.PIE.List.Value
-        %%% create plot
-        h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+    
+    obj = gcbo;
+    if obj == h.PCH.PCH_2D_Menu
+        switch obj.Checked
+            case 'on'
+                obj.Checked = 'off';
+                UserValues.Settings.Pam.PCH_2D = 0;
+            case 'off'
+                obj.Checked = 'on';
+                UserValues.Settings.Pam.PCH_2D = 1;
+        end
     end
-    guidata(h.Pam,h);
-    h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value))),1])];
+    if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
+        for t = h.PIE.List.Value
+            %%% create plot
+            h.Plots.PCH{end+1} = plot(PamMeta.BinsPCH{t},PamMeta.PCH{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.PCH.Axes);
+        end
+        guidata(h.Pam,h);
+        h.PCH.Axes.YLimMode = 'auto';
+        h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value))),1])];
+        h.PCH.Axes.XLabel.String = 'Counts per ms';
+        h.PCH.Axes.YLabel.String = 'Frequency';
+        h.PCH.Axes.YScale = 'log';
+        h.PCH.Axes.DataAspectRatioMode = 'auto';
+    else
+        sel = h.PIE.List.Value;
+        sel = sel(1:2);
+        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)});
+        h.Plots.PCH{end+1} = imagesc(x(1:end-1)+min(diff(x))/2,y(1:end-1)+min(diff(y))/2,log10(H),'Parent',h.PCH.Axes);
+        h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
+        guidata(h.Pam,h);
+        h.PCH.Axes.YScale = 'lin';
+        h.PCH.Axes.XLim = [x(1),find(PamMeta.PCH{sel(1)} > 1,1,'last')];
+        h.PCH.Axes.YLim = [y(1),find(PamMeta.PCH{sel(2)} > 1,1,'last')];
+        h.PCH.Axes.XLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(1)} ')'];
+        h.PCH.Axes.YLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(2)} ')'];
+        h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
+    end
+    if obj == h.PCH.PCH_Export_Menu
+        hfig = figure('Visible','on','Units','pixel',...
+            'Position',[100,100,500*h.PCH.Axes.Position(3),500*h.PCH.Axes.Position(4)],...
+            'Name',FileInfo.FileName{1});
+        ax = copyobj(h.PCH.Axes,hfig);
+        hfig.Color = [1,1,1];
+        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
+            'FontSize',h.Progress.Text.FontSize,'Layer','top');
+        colormap(h.Pam.Colormap);
+        ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
+        hfig.Position(4) = hfig.Position(4)+25;
+        ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
+        if ~UserValues.Settings.Pam.PCH_2D
+            legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color','none');
+        end
+    end
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates image
@@ -4397,6 +4489,7 @@ if any(mode==2)
         if isempty(h.Plots.MT_Patches{i})
             h.Plots.MT_Patches{i}=handle(patch([PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i+1) PamMeta.MT_Patch_Times(i+1)],YData,UserValues.Look.Axes,'Parent',h.Trace.Axes));
             h.Plots.MT_Patches{i}.ButtonDownFcn=@MT_Section;
+            h.Plots.MT_Patches{i}.UIContextMenu = h.Trace.Menu;
             %%% Resets old patch
         else
             h.Plots.MT_Patches{i}.XData=[PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i+1) PamMeta.MT_Patch_Times(i+1)];
@@ -4767,17 +4860,18 @@ Update_to_UserValues; %%% Updates CorrTable and BurstGUI
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Selects/Unselects macrotime sections  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function MT_Section(obj,~)
+function MT_Section(obj,eventData)
 global PamMeta
 h = guidata(findobj('Tag','Pam'));
-
-for i=1:numel(h.Plots.MT_Patches)
-    if obj==h.Plots.MT_Patches{i}
-        break;
+if eventData.Button == 1 %%% only accept left-click
+    for i=1:numel(h.Plots.MT_Patches)
+        if obj==h.Plots.MT_Patches{i}
+            break;
+        end
     end
+    PamMeta.Selected_MT_Patches(i)=abs(PamMeta.Selected_MT_Patches(i)-1);
+    Update_Display([],[],2);
 end
-PamMeta.Selected_MT_Patches(i)=abs(PamMeta.Selected_MT_Patches(i)-1);
-Update_Display([],[],2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Callback functions of metadata table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
