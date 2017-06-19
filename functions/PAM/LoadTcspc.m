@@ -860,9 +860,9 @@ switch (Type)
         FileInfo.ClockPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
-        FileInfo.Lines=10;
+        FileInfo.Lines=1;
         FileInfo.LineTimes=[];
-        FileInfo.Pixels=10;
+        FileInfo.Pixels=1;
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
@@ -905,7 +905,7 @@ switch (Type)
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, SyncRate, ClockRate, Resolution] = Read_T3R(fullfile(Path,FileName{i}));
+            [MT, MI, ~, ~, ~, SyncRate, ClockRate, Resolution] = Read_T3R(fullfile(Path,FileName{i}));
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/SyncRate;

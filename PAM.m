@@ -5591,6 +5591,14 @@ if mode==2 %%% For Multiple Correlation
     Filetypes = UserValues.File.SPC_FileTypes;
     %%% Finds last used file type
     Lastfile = UserValues.File.OpenTCSPC_FilterIndex;
+    
+    %%% Adds the custum filetype to the filetype selection
+    if h.Profiles.Filetype.Value>1
+        Custom = str2func(h.Profiles.Filetype.String{h.Profiles.Filetype.Value});
+        [Custom_Suffix, Custom_Description] = feval(Custom);
+        Filetypes{end+1,1} = Custom_Suffix;
+        Filetypes{end,2} = Custom_Description;
+    end
     %%% Puts last uses file type to front
     Fileorder = 1:size(Filetypes,1);
     Fileorder = [Lastfile, Fileorder(Fileorder~=Lastfile)];
