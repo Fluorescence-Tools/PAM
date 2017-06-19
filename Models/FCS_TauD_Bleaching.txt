@@ -1,9 +1,9 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 Simple one component, 3D normal diffusion FCS model.
 Diffusion time is fitted, no focus size information
-One exponential triplet component
+One exponential bleaching component.
 
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
+|gamma|*|N|*|Bleaching amplitude|*|Bleaching time|*|xy diffusion|*|z diffusion|+|Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;	LB = 0;     UB = Inf;
 Param(2): tauD[?s]      = 30;	LB = 0;     UB = Inf;

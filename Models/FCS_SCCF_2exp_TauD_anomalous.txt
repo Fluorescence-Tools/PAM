@@ -1,9 +1,11 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-Simple one component, 3D normal diffusion FCS model.
-Diffusion time is fitted, no focus size information
-One exponential triplet component
+Filtered-FCS model function.
+3D anomalous diffusion FCS model with biexponential kinetic terms.
+Diffusion time is fitted, no focus size information.
+Set amplitude to positive values for species autocorrelation functions (SACF)
+and to negative values for cross-correlation functions (SCCF).
 
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
+|gamma|*|N|*|first exponential + second exponential|*|xy diffusion*|z diffusion|+|Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 0.01;	LB = 0;     UB = Inf;
 Param(2): tauD[?s]      = 2500;   LB = 0;     UB = Inf;
