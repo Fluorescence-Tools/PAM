@@ -5465,6 +5465,7 @@ switch e.Key
             for i = 1:size(PamMeta.Database,1)
                 h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
             end
+            m = msgbox('Please consider restarting PAM to ensure that all settings are updated.','Profile changed!');
         end
     case 'duplicate'
         %% Duplicates selected profile
