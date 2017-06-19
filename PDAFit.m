@@ -3763,7 +3763,17 @@ else
     tmp.fittable(2:end,:) = num2cell(cellfun(@str2double,tmp.fittable(2:end,:)));
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b> ',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>','_'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sub>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'&',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,';',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<html>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</html>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>','^'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sup>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'Aring','A'),tmp.fittable(1,:),'UniformOutput',false);    
     fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
     %%% write to text file
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
