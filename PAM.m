@@ -11232,7 +11232,9 @@ for i = 1:numel(start_times1)
     patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times1(i),stop_times1(i),stop_times1(i),start_times1(i)],...
         [minY,minY,maxY,maxY],'b','FaceAlpha',0.3,'EdgeColor','none');
 end
-
+%%% add threshold to plot
+plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),(M./(1E-3*T)).*ones(size(x(1:end-1))),'--','Color',[0.3020 0.7490 0.9294]);
+    
 %%% plot second channel
 if Cor_B ~= Cor_A
     % get the average countrate of the block
@@ -11259,6 +11261,8 @@ if Cor_B ~= Cor_A
         patch(h.Cor.Remove_Aggregates_Axes,FileInfo.ClockPeriod*[start_times2(i),stop_times2(i),stop_times2(i),start_times2(i)],...
             [minY,minY,maxY,maxY],'r','FaceAlpha',0.3,'EdgeColor','none');
     end
+    %%% add threshold to plot
+    plot(h.Cor.Remove_Aggregates_Axes,x(1:end-1),(M./(1E-3*T)).*ones(size(x(1:end-1))),'--','Color',[0.8510 0.3294 0.1020]);
 end
 if (Cor_B == Cor_A)
     legend(trace1,Name1);
