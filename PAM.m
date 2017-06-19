@@ -2094,9 +2094,7 @@ h.PCH.Axes.XLabel.Color=Look.Fore;
 h.PCH.Axes.YLabel.String='Frequency';
 h.PCH.Axes.YLabel.Color=Look.Fore;
 h.Plots.PCH{1}=handle(plot([0 1],[0 0],'b'));
-if ~UserValues.Settings.Pam.Use_PCH
-    h.PCH.Tab.Parent = [];
-end
+
 % add context menu
 h.PCH.Menu = uicontextmenu;
 h.PCH.PCH_2D_Menu = uimenu(...
@@ -2112,6 +2110,9 @@ h.PCH.Axes.UIContextMenu = h.PCH.Menu;
 h.PCH.Panel.UIContextMenu = h.PCH.Menu;
 if UserValues.Settings.Pam.PCH_2D
     h.PCH.PCH_2D_Menu.Checked = 'on';
+end
+if ~UserValues.Settings.Pam.Use_PCH
+    h.PCH.Tab.Parent = [];
 end
 %% Plot and functions for image %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Image tab
