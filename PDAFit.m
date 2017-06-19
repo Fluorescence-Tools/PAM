@@ -1,4 +1,4 @@
-function GlobalPDAFit(~,~)
+function PDAFit(~,~)
 % GlobalPDAFit Global Analysis of PDA data
 %
 %      This is a beta version!
@@ -1018,6 +1018,19 @@ end
 function Close_PDA(~,~)
 clearvars -global PDAData PDAMeta
 delete(findobj('Tag','GlobalPDAFit'));
+Phasor=findobj('Tag','Phasor');
+Pam=findobj('Tag','Pam');
+MIAFit=findobj('Tag','MIAFit');
+Mia=findobj('Tag','Mia');
+Sim=findobj('Tag','Sim');
+PCF=findobj('Tag','PCF');
+BurstBrowser=findobj('Tag','BurstBrowser');
+TauFit=findobj('Tag','TauFit');
+PhasorTIFF = findobj('Tag','PhasorTIFF');
+FCSFit = findobj('Tag','FCSFit');
+if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF) && isempty(FCSFit)
+    clear global -regexp UserValues
+end
 
 % Load data that was exported in BurstBrowser
 function Load_PDA(~,~,mode)
@@ -1027,6 +1040,9 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 if mode ~= 3
     %% Load or Add data
     Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.File.PDAPath);
+    if isempty(Files)
+        return;
+    end
     FileName = Files(:,1);
     PathName = Files(:,2);
     %%% Only executes, if at least one file was selected
@@ -1650,6 +1666,11 @@ switch mode
             Active = find(Active);
         end
         for i = Active
+            try %%% see if histogram exists
+                x = PDAMeta.hFit{i};
+            catch
+                continue;
+            end
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
                 % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
@@ -2336,7 +2357,9 @@ PDAMeta.MCMC_mean = [];
 
 if sum(PDAMeta.Global) == 0
     %% One-curve-at-a-time fitting
+    fit_counter = 0;
     for i = find(PDAMeta.Active)'
+        fit_counter = fit_counter + 1;
         LB = PDAMeta.LB;
         UB = PDAMeta.UB;
         h.SingleTab.Popup.Value = i;
@@ -2400,8 +2423,8 @@ if sum(PDAMeta.Global) == 0
             case h.Menu.ViewFit
                 %% Check if View_Curve was pressed
                 %%% Only Update Plot and break
-                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                     case {'MLE','MonteCarlo'}
                         %%% For Updating the Result Plot, use MC sampling
@@ -2419,8 +2442,8 @@ if sum(PDAMeta.Global) == 0
                         PDAHistogramFit_Single(fitpar,h);
                 end
                 %% Do Fit
-                Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
-                Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Fitting Histograms...');
+                Progress((fit_counter-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
                 
                 switch h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value}
                     case 'Simplex'
@@ -2583,8 +2606,8 @@ else
     switch obj
         case h.Menu.ViewFit
              %%% Only Update Plot and break
-            Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
-            Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
+            Progress(0,h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Simulating Histograms...');
+            Progress(0,h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Simulating Histograms...');
             switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                 case {'MLE','MonteCarlo'}
                     %%% For Updating the Result Plot, use MC sampling
@@ -2767,8 +2790,15 @@ end
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
     % array from dummy data
-    fitpar_dummy = PDAMeta.FitParams(i,:);
-    fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        %%% add sigma fraction to end
+        fitpar_dummy = [PDAMeta.FitParams(i,:), str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
+        fixed = [PDAMeta.Fixed(i,:), h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
+        fitpar_dummy(~fixed) = fitpar;
+    else
+        fitpar_dummy = PDAMeta.FitParams(i,:);
+        fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
+    end
     fitpar = fitpar_dummy;
 end
 %%% if sigma is fixed at fraction of, change its value here, and remove the
@@ -2868,6 +2898,8 @@ else %%% dynamic model
             end
         end
         hFit_Dyn = hFit_Dyn./norm;
+        hFit_Ind{1} = hFit_Ind{1}./norm;
+        hFit_Ind{2} = hFit_Ind{2}./norm;
     end
     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
     
@@ -3731,7 +3763,17 @@ else
     tmp.fittable(2:end,:) = num2cell(cellfun(@str2double,tmp.fittable(2:end,:)));
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b> ',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<HTML><b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<b>',''),tmp.fittable(1,:),'UniformOutput',false);
     tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</b>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sub>','_'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sub>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'&',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,';',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<html>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</html>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'<sup>','^'),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'</sup>',''),tmp.fittable(1,:),'UniformOutput',false);
+    tmp.fittable(1,:) = cellfun(@(x) strrep(x,'Aring','A'),tmp.fittable(1,:),'UniformOutput',false);    
     fitResult(1:size(tmp.fittable,1),2:size(tmp.fittable,2)+1) = tmp.fittable;
     %%% write to text file
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
@@ -4664,6 +4706,7 @@ ceq = sum(x) - 1;
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
 count = 0;
+Files = [];
 while FileName ~= 0
     [FileName,PathName] = uigetfile(FilterSpec,Title, PathName, 'MultiSelect', 'on');
     if ~iscell(FileName)

@@ -48,7 +48,7 @@ switch Card
         
         if numel(ByteRecord) < 2 % Even empty file will contain sync rate
             %h = msgbox(['Empty file: ', FileName]);
-            disp(['Empty file: ', FileName])
+            %disp(['Empty file: ', FileName])
             %pause(1)
             %close(h)
             MT = {[]};

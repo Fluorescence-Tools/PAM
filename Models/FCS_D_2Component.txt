@@ -4,15 +4,15 @@ Brightnesses are assumed to be equal.
 Diffusion coefficient and focus size are both parameters
 One exponential triplet component
 
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
+|gamma|*|N|*|Trip amplitude|*|Trip time|*|xy diffusion|*|z diffusion|+|Offset|
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N1            = 1;	LB = 0;     UB = Inf;
-Param(2): D1[µm^2/s]    = 373;	LB = 0;     UB = Inf; 
+Param(2): D1[ï¿½m^2/s]    = 373;	LB = 0;     UB = Inf; 
 Param(3): N2            = 1;	LB = 0;     UB = Inf;
-Param(4): D2[µm^2/s]    = 10;	LB = 0;     UB = Inf;
-Param(5): w_r [µm]      = 0.2;	LB = 0;     UB = Inf;
-Param(6): w_z [µm]      = 1;	LB = 0;     UB = Inf;
-Param(7): tauT[µs]      = 1;	LB = 0;     UB = Inf;
+Param(4): D2[ï¿½m^2/s]    = 10;	LB = 0;     UB = Inf;
+Param(5): w_r [ï¿½m]      = 0.2;	LB = 0;     UB = Inf;
+Param(6): w_z [ï¿½m]      = 1;	LB = 0;     UB = Inf;
+Param(7): tauT[ï¿½s]      = 1;	LB = 0;     UB = Inf;
 Param(8): Trip          = 0.01; LB = 0;     UB = 1;
 Param(9): y0            = 0;	LB = -1;    UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%

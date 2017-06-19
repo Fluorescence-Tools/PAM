@@ -1,21 +1,23 @@
 function TauFit(obj,~)
-global UserValues
+global UserValues TauFitData PamMeta
 h.TauFit = findobj('Tag','TauFit');
 addpath(genpath(['.' filesep 'functions']));
 LSUserValues(0);
-%%% If called from command line, close
-if nargin < 1 && isempty(gcbo)
+method = '';
+%%% If called from command line, or from Launcher
+if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'TauFit_Launcher'))
     Close_TauFit
-    disp('Call TauFit from Pam or BurstBrowser instead of command line!');
-    return;
-    %TauFitData.Who = 'External';
+    %disp('Call TauFit from Pam or BurstBrowser instead of command line!');
+    %return;
+    TauFitData.Who = 'External';
+    method = 'ensemble';
+    obj = false;
 end
 
 if ~isempty(h.TauFit)
     % Close TauFit cause it might be called from somewhere else than before
     Close_TauFit
 end
-global TauFitData PamMeta
 if ~isempty(findobj('Tag','Pam'))
     ph = guidata(findobj('Tag','Pam'));
 end
@@ -68,6 +70,8 @@ h.Menu.Export_To_Clipboard = uimenu(h.Menu.Export_Menu,'Label','Copy Data to Cli
     'Separator','on');
 h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted microtime pattern',...
     'Callback',@Export);
+h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
+    'Callback',@Export,'Separator','on');
     
 
 
@@ -122,15 +126,17 @@ h.Microtime_Plot = axes(...
 
 %%% Create Graphs
 hold on;
+h.Plots.Scat_Sum = plot([0 1],[0 0],'.r','Color',[0.5 0.5 0.5],'MarkerSize',5,'DisplayName','Scatter (sum)');
 h.Plots.Scat_Par = plot([0 1],[0 0],'LineStyle',':','Color',[0.5 0.5 0.5],'LineWidth',1,'DisplayName','Scatter (par)');
 h.Plots.Scat_Per = plot([0 1],[0 0],'LineStyle',':','Color',[0.3 0.3 0.3],'LineWidth',1,'DisplayName','Scatter (perp)');
 h.Plots.Decay_Sum = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay (sum)');
-h.Plots.Decay_Par = plot([0 1],[0 0],'-r','LineWidth',1,'DisplayName','Decay (par)');
-h.Plots.Decay_Per = plot([0 1],[0 0],'-b','LineWidth',1,'DisplayName','Decay (perp)');
+h.Plots.Decay_Par = plot([0 1],[0 0],'Color',[0.8510,0.3294,0.1020],'LineWidth',1,'DisplayName','Decay (par)');
+h.Plots.Decay_Per = plot([0 1],[0 0],'Color',[0,0.4510,0.7412],'LineWidth',1,'DisplayName','Decay (perp)');
+h.Plots.IRF_Sum = plot([0 1],[0 0],'.r','Color',[0,0.4510,0.7412],'MarkerSize',5,'DisplayName','IRF (sum)');
 h.Plots.IRF_Par = plot([0 1],[0 0],'.r','MarkerSize',5,'DisplayName','IRF (par)');
 h.Plots.IRF_Per = plot([0 1],[0 0],'.b','MarkerSize',5,'DisplayName','IRF (perp)');
-h.Plots.FitPreview = plot([0 1],[0 0],'k','LineWidth',1);
 h.Ignore_Plot = plot([0 0],[1e-6 1],'Color','k','Visible','off','LineWidth',1,'DisplayName','Decay (ignore)');
+h.Plots.Aniso_Preview = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy');
 h.Microtime_Plot.XLim = [0 1];
 h.Microtime_Plot.YLim = [0 1];
 h.Microtime_Plot.XLabel.Color = Look.Fore;
@@ -151,12 +157,12 @@ h.Residuals_Plot = axes(...
     'XTickLabel',[],...
     'Box','on');
 hold on;
-h.Plots.Residuals = plot([0 1],[0 0],'-k','LineWidth',2);
-h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',2);
-h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off','LineWidth',2);
-h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off','LineWidth',2);
+h.Plots.Residuals = plot([0 1],[0 0],'-k','LineWidth',1);
+h.Plots.Residuals_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1);
+h.Plots.Residuals_Perp = plot([0 1],[0 0],'-b','Visible','off','LineWidth',1);
+h.Plots.Residuals_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0 0.4],'Visible','off','LineWidth',1);
 
-h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off','LineWidth',2);
+h.Plots.Residuals_ZeroLine = plot([0 1],[0 0],'-k','Visible','off','LineWidth',1);
 h.Residuals_Plot.YLabel.Color = Look.Fore;
 h.Residuals_Plot.YLabel.String = 'w_{res}';
 h.Residuals_Plot.XGrid = 'on';
@@ -194,12 +200,12 @@ h.Result_Plot.XGrid = 'on';
 h.Result_Plot.YGrid = 'on';
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
-h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',2,'MarkerSize',10,'DisplayName','IRF');
-h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',2,'MarkerSize',10,'DisplayName','IRF (perp)');
-h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',2,'DisplayName','Decay');
-h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',2,'DisplayName','Decay (ignore)');
-h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',2,'DisplayName','Decay (perp)');
-h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',2,'DisplayName','Decay (ignore perp)');
+h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',1,'MarkerSize',10,'DisplayName','IRF');
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',1,'MarkerSize',10,'DisplayName','IRF (perp)');
+h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay','MarkerSize',10);
+h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore)','MarkerSize',10);
+h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',1,'DisplayName','Decay (perp)','MarkerSize',10);
+h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore perp)','MarkerSize',10);
 h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off','LineWidth',2,'DisplayName','Fit (ignore)');
 h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',2,'Visible','off','DisplayName','Fit (perp)');
@@ -225,8 +231,8 @@ h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
 h.Result_Plot_Aniso.XGrid = 'on';
 h.Result_Plot_Aniso.YGrid = 'on';
 hold on;
-h.Plots.AnisoResult = plot([0 1],[0 0],'-k','LineWidth',2,'DisplayName','Anisotropy');
-h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'LineWidth',2,'DisplayName','Anisotropy (ignore)');
+h.Plots.AnisoResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Anisotropy','MarkerSize',10);
+h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'LineWidth',1,'DisplayName','Anisotropy (ignore)','MarkerSize',10);
 h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2,'DisplayName','Fit (ignore)');
 
@@ -245,7 +251,7 @@ h.Result_Plot_Aniso.Parent = h.HidePanel;
 if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
     h.Microtime_Plot.YScale = 'log';
     h.Result_Plot.YScale = 'log';
-    h.Result_Plot_Aniso.YScale = 'log';
+    %h.Result_Plot_Aniso.YScale = 'log';
 end
 %% Sliders
 %%% Define the container
@@ -618,126 +624,7 @@ if exist('ph','var')
                 TauFitData.Who = 'TauFit';
                 % user called TauFit from Pam
                 % fit a lifetime from data in a PIE channel
-                %%% Popup menus for PIE Channel Selection
-                h.PIEChannelPar_Popupmenu = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','Popupmenu',...
-                    'Tag','PIEChannelPar_Popupmenu',...
-                    'Units','normalized',...
-                    'Position',[0.5 0.85 0.4 0.1],...
-                    'String',UserValues.PIE.Name,...
-                    'Callback',@Channel_Selection);
-                h.PIEChannelPar_Text = uicontrol(...switch
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','Text',...
-                    'Tag','PIEChannelPar_Text',...
-                    'Units','normalized',...
-                    'Position',[0.05 0.85 0.4 0.1],...
-                    'BackgroundColor', Look.Back,...
-                    'ForegroundColor', Look.Fore,...
-                    'HorizontalAlignment','left',...
-                    'FontSize',10,...
-                    'String','Parallel Channel',...
-                    'ToolTipString','Selection for the Parallel Channel');
-                h.PIEChannelPer_Popupmenu = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','Popupmenu',...
-                    'Tag','PIEChannelPer_Popupmenu',...
-                    'Units','normalized',...
-                    'Position',[0.5 0.7 0.4 0.1],...
-                    'String',UserValues.PIE.Name,...
-                    'Callback',@Channel_Selection);
-                h.PIEChannelPer_Text = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','Text',...
-                    'Tag','PIEChannelPer_Text',...
-                    'Units','normalized',...
-                    'Position',[0.05 0.7 0.4 0.1],...
-                    'BackgroundColor', Look.Back,...
-                    'ForegroundColor', Look.Fore,...
-                    'HorizontalAlignment','left',...
-                    'FontSize',10,...
-                    'String','Perpendicular Channel',...
-                    'ToolTipString','Selection for the Perpendicular Channel');
-
-                %%% Set the Popupmenus according to UserValues
-                h.PIEChannelPar_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
-                h.PIEChannelPer_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
-                if isempty(h.PIEChannelPar_Popupmenu.Value)
-                    h.PIEChannelPar_Popupmenu.Value = 1;
-                end
-                if isempty(h.PIEChannelPer_Popupmenu.Value)
-                    h.PIEChannelPer_Popupmenu.Value = 1;
-                end
-                %%% Popup Menu for Fit Method Selection
-                h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
-                'Distribution','Distribution plus Donor only','Fit Anisotropy',...
-                'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
-                'Fit Anisotropy (2 exp lifetime, 2 exp rot)'};
-                %%% Button for loading the selected PIE Channels
-                h.LoadData_Button = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','pushbutton',...
-                    'Tag','LoadData_Button',...
-                    'Units','normalized',...
-                    'BackgroundColor', Look.Control,...
-                    'ForegroundColor', Look.Fore,...
-                    'Position',[0.05 0.55 0.4 0.12],...
-                    'String','Import Data from PAM',...
-                    'Callback',@Load_Data);
-                %%% Button to start fitting
-                h.Fit_Button = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','pushbutton',...
-                    'Tag','Fit_Button',...
-                    'Units','normalized',...
-                    'BackgroundColor', Look.Control,...
-                    'ForegroundColor', Look.Fore,...
-                    'Position',[0.3 0.25 0.6 0.12],...
-                    'String','Start reconvolution fit',...
-                    'Callback',@Start_Fit);
-                %%% Button to start tail fitting
-                h.Fit_Tail_Button = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','pushbutton',...
-                    'Tag','Fit_Tail_Button',...
-                    'Units','normalized',...
-                    'BackgroundColor', Look.Control,...
-                    'ForegroundColor', Look.Fore,...
-                    'Position',[0.05 0.05 0.29 0.12],...
-                    'String','Start tail fit',...
-                    'Callback',@Start_Fit);
-                h.Fit_Tail_Menu = uicontextmenu;
-                h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
-                    'Label','2 exponentials',...
-                    'Checked','off',...
-                    'Callback',@Start_Fit);
-                h.Fit_Tail_3exp = uimenu('Parent',h.Fit_Tail_Menu,...
-                    'Label','3 exponentials',...
-                    'Checked','off',...
-                    'Callback',@Start_Fit);
-                h.Fit_Tail_Button.UIContextMenu = h.Fit_Tail_Menu;
-                %%% Button to fit Time resolved anisotropy
-                h.Fit_Aniso_Button = uicontrol(...
-                    'Parent',h.PIEChannel_Panel,...
-                    'Style','pushbutton',...
-                    'Tag','Fit_Button',...
-                    'Units','normalized',...
-                    'BackgroundColor', Look.Control,...
-                    'ForegroundColor', Look.Fore,...
-                    'Position',[0.35 0.05 0.29 0.12],...
-                    'String','Fit anisotropy',...
-                    'Callback',@Start_Fit);
-                h.Fit_Aniso_Menu = uicontextmenu;
-                h.Fit_Aniso_2exp = uimenu('Parent',h.Fit_Aniso_Menu,...
-                    'Label','2 exponentials',...
-                    'Checked','off',...
-                    'Callback',@Start_Fit);
-                h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-                    'Label','"Dip and rise"',...
-                    'Checked','off',...
-                    'Callback',@Start_Fit);
-                h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+                method = 'ensemble';
             case {ph.Burst.BurstLifetime_Button, ph.Burst.Button}
                 TauFitData.Who = 'Burstwise';
                 %%% User Clicks Burstwise Lifetime button in Pam, Burst 
@@ -809,7 +696,7 @@ if exist('ph','var')
                     'ForegroundColor', Look.Fore,...
                     'Position',[0.05 0.05 0.5 0.12],...
                     'String','Burstwise Fit',...
-                    'ToolTipString','Start the burstwise fitting (sliders should be correct!',...
+                    'ToolTipString','Perform the burstwise fitting (sliders should be correct!',...
                     'Callback',@BurstWise_Fit);
                 %%% Button to start fitting
                 h.Fit_Button = uicontrol(...
@@ -839,7 +726,206 @@ if exist('ph','var')
                     'String','Auto-save images of plots',...
                     'Value',UserValues.BurstSearch.BurstwiseLifetime_SaveImages,...
                     'Position',[0.55,0.05,0.5,0.12]);
+                
+                %%% radio buttons to select the plotted data (decay or
+                %%% anisotropy)
+                h.ShowDecay_radiobutton = uicontrol('Style','radiobutton',...
+                  'Parent',h.PIEChannel_Panel,...
+                  'String','Decay',...
+                  'Units','normalized',...
+                  'Value',1,...
+                  'Callback',@Update_Plots,...
+                  'ForegroundColor',UserValues.Look.Fore,...
+                  'BackgroundColor',UserValues.Look.Back,...
+                  'Position',[0.01 0.32 0.27 0.07],...
+                  'Visible','off');
+                h.ShowDecaySum_radiobutton = uicontrol('Style','radiobutton',...
+                  'Parent',h.PIEChannel_Panel,...
+                  'String','Decay (Sum)',...
+                  'Units','normalized',...
+                  'Value',0,...
+                  'Callback',@Update_Plots,...
+                  'ForegroundColor',UserValues.Look.Fore,...
+                  'BackgroundColor',UserValues.Look.Back,...
+                  'Position',[0.01 0.25 0.27 0.07],...
+                  'Visible','off');
+                h.ShowAniso_radiobutton = uicontrol('Style','radiobutton',...
+                  'Parent',h.PIEChannel_Panel,...
+                  'String','Anisotropy',...
+                  'Units','normalized',...
+                  'Value',0,...
+                  'ForegroundColor',UserValues.Look.Fore,...
+                  'BackgroundColor',UserValues.Look.Back,...
+                  'Callback',@Update_Plots,...
+                  'Position',[0.01 0.18 0.27 0.07],...
+                  'Visible','off');
         end
+    end
+end
+if strcmp(method,'ensemble')
+    %%% this occurs if we either called from PAM or directly from
+    %%% command-line (i.e. operating on processed data *.dec files)
+    
+    %%% Popup menus for PIE Channel Selection
+    h.PIEChannelPar_Popupmenu = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','Popupmenu',...
+        'Tag','PIEChannelPar_Popupmenu',...
+        'Units','normalized',...
+        'Position',[0.5 0.85 0.4 0.1],...
+        'String',UserValues.PIE.Name,...
+        'Callback',@Channel_Selection);
+    h.PIEChannelPar_Text = uicontrol(...switch
+        'Parent',h.PIEChannel_Panel,...
+        'Style','Text',...
+        'Tag','PIEChannelPar_Text',...
+        'Units','normalized',...
+        'Position',[0.05 0.85 0.4 0.1],...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',10,...
+        'String','Parallel Channel',...
+        'ToolTipString','Selection for the Parallel Channel');
+    h.PIEChannelPer_Popupmenu = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','Popupmenu',...
+        'Tag','PIEChannelPer_Popupmenu',...
+        'Units','normalized',...
+        'Position',[0.5 0.7 0.4 0.1],...
+        'String',UserValues.PIE.Name,...
+        'Callback',@Channel_Selection);
+    h.PIEChannelPer_Text = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','Text',...
+        'Tag','PIEChannelPer_Text',...
+        'Units','normalized',...
+        'Position',[0.05 0.7 0.4 0.1],...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'FontSize',10,...
+        'String','Perpendicular Channel',...
+        'ToolTipString','Selection for the Perpendicular Channel');
+
+    %%% Set the Popupmenus according to UserValues
+    h.PIEChannelPar_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{1}));
+    h.PIEChannelPer_Popupmenu.Value = find(strcmp(UserValues.PIE.Name,UserValues.TauFit.PIEChannelSelection{2}));
+    if isempty(h.PIEChannelPar_Popupmenu.Value)
+        h.PIEChannelPar_Popupmenu.Value = 1;
+    end
+    if isempty(h.PIEChannelPer_Popupmenu.Value)
+        h.PIEChannelPer_Popupmenu.Value = 1;
+    end
+    %%% Popup Menu for Fit Method Selection
+    h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
+    'Distribution','Distribution plus Donor only','Fit Anisotropy',...
+    'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
+    'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
+    %%% Button for loading the selected PIE Channels
+    h.LoadData_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','LoadData_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.05 0.55 0.4 0.12],...
+        'String','Import Data from PAM',...
+        'Callback',@Load_Data);
+    %%% Button to start fitting
+    h.Fit_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','Fit_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.35 0.25 0.5 0.12],...
+        'String','Perform reconvolution fit',...
+        'Callback',@Start_Fit);
+    %%% Button to start tail fitting
+    h.Fit_Tail_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','Fit_Tail_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.05 0.05 0.29 0.12],...
+        'String','Perform tail fit',...
+        'Callback',@Start_Fit);
+    h.Fit_Tail_Menu = uicontextmenu;
+    h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
+        'Label','2 exponentials',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Tail_3exp = uimenu('Parent',h.Fit_Tail_Menu,...
+        'Label','3 exponentials',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Tail_Button.UIContextMenu = h.Fit_Tail_Menu;
+    %%% Button to fit Time resolved anisotropy
+    h.Fit_Aniso_Button = uicontrol(...
+        'Parent',h.PIEChannel_Panel,...
+        'Style','pushbutton',...
+        'Tag','Fit_Button',...
+        'Units','normalized',...
+        'BackgroundColor', Look.Control,...
+        'ForegroundColor', Look.Fore,...
+        'Position',[0.35 0.05 0.29 0.12],...
+        'String','Fit anisotropy',...
+        'Callback',@Start_Fit);
+    h.Fit_Aniso_Menu = uicontextmenu;
+    h.Fit_Aniso_2exp = uimenu('Parent',h.Fit_Aniso_Menu,...
+        'Label','2 exponentials',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
+        'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+
+    %%% radio buttons to select the plotted data (decay or
+    %%% anisotropy)
+    h.ShowDecay_radiobutton = uicontrol('Style','radiobutton',...
+      'Parent',h.PIEChannel_Panel,...
+      'String','Decay',...
+      'Units','normalized',...
+      'Value',1,...
+      'Callback',@Update_Plots,...
+      'ForegroundColor',UserValues.Look.Fore,...
+      'BackgroundColor',UserValues.Look.Back,...
+      'Position',[0.01 0.32 0.27 0.07]);
+    h.ShowDecaySum_radiobutton = uicontrol('Style','radiobutton',...
+      'Parent',h.PIEChannel_Panel,...
+      'String','Decay (Sum)',...
+      'Units','normalized',...
+      'Value',0,...
+      'Callback',@Update_Plots,...
+      'ForegroundColor',UserValues.Look.Fore,...
+      'BackgroundColor',UserValues.Look.Back,...
+      'Position',[0.01 0.25 0.27 0.07]);
+    h.ShowAniso_radiobutton = uicontrol('Style','radiobutton',...
+      'Parent',h.PIEChannel_Panel,...
+      'String','Anisotropy',...
+      'Units','normalized',...
+      'Value',0,...
+      'ForegroundColor',UserValues.Look.Fore,...
+      'BackgroundColor',UserValues.Look.Back,...
+      'Callback',@Update_Plots,...
+      'Position',[0.01 0.18 0.27 0.07]);
+  
+    if strcmp(TauFitData.Who,'External')
+        %%% hide buttons that relate to loading data from PAM
+        h.PIEChannelPar_Popupmenu.Value = 1;
+        h.PIEChannelPer_Popupmenu.Value = 1;
+        h.PIEChannelPar_Popupmenu.String = {''};
+        h.PIEChannelPer_Popupmenu.String = {''};
+        h.LoadData_Button.String = 'Plot Selection';
+        h.LoadData_Button.Enable = 'off';
+        h.Menu.Save_To_Dec.Visible = 'off';
     end
 end
 if exist('bh','var')
@@ -902,7 +988,8 @@ if exist('bh','var')
         h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
             'Distribution','Distribution plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
-            'Fit Anisotropy (2 exp lifetime, 2 exp rot)'};
+            'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
+            'Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
         %%% Button to start fitting
         h.Fit_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -911,8 +998,8 @@ if exist('bh','var')
             'Units','normalized',...
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
-            'Position',[0.3 0.25 0.6 0.12],...
-            'String','Start reconvolution fit',...
+            'Position',[0.38 0.25 0.5 0.12],...
+            'String','Perform reconvolution fit',...
             'Callback',@Start_Fit);
         %%% Button to start tail fitting
         h.Fit_Tail_Button = uicontrol(...
@@ -923,7 +1010,7 @@ if exist('bh','var')
             'BackgroundColor', Look.Control,...
             'ForegroundColor', Look.Fore,...
             'Position',[0.05 0.05 0.29 0.12],...
-            'String','Start tail fit',...
+            'String','Perform tail fit',...
             'Callback',@Start_Fit);
         h.Fit_Tail_Menu = uicontextmenu;
         h.Fit_Tail_2exp = uimenu('Parent',h.Fit_Tail_Menu,...
@@ -952,10 +1039,40 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-            'Label','"Dip and rise"',...
+            'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
+        
+        %%% radio buttons to select the plotted data (decay or
+        %%% anisotropy)
+        h.ShowDecay_radiobutton = uicontrol('Style','radiobutton',...
+          'Parent',h.PIEChannel_Panel,...
+          'String','Decay',...
+          'Units','normalized',...
+          'Value',1,...
+          'Callback',@Update_Plots,...
+          'ForegroundColor',UserValues.Look.Fore,...
+          'BackgroundColor',UserValues.Look.Back,...
+          'Position',[0.01 0.32 0.27 0.07]);
+        h.ShowDecaySum_radiobutton = uicontrol('Style','radiobutton',...
+          'Parent',h.PIEChannel_Panel,...
+          'String','Decay (Sum)',...
+          'Units','normalized',...
+          'Value',0,...
+          'Callback',@Update_Plots,...
+          'ForegroundColor',UserValues.Look.Fore,...
+          'BackgroundColor',UserValues.Look.Back,...
+          'Position',[0.01 0.25 0.27 0.07]);
+        h.ShowAniso_radiobutton = uicontrol('Style','radiobutton',...
+          'Parent',h.PIEChannel_Panel,...
+          'String','Anisotropy',...
+          'Units','normalized',...
+          'Value',0,...
+          'ForegroundColor',UserValues.Look.Fore,...
+          'BackgroundColor',UserValues.Look.Back,...
+          'Callback',@Update_Plots,...
+          'Position',[0.01 0.18 0.27 0.07]);
         
         set(h.Determine_GFactor_Button,'Visible','off');
         
@@ -971,7 +1088,7 @@ h.FitMethod_Popupmenu = uicontrol(...
     'Style','Popupmenu',...
     'Tag','FitMethod_Popupmenu',...
     'Units','normalized',...
-    'Position',[0.3 0.4 0.6 0.095],...
+    'Position',[0.27 0.4 0.72 0.095],...
     'String',h.FitMethods,...
     'Callback',@Method_Selection);
 
@@ -980,13 +1097,13 @@ h.FitMethod_Text = uicontrol(...
     'Style','Text',...
     'Tag','FitMethod_Text',...
     'Units','normalized',...
-    'Position',[0.05 0.4 0.2 0.095],...
+    'Position',[0.01 0.4 0.25 0.095],...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'HorizontalAlignment','left',...
     'FontSize',10,...
-    'String','Fit Method',...
-    'ToolTipString','Select the Fit Method');
+    'String','Model Function:',...
+    'ToolTipString','Select the Model Function');
 
 %% Progressbar and file name %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -1052,14 +1169,19 @@ h.FitPar_Table = uitable(...
     'ColumnFormat',{'numeric','numeric','numeric','logical'},...
     'RowName',{'Test'},...
     'ColumnEditable',[true true true true],...
-    'ColumnWidth',{50,50,50,40},...
+    'ColumnWidth',{100,50,50,40},...
     'Tag','FitPar_Table',...
     'CellEditCallBack',@Update_Plots,...
     'BackgroundColor', [Look.Table1;Look.Table2],...
     'ForegroundColor', Look.TableFore);
 %%% Get the values of the table and the RowNames from UserValues
 [h.FitPar_Table.Data, h.FitPar_Table.RowName] = GetTableData(1, 1);
-
+h.FitResultToClip_Menu = uicontextmenu;
+h.FitResultToClip = uimenu(...
+    'Parent',h.FitResultToClip_Menu,...
+    'Label','Copy Fit Result to Clipboard',...
+    'Callback',@Export);
+h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -1119,8 +1241,7 @@ h.l2_text = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'HorizontalAlignment','left',...
-    'Tag','l2_text',...
-    'Callback',@UpdateOptions);
+    'Tag','l2_text');
 
 h.l2_edit = uicontrol(...
     'Parent',h.FitPar_Panel,...
@@ -1129,7 +1250,8 @@ h.l2_edit = uicontrol(...
     'Position',[0.17 0.025 0.2 0.04],...
     'String',num2str(UserValues.TauFit.l2),...
     'FontSize',10,...
-    'Tag','l2_edit');
+    'Tag','l2_edit',...
+    'Callback',@UpdateOptions);
 
 h.Output_Panel = uibuttongroup(...
     'Parent',h.FitPar_Panel,...
@@ -1168,7 +1290,7 @@ h.Settings_Panel = uibuttongroup(...
     'Position',[0 0 1 1],...
     'Tag','Settings_Panel');
 
-uicontrol(...
+h.ConvolutionType_Text = uicontrol(...
     'Style','text',...
     'Parent',h.Settings_Panel,...
     'Units','normalized',...
@@ -1187,6 +1309,27 @@ h.ConvolutionType_Menu = uicontrol(...
     'String',{'linear','circular'},...
     'Value',find(strcmp({'linear','circular'},UserValues.TauFit.ConvolutionType)),...
     'Tag','ConvolutionType_Menu');
+
+h.LineStyle_Text = uicontrol(...
+    'Style','text',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.8 0.35 0.07],...
+    'String','Line Style (Result)',...
+    'FontSize',10,...
+    'Tag','LineStyle_Text');
+h.LineStyle_Menu = uicontrol(...
+    'Style','popupmenu',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'Position',[0.4 0.8 0.5 0.07],...
+    'String',{'line','dots'},...
+    'Value',find(strcmp({'line','dots'},UserValues.TauFit.LineStyle)),...
+    'Callback',@UpdateOptions,...
+    'Tag','LineStyle_Menu');
+
 h.AutoFit_Menu = uicontrol(...
     'Style','checkbox',...
     'Parent',h.Settings_Panel,...
@@ -1282,9 +1425,10 @@ for i = 1:3 %max number of pairs for fitting
 end
 TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
 TauFitData.FitMethods = h.FitMethods;
-
+h.subresolution = 10;
 guidata(gcf,h);
 
+ChangeLineStyle(h);
 % If data is ready to be displayed, display it
 % (user sent data from burstbrowser or wants to do a burstwise fitting)
 if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
@@ -1395,7 +1539,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
 
         %%% mark TauFit mode as external
         TauFitData.Who = 'External';
-
+        TauFitData.FileName = fullfile(PathName,FileName);
         if numel(PIEchans) == 1
             PIEChannel_Par = 1; PIEChannel_Per = 1;
         else
@@ -1425,8 +1569,8 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     TauFitData.hIRF_Par{chan} = (TauFitData.hIRF_Par{chan}./max(TauFitData.hIRF_Par{chan})).*max(TauFitData.hMI_Par{chan});
     TauFitData.hIRF_Per{chan} = (TauFitData.hIRF_Per{chan}./max(TauFitData.hIRF_Per{chan})).*max(TauFitData.hMI_Per{chan});
     %%% Read out the Microtime Histograms of the Scatter Measurement for the two channels
-    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar);
-    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer);
+    TauFitData.hScat_Par{chan} = TauFitData.External.Scat{PIEChannel_Par}(ToFromPar)';
+    TauFitData.hScat_Per{chan} = TauFitData.External.Scat{PIEChannel_Per}(ToFromPer)';
     %%% Normalize Scatter for better Visibility
     if ~(sum(TauFitData.hScat_Par{chan})==0)
         TauFitData.hScat_Par{chan} = (TauFitData.hScat_Par{chan}./max(TauFitData.hScat_Par{chan})).*max(TauFitData.hMI_Par{chan});
@@ -1443,6 +1587,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     UserValues.TauFit.PIEChannelSelection{2} = h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value};
     
     h.LoadData_Button.String = 'Plot Selection';
+    h.LoadData_Button.Enable = 'on';
 else %%% clicked Load Data button, load from PAM
     % Load Data button was pressed
     % User called TauFit from Pam
@@ -1569,14 +1714,36 @@ else %%% clicked Load Data button, load from PAM
     end 
 end
 %%% disable reconvolution fitting if no IRF is defined
-if all(isnan(TauFitData.hIRF_Par{chan})) ||?all(isnan(TauFitData.hIRF_Per{chan}))
+if all(isnan(TauFitData.hIRF_Par{chan})) || all(isnan(TauFitData.hIRF_Per{chan}))
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
-elseif all(isnan(TauFitData.hScat_Par{chan})) ||?all(isnan(TauFitData.hScat_Per{chan}))
+elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{chan}))
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
 else
     h.Fit_Button.Enable = 'on';
+end
+%%% fix wrong length of IRF or Scatter pattern
+len = numel(TauFitData.hMI_Par{chan});
+if numel(TauFitData.hIRF_Par{chan}) < len
+    TauFitData.hIRF_Par{chan} = [TauFitData.hIRF_Par{chan},zeros(1,len-numel(TauFitData.hIRF_Par{chan}))];
+elseif numel(TauFitData.hIRF_Par{chan}) > len
+    TauFitData.hIRF_Par{chan} = TauFitData.hIRF_Par{chan}(1:len);
+end
+if numel(TauFitData.hIRF_Per{chan}) < len
+    TauFitData.hIRF_Per{chan} = [TauFitData.hIRF_Per{chan},zeros(1,len-numel(TauFitData.hIRF_Per{chan}))];
+elseif numel(TauFitData.hIRF_Per{chan}) > len
+    TauFitData.hIRF_Per{chan} = TauFitData.hIRF_Per{chan}(1:len);
+end
+if numel(TauFitData.hScat_Par{chan}) < len
+    TauFitData.hScat_Par{chan} = [TauFitData.hScat_Par{chan},zeros(1,len-numel(TauFitData.hScat_Par{chan}))];
+elseif numel(TauFitData.hScat_Par{chan}) > len
+    TauFitData.hScat_Par{chan} = TauFitData.hScat_Par{chan}(1:len);
+end
+if numel(TauFitData.hScat_Per{chan}) < len
+    TauFitData.hScat_Per{chan} = [TauFitData.hScat_Per{chan},zeros(1,len-numel(TauFitData.hScat_Per{chan}))];
+elseif numel(TauFitData.hScat_Per{chan}) > len
+    TauFitData.hScat_Per{chan} = TauFitData.hScat_Per{chan}(1:len);
 end
 %%% disable some GUI elements of the same channel is used twice, i.e. no
 %%% polarized detection
@@ -1587,7 +1754,8 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
         h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
         h.G_factor_edit,h.G_factor_text,...
         h.l1_edit,h.l1_text,...
-        h.l2_edit,h.l2_text],'Visible','off'); 
+        h.l2_edit,h.l2_text,...
+        h.ShowAniso_radiobutton,h.ShowDecay_radiobutton,h.ShowDecaySum_radiobutton],'Visible','off'); 
     %%% set l1 and l2 to zero
     h.l1_edit.String = '0';
     h.l2_edit.String = '0';
@@ -1619,7 +1787,8 @@ else
         h.Fit_Aniso_Button,h.Determine_GFactor_Button,...%%% anisotropy related buttons
         h.G_factor_edit,h.G_factor_text,...
         h.l1_edit,h.l1_text,...
-        h.l2_edit,h.l2_text],'Visible','on'); 
+        h.l2_edit,h.l2_text,...
+        h.ShowAniso_radiobutton,h.ShowDecay_radiobutton,h.ShowDecaySum_radiobutton],'Visible','on'); 
     %%% reenable polarization correction factors
     h.l1_edit.String = num2str(UserValues.TauFit.l1);
     h.l2_edit.String = num2str(UserValues.TauFit.l2);
@@ -1658,8 +1827,16 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else
+        return;
+    end
 end
+
+G = str2double(h.G_factor_edit.String);
+l1 = str2double(h.l1_edit.String);
+l2 = str2double(h.l2_edit.String);
 
 if ~isprop(obj, 'Style')
     dummy = '';
@@ -1709,6 +1886,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% channel and should not assume larger values
     h.Length_Slider.Min = 1;
     h.Length_Slider.Max = TauFitData.MaxLength{chan};
+    h.Length_Slider.SliderStep =[1, 10]*(1/(h.Length_Slider.Max-h.Length_Slider.Min));
     if UserValues.TauFit.Length{chan} > 0 && UserValues.TauFit.Length{chan} < TauFitData.MaxLength{chan}+1
         tmp = UserValues.TauFit.Length{chan};
     else
@@ -1722,6 +1900,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% length of the shortest PIE channel minus the set length
     h.StartPar_Slider.Min = 0;
     h.StartPar_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
+    h.StartPar_Slider.SliderStep =[1, 10]*(1/(h.StartPar_Slider.Max-h.StartPar_Slider.Min));
     if UserValues.TauFit.StartPar{chan} >= 0 && UserValues.TauFit.StartPar{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.StartPar{chan};
     else
@@ -1737,6 +1916,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% of the perpendicular channel
     h.ShiftPer_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ShiftPer_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ShiftPer_Slider.SliderStep =[0.1, 1]*(1/(h.ShiftPer_Slider.Max-h.ShiftPer_Slider.Min));
     if UserValues.TauFit.ShiftPer{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ShiftPer{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ShiftPer{chan};
@@ -1746,10 +1926,11 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     h.ShiftPer_Slider.Value = tmp;
     TauFitData.ShiftPer{chan} = tmp;
     h.ShiftPer_Edit.String = num2str(tmp);
-    
+
     %%% IRF Length has the same limits as the Length property
     h.IRFLength_Slider.Min = 1;
     h.IRFLength_Slider.Max = TauFitData.MaxLength{chan};
+    h.IRFLength_Slider.SliderStep =[1, 10]*(1/(h.IRFLength_Slider.Max-h.IRFLength_Slider.Min));
     if UserValues.TauFit.IRFLength{chan} >= 0 && UserValues.TauFit.IRFLength{chan} <= TauFitData.MaxLength{chan}
         tmp = UserValues.TauFit.IRFLength{chan};
     else
@@ -1762,6 +1943,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF Shift has the same limits as the perp shift property
     h.IRFShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFShift_Slider.Max-h.IRFShift_Slider.Min));
     if UserValues.TauFit.IRFShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFShift{chan};
@@ -1775,6 +1957,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% IRF rel. Shift has the same limits as the perp shift property
     h.IRFrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.IRFrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.IRFrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.IRFrelShift_Slider.Max-h.IRFrelShift_Slider.Min));
     if UserValues.TauFit.IRFrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.IRFrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.IRFrelShift{chan};
@@ -1788,6 +1971,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat Shift has the same limits as the perp shift property
     h.ScatShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatShift_Slider.Max-h.ScatShift_Slider.Min));
     if UserValues.TauFit.ScatShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatShift{chan};
@@ -1801,6 +1985,7 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Scat rel. Shift has the same limits as the perp shift property
     h.ScatrelShift_Slider.Min = -floor(TauFitData.MaxLength{chan}/20);
     h.ScatrelShift_Slider.Max = floor(TauFitData.MaxLength{chan}/20);
+    h.ScatrelShift_Slider.SliderStep =[0.1, 1]*(1/(h.ScatrelShift_Slider.Max-h.ScatrelShift_Slider.Min));
     if UserValues.TauFit.ScatrelShift{chan} >= -floor(TauFitData.MaxLength{chan}/20)...
             && UserValues.TauFit.ScatrelShift{chan} <= floor(TauFitData.MaxLength{chan}/20)
         tmp = UserValues.TauFit.ScatrelShift{chan};
@@ -1814,7 +1999,8 @@ if isempty(obj) || strcmp(dummy,'pushbutton') || strcmp(dummy,'popupmenu') || is
     %%% Ignore Slider reaches from 1 to maximum length
     h.Ignore_Slider.Min = 1;
     h.Ignore_Slider.Max = floor(TauFitData.MaxLength{chan}/5);
-    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/10)
+    h.Ignore_Slider.SliderStep =[1, 10]*(1/(h.Ignore_Slider.Max-h.Ignore_Slider.Min));
+    if UserValues.TauFit.Ignore{chan} >= 1 && UserValues.TauFit.Ignore{chan} <= floor(TauFitData.MaxLength{chan}/5)
         tmp = UserValues.TauFit.Ignore{chan};
     else
         tmp = 1;
@@ -1837,32 +2023,38 @@ if isobject(obj) % check if matlab object
             if obj == h.StartPar_Slider
                 TauFitData.StartPar{chan} = floor(obj.Value);
             elseif obj == h.StartPar_Edit
-                TauFitData.StartPar{chan} = str2double(obj.String);
+                TauFitData.StartPar{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.StartPar{chan});
             end
         case {h.Length_Slider, h.Length_Edit}
             %%% Update Value
             if obj == h.Length_Slider
                 TauFitData.Length{chan} = floor(obj.Value);
             elseif obj == h.Length_Edit
-                TauFitData.Length{chan} = str2double(obj.String);
+                TauFitData.Length{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.Length{chan});
             end
             %%% Correct if IRFLength exceeds the Length
             if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
                 TauFitData.IRFLength{chan} = TauFitData.Length{chan};
+                h.IRFLength_Edit.String = num2str(TauFitData.IRFLength{chan});
+                h.IRFLength_Slider.Value = TauFitData.IRFLength{chan};
             end
         case {h.ShiftPer_Slider, h.ShiftPer_Edit}
             %%% Update Value
             if obj == h.ShiftPer_Slider
-                TauFitData.ShiftPer{chan} = floor(obj.Value);
+                TauFitData.ShiftPer{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ShiftPer_Edit
-                TauFitData.ShiftPer{chan} = str2double(obj.String);
+                TauFitData.ShiftPer{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ShiftPer{chan});
             end
         case {h.IRFLength_Slider, h.IRFLength_Edit}
             %%% Update Value
             if obj == h.IRFLength_Slider
                 TauFitData.IRFLength{chan} = floor(obj.Value);
             elseif obj == h.IRFLength_Edit
-                TauFitData.IRFLength{chan} = str2double(obj.String);
+                TauFitData.IRFLength{chan} = floor(str2double(obj.String));
+                obj.String = num2str(TauFitData.IRFLength{chan});
             end
             %%% Correct if IRFLength exceeds the Length
             if TauFitData.IRFLength{chan} > TauFitData.Length{chan}
@@ -1871,47 +2063,69 @@ if isobject(obj) % check if matlab object
         case {h.IRFShift_Slider, h.IRFShift_Edit}
             %%% Update Value
             if obj == h.IRFShift_Slider
-                TauFitData.IRFShift{chan} = floor(obj.Value);
+                TauFitData.IRFShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFShift_Edit
-                TauFitData.IRFShift{chan} = str2double(obj.String);
+                TauFitData.IRFShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.IRFShift{chan});
             end
         case {h.IRFrelShift_Slider, h.IRFrelShift_Edit}
             %%% Update Value
             if obj == h.IRFrelShift_Slider
-                TauFitData.IRFrelShift{chan} = floor(obj.Value);
+                TauFitData.IRFrelShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.IRFrelShift_Edit
-                TauFitData.IRFrelShift{chan} = str2double(obj.String);
+                TauFitData.IRFrelShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.IRFrelShift{chan});
             end
         case {h.ScatShift_Slider, h.ScatShift_Edit}
             %%% Update Value
             if obj == h.ScatShift_Slider
-                TauFitData.ScatShift{chan} = floor(obj.Value);
+                TauFitData.ScatShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatShift_Edit
-                TauFitData.ScatShift{chan} = str2double(obj.String);
+                TauFitData.ScatShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ScatShift{chan});
             end
         case {h.ScatrelShift_Slider, h.ScatrelShift_Edit}
             %%% Update Value
             if obj == h.ScatrelShift_Slider
-                TauFitData.ScatrelShift{chan} = floor(obj.Value);
+                TauFitData.ScatrelShift{chan} = round(obj.Value*h.subresolution)/h.subresolution;
             elseif obj == h.ScatrelShift_Edit
-                TauFitData.ScatrelShift{chan} = str2double(obj.String);
+                TauFitData.ScatrelShift{chan} = round(str2double(obj.String)*h.subresolution)/h.subresolution;
+                obj.String = num2str(TauFitData.ScatrelShift{chan});
             end
         case {h.Ignore_Slider,h.Ignore_Edit}%%% Update Value
             if obj == h.Ignore_Slider
                 TauFitData.Ignore{chan} = floor(obj.Value);
             elseif obj == h.Ignore_Edit
-                if obj.Value <  1
+                if str2double(obj.String) <  1
                     TauFitData.Ignore{chan} = 1;
                     obj.String = '1';
                 else
-                    TauFitData.Ignore{chan} = str2double(obj.String);
+                    TauFitData.Ignore{chan} = floor(str2double(obj.String));
+                    obj.String = num2str(TauFitData.Ignore{chan});
                 end
             end
         case {h.FitPar_Table}
-            TauFitData.IRFShift{chan} = obj.Data{end,1};
+            TauFitData.IRFShift{chan} = round(obj.Data{end,1}*h.subresolution)/h.subresolution;
             %%% Update Edit Box and Slider when user changes value in the table
             h.IRFShift_Edit.String = num2str(TauFitData.IRFShift{chan});
             h.IRFShift_Slider.Value = TauFitData.IRFShift{chan}; 
+        case {h.ShowDecay_radiobutton,h.ShowDecaySum_radiobutton,h.ShowAniso_radiobutton}
+            if obj == h.ShowDecay_radiobutton
+                if obj.Value == 1 %%% switched on
+                    h.ShowAniso_radiobutton.Value = 0;
+                    h.ShowDecaySum_radiobutton.Value = 0;
+                end
+            elseif obj == h.ShowAniso_radiobutton
+                if obj.Value == 1 %%% switched on
+                    h.ShowDecay_radiobutton.Value = 0;
+                    h.ShowDecaySum_radiobutton.Value = 0;
+                end
+            elseif obj == h.ShowDecaySum_radiobutton
+                if obj.Value == 1 %%% switched on
+                    h.ShowDecay_radiobutton.Value = 0;
+                    h.ShowAniso_radiobutton.Value = 0;
+                end
+            end
     end
 end
 %%% Update Edit Boxes if Slider was used and Sliders if Edit Box was used
@@ -1956,7 +2170,6 @@ end
 h.Microtime_Plot.Parent = h.TauFit_Panel;
 h.Result_Plot.Parent = h.HidePanel;
 h.Result_Plot_Aniso.Parent = h.HidePanel;
-
 %%% hide wres plot
 set([h.Plots.Residuals,h.Plots.Residuals_ignore,h.Plots.Residuals_Perp,h.Plots.Residuals_Perp_ignore],'Visible','off');
 %%% Apply the shift to the parallel channel
@@ -1965,19 +2178,23 @@ h.Plots.Decay_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1
 h.Plots.Decay_Par.YData = TauFitData.hMI_Par{chan}((TauFitData.StartPar{chan}+1):TauFitData.Length{chan})';
 %%% Apply the shift to the perpendicular channel
 h.Plots.Decay_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
+%tmp = circshift(TauFitData.hMI_Per{chan},[TauFitData.ShiftPer{chan},0])';
+tmp = shift_by_fraction(TauFitData.hMI_Per{chan}, TauFitData.ShiftPer{chan});
 h.Plots.Decay_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the parallel IRF channel
 h.Plots.IRF_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+%tmp = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
 h.Plots.IRF_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the perpendicular IRF channel
 h.Plots.IRF_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.IRFLength{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+%tmp = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
 h.Plots.IRF_Per.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
 %%% Apply the shift to the parallel Scat channel
 h.Plots.Scat_Par.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
+%tmp = circshift(TauFitData.hScat_Par{chan},[0,TauFitData.ScatShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hScat_Par{chan},TauFitData.ScatShift{chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
@@ -1985,43 +2202,93 @@ if h.NormalizeScatter_Menu.Value
     tmp = (tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end)));
     tmp = tmp/max(tmp)*maxscat;
     %tmp(tmp < 0) = 0;
+    tmp(isnan(tmp)) = 0;
 end
 h.Plots.Scat_Par.YData = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 %%% Apply the shift to the perpendicular Scat channel
 h.Plots.Scat_Per.XData = ((TauFitData.StartPar{chan}:(TauFitData.Length{chan}-1)) - TauFitData.StartPar{chan})*TACtoTime;
-tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
+%tmp = circshift(TauFitData.hScat_Per{chan},[0,TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan}])';
+tmp = shift_by_fraction(TauFitData.hScat_Per{chan},TauFitData.ScatShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.ScatrelShift{chan});
 tmp = tmp((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
 if h.NormalizeScatter_Menu.Value
     % since the scatter pattern should not contain background, we subtract the constant offset
     maxscat = max(tmp);
     tmp = tmp-mean(tmp(end-floor(TauFitData.MI_Bins/50):end));
     tmp = tmp/max(tmp)*maxscat;
+    tmp(isnan(tmp)) = 0;
     %tmp(tmp < 0) = 0;
 end
 h.Plots.Scat_Per.YData = tmp;
-axes(h.Microtime_Plot);xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
+h.Ignore_Plot.Visible = 'off';
+%%% check if anisotropy plot is selected
+if h.ShowAniso_radiobutton.Value == 1
+    %%% hide all IRF and Scatter plots
+    set([h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Par,h.Plots.Decay_Per],'Visible','off');
+    set([h.Plots.Decay_Sum,h.Plots.Aniso_Preview,h.Plots.IRF_Sum,h.Plots.Scat_Sum],'Visible','off');
+    h.Plots.Aniso_Preview.Visible = 'on';
+    %%% set parallel channel plot to anisotropy
+    Decay = G*(1-3*l2)*h.Plots.Decay_Par.YData+(2-3*l1)*h.Plots.Decay_Per.YData;
+    Aniso = (G*h.Plots.Decay_Par.YData - h.Plots.Decay_Per.YData)./Decay;
+    h.Plots.Aniso_Preview.XData = h.Plots.Decay_Par.XData;
+    h.Plots.Aniso_Preview.YData = Aniso;
+    ylim(h.Microtime_Plot,[min([0,min(Aniso)-0.02]),max(Aniso)+0.02]);
+    h.Microtime_Plot.YLabel.String = 'Anisotropy';
+elseif h.ShowDecay_radiobutton.Value == 1
+    %%% unihde all IRF and Scatter plots
+    set([h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Par,h.Plots.Decay_Per],'Visible','on');
+    set([h.Plots.Decay_Sum,h.Plots.Aniso_Preview,h.Plots.IRF_Sum,h.Plots.Scat_Sum],'Visible','off');
+    h.Plots.Decay_Par.Color = [0.8510    0.3294    0.1020];
+    h.Microtime_Plot.YLimMode = 'auto';
+    h.Microtime_Plot.YLim(1) = 0;
+    h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
+elseif h.ShowDecaySum_radiobutton.Value == 1
+    %%% unihde all IRF and Scatter plots
+    set([h.Plots.Aniso_Preview,h.Plots.IRF_Par, h.Plots.IRF_Per,h.Plots.Scat_Par,h.Plots.Scat_Per,h.Plots.Decay_Per,h.Plots.Decay_Par],'Visible','off');
+    set([h.Plots.Decay_Sum,h.Plots.IRF_Sum,h.Plots.Scat_Sum],'Visible','on');
+    Decay = G*(1-3*l2)*h.Plots.Decay_Par.YData+(2-3*l1)*h.Plots.Decay_Per.YData;
+    IRF = G*(1-3*l2)*h.Plots.IRF_Par.YData+(2-3*l1)*h.Plots.IRF_Per.YData;
+    Scat = G*(1-3*l2)*h.Plots.Scat_Par.YData+(2-3*l1)*h.Plots.Scat_Per.YData;
+    set([h.Plots.Decay_Sum,h.Plots.Scat_Sum],'XData',h.Plots.Decay_Par.XData);
+    h.Plots.IRF_Sum.XData = h.Plots.IRF_Per.XData;
+    h.Plots.Decay_Sum.YData = Decay;
+    h.Plots.IRF_Sum.YData = IRF;
+    h.Plots.Scat_Sum.YData = Scat;
+    h.Microtime_Plot.YLimMode = 'auto';
+    h.Microtime_Plot.YLim(1) = 0;
+    h.Microtime_Plot.YLabel.String = 'Intensity [counts]';
+end
+axes(h.Microtime_Plot);
+xlim([h.Plots.Decay_Par.XData(1),h.Plots.Decay_Par.XData(end)]);
+
 %%% Update Ignore Plot
 if TauFitData.Ignore{chan} > 1
     %%% Make plot visible
     h.Ignore_Plot.Visible = 'on';
     h.Ignore_Plot.XData = [TauFitData.Ignore{chan}*TACtoTime TauFitData.Ignore{chan}*TACtoTime];
     if strcmp(h.Microtime_Plot.YScale,'log')
-        ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
-            h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
-            h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+        if h.ShowDecay_radiobutton.Value == 1
+            ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+                h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+                h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+        elseif h.ShowDecaySum_radiobutton.Value == 1
+            ydat = [h.Plots.IRF_Sum.YData,h.Plots.Scat_Sum.YData,h.Plots.Decay_Sum.YData];
+        elseif h.ShowAniso_radiobutton.Value == 1
+            ydat = h.Plots.Aniso_Preview.YData;
+        end
         ydat = ydat(ydat > 0);
         h.Ignore_Plot.YData = [...
             min(ydat),...
             h.Microtime_Plot.YLim(2)];
     else
         h.Ignore_Plot.YData = [...
-            0,...
+            h.Microtime_Plot.YLim(1),...
             h.Microtime_Plot.YLim(2)];
     end
 elseif TauFitData.Ignore{chan} == 1
     %%% Hide Plot Again
     h.Ignore_Plot.Visible = 'off';
 end
+
 if h.AutoFit_Menu.Value
     Start_Fit(h.Fit_Button)
 end
@@ -2098,7 +2365,11 @@ if ~strcmp(TauFitData.Who, 'TauFit') && ~strcmp(TauFitData.Who, 'External')
     % Burstwise lifetime and Burstbrowser subensembe TCSPC
     chan = h.ChannelSelect_Popupmenu.Value;
 else
-    chan = TauFitData.chan;
+    if isfield(TauFitData,'chan')
+        chan = TauFitData.chan;
+    else
+        return;
+    end
 end
 if gcbo == h.Menu.Export_MIPattern
     save_fix = false; %%% do not store fix state in UserValues, since it is set to fix all
@@ -2137,7 +2408,8 @@ else
 end
 %%% Don't Apply the IRF Shift here, it is done in the FitRoutine using the
 %%% total Scatter Pattern to avoid Edge Effects when using circshift!
-IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
+%IRFPer = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}]);
+IRFPer = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
 IRFPattern = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan}) + 2*IRFPer(1:TauFitData.Length{chan});
 IRFPattern = IRFPattern'./sum(IRFPattern);
 
@@ -2163,7 +2435,7 @@ if h.FitPar_Table.Data{end,4} == 0
     %%% IRF is not fixed
     irf_lb = h.FitPar_Table.Data{end,2};
     irf_ub = h.FitPar_Table.Data{end,3};
-    shift_range = floor(TauFitData.IRFShift{chan} + irf_lb):ceil(TauFitData.IRFShift{chan} + irf_ub);%irf_lb:irf_ub; 
+    shift_range = floor(TauFitData.IRFShift{chan} + irf_lb):(1/h.subresolution):ceil(TauFitData.IRFShift{chan} + irf_ub);%irf_lb:irf_ub; 
 elseif h.FitPar_Table.Data{end,4} == 1
     shift_range = TauFitData.IRFShift{chan};
 end
@@ -2172,6 +2444,8 @@ ignore = TauFitData.Ignore{chan};
 %%% Update Progressbar
 h.Progress_Text.String = 'Fitting...';
 MI_Bins = TauFitData.MI_Bins;
+
+opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
     case h.Fit_Button
         %%% Read out parameters
@@ -2210,7 +2484,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2275,7 +2549,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2361,7 +2635,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2464,7 +2738,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2541,7 +2815,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2608,10 +2882,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
                 %%% Convert Lifetimes
                 x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
                 lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
@@ -2627,6 +2904,12 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                I0 = max(Decay_stacked);
+                x0(end+1) = I0;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;
+                
                 if fit
                     %%% fit for different IRF offsets and compare the results
                     x = cell(numel(shift_range,1));
@@ -2635,9 +2918,9 @@ switch obj
                     for i = shift_range
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2651,7 +2934,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -2663,7 +2946,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
+                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -2716,9 +3000,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
                 
                 %%% Convert Lifetimes
                 x0([1,2,4]) = round(x0([1,2,4])/TauFitData.TACChannelWidth);
@@ -2735,6 +3023,12 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                I0 = max(Decay_stacked);
+                x0(end+1) = I0;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;
+
                 if fit
                     %%% fit for different IRF offsets and compare the results
                     x = cell(numel(shift_range,1));
@@ -2743,9 +3037,9 @@ switch obj
                     for i = shift_range
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2759,7 +3053,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -2771,7 +3065,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
+                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -2842,10 +3137,14 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                 
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end
+                
                 %%% Convert Lifetimes
                 x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
                 lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
@@ -2861,6 +3160,12 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                I0 = max(Decay_stacked);
+                x0(end+1) = I0;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;
+                
                 if fit
                     %%% fit for different IRF offsets and compare the results
                     x = cell(numel(shift_range,1));
@@ -2869,9 +3174,9 @@ switch obj
                     for i = shift_range
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2885,7 +3190,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -2898,7 +3203,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
+                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -2955,10 +3261,13 @@ switch obj
                 %%% Define separate Scatter Patterns
                 ScatterPattern = cell(2,1);
                 ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
-                ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
                 ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
-                ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
-                 
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end 
                 %%% Convert Lifetimes
                 x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
                 lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
@@ -2974,6 +3283,12 @@ switch obj
                     sigma_est = ones(1,numel(Decay_stacked));
                 end
                 
+                I0 = max(Decay_stacked);
+                x0(end+1) = I0;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;
+                
                 if fit
                     %%% fit for different IRF offsets and compare the results
                     x = cell(numel(shift_range,1));
@@ -2982,9 +3297,9 @@ switch obj
                     for i = shift_range
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
-                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,Conv_Type};
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2998,7 +3313,7 @@ switch obj
                 %%% remove ignore range from decay
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
-                FitFun = fitfun_2lt_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
+                FitFun = fitfun_2lt_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
                 wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
                 if UserValues.TauFit.use_weighted_residuals
                     wres = wres./sqrt(Decay_stacked);
@@ -3011,7 +3326,8 @@ switch obj
                 Length = numel(Decay);
                 
                 %%% Update FitResult
-                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
+                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
                 %%% Convert Lifetimes to Nanoseconds
                 FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
                 FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
@@ -3064,6 +3380,150 @@ switch obj
                 UserValues.TauFit.IRFShift{chan} = FitResult{14};
                 h.l1_edit.String = num2str(FitResult{12});
                 h.l2_edit.String = num2str(FitResult{13});
+            case 'Fit Anisotropy (2 exp lifetime with independent anisotropy)'
+                %%% Parameter
+                %%% Lifetime 1 and 2
+                %%% Fraction 1
+                %%% Rotational Correlation Time 1
+                %%% Rotational Correlation Time 2
+                %%% r0 - Initial Anisotropy
+                %%% r_infinity1 - Residual Anisotropy
+                %%% r_infinity2 - Residual Anisotropy
+                %%% Background par
+                %%% Background per
+                
+                %%% Define separate IRF Patterns
+                IRFPattern = cell(2,1);
+                IRFPattern{1} = TauFitData.hIRF_Par{chan}(1:TauFitData.Length{chan})';IRFPattern{1} = IRFPattern{1}./sum(IRFPattern{1});
+                IRFPattern{2} = IRFPer(1:TauFitData.Length{chan})';IRFPattern{2} = IRFPattern{2}./sum(IRFPattern{2});
+                for i = 1:2
+                    IRFPattern{i} = IRFPattern{i} - mean(IRFPattern{i}(end-round(numel(IRFPattern{i})/10):end)); IRFPattern{i}(IRFPattern{i}<0) = 0;
+                end
+                
+                %%% Define separate Scatter Patterns
+                ScatterPattern = cell(2,1);
+                ScatterPattern{1} = h.Plots.Scat_Par.YData';%TauFitData.hScat_Par{chan}(1:TauFitData.Length{chan})';
+                ScatterPattern{2} = h.Plots.Scat_Per.YData'; %ScatterPer(1:TauFitData.Length{chan})';
+                if ~(sum(ScatterPattern{1}) == 0)
+                    ScatterPattern{1} = ScatterPattern{1}./sum(ScatterPattern{1});
+                end
+                if ~(sum(ScatterPattern{2}) == 0)
+                    ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
+                end 
+                %%% Convert Lifetimes
+                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
+                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
+                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                
+                %%% Prepare data as vector
+                Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
+                Decay_stacked = [TauFitData.FitData.Decay_Par(ignore:end) TauFitData.FitData.Decay_Per(ignore:end)];
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay_stacked);sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay_stacked));
+                end
+                
+                I0 = max(Decay_stacked);
+                x0(end+1) = I0;
+                lb(end+1) = 0;
+                ub(end+1) = Inf;
+                fixed(end+1) = false;
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                end
+                
+                %%% remove ignore range from decay
+                Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
+                Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
+                FitFun = fitfun_2lt_2aniso_independent(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
+                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay_stacked);
+                end
+                
+                %%% ignore plotting is not implemented here yet!
+                FitFun_ignore = FitFun;
+                wres_ignore = wres;
+                Decay_ignore = Decay;
+                Length = numel(Decay);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit}(1:end-1) shift_range(best_fit)]');
+                disp(sprintf('I0 = %.2i\n',x{best_fit}(end)));
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                FitResult{2} = FitResult{2}.*TauFitData.TACChannelWidth;
+                FitResult{4} = FitResult{4}.*TauFitData.TACChannelWidth;
+                FitResult{5} = FitResult{5}.*TauFitData.TACChannelWidth;
+                
+                %%% Convert Fraction from Amplitude (species) fraction to Intensity fraction
+                %%% (i.e. correct for brightness)
+                %%% Intensity is proportional to tau*amplitude
+                amp1 = FitResult{3}*FitResult{1}; amp2 = (1-FitResult{3})*FitResult{2};
+                f1 = amp1./(amp1+amp2);
+                f2 = amp2./(amp1+amp2);
+                meanTau = FitResult{1}*f1+FitResult{2}*f2;
+                
+                % Also update status text
+                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                    ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
+                
+                h.FitPar_Table.Data(:,1) = FitResult;
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                UserValues.TauFit.FitFix{chan}(2) = fix(2);
+                UserValues.TauFit.FitFix{chan}(4) = fix(3);
+                UserValues.TauFit.FitFix{chan}(15) = fix(4);
+                UserValues.TauFit.FitFix{chan}(16) = fix(5);
+                UserValues.TauFit.FitFix{chan}(17) = fix(6);
+                UserValues.TauFit.FitFix{chan}(18) = fix(7);
+                UserValues.TauFit.FitFix{chan}(22) = fix(8);
+                UserValues.TauFit.FitFix{chan}(6) = fix(9);
+                UserValues.TauFit.FitFix{chan}(7) = fix(10);
+                UserValues.TauFit.FitFix{chan}(8) = fix(11);
+                UserValues.TauFit.FitFix{chan}(9) = fix(12);
+                UserValues.TauFit.FitFix{chan}(13) = fix(13);
+                UserValues.TauFit.FitFix{chan}(14) = fix(14);
+                UserValues.TauFit.FitFix{chan}(10) = fix(15);
+                end
+                UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(2) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(4) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(15) = FitResult{4};
+                UserValues.TauFit.FitParams{chan}(16) = FitResult{5};
+                UserValues.TauFit.FitParams{chan}(17) = FitResult{6};
+                UserValues.TauFit.FitParams{chan}(18) = FitResult{7};
+                UserValues.TauFit.FitParams{chan}(22) = FitResult{8};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{9};
+                UserValues.TauFit.FitParams{chan}(7) = FitResult{10};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{11};
+                UserValues.TauFit.FitParams{chan}(9) = FitResult{12};
+                UserValues.TauFit.FitParams{chan}(13) = FitResult{13};
+                UserValues.TauFit.FitParams{chan}(14) = FitResult{14};
+                UserValues.TauFit.IRFShift{chan} = FitResult{15};
+                h.l1_edit.String = num2str(FitResult{13});
+                h.l2_edit.String = num2str(FitResult{14});
         end
         LSUserValues(1)
         %%% Update IRFShift in Slider and Edit Box
@@ -3102,7 +3562,7 @@ switch obj
             h.Plots.Residuals_ignore.Visible = 'off';
             h.Plots.FitResult_ignore.Visible = 'off';
         end
-        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)'}))
+        if any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
             % Unhide plots
             h.Plots.IRFResult_Perp.Visible = 'on';
             h.Plots.FitResult_Perp.Visible = 'on';
@@ -3126,13 +3586,15 @@ switch obj
             wres_par = wres(1:numel(Decay)/2);
             wres_per = wres(numel(Decay)/2+1:end);
             
-            IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Par = circshift(IRFPattern{1},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Par = shift_by_fraction(IRFPattern{1},UserValues.TauFit.IRFShift{chan});
             IRFPat_Par = IRFPat_Par((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Par = IRFPat_Par./max(IRFPat_Par).*max(Decay_par);
             h.Plots.IRFResult.XData = (1:numel(IRFPat_Par))*TACtoTime;
             h.Plots.IRFResult.YData = IRFPat_Par;
             
-            IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat_Perp = circshift(IRFPattern{2},[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat_Perp = shift_by_fraction(IRFPattern{2},UserValues.TauFit.IRFShift{chan});
             IRFPat_Perp = IRFPat_Perp((ShiftParams(1)+1):ShiftParams(4));
             IRFPat_Perp = IRFPat_Perp./max(IRFPat_Perp).*max(Decay_per);
             h.Plots.IRFResult_Perp.XData = (1:numel(IRFPat_Perp))*TACtoTime;
@@ -3185,8 +3647,8 @@ switch obj
             h.Plots.FitResult_Perp_ignore.YData = Fit_per(1:ignore);
             
             axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim(1) = min([min(Decay_par(ignore:end)) min(Decay_per(ignore:end))]);
-            h.Result_Plot.YLim(2) = 1.1*max([max(Decay_par(ignore:end)) max(Decay_per(ignore:end))]);
+            h.Result_Plot.YLim(1) = min([min(Decay_par(1:end)) min(Decay_per(1:end))]);
+            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -3222,7 +3684,8 @@ switch obj
             h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
             h.Result_Plot_Aniso.Parent = h.HidePanel;
             
-            IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+            %IRFPat = circshift(IRFPattern,[UserValues.TauFit.IRFShift{chan},0]);
+            IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
             IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
             IRFPat = IRFPat./max(IRFPat).*max(Decay);
             h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
@@ -3244,7 +3707,8 @@ switch obj
             h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
             h.Plots.FitResult_ignore.YData = FitFun_ignore;
             axis(h.Result_Plot,'tight');
-            h.Result_Plot.YLim = [min([min(Decay) min(Decay_ignore)]) 1.05*max(Decay)];
+            h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+            h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
             
             h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
             h.Plots.Residuals.YData = wres;
@@ -3279,11 +3743,25 @@ switch obj
             param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,8/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
             param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
         elseif number_of_exponentials == 0
-            %%% "dip and rise model" with two components of different lifetimes
+            %%% ask to fix the lifetimes
+            lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
+            [lifetimes,order] = sort(lifetimes);
+            fraction = UserValues.TauFit.FitParams{chan}(4);
+            if order(1)==2 %%% tau2 is shorter lifetime, i.e. free species
+                fraction = 1-fraction;
+            end
+            answer = inputdlg({'Lifetime free [ns]:','Lifetime stuck [ns]:','Fraction free:'},'Fix lifetimes?',3,{num2str(lifetimes(1)),num2str(lifetimes(2)),num2str(fraction)});
+            %%% "Fit Anisotropy (2 exp lifetime with independent anisotropy) model" with two components of different lifetimes
             tres_aniso = @(x,xdata) (1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(5)).*exp(-xdata./x(6))+x(5))+(1-1./(1+(x(1).*exp(-xdata.*(1/x(3)-1/x(2)))))).*((x(4)-x(7)).*exp(-xdata./x(8))+x(7));
-            lb = [0,0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
+            lb = [0,0,0,0,0,0,0,0];ub = [Inf,Inf,Inf,0.4,0.4,Inf,0.4,Inf];
+            if ~isempty(answer)
+                lb(1) = 1/str2double(answer{3})-1; ub(1) = lb(1);
+                lb(2) = str2double(answer{1})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(2) = lb(2);
+                lb(3) = str2double(answer{2})/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins; ub(3) = lb(3);
+            end
+            opt = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E4);
             param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
-            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub);
+            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub,opt);
         end
         
         x_fitres = ignore:numel(Aniso);
@@ -3315,7 +3793,7 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
-        h.Result_Plot.YLim = [min([0,min(Aniso)]),min([0.8,max(Aniso)])];
+        h.Result_Plot.YLim = [min([0,min(Aniso)-0.02]),min([0.8,max(Aniso)+0.02])];
         h.Result_Plot_Text.Visible = 'on';
         if number_of_exponentials == 1
             str = sprintf('rho = %1.2f ns\nr_0 = %2.4f\nr_{inf} = %3.4f',param(1)*TACtoTime,param(2),param(3));
@@ -3433,6 +3911,7 @@ switch obj
         h.Plots.FitResult.XData = x_fitres*TACtoTime;
         h.Plots.FitResult.YData = fitres;
         axis(h.Result_Plot,'tight');
+        h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
         h.Result_Plot_Text.Visible = 'on';
         
         %%% update output text
@@ -3562,6 +4041,7 @@ FitFun = Fit_Exp(x,x_ax);
 h.Microtime_Plot.Parent = h.HidePanel;
 h.Result_Plot.Parent = h.TauFit_Panel;
 h.Plots.IRFResult.Visible = 'off';
+h.Plots.FitResult_ignore.Visible = 'off';
 %TACtoTime = 1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
 h.Plots.DecayResult.XData = MI(ignore:end);%*TACtoTime;
 h.Plots.DecayResult.YData = Anisotropy_fit;
@@ -3649,7 +4129,7 @@ function f = ExportGraph(obj,~)
 global TauFitData
 % anders, in Burstbrowser there was code to plot fit parameters on graph.
 h = guidata(findobj('tag','TauFit'));
-f = figure('Position',[100,100,700,500],'color',[1 1 1]);
+f = figure('Position',[100,100,800,550],'color',[1 1 1]);
 panel_copy = copyobj(h.TauFit_Panel,f);
 panel_copy.Position = [0 0 1 1];
 panel_copy.ShadowColor = [1 1 1];
@@ -3663,19 +4143,19 @@ for i = 1:numel(ax)
     ax(i).Color = [1 1 1];
     ax(i).XColor = [0 0 0];
     ax(i).YColor = [0 0 0];
-    ax(i).LineWidth = 3;
+    ax(i).LineWidth = 1.5;
     ax(i).FontSize = 18;
     ax(i).XLabel.Color = [0,0,0];
     ax(i).YLabel.Color = [0,0,0];
     ax(i).Layer = 'top';
     for j = 1:numel(ax(i).Children)
         if strcmp(ax(i).Children(j).Type,'line')
-            ax(i).Children(j).LineWidth = 2;
+            ax(i).Children(j).LineWidth = 1.5;
         end
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)'}))
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -3688,6 +4168,7 @@ if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)'
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
             case 'Residuals_Plot'
                 ax(i).Position = [0.1 0.85 0.875 .12];
@@ -3697,12 +4178,12 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.1 0.13 0.875 0.15];
+                ax(i).Position = [0.125 0.13 0.845 0.15];
                 if strcmp(h.Microtime_Plot.YScale,'log')
-                    ax(i).YScale = 'log';
+                    %ax(i).YScale = 'log';
                 end
             case 'Microtime_Plot'
-                ax(i).Position = [0.1 0.28 0.875 0.58];
+                ax(i).Position = [0.125 0.28 0.845 0.58];
                 ax(i).XTickLabels = [];
                 ax(i).XLabel.String = '';
                 if ~isequal(obj, h.Microtime_Plot_Export)
@@ -3712,10 +4193,12 @@ else
                 end
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     ax(i).YScale = 'log';
+                    ax(i).YLim(2) = ax(i).YLim(2)*1.25;
                 end
+                ax(i).YTickLabelMode = 'auto';
                 ax(i).YTickLabels{1} = '';
             case 'Residuals_Plot'
-                ax(i).Position = [0.1 0.86 0.875 .13];
+                ax(i).Position = [0.125 0.86 0.845 .13];
                 ax(i).YTickLabelMode = 'auto';
         end
     end
@@ -3723,7 +4206,7 @@ end
 for i = 1:numel(ax)
     ax(i).Units = 'pixels';
 end
-if strcmp(TauFitData.Who, 'TauFit')
+if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'External')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
         '_x_' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
 else% if strcmp(TauFitData.Who, 'Burstwise') or strcmp(TauFitData.Who, 'BurstBrowser')
@@ -4404,11 +4887,13 @@ switch TauFitData.BAMethod
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
                 %%% Apply the shift to the parallel IRF channel
-                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                hIRF_par = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
                 %%% Apply the shift to the perpendicular IRF channel
-                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                %hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                hIRF_per = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-                IRFPattern = IRFPattern'./sum(IRFPattern);
+                IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
                 Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
@@ -4480,7 +4965,7 @@ switch TauFitData.BAMethod
                 Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
                 %%% Shift Microtimes
                 Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = circshift(Per1,[0,round(TauFitData.ShiftPer{1})]); %%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});                
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
                 clear Par1 Per1
@@ -4514,7 +4999,7 @@ switch TauFitData.BAMethod
                 
                 %%% Shift Microtimes
                 Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = circshift(Per2,[0,round(TauFitData.ShiftPer{2})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
                 clear Par2 Per2
@@ -4658,11 +5143,13 @@ switch TauFitData.BAMethod
                 %%% Changed this back so a better correction of the IRF can be
                 %%% performed, for which the total IRF pattern is needed!
                 %%% Apply the shift to the parallel IRF channel
-                hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                %hIRF_par = circshift(TauFitData.hIRF_Par{chan},[0,TauFitData.IRFShift{chan}])';
+                hIRF_par = shift_by_fraction(TauFitData.hIRF_Par{chan},TauFitData.IRFShift{chan});
                 %%% Apply the shift to the perpendicular IRF channel
-                hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                %hIRF_per = circshift(TauFitData.hIRF_Per{chan},[0,TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan}])';
+                hIRF_per = shift_by_fraction(TauFitData.hIRF_Per{chan},TauFitData.IRFShift{chan}+TauFitData.ShiftPer{chan}+TauFitData.IRFrelShift{chan});
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
-                IRFPattern = IRFPattern'./sum(IRFPattern);
+                IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
                 Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
@@ -4723,7 +5210,7 @@ switch TauFitData.BAMethod
                 Mic{1} = zeros(numel(MI),numel((TauFitData.StartPar{1}+1):TauFitData.Length{1}));
                 %%% Shift Microtimes
                 Par1 = Par1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                Per1 = circshift(Per1,[0,TauFitData.ShiftPer{1}]);
+                Per1 = circshift(Per1,[0,round(TauFitData.ShiftPer{1})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});
                 
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
@@ -4747,7 +5234,7 @@ switch TauFitData.BAMethod
                 Mic{2} = zeros(numel(MI),numel((TauFitData.StartPar{2}+1):TauFitData.Length{2}));
                 %%% Shift Microtimes
                 Par2 = Par2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
-                Per2 = circshift(Per2,[0,TauFitData.ShiftPer{2}]);
+                Per2 = circshift(Per2,[0,round(TauFitData.ShiftPer{2})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
@@ -4771,7 +5258,7 @@ switch TauFitData.BAMethod
                 
                 %%% Shift Microtimes
                 Par3 = Par3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
-                Per3 = circshift(Per3,[0,TauFitData.ShiftPer{3}]);
+                Per3 = circshift(Per3,[0,round(TauFitData.ShiftPer{3})]);%%% note: for burst-wise fitting, do not consider fractional shifting of decays
                 Per3 = Per3(:,(TauFitData.StartPar{3}+1):TauFitData.Length{3});
                 
                 Mic{3} = (1-3*l2)*G{3}*Par3+(2-3*l1)*Per3;
@@ -4985,8 +5472,9 @@ Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','T
 Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
 Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -5011,6 +5499,7 @@ rinf = UserValues.TauFit.FitParams{chan}(18);
 R = UserValues.TauFit.FitParams{chan}(19);
 sigR = UserValues.TauFit.FitParams{chan}(20);
 FD0 = UserValues.TauFit.FitParams{chan}(21);
+rinf2 = UserValues.TauFit.FitParams{chan}(22);
 
 tau1f = UserValues.TauFit.FitFix{chan}(1);
 tau2f = UserValues.TauFit.FitFix{chan}(2);
@@ -5033,6 +5522,7 @@ rinff = UserValues.TauFit.FitFix{chan}(18);
 Rf = UserValues.TauFit.FitFix{chan}(19);
 sigRf = UserValues.TauFit.FitFix{chan}(20);
 FD0f = UserValues.TauFit.FitFix{chan}(21);
+rinf2f = UserValues.TauFit.FitFix{chan}(22);
 
 StartPar = cell(7,1);
 StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
@@ -5048,7 +5538,8 @@ StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;r
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-
+StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+    ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 startpar = StartPar{model};
 names = Parameters{model};
 
@@ -5081,7 +5572,27 @@ if strcmp(TauFitData.Who,'Burstwise') && obj == h.Save_Figures
     UserValues.BurstSearch.BurstwiseLifetime_SaveImages = obj.Value;
     LSUserValues(1);
 end
+UserValues.TauFit.ConvolutionType = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
+UserValues.TauFit.LineStyle = h.LineStyle_Menu.String{h.LineStyle_Menu.Value};
 
+if obj == h.LineStyle_Menu
+    ChangeLineStyle(h);
+end
+if h.ShowAniso_radiobutton.Value == 1
+    Update_Plots(h.ShowAniso_radiobutton,[]);
+end
+
+function ChangeLineStyle(h)
+global UserValues
+switch UserValues.TauFit.LineStyle
+    case 'line'
+        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore],...
+            'Marker','none','LineStyle','-');
+    case 'dots'
+        set([h.Plots.DecayResult,h.Plots.DecayResult_ignore,h.Plots.DecayResult_Perp,h.Plots.DecayResult_Perp_ignore,h.Plots.AnisoResult,h.Plots.AnisoResult_ignore],...
+            'Marker','.','LineStyle','none');
+end
+    
 function IncludeChannel(obj,~)
 global UserValues
 h = guidata(findobj('Tag','TauFit'));
@@ -5228,18 +5739,18 @@ switch obj
         %%% data
         %%% fit function
         %%%
-        %%% Considers only the valid region outside of ignore
-        
+        %%% Exports the total region of the data, but only the non-ignore
+        %%% region of the fit
         if h.Result_Plot.Parent == h.HidePanel % no fit has been performed
             disp('Fit the data first');
             return;
         end
-       
-        if (h.Result_Plot_Aniso.Parent == h.HidePanel) %%% no anistropy reconvolution fit
-            time = h.Plots.DecayResult.XData; time = time-time(1);
-            data = h.Plots.DecayResult.YData;
-            fit =  h.Plots.FitResult.YData;
-            res = h.Plots.Residuals.YData;
+            
+        if (h.Result_Plot_Aniso.Parent == h.HidePanel) %%% no anisotropy reconvolution fit
+            time = [h.Plots.DecayResult_ignore.XData, h.Plots.DecayResult.XData]; %time = time-time(1);
+            data = [h.Plots.DecayResult_ignore.YData,h.Plots.DecayResult.YData];
+            fit =  [NaN(1,numel(h.Plots.DecayResult_ignore.XData)),h.Plots.FitResult.YData];
+            res = [NaN(1,numel(h.Plots.DecayResult_ignore.XData)),h.Plots.Residuals.YData];
             if strcmp(h.Result_Plot.YLabel.String,'Anisotropy')
                 names = {'time_ns','anisotropy','fit','wres'};
                 ext = '_aniso';
@@ -5250,7 +5761,7 @@ switch obj
             tab = table(time',data',fit',res','VariableNames',names);
         else
             %%% anisotropy reconvolution fit
-            time = h.Plots.DecayResult.XData; time = time-time(1);
+            time = h.Plots.DecayResult.XData; %time = time-time(1);
             data_par = h.Plots.DecayResult.YData;
             data_per = h.Plots.DecayResult_Perp.YData;
             fit_par =  h.Plots.FitResult.YData;
@@ -5264,9 +5775,20 @@ switch obj
             ext = '_tau_aniso';
         end
         %%% get path
-        [path,filename,~] = fileparts(TauFitData.FileName);
+        if ~strcmp(TauFitData.Who,'BurstBrowser')
+            [path,filename,~] = fileparts(TauFitData.FileName);
+        else
+            path = fullfile(TauFitData.Path,'..');
+            filename = strsplit(TauFitData.FileName,'.'); filename = filename{1};
+        end
         if isfield(TauFitData,'SpeciesName')
             filename = [filename '_' TauFitData.SpeciesName];
+        end
+        if strcmp(TauFitData.Who,'BurstBrowser')
+            filename = [filename '_' h.ChannelSelect_Popupmenu.String{h.ChannelSelect_Popupmenu.Value}];
+        else
+            %%% add PIE channel names
+            filename = [filename '_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value} '-' h.PIEChannelPer_Popupmenu.String{h.PIEChannelPer_Popupmenu.Value}];
         end
         filename = strrep(filename,' - ','-');
         filename = strrep(filename,' ','_');
@@ -5280,19 +5802,118 @@ switch obj
             filename = [filename(1:end-4) ext '.txt'];
         end
         writetable(tab,fullfile(pathname,filename));
+        UserValues.File.TauFitPath = pathname;
+    case h.Menu.Save_To_Dec
+        %%% saves data to *.dec file which can be loaded again into TauFit
+        %%%
+        %%% format:
+        %%% header
+        %%% channel
+        %%% Decay IRF scatter
+        if strcmp(TauFitData.Who,'External')
+            disp('Already using external data, no need to save it again.');
+            return;
+        end
+        %%% get path and filename
+        if ~strcmp(TauFitData.Who,'BurstBrowser')
+            [path,filename,~] = fileparts(TauFitData.FileName);
+        else
+            path = fullfile(TauFitData.Path,'..');
+            filename = strsplit(TauFitData.FileName,'.'); filename = filename{1};
+        end
+        if isfield(TauFitData,'SpeciesName')
+            filename = [filename '_' TauFitData.SpeciesName];
+        end
+        if strcmp(TauFitData.Who,'BurstBrowser')
+            %%% channel names
+            switch TauFitData.BAMethod
+                case {1,2} % 2color MFD
+                    chan_names = {'DD1','DD2','AA1','AA2','DA1','DA2'};
+                case {3,4} % 3color MFD
+                    chan_names = {'BB1','BB2','GG1','GG2','RR1','RR2'};
+                case 5 % 2color noMFD
+                    chan_names = {'DD','AA','DA'};
+            end
+        else
+            %%% PIE channel names
+            chan_names = h.PIEChannelPar_Popupmenu.String;
+        end
+        filename = strrep(filename,' - ','-');
+        filename = strrep(filename,' ','_');
+        [filename, pathname, FilterIndex] = uiputfile('*.dec','Save *.dec file',[path filesep filename '.dec']);
+        if FilterIndex == 0
+            return;
+        end
+        %%% assemble microtime histograms
+        microtimeHistograms = zeros(TauFitData.FileInfo.MI_Bins,3*numel(chan_names));
+        if strcmp(TauFitData.Who,'BurstBrowser')
+            switch TauFitData.BAMethod
+                case {1,2,3,4}
+                    count = 1;
+                    switch TauFitData.BAMethod
+                        case {1,2}
+                            from = TauFitData.PIE.From([1,2,5,6,3,4]);
+                            to = TauFitData.PIE.To([1,2,5,6,3,4]);
+                        case {3,4}
+                            from = TauFitData.PIE.From([1,2,7,8,11,12]);
+                            to = TauFitData.PIE.To([1,2,7,8,11,12]);
+                    end
+                    for i = 1:2:5
+                        range = from(i):to(i);
+                        microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI_Par{count};
+                        microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF_Par{count};
+                        microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat_Par{count};
+                        range = from(i+1):to(i+1);
+                        microtimeHistograms(range,3*(i)+1) = TauFitData.hMI_Per{count};
+                        microtimeHistograms(range,3*(i)+2) = TauFitData.hIRF_Per{count};
+                        microtimeHistograms(range,3*(i)+3) = TauFitData.hScat_Per{count};
+                        count = count + 1;
+                    end
+                case 5
+            end
+        else
+            for i = 1:numel(chan_names)
+                range = TauFitData.PIE.From(i):TauFitData.PIE.To(i);
+                microtimeHistograms(range,3*(i-1)+1) = TauFitData.hMI{i};
+                microtimeHistograms(range,3*(i-1)+2) = TauFitData.hIRF{i};
+                microtimeHistograms(range,3*(i-1)+3) = TauFitData.hScat{i};
+            end
+        end
+        fileName = [filename '.dec'];
+        fid = fopen(fullfile(pathname,fileName),'w');
+        %%% write header
+        %%% general info
+        fprintf(fid,'TAC range [ns]:\t\t %.2f\nMicrotime Bins:\t\t %d\nResolution [ps]:\t %.2f\n\n',...
+            1E9*TauFitData.FileInfo.TACRange,TauFitData.FileInfo.MI_Bins,1E12*TauFitData.FileInfo.TACRange/TauFitData.FileInfo.MI_Bins);
+        %%% PIE channel names
+        for i = 1:numel(chan_names)
+            fprintf(fid,'%s\t\t\t',chan_names{i});
+        end
+        fprintf(fid,'\n');
+        for i = 1:numel(chan_names)
+            fprintf(fid,'%s\t%s\t%s\t','Decay','IRF','Scatter');
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(fullfile(pathname,fileName),microtimeHistograms,'-append','delimiter','\t');
     case h.Compare_Result
         %%% load data and make comparison plot
         try
-            [pathname,~,~] = fileparts(TauFitData.FileName);
+            if ~strcmp(TauFitData.Who,'BurstBrowser')
+                [pathname,~,~] = fileparts(TauFitData.FileName);
+            else
+                pathname = fullfile(TauFitData.Path,'..');
+            end
         catch
-            pathname = UserValues.File.Path;
+            pathname = UserValues.File.TauFitPath;
         end
+        
         [filename, pathname, FilterIndex] = uigetfile('*.txt','Load lifetime data...',pathname,...
             'MultiSelect','on');
         if FilterIndex == 0
             return;
         end
-        
+        UserValues.File.TauFitPath = pathname;
         if ~iscell(filename)
             filename = {filename};
         end
@@ -5325,18 +5946,22 @@ switch obj
         for i = 1:numel(filename)
             dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
             data{i} = dummy(:,2);
+            fit{i} = dummy(:,3);
         end
         dT = mean(diff(dummy(:,1)));  
         %%% if different lengths have been loaded, truncate to shortest
         minLength = min(cellfun(@numel,data));
         for i = 1:numel(data)
             data{i} = data{i}(1:minLength);
+            fit{i} = fit{i}(1:minLength);
         end
         t = (1:minLength)*dT;
         
         if strcmp(type,'tau') %%% normalize and shift if tau data
             for i = 1:numel(data)
-                data{i} = data{i}./max(smooth(data{i},10));
+                norm = max(smooth(data{i},10));
+                data{i} = data{i}./norm;
+                fit{i} = fit{i}./norm;
             end
             
             %%% for shift, take first measurement as reference
@@ -5348,21 +5973,24 @@ switch obj
                 shift_left = min([shift_left, peakPosition-peakPos]);
                 shift_right = max([shift_right, peakPosition-peakPos]);
                 data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+                fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
             end
             %%% adjust range
             range = (shift_right+1):(minLength+shift_left);
-            t = (1:numel(range))*dT;
+            t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
+                fit{i} = fit{i}(range);
             end
         elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
             for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i},10));
+                [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
             end
-            range = min(peakPos):minLength;
-            t = (1:numel(range))*dT;
+            range = max([1,min(peakPos)-10]):minLength;
+            t = (0:numel(range)-1)*dT;
             for i = 1:numel(data)
                 data{i} = data{i}(range);
+                fit{i} = fit{i}(range);
             end
         end
         
@@ -5373,10 +6001,21 @@ switch obj
         
         %%% plot data
         hfig = figure('Units','pixels','Position',[100,100,600,400],'Color',[1,1,1]);
-        ax = axes('Color',[1,1,1],'LineWidth',2,'Box','on','XGrid','on','YGrid','on','FontSize',20);
+        ax = axes('Color',[1,1,1],'LineWidth',1,'Box','on','XGrid','on','YGrid','on','FontSize',20);
+        colors = lines(numel(data));
         hold on;
         for i = 1:numel(data)
-            plot(t,data{i},'LineWidth',2);
+            plot(t,fit{i},'LineWidth',2,'Color',colors(i,:));
+        end
+        for i = 1:numel(filename)
+            % remove extension
+            filename{i} = filename{i}(1:end-4);
+            % replace underscore with space
+            filename{i} = strrep(filename{i},'_',' ');
+        end
+        l = legend(filename);
+        for i = 1:numel(data)
+            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
         end 
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
@@ -5387,14 +6026,13 @@ switch obj
         else
             ylabel('Anisotropy');
         end
-        for i = 1:numel(filename)
-            % remove extension
-            filename{i} = filename{i}(1:end-4);
-            % replace underscore with space
-            filename{i} = strrep(filename{i},'_',' ');
-        end
-        l = legend(filename);
+        
         ax.Layer = 'top';
         ax.Units = 'pixels';
         l.Units = 'pixels';
+    case h.FitResultToClip
+        %%% get fit result from table, concatenate with parameter names and
+        %%% copy to clipboard using Mat2clip function
+        res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
+        Mat2clip(res);
 end

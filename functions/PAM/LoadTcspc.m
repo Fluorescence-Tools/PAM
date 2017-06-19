@@ -89,7 +89,7 @@ if strcmp(Caller.Tag, 'Pam')
     end
     h.Database.List.String = [];
     for i = 1:size(PamMeta.Database,1) %%% update file list
-        h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
+        h.Database.List.String = [{[PamMeta.Database{size(PamMeta.Database,1)-i+1,1} ' (path:' PamMeta.Database{size(PamMeta.Database,1)-i+1,2} ')']}; h.Database.List.String];
     end
     if size(PamMeta.Database,1) > 20
         PamMeta.Database = PamMeta.Database(1:20,:);
@@ -621,6 +621,7 @@ switch (Type)
         if isempty(FileInfo.ClockPeriod)
             FileInfo.ClockPeriod = FileInfo.SyncPeriod;
         end
+        FileInfo.Path = Path;
         TcspcData.MT(1:size(Loaded.MT,1),1:size(Loaded.MT,2)) = Loaded.MT;
         TcspcData.MI(1:size(Loaded.MT,1),1:size(Loaded.MT,2)) = Loaded.MI;
         for i = 2:numel(FileName)
@@ -635,6 +636,7 @@ switch (Type)
             FileInfo.MeasurementTime = FileInfo.MeasurementTime + Loaded.Info.MeasurementTime;
             FileInfo.NumberOfFiles = FileInfo.NumberOfFiles + Loaded.Info.NumberOfFiles;
         end
+        FileInfo.FileName = FileName;
     case 6 %%% .PTU files from HydraHarp Software V3.0
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'HydraHarp';
@@ -858,9 +860,9 @@ switch (Type)
         FileInfo.ClockPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
-        FileInfo.Lines=10;
+        FileInfo.Lines=1;
         FileInfo.LineTimes=[];
-        FileInfo.Pixels=10;
+        FileInfo.Pixels=1;
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
@@ -903,7 +905,7 @@ switch (Type)
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
-            [MT, MI, SyncRate, ClockRate, Resolution] = Read_T3R(fullfile(Path,FileName{i}));
+            [MT, MI, ~, ~, ~, SyncRate, ClockRate, Resolution] = Read_T3R(fullfile(Path,FileName{i}));
             
             if isempty(FileInfo.SyncPeriod)
                 FileInfo.SyncPeriod = 1/SyncRate;
@@ -1082,7 +1084,7 @@ switch (Type)
         %%% The User can select which Read-Ins to display an use
         %%% This will allow easier, modular implementation of custom file types (esp. for scanning) 
         if ~exist('Custom','var') %%% If it was called from the database etc.
-            Customdir = [pwd filesep 'functions' filesep 'Custom_Read_Ins'];
+            Customdir = [fileparts(mfilename('fullpath')) filesep '..' filesep 'Custom_Read_Ins']; %%% one up from current .m file
             %%% Finds all matlab files in profiles directory
             Custom_Methods = what(Customdir);
             Custom_Methods = Custom_Methods.m(:);
@@ -1091,7 +1093,7 @@ switch (Type)
                     Custom = str2func(UserValues.File.Custom_Filetype);
                 end
             end
-            if ~exist('Custom','var') %%% Aborts is file does not exist anymore
+            if ~exist('Custom','var') %%% Aborts if file does not exist anymore
                 return;
             end
         end  
@@ -1159,7 +1161,7 @@ if strcmp(Caller.Tag, 'Pam')
         sprintf('%.2f',1E9*FileInfo.TACRange);...
         sprintf('%d',FileInfo.MI_Bins);...
         sprintf('%.2f',TCSPCResolution);
-        sprintf('%d',FileInfo.NumberOfFiles);...
+        sprintf('%d',FileInfo.NumberOfFiles);...        
         get_date_modified(FileInfo.Path,FileInfo.FileName{1})};
     
     %%% Updates MI Range in Phasor

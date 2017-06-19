@@ -42,12 +42,12 @@ line
 
 You might explain your function here:
 
-    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     |    
+|gamma|*|N|*|Trip amplitude|*|Trip time|*|xy diffusion|*|z diffusion|+|Offset|
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;    LB = 0; UB = Inf;
-Param(2): tauD[µs]      = 30;	LB = 0; UB = Inf;   
+Param(2): tauD[ï¿½s]      = 30;	LB = 0; UB = Inf;   
 Param(3): p             = 5;    LB = 0; UB = Inf;
-Param(4): tauT[µs]      = 1;    LB = 0; UB = Inf;
+Param(4): tauT[ï¿½s]      = 1;    LB = 0; UB = Inf;
 Param(5): Trip          = 0.01; LB = 0; UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 

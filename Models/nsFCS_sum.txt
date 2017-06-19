@@ -1,9 +1,10 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-Simple one component, 3D normal diffusion FCS model with one antibunching term (fluorescence lifetime) and three bunching terms (dynamics/triplet).
+Simple one component, 3D normal diffusion FCS model with one antibunching term (fluorescence lifetime) and three bunching terms (2 dynamic + 1 triplet).
 Diffusion time is fitted, no focus size information
 All kinetics exponential.
+The two kinetic terms are summed up.
 
-    |gamma    |*|N    |*|Antibunching| * |Bunching1| * |Bunching2|*|xy diffusion        | *|z diffusion                     | |Offset|    
+|gamma|*|N|*|Antibunching|*|Bunching1 + Bunching2|*|xy diffusion|*|z diffusion|+|Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;	LB = 0;     UB = Inf;
 Param(2): tauD[?s]      = 60;	LB = 0;     UB = Inf;

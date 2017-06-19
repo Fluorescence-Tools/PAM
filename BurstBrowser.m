@@ -136,6 +136,12 @@ if isempty(hfig)
         'Tag','Export_PDA_All_Menu',...
         'Callback',@Export_To_PDA,...
         'Enable','on');
+    h.ExportAllGraphs_Menu = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','<html>Export all graphs (E, E-S, lifetime...)</html>',...
+        'Tag','ExportAllGraphs_Menu',...
+        'Callback',@ExportAllGraphs,...
+        'Separator','on');
      %%% Choose print path
     h.Autoset_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
@@ -572,9 +578,11 @@ if isempty(hfig)
     % Set the tree mouse-click callback
     set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
     
-    button_posX = 0.7*h.figure_size(3);
-    button_posY = 0.2375*h.figure_size(4)-20;
     buttonsize = 20;
+    offset = 5;
+    button_posX = (h.SpeciesList.container.Position(1)+0.5*h.SpeciesList.container.Position(3))*h.figure_size(3);
+    button_posY = 0.2375*h.figure_size(4)-buttonsize;
+
     %%% add buttons to species list
     h.AddSpecies_Button = uicontrol(...
         'Parent',h.BurstBrowser,...
@@ -594,7 +602,7 @@ if isempty(hfig)
         'Units','pixels',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[button_posX+20+5 button_posY buttonsize buttonsize],...
+        'Position',[button_posX+buttonsize+offset button_posY buttonsize buttonsize],...
         'Style','pushbutton',...
         'Tag','RemoveSpecies_Button',...
         'FontSize',12,...
@@ -607,7 +615,7 @@ if isempty(hfig)
         'Units','pixels',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[button_posX+40+10 button_posY buttonsize buttonsize],...
+        'Position',[button_posX+2*(buttonsize+offset) button_posY buttonsize buttonsize],...
         'Style','pushbutton',...
         'Tag','RenameSpecies_Button',...
         'FontSize',12,...
@@ -620,7 +628,7 @@ if isempty(hfig)
         'Units','pixels',...
         'BackgroundColor','black',...
         'ForegroundColor', Look.Fore,...
-        'Position',[button_posX+60+25 button_posY buttonsize buttonsize],...
+        'Position',[button_posX+3*(buttonsize+offset)+10 button_posY buttonsize buttonsize],...
         'Style','pushbutton',...
         'Tag','Send_to_TauFit_Button',...
         'FontSize',12,...
@@ -633,7 +641,7 @@ if isempty(hfig)
         'Units','pixels',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[button_posX+80+30 button_posY buttonsize buttonsize],...
+        'Position',[button_posX+4*(buttonsize+offset)+10 button_posY buttonsize buttonsize],...
         'Style','pushbutton',...
         'Tag','Export_To_PDA_Button',...
         'FontSize',12,...
@@ -641,6 +649,52 @@ if isempty(hfig)
         'Callback',@Export_To_PDA);
     iconbutton(h.Export_To_PDA_Button,'images/BurstBrowser/plottype-hist.jpg');
     
+    %%% Multiselect checkbox and multiplot button
+    h.MultiPlotButtonMenu = uicontextmenu;
+    h.MultiPlotButtonMenu_ToggleNormalize = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleNormalize',...
+        'Label','Normalize populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Normalize_Multiplot
+        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
+    end
+    %%% Define MultiPlot Button
+    h.MultiPlotButton = uicontrol(...
+        'Parent',h.BurstBrowser,...
+        'Units','pixels',...
+        'BackgroundColor', 'white',...
+        'ForegroundColor', Look.Fore,...
+        'Position',[button_posX+3*(buttonsize+offset)+10 button_posY 2.5*buttonsize buttonsize],...
+        'Style','pushbutton',...
+        'Tag','MutliPlotButton',...
+        'TooltipString','Plots multiple species using different colors. Support up to three species.',...
+        'FontSize',12,...
+        'Visible','off',...
+        'Callback',@MultiPlot,...
+        'Enable','on');
+        %'String','Plot multiple species',...
+    iconbutton(h.MultiPlotButton,'images/BurstBrowser/plot_multiple_icon.png');
+    
+    h.MultiselectOnCheckbox = uicontrol(...
+        'Parent',h.BurstBrowser,...
+        'Units','pixels',...
+        'BackgroundColor', 'white',...
+        'ForegroundColor', Look.Fore,...
+        'Position',[button_posX+6*(buttonsize+offset)+20 button_posY buttonsize buttonsize],...
+        'Style','pushbutton',...
+        'Tag','MultiselectOnCheckbox',...
+        'FontSize',12,...
+        'TooltipString','Enable multiselection for plotting',...
+        'Callback',@UpdateOptions,...
+        'UserData',0,...
+        'UIContextMenu', h.MultiPlotButtonMenu);
+    iconbutton(h.MultiselectOnCheckbox,'images/BurstBrowser/multiselection.png');
+    h.MultiselectOnCheckbox.CData(:,:,[2,3]) = 0;
+    
+    %%% Cut Table right click menu
     h.CutTable_Menu = uicontextmenu;
     h.StoreInCutDatabase_Menu = uimenu(...
         'Parent',h.CutTable_Menu,...
@@ -656,16 +710,16 @@ if isempty(hfig)
     
     %define the cut table
     if ispc
-        trash_image = ['<html><img src="file:/' pwd '/images/trash16p.png"/></html>'];
+        trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
         trash_image = strrep(trash_image,'\','/');
-        circle_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        circle_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
         circle_image = strrep(circle_image,'\','/');
-        zscale_image = ['<html><img src="file:/' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+        zscale_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
         zscale_image = strrep(zscale_image,'\','/');
     else
-        trash_image = ['<html><img src="file://' pwd '/images/trash16p.png"/></html>'];
-        circle_image = ['<html><img src="file://' pwd '/images/BurstBrowser/greencircleicon.gif"/></html>'];
-        zscale_image = ['<html><img src="file://' pwd '/images/BurstBrowser/zscale_square.png"/></html>'];
+        trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
+        circle_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        zscale_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
     end
     cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'char','numeric','numeric','logical','logical','logical'};
@@ -704,8 +758,10 @@ if isempty(hfig)
         'Position',[0 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListX',...
+        'Interruptible','off',...
         'Enable','on',...
-        'FontSize',12);%,...
+        'FontSize',12,...
+        'KeyPressFcn',@BurstBrowser_KeyPress);%,...
         %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
         %'ButtonDownFcn',{@ParameterList_ButtonDownFcn,'right'});
     
@@ -718,6 +774,7 @@ if isempty(hfig)
         'Position',[0.5 0.385 0.5 0.615],...
         'Style','listbox',...
         'Tag','ParameterListY',...
+        'Interruptible','off',...
         'Enable','on',...
         'FontSize',12);%,...
         %'Callback',{@ParameterList_ButtonDownFcn,'left'},...
@@ -736,55 +793,13 @@ if isempty(hfig)
     set(jParameterListX, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListX});
     set(jParameterListY, 'MousePressedCallback',{@ParameterList_ButtonDownFcn,h.ParameterListY});
     
-    h.MultiPlotButtonMenu = uicontextmenu;
-    h.MultiPlotButtonMenu_ToggleNormalize = uimenu(...
-        h.MultiPlotButtonMenu,...
-        'Tag','MultiPlotButtonMenu_ToggleNormalize',...
-        'Label','Normalize populations',...
-        'Callback',@UpdateOptions);
-    if UserValues.BurstBrowser.Settings.Normalize_Multiplot
-        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'on';
-    else
-        h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
-    end
-    %%% Define MultiPlot Button
-    h.MultiPlotButton = uicontrol(...
-        'Parent',h.SecondaryTabSelectionPanel,...
-        'Units','normalized',...
-        'BackgroundColor', 'white',...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.19 0.0025 0.1 0.035],...
-        'Style','pushbutton',...
-        'Tag','MutliPlotButton',...
-        'TooltipString','Plots multiple species using different colors. Support up to three species.',...
-        'FontSize',12,...
-        'Callback',@MultiPlot,...
-        'Enable','off');
-        %'String','Plot multiple species',...
-    iconbutton(h.MultiPlotButton,'images/BurstBrowser/plot_multiple_icon.png');
-    
-    h.MultiselectOnCheckbox = uicontrol(...
-        'Parent',h.SecondaryTabSelectionPanel,...
-        'Units','normalized',...
-        'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore,...
-        'Position',[0.01 0.0025 0.17 0.035],...
-        'Style','checkbox',...
-        'Tag','MultiselectOnCheckbox',...
-        'String','Multiselect',...
-        'Value',0,...
-        'FontSize',12,...
-        'TooltipString','Enable multiselection for plotting',...
-        'Callback',@UpdateOptions,...
-        'UIContextMenu', h.MultiPlotButtonMenu);
-    
     %define manual cut button
     h.CutButton = uicontrol(...
         'Parent',h.SecondaryTabSelectionPanel,...
         'Units','normalized',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.9 0.0025 0.05 0.035],...
+        'Position',[0 0.0025 0.05 0.035],...
         'Style','pushbutton',...
         'Tag','CutButton',...
         'FontSize',12,...
@@ -797,7 +812,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.95 0.0025 0.05 0.035],...
+        'Position',[0.05 0.0025 0.05 0.035],...
         'Style','pushbutton',...
         'Tag','ArbitraryCutButton',...
         'FontSize',12,...
@@ -830,11 +845,12 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.3 0.0025 0.18 0.035],...
+        'Position',[0.1 0.0025 0.2 0.035],...
         'Style','text',...
         'Tag','CutDatabaseText',...
+        'HorizontalAlignment','right',...
         'TooltipString',cutdatabasetooltip,...
-        'String','Cuts:',...
+        'String','Cut Database:',...
         'FontSize',12);
     %define cut selection popupmenu
     h.CutDatabase = uicontrol(...
@@ -842,7 +858,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.48 0.0025 0.3 0.035],...
+        'Position',[0.3 0.0025 0.5 0.035],...
         'Style','popupmenu',...
         'Tag','CutDatabase',...
         'TooltipString',cutdatabasetooltip,...
@@ -858,7 +874,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.78 0.0025 0.05 0.035],...
+        'Position',[0.9 0.0025 0.05 0.035],...
         'Style','pushbutton',...
         'Tag','ApplyCutDatabase',...
         'FontSize',12,...
@@ -870,7 +886,7 @@ if isempty(hfig)
         'Units','normalized',...
         'BackgroundColor','white',...
         'ForegroundColor', Look.Fore,...
-        'Position',[0.83 0.0025 0.05 0.035],...
+        'Position',[0.95 0.0025 0.05 0.035],...
         'Style','pushbutton',...
         'Tag','AddCutDatabase',...
         'FontSize',12,...
@@ -1651,7 +1667,7 @@ if isempty(hfig)
         'Units','normalized',...
         'Callback',@UpdateOptions,...
         'Position',[0.4,0.9,0.2,0.08],...
-        'String',{'1','2','3','4'},...
+        'String',{'1','2','3','4','5'},...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
         'TooltipStr','Number of Gaussian components of the model.');
@@ -1689,14 +1705,14 @@ if isempty(hfig)
     h.FitTable_ContextMenu = uicontextmenu;
     h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Copy fit result to clipboard','Callback',@CopyFitresultToClipboard);
     h.FitTable_SpeciesFromGaussFit = uimenu(h.FitTable_ContextMenu,'Label','Define Species from Fit','Callback',@SpeciesFromGaussianFit,'Separator','on');
-    h.GUIData.TableDataMLE = cell(7,6);
+    h.GUIData.TableDataMLE = cell(8,6);
     h.GUIData.TableDataMLE(3,1:6) = {'<html><b>Fraction</b></html>','<html><b>Mean(X)</b></html>','<html><b>Mean(Y)</b></html>','<html><b>&sigma(XX)</b></html>','<html><b>&sigma(YY)</b></html>','<html><b>COV(XY)</b></html>'};
     h.GUIData.ColumnNameMLE = {'<html><b>Converged</b></html>','<html><b>-logL</b></html>','<html><b>BIC</b></html>'};
     h.GUIData.ColumnEditableMLE = false(1,6);
     h.GUIData.ColumnWidthMLE = {100,100,100,100,100,100,100};
     h.GUIData.ColumnFormatMLE = repmat({'numeric'},1,7);
-    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0.01,Inf,false,0.05,0.01,Inf,false,0,-Inf,Inf,false],[4,1]));
-    for i =1:4
+    h.GUIData.TableDataLSQ = num2cell(repmat([1,0,1,false,0.5,0,Inf,false,0.5,0,Inf,false,0.05,0.01,Inf,false,0.05,0.01,Inf,false,0,-Inf,Inf,false],[5,1]));
+    for i =1:5
         h.GUIData.TableDataLSQ(i,4:4:end) = {false,false,false,false,false,false};
     end
     h.GUIData.ColumnEditableLSQ = true(1,24);
@@ -1837,6 +1853,22 @@ if isempty(hfig)
         'TooltipStr','Choose to overlay grid lines on data, or to plot grid lines behind data.',...
         'Callback',@UpdateGUIOptions...
         );
+    %%% Plot grid lines above data
+    h.Restrict_EandS_Range = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.7 0.85 0.3 0.07],...
+        'FontSize',12,...
+        'Tag','Restrict_EandS_Range',...
+        'Value',UserValues.BurstBrowser.Display.Restrict_EandS_Range,...
+        'String','Restrict E and S range',...
+        'TooltipStr','Restrict Efficiency and Stoichiometry plot ranges to [0,1].',...
+        'Callback',@UpdatePlot...
+        );
+    
     %%% Specify the Plot Type
     h.PlotTypeText = uicontrol('Style','text',...
         'Parent',h.DisplayOptionsPanel,...
@@ -2101,6 +2133,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
+        'TooltipString','Brightens the colormap. Affects z-scaling and multiplot.',...
         'Position',[0.52 0.35 0.36 0.07],...
         'FontSize',12,...
         'Tag','BrightenColorMap_text',...
@@ -2113,7 +2146,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'Position',[0.88 0.36 0.1 0.07],...
+        'Position',[0.88 0.35 0.1 0.07],...
         'FontSize',12,...
         'Tag','BrightenColorMap_edit',...
         'TooltipString','Brightens the colormap. Affects z-scaling and multiplot.',...
@@ -2138,78 +2171,22 @@ if isempty(hfig)
         'Callback',@UpdateOptions...
         );
     
-    h.ColorLine1 = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','',...
-        'Tag','ColorLine1',...
-        'Units','normalized',...
-        'Position',[0.13 0.1 0.06 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine1,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@UpdateLineColor...
-        );
-    
-    h.ColorLine2 = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','',...
-        'Tag','ColorLine2',...
-        'Units','normalized',...
-        'Position',[0.33 0.1 0.06 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine2,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@UpdateLineColor...
-        );
-    
-    h.ColorLine3 = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','',...
-        'Tag','ColorLine3',...
-        'Units','normalized',...
-        'Position',[0.53 0.1 0.06 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine3,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@UpdateLineColor...
-        );
-    
-    h.ColorLine4 = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','',...
-        'Tag','ColorLine4',...
-        'Units','normalized',...
-        'Position',[0.73 0.1 0.06 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine4,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@UpdateLineColor...
-        );
-    
-    h.ColorLine5 = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','',...
-        'Tag','ColorLine5',...
-        'Units','normalized',...
-        'Position',[0.93 0.1 0.06 0.07],...
-        'FontSize',12,...
-        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine5,...
-        'ForegroundColor', Look.Fore,...
-        'Callback',@UpdateLineColor...
-        );
+    h.ColorSettingContainer = uigridcontainer(h.DisplayOptionsPanel,...
+        'GridSize',[2,6],...
+        'Units','norm',...
+        'Position',[0.02,0,0.96,.17],...
+        'BackgroundColor',Look.Back);
     
     h.ColorLine1Text = uicontrol('Style','text',...
-        'Parent',h.DisplayOptionsPanel,...
+        'Parent',h.ColorSettingContainer,...
         'String','Line 1',...
         'Tag','ColorLine1Text',...
-        'Units','normalized',...
-        'Position',[0.01 0.1 0.12 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
     h.ColorLine2Text = uicontrol('Style','text',...
-        'Parent',h.DisplayOptionsPanel,...
+        'Parent',h.ColorSettingContainer,...
         'String','Line 2',...
         'Tag','ColorLine2Text',...
         'Units','normalized',...
@@ -2219,46 +2196,97 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore);
     
     h.ColorLine3Text = uicontrol('Style','text',...
-        'Parent',h.DisplayOptionsPanel,...
+        'Parent',h.ColorSettingContainer,...
         'String','Line 3',...
         'Tag','ColorLine3Text',...
-        'Units','normalized',...
-        'Position',[0.41 0.1 0.12 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
     h.ColorLine4Text = uicontrol('Style','text',...
-        'Parent',h.DisplayOptionsPanel,...
+        'Parent',h.ColorSettingContainer,...
         'String','Line 4',...
         'Tag','ColorLine4Text',...
-        'Units','normalized',...
-        'Position',[0.61 0.1 0.12 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
     h.ColorLine5Text = uicontrol('Style','text',...
-        'Parent',h.DisplayOptionsPanel,...
+        'Parent',h.ColorSettingContainer,...
         'String','Line 5',...
         'Tag','ColorLine5Text',...
-        'Units','normalized',...
-        'Position',[0.81 0.1 0.12 0.07],...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore);
+
+    h.ColorLine6Text = uicontrol('Style','text',...
+        'Parent',h.ColorSettingContainer,...
+        'String','Line 6',...
+        'Tag','ColorLine6Text',...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    h.ExportAllGraphs_Button = uicontrol('Style','pushbutton',...
-        'Parent',h.DisplayOptionsPanel,...
-        'String','Export all graphs',...
-        'Tag','ExportAllGraphs_Button',...
-        'Units','normalized',...
-        'Position',[0.6 0.01 0.35 0.07],...
+    h.ColorLine1 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine1',...
         'FontSize',12,...
-        'BackgroundColor', Look.Control,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine1,...
         'ForegroundColor', Look.Fore,...
-        'Callback',@ExportAllGraphs);
-   
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine2 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine2',...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine2,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine3 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine3',...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine3,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine4 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine4',...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine4,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine5 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine5',...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine5,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
+    h.ColorLine6 = uicontrol('Style','pushbutton',...
+        'Parent',h.ColorSettingContainer,...
+        'String','',...
+        'Tag','ColorLine6',...
+        'FontSize',12,...
+        'BackgroundColor', UserValues.BurstBrowser.Display.ColorLine6,...
+        'ForegroundColor', Look.Fore,...
+        'Callback',@UpdateLineColor...
+        );
+    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Data Processing Options Panel
@@ -2491,6 +2519,7 @@ if isempty(hfig)
         'BackgroundColor', Look.List,...
         'ForegroundColor', Look.ListFore,...
         'KeyPressFcn',{@Database,0},...
+        'Callback',{@Database,0},...
         'Tooltipstring', ['<html>'...
                           'List of files in database <br>',...
                           '<i>"return"</i>: Loads selected files<br>',...
@@ -3618,6 +3647,15 @@ if isempty(hfig)
             end
         end
     end
+    %% add keypress function to all gui elements
+    fields = fieldnames(h); %%% loop through h structure
+    for i = 1:numel(fields)
+        if isprop(h.(fields{i}),'KeyPressFcn')
+            if isempty(h.(fields{i}).KeyPressFcn)
+                h.(fields{i}).KeyPressFcn = @BurstBrowser_KeyPress;
+            end
+        end
+    end
     %% Store GUI data
     guidata(h.BurstBrowser,h);
     BurstMeta.SelectedFile = 1;
@@ -3705,16 +3743,19 @@ switch mode
         [~,BurstMeta.Plots.Mixture.Main_Plot(3)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(3).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(4)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine4,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(4).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(5)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine5,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(5).UIContextMenu = h.ExportGraph_Menu;
+        [~,BurstMeta.Plots.Mixture.Main_Plot(6)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine6,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(6).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(1)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine1);BurstMeta.Plots.Mixture.Main_Plot(1).UIContextMenu = h.ExportGraph_Menu;
         BurstMeta.Plots.Mixture.plotX(2) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(3) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(4) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine4,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(5) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine5,'LineWidth',2,'Visible','off','LineStyle','--');
+        BurstMeta.Plots.Mixture.plotX(6) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine6,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotX(1) = plot(h.axes_1d_x,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Visible','off');
         BurstMeta.Plots.Mixture.plotY(2) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine2,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(3) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine3,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(4) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine4,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(5) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine5,'LineWidth',2,'Visible','off','LineStyle','--');
+        BurstMeta.Plots.Mixture.plotY(6) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine6,'LineWidth',2,'Visible','off','LineStyle','--');
         BurstMeta.Plots.Mixture.plotY(1) = plot(h.axes_1d_y,0.5,1,'Color',UserValues.BurstBrowser.Display.ColorLine1,'LineWidth',2,'Visible','off');
         %%%Corrections Tab
         BurstMeta.Plots.histE_donly = bar(h.Corrections.TwoCMFD.axes_crosstalk,0.5,1,'FaceColor',[0 0 0],'BarWidth',1);
@@ -3958,17 +3999,43 @@ if obj ~= h.DatabaseBB.List
     end
     switch obj
         case {h.Load_Bursts, h.Append_File}
-            [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
-            if FilterIndex == 0
-                return;
+            switch obj
+                case h.Load_Bursts %%% load once from one folder
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file';'*.kba','*.kba file from old PAM'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if FilterIndex == 0
+                        return;
+                    end
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                case h.Append_File
+                    %%% query multiple files (only allow  *.bur files)
+                    [FileName,pathname,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                    if ischar(FileName)
+                        FileName = {FileName};
+                    end
+                    %%% make pathname to cell array
+                    for i = 1:numel(FileName)
+                        PathName{i} = pathname;
+                    end
+                    while FilterIndex ~= 0 %%% query for more files until cancel is selected
+                        [fn,pn,FilterIndex] = uigetfile({'*.bur','*.bur file'}, 'Choose a file', path, 'MultiSelect', 'on');
+                        if FilterIndex ~= 0
+                            if ischar(fn)
+                                fn = {fn};
+                            end
+                            FileName = [FileName;fn];
+                            for i = 1:numel(fn)
+                                PathName{end+1} = pn;
+                            end
+                        end
+                    end
             end
-            if ischar(FileName)
-                FileName = {FileName};
-            end
-            %%% make pathname to cell array
-            for i = 1:numel(FileName)
-                PathName{i} = pathname;
-            end
+            
         case h.Load_Bursts_From_Folder
             %%% Choose a folder and load files from all subfolders
             %%% only consider one level downwards
@@ -4153,6 +4220,8 @@ for i = 1:numel(FileName)
     Progress((i-1)/numel(FileName),h.Progress_Axes,h.Progress_Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
     if ~exist(fullfile(PathName{i},FileName{i}),'file')
         disp(['File ' fullfile(PathName{i},FileName{i}) ' does not exist.']);
+        h.Progress_Text.String = 'Error - File not found.';
+        uiwait(h.BurstBrowser,1);
         return;
     end
     S = load('-mat',fullfile(PathName{i},FileName{i}));
@@ -4198,16 +4267,29 @@ for i = 1:numel(FileName)
                 end
                 S.NameArray{end+1} = 'Anisotropy D';
                 S.NameArray{end+1} = 'Anisotropy A';
-                %%% Caculate Anisotropies
+                %%% Calculate Anisotropies
                 S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')))./...
                     (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + 2.*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')));
                 S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) - S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')))./...
                     (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA par)')) + 2*S.DataArray(:,strcmp(S.NameArray,'Number of Photons (AA perp)')));
-
+                
+                if sum(strcmp(S.NameArray,'Proximity Ratio')) == 0
+                    S.NameArray{end+1} = 'Proximity Ratio';
+                    S.DataArray(:,end+1) = (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA perp)')))./...
+                        (S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DD perp)')) +...
+                         S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA par)')) + S.DataArray(:,strcmp(S.NameArray,'Number of Photons (DA perp)')));
+                end
                 S.BurstData.NameArray = S.NameArray;
                 S.BurstData.DataArray = S.DataArray;
                 S.BurstData.BAMethod = S.Data.BAMethod;
-                S.BurstData.FileType = S.Data.Filetype;
+                if isfield(S.Data,'Filetype')
+                    S.BurstData.FileType = S.Data.Filetype;
+                else
+                    S.BurstData.FileType = 'SPC';
+                end
+                if ~isfield(S.Data,'SyncRate')
+                    S.Data.SyncRate = round(1/37.5E-9);
+                end
                 if isfield(S.Data,'TACrange')
                     S.BurstData.TACRange = S.Data.TACrange;
                 else
@@ -4238,13 +4320,14 @@ for i = 1:numel(FileName)
                     end
                     S.BurstData.ScatterPattern = S.BurstData.IRF;
                 end
-
-                S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
-                S.BurstTCSPCData.Microtime = S.Data.Microtime;
-                S.BurstTCSPCData.Channel = S.Data.Channel;
-                S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
-                S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
-                S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                if isfield(S.Data,'Macrotime')
+                    S.BurstTCSPCData.Macrotime = S.Data.Macrotime;
+                    S.BurstTCSPCData.Microtime = S.Data.Microtime;
+                    S.BurstTCSPCData.Channel = S.Data.Channel;
+                    S.BurstTCSPCData.Macrotime = cellfun(@(x) x',S.BurstTCSPCData.Macrotime,'UniformOutput',false);
+                    S.BurstTCSPCData.Microtime = cellfun(@(x) x',S.BurstTCSPCData.Microtime,'UniformOutput',false);
+                    S.BurstTCSPCData.Channel = cellfun(@(x) x',S.BurstTCSPCData.Channel,'UniformOutput',false);
+                end
             case {3,4} %%% 3Color MFD
                 %%% Convert NameArray
                 S.NameArray{strcmp(S.NameArray,'TG - TR (PIE)')} = '|TGX-TRR| Filter';
@@ -4298,19 +4381,20 @@ for i = 1:numel(FileName)
                 if isfield(S.Data,'Filetype')
                     S.BurstData.FileType = S.Data.Filetype;
                 end
-                if isfield(S.Data,'SyncRate')
-                    if isfield(S.Data,'TACrange')
-                        S.BurstData.TACRange = S.Data.TACrange;
-                        S.BurstData.FileInfo.TACRange = S.Data.TACrange;
-                    else
-                        S.BurstData.TACRange =  1E9./S.Data.SyncRate;
-                        S.BurstData.FileInfo.TACRange =  1E9./S.Data.SyncRate;
-                        % this will not work if the syncrate and clockrate are
-                        % different
-                    end
-                    S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
-                    S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;  %kba file from old pam
+                if ~isfield(S.Data,'SyncRate')
+                    S.Data.SyncRate = round(1/37.5E-9);
                 end
+                if isfield(S.Data,'TACrange')
+                    S.BurstData.TACRange = S.Data.TACrange;
+                    S.BurstData.FileInfo.TACRange = S.Data.TACrange;
+                else
+                    S.BurstData.TACRange =  1E9./S.Data.SyncRate;
+                    S.BurstData.FileInfo.TACRange =  1E9./S.Data.SyncRate;
+                    % this will not work if the syncrate and clockrate are
+                    % different
+                end
+                S.BurstData.SyncPeriod = 1./S.Data.SyncRate;
+                S.BurstData.ClockPeriod = S.BurstData.SyncPeriod;  %kba file from old pam
                 S.BurstData.FileInfo.MI_Bins = 4096;
 
                 if isfield(S.Data,'PIEChannels')
@@ -4949,7 +5033,7 @@ end
 
 switch mode
     case 2 % 2ColorMFD
-        xE = linspace(-0.05,1,N_bins+1);
+        xE = linspace(-0.1,1,N_bins+1);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
             H{i} = H{i}./sum(H{i});
@@ -4967,7 +5051,7 @@ switch mode
         ax.FontSize = 20;
         ax.LineWidth = 2;
         ax.Layer = 'top';
-        ax.XLim = [-0.05,1];
+        ax.XLim = [-0.1,1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
         ylabel('occurrence (norm.)');
@@ -5188,11 +5272,11 @@ switch obj
         if strcmp(UserValues.BurstBrowser.Settings.GaussianFitMethod,'LSQ')
             %%% change fixed values in table
             nG = obj.Value;
-            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG,1/nG};
+            h.Fit_Gaussian_Text.Data(:,1) = {1/nG,1/nG,1/nG,1/nG,1/nG};
             for i = 1:nG           
                 h.Fit_Gaussian_Text.Data(i,4:4:end) = {false,false,false,false,false,false};
             end
-            for i = (nG+1):4           
+            for i = (nG+1):5           
                 h.Fit_Gaussian_Text.Data(i,4:4:end) = {true,true,true,true,true,true};
                 h.Fit_Gaussian_Text.Data{i,1} = 0;
             end
@@ -5207,14 +5291,14 @@ switch obj
     case h.MultiPlot_PlotType
         UserValues.BurstBrowser.Display.MultiPlotMode = obj.Value;
     case h.MultiselectOnCheckbox
-        switch obj.Value
-            case 1
+        switch obj.UserData
+            case 0
                 %%% enable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(true);
                 % disable right click
                 set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', []);
                 %%% enable multiplot button
-                h.MultiPlotButton.Enable = 'on';
+                h.MultiPlotButton.Visible = 'on';
                 %%% Disable buttonsin Species List
                 h.AddSpecies_Button.Visible = 'off';
                 h.RemoveSpecies_Button.Visible = 'off';
@@ -5223,13 +5307,15 @@ switch obj
                 h.Send_to_TauFit_Button.Visible = 'off';
                 h.Param_comp_selected_Menu.Enable = 'on';
                 h.FRET_comp_selected_Menu.Enable = 'on';
-            case 0
+                obj.UserData = 1;
+                obj.CData = circshift(obj.CData,[0,0,1]);
+            case 1
                 %%% disable multiselect
                 h.SpeciesList.Tree.setMultipleSelectionEnabled(false);
                 % reenable right click
                 set(h.SpeciesList.Tree.getTree, 'MousePressedCallback', {@SpeciesListContextMenuCallback,h.SpeciesListMenu});
                 %%% disable multiplot button
-                h.MultiPlotButton.Enable = 'off';
+                h.MultiPlotButton.Visible = 'off';
                 %%% Reenable buttonsin Species List
                 h.AddSpecies_Button.Visible = 'on';
                 h.RemoveSpecies_Button.Visible = 'on';
@@ -5238,6 +5324,8 @@ switch obj
                 h.Send_to_TauFit_Button.Visible = 'on';
                 h.Param_comp_selected_Menu.Enable = 'off';
                 h.FRET_comp_selected_Menu.Enable = 'off';
+                obj.UserData = 0;
+                obj.CData = circshift(obj.CData,[0,0,-1]);
          end
     case h.Threshold_S_Donly_Min_Edit
         newVal = str2double(obj.String);
@@ -5991,10 +6079,12 @@ if isempty(BurstData)
     return;
 end
 
+drawnow nocallbacks
 %% Update Main Plot
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
-
+x_name = h.ParameterListX.String{x};
+y_name = h.ParameterListY.String{y};
 %%% Read out the Number of Bins
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
@@ -6023,10 +6113,18 @@ BurstMeta.Plots.Main_histY.Visible = 'on';
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
 set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
+
 for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
     try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end;
     try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end;
 end
+BurstMeta.Plots.MultiScatter.h1dx = [];
+BurstMeta.Plots.MultiScatter.h1dy = [];
+%%% additionally, delete all left-over stair plots (those are multi-species
+%%% plots, which sometimes are not deleted by the above code...)
+delete(h.axes_1d_x.Children(1:end-11));
+delete(h.axes_1d_y.Children(1:end-11));
+
 legend(h.axes_1d_x,'off');
 %%% only hide fit plots if selection of parameter or species has changed,
 %%% or if we switched on KDE
@@ -6082,6 +6180,10 @@ if size(CutState,2) > 0
             %%% Set x-axis limits according to cut boundaries of selected parameter
             xlimits = [CutState{strcmp(NameArray{x},CutParameters),2},...
                 CutState{strcmp(NameArray{x},CutParameters),3}];
+            if UserValues.BurstBrowser.Display.logX
+                xlimits(xlimits <= 0) = 1e-2;
+                xlimits = log10(xlimits);
+            end
         else
             %%% set to min max
             xlimits = [min(datatoplot(isfinite(datatoplot(:,x)),x)), max(datatoplot(isfinite(datatoplot(:,x)),x))];
@@ -6096,6 +6198,10 @@ if size(CutState,2) > 0
             %%% Set x-axis limits according to cut boundaries of selected parameter
             ylimits = [CutState{strcmp(NameArray{y},CutParameters),2},...
                 CutState{strcmp(NameArray{y},CutParameters),3}];
+            if UserValues.BurstBrowser.Display.logY
+                ylimits(ylimits <= 0) = 1e-2;
+                ylimits = log10(ylimits);
+            end
         else
             %%% set to min max
             ylimits = [min(datatoplot(isfinite(datatoplot(:,y)),y)), max(datatoplot(isfinite(datatoplot(:,y)),y))];
@@ -6118,12 +6224,34 @@ if size(CutState,2) > 0
     if sum(ylimits == [0,0]) == 2
         ylimits = [0 1];
     end
+    if UserValues.BurstBrowser.Display.Restrict_EandS_Range
+        %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+        %%% efficiency parameter if the cut limits fall within that range
+        if ~isempty(strfind(NameArray{x},'Stoichiometry')) || ~isempty(strfind(NameArray{x},'Efficiency'))
+            xlimits = [min(xlimits(1),-0.1) max(xlimits(2),1.1)];
+            if UserValues.BurstBrowser.Display.logX
+                if xlimits(1) <= 0
+                    xlimits(1) = 1E-2;
+                end
+                xlimits = log10(xlimits);
+            end
+        end
+        if ~isempty(strfind(NameArray{y},'Stoichiometry')) || ~isempty(strfind(NameArray{y},'Efficiency'))
+            ylimits = [min(ylimits(1),-0.1) max(ylimits(2),1.1)];
+            if UserValues.BurstBrowser.Display.logY
+                if ylimits(1) <= 0
+                    ylimits(1) = 1E-2;
+                end
+                ylimits = log10(ylimits);
+            end
+        end
+    end
 end
 
 %%% check what plot type to use
-colorbyparam = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.Value && ~h.SmoothKDE.Value;
-if ~colorbyparam
-    if ~h.MultiselectOnCheckbox.Value
+advanced = any(cell2mat(h.CutTable.Data(:,6))) && ~h.MultiselectOnCheckbox.UserData && ~h.SmoothKDE.Value;
+if ~advanced
+    if ~h.MultiselectOnCheckbox.UserData
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     else
         %%% call MultiPlot for superposition of all histograms
@@ -6176,7 +6304,7 @@ if ~colorbyparam
         h.NumberOfBinsXEdit.String = num2str(nbins);
         h.NumberOfBinsYEdit.String = num2str(nbins);
         %%% get data
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             datapoints = [datatoplot(:,x),datatoplot(:,y)];
         end
         %%% make hexplot
@@ -6184,15 +6312,16 @@ if ~colorbyparam
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
         set(BurstMeta.HexPlot.MainPlot_hex,'UIContextMenu',h.ExportGraph_Menu);
     end
-    if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists 
-         %%% prepare 1d hists
+    if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists
+        normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button);
+        %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
         binsy = linspace(ylimits(1),ylimits(2),nbinsY+1);
         n_per_species_cum = cumsum([1,(n_per_species-1)]);
         for i = 1:numel(n_per_species_cum)-1
             hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
             hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
-            if obj ~= h.Fit_Gaussian_Button
+            if normalize %obj ~= h.Fit_Gaussian_Button
                 hx{i} = hx{i}./sum(hx{i});
                 hy{i} = hy{i}./sum(hy{i});
             end
@@ -6227,7 +6356,7 @@ if ~colorbyparam
         legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
-        if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+        if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -6438,8 +6567,23 @@ if obj == h.Fit_Gaussian_Button
     h.Progress_Text.String = 'Fitting Gaussian Mixture...';drawnow;
     nG = h.Fit_NGaussian_Popupmenu.Value;
     %%% update datatoplot if multiselection is enabled
-    if h.MultiselectOnCheckbox.Value
-        datatoplot = get_multiselection_data(h);
+    if h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1
+        data_x = get_multiselection_data(h,x_name);
+        data_y = get_multiselection_data(h,y_name);
+        %%% logarithmic plot option
+        if UserValues.BurstBrowser.Display.logX
+            val = data_x > 0; % avoid complex numbers
+            data_x(val) = log10(data_x(val));
+            data_x(~val) = NaN;
+        end
+        if UserValues.BurstBrowser.Display.logY
+            val = data_y > 0; % avoid complex numbers
+            data_y(val) = log10(data_y(val));
+            data_y(~val) = NaN;
+        end
+    else
+        data_x = datatoplot(:,x);
+        data_y = datatoplot(:,y);
     end
     %%% we need to adjust the number of xbins/ybins of KDE has been used
     if UserValues.BurstBrowser.Display.KDE
@@ -6452,8 +6596,8 @@ if obj == h.Fit_Gaussian_Button
             if x == y %%% same data selected, 1D fitting
                 BurstMeta.Fitting.FitType = '1D';
                 
-                GModel = fitgmdist(datatoplot(:,x),nG,'Options',statset('MaxIter',1000));
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
+                GModel = fitgmdist(data_x,nG,'Options',statset('MaxIter',1000));
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
                 p = pdf(GModel,xbins_fit');
                 Res = zeros(1,3*nG);
                 Res(1:3:end) = GModel.ComponentProportion;
@@ -6479,23 +6623,23 @@ if obj == h.Fit_Gaussian_Button
                 for i = 1:nG
                     h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),'-',sqrt(GModel.Sigma(1,1,i)),'-','-'};
                 end
-                if nG < 4
-                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
+                if nG < 5
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(5-nG,6);
                 end
             else
                 BurstMeta.Fitting.FitType = '2D';
                 
-                valid = isfinite(datatoplot(:,x)) & isfinite(datatoplot(:,y));
+                valid = isfinite(data_x) & isfinite(data_y);
                 if h.Fit_Gaussian_Pick.Value
-                    cov = [std(datatoplot(:,x)),0; 0,std(datatoplot(:,y))];
+                    cov = [std(data_x),0; 0,std(data_y)];
                     [x_start,y_start] = ginput(nG);
                     start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start',start,'Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([data_x(valid),data_y(valid)],nG,'Start',start,'Options',statset('MaxIter',1000));
                 else
                     %[~,ix_max] = max(HH(:));
                     %[y_start,x_start] = ind2sub([nbinsX,nbinsY],ix_max);
                     %start = struct('mu',repmat([xbins(x_start),ybins(y_start)],[nG,1]),'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
-                    GModel = fitgmdist([datatoplot(valid,x),datatoplot(valid,y)],nG,'Start','plus','Options',statset('MaxIter',1000));
+                    GModel = fitgmdist([data_x(valid),data_y(valid)],nG,'Start','plus','Options',statset('MaxIter',1000));
                 end
                 Res = zeros(1,6*nG);
                 Res(1:6:end) = GModel.ComponentProportion;
@@ -6518,8 +6662,8 @@ if obj == h.Fit_Gaussian_Button
                 end
                 % prepare fit data
                 if h.Hist_log10.Value; HH = 10.^(HH);end;
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
-                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
+                ybins_fit = linspace(ybins(1)-min(diff(ybins)),ybins(end)+min(diff(ybins)),1000);
                 [X,Y] = meshgrid(xbins_fit,ybins_fit);
                 p = reshape(pdf(GModel,[X(:) Y(:)]),[1000,1000]);
                 pX = sum(p,1);pX = pX./sum(pX).*sum(sum(HH))*1000/nbinsX;
@@ -6566,23 +6710,23 @@ if obj == h.Fit_Gaussian_Button
                 for i = 1:nG
                     h.Fit_Gaussian_Text.Data(3+i,:) = {GModel.ComponentProportion(i),GModel.mu(i,1),GModel.mu(i,2),sqrt(GModel.Sigma(1,1,i)),sqrt(GModel.Sigma(2,2,i)),GModel.Sigma(1,2,i)};
                 end
-                if nG < 4
-                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(4-nG,6);
+                if nG < 5
+                    h.Fit_Gaussian_Text.Data(3+nG+1:end,:) = cell(5-nG,6);
                 end
             end
         case 'LSQ'
             if x == y %%% same data selected, 1D fitting
                 BurstMeta.Fitting.FitType = '1D';
                 
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
-                x_start = mean(datatoplot(isfinite(datatoplot(:,x)),x));
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
+                x_start = mean(data_x(isfinite(data_x)));
                 %%% for non fixed values, take estimate
                 %%% set fixed values to x0
                 x0 = zeros(1,12);
                 lb = zeros(1,12);
                 ub = inf(1,12);
                 fixed = false(1,12);
-                for i = 1:4
+                for i = 1:5
                     x0((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[1,5,13]));
                     lb((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[2,6,14]));
                     ub((1+(i-1)*3):(3+(i-1)*3)) = cell2mat(h.Fit_Gaussian_Text.Data(i,[3,7,15]));
@@ -6645,7 +6789,7 @@ if obj == h.Fit_Gaussian_Button
             else
                 BurstMeta.Fitting.FitType = '2D';
                 
-                cov = [std(datatoplot(:,x)).^2,std(datatoplot(:,y)).^2,0];
+                cov = [std(data_x).^2,std(data_y).^2,0];
                 if h.Fit_Gaussian_Pick.Value
                     [x_start,y_start] = ginput(nG);
                     x0_input = zeros(1,18);
@@ -6661,11 +6805,11 @@ if obj == h.Fit_Gaussian_Button
                 lb = zeros(1,24);
                 ub = inf(1,24);
                 fixed = false(1,24);
-                lowerx = min(datatoplot(:,x));
-                lowery = min(datatoplot(:,y));
-                upperx = max(datatoplot(:,x));
-                uppery = max(datatoplot(:,y));
-                for i = 1:4
+                lowerx = min(data_x);
+                lowery = min(data_y);
+                upperx = max(data_x);
+                uppery = max(data_y);
+                for i = 1:5
                     x0((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,1:4:end));
                     lb((1+(i-1)*6):(6+(i-1)*6)) = cell2mat(h.Fit_Gaussian_Text.Data(i,2:4:end));
                     lb(2+(i-1)*6) = max([lowerx lb(2+(i-1)*6)]);
@@ -6740,8 +6884,8 @@ if obj == h.Fit_Gaussian_Button
                 end
 
                 % prepare fit data
-                xbins_fit = linspace(xbins(1),xbins(end),1000);
-                ybins_fit = linspace(ybins(1),ybins(end),1000);
+                xbins_fit = linspace(xbins(1)-min(diff(xbins)),xbins(end)+min(diff(xbins)),1000);
+                ybins_fit = linspace(ybins(1)-min(diff(ybins)),ybins(end)+min(diff(ybins)),1000);
                 p = MultiGaussFit(x,{xbins_fit,ybins_fit,sum(sum(HH)),fixed,nG,0});
                 pX = sum(p,1);
                 pY = sum(p,2);
@@ -6787,7 +6931,7 @@ if obj == h.Fit_Gaussian_Button
                     end
                 end
                 %%% make variance to sigma
-                for i =1:4
+                for i =1:5
                     Res([4,5]+(i-1)*6) = sqrt(Res([4,5]+(i-1)*6));
                 end
                 %%% output result in table
@@ -6798,14 +6942,14 @@ if obj == h.Fit_Gaussian_Button
                 h.Fit_Gaussian_Text.Data = Data;
             end
     end
-    if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.Value
+    if (paramx ~= paramy) && ~h.MultiselectOnCheckbox.UserData
         BurstMeta.Fitting.BurstBins = NaN(size(BurstData{file}.DataArray,1),2);
         BurstMeta.Fitting.BurstBins(BurstData{file}.Selected,:) = bin;
         BurstMeta.Fitting.BurstCount = H;
         BurstMeta.Fitting.ParamX = BurstData{file}.NameArray{paramx};
         BurstMeta.Fitting.ParamY = BurstData{file}.NameArray{paramy};
     end
-    if colorbyparam
+    if advanced
         h.colorbar.Ticks = [h.colorbar.Limits(1) h.colorbar.Limits(1)+0.5*(h.colorbar.Limits(2)-h.colorbar.Limits(1)) h.colorbar.Limits(2)];
     end
     h.Progress_Text.String = 'Done';
@@ -6818,6 +6962,8 @@ else
     BurstMeta.Plots.Main_histY.EdgeColor = [0,0,0];
 end
 
+drawnow;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Defines new cuts from fitted Gaussians  %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6825,7 +6971,7 @@ function SpeciesFromGaussianFit(obj,~)
 global BurstData BurstMeta
 file = BurstMeta.SelectedFile;
 h = guidata(obj);
-if h.MultiselectOnCheckbox.Value
+if h.MultiselectOnCheckbox.UserData
     disp('Disable multiplot mode and fit a single file!');
     return;
 end
@@ -7061,7 +7207,11 @@ if nargin < 3
     end 
 end
 global BurstData UserValues BurstMeta
-
+%%% special case when lifetime_ind tab is selected
+if (nargout == 0) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
+    PlotLifetimeInd(obj,[],h);
+    return;
+end
 %%% get selection of species list
 [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
 
@@ -7211,15 +7361,24 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
+if UserValues.BurstBrowser.Display.Restrict_EandS_Range
+    %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
+    %%% efficiency parameter if the cut limits fall within that range
+    if ~isempty(strfind(paramX,'Stoichiometry')) || ~isempty(strfind(paramX,'Efficiency'))
+        x_boundaries = [min(x_boundaries(1),-0.1) max(x_boundaries(2),1.1)];
+    end
+    if ~isempty(strfind(paramY,'Stoichiometry')) || ~isempty(strfind(paramY,'Efficiency'))
+        y_boundaries = [min(y_boundaries(1),-0.1) max(y_boundaries(2),1.1)];
+    end
+end
 
-    
 H = cell(num_species,1);
 for i = 1:num_species
     [H{i}, xbins, ybins] = calc2dhist(datatoplot{i}(:,x{i}), datatoplot{i}(:,y{i}),[nbinsX,nbinsY], x_boundaries, y_boundaries);
 end
 
-
-if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
+normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button);
+if normalize
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
         H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
@@ -7227,14 +7386,18 @@ if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~s
 end
 
 if nargout > 0 %%% we requested the histogram, do not plot!
-    Hcum = H{1};
-    for k = 2:numel(H)
-        Hcum = Hcum + H{k};
-    end
-    if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
-        HistOut = Hcum./max(Hcum(:));
+    if (gcbo == h.MultiPlotButton) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
+        HistOut = H; %%% just return the cell array
     else
-        HistOut = Hcum;
+        Hcum = H{1};
+        for k = 2:numel(H)
+            Hcum = Hcum + H{k};
+        end
+        if UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species > 1 && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button)
+            HistOut = Hcum./max(Hcum(:));
+        else
+            HistOut = Hcum;
+        end
     end
     
     datapoints = [];
@@ -7251,54 +7414,9 @@ delete(BurstMeta.HexPlot.MainPlot_hex);
 %%% prepare image plot
 white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
 axes(h.axes_general);
-color = zeros(3,1,3);
-color(1,1,:) = [0    0.4471    0.7412];
-color(2,1,:) = [0.8510    0.3255    0.0980];
-color(3,1,:) = [0.4667    0.6745    0.1882];
-if num_species == 2
-    H{1}(isnan(H{1})) = 0;
-    H{2}(isnan(H{2})) = 0;
-    if white == 0
-        zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
-        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
-    elseif white == 1
-        %%% sub
-        zz = ones(size(H{1},1),size(H{1},2),3);
-        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
-    end
-elseif num_species == 3
-    H{1}(isnan(H{1})) = 0;
-    H{2}(isnan(H{2})) = 0;
-    H{3}(isnan(H{3})) = 0;
-    if white == 0
-        zz = zeros(size(H{1},1),size(H{1},2),3);
-        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
-        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
-        zz(:,:,:) = zz(:,:,:) + repmat(H{3}/max(max(H{3})),1,1,3).*repmat(color(3,1,:),size(H{3},1),size(H{3},2),1); %%% color3
-    elseif white == 1
-        zz = ones(size(H{1},1),size(H{1},2),3);
-        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
-        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
-        zz(:,:,1) = zz(:,:,1) - H{3}./max(max(H{3})); %%% green
-        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% green
-    end
-else
-    return;
-end
-if white == 0
-    beta = UserValues.BurstBrowser.Display.BrightenColorMap;
-    if beta > 0
-        zz = zz.^(1-beta);
-    elseif beta <= 0
-        zz = zz.^(1/(1+beta));
-    end
-end
+
+%%% mix histograms
+[zz,color] = overlay_colored(H);
 
 %%% plot
 set(BurstMeta.Plots.Main_Plot,'Visible','off');
@@ -7351,7 +7469,10 @@ end
 %plot first histogram
 hx = sum(H{1},1);
 %normalize
-hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
+if normalize
+    hx = hx./sum(hx);
+end
+hx = hx'; hx = [hx; hx(end)];
 xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
 BurstMeta.Plots.Multi.Multi_histX(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histX(1).XData = xbins;
@@ -7361,7 +7482,10 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'on';
     hx = sum(H{i},1);
     %normalize
-    hx = hx./sum(hx); hx = hx'; hx = [hx; hx(end)];
+    if normalize
+        hx = hx./sum(hx);
+    end
+    hx = hx'; hx = [hx; hx(end)];
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
     BurstMeta.Plots.Multi.Multi_histX(i).YData = hx;
 end
@@ -7372,7 +7496,10 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 %plot first histogram
 hy = sum(H{1},2);
 %normalize
-hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
+if normalize
+    hy = hy./sum(hy);
+end
+hy = hy'; hy = [hy, hy(end)];
 ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
 BurstMeta.Plots.Multi.Multi_histY(1).Visible = 'on';
 BurstMeta.Plots.Multi.Multi_histY(1).XData = ybins;
@@ -7382,7 +7509,10 @@ for i = 2:num_species
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'on';
     hy = sum(H{i},2);
     %normalize
-    hy = hy./sum(hy); hy = hy'; hy = [hy, hy(end)];
+    if normalize
+        hy = hy./sum(hy);
+    end
+    hy = hy'; hy = [hy, hy(end)];
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
     BurstMeta.Plots.Multi.Multi_histY(i).YData = hy;
 end
@@ -7403,11 +7533,66 @@ for i = 1:num_species
     end
     str{i} = strrep(name,'_',' ');  
 end
-
+legend(BurstMeta.Plots.Multi.Multi_histX(1:num_species),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 h.colorbar.Visible = 'off';
 h.axes_ZScale.Visible = 'off';
 set(h.axes_ZScale.Children,'Visible','off');
+
+function [zz,color] = overlay_colored(H)
+global UserValues
+%%% H is a Nx1 cell array of the individual histograms
+%%% white specifies the mode
+white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+num_species = numel(H);
+color = zeros(3,1,3);
+color(1,1,:) = [0    0.4471    0.7412];
+color(2,1,:) = [0.8510    0.3255    0.0980];
+color(3,1,:) = [0.4667    0.6745    0.1882];
+if num_species == 2
+    H{1}(isnan(H{1})) = 0;
+    H{2}(isnan(H{2})) = 0;
+    if white == 0
+        zz = zeros(size(H{1},1),size(H{1},2),3);
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
+    elseif white == 1
+        %%% sub
+        zz = ones(size(H{1},1),size(H{1},2),3);
+        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
+    end
+elseif num_species == 3
+    H{1}(isnan(H{1})) = 0;
+    H{2}(isnan(H{2})) = 0;
+    H{3}(isnan(H{3})) = 0;
+    if white == 0
+        zz = zeros(size(H{1},1),size(H{1},2),3);
+        zz(:,:,:) = zz(:,:,:) + repmat(H{1}/max(max(H{1})),1,1,3).*repmat(color(1,1,:),size(H{1},1),size(H{1},2),1); %%% color1
+        zz(:,:,:) = zz(:,:,:) + repmat(H{2}/max(max(H{2})),1,1,3).*repmat(color(2,1,:),size(H{2},1),size(H{2},2),1); %%% color2
+        zz(:,:,:) = zz(:,:,:) + repmat(H{3}/max(max(H{3})),1,1,3).*repmat(color(3,1,:),size(H{3},1),size(H{3},2),1); %%% color3
+    elseif white == 1
+        zz = ones(size(H{1},1),size(H{1},2),3);
+        zz(:,:,1) = zz(:,:,1) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{1}./max(max(H{1})); %%% blue
+        zz(:,:,2) = zz(:,:,2) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,3) = zz(:,:,3) - H{2}./max(max(H{2})); %%% red
+        zz(:,:,1) = zz(:,:,1) - H{3}./max(max(H{3})); %%% green
+        zz(:,:,3) = zz(:,:,3) - H{3}./max(max(H{3})); %%% green
+    end
+else
+    return;
+end
+if white == 0
+    beta = UserValues.BurstBrowser.Display.BrightenColorMap;
+    if beta > 0
+        zz = zz.^(1-beta);
+    elseif beta <= 0
+        zz = zz.^(1/(1+beta));
+    end
+end
 
 function [file_n,species_n,subspecies_n,sel] = get_multiselection(h)
 %%% get the selection of species list
@@ -7675,6 +7860,9 @@ if ~isempty(eventdata.Modifier)
                 case 't'
                     %%% open notepad
                     Open_Notepad([],[])
+                case 'c'
+                    %%% Copy currently selected x-parameter to clipboard
+                    Param_to_clip([],[]);
             end
     end
 else
@@ -7809,7 +7997,7 @@ switch obj
         switch obj
             case h.ApplyCutDatabase
                 %%% apply to selected species
-                if ~h.MultiselectOnCheckbox.Value
+                if ~h.MultiselectOnCheckbox.UserData
                     file_n = BurstMeta.SelectedFile;
                     species_n = BurstData{file_n}.SelectedSpecies(1);
                     subspecies_n = BurstData{file_n}.SelectedSpecies(2);
@@ -7878,7 +8066,8 @@ switch obj
         UpdateCuts();
         
         %%% Update Plot
-        UpdatePlot([],[],h);        
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
     case h.RemoveCutDatabase_Menu
         %%% check if cuts are available
         if isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{BAMethod}))
@@ -8196,6 +8385,14 @@ if any(BurstData{file}.BAMethod == [1,2,5]) % 2-color MFD
     end
     El(El<0 | El>1) = NaN;
     BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Distance (from lifetime) [A]')) = ((1./El-1).*R0^6).^(1/6);
+    
+    %FRET from sensitized acceptor emission
+    if ~sum(strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)'))
+        BurstData{file}.NameArray{end+1} = 'FRET efficiency (sens. Acc. Em.)';
+        BurstData{file}.DataArray(:,end+1) = 0;
+    end
+    E_A = BurstData{file}.Corrections.Beta_GR*BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'))./BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Number of Photons (AA)'));
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = E_A;
 elseif any(BurstData{file}.BAMethod == [3,4]) % 3-color MFD
      %No. of Photons (GX) and Countrate (GX)
     if ~sum(strcmp(BurstData{file}.NameArray,'Number of Photons (GX)'))
@@ -8336,7 +8533,7 @@ end
 %% Crosstalk and direct excitation
 if obj == h.DetermineCorrectionsButton
     %%% read raw data
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         data_for_corrections = BurstData{file}.DataArray;
     else
         Files = get_multiselection(h);
@@ -8376,7 +8573,7 @@ if obj == h.DetermineCorrectionsButton
         UserValues.BurstBrowser.Corrections.CrossTalk_GR = ct;
     end
     
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.CrossTalk_GR = UserValues.BurstBrowser.Corrections.CrossTalk_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8412,7 +8609,7 @@ if obj == h.DetermineCorrectionsButton
     if ~isnan(de) && (de > 0)
         UserValues.BurstBrowser.Corrections.DirectExcitation_GR = de;
     end
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.DirectExcitation_GR = UserValues.BurstBrowser.Corrections.DirectExcitation_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8424,7 +8621,7 @@ end
 if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     %% plot gamma plot for two populations (or lifetime versus E)
     % use the user selected species
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
         %%% Calculate "raw" E and S with gamma = 1, but still apply direct
         %%% excitation,crosstalk, and background corrections!
@@ -8457,7 +8654,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     %     case h.DetermineGammaManuallyButton
     %         [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
     % end
-    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[0 1], [min(S_raw) max(S_raw)]);
+    [H,xbins,ybins] = calc2dhist(E_raw,S_raw,[51 51],[-0.1 1], [min(S_raw) max(S_raw)]);
     
     BurstMeta.Plots.gamma_fit(1).XData= xbins;
     BurstMeta.Plots.gamma_fit(1).YData= ybins;
@@ -8482,10 +8679,10 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             fitGamma = fit(E_raw,S_raw,funS,'StartPoint',[1,1],'Robust','LAR');
             BurstMeta.Plots.Fits.gamma.Visible = 'on';
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'off';
-            BurstMeta.Plots.Fits.gamma.XData = linspace(0,1,1000);
-            BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(0,1,1000));
+            BurstMeta.Plots.Fits.gamma.XData = linspace(-0.1,1,1100);
+            BurstMeta.Plots.Fits.gamma.YData = fitGamma(linspace(-0.1,1,1100));
             axis(h.Corrections.TwoCMFD.axes_gamma,'tight');
-            xlim(h.Corrections.TwoCMFD.axes_gamma,[0,1]);
+            xlim(h.Corrections.TwoCMFD.axes_gamma,[-0.1,1]);
             %ylim(h.Corrections.TwoCMFD.axes_gamma,[1,quantile(1./S_raw,0.99)]);
 
             %%% Determine Gamma and Beta
@@ -8516,7 +8713,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
     UserValues.BurstBrowser.Corrections.Gamma_GR = gamma;
     UserValues.BurstBrowser.Corrections.Beta_GR = beta;
             
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
         BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
     else %%% Update for all files contributing
@@ -8533,7 +8730,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
 end
 if obj == h.DetermineGammaLifetimeTwoColorButton
     % use the user selected species
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         Valid = UpdateCuts();
 
         indTauGG = (strcmp(BurstData{file}.NameArray,'Lifetime D [ns]'));
@@ -8569,7 +8766,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(tauGG,E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.05 1]);
+    [H,xbins,ybins] = calc2dhist(tauGG,E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.1 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -8582,10 +8779,10 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
-    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
+    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
     else %%% Update for all files contributing
         Files = get_multiselection(h);
@@ -8635,7 +8832,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(ct) && (ct > 0)
             UserValues.BurstBrowser.Corrections.CrossTalk_BG = ct;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.CrossTalk_BG = UserValues.BurstBrowser.Corrections.CrossTalk_BG;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8662,7 +8859,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(ct) && (ct > 0)
             UserValues.BurstBrowser.Corrections.CrossTalk_BR = ct;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.CrossTalk_BR = UserValues.BurstBrowser.Corrections.CrossTalk_BR;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8694,7 +8891,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(de) && (de > 0)
             UserValues.BurstBrowser.Corrections.DirectExcitation_BG = de;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.DirectExcitation_BG = UserValues.BurstBrowser.Corrections.DirectExcitation_BG;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8726,7 +8923,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         if ~isnan(de) && (de > 0)
             UserValues.BurstBrowser.Corrections.DirectExcitation_BR = de;
         end
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.DirectExcitation_BR = UserValues.BurstBrowser.Corrections.DirectExcitation_BR;
         else %%% Update for all files contributing
             Files = get_multiselection(h);
@@ -8880,7 +9077,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     if obj == h.DetermineGammaLifetimeThreeColorButton
         % use the user selected species
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             indTauBB = (strcmp(BurstData{file}.NameArray,'Lifetime BB [ns]'));
             data_for_corrections = BurstData{file}.DataArray;
             %%% use selected species
@@ -8933,7 +9130,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(tauBB,E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
+        [H,xbins,ybins] = calc2dhist(tauBB,E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -8946,12 +9143,12 @@ if any(BurstData{file}.BAMethod == [3,4])
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETline;%statFRETfun(tau);
-        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
+        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
         
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
             BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
         else %%% Update for all files contributing
@@ -9109,7 +9306,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     gamma_fit = coeffvalues(gamma_fit);
     E =  NGR./(gamma_fit.*NGG+NGR);
     %%% plot E versus tau with static FRET line
-    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.05 1]);
+    [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauGG),E,[51 51],[0 min([max(tauGG) BurstData{file}.Corrections.DonorLifetime+1.5])],[-0.1 1]);
     BurstMeta.Plots.gamma_lifetime(1).XData= xbins;
     BurstMeta.Plots.gamma_lifetime(1).YData= ybins;
     BurstMeta.Plots.gamma_lifetime(1).CData= H;
@@ -9122,7 +9319,7 @@ if obj == h.DetermineGammaLifetimeTwoColorButton
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.Visible = 'on';
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.XData = tau;
     BurstMeta.Plots.Fits.staticFRET_gamma_lifetime.YData = FRETline;
-    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.05,1]);
+    ylim(h.Corrections.TwoCMFD.axes_gamma_lifetime,[-0.1,1]);
     %%% Update UserValues
     UserValues.BurstBrowser.Corrections.Gamma_GR =gamma_fit;
     BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
@@ -9178,7 +9375,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         gamma_fit = fmincon(dev,1,[],[],[],[],0,10);
         E1A =  (gamma_gr.*NBG+NBR)./(gamma_fit.*NBB + gamma_gr.*NBG + NBR);
         %%% plot E versus tau with static FRET line
-        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.05 1]);
+        [H,xbins,ybins] = calc2dhist(data_for_corrections(S_threshold,indTauBB),E1A,[51 51],[0 min([max(tauBB) BurstData{file}.Corrections.DonorLifetimeBlue+1.5])],[-0.1 1]);
         BurstMeta.Plots.gamma_threecolor_lifetime(1).XData= xbins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).YData= ybins;
         BurstMeta.Plots.gamma_threecolor_lifetime(1).CData= H;
@@ -9191,7 +9388,7 @@ if obj == h.DetermineGammaLifetimeThreeColorButton
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.Visible = 'on';
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.XData = tau;
         BurstMeta.Plots.Fits.staticFRET_gamma_threecolor_lifetime.YData = statFRETline;%statFRETfun(tau);
-        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.05,1]);
+        ylim(h.Corrections.ThreeCMFD.axes_gamma_threecolor_lifetime,[-0.1,1]);
         %%% Update UserValues
         UserValues.BurstBrowser.Corrections.Gamma_BR =gamma_fit;
         UserValues.BurstBrowser.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BR./UserValues.BurstBrowser.Corrections.Gamma_GR;
@@ -9234,7 +9431,7 @@ if obj == h.ApplyCorrectionsAll_Menu
     end
     Corrections = BurstData{BurstMeta.SelectedFile}.Corrections;
 
-    %if ~h.MultiselectOnCheckbox.Value
+    %if ~h.MultiselectOnCheckbox.UserData
         files = 1:numel(BurstData);
     %else %%% only loop over selected foles
     %    files = get_multiselection(h);
@@ -9262,10 +9459,10 @@ if obj == h.ApplyCorrectionsAll_Menu
     %%% Apply with display update
     ApplyCorrections([],[],h);
 end
-if h.MultiselectOnCheckbox.Value
+if h.MultiselectOnCheckbox.UserData
     %%% disable callback and disable checkbox
     h.MultiselectOnCheckbox.Callback = [];
-    h.MultiselectOnCheckbox.Value = 0;
+    h.MultiselectOnCheckbox.UserData = 0;
     
     %%% apply corrections to all selected files
     sel_file = BurstMeta.SelectedFile;
@@ -9282,7 +9479,7 @@ if h.MultiselectOnCheckbox.Value
     
     %%% reenable callback and checkbox
     h.MultiselectOnCheckbox.Callback = @UpdateOptions;
-    h.MultiselectOnCheckbox.Value = 1;
+    h.MultiselectOnCheckbox.UserData = 1;
 end
 file = BurstMeta.SelectedFile;
 %% 2colorMFD
@@ -9351,7 +9548,9 @@ end
 BurstData{file}.DataArray(:,indE) = E;
 BurstData{file}.DataArray(:,indS) = S;
 %BurstData{file}.DataArray(:,indEPR) = EPR;
-
+if any(BurstData{file}.BAMethod == [1,2,5])
+    BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET efficiency (sens. Acc. Em.)')) = beta_gr*NGR./NRR;
+end
 if BurstData{file}.BAMethod ~= 5 % ensure that polarized detection was used
     %% Anisotropy Corrections
     %%% Read out indices of parameters
@@ -10856,7 +11055,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
     end
 else %%% Update UserValues and BurstData with new values
     LSUserValues(0);
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
        files = BurstMeta.SelectedFile;
     else %%% loop over selected files
        files = get_multiselection(h);
@@ -11002,9 +11201,8 @@ else %%% Update UserValues and BurstData with new values
                     switch e.Indices(1)
                         case 1
                             BurstData{file}.Corrections.Gamma_GR = UserValues.BurstBrowser.Corrections.Gamma_GR;
-                        case 2
+                        case {2,3} %%% Update both gamma_BG and gamma_BR if either one is changed
                             BurstData{file}.Corrections.Gamma_BG = UserValues.BurstBrowser.Corrections.Gamma_BG;
-                        case 3
                             BurstData{file}.Corrections.Gamma_BR = UserValues.BurstBrowser.Corrections.Gamma_BR;
                         case 4
                             BurstData{file}.Corrections.Beta_GR = UserValues.BurstBrowser.Corrections.Beta_GR;
@@ -11210,7 +11408,7 @@ h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 %%% query photon threshold
-threshold = inputdlg({'Minimum number of photons'},'Set threshold',1,{'50'})
+threshold = inputdlg({'Minimum number of photons'},'Set threshold',1,{'50'});
 if isempty(threshold)
     return;
 else
@@ -11515,7 +11713,7 @@ end
 file = BurstMeta.SelectedFile;
 NameArray = BurstData{file}.NameArray;
 %%% Use the current cut Data (of the selected species) for plots
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     datatoplot = BurstData{file}.DataCut;
 else
     %%% get average dye only lifetimes from selected files
@@ -11552,13 +11750,13 @@ end
 nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
 nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 %% Plot E vs. tauGG in first plot
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.1 1]);
     datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.05 1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1]});
 end
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
@@ -11577,7 +11775,7 @@ Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hco
 BurstMeta.Plots.EvsTauGG(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-    if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+    if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
         for i = 1:numel(n_per_species)
             color = [color; i*ones(n_per_species(i),1)];
@@ -11601,22 +11799,22 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     delete(BurstMeta.HexPlot.EvsTauGG);
     %%% make hexplot
     axes(h.axes_EvsTauGG);
-    BurstMeta.HexPlot.EvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+    BurstMeta.HexPlot.EvsTauGG = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1],'res',nbinsX);
 end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauGG,[-0.05 1]);
+ylim(h.axes_EvsTauGG,[-0.1 1]);
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
 end
 %% Plot E vs. tauRR in second plot
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
-    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+    [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idxE),[nbinsX nbinsY], [0 maxX], [-0.1 1]);
     datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+1.5;
-    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.05 1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1]});
 end
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
@@ -11635,7 +11833,7 @@ Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hco
 BurstMeta.Plots.EvsTauRR(2).ZData = Hcontour;
 BurstMeta.Plots.EvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-    if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+    if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
         color = [];
         for i = 1:numel(n_per_species)
             color = [color; i*ones(n_per_species(i),1)];
@@ -11658,13 +11856,13 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     delete(BurstMeta.HexPlot.EvsTauRR);
     %%% make hexplot
     axes(h.axes_EvsTauRR);
-    BurstMeta.HexPlot.EvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+    BurstMeta.HexPlot.EvsTauRR = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1],'res',nbinsX);
 end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
-ylim(h.axes_EvsTauRR,[-0.05 1]);
+ylim(h.axes_EvsTauRR,[-0.1 1]);
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauGG)) BurstData{file}.Corrections.DonorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)];
@@ -11689,7 +11887,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rGGvsTauGG(2).ZData = Hcontour;
     BurstMeta.Plots.rGGvsTauGG(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11717,7 +11915,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     %% Plot rRR vs. tauRR in fourth plot
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)];
@@ -11742,7 +11940,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rRRvsTauRR(2).ZData = Hcontour;
     BurstMeta.Plots.rRRvsTauRR(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11776,14 +11974,14 @@ if any(BurstData{file}.BAMethod == [3,4])
     idx_rBB = strcmp('Anisotropy BB',NameArray);
     idxE1A = strcmp('FRET Efficiency B->G+R',NameArray);
     %% Plot E1A vs. tauBB
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         valid = (datatoplot(:,idx_tauBB) > 0.01);
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
-        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.05 1]);
+        [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A),[nbinsX nbinsY], [0 maxX], [-0.1 1]);
         datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idxE1A)];
     else
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
-        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.05 1]});
+        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.1 1]});
     end
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
@@ -11802,7 +12000,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.E_BtoGRvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.E_BtoGRvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11825,12 +12023,12 @@ if any(BurstData{file}.BAMethod == [3,4])
         delete(BurstMeta.HexPlot.E_BtoGRvsTauBB);
         %%% make hexplot
         axes(h.axes_E_BtoGRvsTauBB);
-        BurstMeta.HexPlot.E_BtoGRvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.05 1],'res',nbinsX);
+        BurstMeta.HexPlot.E_BtoGRvsTauBB = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',[0 maxX],'ylim',[-0.1 1],'res',nbinsX);
     end
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
-    ylim(h.axes_E_BtoGRvsTauBB,[-0.05 1]);
+    ylim(h.axes_E_BtoGRvsTauBB,[-0.1 1]);
     %% Plot rBB vs tauBB
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
         [H, xbins, ybins] = calc2dhist(datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB),[nbinsX nbinsY], [0 maxX], [-0.1 0.5]);
         datapoints = [datatoplot(valid,idx_tauBB), datatoplot(valid,idx_rBB)];
@@ -11855,7 +12053,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.rBBvsTauBB(2).ZData = Hcontour;
     BurstMeta.Plots.rBBvsTauBB(2).LevelList = linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
-        if h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1
+        if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1
             color = [];
             for i = 1:numel(n_per_species)
                 color = [color; i*ones(n_per_species(i),1)];
@@ -11951,7 +12149,7 @@ switch BurstData{file}.BAMethod
         end
 end
 BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
-BurstMeta.Plots.LifetimeInd_histX.Visible = 'on';
+BurstMeta.Plots.LifetimeInd_histY.Visible = 'on';
 for i=1:numel(BurstMeta.Plots.MultiScatter.h1dx_lifetime)
     try;delete(BurstMeta.Plots.MultiScatter.h1dx_lifetime(i));end;
 end
@@ -11994,28 +12192,89 @@ h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
 h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];
 h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];
 
-[H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h);
-if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% multiple species selected, color automatically
     [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h,paramX,paramY,{origin.XLim,origin.YLim});
-    %%% prepare 1d hists
-    binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
-    binsy = linspace(ylimits(1),ylimits(2),numel(ybins)+1);
-    n_per_species = cumsum([1,(n_per_species-1)]);
-    for i = 1:numel(n_per_species)-1
-        hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); hx{i} = hx{i}./sum(hx{i});
-        hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); hy{i} = hy{i}./sum(hy{i});
+    normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex');
+    if gcbo ~= h.MultiPlotButton
+        %%% prepare 1d hists
+        binsx = linspace(xlimits(1),xlimits(2),numel(xbins)+1);
+        binsy = linspace(ylimits(1),ylimits(2),numel(ybins)+1);
+        n_per_species = cumsum([1,(n_per_species-1)]);
+        for i = 1:numel(n_per_species)-1
+            hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); 
+            if normalize;hx{i} = hx{i}./sum(hx{i});end;
+            hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
+            if normalize;hy{i} = hy{i}./sum(hy{i});end;
+        end
+        color = lines(numel(n_per_species));
+        for i = 1:numel(hx)
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
+        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+    elseif gcbo == h.MultiPlotButton
+        [zz,color] = overlay_colored(H);
+        del = false(numel(h.axes_lifetime_ind_2d.Children),1);
+        for k = 1:numel(h.axes_lifetime_ind_2d.Children)
+            if ~strcmp(h.axes_lifetime_ind_2d.Children(k).Type,'line')
+                del(k) = true;
+            end
+        end
+        delete(h.axes_lifetime_ind_2d.Children(del));
+        
+        normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot;
+        
+        multiplot = imagesc(h.axes_lifetime_ind_2d,xbins,ybins,zz);
+        uistack(multiplot,'bottom'); multiplot.UIContextMenu = h.ExportGraphLifetime_Menu;
+        white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+        %%% set alpha property
+        if white == 0
+            multiplot.AlphaData = sum(zz,3)>0;
+        else
+            multiplot.AlphaData = 1-(sum(zz,3)==3);
+        end
+        %plot first histogram
+        hx = sum(H{1},1);
+        if normalize
+            hx = hx./sum(hx);
+        end
+        hx = hx'; hx = [hx; hx(end)];
+        xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
+        BurstMeta.Plots.MultiScatter.h1dx_lifetime(1) = handle(stairs(xbins,hx,'Color',color(1,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        %plot rest of histograms
+        for i = 2:numel(H)
+            hx = sum(H{i},1);
+            if normalize
+                hx = hx./sum(hx);
+            end
+            hx = hx'; hx = [hx; hx(end)];
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(xbins,hx,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+        end
+        
+        %plot first histogram
+        hy = sum(H{1},2);
+        if normalize
+            hy = hy./sum(hy);
+        end
+        hy = [hy; hy(end)];
+        ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
+        BurstMeta.Plots.MultiScatter.h1dy_lifetime(1) = handle(stairs(ybins,hy,'Color',color(1,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        %plot rest of histograms
+        for i = 2:numel(H)
+            hy = sum(H{i},2);
+            if normalize
+                hy = hy./sum(hy);
+            end
+            hy = [hy; hy(end)];
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(ybins,hy,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
     end
-    color = lines(numel(n_per_species));
-    for i = 1:numel(hx)
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
-    end
-    hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-    BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-    BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
     %%% hide normal 1d plots
     BurstMeta.Plots.LifetimeInd_histX.Visible = 'off';
     BurstMeta.Plots.LifetimeInd_histY.Visible = 'off';
+    
     %%% add legend
     [file_n,species_n,subspecies_n,sel] = get_multiselection(h);
     num_species = numel(file_n);
@@ -12032,7 +12291,11 @@ if  h.MultiselectOnCheckbox.Value && numel(n_per_species) > 1 %%% multiple speci
         end
         str{i} = strrep(name,'_',' ');  
     end
-    legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    if gcbo ~= h.MultiPlotButton
+        legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    elseif gcbo ==  h.MultiPlotButton
+        legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+    end
     h.axes_lifetime_ind_1d_x.YLimMode = 'auto';
     h.axes_lifetime_ind_1d_y.YLimMode = 'auto';
 end
@@ -12173,7 +12436,7 @@ if obj == h.FitAnisotropyButton
     %% Add Perrin Fits to Anisotropy Plot
     %% GG
     fPerrin = @(rho,x) BurstData{file}.Corrections.r0_green./(1+x./rho); %%% x = tau
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         tauGG = datatoplot(:,idx_tauGG);
         rGG = datatoplot(:,idx_rGG);
     else
@@ -12202,7 +12465,7 @@ if obj == h.FitAnisotropyButton
     end
     %% RR
     fPerrin = @(rho,x) BurstData{file}.Corrections.r0_red./(1+x./rho); %%% x = tau
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         tauRR = datatoplot(:,idx_tauRR);
         rRR = datatoplot(:,idx_rRR);
     else
@@ -12232,7 +12495,7 @@ if obj == h.FitAnisotropyButton
         %% BB
         idx_tauBB = strcmp('Lifetime BB [ns]',BurstData{file}.NameArray);
         idx_rBB = strcmp('Anisotropy BB',BurstData{file}.NameArray);
-        if ~h.MultiselectOnCheckbox.Value
+        if ~h.MultiselectOnCheckbox.UserData
             tauBB = datatoplot(:,idx_tauBB);
             rBB = datatoplot(:,idx_rBB);
         else
@@ -12482,7 +12745,7 @@ file = BurstMeta.SelectedFile;
 
 LSUserValues(0);
 
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     data = BurstData{file}.DataArray;
 else
     files = get_multiselection(h);
@@ -12568,7 +12831,7 @@ h.Corrections.TwoCMFD.axes_direct_excitation.XLim = [0, AcceptorOnlyLifetime+3*s
 h.AcceptorLifetimeEdit.String = num2str(AcceptorOnlyLifetime);
 UserValues.BurstBrowser.Corrections.AcceptorLifetime = AcceptorOnlyLifetime;
 
-if ~h.MultiselectOnCheckbox.Value
+if ~h.MultiselectOnCheckbox.UserData
     BurstData{file}.Corrections.AcceptorLifetime = UserValues.BurstBrowser.Corrections.AcceptorLifetime;
     BurstData{file}.Corrections.DonorLifetime = UserValues.BurstBrowser.Corrections.DonorLifetime;
 else
@@ -12593,7 +12856,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     h.DonorLifetimeBlueEdit.String = num2str(DonorBlueLifetime);
 
     UserValues.BurstBrowser.Corrections.DonorLifetimeBlue = DonorBlueLifetime;
-    if ~h.MultiselectOnCheckbox.Value
+    if ~h.MultiselectOnCheckbox.UserData
         BurstData{file}.Corrections.DonorLifetimeBlue = UserValues.BurstBrowser.Corrections.DonorLifetimeBlue;
     else
         for i = 1:numel(files)
@@ -13485,7 +13748,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13555,7 +13818,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13728,7 +13991,7 @@ switch obj
                 ax1dx = n;
             end
         end
-        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
+        if strcmp(panel_copy.Children(ax1dx).Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% (if multi plot is used, first stair plot is visible)
             %%% if multiplot, extend figure and shift legend upstairs
             %%% delete the zscale axis
@@ -13760,6 +14023,10 @@ switch obj
                     panel_copy.Children(leg).Position(1) = 40;
                     panel_copy.Children(leg).Position(2) = 590;
                 end
+            end
+            %%% hide colorbar if it exists
+            if exist('cbar','var')
+                cbar.Visible = 'off';
             end
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
@@ -13993,6 +14260,9 @@ switch obj
         %%% set Background Color to white
         panel_copy.BackgroundColor = [1 1 1];
         panel_copy.HighlightColor = [1 1 1];
+        
+        color_bar = true;
+        
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
@@ -14024,12 +14294,26 @@ switch obj
             %%% Increase FontSize
             panel_copy.Children(i).FontSize = fontsize;
             %panel_copy.Children(i).Layer = 'bottom';
+            
             %%% Reorganize Axes Positions
             switch panel_copy.Children(i).Tag
                 case 'axes_lifetime_ind_1d_y'
                     panel_copy.Children(i).Position = [0.77 0.135 0.15 0.65];
                     panel_copy.Children(i).YTickLabelRotation = 270;
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    else
+                        if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                            panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                        else
+                             maxY = 0;
+                             for k = 1:numel(panel_copy.Children(i).Children)-1
+                                 maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                             end
+                             panel_copy.Children(i).YLim = [0, maxY*1.05];
+                             color_bar = false;
+                        end
+                    end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
@@ -14042,7 +14326,19 @@ switch obj
                 case 'axes_lifetime_ind_1d_x'
                     panel_copy.Children(i).Position = [0.12 0.785 0.65 0.15];
                     xlabel(panel_copy.Children(i),'');
-                    panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    if numel(panel_copy.Children(i).Children) == 1 %%% no multiplot
+                        panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                    else
+                        if all(panel_copy.Children(i).Children(1).Color == [0,0,0]) %%% overlayed plot, not multiplot
+                            panel_copy.Children(i).YLim = [0, max(panel_copy.Children(i).Children(1).YData)*1.05];
+                        else
+                            maxY = 0;
+                            for k = 1:numel(panel_copy.Children(i).Children)-1
+                                maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                            end
+                            panel_copy.Children(i).YLim = [0, maxY*1.05];
+                        end
+                    end
                     panel_copy.Children(i).YTickLabel = [];
                     panel_copy.Children(i).YLabel.String = '';
                     % change the grayscale of the bars and remove the line
@@ -14072,7 +14368,7 @@ switch obj
                     end
             end
         end
-        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
                 'Location','north','Color',[0 0 0],'FontSize',fontsize-6); 
             cbar.Position = [0.8,0.85,0.18,0.025];
@@ -14090,13 +14386,15 @@ switch obj
                         end
                     end
                 end
-                for i = 1:numel(labels)
-                    cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                if maxZ > 1 %%% ensure that the plot is not normalized
+                    for i = 1:numel(labels)
+                        cbar.TickLabels{i} = num2str(round(labels(i)*maxZ));
+                    end
                 end
             end
             cbar.Units = 'pixels';drawnow;
         end
-        if (h.MultiselectOnCheckbox.Value && numel(get_multiselection(h)) > 1)
+        if (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% Set all units to pixels for easy editing without resizing
             hfig.Units = 'pixels';
             panel_copy.Units = 'pixels';
@@ -14311,7 +14609,7 @@ hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,ask_file,FigureName};
 
 function ExportGraph_CloseFunction(hfig,~,ask_file,FigureName)
 global UserValues BurstData BurstMeta
-if isempty(UserValues)
+if isempty(UserValues) || isempty(BurstData)
     delete(hfig);
     return;
 end
@@ -14446,6 +14744,10 @@ switch obj
         c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
         UserValues.BurstBrowser.Display.ColorLine5 = c;
         n=5;
+    case h.ColorLine6
+        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine6);
+        UserValues.BurstBrowser.Display.ColorLine6 = c;
+        n=6;
     case h.MarkerColor_button
         c = uisetcolor(UserValues.BurstBrowser.Display.MarkerColor);
         UserValues.BurstBrowser.Display.MarkerColor = c;
@@ -14484,16 +14786,19 @@ BurstMeta.Plots.Mixture.Main_Plot(2).LineColor = UserValues.BurstBrowser.Display
 BurstMeta.Plots.Mixture.Main_Plot(3).LineColor = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.Main_Plot(4).LineColor = UserValues.BurstBrowser.Display.ColorLine4;
 BurstMeta.Plots.Mixture.Main_Plot(5).LineColor = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.Main_Plot(6).LineColor = UserValues.BurstBrowser.Display.ColorLine6;
 BurstMeta.Plots.Mixture.plotX(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotX(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotX(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotX(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
 BurstMeta.Plots.Mixture.plotX(5).Color = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.plotX(6).Color = UserValues.BurstBrowser.Display.ColorLine6;
 BurstMeta.Plots.Mixture.plotY(1).Color = UserValues.BurstBrowser.Display.ColorLine1;
 BurstMeta.Plots.Mixture.plotY(2).Color = UserValues.BurstBrowser.Display.ColorLine2;
 BurstMeta.Plots.Mixture.plotY(3).Color = UserValues.BurstBrowser.Display.ColorLine3;
 BurstMeta.Plots.Mixture.plotY(4).Color = UserValues.BurstBrowser.Display.ColorLine4;
 BurstMeta.Plots.Mixture.plotY(5).Color = UserValues.BurstBrowser.Display.ColorLine5;
+BurstMeta.Plots.Mixture.plotY(6).Color = UserValues.BurstBrowser.Display.ColorLine6;
 %%% Reset color of correction fits
 BurstMeta.Plots.Fits.histE_donly(1).Color = [1,0,0];
 BurstMeta.Plots.Fits.histS_aonly(1).Color = [1,0,0];
@@ -14708,11 +15013,19 @@ global UserValues BurstMeta BurstData
 h = guidata(obj);
 
 if mode == 0 %%% Checks, which key was pressed
-    switch e.Key
-        case 'delete'
-            mode = 2;
-        case 'return'
-            mode =5;
+    switch e.EventName
+        case 'KeyPress'
+            switch e.Key
+                case 'delete'
+                    mode = 2;
+                case 'return'
+                    %mode = 5;
+            end
+        case 'Action' %%% mouse-click
+            switch get(gcbf,'SelectionType')
+                case 'open' %%% double click
+                    mode = 5;
+            end
     end
 end
 
@@ -14852,6 +15165,7 @@ switch mode
         db.str = db.str(valid); db.database=db.database(valid,:);
         BurstMeta.Database = db.database;
         h.DatabaseBB.List.String = db.str;
+        h.DatabaseBB.List.Value = 1;
         clear db;
         
         if size(BurstMeta.Database, 1) > 0
@@ -15073,6 +15387,9 @@ if obj == h.PlotGridAboveDataCheckbox
     set([h.axes_general,h.axes_EvsTauGG,h.axes_EvsTauRR,h.axes_rGGvsTauGG,h.axes_rRRvsTauRR,...
         h.axes_E_BtoGRvsTauBB,h.axes_rBBvsTauBB,h.axes_lifetime_ind_2d],'Layer',layer);
 end
+if obj == h.Restrict_EandS_Range
+    UserValues.BurstBrowser.Display.Restrict_EandS_Range = obj.Value;
+end
 if obj == h.MarkerSize_edit
     markersize = str2double(h.MarkerSize_edit.String);
     if ~isnan(markersize)
@@ -15121,7 +15438,7 @@ if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray) || any(~st
     end
 end
 
-if numel(h.ParameterListX.String) ~= numel(BurstData{file}.NameArray)
+if numel(h.ParameterListY.String) ~= numel(BurstData{file}.NameArray)
     paramY = h.ParameterListY.String{h.ParameterListY.Value};
     h.ParameterListY.String = BurstData{file}.NameArray;
     val = find(strcmp(BurstData{file}.NameArray,paramY));
@@ -15288,3 +15605,11 @@ if isempty(BurstTCSPCData{BurstMeta.SelectedFile})
     Load_Photons();
 end
 export_to_tracy(answer);
+
+function Param_to_clip(~,~)
+global BurstData BurstMeta
+%%% copy the currently selected x-parameter to clipboard
+h = guidata(gcbo);
+%%% get the parameter
+data = BurstData{BurstMeta.SelectedFile}.DataArray(BurstData{BurstMeta.SelectedFile}.Selected,strcmp(h.ParameterListX.String{h.ParameterListX.Value},BurstData{BurstMeta.SelectedFile}.NameArray));
+Mat2clip(data);

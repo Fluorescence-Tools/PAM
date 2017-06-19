@@ -20,7 +20,8 @@ c = xdata{6}; %IRF shift
 ignore = xdata{7};
 conv_type = xdata{end}; %%% linear or circular convolution
 %%% Define IRF and Scatter from ShiftParams and ScatterPattern!
-irf = circshift(IRFPattern,[c, 0]);
+%irf = circshift(IRFPattern,[c, 0]);
+irf = shift_by_fraction(IRFPattern,c);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
 irf = irf-min(irf(irf~=0));
 irf = irf./sum(irf);

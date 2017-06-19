@@ -7,12 +7,11 @@ Fits the particle number
 The i in the formula comes from MIAFit and accounts for the 
 3rd variable (Time).
 
-
-    |Offset|+|Amplitude Mobile|*                    |Mobile Fraktion                                                 |+    | Immobile Fraction
+|Offset|+|Amplitude Mobile|*|Mobile Fraktion|+|Immobile Fraction|
 %%%-------------------------PARAMETER DEFINITION------------------------%%% 
 Param(1): A_mob             = 1;     LB = 0;      UB = Inf; 
 Param(2): w_r_mob[nm]       = 200;   LB = 0;      UB = Inf;g
-Param(3): D[µm²]            = 0.01;  LB = 0;      UB = Inf;g
+Param(3): D[ï¿½mï¿½]            = 0.01;  LB = 0;      UB = Inf;g
 Param(4): A_immob           = 1;     LB = 0;      UB = Inf; 
 Param(5): w_r_im[nm]        = 200;   LB = 0;      UB = Inf;g
 Param(6): I0                = 0;     LB = -Inf;   UB = Inf;

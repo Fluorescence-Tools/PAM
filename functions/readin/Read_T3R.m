@@ -1,9 +1,9 @@
-function [Macrotime, Microtime, SyncRate, ClockRate, Resolution] = Read_T3R(FullFileName)
+function [Macrotime, Microtime, MT1, MT2, MT3, SyncRate, ClockRate, Resolution] = Read_T3R(FullFileName)
 Macrotime = cell(10);
 Microtime = cell(10);
 FabSurf = false;
 
-FileID = fopen(FullFileName, 'r');
+FileID = fopen(FullFileName,'r');
 
 Header.Ident = fread(FileID, 16, 'uchar=>char')';
 Header.FormatVersion = fread(FileID, 6, 'uchar=>char')';
@@ -129,6 +129,12 @@ clear FileID;
 %
 % Reserved = bitget(TTTRRecord, 32);
 Valid = bitget(TTTRRecord, 31);
+Overflow = bitget(TTTRRecord, 28);
+Marker = bitand(bitshift(TTTRRecord, -16),7);
+M1 = find((Valid == 0) & (Marker == 1));
+M2 = find((Valid == 0) & (Marker == 2));
+M3 = find((Valid == 0) & (Marker == 7));
+
 
 RouteTemp(:, 2) = bitget(TTTRRecord, 30);
 RouteTemp(:, 1) = bitget(TTTRRecord, 29);
@@ -137,6 +143,9 @@ clear RouteTemp;
 
 ValidIndices = find(Valid == 1);
 TimeTag(ValidIndices) = double(mod(TTTRRecord(ValidIndices), 65536));
+TimeTag(M1) = double(mod(TTTRRecord(M1), 65536));
+TimeTag(M2) = double(mod(TTTRRecord(M2), 65536));
+TimeTag(M3) = double(mod(TTTRRecord(M3), 65536));
 
 %%% old:
 %InvalidIndices = find(Valid == 0);
@@ -147,10 +156,13 @@ TimeTag(ValidIndices) = double(mod(TTTRRecord(ValidIndices), 65536));
 % TimeTag(InvalidIndices(i)+1:end) = TimeTag(InvalidIndices(i)+1:end) + i*65536;
 
 %%% better not use a for loop:
-OverflowCorrection = cumsum((Valid == 0))';
+OverflowCorrection = cumsum((Valid == 0) & Overflow == 1)';
 TimeTag(ValidIndices) = TimeTag(ValidIndices) + 65536*OverflowCorrection(ValidIndices);
+TimeTag(M1) = TimeTag(M1) + 65536*OverflowCorrection(M1);
+TimeTag(M2) = TimeTag(M2) + 65536*OverflowCorrection(M2);
+TimeTag(M3) = TimeTag(M3) + 65536*OverflowCorrection(M3);
 clear ValidIndices;
-clear InvalidIndices; 
+clear InvalidIndices;
 
 ValidIndicesChannel0 = find((Route == 0) & (Valid == 1));
 ValidIndicesChannel1 = find((Route == 1) & (Valid == 1));
@@ -167,14 +179,23 @@ Microtime{2,1} = double(bitand(bitshift(TTTRRecord(ValidIndicesChannel1), -16), 
 Microtime{2,1} = 4095 - Microtime{2};
 Macrotime{2,1} = TimeTag(ValidIndicesChannel1)';
 clear ValidIndicesChannel1;
-
+ 
 Microtime{3,1} = double(bitand(bitshift(TTTRRecord(ValidIndicesChannel2), -16), 12));
 Microtime{3,1} = 4095 - Microtime{3};
 Macrotime{3,1} = TimeTag(ValidIndicesChannel2)';
 clear ValidIndicesChannel2;
-
-
+ 
+ 
 Microtime{4,1} = double(bitand(bitshift(TTTRRecord(ValidIndicesChannel3), -16), 12));
 Microtime{4,1} = 4095 - Microtime{4};
 Macrotime{4,1} = TimeTag(ValidIndicesChannel3)';
 clear ValidIndicesChannel3;
+
+MT1 = TimeTag(M1)';
+clear M1;
+
+MT2 = TimeTag(M2)';
+clear M2;
+
+MT3 = TimeTag(M3)';
+clear M3;

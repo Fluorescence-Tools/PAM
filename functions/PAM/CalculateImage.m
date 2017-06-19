@@ -52,7 +52,7 @@ else %%% Image data with additional line/frame stop markers and other more compl
             Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines),[2 1]));
             Image = Image(:,1:end-1);
         case 2 %%% Summed up image vector with photon-to-pixel assignement
-            [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
+            [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
             Bin=uint32(Bin);
