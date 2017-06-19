@@ -6079,6 +6079,7 @@ if isempty(BurstData)
     return;
 end
 
+drawnow nocallbacks
 %% Update Main Plot
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
@@ -6960,6 +6961,8 @@ else
     BurstMeta.Plots.Main_histX.EdgeColor = [0,0,0];
     BurstMeta.Plots.Main_histY.EdgeColor = [0,0,0];
 end
+
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Defines new cuts from fitted Gaussians  %%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1666,6 +1666,11 @@ switch mode
             Active = find(Active);
         end
         for i = Active
+            try %%% see if histogram exists
+                x = PDAMeta.hFit{i};
+            catch
+                continue;
+            end
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
                 % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
