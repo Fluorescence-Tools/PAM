@@ -1,7 +1,7 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
 Model to fit pair correlation data to a gamma distribution
 
-    |Amplitude            |/|x|*|exp(- |(lnx-µ)^2/ |(2sigma^2)|)
+|Amplitude|/|x|*|exp(- |(lnx-ï¿½)^2/ |(2sigma^2)|)
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A             = 1;    LB = 0;     UB = Inf;
 Param(2): alpha         = 1;   LB = 1;     UB = Inf;   
