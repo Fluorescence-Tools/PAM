@@ -141,11 +141,8 @@ TauFit();
 function Open_Doc(~,~)
 global PathToApp
 if isunix
-    [status,cmdout] = system(['open ' PathToApp filesep 'doc/sphinx_docs/build/html/index.html']);
+    path = fullfile(PathToApp,'doc/sphinx_docs/build/html/index.html');
 elseif ispc
-    command = fullfile(PathToApp,'doc\sphinx_docs\build\html\index.html');
-    [status,cmdout] = system(command);
+    path = fullfile(PathToApp,'doc\sphinx_docs\build\html\index.html');
 end
-if ~isempty(cmdout)
-    disp(cmdout);
-end
+web(path);
