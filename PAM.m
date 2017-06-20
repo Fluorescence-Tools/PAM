@@ -11068,9 +11068,6 @@ switch obj
         Update_Profiles(h.Profiles.List,ed)
 end
         
-
-
-
 function Open_Doc(~,~)
 global PathToApp
 if isunix
@@ -11082,8 +11079,10 @@ if ~isdeployed
     web(path);
 else
     %%% use system call to browser
-    % fix spaces in path
-    path = strrep(path,' ','\ ');
+    if isunix
+        % fix spaces in path
+        path = strrep(path,' ','\ ');
+    end
     web(path,'-browser');
 end
 

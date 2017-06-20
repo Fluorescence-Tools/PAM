@@ -1,14 +1,16 @@
 function Launcher(~,~)
 hfig=findobj('Tag','Launcher');
+global UserValues PathToApp
 
 addpath(genpath(['.' filesep 'functions']));
 
-global UserValues PathToApp
-LSUserValues(0);
-Look=UserValues.Look;
 if isempty(PathToApp)
     GetAppFolder();
 end
+
+LSUserValues(0);
+Look=UserValues.Look;
+
 ImageFolderPath = [PathToApp filesep 'images' filesep 'Launcher' filesep];
 if isempty(hfig)
     %%% find screen size
@@ -149,7 +151,9 @@ if ~isdeployed
     web(path);
 else
     %%% use system call to browser
-    % fix spaces in path
-    path = strrep(path,' ','\ ');
+    if isunix
+        % fix spaces in path
+        path = strrep(path,' ','\ ');
+    end
     web(path,'-browser');
 end
