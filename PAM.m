@@ -11078,7 +11078,14 @@ if isunix
 elseif ispc
     path = fullfile(PathToApp,'doc\sphinx_docs\build\html\index.html');
 end
-web(path);
+if ~isdeployed
+    web(path);
+else
+    %%% use system call to browser
+    % fix spaces in path
+    path = strrep(path,' ','\ ');
+    web(path,'-browser');
+end
 
 function colored_strings = color_string(strings,colors)
 %%% takes a cell array of strings and formats them using html to appear as color

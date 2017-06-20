@@ -145,4 +145,11 @@ if isunix
 elseif ispc
     path = fullfile(PathToApp,'doc\sphinx_docs\build\html\index.html');
 end
-web(path);
+if ~isdeployed
+    web(path);
+else
+    %%% use system call to browser
+    % fix spaces in path
+    path = strrep(path,' ','\ ');
+    web(path,'-browser');
+end
