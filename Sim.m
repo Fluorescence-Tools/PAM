@@ -1,5 +1,5 @@
 function Sim(~,~)
-global UserValues SimData
+global UserValues SimData PathToApp
 h.Sim=findobj('Tag','Sim');
 
 if ~isempty(h.Sim) % Creates new figure, if none exists
@@ -7,6 +7,11 @@ if ~isempty(h.Sim) % Creates new figure, if none exists
 end
 
 addpath(genpath(['.' filesep 'functions']));
+
+if isempty(PathToApp)
+    GetAppFolder();
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2166,7 +2171,7 @@ File_List_Callback([],[],3);
 %%% Peforms actual simulation procedure for point detector observation %%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_PointSim(~,~)
-global SimData UserValues
+global SimData UserValues PathToApp
 h = guidata(findobj('Tag','Sim'));
 
 StartParPool();
@@ -2340,7 +2345,7 @@ if ~advanced
         Photons3 = cell(NoP,1); MI3 = cell(NoP,1);
         Photons4 = cell(NoP,1); MI4 = cell(NoP,1);
 
-        fid = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'timing.txt'],'w');
+        fid = fopen([PathToApp,filesep,'Profiles',filesep,'timing.txt'],'w');
         fclose(fid);
         if fid == -1
             return;
@@ -2421,7 +2426,7 @@ if ~advanced
                 MI4{j} = [MI4{j}; uint16(MI(bitand(Channel,3)==3))];
             end
 
-            FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'Timing.txt'],'a');
+            FID = fopen([PathToApp,filesep,'Profiles',filesep,'Timing.txt'],'a');
             fprintf(FID,['Particle' num2str(j) '\n']);
             fclose(FID);
         end
@@ -2909,7 +2914,7 @@ if advanced
                 end
             end
 
-            FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'Timing.txt'],'a');
+            FID = fopen([PathToApp,filesep,'Profiles',filesep,'Timing.txt'],'a');
             fprintf(FID,['Particle' num2str(j) '\n']);
             fclose(FID);
         end
@@ -3539,13 +3544,14 @@ end
 %%% Updates Progressbar during simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Update_Progress(~,~,mode,Species,NoS,NoP)
+global PathToApp
 h = guidata(findobj('Tag','Sim'));
 
 switch mode
     case 1 %%% Simulation starts
         Progress(0,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);
     case 2 %%% Simulation progress update
-        FID = fopen([fileparts(mfilename('fullpath')),filesep,'Profiles',filesep,'timing.txt'],'r');
+        FID = fopen([PathToApp,filesep,'Profiles',filesep,'timing.txt'],'r');
         Text = fread(FID);
         fclose(FID);
         Progress(sum(Text==10)/NoP,h.Progress_Axes,h.Progress_Text,['Simulating species ' num2str(Species) ' of ' num2str(NoS) ':']);

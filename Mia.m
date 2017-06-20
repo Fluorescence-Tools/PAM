@@ -1,5 +1,5 @@
 function Mia(~,~)
-global UserValues MIAData
+global UserValues MIAData PathToApp
 h.Mia=findobj('Tag','Mia');
 
 addpath(genpath(['.' filesep 'functions']));
@@ -8,9 +8,11 @@ if ~isempty(h.Mia)
     figure(h.Mia); % Gives focus to Pam figure
     return;
 end
-
+if isempty(PathToApp)
+    GetAppFolder();
+end
 %%% start splash screen
-s = SplashScreen( 'Splashscreen', 'images/PAM/logo.png', ...
+s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' filesep 'logo.png'], ...
     'ProgressBar', 'on', ...
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );

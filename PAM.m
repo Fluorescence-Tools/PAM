@@ -1,5 +1,5 @@
 function Output = PAM (SubFunction)
-global UserValues FileInfo PamMeta TcspcData
+global UserValues FileInfo PamMeta TcspcData PathToApp
 h.Pam=findobj('Tag','Pam');
 if nargout > 0
     Output = [];
@@ -19,11 +19,14 @@ end
 
 addpath(genpath(['.' filesep 'functions']));
 
+if isempty(PathToApp)
+    GetAppFolder();
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% start splash screen
-s = SplashScreen( 'Splashscreen', 'images/PAM/logo.png', ...
+s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' filesep 'logo.png'], ...
     'ProgressBar', 'on', ...
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );
@@ -3064,10 +3067,10 @@ h.MI.Auto = uimenu(...
 %%% Following is alternate implementation using a table instead of a
 %%% list
 if ispc
-    trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file:/' PathToApp '/images/trash16p.png"/></html>'];
     trash_image = strrep(trash_image,'\','/');
 else
-    trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
+    trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
 end
 TableData = {'Detector',1,1,'[1 0 0]','500/25','none','none','on',0};
 ColumnNames = {'<html><font size=4><b>Name</b></font></html>','<html><font size=4><b>Det#</b></font></html>','<html><font size=4><b>Rout#</b></font></html>','<html><font size=4><b>Color</b></font></html>','<html><font size=4><b>Filter</b></font></html>','<html><font size=4><b>Pol</b></font></html>','<html><font size=4><b>BS</b></font></html>','<html><font size=4><b>Enabled</b></font></html>',trash_image};
@@ -3178,7 +3181,10 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
 
 %%% Allows custom Filetype selection
-Customdir = [fileparts(mfilename('fullpath')) filesep 'functions' filesep 'Custom_Read_Ins'];
+Customdir = [PathToApp filesep 'functions' filesep 'Custom_Read_Ins'];
+if ~(exist(Customdir,'dir') == 7)
+    mkdir(Customdir);
+end
 %%% Finds all matlab files in profiles directory
 Custom_Methods = what(Customdir);
 Custom_Methods = ['none'; Custom_Methods.m(:)];
@@ -5356,11 +5362,11 @@ end
 %%% "enter"-Key or Select menu: Makes selected profile current profile
 function Update_Profiles(obj,ed)
 h=guidata(findobj('Tag','Pam'));
-global UserValues PamMeta
+global UserValues PamMeta PathToApp
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
-    load([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat']);
+    load([PathToApp filesep 'profiles' filesep 'Profile.mat']);
     for i=1:numel(h.Profiles.List.String)
         %%% Looks for current profile in profiles list
         if strcmp([h.Profiles.List.String{i} '.mat'], Profile) %#ok<NODEF>
@@ -5396,7 +5402,7 @@ switch e.Key
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
             PIE=[];
-            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'PIE');
+            save([PathToApp filesep 'profiles' filesep Name{1} '.mat'],'PIE');
             h.Profiles.List.String{end+1} = Name{1};
         end
     case {'delete';'subtract'}
@@ -5405,15 +5411,15 @@ switch e.Key
             %%% If selected profile is not the current profile
             if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
                 %%% Deletes profile file and list entry
-                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
                 h.Profiles.List.String(Sel)=[];
             else
                 %%% Deletes profile file and list entry
-                delete([fileparts(mfilename('fullpath')) filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
                 h.Profiles.List.String(Sel)=[];
                 %%% Selects first profile as current profile
                 Profile= [h.Profiles.List.String{1} '.mat'];
-                save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
+                save([PathToApp filesep 'profiles' filesep 'Profile.mat'],'Profile');
                 %%% Updates UserValues
                 LSUserValues(1);
                 %%% Changes color to indicate current profile
@@ -5439,7 +5445,7 @@ switch e.Key
             end
             %%% Makes selected profile the current profile
             Profile= [h.Profiles.List.String{Sel} '.mat'];
-            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep 'Profile.mat'],'Profile');
+            save([PathToApp filesep 'profiles' filesep 'Profile.mat'],'Profile');
             %%% Updates UserValues
             LSUserValues(0);          
             %%% Changes color to indicate current profile
@@ -5474,7 +5480,7 @@ switch e.Key
         Name=inputdlg('Enter profile name:');
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
-            save([fileparts(mfilename('fullpath')) filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
+            save([PathToApp filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
             h.Profiles.List.String{end+1} = Name{1};
         end
 end
@@ -10920,7 +10926,7 @@ end
 %%% Function that exports MetaData to txt file %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Save_MetaData(~,~,fid)
-global UserValues PamMeta FileInfo
+global UserValues PamMeta FileInfo PathToApp
 %h = guidata(findobj('Tag','Pam'));
 if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
@@ -10968,7 +10974,7 @@ end
 
 fprintf(fid,'\n');
 %%% profile name
-s = load(fullfile(fileparts(mfilename('fullpath')),'profiles','Profile.mat'));
+s = load(fullfile(PathToApp,'profiles','Profile.mat'));
 fprintf(fid,'Profile name:\t%s\n\n',s.Profile(1:end-4));
 %%% PIE channel information
 fprintf(fid,'PIE Channel Information\n');
@@ -10989,7 +10995,7 @@ end
 fclose(fid);
 
 function SaveLoadProfile(obj, ~)
-global UserValues FileInfo
+global UserValues FileInfo PathToApp
 h = guidata(findobj('Tag','Pam'));
 
 if obj == h.Profiles.SaveProfile_Auto
@@ -11034,7 +11040,7 @@ switch obj
         end
         ProfileData = load(fullfile(Path,File),'-mat');
         ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
-        save(fullfile([fileparts(mfilename('fullpath')) filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
+        save(fullfile([PathToApp filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
         
         Current_Exists = 0;
         %%% Checks position of the "Current" profile in the list
@@ -11066,10 +11072,11 @@ end
 
 
 function Open_Doc(~,~)
+global PathToApp
 if isunix
     [status,cmdout] = system('open doc/sphinx_docs/build/html/index.html');
 elseif ispc
-    command = [fileparts(mfilename('fullpath')),'\doc\sphinx_docs\build\html\index.html'];
+    command = [PathToApp,'\doc\sphinx_docs\build\html\index.html'];
     [status,cmdout] = system(command);
 end
 if ~isempty(cmdout)

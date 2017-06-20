@@ -3,16 +3,18 @@ hfig=findobj('Tag','BurstBrowser');
 
 addpath(genpath(['.' filesep 'functions']));
 
-global UserValues BurstMeta
+global UserValues BurstMeta PathToApp
 LSUserValues(0);
 Look=UserValues.Look;
-
+if isempty(PathToApp)
+    GetAppFolder();
+end
 if isempty(hfig)
     warning('off','MATLAB:uigridcontainer:MigratingFunction');
     warning('off','MATLAB:uiflowcontainer:MigratingFunction');
     
     %%% start splash screen
-    s = SplashScreen( 'Splashscreen', 'images/BurstBrowser/splash.jpg', ...
+    s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'BurstBrowser' filesep 'splash.jpg'], ...
                          'ProgressBar', 'on', ...
                          'ProgressPosition', 5, ...
                          'ProgressRatio', 0 );
@@ -710,16 +712,16 @@ if isempty(hfig)
     
     %define the cut table
     if ispc
-        trash_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
+        trash_image = ['<html><img src="file:/' PathToApp '/images/trash16p.png"/></html>'];
         trash_image = strrep(trash_image,'\','/');
-        circle_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        circle_image = ['<html><img src="file:/' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
         circle_image = strrep(circle_image,'\','/');
-        zscale_image = ['<html><img src="file:/' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
+        zscale_image = ['<html><img src="file:/' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
         zscale_image = strrep(zscale_image,'\','/');
     else
-        trash_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/trash16p.png"/></html>'];
-        circle_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/greencircleicon.gif"/></html>'];
-        zscale_image = ['<html><img src="file://' fileparts(mfilename('fullpath')) '/images/BurstBrowser/zscale_square.png"/></html>'];
+        trash_image = ['<html><img src="file://' PathToApp '/images/trash16p.png"/></html>'];
+        circle_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/greencircleicon.gif"/></html>'];
+        zscale_image = ['<html><img src="file://' PathToApp '/images/BurstBrowser/zscale_square.png"/></html>'];
     end
     cname = {'<html><font size=4><b>Parameter</b></font></html>','<html><font size=4><b>min</b></font></html>','<html><font size=4><b>max</b></font></html>',circle_image,trash_image,zscale_image};
     cformat = {'char','numeric','numeric','logical','logical','logical'};

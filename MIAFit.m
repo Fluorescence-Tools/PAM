@@ -1,5 +1,5 @@
 function MIAFit(~,~)
-global UserValues MIAFitData MIAFitMeta
+global UserValues MIAFitData MIAFitMeta PathToApp
 
 h.MIAFit=findobj('Tag','MIAFit');
 
@@ -9,6 +9,10 @@ if ~isempty(h.MIAFit) % Creates new figure, if none exists
 end
 
 addpath(genpath(['.' filesep 'functions']));
+
+if isempty(PathToApp)
+    GetAppFolder();
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure generation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1065,22 +1069,22 @@ Update_Table([],[],1); %contains UpdatePlots, where the 2D plot is updated
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
-global MIAFitMeta MIAFitData UserValues
+global MIAFitMeta MIAFitData UserValues PathToApp
 
 FileName=[];
 if mode %% Select a new model to load
-    [FileName,PathName]= uigetfile('.miafit', 'Choose a fit model', [fileparts(mfilename('fullpath')) filesep 'Models']);
+    [FileName,PathName]= uigetfile('.miafit', 'Choose a fit model', [PathToApp filesep 'Models']);
     if all(FileName==0)
        return; 
     end
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.MIAFit_Standard) || ~exist(UserValues.File.MIAFit_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
-    Models=dir([fileparts(mfilename('fullpath')) filesep 'Models']);
+    Models=dir([PathToApp filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-6:end),'.miafit')
-           FileName=[fileparts(mfilename('fullpath')) filesep 'Models' filesep Models(1).name];
+           FileName=[PathToApp filesep 'Models' filesep Models(1).name];
            UserValues.File.MIAFit_Standard=FileName;
        else
            Models(1)=[];

@@ -1,8 +1,12 @@
 function FCSFit(~,~)
-global UserValues FCSData FCSMeta
+global UserValues FCSData FCSMeta PathToApp
 h.FCSFit=findobj('Tag','FCSFit');
 
 addpath(genpath(['.' filesep 'functions']));
+
+if isempty(PathToApp)
+    GetAppFolder();
+end
 
 if isempty(h.FCSFit) % Creates new figure, if none exists
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1036,21 +1040,21 @@ save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_S
 %%% Changes fit function %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
-global FCSMeta UserValues
+global FCSMeta UserValues PathToApp
 
 FileName=[];
 FilterIndex = 1;
 if mode
     %% Select a new model to load
-    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [fileparts(mfilename('fullpath')) filesep 'Models']);
+    [FileName,PathName,FilterIndex]= uigetfile('.txt', 'Choose a fit model', [PathToApp filesep 'Models']);
     FileName=fullfile(PathName,FileName);
 elseif isempty(UserValues.File.FCS_Standard) || ~exist(UserValues.File.FCS_Standard,'file') 
     %% Opens the first model in the folder at the start of the program
-    Models=dir([fileparts(mfilename('fullpath')) filesep 'Models']);
+    Models=dir([PathToApp filesep 'Models']);
     Models=Models(~cell2mat({Models.isdir}));
     while isempty(FileName) && ~isempty(Models)
        if strcmp(Models(1).name(end-3:end),'.txt') 
-           FileName=[fileparts(mfilename('fullpath')) filesep 'Models' filesep Models(1).name];
+           FileName=[PathToApp filesep 'Models' filesep Models(1).name];
            UserValues.File.FCS_Standard=FileName;
        else
            Models(1)=[];

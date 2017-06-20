@@ -1,5 +1,8 @@
 function LoadTcspc(~,~,Update_Data,Update_Display,Shift_Detector,Update_Detector_Channels,Caller,FileName,Type)
-global UserValues TcspcData FileInfo PamMeta
+global UserValues TcspcData FileInfo PamMeta PathToApp
+if isempty(PathToApp)
+    GetAppFolder();
+end
 if nargin<9 %%% Opens Dialog box for selecting new files to be loaded
     %%% following code is for remembering the last used FileType
     LSUserValues(0);    
@@ -1084,7 +1087,7 @@ switch (Type)
         %%% The User can select which Read-Ins to display an use
         %%% This will allow easier, modular implementation of custom file types (esp. for scanning) 
         if ~exist('Custom','var') %%% If it was called from the database etc.
-            Customdir = [fileparts(mfilename('fullpath')) filesep '..' filesep 'Custom_Read_Ins']; %%% one up from current .m file
+            Customdir = [PathToApp filesep 'functions' filesep 'Custom_Read_Ins'];
             %%% Finds all matlab files in profiles directory
             Custom_Methods = what(Customdir);
             Custom_Methods = Custom_Methods.m(:);

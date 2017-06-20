@@ -1,9 +1,15 @@
 function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
-global UserValues FileInfo
+global UserValues FileInfo PathToApp
 
-%%% get path to profile dir (i.e. on up from the location of LSUserValues.m)
-Profiledir=[fileparts(mfilename('fullpath')) filesep '..' filesep 'profiles'];
+if isempty(PathToApp)
+    GetAppFolder();
+end
 
+%%% get path to profile dir
+Profiledir=[PathToApp filesep 'profiles'];
+if ~(exist(Profiledir,'dir') == 7)
+    mkdir(Profiledir);
+end
 if Mode==0 %%% Loads user values
     %% Identifying current profile
     %%% Finds all matlab files in profiles directory
@@ -25,7 +31,6 @@ if Mode==0 %%% Loads user values
     if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
         PIE=[];
         Profile='StartingProfile.mat';
-        mkdir('profiles');
         save([Profiledir filesep 'Profile.mat'],'Profile');
         save([Profiledir filesep 'StartingProfile.mat'],'PIE');
         Profiles = {'StartingProfile.mat'};
