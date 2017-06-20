@@ -7,7 +7,6 @@ addpath(genpath(['.' filesep 'functions']));
 if isempty(PathToApp)
     GetAppFolder();
 end
-
 LSUserValues(0);
 Look=UserValues.Look;
 

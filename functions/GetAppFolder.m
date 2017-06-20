@@ -5,7 +5,7 @@ if isdeployed
     PathToApp = GetExeLocation();
     if ismac
         %%% navigate out of the packaged app to folder of .app
-        for i = 1:5
+        for i = 1:4
             PathToApp = fileparts(PathToApp);
         end
     elseif ispc
