@@ -3203,7 +3203,7 @@ else
     fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'r');
     if fid == -1
         disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
-        Custom_Methods = {'none'}
+        Custom_Methods = {'none'};
         Custom_Value = 1;
     else % read file
         % skip the first three lines (header)
