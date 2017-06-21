@@ -3211,6 +3211,7 @@ else
             tline = fgetl(fid);
         end
         Custom_Methods = {'none'};
+        Custom_Value = 1;
         while ischar(tline)
             tline = fgetl(fid);
             if ischar(tline)
