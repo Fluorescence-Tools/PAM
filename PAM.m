@@ -3181,18 +3181,48 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
 
 %%% Allows custom Filetype selection
-Customdir = [PathToApp filesep 'functions' filesep 'Custom_Read_Ins'];
-if ~(exist(Customdir,'dir') == 7)
-    mkdir(Customdir);
-end
-%%% Finds all matlab files in profiles directory
-Custom_Methods = what(Customdir);
-Custom_Methods = ['none'; Custom_Methods.m(:)];
-Custom_Value = 1;
-for i=2:numel(Custom_Methods)
-    Custom_Methods{i}=Custom_Methods{i}(1:end-2);
-    if strcmp(Custom_Methods{i},UserValues.File.Custom_Filetype)
-        Custom_Value = i;
+if ~isdeployed
+    Customdir = [PathToApp filesep 'functions' filesep 'Custom_Read_Ins'];
+    if ~(exist(Customdir,'dir') == 7)
+        mkdir(Customdir);
+    end
+    %%% Finds all matlab files in profiles directory
+    Custom_Methods = what(Customdir);
+    Custom_Methods = ['none'; Custom_Methods.m(:)];
+    Custom_Value = 1;
+    for i=2:numel(Custom_Methods)
+        Custom_Methods{i}=Custom_Methods{i}(1:end-2);
+        if strcmp(Custom_Methods{i},UserValues.File.Custom_Filetype)
+            Custom_Value = i;
+        end
+    end
+else
+    %%% compiled application
+    %%% custom file types are embedded
+    %%% names are in associated text file
+    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'r');
+    if fid == -1
+        disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
+        Custom_Methods = {'none'}
+        Custom_Value = 1;
+    else % read file
+        % skip the first three lines (header)
+        for i = 1:3
+            tline = fgetl(fid);
+        end
+        Custom_Methods = {'none'};
+        while ischar(tline)
+            tline = fgetl(fid);
+            if ischar(tline)
+                Custom_Methods{end+1,1} = tline;
+            end
+        end
+        for i=2:numel(Custom_Methods)
+            Custom_Methods{i}=Custom_Methods{i};
+            if strcmp(Custom_Methods{i},UserValues.File.Custom_Filetype)
+                Custom_Value = i;
+            end
+        end
     end
 end
 %%% Text

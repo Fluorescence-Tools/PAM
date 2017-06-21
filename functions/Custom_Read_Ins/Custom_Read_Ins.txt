@@ -1,0 +1,7 @@
+# List of the custom read ins embedded in the compiled application.
+# State the function names here.
+
+Fabsurf
+Fabsurf_ht3
+Leuven_PTU
+Hasselt_SPC830
