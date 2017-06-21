@@ -3200,7 +3200,7 @@ else
     %%% compiled application
     %%% custom file types are embedded
     %%% names are in associated text file
-    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'r');
+    fid = fopen([PathToApp filesep 'Custom_Read_Ins.txt'],'rt');
     if fid == -1
         disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
         Custom_Methods = {'none'};
