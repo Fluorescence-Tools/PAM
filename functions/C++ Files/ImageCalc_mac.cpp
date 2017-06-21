@@ -70,8 +70,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     unsigned long Pixel = (unsigned long)mxGetScalar(prhs[3]);   
     unsigned long Max = (unsigned long)mxGetScalar(prhs[4]);
     
-
-    
     // Output/Calculated parameters
     unsigned long *Bin;
     Bin = (unsigned long*) mxCalloc(Photons, sizeof(unsigned long*));
@@ -94,8 +92,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
    
     mwSize NPhot[]={(int)Photons,1};
     
-    plhs[0] = mxCreateNumericArray(2, NPix, mxINT32_CLASS, mxREAL);
-    plhs[1] = mxCreateNumericArray(2, NPhot, mxINT32_CLASS, mxREAL);
+    plhs[0] = mxCreateNumericArray(2, NPix, mxINT64_CLASS, mxREAL);
+    plhs[1] = mxCreateNumericArray(2, NPhot, mxINT64_CLASS, mxREAL);
     
     mxSetData(plhs[0], Int);
     mxSetData(plhs[1], Bin);
