@@ -3218,7 +3218,6 @@ else
             end
         end
         for i=2:numel(Custom_Methods)
-            Custom_Methods{i}=Custom_Methods{i};
             if strcmp(Custom_Methods{i},UserValues.File.Custom_Filetype)
                 Custom_Value = i;
             end
