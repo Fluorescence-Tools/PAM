@@ -8504,7 +8504,7 @@ h.Main_Tab.SelectedTab = h.Main_Tab_Corrections;
 %%% Change focus to CorrectionsTab
 switch BurstData{file}.BAMethod
     case {1,2,5}
-        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry'));
+        indS = find(strcmp(BurstData{file}.NameArray,'Stoichiometry (raw)'));
         indE = find(strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
         indNGG = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DD)'));
         indNGR = find(strcmp(BurstData{file}.NameArray,'Number of Photons (DA)'));
