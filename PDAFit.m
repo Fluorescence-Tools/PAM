@@ -3779,11 +3779,11 @@ else
     fID  = fopen(GenerateName(fullfile(Path, 'PDAresult.txt'),1),'w');
     fprintf(fID,[repmat('%s\t',1,17),'%s\n'],fitResult{1,:});
     for i = 2:size(fitResult,1)
-        fprintf(fID,['%s' repmat('\t%.2f',1,17) '\n\n'],fitResult{i,:});
+        fprintf(fID,['%s' repmat('\t%.3f',1,17) '\n\n'],fitResult{i,:});
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
-    fprintf(fID,[repmat('%.2f\t',1,6) '%.2f\n'],tmp.parameterstable{2,:});
+    fprintf(fID,[repmat('%.3f\t',1,6) '%.3f\n'],tmp.parameterstable{2,:});
     fprintf(fID,'\nSettings:\n');
     settings = [fieldnames(tmp.settings), struct2cell(tmp.settings)];
     for i = 1:size(settings,1)
@@ -3794,14 +3794,14 @@ else
     for i = 1:size(settings,1)-2
         fprintf(fID,'%s\t%d\n',settings{i,:});
     end
-    fprintf(fID,'%s\t%.2f\n',settings{end-1,:});
-    fprintf(fID,'%s\t%.2f\n',settings{end,:});
+    fprintf(fID,'%s\t%.3f\n',settings{end-1,:});
+    fprintf(fID,'%s\t%.3f\n',settings{end,:});
     fclose(fID);
     %%% save plot data also
     fID  = fopen(GenerateName(fullfile(Path, 'Plots.txt'),1),'w');
     data = [tmp.eprheader; num2cell(tmp.epr)];
     fprintf(fID,[repmat('%s\t',1,size(data,2)-1) '%s\n'],data{1,:});
-    formatSpec = [repmat('%.2f\t',1,size(data,2)-1) '%.2f\n'];
+    formatSpec = [repmat('%.3f\t',1,size(data,2)-1) '%.3f\n'];
     for i = 2:size(data,1)
         fprintf(fID,formatSpec,data{i,:});
     end
