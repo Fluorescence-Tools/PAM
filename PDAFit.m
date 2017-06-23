@@ -1831,6 +1831,7 @@ switch mode
                 Maxi = max(Maxi, FitTable(i,3*c-1)+3*FitTable(i,3*c));
             end
         end
+        Maxi = min(Maxi,150);
         xlim(h.AllTab.Gauss_Axes,[Mini, Maxi]);
         xlim(h.SingleTab.Gauss_Axes,[Mini, Maxi]);
         %xlim(h.AllTab.Gauss_Axes,[20 70]);
