@@ -142,9 +142,9 @@ TauFit();
 function Open_Doc(~,~)
 global PathToApp
 if isunix
-    path = fullfile(PathToApp,'doc/sphinx_docs/build/html/index.html');
+    path = fullfile(PathToApp,'doc/build/html/index.html');
 elseif ispc
-    path = fullfile(PathToApp,'doc\sphinx_docs\build\html\index.html');
+    path = fullfile(PathToApp,'doc\build\html\index.html');
 end
 if ~isdeployed
     web(path);
