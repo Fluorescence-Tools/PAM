@@ -4965,7 +4965,7 @@ if obj == h.MI.Channels_List
             case 2 %%% Detector was changed
                 UserValues.Detector.Det(Sel) = ed.NewData;
                 for i=1:numel(UserValues.PIE.Detector)
-                   if UserValues.PIE.Detector(i)==ed.PreviousData && UserValues.PIE.Router==ed.Source.Data{Sel,3}
+                   if UserValues.PIE.Detector(i)==ed.PreviousData && UserValues.PIE.Router(i)==ed.Source.Data{Sel,3}
                        UserValues.PIE.Detector(i)=ed.NewData;
                    end
                 end
@@ -4974,7 +4974,7 @@ if obj == h.MI.Channels_List
             case 3 %%% Rout was changed
                 UserValues.Detector.Rout(Sel) = ed.NewData;
                 for i=1:numel(UserValues.PIE.Detector)
-                   if UserValues.PIE.Router(i)==ed.PreviousData && UserValues.PIE.Detector==ed.Source.Data{Sel,2}
+                   if UserValues.PIE.Router(i)==ed.PreviousData && UserValues.PIE.Detector(i)==ed.Source.Data{Sel,2}
                        UserValues.PIE.Router(i)=ed.NewData;
                    end
                 end
