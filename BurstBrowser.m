@@ -1,4 +1,6 @@
 function BurstBrowser(~,~)
+%   2017 - FAB Lab Munich - Don C. Lamb
+
 hfig=findobj('Tag','BurstBrowser');
 
 addpath(genpath(['.' filesep 'functions']));

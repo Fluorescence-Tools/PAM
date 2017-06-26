@@ -1,4 +1,6 @@
 function Output = PAM (SubFunction)
+%   2017 - FAB Lab Munich - Don C. Lamb
+
 global UserValues FileInfo PamMeta TcspcData PathToApp
 h.Pam=findobj('Tag','Pam');
 if nargout > 0
@@ -10960,6 +10962,7 @@ global UserValues PamMeta FileInfo PathToApp
 %h = guidata(findobj('Tag','Pam'));
 if nargin < 3 %%% no file id given, create one
     if strcmp(FileInfo.FileName{1},'Nothing loaded')
+        disp('No file loaded.');
         return;
     end
     

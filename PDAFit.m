@@ -1,9 +1,7 @@
 function PDAFit(~,~)
-% GlobalPDAFit Global Analysis of PDA data
+% PDAFit Global Analysis of PDA data
 %
-%      This is a beta version!
-%
-%      To use the program, simply call GlobalPDAFit at command line.
+%      To use the program, simply call PDAFit at command line.
 %
 %      The PDAData structure contains original experimental data and a
 %      number of parameters exported from BurstBrowser (gamma,
@@ -17,7 +15,7 @@ function PDAFit(~,~)
 %
 %      The PDAMeta structure contains all metadata generated during program usage
 %
-%   2015 - FAB Lab Munich - Don C. Lamb
+%   2017 - FAB Lab Munich - Don C. Lamb
 
 %%% TO DO:
 %%% Fix Brightness correction
