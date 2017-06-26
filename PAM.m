@@ -2054,15 +2054,17 @@ h.Trace.Axes.XLabel.Color=Look.Fore;
 h.Trace.Axes.YLabel.String='Count rate [kHz]';
 h.Trace.Axes.YLabel.Color=Look.Fore;
 h.Plots.Trace{1}=handle(plot([0 1],[0 0],'b'));
-if ~UserValues.Settings.Pam.Use_TimeTrace
-    h.Trace.Tab.Parent = [];
-end
+
 h.Trace.Menu = uicontextmenu;
 h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
     'Callback',{@Update_Display,2});
 h.Trace.Axes.UIContextMenu = h.Trace.Menu;
+
+if ~UserValues.Settings.Pam.Use_TimeTrace
+    h.Trace.Tab.Parent = [];
+end
 %% Plot and functions for PCH trace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Intensity trace tab
 h.PCH.Tab= uitab(...
@@ -4528,7 +4530,9 @@ if any(mode==2)
         if isempty(h.Plots.MT_Patches{i})
             h.Plots.MT_Patches{i}=handle(patch([PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i+1) PamMeta.MT_Patch_Times(i+1)],YData,UserValues.Look.Axes,'Parent',h.Trace.Axes));
             h.Plots.MT_Patches{i}.ButtonDownFcn=@MT_Section;
-            h.Plots.MT_Patches{i}.UIContextMenu = h.Trace.Menu;
+            if UserValues.Settings.Pam.Use_TimeTrace
+                h.Plots.MT_Patches{i}.UIContextMenu = h.Trace.Menu;
+            end
             %%% Resets old patch
         else
             h.Plots.MT_Patches{i}.XData=[PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i) PamMeta.MT_Patch_Times(i+1) PamMeta.MT_Patch_Times(i+1)];
