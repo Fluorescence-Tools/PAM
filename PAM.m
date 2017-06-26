@@ -11095,19 +11095,20 @@ end
         
 function Open_Doc(~,~)
 global PathToApp
-if isunix
-    path = fullfile(PathToApp,'doc/build/html/index.html');
-elseif ispc
-    path = fullfile(PathToApp,'doc\build\html\index.html');
-end
+% if isunix
+%     path = fullfile(PathToApp,'doc/build/html/index.html');
+% elseif ispc
+%     path = fullfile(PathToApp,'doc\build\html\index.html');
+% end
+path = 'http://pam.readthedocs.io';
 if ~isdeployed
     web(path);
 else
     %%% use system call to browser
-    if isunix
-        % fix spaces in path
-        path = strrep(path,' ','\ ');
-    end
+    %if isunix
+    %    % fix spaces in path
+    %    path = strrep(path,' ','\ ');
+    %end
     web(path,'-browser');
 end
 
