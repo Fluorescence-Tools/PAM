@@ -1,5 +1,8 @@
-function iconbutton(hBut,imgFile)
+function iconbutton(hBut,imgFile,opacity)
 %%% plots scaled image on button
+if nargin < 3
+    opacity = 1;
+end
 [a,~]=imread(imgFile);
 dim = size(a); img_hei = dim(1); img_wid = dim(2);
 hBut.Units = 'pixels'; drawnow;
@@ -17,5 +20,6 @@ img = uint8(ones(hei+2,wid+2,3));
 idx_wid = floor((wid+2-size(a,2))/2)+(1:size(a,2));
 idx_hei = floor((hei+2-size(a,1))/2)+(1:size(a,1));
 img(idx_hei,idx_wid,:) = a;
+img = opacity.*img + (1-opacity)*255;
 set(hBut,'CData',img);
 hBut.Units = 'normalized';
