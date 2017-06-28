@@ -14,3 +14,14 @@ Did you find a bug? Run into an error?
     
 Did you fix a bug?
 --------------------
+
+* Small and obvious bug fixes (i.e. syntax errors, typos) may be directly performed on the *develop* branch.
+    * Simply commit your changes with a **clear message** and push to the remote.
+* Generally, it is best practice to create a *bugfix* branch from *develop* to work on fixing a particular issue.
+    * Once the bug is fixed on your *bugfix* branch, submit a merge request detailing you changes and await approval/feedback.
+
+Do you want to work on a larger feature or addition to PAM?
+-------------------------------------------------------------
+
+* Follow the same workflow as for bugfixes by creating a *feature* branch.
+* Once your feature is finished, submit a merge request.
