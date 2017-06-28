@@ -15,9 +15,12 @@ Did you find a bug? Run into an error?
 Did you fix a bug?
 --------------------
 
-* Small and obvious bug fixes (i.e. syntax errors, typos) may be directly performed on the *develop* branch.
-    * Simply commit your changes with a **clear message** and push to the remote.
-* Generally, it is best practice to create a *bugfix* branch from *develop* to work on fixing a particular issue.
+* For small and obvious bug fixes (i.e. syntax errors, typos), [open a new issue](https://gitlab.com/PAM-PIE/PAM/issues/new),
+    describing what the bug is and how to fix it.
+    * These small bugfixes may be directly performed on the *develop* branch, however since the *develop* branch is protected, 
+        a user with *master* status has to perform the changes.
+    
+* For larger bugfixes, create a *bugfix* branch from *develop* to work on fixing a particular issue. Choose a descriptive name for the branch.
     * Once the bug is fixed on your *bugfix* branch, submit a merge request detailing you changes and await approval/feedback.
 
 Do you want to work on a larger feature or addition to PAM?
