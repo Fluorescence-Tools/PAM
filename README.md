@@ -100,4 +100,4 @@ and help with the development of new and the improvement of existing functionali
 To report bugs or suggest improvements and bugfixes, please use the 'Issues' function of GitLab.
 For this, a free GitLab account is required.
 
-To contribute to PAM, please consult the *contribution guide*.
+To contribute to PAM, please consult the [contribution guide](https://gitlab.com/PAM-PIE/PAM/blob/master/CONTRIBUTING.md).
