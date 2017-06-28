@@ -15,19 +15,18 @@ Did you find a bug? Run into an error?
 Did you fix a bug?
 --------------------
 
-* For small and obvious bug fixes (i.e. syntax errors, typos), [open a new issue](https://gitlab.com/PAM-PIE/PAM/issues/new),
+* For **small and obvious bug fixes** (i.e. syntax errors, typos), [open a new issue](https://gitlab.com/PAM-PIE/PAM/issues/new),
     describing what the bug is and how to fix it.
     * These small bugfixes may be directly performed on the *develop* branch, however since the *develop* branch is protected, 
-        a user with *master* status has to perform the changes.
-    
-* For larger bugfixes, create a *bugfix* branch from *develop* to work on fixing a particular issue.
-    * Choose a descriptive name for the branch.
-    * Work on fixing the bug, while keeping you branch up-to-date with the *develop* branch.
-    * Once the bug is fixed on your *bugfix* branch, submit a merge request detailing you changes and await approval/feedback.
+        a user with 'master' status has to perform the changes.
+
+* For **larger bugfixes**, create a *bugfix* branch from *develop* to work on fixing a particular issue. Choose a **clear name** for the branch.
+    * Work on fixing the bug, while keeping you branch **up-to-date** with the *develop* branch.
+    * Once the bug is fixed on your *bugfix* branch, submit a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new) detailing you changes and await approval/feedback.
 
 Do you want to work on a larger feature or addition to PAM?
 -------------------------------------------------------------
 
-* Follow the same workflow as for bugfixes by creating a *feature* branch. Choose a clear name for your *feature* branch. 
+* Follow the same workflow as for bugfixes by creating a *feature* branch. Choose a **clear name** for your *feature* branch. 
 * Work on your feature, while keeping you branch up-to-date with the *develop* branch.
 * Once your feature is finished, submit a merge request.
