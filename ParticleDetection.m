@@ -339,7 +339,8 @@ h.Particle_Save_Method = uicontrol(...
     'Position',[0.01 0.01, 0.5 0.03],...
     'Callback',{@Misc},...
     'String',{'Save Average';...
-    'Save FLIM Trace'});
+              'Save FLIM Trace';...
+              'Save Text'});
 %%% Frames to use
 h.Particle_Frames_Sum_Text = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -415,7 +416,7 @@ h.Particle_Display_ExternalMask = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String','Show external mask',...
     'Callback',{@Plot_Particle,2},....
-    'Position',[0.45 0.27, 0.4 0.04]);
+    'Position',[0.5 0.27, 0.49 0.04]);
 
 h.Particle_Number = uicontrol(...
     'Parent',h.Display_Panel,...
@@ -427,6 +428,17 @@ h.Particle_Number = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.21, 0.96 0.04],...
     'String','Particle detected: 0 ');
+
+h.Particle_SaveMask = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',15,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String','Save Mask',...
+    'Callback',@Save_Mask,....
+    'Position',[0.5 0.21, 0.44 0.04]);
 %% Stores Info in guidata
 guidata(h.Particle,h);
 %%% Updated method table
@@ -1172,10 +1184,14 @@ function Particle_Save(~,~)
 h = guidata(findobj('Tag','Particle'));
 switch h.Particle_Save_Method.Value
     case 1 %%% Save time sum
-        Save_Averaged
+        Save_Averaged;
     case 2 %%% Save FLIM trace
-        Save_FLIM_Trace
+        Save_FLIM_Trace;
+    case 3 %%% Saves text or excel files
+        Save_Text;
 end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Averages the selected regions and frames and saves the FLIM image
@@ -1251,9 +1267,8 @@ Path = ParticleData.Data.Path;
 
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Save the FLIM data as a trace for each (static) region over time
+%%% Save the particle data as a text or excel file
 function Save_FLIM_Trace
 h = guidata(findobj('Tag','Particle'));
 global ParticleData
@@ -1338,6 +1353,123 @@ Regions =ParticleData.Regions;
 Path = ParticleData.Data.Path;
 
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Save the FLIM data as a trace for each (static) region over time
+function Save_Text
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName, FilterIndex] = uiputfile({'*.txt';'*.csv';'*.xlsx';},'Save Particle Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+
+Mask = logical(squeeze(sum(ParticleData.Mask,3)));
+g = sum(ParticleData.Data.g(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+s = sum(ParticleData.Data.s(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+
+%%% Applies particle averaging
+G=zeros(numel(ParticleData.Regions),1);
+S=zeros(numel(ParticleData.Regions),1);
+x=zeros(numel(ParticleData.Regions),1);
+y=zeros(numel(ParticleData.Regions),1);
+for i=1:numel(ParticleData.Regions)
+    %%% Calculates mean particle phasor
+    G(i) = sum(g(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+    S(i) = sum(s(ParticleData.Regions(i).PixelIdxList).*Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(Intensity(ParticleData.Regions(i).PixelIdxList));
+    %%% Extracts first pixel position of each particle
+    x(i) = ParticleData.Regions(i).PixelList(1,1);
+    y(i) = ParticleData.Regions(i).PixelList(1,2);
+    
+end
+
+%%% Calculate lifetimes from phasor
+Freq = repmat(ParticleData.Data.Freq,size(G));
+Fi = atan(S./G);
+M = sqrt(S.^2+G.^2);
+TauP = real(tan(Fi)./(2*pi*Freq/10^9));
+TauM = real(sqrt((1./(S.^2+G.^2))-1)./(2*pi*Freq/10^9));
+
+
+VarNames = {'TauP','TauM','TotalPhotons','MeanPhotons','MaxPhotons','Area','x','y','s','g','Frequency'};
+%%% Creates table variable for saving
+tab = table(TauP,... Phase based lifetime
+            TauM,... Modulation based lifetime
+            [ParticleData.Regions.TotalCounts]',... Total photons of particle
+            [ParticleData.Regions.MeanIntensity]',... Average photons per pixel
+            [ParticleData.Regions.MaxIntensity]',... Brightest pixel counts
+            [ParticleData.Regions.Area]',... Particle area in photons
+            x,... x position of first pixel
+            y,... y position of first pixel
+            S,... S value of particle
+            G,... G value of particle
+            Freq,... %%% Measurement frequency, e.g. 1/TAC
+            'VariableNames',VarNames);
+
+%%% Saves data as text or table
+if FilterIndex == 1 %%% Use tab sepparation for .txt files
+    writetable(tab,fullfile(PathName,FileName),'Delimiter','tab');
+else
+    writetable(tab,fullfile(PathName,FileName));
+end
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Saves the calculated Mask as a TIFF %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Save_Mask(~,~)
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
+
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.tif', 'Save Mask', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+Image = uint16(ParticleData.Particle(:,:,1));
+imwrite(Image,fullfile(PathName,FileName));
+
+
+
+
+
+
+
+
+
 
 
 
