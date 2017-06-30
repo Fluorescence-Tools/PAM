@@ -3,7 +3,7 @@ PAM - PIE Analysis with MATLAB
 
 The program can be downloaded from the homepage of Prof. Don C. Lamb - http://www.cup.uni-muenchen.de/pc/lamb/ - or through *GitLab* - https://gitlab.com/PAM-PIE.
 
-Checkout out the manual hosted at [http://pam.readthedocs.io](http://pam.readthedocs.io).
+The **manual** can be found at [http://pam.readthedocs.io](http://pam.readthedocs.io).
 
 This *GitLab* group contains frour projects:
 
