@@ -1217,11 +1217,16 @@ end
 
 %%% Actual particle detection and averaging
 if mode == 1
-    if ~isfield(ParticleData,'MaskData')
-        msgbox('Load external mask'); 
+    
+    %%% Stops invalid execution
+    if ~isfield(ParticleData,'MaskData') ||...
+       ~isfield(ParticleData,'Data') ||...
+       size(ParticleData.MaskData,1)~= size(ParticleData.Data,1) ||...
+       size(ParticleData.MaskData,2)~= size(ParticleData.Data,2)
+        msgbox('Invalid data loaded'); 
         return;
     end
-   
+
     From = str2double(h.Particle_Frames_Start.String);
     To = str2double(h.Particle_Frames_Stop.String);
     
