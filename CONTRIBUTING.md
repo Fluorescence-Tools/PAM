@@ -1,4 +1,4 @@
- zHow to contribute to PAM
+How to contribute to PAM
 ==========================
 
 Did you find a bug? Run into an error?
@@ -28,7 +28,7 @@ Did you fix a bug?
 
 * To create a branch for bugfixes, first make sure that you are on the *develop* branch by typing `git checkout develop`.
 * Create a new branch from develop for your bugfix by typing `git checkout -b bugfix`. This will create the branch *bugfix* and switch to it. 
-*   * `git checkout -b bugfix` is equivalent to typing `git branch bugfix` + `git checkout bugfix`.
+    * `git checkout -b bugfix` is equivalent to typing `git branch bugfix` + `git checkout bugfix`.
 * Work on your bugfix and commit locally.
 * To push your branch and commits to the remote, type `git push origin bugfix`.
 * Open a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new).
