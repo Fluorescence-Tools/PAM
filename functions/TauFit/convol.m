@@ -1,6 +1,7 @@
 function y = convol(irf, x)
 % convol(irf, x) performs a convolution of the instrumental response 
 % function irf with the decay function x. Periodicity (=length(x)) is assumed.
+% (c) 1996 J?rg Enderlein 
 
 mm = mean(irf(end-10:end));
 if size(x,1)==1 || size(x,2)==1
