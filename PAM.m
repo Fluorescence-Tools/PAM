@@ -3811,7 +3811,7 @@ end
 %%% Uses HTML to set color of each channel to selected color
 List=cell(numel(UserValues.PIE.Name),1);
 for i=1:numel(List)
-    Hex_color=dec2hex(UserValues.PIE.Color(i,:)*255)';
+    Hex_color=dec2hex(round(UserValues.PIE.Color(i,:)*255))';
     List{i}=['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.PIE.Name{i} '</Font></html>'];
 end
 %%% Updates PIE_List string
@@ -4771,7 +4771,11 @@ switch e.Key
         %%% Does not combine single
         if numel(Sel)>1 && isempty(cell2mat(UserValues.PIE.Combined(Sel)))
             
-            UserValues.PIE.Color(end+1,:)=[0 0 1];
+            color = [0,0,0]
+            for i = Sel;
+                color = color + UserValues.PIE.Color(i,:);
+            end
+            UserValues.PIE.Color(end+1,:)=color./numel(Sel);
             UserValues.PIE.Combined{end+1}=Sel;
             UserValues.PIE.Detector(end+1)=0;
             UserValues.PIE.Router(end+1)=0;
