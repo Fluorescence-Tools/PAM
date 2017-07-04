@@ -7,7 +7,7 @@ The two kinetic terms are multiplied.
 |gamma|*|N|*|Antibunching|*|Bunching1|*|Bunching2|*|xy diffusion|*|z diffusion|+|Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;	LB = 0;     UB = Inf;
-Param(2): tauD[?s]      = 60;	LB = 0;     UB = Inf;
+Param(2): tauD[&mu;s]      = 60;	LB = 0;     UB = Inf;
 Param(3): p             = 5;	LB = 0;     UB = Inf;
 Param(4): tauAB[ns]      = 1;    LB = 0;     UB = Inf;
 Param(5): A(ab)          = 1; LB = 0;     UB = 1;

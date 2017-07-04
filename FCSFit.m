@@ -1108,8 +1108,10 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
         Param_Pos=strfind(Text{i+Param_Start},' ');
         FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
         Start = strfind(Text{i+Param_Start},'=');
-        Stop = strfind(Text{i+Param_Start},';');
-
+        %Stop = strfind(Text{i+Param_Start},';');
+        % Filter more specifically (this enables the use of html greek
+        % letters like &mu; etc.)
+        [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
         FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
         FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
         FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));

@@ -12,14 +12,14 @@ AutoCorrelation RICS model
 
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N1            = 1;	LB = 0;     UB = Inf;   
-Param(2): D1[µm²/s]     = 10;	LB = 0;     UB = Inf;
+Param(2): D1[&mu;m<sup>2</sup>/s]     = 10;	LB = 0;     UB = Inf;
 Param(3): N2            = 1;	LB = 0;     UB = Inf;   
-Param(4): D2[µm²/s]     = 10;	LB = 0;     UB = Inf;
-Param(5): w_r[µm]       = 0.2;	LB = 0;     UB = Inf;
-Param(6): w_z[µm]       = 0.2;	LB = 0;     UB = Inf;
+Param(4): D2[&mu;m<sup>2</sup>/s]     = 10;	LB = 0;     UB = Inf;
+Param(5): w_r[&mu;m]       = 0.2;	LB = 0;     UB = Inf;
+Param(6): w_z[&mu;m]       = 0.2;	LB = 0;     UB = Inf;
 Param(7): y0            = 0;    LB = -Inf;  UB = Inf;
 Param(8): Px[nm]        = 50;	LB = 0;     UB = Inf;
-Param(9): P_Time[µs]    = 10;	LB = 0;     UB = Inf;
+Param(9): P_Time[&mu;s]    = 10;	LB = 0;     UB = Inf;
 Param(10): L_Time[ms]   = 3.33;	LB = 0;     UB = Inf;
 Param(11): N_Imm        = 1;	LB = 0;     UB = Inf;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
