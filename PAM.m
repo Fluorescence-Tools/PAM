@@ -3541,6 +3541,9 @@ for  i=find(UserValues.PIE.Detector==0)
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
+    if UserValues.Settings.Pam.Use_Lifetime
+        PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
+    end
     if UserValues.Settings.Pam.Use_PCH
         PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
         PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
