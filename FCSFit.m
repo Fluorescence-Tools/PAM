@@ -1507,7 +1507,7 @@ switch mode
                 NewName = inputdlg('Enter new filename');
                 if ~isempty(NewName)
                     h.Style_Table.RowName{File} = NewName{1};
-                    h.Fit_Table.Data{File,1} = ['<HTML><b>' NewName{1} '</b></HTML>'];
+                    h.Fit_Table.Data{File,1} = NewName{1};
                     FCSData.FileName{File} = NewName{1};
                     Update_Plots;
                 end                  
