@@ -145,7 +145,15 @@ if isempty(hfig)
         'Label','<html>Export all graphs (E, E-S, lifetime...)</html>',...
         'Tag','ExportAllGraphs_Menu',...
         'Callback',@ExportAllGraphs,...
+        'Enable','on',...
         'Separator','on');
+    h.ExportAllInOneGraphs_Menu = uimenu(...
+        'Parent',h.Export_Menu,...
+        'Label','<html>Export all-in-one graphs...</html>',...
+        'Tag','ExportAllInOneGraphs_Menu',...
+        'Callback',@ExportAllInOneGraphs,...
+        'Enable','on',...
+        'Separator','off');
      %%% Choose print path
     h.Autoset_PrintPath_Menu = uimenu(...
         'Parent',h.Export_Menu,...
@@ -14719,6 +14727,249 @@ ExportGraph_CloseFunction(hfig,[],0,FigureName)
 % ExportGraph_CloseFunction(hfig,[],0,FigureName)
 
 UserValues.BurstBrowser.Settings.SaveFileExportFigure = prev_setting;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Export all-in-one graphs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function ExportAllInOneGraphs(obj,~)
+global BurstData BurstMeta
+h = guidata(obj);
+
+% file and species that is currently selected
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+
+for k = 1:numel(BurstData) %loop through all files
+    BurstMeta.SelectedFile = k;
+    % select the same species for all files as for the currently selected file
+    BurstData{k}.SelectedSpecies = species;
+    
+    UpdateCorrections([],[],h);
+    UpdateCutTable(h);
+    UpdateCuts();
+    %Update_fFCS_GUI([],[],h);
+    %update all plots, cause that's what we'll be copying
+    UpdatePlot([],[],h);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
+    
+    if any(BurstData{k}.BAMethod == [3,4])
+        disp('Not implemented for three color.');
+        return;
+    end
+    
+    % initialize the figure
+    fontsize = 16;
+    if ispc
+        fontsize = fontsize/1.2;
+    end
+    size_pixels = 650;
+    AspectRatio = 1;
+    pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
+    %NIels
+    
+    % make a cell containing the strings of the parameters you want to plot
+    % in the figure.
+    paramname = cell(4,2);
+    % 2D Lifetime-E
+    paramname{1,1} = 'Lifetime GG [ns]';
+    paramname{1,2} = 'FRET Efficiency';
+    % 2D lifetime GG-Anisotropy GG
+    paramname{2,1} = 'Lifetime GG [ns]';
+    paramname{2,2} = 'Anisotropy GG';
+    % 2D lifetime RR-Anisotropy RR
+    paramname{3,1} = 'Lifetime RR [ns]';
+    paramname{3,2} = 'Anisotropy RR';
+    % 2D Stoichiometry-E
+    paramname{4,1} = 'Stoichiometry';
+    paramname{4,2} = 'FRET Efficiency';
+   
+  
+    panel_copy = cell(4,1);
+    
+    % Make 4 new figures with the appropriate plots
+    for f = 1:4
+        h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{k}.NameArray));
+        h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{k}.NameArray));
+        UpdatePlot([],[],h);
+        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
+        %%% Copy axes to figure
+        panel_copy{f} = copyobj([h.MainTabGeneralPanel.Children(3),...
+            h.MainTabGeneralPanel.Children(4),...
+            h.MainTabGeneralPanel.Children(6)],...
+            hfig);
+        if f == 1
+        copyobj (h.axes_EvsTauGG.Children(5),...
+            panel_copy{f}(3));
+        panel_copy{f}(3).Children(1).Visible='on';
+        h.axes_EvsTauGG.Children(5).LineWidth = 2;
+        end
+        if f == 2
+        copyobj (h.axes_rGGvsTauGG.Children(3),...
+            panel_copy{f}(3));
+            panel_copy{f}(3).Children(1).Visible='on';
+            h.axes_rGGvsTauGG.Children(3).LineWidth = 2;
+        end
+        if f == 3
+        copyobj (h.axes_rRRvsTauRR.Children(3),...
+             panel_copy{f}(3));
+             panel_copy{f}(3).Children(1).Visible='on';
+             h.axes_rRRvsTauRR.Children(3).LineWidth = 2;
+        end
+
+        %%% set Background Color to white
+        for a = 1:3
+        panel_copy{f}(a).Color = [1 1 1];
+        panel_copy{f}(a).XColor = [0 0 0];
+        panel_copy{f}(a).GridAlpha=0.5;
+        panel_copy{f}(a).GridAlphaMode = 'manual';
+        panel_copy{f}(a).GridColor = [0 0 0];
+        panel_copy{f}(a).GridColorMode = 'auto';
+        panel_copy{f}(a).GridLineStyle = '-';
+        %panel_copy{f}(a).XTickLabelMode = 'auto';
+        %panel_copy{f}(a).YTickLabelMode = 'auto';
+        panel_copy{f}(a).XMinorGrid = 'off';
+        panel_copy{f}(a).YMinorGrid = 'off';
+        %%% change X/YColor Color Color
+        panel_copy{f}(a).XColor = [0,0,0];
+        panel_copy{f}(a).YColor = [0,0,0];
+        panel_copy{f}(a).XLabel.Color = [0,0,0];
+        panel_copy{f}(a).YLabel.Color = [0,0,0];
+        end
+        for a = 3
+        panel_copy{f}(a).YColor = [0 0 0];
+        panel_copy{f}(a).XGrid = 'on';
+        panel_copy{f}(a).YGrid = 'on';
+        end
+        for a = 1:2
+        panel_copy{f}(a).XTickLabelMode = 'auto';
+        panel_copy{f}(a).YTickLabelMode = 'auto';
+        panel_copy{f}(a).XGrid = 'off';
+        panel_copy{f}(a).YGrid = 'off';
+        % change the grayscale of the bars and remove the line
+        panel_copy{f}(a).Children(9).FaceColor = [0.7 0.7 0.7];
+        panel_copy{f}(a).Children(9).LineStyle = 'none';
+        end
+        for a = 3
+        panel_copy{f}(a).XTickLabel = [];
+        panel_copy{f}(a).YTickLabel = [];
+        panel_copy{f}(a).XLabel.String = [];
+        panel_copy{f}(a).YLabel.String = [];
+        end
+            
+    end
+    %NIELS
+    hfigallinone = figure('Position',pos,'Color',[1 1 1],'Visible','on');
+    % 2D Lifetime-E
+    copyobj([panel_copy{1}],hfigallinone);
+    hfigallinone.Children(1).Position = [0.06 0.53 0.06 0.35];
+    set(hfigallinone.Children(1).YLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(1).XAxisLocation = 'bottom';
+    hfigallinone.Children(1).YLabel.Position = [0.48 1.1 0];
+    set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(1).XLabel.Position = [-0.55 0.5 0];
+    hfigallinone.Children(1).XLabel.String = 'FRET Efficiency';
+    set(hfigallinone.Children(1), 'Ydir','reverse')
+    hfigallinone.Children(1).YAxisLocation = 'Right';
+    hfigallinone.Children(1).YTickLabelRotation = 90;
+    hfigallinone.Children(1).YLabel.FontSize = 8;
+    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(2).Position = [0.12 0.88 0.35 0.06];
+    set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
+    hfigallinone.Children(2).YAxisLocation = 'Right';
+    hfigallinone.Children(2).YLabel.FontSize = 8;
+    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).TickLength = [0.0100 0.0250];
+    hfigallinone.Children(3).Position = [0.12 0.53 0.35 0.35];
+    hfigallinone.Children(3).XAxisLocation = 'top';
+    hfigallinone.Children(3).XGrid = 'on';
+    hfigallinone.Children(3).YGrid = 'on';
+    for b = 1:2
+            labels = hfigallinone.Children(b).XTickLabel;
+            labels{1} = '';
+            labels{end} = '';
+            hfigallinone.Children(b).XTickLabel = labels;
+    end
+    % 2D lifetime GG-Anisotropy GG
+    copyobj([panel_copy{2}],hfigallinone);
+    hfigallinone.Children(1).Position = [0.06 0.18 0.06 0.35];
+    hfigallinone.Children(1).YLabel.Color = 'k';
+    set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(1).XAxisLocation = 'bottom';
+    hfigallinone.Children(1).XLabel.Position = [-0.55 0.5 0];
+    hfigallinone.Children(1).XLabel.String = 'Anisotropy GG';
+    hfigallinone.Children(1).TickLength = [0.0100 0.0250];
+    hfigallinone.Children(1).YAxisLocation = 'Left';
+    hfigallinone.Children(1).YTickLabelRotation = 90;
+    hfigallinone.Children(1).YLabel.FontSize = 8;
+    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(1).YTick = [500 1000 1500];
+    hfigallinone.Children(2).Position = [1.5 1.5 0.35 0.06];
+    hfigallinone.Children(2).XAxisLocation = 'bottom';
+    set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(2).XLabel.Position = [0.43 -0.5 0];
+    hfigallinone.Children(3).Position = [0.12 0.18 0.35 0.35];
+    hfigallinone.Children(3).XGrid = 'on';
+    hfigallinone.Children(3).YGrid = 'on';
+    set(hfigallinone.Children(1), 'Ydir','reverse')
+    set(hfigallinone.Children(2), 'Ydir','reverse')
+    for b = 1:2
+            labels = hfigallinone.Children(b).XTickLabel;
+            labels{1} = '';
+            labels{end} = '';
+            hfigallinone.Children(b).XTickLabel = labels;
+    end
+    % 2D lifetime RR-Anisotropy RR
+    copyobj([panel_copy{3}],hfigallinone);
+    hfigallinone.Children(1).Position = [0.82 0.18 0.06 0.35];
+    set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
+    hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
+    hfigallinone.Children(1).XLabel.String = 'Anisotropy RR';
+    hfigallinone.Children(1).YAxisLocation = 'Right';
+    hfigallinone.Children(1).YTickLabelRotation = -90;
+    hfigallinone.Children(1).YLabel.FontSize = 8;
+    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(2).Position = [0.47 0.12 0.35 0.06];
+    hfigallinone.Children(2).XAxisLocation = 'bottom';
+    set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(2).XLabel.Position = [0.50 -0.5 0];
+    hfigallinone.Children(2).YLabel.FontSize = 8;
+    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).XTick = [0 1 2 3 4 5 6];
+    hfigallinone.Children(3).Position = [0.47 0.18 0.35 0.35];
+    hfigallinone.Children(3).XGrid = 'on';
+    hfigallinone.Children(3).YGrid = 'on';
+    set(hfigallinone.Children(2), 'Ydir','reverse')
+    for b = 1:2
+            labels = hfigallinone.Children(b).XTickLabel;
+            labels{1} = '';
+            labels{end} = '';
+            hfigallinone.Children(b).XTickLabel = labels;
+    end
+
+    % 2D Stoichiometry-E
+    copyobj([panel_copy{4}],hfigallinone);
+    hfigallinone.Children(1).Position = [1.5 1.5 0.06 0.35];
+    hfigallinone.Children(2).Position = [0.47 0.88 0.35 0.06];
+    set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
+    hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
+    hfigallinone.Children(2).YAxisLocation = 'Right';
+    hfigallinone.Children(2).YLabel.FontSize = 8;
+    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).TickLength = [0.0100 0.0250];
+    hfigallinone.Children(3).Position = [0.47 0.53 0.35 0.35];
+    hfigallinone.Children(3).XAxisLocation = 'top';
+    hfigallinone.Children(3).XLabel.Position = [0.50 1.0 0];
+    hfigallinone.Children(3).XGrid = 'on';
+    hfigallinone.Children(3).YGrid = 'on';
+    for b = 1:2
+            labels = hfigallinone.Children(b).XTickLabel;
+            labels{1} = '';
+            labels{end} = '';
+            hfigallinone.Children(b).XTickLabel = labels;
+    end
+end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
