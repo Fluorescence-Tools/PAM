@@ -3154,6 +3154,7 @@ for i=Images %%% Plots Phasor Data
             roi = ceil((s-y(1))/(y(2)-y(1))*(size(FractionColor,1)-1));
             %%% removes points too far away
             Dist = abs(x(1)-g);
+            
             roi(roi<0 | roi > size(FractionColor,1)-1 | Dist > Width ) = 0;
             
             %%% Removes pixels below threshold
