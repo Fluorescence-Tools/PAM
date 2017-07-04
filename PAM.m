@@ -4865,6 +4865,16 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         Update_Cor_Table(obj);
         %%% Rename channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+        %%% Update names in combined channels
+        Combined=find(UserValues.PIE.Detector==0);
+        for i=Combined
+            %%% update name
+            UserValues.PIE.Name{i}='Comb.: ';
+            for j=UserValues.PIE.Combined{i};
+                UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
+            end
+            UserValues.PIE.Name{i}(end)=[];
+        end
     elseif obj == h.PIE.DetectionChannel
         %%% Updates PIE detector and routing
         UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(h.PIE.DetectionChannel.Value);
