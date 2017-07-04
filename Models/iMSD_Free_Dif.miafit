@@ -9,7 +9,7 @@ The i in the formula comes from MIAFit and accounts for the
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): A0                = 1;     LB = 0;      UB = Inf;  
 Param(2): w_r[nm]           = 200;   LB = 0;      UB = Inf;g
-Param(3): D[�m�]            = 0.01;  LB = 0;      UB = Inf;g
+Param(3): D[&mu;m<sup>2</sup>/s]            = 0.01;  LB = 0;      UB = Inf;g
 Param(4): I0                = 0;     LB = -Inf;   UB = Inf;
 Param(5): Pixel_Size[nm]    = 50;    LB = 0;      UB = Inf;f
 Param(6): Inter_Frame_Time[ms]    = 100;    LB = 0;      UB = Inf;f

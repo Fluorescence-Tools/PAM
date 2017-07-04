@@ -4634,7 +4634,9 @@ switch e.Key
         PamMeta.Image(Sel)=[];
         PamMeta.Lifetime(Sel)=[];
         PamMeta.Info(Sel)=[];
-        
+        PamMeta.PCH(Sel) = [];
+        PamMeta.BinsPCH(Sel) = [];
+        PamMeta.TracePCH(Sel) = [];
         %%% Removes deleted PIE channel from all combined channels
         Combined=find(UserValues.PIE.Detector==0);
         new=0;
@@ -4707,9 +4709,10 @@ switch e.Key
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)-1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)-1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)-1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4747,9 +4750,10 @@ switch e.Key
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)+1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)+1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)+1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4771,7 +4775,7 @@ switch e.Key
         %%% Does not combine single
         if numel(Sel)>1 && isempty(cell2mat(UserValues.PIE.Combined(Sel)))
             
-            color = [0,0,0]
+            color = [0,0,0];
             for i = Sel;
                 color = color + UserValues.PIE.Color(i,:);
             end
@@ -4865,6 +4869,16 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         Update_Cor_Table(obj);
         %%% Rename channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+        %%% Update names in combined channels
+        Combined=find(UserValues.PIE.Detector==0);
+        for i=Combined
+            %%% update name
+            UserValues.PIE.Name{i}='Comb.: ';
+            for j=UserValues.PIE.Combined{i};
+                UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
+            end
+            UserValues.PIE.Name{i}(end)=[];
+        end
     elseif obj == h.PIE.DetectionChannel
         %%% Updates PIE detector and routing
         UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(h.PIE.DetectionChannel.Value);

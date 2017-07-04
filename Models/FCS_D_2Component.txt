@@ -7,12 +7,12 @@ One exponential triplet component
 |gamma|*|N|*|Trip amplitude|*|Trip time|*|xy diffusion|*|z diffusion|+|Offset|
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N1            = 1;	LB = 0;     UB = Inf;
-Param(2): D1[�m^2/s]    = 373;	LB = 0;     UB = Inf; 
+Param(2): D1[&mu;m<sup>2</sup>/s]    = 373;	LB = 0;     UB = Inf; 
 Param(3): N2            = 1;	LB = 0;     UB = Inf;
-Param(4): D2[�m^2/s]    = 10;	LB = 0;     UB = Inf;
-Param(5): w_r [�m]      = 0.2;	LB = 0;     UB = Inf;
-Param(6): w_z [�m]      = 1;	LB = 0;     UB = Inf;
-Param(7): tauT[�s]      = 1;	LB = 0;     UB = Inf;
+Param(4): D2[&mu;m<sup>2</sup>/s]    = 10;	LB = 0;     UB = Inf;
+Param(5): w_r [&mu;m]      = 0.2;	LB = 0;     UB = Inf;
+Param(6): w_z [&mu;m]      = 1;	LB = 0;     UB = Inf;
+Param(7): tauT[&mu;s]      = 1;	LB = 0;     UB = Inf;
 Param(8): Trip          = 0.01; LB = 0;     UB = 1;
 Param(9): y0            = 0;	LB = -1;    UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%

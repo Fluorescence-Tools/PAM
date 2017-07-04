@@ -127,7 +127,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Units','normalized',...
         'ForegroundColor',Look.TableFore,...
         'BackgroundColor',[Look.Table1;Look.Table2],...
-        'FontSize',8,...
+        'FontSize',10,...
         'Position',[0 0 1 1],...
         'CellEditCallback',{@Update_Table,3},...
         'CellSelectionCallback',{@Update_Table,3});
@@ -1108,8 +1108,10 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
         Param_Pos=strfind(Text{i+Param_Start},' ');
         FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
         Start = strfind(Text{i+Param_Start},'=');
-        Stop = strfind(Text{i+Param_Start},';');
-
+        %Stop = strfind(Text{i+Param_Start},';');
+        % Filter more specifically (this enables the use of html greek
+        % letters like &mu; etc.)
+        [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
         FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
         FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
         FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
@@ -1216,13 +1218,10 @@ switch mode
         Rows=cell(numel(FCSData.Data)+3,1);
         tmp = FCSData.FileName;
 
-        for i = 1:numel(tmp)
-            tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
-        end
         Rows(1:numel(tmp))=deal(tmp);
-        Rows{end-2}='<HTML><b>ALL</b>';
-        Rows{end-1}='<HTML><b>Lower bound</b>';
-        Rows{end}='<HTML><b>Upper bound</b>';
+        Rows{end-2}='ALL';
+        Rows{end-1}='Lower bound';
+        Rows{end}='Upper bound';
         %h.Fit_Table.RowName=Rows;
         
         Data=cell(numel(Rows),size(h.Fit_Table.Data,2)-1);
@@ -1279,21 +1278,23 @@ switch mode
 
         if e.Indices(1)==size(h.Fit_Table.Data,1)-2
             %% ALL row wase used => Applies to all files
-            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
-                %% Value was changed => Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
-            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
-                %% Value was fixed => Uncheck global
-                h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
-            elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && NewData==1
-                %% Global was change
-                %%% Apply value to all files
-                h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
-                %%% Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
-                %%% Unfixes all files to prohibit fixed and global
-                h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
+            if e.Indices(2) > 1 %%% don't execute for name column
+                h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
+                if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
+                    %% Value was changed => Apply value to global variables
+                    FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
+                elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
+                    %% Value was fixed => Uncheck global
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && NewData==1
+                    %% Global was change
+                    %%% Apply value to all files
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
+                    %%% Apply value to global variables
+                    FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                    %%% Unfixes all files to prohibit fixed and global
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                end
             end
         elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Global was changed => Applies to all files
@@ -1506,7 +1507,7 @@ switch mode
                 NewName = inputdlg('Enter new filename');
                 if ~isempty(NewName)
                     h.Style_Table.RowName{File} = NewName{1};
-                    h.Fit_Table.RowName{File} = NewName{1};
+                    h.Fit_Table.Data{File,1} = NewName{1};
                     FCSData.FileName{File} = NewName{1};
                     Update_Plots;
                 end                  

@@ -8,12 +8,12 @@ and to negative values for cross-correlation functions (SCCF).
 |gamma|*|N|*|first exponential + second exponential|*|xy diffusion*|z diffusion|+|Offset|    
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 0.01;	LB = 0;     UB = Inf;
-Param(2): tauD[?s]      = 2500;   LB = 0;     UB = Inf;
+Param(2): tauD[&mu;s]      = 2500;   LB = 0;     UB = Inf;
 Param(3): p             = 5;	LB = 0;     UB = Inf;
 Param(4): alpha         = 1;	LB = 0;     UB = Inf;
-Param(5): tauT1[?s]      = 1;	LB = 0;     UB = Inf;
+Param(5): tauT1[&mu;s]      = 1;	LB = 0;     UB = Inf;
 Param(6): A1            = 1;    LB = -1;     UB = 1;
-Param(7): tauT2[?s]      = 1;	LB = 0;     UB = Inf;
+Param(7): tauT2[&mu;s]      = 1;	LB = 0;     UB = Inf;
 Param(8): A2            = 1;    LB = -1;     UB = 1;
 Param(9): y0            = 0;    LB = -1;    UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
