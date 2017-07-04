@@ -4634,7 +4634,9 @@ switch e.Key
         PamMeta.Image(Sel)=[];
         PamMeta.Lifetime(Sel)=[];
         PamMeta.Info(Sel)=[];
-        
+        PamMeta.PCH(Sel) = [];
+        PamMeta.BinsPCH(Sel) = [];
+        PamMeta.TracePCH(Sel) = [];
         %%% Removes deleted PIE channel from all combined channels
         Combined=find(UserValues.PIE.Detector==0);
         new=0;
