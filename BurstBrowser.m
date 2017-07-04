@@ -14766,20 +14766,19 @@ for k = 1:numel(BurstData) %loop through all files
     size_pixels = 650;
     AspectRatio = 1;
     pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
-    %NIels
     
     % make a cell containing the strings of the parameters you want to plot
     % in the figure.
     paramname = cell(4,2);
     % 2D Lifetime-E
-    paramname{1,1} = 'Lifetime GG [ns]';
+    paramname{1,1} = 'Lifetime D [ns]';
     paramname{1,2} = 'FRET Efficiency';
     % 2D lifetime GG-Anisotropy GG
-    paramname{2,1} = 'Lifetime GG [ns]';
-    paramname{2,2} = 'Anisotropy GG';
+    paramname{2,1} = 'Lifetime D [ns]';
+    paramname{2,2} = 'Anisotropy D';
     % 2D lifetime RR-Anisotropy RR
-    paramname{3,1} = 'Lifetime RR [ns]';
-    paramname{3,2} = 'Anisotropy RR';
+    paramname{3,1} = 'Lifetime A [ns]';
+    paramname{3,2} = 'Anisotropy A';
     % 2D Stoichiometry-E
     paramname{4,1} = 'Stoichiometry';
     paramname{4,2} = 'FRET Efficiency';
@@ -14792,12 +14791,12 @@ for k = 1:numel(BurstData) %loop through all files
         h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{k}.NameArray));
         h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{k}.NameArray));
         UpdatePlot([],[],h);
-        hfig = figure('Position',pos,'Color',[1 1 1],'Visible','on');
+        hfig{f} = figure('Position',pos,'Color',[1 1 1],'Visible','on');
         %%% Copy axes to figure
         panel_copy{f} = copyobj([h.MainTabGeneralPanel.Children(3),...
             h.MainTabGeneralPanel.Children(4),...
             h.MainTabGeneralPanel.Children(6)],...
-            hfig);
+            hfig{f});
         if f == 1
         copyobj (h.axes_EvsTauGG.Children(5),...
             panel_copy{f}(3));
@@ -14847,7 +14846,7 @@ for k = 1:numel(BurstData) %loop through all files
         panel_copy{f}(a).XGrid = 'off';
         panel_copy{f}(a).YGrid = 'off';
         % change the grayscale of the bars and remove the line
-        panel_copy{f}(a).Children(9).FaceColor = [0.7 0.7 0.7];
+%        panel_copy{f}(a).Children(9).FaceColor = [0.7 0.7 0.7];
         panel_copy{f}(a).Children(9).LineStyle = 'none';
         end
         for a = 3
@@ -14858,7 +14857,7 @@ for k = 1:numel(BurstData) %loop through all files
         end
             
     end
-    %NIELS
+
     hfigallinone = figure('Position',pos,'Color',[1 1 1],'Visible','on');
     % 2D Lifetime-E
     copyobj([panel_copy{1}],hfigallinone);
@@ -14898,7 +14897,7 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(1).XAxisLocation = 'bottom';
     hfigallinone.Children(1).XLabel.Position = [-0.55 0.5 0];
-    hfigallinone.Children(1).XLabel.String = 'Anisotropy GG';
+    hfigallinone.Children(1).XLabel.String = 'Anisotropy D';
     hfigallinone.Children(1).TickLength = [0.0100 0.0250];
     hfigallinone.Children(1).YAxisLocation = 'Left';
     hfigallinone.Children(1).YTickLabelRotation = 90;
@@ -14925,7 +14924,7 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).Position = [0.82 0.18 0.06 0.35];
     set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
     hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
-    hfigallinone.Children(1).XLabel.String = 'Anisotropy RR';
+    hfigallinone.Children(1).XLabel.String = 'Anisotropy A';
     hfigallinone.Children(1).YAxisLocation = 'Right';
     hfigallinone.Children(1).YTickLabelRotation = -90;
     hfigallinone.Children(1).YLabel.FontSize = 8;
@@ -14968,6 +14967,9 @@ for k = 1:numel(BurstData) %loop through all files
             labels{1} = '';
             labels{end} = '';
             hfigallinone.Children(b).XTickLabel = labels;
+    end
+    for k = 1:4
+        close(hfig{k})
     end
 end 
 
