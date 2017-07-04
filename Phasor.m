@@ -2110,78 +2110,139 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 end
             end
         case h.Export_Fraction %%% Exports histogram along fraction line
-            
-            Pixel=str2double(h.Phasor_Res.String);
-            THmin=str2double(h.THmin.String);
-            THmax=str2double(h.THmax.String);
-            Sel = h.List.Value;
-                        
-            
-            %%% Calculate Map
-            Width=str2double(h.ROI_Size{7}.String);
-            
-            if strcmp(h.Phasor_Fraction.Visible,'on') %%% Fraction Line
-                x=h.Phasor_Fraction.XData;
-                y=h.Phasor_Fraction.YData;
-                x=linspace(x(1),x(2),str2double(h.Export_Line_Points.String));
-                y=linspace(y(1),y(2),str2double(h.Export_Line_Points.String));
-            elseif strcmp(h.Phasor_FRET(2,1).Visible, 'on') %%%FRET line
+           
+            if strcmp(h.Phasor_FRET(2,1).Visible, 'on') %%%FRET line
+                tic
+                Pixel=str2double(h.Phasor_Res.String);
+                THmin=str2double(h.THmin.String);
+                THmax=str2double(h.THmax.String);
+                Sel = h.List.Value;
+
+                %%% Calculate Map
+                Width=str2double(h.ROI_Size{7}.String);
+                
                 x=h.Phasor_FRET(2,1).XData;
                 y=h.Phasor_FRET(2,1).YData;
                 PT=interparc(str2double(h.Export_Line_Points.String),x,y);
                 x=PT(:,1); y=PT(:,2);
-            else
-                return;
-            end
-            
-            step=1/Pixel;
-            X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
-            Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
-            Z1 = single(reshape(x,[1, 1,numel(x)]));
-            Z2 = single(reshape(y,[1, 1,numel(y)]));
-            
-            Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
-            Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
-
-            [Min,Ind]=min(double(Dist),[],3);
-            Map=(Ind.*(Min<=Width))';
-            
-            j=1;
-            for i=Sel
-                %%% Finds valid pixel
-                G=round((PhasorData.Data{i}.g+0.1)*Pixel);
-                G(isnan(G) | G<1)=1;
-                S=round((PhasorData.Data{i}.s+0.1)*Pixel);
-                S(isnan(S) | S<1)=1;
-                %%% Generates ROI map
-                roi=Map(sub2ind(size(Map),G,S));
-                roi = roi.*(~PhasorData.Selected_Region{i} &...
-                    PhasorData.Data{i}.Intensity >= THmin &...
-                    PhasorData.Data{i}.Intensity <= THmax);
-                Fraction.ROI = roi;
-                Fraction.Hist = hist(roi(roi>0),1:str2double(h.Export_Line_Points.String))';
+                
+                step=1/Pixel;
+                X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
+                Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
+                Z1 = single(reshape(x,[1, 1,numel(x)]));
+                Z2 = single(reshape(y,[1, 1,numel(y)]));
+                
+                Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
+                Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
+                
+                [Min,Ind]=min(double(Dist),[],3);
+                Map=(Ind.*(Min<=Width))';
+                
+                j=1;
+                for i=Sel
+                    %%% Finds valid pixel
+                    G=round((PhasorData.Data{i}.g+0.1)*Pixel);
+                    G(isnan(G) | G<1)=1;
+                    S=round((PhasorData.Data{i}.s+0.1)*Pixel);
+                    S(isnan(S) | S<1)=1;
+                    %%% Generates ROI map
+                    roi=Map(sub2ind(size(Map),G,S));
+                    roi = roi.*(~PhasorData.Selected_Region{i} &...
+                        PhasorData.Data{i}.Intensity >= THmin &...
+                        PhasorData.Data{i}.Intensity <= THmax);
+                    Fraction.ROI = roi;
+                    Fraction.Hist = hist(roi(roi>0),1:str2double(h.Export_Line_Points.String))';
+                    Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
+                    
+                    AVG=0;
+                    Name=PhasorData.Files{i,1};
+                    while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
+                        AVG=AVG+1;
+                        Name=Name(1:end-6);
+                    end
+                    
+                    if ~isstrprop(Name(1), 'alpha')
+                        Name = ['File_' Name];
+                    end
+                    
+                    if AVG==0
+                        assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
+                    else
+                        assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
+                    end
+                    
+                    Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
+                end
+                assignin('base','Fraction_Total',Fraction_Total);
+                toc
+            elseif strcmp(h.Phasor_Fraction.Visible,'on') %%% Fraction Line
+                %%% Rotation with complex numbers
+                THmin=str2double(h.THmin.String);
+                THmax=str2double(h.THmax.String);
+                Sel = h.List.Value;
+                Width=str2double(h.ROI_Size{7}.String);
+                
+                x=h.Phasor_Fraction.XData;
+                y=h.Phasor_Fraction.YData;
                 Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
+                %%% transforms phasor to complex number
+                Complex_Line = x+sqrt(-1)*y;
                 
-                AVG=0;
-                Name=PhasorData.Files{i,1};                
-                while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
-                    AVG=AVG+1;
-                    Name=Name(1:end-6);
+                %%% Calculates rotation coefficients
+                k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+                %%% Rotats fraction line
+                Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+                %%% transforms complex number to phasor
+                x = real(Complex_Line);
+                y = imag(Complex_Line);
+  
+                
+                %%% Calculates position for each selected file
+                j=1;
+                for i=Sel
+                   %%% Transforms phasor into a complex number
+                   Complex = PhasorData.Data{i}.g + sqrt(-1)*PhasorData.Data{i}.s;
+                   %%% Rotates Phasor
+                   Complex = Complex*Scale*(1+k*sqrt(-1));
+                   %%% transforms complex back to phasor
+                   g = real(Complex);
+                   s = imag(Complex);
+                   
+                   %%% Position relative to the line
+                   Pos = (s-y(1))/(y(2)-y(1));
+                   Dist = abs(x(1)-g);
+                   
+                   %%% Removes pixels below threshold and too far away
+                   Pos(PhasorData.Data{i}.Intensity < THmin |...
+                       PhasorData.Data{i}.Intensity > THmax |...
+                       Dist > Width) = NaN;
+                   
+                   Fraction.ROI = Pos;
+                   Fraction.Hist = histcounts(Pos,linspace(0,1,str2double(h.Export_Line_Points.String)+1))';
+                   
+                   %%% adjusts name for exporting
+                   AVG=0;
+                   Name=PhasorData.Files{i,1};
+                   while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
+                       AVG=AVG+1;
+                       Name=Name(1:end-6);
+                   end
+                   if ~isstrprop(Name(1), 'alpha')
+                       Name = ['File_' Name];
+                   end
+                   
+                   %%% exports individual data to workspace
+                   if AVG==0
+                       assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
+                   else
+                       assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
+                   end
+                   
+                   %%% exports collected data to workspace
+                   Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
+                   assignin('base','Fraction_Total',Fraction_Total);
                 end
-                
-                if ~isstrprop(Name(1), 'alpha')
-                   Name = ['File_' Name]; 
-                end
-                
-                if AVG==0
-                    assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
-                else
-                    assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
-                end
-                
-                Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
-            end
-            assignin('base','Fraction_Total',Fraction_Total);
+            end           
         case h.Export_Hist %%% Exports full histogram to workspace
             Pixel=str2double(h.Phasor_Res.String);
             THmin=str2double(h.THmin.String);
@@ -2967,7 +3028,6 @@ else
     Images = [];
 end
 Map=cell(6,1);
-Z1=[];
 for i=Images %%% Plots Phasor Data
     if PhasorData.Plot(i)~=0 
         %%% Changes the plot title
@@ -3047,15 +3107,15 @@ for i=Images %%% Plots Phasor Data
             %%% Determines Fraction line colormap
             switch h.Fraction_Color.Value
                 case 1
-                    FractionColor=[0 0 0; jet(16)];
+                    FractionColor=[0 0 0; jet(32)];
                 case 2
-                    FractionColor=[0 0 0; hot(16)];
+                    FractionColor=[0 0 0; hot(32)];
                 case 3
-                    FractionColor=[0 0 0; hsv(16)];
+                    FractionColor=[0 0 0; hsv(32)];
                 case 4
-                    FractionColor(1:17,1) = [0; linspace(0,1,8)';ones(8,1) ];
-                    FractionColor(1:17,2) = [0; ones(8,1); linspace(1,0,8)'];
-                    FractionColor(1:17,3) = zeros(17,1);
+                    FractionColor(1:17,1) = [0; linspace(0,1,16)';ones(16,1) ];
+                    FractionColor(1:17,2) = [0; ones(18,1); linspace(1,0,16)'];
+                    FractionColor(1:17,3) = zeros(33,1);
                 case 5
                     if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
                         FractionColor=[0 0 0; Phasor_Colormap];
@@ -3066,42 +3126,43 @@ for i=Images %%% Plots Phasor Data
                         FractionColor=[0 0 0; UserValues.Phasor.Colormap];
                     end
             end
+            %%% Rotation with complex numbers
+            Width=str2double(h.ROI_Size{7}.String);
             
-            if isempty(Z1)
-                %%% Calculate Map
-                Width=str2double(h.ROI_Size{7}.String);
-                x=h.Phasor_Fraction.XData;
-                y=h.Phasor_Fraction.YData;
-                x=linspace(x(1),x(2),size(FractionColor,1)-1);
-                y=linspace(y(1),y(2),size(FractionColor,1)-1);
-                
-                step=1/Pixel;
-                X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
-                Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
-                Z1 = single(reshape(x,[1, 1,numel(x)]));
-                Z2 = single(reshape(y,[1, 1,numel(y)]));
-                
-                Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
-                Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
-                
-                %                 [X1,Y1,Z1]=meshgrid(X,Y,x);
-                %                 [~,~,Z2]=meshgrid(X,Y,y);
-                %                 Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
-                [Min,Ind]=min(Dist,[],3);
-                Map=(Ind.*(Min<=Width))';
-            end
-            %%% Finds valid pixel
-            G=round((PhasorData.Data{PhasorData.Plot(i)}.g+0.1)*Pixel);
-            G(isnan(G) | G<1)=1;
-            S=round((PhasorData.Data{PhasorData.Plot(i)}.s+0.1)*Pixel);
-            S(isnan(S) | S<1)=1;
-            %%% Generates ROI map
-            roi=Map(sub2ind(size(Map),G,S));
+            x=h.Phasor_Fraction.XData;
+            y=h.Phasor_Fraction.YData;
+            %%% transforms phasor to complex number
+            Complex_Line = x+sqrt(-1)*y;
+            
+            %%% Calculates rotation coefficients
+            k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+            %%% Rotats fraction line
+            Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+            %%% transforms complex number to phasor
+            x = real(Complex_Line);
+            y = imag(Complex_Line);
+            
+            %%% Transforms phasor into a complex number
+            Complex = PhasorData.Data{PhasorData.Plot(i)}.g + sqrt(-1)*PhasorData.Data{PhasorData.Plot(i)}.s;
+            %%% Rotates Phasor
+            Complex = Complex*Scale*(1+k*sqrt(-1));
+            %%% transforms complex back to phasor
+            g = real(Complex);
+            s = imag(Complex);
+            
+            %%% position relative to line
+            roi = ceil((s-y(1))/(y(2)-y(1))*(size(FractionColor,1)-1));
+            %%% removes points too far away
+            Dist = abs(x(1)-g);
+            roi(roi<0 | roi > size(FractionColor,1)-1 | Dist > Width ) = 0;
+            
+            %%% Removes pixels below threshold
             ROI=roi>0 &...
-                PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
-                PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;
+                PhasorData.Data{PhasorData.Plot(PhasorData.Plot(i))}.Intensity >= THmin &...
+                PhasorData.Data{PhasorData.Plot(PhasorData.Plot(i))}.Intensity <= THmax;
             ROI=repmat(ROI,[1 1 3]);
             Mask=reshape(FractionColor(roi+1,:),size(Image));
+
         elseif strcmp(h.Phasor_FRET(1,1).Visible,'on') && h.FRET_Use.Value==2
             %% FRET line
             
