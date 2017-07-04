@@ -1,29 +1,58 @@
 Copyrights of external functions:
 
+convnfft.m
+===========
+Copyright (c) 2009, Bruno Luong
+All rights reserved.
 
-findjobj
-=========
+convol.m
+========
+Copyright (c) 1996, Joerg Enderlein
+All rights reserved.
+
+findjobj.m
+==========
 Copyright (c) 2017, Yair Altman 
 All rights reserved.
 
-jetvar
-=======
-Copyright (c) 2012, Drew Compston 
-All rights reserved.
-
-fminsearchbnd
-==============
+fminsearchbnd.m
+===============
 Copyright (c) 2006, John D'Errico 
 All rights reserved.
 
-SpashScreen
+hexscatter.m
 ============
-Copyright (c) 2016, The MathWorks, Inc. 
+Copyright (c) 2014, Gordon Bean
 All rights reserved.
 
-interparc
-==========
+inplaceprod.c
+=============
+Copyright (c) 2009, Bruno Luong
+All rights reserved.
+
+interparc.m
+===========
 Copyright (c) 2012, John D'Errico 
+All rights reserved.
+
+jetvar.m
+========
+Copyright (c) 2012, Drew Compston 
+All rights reserved.
+
+kde2d.m
+=======
+Copyright (c) 2009, Botev
+All rights reserved.
+
+SplashScreen.m
+==============
+Copyright (c) 2011, The MathWorks, Inc. 
+All rights reserved.
+
+york_fit.m
+==========
+Copyright (c) 2010, Travis Wiens
 All rights reserved.
 
 
