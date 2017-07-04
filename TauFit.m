@@ -2300,10 +2300,12 @@ drawnow;
 function Channel_Selection(obj,~)
 global UserValues TauFitData
 h = guidata(findobj('Tag','TauFit'));
-%%% Update the Channel Selection in UserValues
-UserValues.TauFit.PIEChannelSelection{1} = UserValues.PIE.Name{h.PIEChannelPar_Popupmenu.Value};
-UserValues.TauFit.PIEChannelSelection{2} = UserValues.PIE.Name{h.PIEChannelPer_Popupmenu.Value};
-LSUserValues(1);
+if ~strcmp(TauFitData.Who,'External')
+    %%% Update the Channel Selection in UserValues
+    UserValues.TauFit.PIEChannelSelection{1} = UserValues.PIE.Name{h.PIEChannelPar_Popupmenu.Value};
+    UserValues.TauFit.PIEChannelSelection{2} = UserValues.PIE.Name{h.PIEChannelPer_Popupmenu.Value};
+    LSUserValues(1);
+end
 %%% For recalculation, mark which channel was changed
 switch obj
     case h.PIEChannelPar_Popupmenu
