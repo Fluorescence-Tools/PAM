@@ -252,7 +252,8 @@ h.Particle_Method = uicontrol(...
     'Callback',{@Method_Update,0},...
     'Position',[0.01 0.93, 0.98 0.06],...
     'String',{'Simple threshold method',...
-    'Simple wavelet method'});
+              'Simple wavelet method',...
+              'External mask'});
 
 h.Particle_Method_Description = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -459,8 +460,10 @@ BurstBrowser=findobj('Tag','BurstBrowser');
 TauFit=findobj('Tag','TauFit');
 PhasorTIFF = findobj('Tag','PhasorTIFF');
 Phasor = findobj('Tag','Phasor');
+
+clear global -regexp ParticleData
 if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)  && isempty(Phasor)
-    clear global -regexp UserValues
+    clear global -regexp UserValues 
 end
 delete(Obj);
 
@@ -562,7 +565,7 @@ if ~exist('h','var')
 end
 global ParticleData
 
-if isempty(ParticleData)
+if ~isfield(ParticleData, 'Data')
     return;
 end
 
@@ -871,6 +874,8 @@ switch h.Particle_Method.Value
         Method_Regionprops_Shape([],[],mode);
     case 2 %%% Wavelets and Regionprops
         Method_Wavelets_Simple([],[],mode);
+    case 3 %%% Use external mask
+        Method_External([],[],mode);
 end
 
 
@@ -1172,7 +1177,114 @@ if mode == 1
     return;
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Regionprops with thresholding and shape
+function Method_External(~,~,mode)
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
 
+%%% Is only called for updating the table/info
+if mode == 0
+    
+    
+    %%% Updates Table
+    TableData = {};
+    ColumnNames = {'Parameter Name', 'Value'};
+    
+    h.Particle_Method_Settings.ColumnName = ColumnNames;
+    h.Particle_Method_Settings.Data = TableData;
+    
+    %%% Updates Method information
+    h.Particle_Method_Description.String =['This method uses an externally generated mask. '...
+        'Load a TIFF based mask to use this method. '....
+        'Pixels are assined to particles based on their value. '...
+        'Pixel values of 0 are associated to background. '...
+        'Currently only a static mask is supported.'];
+    %%% Removed detected particle data
+    if isfield(ParticleData,'Regions')
+        ParticleData = rmfield(ParticleData,'Regions');
+    end
+    if isfield(ParticleData,'Mask')
+        ParticleData = rmfield(ParticleData,'Mask');
+    end
+    if isfield(ParticleData,'Particle')
+        ParticleData = rmfield(ParticleData,'Particle');
+    end
+    Plot_Particle([],[],2,h)
+    return;
+end
+
+%%% Actual particle detection and averaging
+if mode == 1
+    
+    %%% Stops invalid execution
+    if ~isfield(ParticleData,'MaskData') ||...
+       ~isfield(ParticleData,'Data') ||...
+       size(ParticleData.MaskData,1)~= size(ParticleData.Data.Intensity,1) ||...
+       size(ParticleData.MaskData,2)~= size(ParticleData.Data.Intensity,2)
+        msgbox('Invalid data loaded'); 
+        return;
+    end
+
+    From = str2double(h.Particle_Frames_Start.String);
+    To = str2double(h.Particle_Frames_Stop.String);
+    
+    %%% Adjusts frame range to mask data
+    if To>size(ParticleData.MaskData,3)
+        To = size(ParticleData.MaskData,3);
+        h.Particle_Frames_Stop.String = size(ParticleData.MaskData,3);
+    end
+    if From > To
+        From = 1;
+        h.Particle_Frames_Start.String = 1;
+    end
+    
+    %%% Extracts mask
+    ParticleData.Particle = max(ParticleData.MaskData(:,:,From:To),[],3);
+    ParticleData.Mask = ParticleData.Particle>0;
+    
+    From = str2double(h.Particle_Frames_Start.String);
+    To = str2double(h.Particle_Frames_Stop.String);
+    
+    %%% Adjusts frame range to data
+    if To>size(ParticleData.Data.Intensity,3)
+        To = size(ParticleData.Data.Intensity,3);
+        h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+    end
+    if From > To
+        From = 1;
+        h.Particle_Frames_Start.String = 1;
+    end
+    
+    %%% Extracts intensity
+    %%% Used image directly
+        Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+        
+    for i=1:max(Int(:))
+        TH = ParticleData.Particle==i;
+        
+        Regions(i).Ecctentricity = NaN;
+        Regions(i).PixelIdxList = find(TH);
+        [Regions(i).PixelList(:,1), Regions(i).PixelList(:,2)] = find(TH);
+        Regions(i).Area = numel(Regions(i).PixelIdxList);
+        Regions(i).TotalCounts = sum(Int(Regions(i).PixelIdxList)); 
+        Regions(i).MeanIntensity = Regions(i).TotalCounts/Regions(i).Area;
+        Regions(i).MaxIntensity = max(Int(Regions(i).PixelIdxList)); 
+        
+    end
+    
+    %%% Aborts calculation when no particles were detected
+    if isempty(Regions)
+        msgbox('No particles detected! Please change threshold.');
+        return;
+    end
+    
+    ParticleData.Regions = Regions;
+    ParticleData.Particle = repmat(ParticleData.Particle,1,1,To-From+1);
+    Plot_Particle([],[],2,h)
+    return;
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
