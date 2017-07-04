@@ -3433,6 +3433,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                             else
                                 PamMeta.BinsPCH{i} = 0:1:10;
                                 PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                                PamMeta.TracePCH{i} = zeros(numel(TimeBinsPCH)+1,1);
                             end
                         else
                             PamMeta.BinsPCH{i} = 0:1:10;
@@ -3484,6 +3485,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
                 PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
@@ -3501,12 +3503,13 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
 end
 %%% Calculates trace, image, mean arrival time and info for combined
 %%% channels
-for  i=find(UserValues.PIE.Detector==0)
+for i=find(UserValues.PIE.Detector==0)
     PamMeta.Image{i}=zeros(FileInfo.Lines);
     PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
     PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
     PamMeta.PCH{i}=zeros(max(cellfun(@numel,PamMeta.BinsPCH(UserValues.PIE.Combined{i}))),1);
     PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
+    PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
     if UserValues.Settings.Pam.Use_PCH
         TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
@@ -3523,21 +3526,7 @@ for  i=find(UserValues.PIE.Detector==0)
             PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
         end
         if UserValues.Settings.Pam.Use_PCH
-            Det=UserValues.PIE.Detector(j);
-            Rout=UserValues.PIE.Router(j);
-            From=UserValues.PIE.From(j);
-            To=UserValues.PIE.To(j);
-            if all(~isempty([Det,Rout])) && all([Det Rout] <= size(TcspcData.MI)) && ~isempty(TcspcData.MT{Det,Rout})
-                %%% combine time traces with 1 ms binning
-                PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-                if ~isempty(PIE_MT)
-                    if numel(PIE_MT) > 1
-                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH)';
-                    else
-                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH);
-                    end
-                end
-            end
+            PamMeta.TracePCH{i} = PamMeta.TracePCH{i} + PamMeta.TracePCH{j};
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
@@ -3545,8 +3534,8 @@ for  i=find(UserValues.PIE.Detector==0)
         PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
     end
     if UserValues.Settings.Pam.Use_PCH
-        PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
-        PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
+        PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
+        PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
     end
 end
 
@@ -4019,8 +4008,8 @@ if any(mode == 10)
         h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
         guidata(h.Pam,h);
         h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.XLim = [x(1),find(PamMeta.PCH{sel(1)} > 1,1,'last')];
-        h.PCH.Axes.YLim = [y(1),find(PamMeta.PCH{sel(2)} > 1,1,'last')];
+        h.PCH.Axes.XLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+        h.PCH.Axes.YLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
         h.PCH.Axes.XLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(1)} ')'];
         h.PCH.Axes.YLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(2)} ')'];
         h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
@@ -4652,13 +4641,20 @@ switch e.Key
         for i=Combined
             if ~isempty(intersect(UserValues.PIE.Combined{i},Sel))
                 UserValues.PIE.Combined{i}=setdiff(UserValues.PIE.Combined{i},Sel);
-                UserValues.PIE.Name{i}='Comb.: ';
-                for j=UserValues.PIE.Combined{i};
-                    UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
-                end
-                UserValues.PIE.Name{i}(end)=[];
                 new=1;
             end
+            %%% Update reference to PIE channels
+            for j = 1:numel(UserValues.PIE.Combined{i})
+                if UserValues.PIE.Combined{i}(j) > Sel
+                    UserValues.PIE.Combined{i}(j) = UserValues.PIE.Combined{i}(j) - 1;
+                end
+            end
+            %%% update name
+            UserValues.PIE.Name{i}='Comb.: ';
+            for j=UserValues.PIE.Combined{i};
+                UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
+            end
+            UserValues.PIE.Name{i}(end)=[];
         end
         Update_to_UserValues
         %%% Updates only combined channels, if any was changed
@@ -4702,6 +4698,9 @@ switch e.Key
             PamMeta.Image([Sel(1)-1 Sel(1)])=PamMeta.Image([Sel(1) Sel(1)-1]);
             PamMeta.Lifetime([Sel(1)-1 Sel(1)])=PamMeta.Lifetime([Sel(1) Sel(1)-1]);
             PamMeta.Info([Sel(1)-1 Sel(1)])=PamMeta.Info([Sel(1) Sel(1)-1]);
+            PamMeta.PCH([Sel(1)-1 Sel(1)])=PamMeta.PCH([Sel(1) Sel(1)-1]);
+            PamMeta.BinsPCH([Sel(1)-1 Sel(1)])=PamMeta.BinsPCH([Sel(1) Sel(1)-1]);
+            PamMeta.TracePCH([Sel(1)-1 Sel(1)])=PamMeta.TracePCH([Sel(1) Sel(1)-1]);
             %%% Selects moved channel again
             h.PIE.List.Value(1)=h.PIE.List.Value(1)-1;
             
@@ -4739,6 +4738,9 @@ switch e.Key
             PamMeta.Image([Sel(1) Sel(1)+1])=PamMeta.Image([Sel(1)+1 Sel(1)]);
             PamMeta.Lifetime([Sel(1) Sel(1)+1])=PamMeta.Lifetime([Sel(1)+1 Sel(1)]);
             PamMeta.Info([Sel(1) Sel(1)+1])=PamMeta.Info([Sel(1)+1 Sel(1)]);
+            PamMeta.PCH([Sel(1) Sel(1)+1])=PamMeta.PCH([Sel(1)+1 Sel(1)]);
+            PamMeta.BinsPCH([Sel(1) Sel(1)+1])=PamMeta.BinsPCH([Sel(1)+1 Sel(1)]);
+            PamMeta.TracePCH([Sel(1) Sel(1)+1])=PamMeta.TracePCH([Sel(1)+1 Sel(1)]);
             %%% Selects moved channel again
             h.PIE.List.Value(1)=h.PIE.List.Value(1)+1;
             
