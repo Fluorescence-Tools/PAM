@@ -4707,9 +4707,10 @@ switch e.Key
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)-1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)-1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)-1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4747,9 +4748,10 @@ switch e.Key
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)+1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)+1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)+1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4771,7 +4773,7 @@ switch e.Key
         %%% Does not combine single
         if numel(Sel)>1 && isempty(cell2mat(UserValues.PIE.Combined(Sel)))
             
-            color = [0,0,0]
+            color = [0,0,0];
             for i = Sel;
                 color = color + UserValues.PIE.Color(i,:);
             end
