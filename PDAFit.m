@@ -3680,6 +3680,8 @@ else
     
     set(fig,'PaperPositionMode','auto');
     print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
+    %%% also save eps file
+    print_eps(fig,GenerateName(fullfile(Path, 'All.eps'),1));
     close(fig)
     
     % Active files
@@ -3724,6 +3726,8 @@ else
         main_ax.Children(end).Units = 'pixel';
         set(fig,'PaperPositionMode','auto');
         print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.tif']),1),'-painters')
+        %%% also save eps file
+        print_eps(fig,GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.eps']),1));
         close(fig)
     end
     
