@@ -921,6 +921,51 @@ if Mode==0 %%% Loads user values
     P.Phasor.Settings_LineColor = S.Phasor.Settings_LineColor;
     
     
+    %%% Checks, if Phasor.FRET subfields exist
+    if ~isfield(S.Phasor,'Settings_FRETColor') || numel(S.Phasor.Settings_FRETColor)<12
+        S.Phasor.Settings_FRETColor=[0 1 0; 1 0 0; 0 0 1; 1 0 0];
+        disp('UserValues.Phasor.Settings_FRETColor was incomplete');
+    end
+    P.Phasor.Settings_FRETColor = S.Phasor.Settings_FRETColor;
+    
+    if ~isfield(S.Phasor,'Settings_FRETWidth') || numel(S.Phasor.Settings_FRETWidth)<4
+        S.Phasor.Settings_FRETWidth=repmat({'2'},4,1);
+        disp('UserValues.Phasor.Settings_FRETWidth was incomplete');
+    end
+    P.Phasor.Settings_FRETWidth = S.Phasor.Settings_FRETWidth;
+    
+    if ~isfield(S.Phasor,'Settings_FRETStyle') || numel(S.Phasor.Settings_FRETStyle)<4
+        S.Phasor.Settings_FRETStyle=repmat({'-'},4,1);
+        disp('UserValues.Phasor.Settings_FRETStyle was incomplete');
+    end
+    P.Phasor.Settings_FRETStyle = S.Phasor.Settings_FRETStyle;
+    
+    if ~isfield(S.Phasor,'Settings_FRETMarker') || numel(S.Phasor.Settings_FRETMarker)<4
+        S.Phasor.Settings_FRETMarker=repmat({'x'},4,1);
+        disp('UserValues.Phasor.Settings_FRETSize was incomplete');
+    end
+    P.Phasor.Settings_FRETMarker = S.Phasor.Settings_FRETMarker;
+    
+    if ~isfield(S.Phasor,'Settings_FRETSize') || numel(S.Phasor.Settings_FRETSize)<4
+        S.Phasor.Settings_FRETSize=repmat({'6'},4,1);
+        disp('UserValues.Phasor.Settings_FRETSize was incomplete');
+    end
+    P.Phasor.Settings_FRETSize = S.Phasor.Settings_FRETSize;
+    
+    if ~isfield(S.Phasor,'Settings_FRETLineColor')
+        S.Phasor.Settings_FRETLineColor = 1;
+        disp('UserValues.Phasor.Settings_FRETLineColor was incomplete');
+    end
+    P.Phasor.Settings_FRETLineColor = S.Phasor.Settings_FRETLineColor;
+    
+    if ~isfield(S.Phasor,'Settings_FRETRadius')
+        S.Phasor.Settings_FRETRadius = '0.05';
+        disp('UserValues.Phasor.Settings_FRETLineColor was incomplete');
+    end
+    P.Phasor.Settings_FRETRadius = S.Phasor.Settings_FRETRadius;
+    
+    
+    
     %%% Checks, if Phasor.Export_Font is complete
     if ~isfield(S.Phasor,'Export_Font') || ~isfield(S.Phasor.Export_Font,'FontName') || ~isfield(S.Phasor.Export_Font,'FontWeight')...
             || ~isfield(S.Phasor.Export_Font,'FontAngle') || ~isfield(S.Phasor.Export_Font,'FontUnits') || ~isfield(S.Phasor.Export_Font,'FontSize')...
