@@ -2794,6 +2794,7 @@ h.Export.List = uicontrol(...
     'BackgroundColor', Look.List,...
     'ForegroundColor', Look.ListFore,...
     'KeyPressFcn',{@Export_Database,0},...
+    'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
     'Position',[0.01 0.01 0.6 0.98]);
@@ -9724,6 +9725,8 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
+                    %%% If both Keypress and Callback are active, 'return'
+                    %%% will call it twice!
                     %mode =7;
             end
         case 'Action' %%% mouse-click
@@ -9831,6 +9834,9 @@ if mode == 0 %%% Checks, which key was pressed
                     mode = 2;
                 case 'return'
                     %mode =9;
+                    %%% If both Keypress and Callback are active, 'return'
+                    %%% will call it twice!
+                    %mode =7;
             end
         case 'Action' %%% mouse-click
             switch get(gcbf,'SelectionType')
