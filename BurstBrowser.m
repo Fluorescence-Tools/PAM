@@ -14971,6 +14971,7 @@ for k = 1:numel(BurstData) %loop through all files
     for k = 1:4
         close(hfig{k})
     end
+    colormap(colormap(h.BurstBrowser));
 end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
