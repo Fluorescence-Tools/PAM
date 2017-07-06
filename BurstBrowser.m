@@ -14759,7 +14759,7 @@ for k = 1:numel(BurstData) %loop through all files
     end
     
     % initialize the figure
-    fontsize = 16;
+    fontsize = 8;
     if ispc
         fontsize = fontsize/1.2;
     end
@@ -14879,8 +14879,8 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(1), 'Ydir','reverse')
     hfigallinone.Children(1).YAxisLocation = 'Right';
     hfigallinone.Children(1).YTickLabelRotation = 90;
-    hfigallinone.Children(1).YLabel.FontSize = 8;
-    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(1).YLabel.FontSize = fontsize;
+    hfigallinone.Children(1).YAxis.FontSize = fontsize;
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
 
@@ -14889,8 +14889,8 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
-    hfigallinone.Children(2).YLabel.FontSize = 8;
-    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YAxis.FontSize = fontsize;
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTickLabel = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -14927,8 +14927,8 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).TickLength = [0.0100 0.0250];
     hfigallinone.Children(1).YAxisLocation = 'Left';
     hfigallinone.Children(1).YTickLabelRotation = 90;
-    hfigallinone.Children(1).YLabel.FontSize = 8;
-    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(1).YLabel.FontSize = fontsize;
+    hfigallinone.Children(1).YAxis.FontSize = fontsize;
     hfigallinone.Children(1).YTick = [500 1000 1500];
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
@@ -14965,8 +14965,8 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).XLabel.String = 'Anisotropy A';
     hfigallinone.Children(1).YAxisLocation = 'Right';
     hfigallinone.Children(1).YTickLabelRotation = -90;
-    hfigallinone.Children(1).YLabel.FontSize = 8;
-    hfigallinone.Children(1).YAxis.FontSize = 8;
+    hfigallinone.Children(1).YLabel.FontSize = fontsize;
+    hfigallinone.Children(1).YAxis.FontSize = fontsize;
     hfigallinone.Children(1).YTick = [];
     
     hfigallinone.Children(2).Units = 'pixel';
@@ -14974,9 +14974,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(2).XAxisLocation = 'bottom';
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 -0.5 0];
-    hfigallinone.Children(2).YLabel.FontSize = 8;
-    hfigallinone.Children(2).YAxis.FontSize = 8;
-    hfigallinone.Children(2).XTick = [0 1 2 3 4 5 6];
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    %hfigallinone.Children(2).XTick = [0 1 2 3 4 5 6];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
     hfigallinone.Children(2).XLabel.String = 'Lifetime A [ns]';
@@ -15010,8 +15010,8 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
-    hfigallinone.Children(2).YLabel.FontSize = 8;
-    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YAxis.FontSize = fontsize;
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -15051,8 +15051,8 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
-    hfigallinone.Children(2).YLabel.FontSize = 8;
-    hfigallinone.Children(2).YAxis.FontSize = 8;
+    hfigallinone.Children(2).YLabel.FontSize = fontsize;
+    hfigallinone.Children(2).YAxis.FontSize = fontsize;
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -15086,6 +15086,9 @@ for k = 1:numel(BurstData) %loop through all files
     cbar.Position = [0.96,0.46,0.27,0.03].*norm_to_pix;
     cbar.Label.String = 'Occurrence';
     cbar.Label.FontSize = 16;
+    if ispc
+        cbar.Label.FontSize = cbar.Label.FontSize/1.2;
+    end
     cbar.Limits(1) = 0;
     cbar.Ticks = [];
     cbar.TickLabels = [];
