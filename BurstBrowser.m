@@ -14816,9 +14816,9 @@ for k = 1:numel(BurstData) %loop through all files
             UserValues.BurstBrowser.Display.Restrict_EandS_Range = 1;
             UpdatePlot([],[],h);
             %%% Copy axes to figure
-            panel_copy{f} = copyobj([h.MainTabGeneralPanel.Children(3),...
-                h.MainTabGeneralPanel.Children(4),...
-                h.MainTabGeneralPanel.Children(6)],...
+            panel_copy{f} = copyobj([findobj('Parent',h.MainTabGeneralPanel,'Tag','Axes_1D_Y'),...
+                findobj('Parent',h.MainTabGeneralPanel,'Tag','Axes_1D_X'),...
+                findobj('Parent',h.MainTabGeneralPanel,'Tag','Axes_General')],...
                 hfig{f});
             UserValues.BurstBrowser.Display.Restrict_EandS_Range = prev_setting;
             UpdatePlot([],[],h);
@@ -15088,7 +15088,7 @@ for k = 1:numel(BurstData) %loop through all files
     %%% add colorbar
     cbar = colorbar('peer', hfigallinone.Children(3),'Location','north','Color',[0 0 0]); 
     cbar.Units = 'pixel';
-    cbar.Position = [0.96,0.46,0.27,0.03].*norm_to_pix;
+    cbar.Position = [0.98,0.49,0.19,0.02].*norm_to_pix;
     cbar.Label.String = 'Occurrence';
     cbar.Label.FontSize = 16;
     if ispc
