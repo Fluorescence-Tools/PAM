@@ -14732,7 +14732,7 @@ UserValues.BurstBrowser.Settings.SaveFileExportFigure = prev_setting;
 %%%%%%% Export all-in-one graphs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ExportAllInOneGraphs(obj,~)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 h = guidata(obj);
 
 % file and species that is currently selected
@@ -14811,12 +14811,17 @@ for k = 1:numel(BurstData) %loop through all files
         else
             h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{k}.NameArray));
             h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{k}.NameArray));
+            %%% restrict E and S to fixed intervals
+            prev_setting = UserValues.BurstBrowser.Display.Restrict_EandS_Range;
+            UserValues.BurstBrowser.Display.Restrict_EandS_Range = 1;
             UpdatePlot([],[],h);
             %%% Copy axes to figure
             panel_copy{f} = copyobj([h.MainTabGeneralPanel.Children(3),...
                 h.MainTabGeneralPanel.Children(4),...
                 h.MainTabGeneralPanel.Children(6)],...
                 hfig{f});
+            UserValues.BurstBrowser.Display.Restrict_EandS_Range = prev_setting;
+            UpdatePlot([],[],h);
         end
         %%% set Background Color to white
         for a = 1:3
