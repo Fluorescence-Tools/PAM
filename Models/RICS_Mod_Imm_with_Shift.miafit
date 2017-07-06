@@ -11,12 +11,12 @@ CrossCorrelation RICS model
       |gamma_imm| / |N_imm|*|Scanning distance of pixel w_imm (chi shift-sx     + psi shift-sy)^2|;
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N_m               = 1;	LB = 0;     UB = Inf;   
-Param(2): D[µm²/s]          = 10;	LB = 0;     UB = Inf;
-Param(3): w_r[µm]           = 0.2;	LB = 0;     UB = Inf;
-Param(4): w_z[µm]           = 0.2;	LB = 0;     UB = Inf;
+Param(2): D[&mu;m<sup>2</sup>/s]          = 10;	LB = 0;     UB = Inf;
+Param(3): w_r[&mu;m]           = 0.2;	LB = 0;     UB = Inf;
+Param(4): w_z[&mu;m]           = 0.2;	LB = 0;     UB = Inf;
 Param(5): y0                = 0;    LB = -Inf;  UB = Inf;
 Param(6): Px[nm]            = 50;	LB = 0;     UB = Inf;
-Param(7): P_Time[µs]        = 10;	LB = 0;     UB = Inf;
+Param(7): P_Time[&mu;s]        = 10;	LB = 0;     UB = Inf;
 Param(8): L_Time[ms]        = 3.33;	LB = 0;     UB = Inf;
 Param(9): N_imm		    = 0; 	LB = 0;	    UB = Inf;
 Param(10): w_imm	    = 0.2;	LB = 0;	    UB = Inf;

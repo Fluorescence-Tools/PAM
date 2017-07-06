@@ -1137,7 +1137,10 @@ for i=1:NParams
     MIAFitMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
     
     Start = strfind(Text{i+Param_Start},'=');
-    Stop = strfind(Text{i+Param_Start},';');
+    %Stop = strfind(Text{i+Param_Start},';');
+    % Filter more specifically (this enables the use of html greek
+    % letters like &mu; etc.)
+    [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
     
     %%% Reads starting value
     MIAFitMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));

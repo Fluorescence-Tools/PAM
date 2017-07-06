@@ -8,7 +8,8 @@ in the file.
 2. Put every parameter in a new line starting with Param(n).
 3. After than comes ONE space, and only ONE space to indicate the begining
 of the parameter name.
-4. Write the parameter name without using spaces.
+4. Write the parameter name without using spaces. Use html syntax to specify
+greek letters, e.g. '&mu;'.
 5. Use at least one space directly after the parameter name to indicate the end.
 6a. Use '=' to indicate the beginning of the initial value, the lower and the upper bound.  
 6b. Use ';' to indicate the end of the initial value, the lower and the upper bound.

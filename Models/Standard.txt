@@ -8,13 +8,13 @@ in the file.
 2. Put every parameter in a new line starting with Param(n).
 3. After than comes ONE space, and only ONE space to indicate the begining
 of the parameter name.
-4. Write the parameter name without using spaces.
+4. Write the parameter name without using spaces. Use html syntax to specify
+greek letters, e.g. '&mu;'.
 5a. Use one space directly after the parameter name to indicate the end.
 5b. Use Tabulator once and enter the lower boundary for the parameter.
 5c. Use Tabulator again and enter the upper boundary.
 6. You can write whatever you want afterwards (including spaces), as long
-you do 
-not use an equal sign.
+you do not use an equal sign.
 7. Indicate the start of parameter initial value with an equal sign 
 directly followed by a space
 8. Put in the parameter initial value
@@ -45,9 +45,9 @@ You might explain your function here:
 |gamma|*|N|*|Trip amplitude|*|Trip time|*|xy diffusion|*|z diffusion|+|Offset|
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;    LB = 0; UB = Inf;
-Param(2): tauD[�s]      = 30;	LB = 0; UB = Inf;   
+Param(2): tauD[&mu;s]      = 30;	LB = 0; UB = Inf;   
 Param(3): p             = 5;    LB = 0; UB = Inf;
-Param(4): tauT[�s]      = 1;    LB = 0; UB = Inf;
+Param(4): tauT[&mu;s]      = 1;    LB = 0; UB = Inf;
 Param(5): Trip          = 0.01; LB = 0; UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%
 B=1/P(1); 
