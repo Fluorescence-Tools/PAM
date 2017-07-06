@@ -14883,7 +14883,7 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).YAxis.FontSize = 8;
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
-    
+
     hfigallinone.Children(2).Units = 'pixel';
     hfigallinone.Children(2).Position = [0.12 0.88 0.35 0.06].*norm_to_pix;   
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
@@ -14911,6 +14911,9 @@ for k = 1:numel(BurstData) %loop through all files
         labels{1} = '';
     end
     hfigallinone.Children(b).XTickLabel = labels;
+    
+    hfigallinone.Children(1).Layer = 'top';
+    hfigallinone.Children(2).Layer = 'top';
 
     % 2D lifetime GG-Anisotropy GG
     copyobj([panel_copy{2}],hfigallinone);
@@ -14949,6 +14952,9 @@ for k = 1:numel(BurstData) %loop through all files
     
     set(hfigallinone.Children(1), 'Ydir','reverse')
     set(hfigallinone.Children(2), 'Ydir','reverse')
+    
+    hfigallinone.Children(1).Layer = 'top';
+    hfigallinone.Children(2).Layer = 'top';
     
     % 2D lifetime RR-Anisotropy RR
     copyobj([panel_copy{3}],hfigallinone);
@@ -14990,6 +14996,9 @@ for k = 1:numel(BurstData) %loop through all files
     end
     hfigallinone.Children(b).XTickLabel = labels;
     
+    hfigallinone.Children(1).Layer = 'top';
+    hfigallinone.Children(2).Layer = 'top';
+    
     % 2D E-tauA
     copyobj([panel_copy{5}],hfigallinone);
     hfigallinone.Children(1).Units = 'pixel';
@@ -15021,6 +15030,9 @@ for k = 1:numel(BurstData) %loop through all files
 %     end
 %     hfigallinone.Children(b).XTickLabel = labels;
     hfigallinone.Children(b).YTick = [];
+    
+    hfigallinone.Children(1).Layer = 'top';
+    hfigallinone.Children(2).Layer = 'top';
     
     % 2D Stoichiometry-E
     copyobj([panel_copy{4}],hfigallinone);
@@ -15060,11 +15072,56 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(b).XTickLabel = labels;
     hfigallinone.Children(b).YTick = [];
     
-    hfigallinone.Units = 'pixel';
+    hfigallinone.Children(1).Layer = 'top';
+    hfigallinone.Children(2).Layer = 'top';
+    
     for k = 1:5
         close(hfig{k})
     end
     colormap(colormap(h.BurstBrowser));
+    
+    %%% add colorbar
+    cbar = colorbar('peer', hfigallinone.Children(3),'Location','north','Color',[0 0 0]); 
+    cbar.Units = 'pixel';
+    cbar.Position = [0.96,0.46,0.27,0.03].*norm_to_pix;
+    cbar.Label.String = 'Occurrence';
+    cbar.Label.FontSize = 16;
+    cbar.Limits(1) = 0;
+    cbar.Ticks = [];
+    cbar.TickLabels = [];
+    
+    %%% Set all units to pixels for easy editing without resizing
+    hfigallinone.Units = 'pixels';
+    for i = 1:numel(hfigallinone.Children)
+        if isprop(hfigallinone.Children(i),'Units');
+            hfigallinone.Children(i).Units = 'pixels';
+        end
+    end
+    hfigallinone.Position(3) = 1125;
+    %%% Combine the Original FileName and the parameter names
+    if isfield(BurstData{file},'FileNameSPC')
+        if strcmp(BurstData{file}.FileNameSPC,'_m1')
+            FileName = BurstData{file}.FileNameSPC(1:end-3);
+        else
+            FileName = BurstData{file}.FileNameSPC;
+        end
+    else
+        FileName = BurstData{file}.FileName(1:end-4);
+    end
+
+    if BurstData{file}.SelectedSpecies(1) ~= 0
+        SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+        if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+            SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+        end
+    else
+        SpeciesName = '';
+    end
+    FigureName = 'AllInOne';
+    FigureName = [FileName SpeciesName '_' FigureName];
+    %%% remove spaces
+    FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+    hfigallinone.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
 end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
