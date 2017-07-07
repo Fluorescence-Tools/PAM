@@ -3291,7 +3291,9 @@ PamMeta.Trace=repmat({0:0.01:FileInfo.MeasurementTime},numel(UserValues.PIE.Name
 PamMeta.Image=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.TimeBins=0:0.01:FileInfo.MeasurementTime;
-PamMeta.BinsPCH =repmat({0:1:10},numel(UserValues.PIE.Name),1);
+PamMeta.BinsPCH = repmat({0:1:10},numel(UserValues.PIE.Name),1);
+PamMeta.PCH = repmat({zeros(1,numel(0:1:10))},numel(UserValues.PIE.Name),1);
+PamMeta.TracePCH = repmat({zeros(1,numel(0:1:10))},numel(UserValues.PIE.Name),1);
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
@@ -3327,8 +3329,20 @@ function Update_Data(~,~,Detector,PIE,mode)
 global TcspcData FileInfo UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 if nargin < 5
-    mode = [0,1,2,3];
+    %mode = [0,1,2,3];
+    mode = 0;
+    %%% check what plots are selected and calculate associated meta data
+    if UserValues.Settings.Pam.Use_TimeTrace == 1
+        mode = [mode, 1];
+    end
+    if UserValues.Settings.Pam.Use_PCH == 1
+        mode = [mode, 2];
+    end
+    if UserValues.Settings.Pam.Use_Image == 1
+        mode = [mode, 3];
+    end
 end
+
 %%% mode determines what part of the metadata is to be calculated
 %%% 0 is microtime histograms
 %%% 1 is time trace
@@ -3337,10 +3351,6 @@ end
 h.Progress.Text.String = 'Updating meta data';
 h.Progress.Axes.Color=[1 0 0];
 drawnow;
-
-
-
-
 
 if PIE==0
     PIE = find(UserValues.PIE.Detector>0);
@@ -3372,7 +3382,7 @@ if any(mode == 0)
 end
 
 %% Creates trace and image plots
-if any(mode == 1) || any(mode == 2) || any(mode==3)
+if any(mode == [0,1,2,3])
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
@@ -3416,6 +3426,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         else
                             PamMeta.BinsPCH{i} = 0:1:10;
                             PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                            PamMeta.TracePCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
                         end
                     end
                 end
@@ -3427,7 +3438,6 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
-                    clear PIE_MT;
                     
                     %% Calculate mean arival time image
                     if h.MT.Use_Image.Value && h.MT.Use_Lifetime.Value && exist('Bin','var')
@@ -3452,10 +3462,11 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         PamMeta.Lifetime{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
                 end
+                clear Image_Sum
                 %% Calculates photons and countrate for PIE channel
                 PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
-                PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*str2double(h.MT.Binning.String);
-                clear Image_Sum;
+                PamMeta.Info{i}(2,1)=numel(PIE_MT);%sum(PamMeta.Trace{i})*str2double(h.MT.Binning.String);
+                clear PIE_MT
                 PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/FileInfo.MeasurementTime/1000;
                 PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/FileInfo.MeasurementTime/1000;
             else
