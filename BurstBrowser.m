@@ -3937,33 +3937,7 @@ if ~isempty(BurstData) && UserValues.BurstBrowser.Settings.SaveOnClose
     end
 end
 
-delete(gcf);
-LSUserValues(1);
-
-clear global -regexp BurstMeta BurstTCSPCData PhotonStream BurstData
-Pam = findobj('Tag','Pam');
-if ~isempty(Pam)
-    %%% reset the burst gui
-    h.Burst.Button.ForegroundColor = UserValues.Look.Fore;
-    h.Burst.BurstLifetime_Button.Enable = 'off';
-    h.Burst.NirFilter_Button.Enable = 'off';
-    h.Burst.LoadedFile_Text.String = 'no *.bur file loaded';
-    h.Burst.LoadedFile_Text.TooltipString = '';
-end
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-PDA = findobj('Tag','GlobalPDAFit');
-tcPDA = findobj('Tag','tcPDA');
-if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(PhasorTIFF) && isempty(TauFit) && isempty(PDA) && isempty(tcPDA)
-    clear global -regexp UserValues
-end
-
+CloseWindow(gcf,[]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Load *.bur file  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -47,7 +47,7 @@ if isempty(h.GlobalPDAFit)
         'Visible','on',...
         'Tag','GlobalPDAFit',...
         'Toolbar','figure',...
-        'CloseRequestFcn',@Close_PDA);
+        'CloseRequestFcn',@CloseWindow);
     
     whitebg(h.GlobalPDAFit, Look.Axes);
     set(h.GlobalPDAFit,'Color',Look.Back);
@@ -1026,22 +1026,6 @@ else
     figure(h.GlobalPDAFit); % Gives focus to GlobalPDAFit figure
 end
 
-function Close_PDA(~,~)
-clearvars -global PDAData PDAMeta
-delete(findobj('Tag','GlobalPDAFit'));
-Phasor=findobj('Tag','Phasor');
-Pam=findobj('Tag','Pam');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-FCSFit = findobj('Tag','FCSFit');
-if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF) && isempty(FCSFit)
-    clear global -regexp UserValues
-end
 
 % Load data that was exported in BurstBrowser
 function Load_PDA(~,~,mode)

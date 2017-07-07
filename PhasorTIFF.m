@@ -32,7 +32,7 @@ if isempty(h.PhasorTIFF)
         'UserData',[],...
         'BusyAction','cancel',...
         'OuterPosition',[0.01 0.1 0.98 0.9],...
-        'CloseRequestFcn',@Close_PhasorTIFF,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
     %%% Sets background of axes and other things
     whitebg(Look.Fore);
@@ -391,26 +391,6 @@ else
     figure(h.PhasorTIFF);
 end
     
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes PhasorTIFF and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_PhasorTIFF(Obj,~)
-clear global -regexp PhasorTIFFData
-
-Pam = findobj('Tag','Pam');
-FCSFit = findobj('Tag','FCSFit');
-MIAFit = findobj('Tag','MIAFit');
-Mia = findobj('Tag','Mia');
-Sim = findobj('Tag','Sim');
-PCF = findobj('Tag','PCF');
-BurstBrowser = findobj('Tag','BurstBrowser');
-TauFit = findobj('Tag','TauFit');
-Phasor = findobj('Tag','Phasor');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(Phasor)
-    clear global -regexp UserValues
-end
-delete(Obj);
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

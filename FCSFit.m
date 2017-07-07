@@ -31,7 +31,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Toolbar','figure',...
         'UserData',[],...
         'OuterPosition',[0.01 0.1 0.98 0.9],...
-        'CloseRequestFcn',@Close_FCSFit,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
     %h.FCSFit.Visible='off';
     %%% Remove unneeded items from toolbar
@@ -659,26 +659,7 @@ else
     figure(h.FCSFit); % Gives focus to Pam figure  
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_FCSFit(Obj,~)
-delete(Obj);
-LSUserValues(1);
-clear global -regexp FCSData FCSMeta
-Phasor=findobj('Tag','Phasor');
-Pam=findobj('Tag','Pam');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-PDAFit = findobj('Tag','GlobalPDAFit');
-if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF) && isempty(PDAFit)
-    clear global -regexp UserValues
-end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
