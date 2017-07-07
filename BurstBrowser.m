@@ -14705,6 +14705,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     disp('Not implemented for three color.');
     return;
 end
+
 % 2D E-S 
 h.ParameterListX.Value = find(strcmp('FRET Efficiency',BurstData{file}.NameArray));
 h.ParameterListY.Value = find(strcmp('Stoichiometry',BurstData{file}.NameArray));
@@ -14738,6 +14739,7 @@ h = guidata(obj);
 % file and species that is currently selected
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
+Progress(0,h.Progress_Axes,h.Progress_Text,'Generating figure...');
 
 for k = 1:numel(BurstData) %loop through all files
     BurstMeta.SelectedFile = k;
@@ -15098,6 +15100,33 @@ for k = 1:numel(BurstData) %loop through all files
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
+    %%% Add text box with information about applied corrections
+    corr = BurstData{file}.Corrections;
+    text_box = '$$\begin{tabular}{ll}';
+    text_box = [text_box '\bf{Correction factors:} & \\ '];
+    text_box = [text_box sprintf('crosstalk: & %.2f\\\\ ',corr.CrossTalk_GR)];
+    text_box = [text_box sprintf('direct excitation: & %.2f\\\\ ',corr.DirectExcitation_GR)];
+    text_box = [text_box sprintf('$\\gamma$-factor: & %.2f\\\\ ',corr.Gamma_GR)];
+    text_box = [text_box sprintf('$\\beta$-factor: & %.2f\\\\ ',corr.Beta_GR)];
+    text_box = [text_box sprintf('$G_{D}$: & %.2f\\\\ ',corr.GfactorGreen)];
+    text_box = [text_box sprintf('$G_{A}$: & %.2f\\\\ ',corr.GfactorRed)];
+    text_box = [text_box ' & \\ '];
+    text_box = [text_box '\bf{Dye parameters:} & \\ '];
+    text_box = [text_box sprintf('Foerster distance: & %d $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
+    text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
+    text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
+    text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
+    text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
+    text_box = [text_box sprintf('$r_0(A)$: & %.2f\\\\ ',corr.r0_green)];
+    text_box = [text_box '\end{tabular}$$'];
+    
+    fontsize = 16;
+    if ispc
+        fontsize= fontsize/1.2;
+    end
+    t=text(-1,0,text_box,'interpreter','latex','FontSize',fontsize);
+    t.Units = 'normalized';
+    t.Position = [-3.34 -0.81];
     %%% Set all units to pixels for easy editing without resizing
     hfigallinone.Units = 'pixels';
     for i = 1:numel(hfigallinone.Children)
@@ -15130,7 +15159,10 @@ for k = 1:numel(BurstData) %loop through all files
     %%% remove spaces
     FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
     hfigallinone.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
+    
+    Progress(k/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Generating figure...');
 end 
+Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Update Color of Lines %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
