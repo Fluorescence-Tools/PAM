@@ -14850,6 +14850,7 @@ for k = 1:numel(BurstData) %loop through all files
     norm_to_pix = [pos(3),pos(4),pos(3),pos(4)];
     % 2D Lifetime-E
     copyobj([panel_copy{1}],hfigallinone);
+    delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = [0.06 0.53 0.06 0.35].*norm_to_pix;
     set(hfigallinone.Children(1).YLabel,'Color', 'k', 'Units', 'norm');
@@ -14862,7 +14863,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).YAxisLocation = 'Right';
     hfigallinone.Children(1).YTickLabelRotation = 90;
     hfigallinone.Children(1).YLabel.FontSize = fontsize;
-    hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    end
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
 
@@ -14872,7 +14875,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
     hfigallinone.Children(2).YLabel.FontSize = fontsize;
-    hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    end
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTickLabel = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -14899,6 +14904,7 @@ for k = 1:numel(BurstData) %loop through all files
 
     % 2D lifetime GG-Anisotropy GG
     copyobj([panel_copy{2}],hfigallinone);
+    delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = [0.06 0.18 0.06 0.35].*norm_to_pix;
     hfigallinone.Children(1).YLabel.Color = 'k';
@@ -14910,7 +14916,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).YAxisLocation = 'Left';
     hfigallinone.Children(1).YTickLabelRotation = 90;
     hfigallinone.Children(1).YLabel.FontSize = fontsize;
-    hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    end
     hfigallinone.Children(1).YTick = [500 1000 1500];
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
@@ -14940,6 +14948,7 @@ for k = 1:numel(BurstData) %loop through all files
     
     % 2D lifetime RR-Anisotropy RR
     copyobj([panel_copy{3}],hfigallinone);
+    delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = [0.82 0.18 0.06 0.35].*norm_to_pix;
     set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
@@ -14948,7 +14957,11 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).YAxisLocation = 'Right';
     hfigallinone.Children(1).YTickLabelRotation = -90;
     hfigallinone.Children(1).YLabel.FontSize = fontsize;
-    hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(1).YAxis.FontSize = fontsize;
+    catch
+        %hfigallinone.Children(1).FontSize = fontsize;
+    end
     hfigallinone.Children(1).YTick = [];
     
     hfigallinone.Children(2).Units = 'pixel';
@@ -14957,7 +14970,9 @@ for k = 1:numel(BurstData) %loop through all files
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 -0.5 0];
     hfigallinone.Children(2).YLabel.FontSize = fontsize;
-    hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    end
     %hfigallinone.Children(2).XTick = [0 1 2 3 4 5 6];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -14983,6 +14998,7 @@ for k = 1:numel(BurstData) %loop through all files
     
     % 2D E-tauA
     copyobj([panel_copy{5}],hfigallinone);
+    delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = [1.5 1.5 0.06 0.35].*norm_to_pix;
     hfigallinone.Children(1).Visible = 'off';
@@ -14993,7 +15009,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
     hfigallinone.Children(2).YLabel.FontSize = fontsize;
-    hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    end
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -15018,6 +15036,7 @@ for k = 1:numel(BurstData) %loop through all files
     
     % 2D Stoichiometry-E
     copyobj([panel_copy{4}],hfigallinone);
+    delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = [1.17 0.53 0.06 0.35].*norm_to_pix;
     hfigallinone.Children(1).YTickLabel = [];
@@ -15034,7 +15053,9 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
     hfigallinone.Children(2).YLabel.FontSize = fontsize;
-    hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    try
+        hfigallinone.Children(2).YAxis.FontSize = fontsize;
+    end
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
@@ -15057,8 +15078,8 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
     
-    for k = 1:5
-        close(hfig{k})
+    for u = 1:5
+        close(hfig{u})
     end
     colormap(colormap(h.BurstBrowser));
     
