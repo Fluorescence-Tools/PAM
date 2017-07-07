@@ -6,7 +6,9 @@ LSUserValues(0);
 method = '';
 %%% If called from command line, or from Launcher
 if (nargin < 1 && isempty(gcbo)) || (nargin < 1 && strcmp(get(gcbo,'Tag'),'TauFit_Launcher'))
-    Close_TauFit
+    if ~isempty(findobj('Tag','TauFit'))
+        CloseWindow(findobj('Tag','TauFit'))
+    end
     %disp('Call TauFit from Pam or BurstBrowser instead of command line!');
     %return;
     TauFitData.Who = 'External';
@@ -43,7 +45,7 @@ h.TauFit = figure(...
     'UserData',[],...
     'BusyAction','cancel',...
     'OuterPosition',[0.075 0.05 0.85 0.85],...
-    'CloseRequestFcn',@Close_TauFit,...
+    'CloseRequestFcn',@CloseWindow,...
     'KeyPressFcn',@TauFit_KeyPress,...
     'Visible','on');
 %%% Sets background of axes and other things
@@ -2314,24 +2316,7 @@ switch obj
         TauFitData.ChannelChanged(2) = 1;
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes TauFit and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_TauFit(~,~)
-clear global -regexp TauFitData
-LSUserValues(1);
-Pam = findobj('Tag','Pam');
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-if isempty(Pam) && isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser)
-    clear global -regexp UserValues
-end
-delete(findobj('Tag','TauFit'));
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Executes on Method selection change %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

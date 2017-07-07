@@ -38,7 +38,7 @@ end
         'WindowScrollWheelFcn',{@Phasor_Move,3,[],[]},...
         'WindowButtonUpFcn',@Stop_All,...
         'KeyPressFcn',{@Phasor_Key,1},...
-        'CloseRequestFcn',@Close_Phasor,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
     %%% Sets background of axes and other things
     whitebg(Look.Fore);
@@ -1799,26 +1799,6 @@ PhasorData.Cursor=[];
     PhasorData.Cursor{9}=Point;  
 %%    
 guidata(h.Phasor,h); 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes Phasor and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Phasor(Obj,~)
-clear global -regexp PhasorData
-Pam=findobj('Tag','Pam');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
 
 
 

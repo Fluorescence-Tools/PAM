@@ -1,5 +1,5 @@
 function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
-global UserValues FileInfo PathToApp
+global UserValues PathToApp
 
 if isempty(PathToApp)
     GetAppFolder();
@@ -2333,7 +2333,8 @@ else
 
     Current=[];
     %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
-    if findobj('Tag','Pam') == get(groot,'CurrentFigure');
+    if findobj('Tag','Pam') == get(groot,'CurrentFigure')
+        global FileInfo
         %%% if Pam is not the active figure, don't go in here
         if isfield(FileInfo,'FileName')
             if ~strcmp(FileInfo.FileName{1},'Nothing loaded')
@@ -2341,7 +2342,7 @@ else
                     for i = 1:FileInfo.NumberOfFiles
                         [~,FileName,~] = fileparts(FileInfo.FileName{i});
                         FullFileName = [FileInfo.Path filesep FileName '.pro'];
-                        if ~strcmp(FullFileName, GenerateName(FullFileName,1));
+                        if ~strcmp(FullFileName, GenerateName(FullFileName,1))
                             %%% filename already existed
                             tmp = dir(FullFileName);
                             if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
