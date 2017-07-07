@@ -6064,8 +6064,9 @@ UpdateGUIOptions(obj,[],h);
 if isempty(BurstData)
     return;
 end
-
-drawnow nocallbacks
+if ~verLessThan('matlab','8.5')
+    drawnow nocallbacks
+end
 %% Update Main Plot
 x = get(h.ParameterListX,'Value');
 y = get(h.ParameterListY,'Value');
