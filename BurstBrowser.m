@@ -6515,8 +6515,8 @@ if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
 
-    set(h.axes_1d_x_text, 'String', sprintf('avg = %.2f%c%.2f',mean(BurstData{file}.DataCut(:,x)),char(177),std(BurstData{file}.DataCut(:,x))));
-    set(h.axes_1d_y_text, 'String', sprintf('avg = %.2f%c%.2f',mean(BurstData{file}.DataCut(:,y)),char(177),std(BurstData{file}.DataCut(:,y))));
+    set(h.axes_1d_x_text, 'String', sprintf('avg = %.3f%c%.3f',mean(BurstData{file}.DataCut(:,x)),char(177),std(BurstData{file}.DataCut(:,x))));
+    set(h.axes_1d_y_text, 'String', sprintf('avg = %.3f%c%.3f',mean(BurstData{file}.DataCut(:,y)),char(177),std(BurstData{file}.DataCut(:,y))));
 else
     h.axes_1d_x_text.Visible = 'off';
     h.axes_1d_y_text.Visible = 'off';
