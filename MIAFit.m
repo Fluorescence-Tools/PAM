@@ -1780,14 +1780,24 @@ for i=1:size(MIAFitMeta.Plots,1)
         %% Updates on axis data plot values 
         MIAFitMeta.Plots{i,1}.XData = x(1,:);    
         MIAFitMeta.Plots{i,1}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;
-        MIAFitMeta.Plots{i,1}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
-        MIAFitMeta.Plots{i,1}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B; 
-        MIAFitMeta.Plots{i,4}.XData = x(1,:);    
-        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B; 
+        if isfield(MIAFitMeta.Plots{i,1}, 'YNegativeDelta')
+            MIAFitMeta.Plots{i,1}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+            MIAFitMeta.Plots{i,1}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+        else
+            MIAFitMeta.Plots{i,1}.LData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+            MIAFitMeta.Plots{i,1}.UData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+        end
+        MIAFitMeta.Plots{i,4}.XData = x(1,:);
+        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;
         MIAFitMeta.Plots{i,5}.XData = y(:,1);
         MIAFitMeta.Plots{i,5}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;
-        MIAFitMeta.Plots{i,5}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
-        MIAFitMeta.Plots{i,5}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        if isfield(MIAFitMeta.Plots{i,5},'YNegativeDelta')
+            MIAFitMeta.Plots{i,5}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+            MIAFitMeta.Plots{i,5}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        else
+            MIAFitMeta.Plots{i,5}.LData = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+            MIAFitMeta.Plots{i,5}.UData= MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        end
         MIAFitMeta.Plots{i,8}.XData = y(:,1);
         MIAFitMeta.Plots{i,8}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B; 
         if h.Omit_Center.Value

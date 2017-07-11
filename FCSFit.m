@@ -1697,12 +1697,22 @@ for i=1:size(FCSMeta.Plots,1)
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
             if ~strcmp(FCSMeta.DataType,'FRET')
-                FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
-                FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+                if isfield(FCSMeta.Plots{i,1}, 'LNegativeDelta')
+                    FCSMeta.Plots{i,1}.YNegativeDelta=FCSMeta.Data{i,3}/B;
+                    FCSMeta.Plots{i,1}.YPositiveDelta=FCSMeta.Data{i,3}/B;
+                else
+                    FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
+                    FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+                end
             else
                 error = FCSMeta.Data{i,3}; error(FCSMeta.Data{i,2}==0) = 0;
-                FCSMeta.Plots{i,1}.LData=error/B;
-                FCSMeta.Plots{i,1}.UData=error/B;
+                if isfield(FCSMeta.Plots{i,1}, 'LNegativeDelta')
+                    FCSMeta.Plots{i,1}.YNegativeDelta=error/B;
+                    FCSMeta.Plots{i,1}.YPositiveDelta=error/B;
+                else
+                    FCSMeta.Plots{i,1}.LData=error/B;
+                    FCSMeta.Plots{i,1}.UData=error/B;
+                end
             end
             FCSMeta.Plots{i,1}.Visible = 'on';
             FCSMeta.Plots{i,4}.Visible = 'off';
@@ -2309,9 +2319,14 @@ for i=1:numel(FCSData.Data)
     %%% Update Plots
     FCSMeta.Plots{i,1}.XData = FCSMeta.Data{i,1};
     FCSMeta.Plots{i,1}.YData = FCSMeta.Data{i,2};
-    FCSMeta.Plots{i,1}.LData = error;
-    FCSMeta.Plots{i,1}.UData = error;
-
+    if isfield(FCSMeta.Plots{i,1},'YNegativeDelta')
+        FCSMeta.Plots{i,1}.YNegativeDelta = error;
+        FCSMeta.Plots{i,1}.YPOsitiveDelta = error;
+    else
+        FCSMeta.Plots{i,1}.LData = error;
+        FCSMeta.Plots{i,1}.UData = error;
+    end
+    
     FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1}-bin/2;
     FCSMeta.Plots{i,4}.YData = FCSMeta.Data{i,2};       
 end

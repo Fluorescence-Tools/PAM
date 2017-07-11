@@ -3382,7 +3382,7 @@ if any(mode == 0)
 end
 
 %% Creates trace and image plots
-if any(mode == [0,1,2,3])
+if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
@@ -3397,17 +3397,17 @@ if any(mode == [0,1,2,3])
                 %% Calculates trace
                 %%% Takes PIE channel macrotimes
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
+                PamMeta.BinsPCH{i} = 0:1:10;
+                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
                             %%% Calculate intensity trace for PIE channel
                             if ~isempty(PIE_MT)
                                 PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
-                            else
-                                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                             end
-                        else
-                            PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                         end
                     end
                     if any(mode==2)
@@ -3417,26 +3417,18 @@ if any(mode == [0,1,2,3])
                             if ~isempty(PIE_MT)
                                 PamMeta.TracePCH{i} = histc(PIE_MT,TimeBinsPCH);
                                 PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
-                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
-                            else
-                                PamMeta.BinsPCH{i} = 0:1:10;
-                                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                                PamMeta.TracePCH{i} = zeros(numel(TimeBinsPCH)+1,1);
+                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i}); 
                             end
-                        else
-                            PamMeta.BinsPCH{i} = 0:1:10;
-                            PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                            PamMeta.TracePCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
                         end
                     end
                 end
                 %% Calculates image
+                PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
+                PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                         [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
                         PamMeta.Image{i} = double(flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1])));
-                    else
-                        PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
                     
                     %% Calculate mean arival time image
@@ -3452,8 +3444,6 @@ if any(mode == [0,1,2,3])
                             PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
                             %%% Sets NaNs to 0 for empty pixels
                             PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
-                        else
-                            PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                         end
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;

@@ -6,6 +6,14 @@ LSUserValues(1);
 switch obj.Tag
     case 'Pam'
         clear global -regexp FileInfo PamMeta TcspcData
+        %%% close TauFit if it is open and interacting with PAM
+        h_TauFit = findobj('Tag','TauFit');
+        if ~isempty(h_TauFit)
+            global TauFitData
+            if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'Burstwise') %%% was called from PAM
+                CloseWindow(h_TauFit);
+            end
+        end
     case 'Phasor'
         clear global -regexp PhasorData
     case 'FCSFit'
@@ -20,6 +28,14 @@ switch obj.Tag
          clear global -regexp PCFData
     case 'BurstBrowser'
          clear global -regexp BurstMeta BurstTCSPCData PhotonStream BurstData
+         %%% close TauFit if it is open and interacting with BurstBrowser
+         h_TauFit = findobj('Tag','TauFit');
+         if ~isempty(h_TauFit)
+             global TauFitData
+             if strcmp(TauFitData.Who,'BurstBrowser') %%% was called from BurstBrowser
+                 CloseWindow(h_TauFit);
+             end
+         end
     case 'TauFit'
         clear global -regexp TauFitData
     case 'PhasorTIFF'
