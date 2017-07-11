@@ -2089,7 +2089,7 @@ switch mode
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
         %%% 2: Countrate of file
-        %%% 3: Brightness if file
+        %%% 3: Brightness of file
         %%% 4:3:end: Parameter value
         %%% 5:3:end: Checkbox to fix parameter
         %%% 6:3:end: Checkbox to fit parameter globaly
@@ -2219,7 +2219,7 @@ end
 
 %%% Calculates brightness for all files
 for i=1:size(MIAFitMeta.Params,2)
-    P=MIAFitMeta.Params(:,:); %#ok<NASGU>
+    P=MIAFitMeta.Params(:,i); %#ok<NASGU>
     eval(MIAFitMeta.Model.Brightness);
     h.Fit_Table.Data{i,3}=num2str(mean(MIAFitData.Counts{i})*B);
 end
