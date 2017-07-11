@@ -15096,33 +15096,69 @@ for k = 1:numel(BurstData) %loop through all files
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
-    %%% Add text box with information about applied corrections
     corr = BurstData{file}.Corrections;
-    text_box = '$$\begin{tabular}{ll}';
-    text_box = [text_box '\bf{Correction factors:} & \\ '];
-    text_box = [text_box sprintf('crosstalk: & %.2f\\\\ ',corr.CrossTalk_GR)];
-    text_box = [text_box sprintf('direct excitation: & %.2f\\\\ ',corr.DirectExcitation_GR)];
-    text_box = [text_box sprintf('$\\gamma$-factor: & %.2f\\\\ ',corr.Gamma_GR)];
-    text_box = [text_box sprintf('$\\beta$-factor: & %.2f\\\\ ',corr.Beta_GR)];
-    text_box = [text_box sprintf('$G_{D}$: & %.2f\\\\ ',corr.GfactorGreen)];
-    text_box = [text_box sprintf('$G_{A}$: & %.2f\\\\ ',corr.GfactorRed)];
-    text_box = [text_box ' & \\ '];
-    text_box = [text_box '\bf{Dye parameters:} & \\ '];
-    text_box = [text_box sprintf('Foerster distance: & %d $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
-    text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
-    text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
-    text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
-    text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
-    text_box = [text_box sprintf('$r_0(A)$: & %.2f\\\\ ',corr.r0_green)];
-    text_box = [text_box '\end{tabular}$$'];
-    
-    fontsize = 16;
-    if ispc
-        fontsize= fontsize/1.2;
+    table_mode = 'html';
+    switch table_mode
+        case 'latex'
+            %%% Add text box with information about applied corrections
+            text_box = '$$\begin{tabular}{ll}';
+            text_box = [text_box '\bf{Correction factors} & \\ '];
+            text_box = [text_box sprintf('crosstalk: & %.2f\\\\ ',corr.CrossTalk_GR)];
+            text_box = [text_box sprintf('direct excitation: & %.2f\\\\ ',corr.DirectExcitation_GR)];
+            text_box = [text_box sprintf('$\\gamma$-factor: & %.2f\\\\ ',corr.Gamma_GR)];
+            text_box = [text_box sprintf('$\\beta$-factor: & %.2f\\\\ ',corr.Beta_GR)];
+            text_box = [text_box sprintf('$G_{D}$: & %.2f\\\\ ',corr.GfactorGreen)];
+            text_box = [text_box sprintf('$G_{A}$: & %.2f\\\\ ',corr.GfactorRed)];
+            text_box = [text_box ' & \\ '];
+            text_box = [text_box '\bf{Dye parameters} & \\ '];
+            text_box = [text_box sprintf('Foerster distance: & %d $\\rm{\\AA}$\\\\ ',corr.FoersterRadius)];
+            text_box = [text_box sprintf('Linker length: & %d $\\rm{\\AA}$\\\\ ',corr.LinkerLength)];
+            text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
+            text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
+            text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
+            text_box = [text_box sprintf('$r_0(A)$: & %.2f\\\\ ',corr.r0_green)];
+            text_box = [text_box '\end{tabular}$$'];
+
+            fontsize = 16;
+            if ispc
+                fontsize= fontsize/1.2;
+            end
+            t=text(-1,0,text_box,'interpreter','latex','FontSize',fontsize);
+            t.Units = 'normalized';
+            t.Position = [-3.34 -0.81];
+        case 'html'
+            table = '<html><table>';
+            table = [table '<tr><th>Correction factors</th></tr>'];
+            table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td></tr>'];
+            table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td></tr>'];
+            table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td></tr>'];
+            table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td></tr>'];
+            table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td></tr>'];
+            table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td></tr>'];
+            table = [table '</table><table>'];
+            table = [table '<tr><th>Dye parameters</th></tr>'];
+            table = [table '<tr><td>Foerster distance:</td><td>' sprintf('%.2f', corr.FoersterRadius) '</td></tr>'];
+            table = [table '<tr><td> app. Linker length:</td><td>' sprintf('%.2f', corr.LinkerLength) '</td></tr>'];
+            table = [table '<tr><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+            table = [table '<tr><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+            table = [table '<tr><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+            table = [table '<tr><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+            table = [table '</table></html>'];
+            
+            hEditbox = uicontrol('style','edit', 'max',1000, 'Units', 'normalized', 'Position', [0.8,0.2,0.1,0.3],...
+                'FontName', UserValues.Look.Font);
+            jScrollPane = findjobj(hEditbox);
+            jViewPort = jScrollPane.getViewport;
+            jEditbox = jViewPort.getComponent(0);
+            jEditbox.setEditorKit(javax.swing.text.html.HTMLEditorKit);
+            jEditbox.setText(table);
+            jScrollPane.Border = [];
+            jScrollPane.VerticalScrollBarPolicy = 21;
+            %%% this setting resets on resizing, add callback
+            cbStr = 'set(gcbo,''VerticalScrollBarPolicy'',21)';
+            hjScrollPane = handle(jScrollPane,'CallbackProperties');
+            set(hjScrollPane,'ComponentResizedCallback',cbStr);
     end
-    t=text(-1,0,text_box,'interpreter','latex','FontSize',fontsize);
-    t.Units = 'normalized';
-    t.Position = [-3.34 -0.81];
     %%% Set all units to pixels for easy editing without resizing
     hfigallinone.Units = 'pixels';
     for i = 1:numel(hfigallinone.Children)
