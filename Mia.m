@@ -2932,7 +2932,7 @@ switch mode
             TIFF_Handle.close(); % Close tif reference   
         end
         if ~isempty(MIAData.RLICS) && mode==1.5
-            MIAData.Data{1,1}=single(MIAData.Data{1,1})/MIAData.RLICS(1,1)-MIAData.RLICS(1,2);
+            MIAData.Data{1,1}=single(MIAData.Data{1,1})/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
         end
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -3012,7 +3012,7 @@ switch mode
             end
         end
         if ~isempty(MIAData.RLICS) && mode==1.5 && size(MIAData.RLICS,1)==2
-            MIAData.Data{2,1}=single(MIAData.Data{2,1})/MIAData.RLICS(2,1)-MIAData.RLICS(2,2);
+            MIAData.Data{2,1}=single(MIAData.Data{2,1})/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
         end
         %%% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
@@ -5159,7 +5159,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %% Creates new filename
             %%% Removes file extension
             switch MIAData.Type
-                case {1,2}
+                case {1,1.5, 2}
                     FileName=MIAData.FileName{1}{1}(1:end-4);
             end
             
