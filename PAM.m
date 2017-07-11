@@ -3382,7 +3382,7 @@ if any(mode == 0)
 end
 
 %% Creates trace and image plots
-if any(mode == [0,1,2,3])
+if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
