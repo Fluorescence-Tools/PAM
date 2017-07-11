@@ -14711,6 +14711,9 @@ function ExportAllInOneGraphs(obj,~)
 global BurstData BurstMeta UserValues
 h = guidata(obj);
 
+%%% some options
+overlay = true; %%% overlay the axis labels on 1D plot
+opacity = 0.8; %%% gray color for 1D axis if overlay = true
 % file and species that is currently selected
 file = BurstMeta.SelectedFile;
 species = BurstData{file}.SelectedSpecies;
@@ -14868,7 +14871,7 @@ for k = 1:numel(BurstData) %loop through all files
     end
     hfigallinone.Children(1).YTick = [];
     hfigallinone.Children(1).YLabel.String = '';
-
+    
     hfigallinone.Children(2).Units = 'pixel';
     hfigallinone.Children(2).Position = [0.12 0.88 0.35 0.06].*norm_to_pix;   
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
@@ -14902,6 +14905,23 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
 
+    if overlay
+        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(1).Visible = 'off';
+        hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+        hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+        hfigallinone.Children(3).YLabel.Units = 'norm';
+        hfigallinone.Children(3).YLabel.Position(1) = -0.17;
+        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(2).Visible = 'off';
+        hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
+        hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
+        hfigallinone.Children(3).XLabel.Units = 'norm';
+        hfigallinone.Children(3).XLabel.Position(2) = 1.17;
+        hfigallinone.Children(3).TickDir = 'out';
+        uistack(hfigallinone.Children(1:2),'bottom');
+    end
+    
     % 2D lifetime GG-Anisotropy GG
     copyobj([panel_copy{2}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
@@ -14945,6 +14965,23 @@ for k = 1:numel(BurstData) %loop through all files
     
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
+    
+    if overlay
+        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(1).Visible = 'off';
+        hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+        hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+        hfigallinone.Children(3).YLabel.Units = 'norm';
+        hfigallinone.Children(3).YLabel.Position(1) = -0.17;
+        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(2).Visible = 'off';
+        hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
+        hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
+        hfigallinone.Children(3).XLabel.Units = 'norm';
+        hfigallinone.Children(3).XLabel.Position(2) = -0.17;
+        hfigallinone.Children(3).TickDir = 'out';
+        uistack(hfigallinone.Children(1:2),'bottom');
+    end
     
     % 2D lifetime RR-Anisotropy RR
     copyobj([panel_copy{3}],hfigallinone);
@@ -14996,6 +15033,26 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
     
+    if overlay
+        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(1).Visible = 'off';
+        hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+        hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+        hfigallinone.Children(3).YLabel.Units = 'norm';
+        hfigallinone.Children(3).YLabel.Rotation = -90;
+        hfigallinone.Children(3).YTickLabelRotation = -90;
+        hfigallinone.Children(3).YAxisLocation = 'right';
+        hfigallinone.Children(3).YLabel.Position(1) = 1.24;
+        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(2).Visible = 'off';
+        hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
+        hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
+        hfigallinone.Children(3).XLabel.Units = 'norm';
+        hfigallinone.Children(3).XLabel.Position(2) = -0.17;
+        hfigallinone.Children(3).TickDir = 'out';
+        uistack(hfigallinone.Children(1:2),'bottom');
+    end
+    
     % 2D E-tauA
     copyobj([panel_copy{5}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
@@ -15033,6 +15090,17 @@ for k = 1:numel(BurstData) %loop through all files
     
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
+    
+    if overlay
+        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        hfigallinone.Children(2).Visible = 'off';
+        hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
+        hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
+        hfigallinone.Children(3).XLabel.Units = 'norm';
+        hfigallinone.Children(3).XLabel.Position(1:2) = [0.5, 1.17];
+        hfigallinone.Children(3).TickDir = 'out';
+        uistack(hfigallinone.Children(1:2),'bottom');
+    end
     
     % 2D Stoichiometry-E
     copyobj([panel_copy{4}],hfigallinone);
@@ -15078,13 +15146,33 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Children(1).Layer = 'top';
     hfigallinone.Children(2).Layer = 'top';
     
+    if overlay
+        set(findobj(hfigallinone.Children(1).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
+        hfigallinone.Children(1).Visible = 'off';
+        hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+        hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+        hfigallinone.Children(3).YLabel.Units = 'norm';
+        hfigallinone.Children(3).YLabel.Rotation = -90;
+        hfigallinone.Children(3).YTickLabelRotation = -90;
+        hfigallinone.Children(3).YAxisLocation = 'right';
+        hfigallinone.Children(3).YLabel.Position(1) = 1.24;
+        set(findobj(hfigallinone.Children(2).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
+        hfigallinone.Children(2).Visible = 'off';
+        hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
+        hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
+        hfigallinone.Children(3).XLabel.Units = 'norm';
+        hfigallinone.Children(3).XLabel.Position(2) = 1.17;
+        hfigallinone.Children(3).TickDir = 'out';
+        uistack(hfigallinone.Children(1:2),'bottom');
+    end
+    
     for u = 1:5
         close(hfig{u})
     end
     colormap(colormap(h.BurstBrowser));
     
     %%% add colorbar
-    cbar = colorbar('peer', hfigallinone.Children(3),'Location','north','Color',[0 0 0]); 
+    cbar = colorbar('peer', hfigallinone.Children(1),'Location','north','Color',[0 0 0]); 
     cbar.Units = 'pixel';
     cbar.Position = [0.98,0.49,0.19,0.02].*norm_to_pix;
     cbar.Label.String = 'Occurrence';
@@ -15136,7 +15224,7 @@ for k = 1:numel(BurstData) %loop through all files
             table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
             table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
             table = [table '</table></html>'];
-            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', [0.63,0.165,0.275,0.275],...
+            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', [0.6000 0.1850 0.2750 0.2750],...
                 'FontName', UserValues.Look.Font, 'String',table, 'BackgroundColor',[1,1,1], 'FontSize', fontsize);
             hTextbox.Units = 'pixel';
             jPushButton = findjobj(hTextbox);
@@ -15144,12 +15232,17 @@ for k = 1:numel(BurstData) %loop through all files
     end
     %%% Set all units to pixels for easy editing without resizing
     hfigallinone.Units = 'pixels';
+    offset_y = 70; %%% shift everything down
+    offset_x = 30; %%% shift everything left
     for i = 1:numel(hfigallinone.Children)
         if isprop(hfigallinone.Children(i),'Units');
             hfigallinone.Children(i).Units = 'pixels';
+            hfigallinone.Children(i).Position(2) = hfigallinone.Children(i).Position(2) - offset_y;
+            hfigallinone.Children(i).Position(1) = hfigallinone.Children(i).Position(1) - offset_x;
         end
     end
-    hfigallinone.Position(3) = 1150;
+    hfigallinone.Position(3) = 1100 - offset_x;
+    hfigallinone.Position(4) = hfigallinone.Position(4) - offset_y - 30;
     %%% Combine the Original FileName and the parameter names
     if isfield(BurstData{file},'FileNameSPC')
         if strcmp(BurstData{file}.FileNameSPC,'_m1')
