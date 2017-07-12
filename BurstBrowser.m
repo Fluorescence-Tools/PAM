@@ -14789,6 +14789,8 @@ for k = 1:numel(BurstData) %loop through all files
                 h.axes_lifetime_ind_2d],...
                 hfig{f});
         else
+            old_paramX = h.ParameterListX.Value;
+            old_paramY = h.ParameterListY.Value;
             h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{k}.NameArray));
             h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{k}.NameArray));
             %%% restrict E and S to fixed intervals
@@ -15224,7 +15226,7 @@ for k = 1:numel(BurstData) %loop through all files
             table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
             table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
             table = [table '</table></html>'];
-            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', [0.6000 0.1850 0.2750 0.2750],...
+            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', [0.6000 0.180 0.2750 0.2750],...
                 'FontName', UserValues.Look.Font, 'String',table, 'BackgroundColor',[1,1,1], 'FontSize', fontsize);
             hTextbox.Units = 'pixel';
             jPushButton = findjobj(hTextbox);
@@ -15267,6 +15269,9 @@ for k = 1:numel(BurstData) %loop through all files
     %%% remove spaces
     FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
     hfigallinone.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
+    
+    h.ParameterListX.Value = old_paramX;
+    h.ParameterListY.Value = old_paramY;
     
     Progress(k/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Generating figure...');
 end 
