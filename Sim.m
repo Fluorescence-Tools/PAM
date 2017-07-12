@@ -2212,7 +2212,7 @@ advanced = any([...
     ]);
 %% basic simulation 
 if ~advanced
-    for i = 1:numel(SimData.Species);
+    for i = 1:numel(SimData.Species)
         if ~SimData.Start %%% Aborts Simulation
            return; 
         end
@@ -2258,7 +2258,7 @@ if ~advanced
         end
 
         %%% Determins barrier type and map (for quenching, barriers, ect.)
-        Map_Type = h.Sim_Barrier.Value;
+        Map_Type = SimData.Species(i).Barrier;
         switch Map_Type
             case 1 %%% Free Diffusion
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
