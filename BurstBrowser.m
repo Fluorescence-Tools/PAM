@@ -14050,7 +14050,7 @@ switch obj
             ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
             linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
-                'LineWidth',1)
+                'LineWidth',1,'Box','on');
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -14454,7 +14454,7 @@ switch obj
             ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
             linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
-                'LineWidth',1)
+                'LineWidth',1,'Box','on')
         end
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
         %%% remove html formatting
