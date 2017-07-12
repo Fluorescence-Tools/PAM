@@ -696,7 +696,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.76, 0.4 0.06],...
-    'String','Pixel time [?s]:');
+    'String','Pixel time [us]:');
 %%% Editbox to set pixel time
 h.Mia_Image.Settings.Image_Pixel = uicontrol(...
     'Parent',h.Mia_Image.Settings.Image_Panel,...
@@ -1894,7 +1894,7 @@ h.Mia_ICS.Fit_Table = uitable(...
     'ColumnName',{'ACF1','CCF','ACF2'},...
     'ColumnWidth',num2cell([40,40,40]),...
     'ColumnEditable',true,...
-    'RowName',{'N';'Fix';'D [?m?/s]';'Fix';'w_r [?m]';'Fix';'w_z [?m]';'Fix';'y0';'Fix';'P Size [nm]';'Fix';'P Time [?s]';'Fix';'L Time [ms]';'Fix'},...
+    'RowName',{'N';'Fix';'D [um2/s]';'Fix';'w_r [um]';'Fix';'w_z [um]';'Fix';'y0';'Fix';'P Size [nm]';'Fix';'P Time [us]';'Fix';'L Time [ms]';'Fix'},...
     'CellEditCallback',{@Update_Plots,2,1:3},...
     'Position',[0.01 0.46, 0.2 0.4]);
 Data=cell(16,3);
@@ -2063,7 +2063,7 @@ h.Mia_TICS.Fit_Table = uitable(...
     'ColumnName',{'ACF1','CCF','ACF2'},...
     'ColumnWidth',num2cell([40,40,40]),...
     'ColumnEditable',true,...
-    'RowName',{'N';'Fix';'D [?m?/s]';'Fix';'w_r [?m]';'Fix';'w_z [?m]';'Fix';'y0';'Fix';},...
+    'RowName',{'N';'Fix';'D [um2/s]';'Fix';'w_r [um]';'Fix';'w_z [um]';'Fix';'y0';'Fix';},...
     'CellEditCallback',{@Calc_TICS_Fit,1:3},...
     'Position',[0.01 0.71, 0.18 0.27]);
 Data=cell(10,3);
@@ -2285,7 +2285,7 @@ h.Mia_STICS.Fit_Table = uitable(...
     'ColumnName',{'ACF1','CCF','ACF2'},...
     'ColumnWidth',num2cell([40,40,40]),...
     'ColumnEditable',true,...
-    'RowName',{'w_r [?m]';'Fix';'D [?m?/s]';'Fix';'Alpha';'Fix';},...
+    'RowName',{'w_r [um]';'Fix';'D [um2/s]';'Fix';'Alpha';'Fix';},...
     'CellEditCallback',{@Update_Plots,6,1:3},...
     'Position',[0.01 0.73, 0.18 0.17]);
 Data = cell(6,3);
@@ -2338,7 +2338,7 @@ for i=1:3
     h.Mia_STICS.Axes.YColor = Look.Fore;
     h.Mia_STICS.Axes.XLabel.String = 'Time Lag {\it\tau{}} [s]';
     h.Mia_STICS.Axes.XLabel.Color = Look.Fore;
-    h.Mia_STICS.Axes.YLabel.String = 'iMSD [?m?/s]';
+    h.Mia_STICS.Axes.YLabel.String = 'iMSD [um2/s]';
     h.Mia_STICS.Axes.YLabel.Color = Look.Fore;
     
     
@@ -2646,7 +2646,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.76, 0.26 0.06],...
-    'String','Pixel time [?s]:');
+    'String','Pixel time [us]:');
 %%% Editbox to set pixel time
 h.Mia_NB.Image.Pixel = uicontrol(...
     'Parent',h.Mia_NB.Image.Panel,...
@@ -3039,7 +3039,7 @@ switch mode
         
     case 2 %%% Loads data from Pam
         %% Aborts, if not Data is loaded or Pam is closed
-        if isempty(findobj('Tag','Pam'));
+        if isempty(findobj('Tag','Pam'))
             return;
         end
         Pam = guidata(findobj('Tag','Pam'));        
@@ -3110,19 +3110,29 @@ switch mode
         
         Sel = h.Mia_Image.Settings.Channel_PIE(1).Value;
         
-        if UserValues.PIE.Detector(Sel)~=0           
-            [MIAData.Data{1,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
+        if UserValues.PIE.Detector(Sel)~=0
+            if ~isempty(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)})
+                [MIAData.Data{1,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
+            else
+                MIAData.Data{1,1} = 0;
+            end
+            
         else
             PIE_MT=[];
             for i=UserValues.PIE.Combined{Sel}
-            PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
+                PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];
             end
-            [MIAData.Data{1,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3); 
+            if ~isempty(PIE_MT)
+                [MIAData.Data{1,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3);
+            else
+                MIAData.Data{1,1} = 0;
+            end
             clear PIE_MT;
+            
         end
         
         %% Updates frame settings for channel 1
@@ -3167,18 +3177,26 @@ switch mode
         MIAData.FileName{2} = FileInfo.FileName;
         Sel = h.Mia_Image.Settings.Channel_PIE(2).Value;
         %%% Gets the photons        
-        if UserValues.PIE.Detector(Sel)~=0           
-            [MIAData.Data{2,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
-                        TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
+        if UserValues.PIE.Detector(Sel)~=0
+            if ~isempty(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)})
+                [MIAData.Data{2,1},~] = CalculateImage(TcspcData.MT{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}>=UserValues.PIE.From(Sel) &...
+                    TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
+            else
+                MIAData.Data{2,1} = 0;
+            end
         else
             PIE_MT=[];
             for i=UserValues.PIE.Combined{Sel}
-            PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
-                        TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];    
+                PIE_MT = [PIE_MT; TcspcData.MT{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}(...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}>=UserValues.PIE.From(i) &...
+                    TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)}<=UserValues.PIE.To(i))];
             end
-            [MIAData.Data{2,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3); 
+            if ~isempty(PIE_MT)
+                [MIAData.Data{2,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3);
+            else
+                MIAData.Data{2,1} = 0;
+            end
             clear PiE_MT;
         end
         %% Updates frame settings for channel 2
@@ -5062,7 +5080,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
         From = h.Plots.ROI(1).Position(1:2)+0.5;
         To = From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(i).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -5117,7 +5135,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
         From=h.Plots.ROI(1).Position(1:2)+0.5;
         To=From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(3).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -5234,7 +5252,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             end
             fprintf(FID,'%s\n','Image Correlation info file');
             %%% Pixel\Line\Frame times
-            fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+            fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
             fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
             fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
             %%% Pixel size
@@ -5338,7 +5356,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             end
             fprintf(FID,'%s\n','Image Correlation info file');
             %%% Pixel\Line\Frame times
-            fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+            fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
             fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
             fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
             %%% Pixel size
@@ -5673,7 +5691,7 @@ end
 if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     %% Get Info structure
     Info = struct;
-    %%% Pixel [?s], Line [ms] and Frametime [s]
+    %%% Pixel [us], Line [ms] and Frametime [s]
     Info.Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
     %%% Pixel size
     Info.Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -5724,7 +5742,7 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     FID = fopen(Current_FileName,'w');
     fprintf(FID,'%s\n','Image Correlation info file');
     %%% Pixel\Line\Frame times
-    fprintf(FID,'%s\t%f\n', 'Pixel time [?s]:',Info.Times(1));
+    fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
     fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
     fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
     %%% Pixel size
@@ -6030,7 +6048,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         From = h.Plots.ROI(1).Position(1:2)+0.5;
         To = From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(i).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
@@ -6079,7 +6097,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         From=h.Plots.ROI(1).Position(1:2)+0.5;
         To=From+h.Plots.ROI(1).Position(3:4)-1;
         InfoAll(3).ROI = [From To];
-        %%% Pixel [?s], Line [ms] and Frametime [s]
+        %%% Pixel [us], Line [ms] and Frametime [s]
         InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
         %%% Pixel size
         InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
