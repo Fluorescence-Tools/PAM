@@ -11549,7 +11549,7 @@ if ~isempty(obj)
                 %%% Make sure to apply corrections
                 ApplyCorrections(obj,[],h,0);
                 Export_FRET_Hist([],[],'Export FRET Histogram');
-                 BurstData{file}.SelectedSpecies = sel_species;
+                BurstData{file}.SelectedSpecies = sel_species;
             end
             BurstMeta.SelectedFile = sel_file;
     end
@@ -14714,26 +14714,30 @@ h = guidata(obj);
 %%% some options
 overlay = true; %%% overlay the axis labels on 1D plot
 opacity = 0.8; %%% gray color for 1D axis if overlay = true
-% file and species that is currently selected
-file = BurstMeta.SelectedFile;
-species = BurstData{file}.SelectedSpecies;
+% file and species that are currently selected
+[file, species, subspecies] = get_multiselection(h);
+file_old = BurstMeta.SelectedFile;
+old_paramX = h.ParameterListX.Value;
+old_paramY = h.ParameterListY.Value;
+            
 Progress(0,h.Progress_Axes,h.Progress_Text,'Generating figure...');
 
-for k = 1:numel(BurstData) %loop through all files
-    BurstMeta.SelectedFile = k;
+for k = 1:numel(file) %loop through all selected species
+    BurstMeta.SelectedFile = file(k);
     % select the same species for all files as for the currently selected file
-    BurstData{k}.SelectedSpecies = species;
+    SelectedSpecies_old = BurstData{file(k)}.SelectedSpecies;
+    BurstData{file(k)}.SelectedSpecies = [species(k), subspecies(k)];
     
-    UpdateCorrections([],[],h);
+    %%% Make sure to apply corrections
+    ApplyCorrections(obj,[],h,0);
     UpdateCutTable(h);
     UpdateCuts();
-    %Update_fFCS_GUI([],[],h);
     %update all plots, cause that's what we'll be copying
     UpdatePlot([],[],h);
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
     
-    if any(BurstData{k}.BAMethod == [3,4])
+    if any(BurstData{file(k)}.BAMethod == [3,4])
         disp('Not implemented for three color.');
         return;
     end
@@ -14789,10 +14793,8 @@ for k = 1:numel(BurstData) %loop through all files
                 h.axes_lifetime_ind_2d],...
                 hfig{f});
         else
-            old_paramX = h.ParameterListX.Value;
-            old_paramY = h.ParameterListY.Value;
-            h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{k}.NameArray));
-            h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{k}.NameArray));
+            h.ParameterListX.Value = find(strcmp(paramname{f,1},BurstData{file(k)}.NameArray));
+            h.ParameterListY.Value = find(strcmp(paramname{f,2},BurstData{file(k)}.NameArray));
             %%% restrict E and S to fixed intervals
             prev_setting = UserValues.BurstBrowser.Display.Restrict_EandS_Range;
             UserValues.BurstBrowser.Display.Restrict_EandS_Range = 1;
@@ -15186,7 +15188,7 @@ for k = 1:numel(BurstData) %loop through all files
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
-    corr = BurstData{file}.Corrections;
+    corr = BurstData{file(k)}.Corrections;
     fontsize = 12;
     if ispc
         fontsize= fontsize/1.2;
@@ -15246,35 +15248,40 @@ for k = 1:numel(BurstData) %loop through all files
     hfigallinone.Position(3) = 1100 - offset_x;
     hfigallinone.Position(4) = hfigallinone.Position(4) - offset_y - 30;
     %%% Combine the Original FileName and the parameter names
-    if isfield(BurstData{file},'FileNameSPC')
-        if strcmp(BurstData{file}.FileNameSPC,'_m1')
-            FileName = BurstData{file}.FileNameSPC(1:end-3);
+    if isfield(BurstData{file(k)},'FileNameSPC')
+        if strcmp(BurstData{file(k)}.FileNameSPC,'_m1')
+            FileName = BurstData{file(k)}.FileNameSPC(1:end-3);
         else
-            FileName = BurstData{file}.FileNameSPC;
+            FileName = BurstData{file(k)}.FileNameSPC;
         end
     else
-        FileName = BurstData{file}.FileName(1:end-4);
+        FileName = BurstData{file(k)}.FileName(1:end-4);
     end
 
-    if BurstData{file}.SelectedSpecies(1) ~= 0
-        SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
-        if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
-            SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    if BurstData{file(k)}.SelectedSpecies(1) ~= 0
+        SpeciesName = ['_' BurstData{file(k)}.SpeciesNames{BurstData{file(k)}.SelectedSpecies(1),1}];
+        if BurstData{file(k)}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+            SpeciesName = [SpeciesName '_' BurstData{file(k)}.SpeciesNames{BurstData{file(k)}.SelectedSpecies(1),BurstData{file(k)}.SelectedSpecies(2)}];
         end
     else
         SpeciesName = '';
     end
     FigureName = 'AllInOne';
     FigureName = [FileName SpeciesName '_' FigureName];
+    hfigallinone.Name = FigureName;
+    hfigallinone.NumberTitle = 'off';
     %%% remove spaces
     FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
     hfigallinone.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
+
+    BurstData{file(k)}.SelectedSpecies = SelectedSpecies_old;
     
-    h.ParameterListX.Value = old_paramX;
-    h.ParameterListY.Value = old_paramY;
-    
-    Progress(k/numel(BurstData),h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    Progress(k/numel(file),h.Progress_Axes,h.Progress_Text,'Generating figure...');
 end 
+h.ParameterListX.Value = old_paramX;
+h.ParameterListY.Value = old_paramY;
+BurstMeta.SelectedFile = file_old;
+UpdatePlot([],[],h);
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
