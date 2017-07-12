@@ -1825,7 +1825,7 @@ for i=1:size(MIAFitMeta.Plots,1)
                OUT(floor((size(OUT,1)+1)/2)+1,:))/2; 
         end
         MIAFitMeta.Plots{i,2}.XData=x(1,:);        
-        MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;     
+        MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;           
         MIAFitMeta.Plots{i,6}.XData=y(:,1);
         MIAFitMeta.Plots{i,6}.YData=OUT(:,1-min(min(x)))/B;
         %% Calculates weighted residuals and plots them
@@ -1873,7 +1873,43 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,3}.XData=x(1,:); 
         MIAFitMeta.Plots{i,3}.YData=ResidualsX; 
         MIAFitMeta.Plots{i,7}.XData=y(:,1); 
-        MIAFitMeta.Plots{i,7}.YData=ResidualsY;      
+        MIAFitMeta.Plots{i,7}.YData=ResidualsY;   
+        
+        %% Removes center point, if it is to be omitted
+        if h.Omit_Center.Value
+             MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,1}.XData(floor((X+1)/2)) = [];
+             if isfield(MIAFitMeta.Plots{i,1}, 'YNegativeDelta')
+                 MIAFitMeta.Plots{i,1}.YNegativeDelta(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.YPositiveDelta(floor((X+1)/2)) = [];
+             else
+                 MIAFitMeta.Plots{i,1}.LData(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.UData(floor((X+1)/2)) = [];
+             end
+             MIAFitMeta.Plots{i,2}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,2}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,3}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,3}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,4}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.XData(floor((X+1)/2)) = [];
+             if isfield(MIAFitMeta.Plots{i,5}, 'YNegativeDelta')
+                 MIAFitMeta.Plots{i,5}.YNegativeDelta(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.YPositiveDelta(floor((X+1)/2)) = [];
+             else
+                 MIAFitMeta.Plots{i,5}.LData(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.UData(floor((X+1)/2)) = [];
+             end
+             MIAFitMeta.Plots{i,6}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,6}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.XData(floor((X+1)/2)) = [];
+             
+        end
+        
         %% Calculates Chi^2 and updates table
         h.Fit_Table.CellEditCallback = [];
         if h.Omit_Center.Value
