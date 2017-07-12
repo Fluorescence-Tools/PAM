@@ -3090,8 +3090,14 @@ switch mode
         MIAData.FileName{1} = FileInfo.FileName;
         h.Mia_Image.Settings.Image_Frame.String = num2str(mean(diff(FileInfo.ImageTimes)));
         h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
+        
+        if isfield(FileInfo, 'LineStops')
+            h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines*1000000);
+        else
+            h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000);
+        end
+        
         h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000)};
-        h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000);
         h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000)};
         
         if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
