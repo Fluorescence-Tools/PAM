@@ -13953,6 +13953,7 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
+                    ax2d = i;
                 case 'axes_ZScale'
                     if strcmp(panel_copy.Children(i).Visible,'on')
                         panel_copy.Children(i).Position = [0.77,0.785,0.15,0.13];
@@ -14039,6 +14040,17 @@ switch obj
             if exist('cbar','var')
                 %cbar.Visible = 'off';
             end
+        end
+        if UserValues.BurstBrowser.Display.ColorMapInvert
+            colormap(flipud(colormap));
+        end
+        if ~UserValues.BurstBrowser.Display.PlotGridAboveData
+            %%% create dummy axis to prevent data overlapping the axis
+            ax2d = findobj(panel_copy.Children,'Tag','Axes_General');
+            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            linkaxes([ax2d ax_dummy]);
+            set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
+                'LineWidth',1)
         end
         FigureName = [BurstData{file}.NameArray{h.ParameterListX.Value} '_' BurstData{file}.NameArray{h.ParameterListY.Value}];
     case h.ExportLifetime_Menu
@@ -14432,6 +14444,17 @@ switch obj
                 panel_copy.Children(leg).Position(1) = 10;
                 panel_copy.Children(leg).Position(2) = 590;
             end
+        end
+        if UserValues.BurstBrowser.Display.ColorMapInvert
+            colormap(flipud(colormap));
+        end
+        if ~UserValues.BurstBrowser.Display.PlotGridAboveData
+            %%% create dummy axis to prevent data overlapping the axis
+            ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
+            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            linkaxes([ax2d ax_dummy]);
+            set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
+                'LineWidth',1)
         end
         FigureName = h.lifetime_ind_popupmenu.String{h.lifetime_ind_popupmenu.Value};
         %%% remove html formatting
