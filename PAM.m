@@ -3382,7 +3382,7 @@ if any(mode == 0)
 end
 
 %% Creates trace and image plots
-if any(mode == [0,1,2,3])
+if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
@@ -10475,6 +10475,7 @@ switch e.Key
                 'FrameTime [s]: ' num2str(mean(diff(FileInfo.ImageTimes))) '\n',...
                 'LineTime [ms]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))*1000) '\n',...
                 'PixelTime [us]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels*1e6) '\n',...
+                'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n',...
                 'RLICS_Scale: ' num2str(Max-Min) '\n',...
                 'RLICS_Offset: ' num2str(Min) '\n'];
             TIFF_handle = Tiff(File, 'w');
