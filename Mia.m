@@ -3117,6 +3117,7 @@ switch mode
                     TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
             else
                 MIAData.Data{1,1} = 0;
+                msgbox('Empty PIE channel');
             end
             
         else
@@ -3130,6 +3131,7 @@ switch mode
                 [MIAData.Data{1,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3);
             else
                 MIAData.Data{1,1} = 0;
+                msgbox('Empty PIE channel');
             end
             clear PIE_MT;
             
@@ -3184,6 +3186,7 @@ switch mode
                     TcspcData.MI{UserValues.PIE.Detector(Sel),UserValues.PIE.Router(Sel)}<=UserValues.PIE.To(Sel))*FileInfo.ClockPeriod, 3);
             else
                 MIAData.Data{2,1} = 0;
+                msgbox('Empty PIE channel');
             end
         else
             PIE_MT=[];
@@ -3196,6 +3199,7 @@ switch mode
                 [MIAData.Data{2,1}, ~] = CalculateImage(PIE_MT*FileInfo.ClockPeriod, 3);
             else
                 MIAData.Data{2,1} = 0;
+                msgbox('Empty PIE channel');
             end
             clear PiE_MT;
         end
