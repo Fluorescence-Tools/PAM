@@ -1,7 +1,4 @@
 function CloseWindow(obj,~)
-
-LSUserValues(1);
-
 %%% Clears function specific variables
 switch obj.Tag
     case 'Pam'
@@ -49,6 +46,9 @@ end
 
 %%% Closes window
 delete(obj);
+
+%%% Save UserValues structure
+LSUserValues(1);
 
 %%% Finds all active PAM related figures
 h = [];
