@@ -9458,8 +9458,13 @@ if obj == h.ApplyCorrectionsAll_Menu
         ApplyCorrections([],[],h,0); %%% Apply without display update
     end
     BurstMeta.SelectedFile = sel_file;
-    %%% Apply with display update
-    ApplyCorrections([],[],h);
+    
+    %%% Update Cuts
+    UpdateCuts;
+    %%% Update Display
+    UpdatePlot([],[],h);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
     return;
 end
 if (obj == h.ApplyCorrectionsButton) & h.MultiselectOnCheckbox.UserData
@@ -9480,6 +9485,8 @@ if (obj == h.ApplyCorrectionsButton) & h.MultiselectOnCheckbox.UserData
     h.MultiselectOnCheckbox.Callback = @UpdateOptions;
     h.MultiselectOnCheckbox.UserData = 1;
     
+    %%% Update Cuts
+    UpdateCuts;
     %%% Update Display
     UpdatePlot([],[],h);
     UpdateLifetimePlots([],[],h);
