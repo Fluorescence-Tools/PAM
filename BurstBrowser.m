@@ -6277,6 +6277,7 @@ if ~advanced
     HHcontour(1,1) = HH(1,1);HHcontour(end,1) = HH(end,1);HHcontour(1,end) = HH(1,end);HHcontour(end,end) = HH(end,end);
     BurstMeta.Plots.Main_Plot(2).ZData = HHcontour;
     BurstMeta.Plots.Main_Plot(2).LevelList = max(HH(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+    h.axes_general.CLimMode = 'auto';h.axes_general.CLim(1) = 0;
     %%% Disable ZScale Axis
     h.axes_ZScale.Visible = 'off';
     set(BurstMeta.Plots.ZScale_hist,'Visible','off');
@@ -11804,6 +11805,7 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
 end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauGG,[-0.1 1.1]);
+h.axes_EvsTauGG.CLimMode = 'auto';h.axes_EvsTauGG.CLim(1) = 0;
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
@@ -11861,6 +11863,7 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
 end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauRR,[-0.1 1.1]);
+h.axes_EvsTauRR.CLimMode = 'auto';h.axes_EvsTauRR.CLim(1) = 0;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
     if ~h.MultiselectOnCheckbox.UserData
@@ -11915,6 +11918,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
+    h.axes_rGGvsTauGG.CLimMode = 'auto';h.axes_rGGvsTauGG.CLim(1) = 0;
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+2]);
@@ -11968,6 +11972,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     try h.axes_rRRvsTauRR.XLim=[0,maxX]; end
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
+    h.axes_rRRvsTauRR.CLimMode = 'auto';h.axes_rRRvsTauRR.CLim(1) = 0;
 end
 %% 3cMFD
 if any(BurstData{file}.BAMethod == [3,4])
@@ -12028,6 +12033,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_E_BtoGRvsTauBB,[-0.1 1.1]);
+    h.axes_E_BtoGRvsTauBB.CLimMode = 'auto';h.axes_E_BtoGRvsTauBB.CLim(1) = 0;
     %% Plot rBB vs tauBB
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
@@ -12081,6 +12087,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     try h.axes_rBBvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
+    h.axes_rBBvsTauBB.CLimMode = 'auto';h.axes_rBBvsTauBB.CLim(1) = 0;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12172,6 +12179,7 @@ h.axes_lifetime_ind_2d.XLabel.String = origin.XLabel.String;
 h.axes_lifetime_ind_2d.XLabel.Color = UserValues.Look.Fore;
 h.axes_lifetime_ind_2d.YLabel.String = origin.YLabel.String;
 h.axes_lifetime_ind_2d.YLabel.Color = UserValues.Look.Fore;
+h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;
 %%% find the image plot
 xdata = plots(strcmp(type,'image')).XData;
 ydata = plots(strcmp(type,'image')).YData;
