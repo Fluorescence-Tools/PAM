@@ -9460,8 +9460,9 @@ if obj == h.ApplyCorrectionsAll_Menu
     BurstMeta.SelectedFile = sel_file;
     %%% Apply with display update
     ApplyCorrections([],[],h);
+    return;
 end
-if h.MultiselectOnCheckbox.UserData
+if (obj == h.ApplyCorrectionsButton) & h.MultiselectOnCheckbox.UserData
     %%% disable callback and disable checkbox
     h.MultiselectOnCheckbox.Callback = [];
     h.MultiselectOnCheckbox.UserData = 0;
@@ -9474,14 +9475,17 @@ if h.MultiselectOnCheckbox.UserData
         ApplyCorrections([],[],h,0); %%% Apply without display update
     end
     BurstMeta.SelectedFile = sel_file;
-    if display_update
-        %%% Apply with display update
-        ApplyCorrections([],[],h);
-    end
-    
+
     %%% reenable callback and checkbox
     h.MultiselectOnCheckbox.Callback = @UpdateOptions;
     h.MultiselectOnCheckbox.UserData = 1;
+    
+    %%% Update Display
+    UpdatePlot([],[],h);
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
+    
+    return;
 end
 file = BurstMeta.SelectedFile;
 %% 2colorMFD
@@ -9742,8 +9746,8 @@ end
 
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
 
-UpdateCuts;
 if display_update
+    UpdateCuts;
     %%% Update Display
     UpdatePlot([],[],h);
     UpdateLifetimePlots([],[],h);
