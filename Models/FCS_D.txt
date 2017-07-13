@@ -7,8 +7,8 @@ One exponential triplet component
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;     LB = 0;   UB = Inf;
 Param(2): D[&mu;m<sup>2</sup>/s]     = 373;   LB = 0;	UB = Inf;   
-Param(3): w_r[&mu;m]       = 0.2;   LB = 0;	UB = Inf;
-Param(4): w_z[&mu;m]       = 1;	LB = 0;   UB = Inf;
+Param(3): w<sub>r</sub>[&mu;m]       = 0.2;   LB = 0;	UB = Inf;
+Param(4): w<sub>z</sub>[&mu;m]       = 1;	LB = 0;   UB = Inf;
 Param(5): tauT[&mu;s]      = 1;	LB = 0;   UB = Inf;f
 Param(6): Trip          = 0;  LB = 0;	UB = 1;f
 Param(7): y0            = 0;     LB = -1;  UB = 1;
