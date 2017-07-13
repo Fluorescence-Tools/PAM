@@ -9469,8 +9469,8 @@ if h.MultiselectOnCheckbox.UserData
     %%% apply corrections to all selected files
     sel_file = BurstMeta.SelectedFile;
     files = get_multiselection(h); files = unique(files);
-    for i = 1:numel(files)
-        BurstMeta.SelectedFile = i;
+    for file = files
+        BurstMeta.SelectedFile = file;
         ApplyCorrections([],[],h,0); %%% Apply without display update
     end
     BurstMeta.SelectedFile = sel_file;
@@ -9742,10 +9742,9 @@ end
 
 h.ApplyCorrectionsButton.ForegroundColor = UserValues.Look.Fore;
 
+UpdateCuts;
 if display_update
     %%% Update Display
-    UpdateCuts;
-
     UpdatePlot([],[],h);
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
