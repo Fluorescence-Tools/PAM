@@ -1961,19 +1961,20 @@ switch mode
         FCS.Model=FCSMeta.Model.Function;
         FCS.FileName=FCSData.FileName(Active)';
         FCS.Params=FCSMeta.Params(:,Active)';        
-        FCS.Time=FCSMeta.Data(Active,1);
-        FCS.Data=FCSMeta.Data(Active,2);
-        FCS.Error=FCSMeta.Data(Active,3);
-        FCS.Fit=cell(numel(FCS.Time),1); 
+        time=FCSMeta.Data(Active,1);
+        data=FCSMeta.Data(Active,2);
+        error=FCSMeta.Data(Active,3);
+        %Fit=cell(numel(FCS.Time),1); 
+        FCS.Graphs=cell(numel(time)+1,1);
+        FCS.Graphs{1}={'time', 'data', 'error', 'fit', 'res'};
         %%% Calculates y data for fit
-        for i=1:numel(FCS.Time)
+        for i=1:numel(time)
             P=FCS.Params(i,:);
-            x=FCS.Time{i};
             %eval(FCSMeta.Model.Function);
-            OUT = feval(FCSMeta.Model.Function,P,x);
+            OUT = feval(FCSMeta.Model.Function,P,time{i});
             OUT=real(OUT);
-            FCS.Fit{i}=OUT;
-            FCS.Residuals{i,1}=(FCS.Data{i}-FCS.Fit{i})./FCS.Error{i};
+            res=(data{i}-OUT)./error{i};
+            FCS.Graphs{i+1} = [time{i}, data{i}, error{i}, OUT, res];
         end
         %%% Copies data to workspace
         assignin('base','FCS',FCS);
