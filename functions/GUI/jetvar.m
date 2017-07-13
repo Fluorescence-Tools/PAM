@@ -25,5 +25,6 @@ end
 out = jet(m);
 % Modify the output starting at 1 before where Jet outputs pure blue.
 n = find(out(:, 3) == 1, 1) - 1;
-out(1:n, 1:2) = repmat((n:-1:1)'/n, [1 2]);
+%%% code changed to not output pure white at start (Anders, 07/2017)
+out(1:n, 1:2) = repmat((n:-1:1)'/(n+1), [1 2]);
 out(1:n, 3) = 1;
