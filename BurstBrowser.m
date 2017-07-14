@@ -7536,7 +7536,7 @@ for i = 1:num_species
     str{i} = strrep(name,'_',' ');  
 end
 legend(BurstMeta.Plots.Multi.Multi_histX(1:num_species),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
-legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+%legend(h.axes_1d_x.Children(8:-1:8-num_species+1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 h.colorbar.Visible = 'off';
 h.axes_ZScale.Visible = 'off';
 set(h.axes_ZScale.Children,'Visible','off');
