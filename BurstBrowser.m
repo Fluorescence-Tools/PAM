@@ -147,11 +147,25 @@ if isempty(hfig)
         'Callback',@ExportAllGraphs,...
         'Enable','on',...
         'Separator','on');
-    h.ExportAllInOneGraphs_Menu = uimenu(...
+    h.ExportAllInOneGraphs_Top_Menu = uimenu(...
         'Parent',h.Export_Menu,...
         'Label','<html>Export all-in-one graphs...</html>',...
-        'Tag','ExportAllInOneGraphs_Menu',...
-        'Callback',@ExportAllInOneGraphs,...
+        'Tag','ExportAllInOneGraphs_Top_Menu',...
+        'Callback',[],...
+        'Enable','on',...
+        'Separator','off');
+    h.ExportAllInOneGraphs_Top_Menu1 = uimenu(...
+        'Parent',h.ExportAllInOneGraphs_Top_Menu,...
+        'Label','<html>S-E plot attached</html>',...
+        'Tag','ExportAllInOneGraphs_Menu1',...
+        'Callback',{@ExportAllInOneGraphs,1},...
+        'Enable','on',...
+        'Separator','off');
+    h.ExportAllInOneGraphs_Top_Menu2 = uimenu(...
+        'Parent',h.ExportAllInOneGraphs_Top_Menu,...
+        'Label','<html>S-E plot centered</html>',...
+        'Tag','ExportAllInOneGraphs_Menu2',...
+        'Callback',{@ExportAllInOneGraphs,2},...
         'Enable','on',...
         'Separator','off');
      %%% Choose print path
@@ -14778,7 +14792,7 @@ UserValues.BurstBrowser.Settings.SaveFileExportFigure = prev_setting;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Export all-in-one graphs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function ExportAllInOneGraphs(obj,~)
+function ExportAllInOneGraphs(obj,~,arrangement)
 global BurstData BurstMeta UserValues
 h = guidata(obj);
 
@@ -14925,11 +14939,52 @@ for k = 1:numel(file) %loop through all selected species
     panel_copy([5,4]) = deal(panel_copy([4,5]));
     hfigallinone = figure('Position',pos.*[1,1,1.5,1],'Color',[1 1 1],'Visible','on');
     norm_to_pix = [pos(3),pos(4),pos(3),pos(4)];
+    
+    corr = BurstData{file(k)}.Corrections;
+    Pos = struct;
+    %tauD - E plots
+    Pos.Y.tauD_E =  [0.06 0.53 0.06 0.35].*norm_to_pix;
+    Pos.X.tauD_E =   [0.12 0.88 0.35 0.06].*norm_to_pix;
+    Pos.XY.tauD_E =   [0.12 0.53 0.35 0.35].*norm_to_pix;
+    %tauD - rD plots
+    Pos.Y.tauD_rD = [0.06 0.18 0.06 0.35].*norm_to_pix;
+    Pos.X.tauD_rD =  [0.12 0.12 0.35 0.06].*norm_to_pix;
+    Pos.XY.tauD_rD =  [0.12 0.18 0.35 0.35].*norm_to_pix;
+    if arrangement == 1
+        %[1, 2, 3;
+        %[4, 5,  ];
+        Pos.Y.tauA_E =  [1.5  1.5  0.06 0.35].*norm_to_pix; %move it out of the screen
+        Pos.X.tauA_E =  [0.47 0.88 0.35 0.06].*norm_to_pix;
+        Pos.XY.tauA_E = [0.47 0.53 0.35 0.35].*norm_to_pix;
+        Pos.Y.tauA_rA = [0.82 0.18 0.06 0.35].*norm_to_pix;
+        Pos.X.tauA_rA = [0.47 0.12 0.35 0.06].*norm_to_pix;
+        Pos.XY.tauA_rA =[0.47 0.18 0.35 0.35].*norm_to_pix;
+        Pos.Y.S_E =     [1.17 0.53 0.06 0.35].*norm_to_pix;
+        Pos.X.S_E =     [0.82 0.88 0.35 0.06].*norm_to_pix;
+        Pos.XY.S_E =    [0.82 0.53 0.35 0.35].*norm_to_pix;
+        Pos.cbar =      [0.98,0.49,0.19,0.02].*norm_to_pix;
+        Pos.table =     [0.6000 0.180 0.2750 0.2750];
+    else
+        %[1, 3, 2;
+        %[4,  , 5];
+        Pos.Y.tauA_E =  [1.17  0.53  0.06 0.35].*norm_to_pix;
+        Pos.X.tauA_E =  [0.82 0.88 0.35 0.06].*norm_to_pix;
+        Pos.XY.tauA_E = [0.82 0.53 0.35 0.35].*norm_to_pix;
+        Pos.Y.tauA_rA = [1.15 0.18 0.06 0.35].*norm_to_pix;
+        Pos.X.tauA_rA = [0.82 0.12 0.35 0.06].*norm_to_pix;
+        Pos.XY.tauA_rA =[0.82 0.18 0.35 0.35].*norm_to_pix;
+        Pos.Y.S_E =     [1.17 1.5 0.06 0.35].*norm_to_pix; %move it out of the screen
+        Pos.X.S_E =     [0.47 0.88 0.35 0.06].*norm_to_pix;
+        Pos.XY.S_E =    [0.47 0.53 0.35 0.35].*norm_to_pix;
+        Pos.cbar =      [0.55,0.47,0.19,0.02].*norm_to_pix;
+        Pos.table =     [0.32 0.180 0.22 0.25];
+    end
+    
     % 2D Lifetime-E
     copyobj([panel_copy{1}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
-    hfigallinone.Children(1).Position = [0.06 0.53 0.06 0.35].*norm_to_pix;
+    hfigallinone.Children(1).Position = Pos.Y.tauD_E;
     set(hfigallinone.Children(1).YLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(1).XAxisLocation = 'bottom';
     hfigallinone.Children(1).YLabel.Position = [0.48 1.1 0];
@@ -14947,7 +15002,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(1).YLabel.String = '';
     
     hfigallinone.Children(2).Units = 'pixel';
-    hfigallinone.Children(2).Position = [0.12 0.88 0.35 0.06].*norm_to_pix;   
+    hfigallinone.Children(2).Position = Pos.X.tauD_E;   
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.43 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
@@ -14962,7 +15017,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).XLabel.String = 'Lifetime D [ns]';
     
     hfigallinone.Children(3).Units = 'pixel';
-    hfigallinone.Children(3).Position = [0.12 0.53 0.35 0.35].*norm_to_pix;
+    hfigallinone.Children(3).Position = Pos.XY.tauD_E;
     hfigallinone.Children(3).XAxisLocation = 'top';
     hfigallinone.Children(3).XGrid = 'on';
     hfigallinone.Children(3).YGrid = 'on';
@@ -14995,12 +15050,12 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-    
+   
     % 2D lifetime GG-Anisotropy GG
     copyobj([panel_copy{2}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
-    hfigallinone.Children(1).Position = [0.06 0.18 0.06 0.35].*norm_to_pix;
+    hfigallinone.Children(1).Position = Pos.Y.tauD_rD;
     hfigallinone.Children(1).YLabel.Color = 'k';
     set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(1).XAxisLocation = 'bottom';
@@ -15018,7 +15073,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(1).YLabel.String = '';
     
     hfigallinone.Children(2).Units = 'pixel';
-    hfigallinone.Children(2).Position = [0.12 0.12 0.35 0.06].*norm_to_pix;
+    hfigallinone.Children(2).Position = Pos.X.tauD_rD;
     hfigallinone.Children(2).XAxisLocation = 'bottom';
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).YTickLabel = [];
@@ -15028,7 +15083,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).XLabel.String = 'Lifetime D [ns]';
     
     hfigallinone.Children(3).Units = 'pixel';
-    hfigallinone.Children(3).Position = [0.12 0.18 0.35 0.35].*norm_to_pix;
+    hfigallinone.Children(3).Position = Pos.XY.tauD_rD;
     hfigallinone.Children(3).XGrid = 'on';
     hfigallinone.Children(3).YGrid = 'on';
     hfigallinone.Children(3).YTickLabel = [];
@@ -15056,12 +15111,12 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-    
+
     % 2D lifetime RR-Anisotropy RR
     copyobj([panel_copy{3}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
-    hfigallinone.Children(1).Position = [0.82 0.18 0.06 0.35].*norm_to_pix;
+    hfigallinone.Children(1).Position = Pos.Y.tauA_rA;
     set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
     hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
     hfigallinone.Children(1).XLabel.String = 'Anisotropy A';
@@ -15076,7 +15131,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(1).YTick = [];
     
     hfigallinone.Children(2).Units = 'pixel';
-    hfigallinone.Children(2).Position = [0.47 0.12 0.35 0.06].*norm_to_pix;
+    hfigallinone.Children(2).Position = Pos.X.tauA_rA;
     hfigallinone.Children(2).XAxisLocation = 'bottom';
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 -0.5 0];
@@ -15090,7 +15145,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).XLabel.String = 'Lifetime A [ns]';
     
     hfigallinone.Children(3).Units = 'pixel';
-    hfigallinone.Children(3).Position = [0.47 0.18 0.35 0.35].*norm_to_pix;
+    hfigallinone.Children(3).Position = Pos.XY.tauA_rA;
     hfigallinone.Children(3).XGrid = 'on';
     hfigallinone.Children(3).YGrid = 'on';
     hfigallinone.Children(3).YTickLabel = [];
@@ -15126,16 +15181,30 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-    
+
     % 2D E-tauA
     copyobj([panel_copy{5}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
-    hfigallinone.Children(1).Position = [1.5 1.5 0.06 0.35].*norm_to_pix;
-    hfigallinone.Children(1).Visible = 'off';
-    
+    hfigallinone.Children(1).Position = Pos.Y.tauA_E;
+    if arrangement == 1
+        hfigallinone.Children(1).Visible = 'off';
+    else
+        set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
+        hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
+        hfigallinone.Children(1).XLabel.String = 'FRET Efficiency';
+        hfigallinone.Children(1).YAxisLocation = 'Right';
+        hfigallinone.Children(1).YTickLabelRotation = -90;
+        try
+            hfigallinone.Children(1).YAxis.FontSize = fontsize;
+        catch
+            %hfigallinone.Children(1).FontSize = fontsize;
+        end
+        hfigallinone.Children(1).YTick = [];
+    end
+
     hfigallinone.Children(2).Units = 'pixel';
-    hfigallinone.Children(2).Position = [0.47 0.88 0.35 0.06].*norm_to_pix;
+    hfigallinone.Children(2).Position = Pos.X.tauA_E;
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
@@ -15149,7 +15218,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).XLabel.String = 'Lifetime A [ns]';
     
     hfigallinone.Children(3).Units = 'pixel';
-    hfigallinone.Children(3).Position = [0.47 0.53 0.35 0.35].*norm_to_pix;
+    hfigallinone.Children(3).Position = Pos.XY.tauA_E;
     hfigallinone.Children(3).XAxisLocation = 'top';
     hfigallinone.Children(3).XLabel.Position = [0.50 1.0 0];
     hfigallinone.Children(3).XGrid = 'on';
@@ -15166,6 +15235,17 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).Layer = 'top';
     
     if overlay
+        if arrangement == 2
+            set(findobj(hfigallinone.Children(1).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
+            hfigallinone.Children(1).Visible = 'off';
+            hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+            hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+            hfigallinone.Children(3).YLabel.Units = 'norm';
+            hfigallinone.Children(3).YLabel.Rotation = -90;
+            hfigallinone.Children(3).YTickLabelRotation = -90;
+            hfigallinone.Children(3).YAxisLocation = 'right';
+            hfigallinone.Children(3).YLabel.Position(1) = 1.24;
+        end
         hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
@@ -15175,22 +15255,25 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-    
+      
     % 2D Stoichiometry-E
     copyobj([panel_copy{4}],hfigallinone);
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
-    hfigallinone.Children(1).Position = [1.17 0.53 0.06 0.35].*norm_to_pix;
-    hfigallinone.Children(1).YTickLabel = [];
-    hfigallinone.Children(1).YLabel.String = '';
-    hfigallinone.Children(1).YTick = [];
-    hfigallinone.Children(1).XLabel.String = 'FRET Efficiency';
-    set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
-    hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
-    hfigallinone.Children(1).YLim(2) = max(hfigallinone.Children(1).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
-    
+    hfigallinone.Children(1).Position = Pos.Y.S_E;
+    if arrangement == 2
+        hfigallinone.Children(1).Visible = 'off';
+    else
+        hfigallinone.Children(1).YTickLabel = [];
+        hfigallinone.Children(1).YLabel.String = '';
+        hfigallinone.Children(1).YTick = [];
+        hfigallinone.Children(1).XLabel.String = 'FRET Efficiency';
+        set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
+        hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
+        hfigallinone.Children(1).YLim(2) = max(hfigallinone.Children(1).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
+    end
     hfigallinone.Children(2).Units = 'pixel';
-    hfigallinone.Children(2).Position = [0.82 0.88 0.35 0.06].*norm_to_pix;
+    hfigallinone.Children(2).Position = Pos.X.S_E;
     set(hfigallinone.Children(2).XLabel,'Color', 'k', 'Units', 'norm');
     hfigallinone.Children(2).XLabel.Position = [0.50 1.5 0];
     hfigallinone.Children(2).YAxisLocation = 'Right';
@@ -15204,7 +15287,7 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).YLim(2) = max(hfigallinone.Children(2).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
     
     hfigallinone.Children(3).Units = 'pixel';
-    hfigallinone.Children(3).Position = [0.82 0.53 0.35 0.35].*norm_to_pix;
+    hfigallinone.Children(3).Position = Pos.XY.S_E;
     hfigallinone.Children(3).XAxisLocation = 'top';
     hfigallinone.Children(3).XLabel.Position = [0.50 1.0 0];
     hfigallinone.Children(3).XGrid = 'on';
@@ -15221,15 +15304,17 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).Layer = 'top';
     
     if overlay
-        set(findobj(hfigallinone.Children(1).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
-        hfigallinone.Children(1).Visible = 'off';
-        hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
-        hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
-        hfigallinone.Children(3).YLabel.Units = 'norm';
-        hfigallinone.Children(3).YLabel.Rotation = -90;
-        hfigallinone.Children(3).YTickLabelRotation = -90;
-        hfigallinone.Children(3).YAxisLocation = 'right';
-        hfigallinone.Children(3).YLabel.Position(1) = 1.24;
+        if arrangement == 1
+            set(findobj(hfigallinone.Children(1).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
+            hfigallinone.Children(1).Visible = 'off';
+            hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
+            hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
+            hfigallinone.Children(3).YLabel.Units = 'norm';
+            hfigallinone.Children(3).YLabel.Rotation = -90;
+            hfigallinone.Children(3).YTickLabelRotation = -90;
+            hfigallinone.Children(3).YAxisLocation = 'right';
+            hfigallinone.Children(3).YLabel.Position(1) = 1.24;
+        end
         set(findobj(hfigallinone.Children(2).Children,'Type','bar'),'FaceColor',[opacity,opacity,opacity]);
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
@@ -15248,7 +15333,7 @@ for k = 1:numel(file) %loop through all selected species
     %%% add colorbar
     cbar = colorbar('peer', hfigallinone.Children(1),'Location','north','Color',[0 0 0]); 
     cbar.Units = 'pixel';
-    cbar.Position = [0.98,0.49,0.19,0.02].*norm_to_pix;
+    cbar.Position = Pos.cbar;
     cbar.Label.String = 'Occurrence';
     cbar.Label.FontSize = 16;
     if ispc
@@ -15258,8 +15343,7 @@ for k = 1:numel(file) %loop through all selected species
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
-    corr = BurstData{file(k)}.Corrections;
-    fontsize = 12;
+    
     if ispc
         fontsize= fontsize/1.2;
     end
@@ -15289,16 +15373,31 @@ for k = 1:numel(file) %loop through all selected species
             t.Units = 'normalized';
             t.Position = [-3.34 -0.81];
         case 'html'
-            table = '<html><table>';
-            table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-            table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-            table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-            table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-            table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-            table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-            table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
-            table = [table '</table></html>'];
-            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', [0.6000 0.180 0.2750 0.2750],...
+            if arrangement == 1
+                fontsize = 12;
+                        table = '<html><table>';
+        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+        table = [table '</table></html>'];
+            else
+                fontsize = 8.5;
+        
+        table = '<html><table>';
+        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+        table = [table '</table></html>'];
+            end
+            hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', Pos.table,...
                 'FontName', UserValues.Look.Font, 'String',table, 'BackgroundColor',[1,1,1], 'FontSize', fontsize);
             hTextbox.Units = 'pixel';
             jPushButton = findjobj(hTextbox);
