@@ -513,7 +513,7 @@ delete(Obj);
 %%% mode 3: not used yet; might be used for automatic loading from database
 %%% mode 4: load species data
 function Load_Data(~,~,mode)
-global SpectralData
+global SpectralData UserValues
 h = guidata(findobj('Tag','SpectralImage'));
 
 switch mode
@@ -522,7 +522,7 @@ switch mode
         %%%% version
         
         %% Get filenames
-        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on');
+        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
@@ -532,6 +532,8 @@ switch mode
         if ~iscell(FileName)
             FileName={FileName};
         end
+        UserValues.File.Spectral_Standard = Path;
+        LSUserValues(1);
         
         SpectralData.Data = [];
         
@@ -554,9 +556,9 @@ switch mode
         SpectralData.Path = Path;
         SpectralData.FileName = FileName{1};
         
-        SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),40,[]);
+        SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),30,[]);
         
-        SpectralData.Species(1).Data = sum(sum(double(sum(SpectralData.Data,4)),2),4);
+        SpectralData.Species(1).Data = sum(sum(double(sum(SpectralData.Data,4)),2),1);
         SpectralData.Species(1).Data = SpectralData.Species(1).Data/max(SpectralData.Species(1).Data(:));
         SpectralData.Filter(1).Data = ones(1,1,size(SpectralData.Data,3),1);
         
@@ -571,7 +573,7 @@ switch mode
         for i=1:numel(SpectralData.Filter)
             h.Filter_List.Value = i;
             if any(SpectralData.Filter(i).Species ~= 1)
-                Calc_Filter([],[],2,SpectralData.Filter(i).Species)
+                Calc_Filter([],[],2,SpectralData.Filter(i).Species);
             end
         end
         
@@ -584,11 +586,13 @@ switch mode
         %%%% This is a test version and will be adjusted for the final
         %%%% version
         
-        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on');
+        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
         end
+        UserValues.File.Spectral_Standard = Path;
+        LSUserValues(1);
         
         %%% Transforms FileName into cell array
         if ~iscell(FileName)
@@ -610,7 +614,7 @@ switch mode
                 Data(:,:,end+1) = TIFF_Handle.read();
             end
             TIFF_Handle.close(); % Close tif reference
-            Data = reshape(Data,size(Data,1),size(Data,2),40,[]);
+            Data = reshape(Data,size(Data,1),size(Data,2),30,[]);
             
             SpectralData.Species(end+1).Data = reshape((sum(sum(sum(Data,4),2),1)),1,1,[],1);
             SpectralData.Species(end).Data = SpectralData.Species(end).Data./max(SpectralData.Species(end).Data(:));
@@ -643,6 +647,8 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
     ColormapMode = h.Colormap.Value;
     
     if ColormapMode <4 %%% Plots one selected filter with colormap
+        %%% Turns off image recalculation when fixed filter is selected
+        h.Filter_List.Callback{2} = 3;
         
         Filter = single(SpectralData.Filter(FilterMode).Data);
         
@@ -658,7 +664,11 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
         if Frame == 0 %%% Sum over time
             
             %%% Applies filter weighting
-            Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+            if FilterMode == 1
+                Image = single(SpectralData.Data);
+            else
+                Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+            end
             %%% Summs over spectral information
             Image = squeeze(sum(sum(Image,3),4));
             
@@ -703,14 +713,219 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
         colormap(h.Image_Plot,Map);
         
     elseif ColormapMode == 4 %%% Plots up to three filters in RGB
-        %%% Plots Image
-        %h.Spectral_Image.CData = repmat(Image/max(Image(:)),1,1,3);
-        %h.Spectral_Image.CDataMapping = 'direct';
+        %%% Turns on image recalculation when variable filter is selected
+        h.Filter_List.Callback{2} = [1 3];
+        
+        %%% Selects channels to be plotted
+        Sel = h.Filter_List.Value;
+        %%% Removes extra chennels
+        if numel(Sel)>3
+            Sel(Sel==1)=[]; %% Removes first channel
+            Sel = Sel(1:3);
+        end
+        
+        switch numel(Sel)
+            case 1 %%% Plots single channel in green
+                
+                Filter = single(SpectralData.Filter(Sel).Data);
+                %%% Adjusts sizes of filter
+                if size(Filter,3) < size(SpectralData.Data,3) %%% Extends filter with zeros to fit data
+                    Filter(1,1,size(SpectralData.Data,3),1) = 0;
+                elseif size(Filter,3) > size(SpectralData.Data,3) %%% Shortens filter at the end to fit data
+                    Filter(1,1,size(SpectralData.Data,3)+1:end,1) = [];
+                end
+                
+                %%% Calculates filter weightes intensity
+                Frame = str2double(h.Frame_Edit.String);
+                if Frame == 0 %%% Sum over time
+                    %%% Applies filter weighting
+                    if Sel == 1
+                        Image = single(SpectralData.Data);
+                    else
+                        Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+                    end
+                    %%% Summs over spectral information
+                    Image = squeeze(sum(sum(Image,3),4));
+                    
+                else %%% Single Frame
+                    Image = single(SpectralData.Data(:,:,:,Frame)) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, 1);
+                    %%% Summs over spectral information
+                    Image = squeeze(sum(Image,3));
+                end
+                %%% Scale image
+                if h.Autoscale.Value %%% Autoscaling
+                    Image = (Image-min(Image(:)))/(max(Image(:))-min(Image(:)));
+                    %%% Homogeneous image
+                    if all(isinf(Image(:)))
+                        Image = Image*0;
+                    end
+                    %%% Sets blue and red channels to zero
+                    Image_R = Image*0;
+                    Image_B = Image*0;
+                    
+                else %%% Manual scaling
+                    %%% Extracts scale
+                    Min = str2double(h.Scale{1}.String);
+                    Max = str2double(h.Scale{2}.String);
+                    if isempty(Min)
+                        Min = 0;
+                        h.Scale{1}.String = '0';
+                    end
+                    if isempty(Max) || Max <= Min
+                        Max = Min+1;
+                        h.Scale{2}.String = num2str(Max);
+                    end
+                    
+                    %%% Rescales image
+                    Image = (Image-Min)/(Max-Min);
+                    %%% Pixels outside of range are shown in blue and red
+                    Image_B = Image<0;
+                    Image_R = Image>1;
+                    Image = Image.*~(Image_B | Image_R);
+                    
+                end
+                
+                %%% Plots Image
+                Image = repmat(Image,1,1,3);
+                Image(:,:,1) = Image_R;
+                Image(:,:,3) = Image_B;
+                
+            case 2 %%% Plots two channels in green/magenta
+                for i = 1:2
+                    Filter = single(SpectralData.Filter(Sel(i)).Data);
+                    %%% Adjusts sizes of filter
+                    if size(Filter,3) < size(SpectralData.Data,3) %%% Extends filter with zeros to fit data
+                        Filter(1,1,size(SpectralData.Data,3),1) = 0;
+                    elseif size(Filter,3) > size(SpectralData.Data,3) %%% Shortens filter at the end to fit data
+                        Filter(1,1,size(SpectralData.Data,3)+1:end,1) = [];
+                    end
+                    
+                    %%% Calculates filter weightes intensity
+                    Frame = str2double(h.Frame_Edit.String);
+                    if Frame == 0 %%% Sum over time
+                        %%% Applies filter weighting
+                        if Sel == 1
+                            Image = single(SpectralData.Data);
+                        else
+                            Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+                        end
+                        %%% Summs over spectral information
+                        Image = squeeze(sum(sum(Image,3),4));
+                        
+                    else %%% Single Frame
+                        Image = single(SpectralData.Data(:,:,:,Frame)) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, 1);
+                        %%% Summs over spectral information
+                        Image = squeeze(sum(Image,3));
+                    end
+                    %%% Scale image
+                    if h.Autoscale.Value %%% Autoscaling
+                        Image = (Image-min(Image(:)))/(max(Image(:))-min(Image(:)));
+                        %%% Homogeneous image
+                        if all(isinf(Image(:)))
+                            Image = Image*0;
+                        end
+                        
+                    else %%% Manual scaling
+                        %%% Extracts scale
+                        Min = str2double(h.Scale{1}.String);
+                        Max = str2double(h.Scale{2}.String);
+                        if isempty(Min)
+                            Min = 0;
+                            h.Scale{1}.String = '0';
+                        end
+                        if isempty(Max) || Max <= Min
+                            Max = Min+1;
+                            h.Scale{2}.String = num2str(Max);
+                        end
+                        
+                        %%% Rescales image
+                        Image = (Image-Min)/(Max-Min);
+                        %%% Pixels outside of range are shown in blue and red
+                    end
+                    
+                    if i==1 %%% Stores Green image part
+                        Image_G = Image;
+                    end
+                end
+                
+                %%% Plots Image
+                Image = repmat(Image,1,1,3);
+                Image(:,:,2) = Image_G;                
+                
+            case 3 %%% Plots three channels in RGB
+                for i = 1:3
+                    Filter = single(SpectralData.Filter(Sel(i)).Data);
+                    %%% Adjusts sizes of filter
+                    if size(Filter,3) < size(SpectralData.Data,3) %%% Extends filter with zeros to fit data
+                        Filter(1,1,size(SpectralData.Data,3),1) = 0;
+                    elseif size(Filter,3) > size(SpectralData.Data,3) %%% Shortens filter at the end to fit data
+                        Filter(1,1,size(SpectralData.Data,3)+1:end,1) = [];
+                    end
+                    
+                    %%% Calculates filter weightes intensity
+                    Frame = str2double(h.Frame_Edit.String);
+                    if Frame == 0 %%% Sum over time
+                        %%% Applies filter weighting
+                        if Sel == 1
+                            Image = single(SpectralData.Data);
+                        else
+                            Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+                        end
+                        %%% Summs over spectral information
+                        Image = squeeze(sum(sum(Image,3),4));
+                        
+                    else %%% Single Frame
+                        Image = single(SpectralData.Data(:,:,:,Frame)) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, 1);
+                        %%% Summs over spectral information
+                        Image = squeeze(sum(Image,3));
+                    end
+                    %%% Scale image
+                    if h.Autoscale.Value %%% Autoscaling
+                        Image = (Image-min(Image(:)))/(max(Image(:))-min(Image(:)));
+                        %%% Homogeneous image
+                        if all(isinf(Image(:)))
+                            Image = Image*0;
+                        end
+                        
+                    else %%% Manual scaling
+                        %%% Extracts scale
+                        Min = str2double(h.Scale{1}.String);
+                        Max = str2double(h.Scale{2}.String);
+                        if isempty(Min)
+                            Min = 0;
+                            h.Scale{1}.String = '0';
+                        end
+                        if isempty(Max) || Max <= Min
+                            Max = Min+1;
+                            h.Scale{2}.String = num2str(Max);
+                        end
+                        
+                        %%% Rescales image
+                        Image = (Image-Min)/(Max-Min);
+                        %%% Pixels outside of range are shown in blue and red
+                    end
+                    
+                    if i==1 %%% Stores Green image part
+                        Image_G = Image;
+                    elseif i==2
+                        Image_R = Image;
+                    end
+                end
+                
+                %%% Plots Image
+                Image = repmat(Image,1,1,3);
+                Image(:,:,2) = Image_G; 
+                Image(:,:,1) = Image_R;  
+        end
+        
+        %%% Plots image and rescalses size
+        h.Spectral_Image.CData = Image;
+        h.Spectral_Image.CDataMapping = 'direct';
+        
+        h.Image_Plot.XLim = [0.5 size(h.Spectral_Image.CData,2)+0.5];
+        h.Image_Plot.YLim = [0.5 size(h.Spectral_Image.CData,1)+0.5];
     end
-    
-    
-    
-    
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -986,8 +1201,10 @@ switch event
             h.Species_List.String{Sel} = Name{1};
         end
     case 'filters' %%% Calculates new filters
-        Calc_Filter([],[],2)
+        Calc_Filter([],[],2);
 end
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for creating new filters
@@ -1028,7 +1245,7 @@ switch mode
             return;
         end
         
-        %%% Calculates summed up spectrum of current data      
+        %%% Calculates summed up spectrum of current data
         Spectrum = squeeze(sum(sum(double(sum(SpectralData.Data,4)),2),1));
         
         diag_Spectrum = zeros(numel(Spectrum));
@@ -1091,18 +1308,19 @@ Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
 if all(Path==0)
     return;
 end
+
 for i=1:numel(Sel)
     
     Full = uint16(squeeze(sum(SpectralData.Data,3)));
     
     switch mode
-        case 1 %%% Apply uniform filters           
+        case 1 %%% Apply uniform filters
             %%% Applies filter
             Filter = single(SpectralData.Filter(Sel(i)).Data);
             Stack = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
             Stack = squeeze(sum(Stack,3));
             
-        case 2 %%% Apply pixel-by pixel filters            
+        case 2 %%% Apply pixel-by pixel filters
             %%% Initializes data cells
             Stack = zeros(size(SpectralData.Data,1),size(SpectralData.Data,2),size(SpectralData.Data,4));
             
@@ -1112,14 +1330,14 @@ for i=1:numel(Sel)
                 Data = double(sum(SpectralData.Data,4));
                 
                 %%% Applies spatial averaging to the data
-                if h.Spatial_Average_Type.Value >1 && str2double(h.Spatial_Average_Size)>1
+                if h.Spatial_Average_Type.Value >1 && str2double(h.Spatial_Average_Size.String)>1
                     switch h.Spatial_Average_Type.Value
                         case 2 %%% Moving average
-                            F = fspecial('average',round(str2double(h.Spatial_Average_Size)));
+                            F = fspecial('average',round(str2double(h.Spatial_Average_Size.String)));
                         case 3 %%% Gaussian
-                            F = fspecial('gaussian',round(str2double(h.Spatial_Average_Size)));
+                            F = fspecial('gaussian',round(str2double(h.Spatial_Average_Size.String))*2,round(str2double(h.Spatial_Average_Size.String)));
                         case 4 %%% Disk
-                            F = fspecial('disk',round(str2double(h.Spatial_Average_Size)));
+                            F = fspecial('disk',round(str2double(h.Spatial_Average_Size.String)));
                     end
                     Data = imfilter(Data,F,'replicate');
                 end

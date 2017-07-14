@@ -259,6 +259,11 @@ if Mode==0 %%% Loads user values
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
     
+    if ~isfield(S.File,'Spectral_Standard')
+        S.File.Spectral_Standard=[];
+    end
+    P.File.Spectral_Standard = S.File.Spectral_Standard;
+    
     %%% substructure to save file histories
     if ~isfield(S.File,'FileHistory')
         S.File.FileHistory=[];
@@ -2314,6 +2319,10 @@ if Mode==0 %%% Loads user values
         S.Trace.AccPar = 1;
     end
     P.Trace.AccPar = S.Trace.AccPar;
+    
+    %% Spectral
+    
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
