@@ -14080,7 +14080,7 @@ switch obj
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','Axes_General');
             ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
-            linkaxes([ax2d ax_dummy]);
+            %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on');
         end
@@ -14484,7 +14484,7 @@ switch obj
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
             ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
-            linkaxes([ax2d ax_dummy]);
+            %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on')
         end
