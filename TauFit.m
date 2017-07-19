@@ -202,12 +202,12 @@ h.Result_Plot.XGrid = 'on';
 h.Result_Plot.YGrid = 'on';
 h.Result_Plot_Text.Position = [0.8 0.9];
 hold on;
-h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',1,'MarkerSize',10,'DisplayName','IRF');
-h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',1,'MarkerSize',10,'DisplayName','IRF (perp)');
-h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay','MarkerSize',10);
-h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore)','MarkerSize',10);
-h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',1,'DisplayName','Decay (perp)','MarkerSize',10);
-h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore perp)','MarkerSize',10);
+h.Plots.IRFResult = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0.6 0.6 0.6],'LineWidth',1,'MarkerSize',5,'DisplayName','IRF');
+h.Plots.IRFResult_Perp = plot([0 1],[0 0],'LineStyle','none','Marker','.','Color',[0 0 0.6],'Visible','off','LineWidth',1,'MarkerSize',5,'DisplayName','IRF (perp)');
+h.Plots.DecayResult = plot([0 1],[0 0],'-k','LineWidth',1,'DisplayName','Decay','MarkerSize',5);
+h.Plots.DecayResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 0.4],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore)','MarkerSize',5);
+h.Plots.DecayResult_Perp = plot([0 1],[0 0],'LineStyle','-','Color',[0 0.4471 0.7412],'Visible','off','LineWidth',1,'DisplayName','Decay (perp)','MarkerSize',5);
+h.Plots.DecayResult_Perp_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0 0.2 0.375],'Visible','off','LineWidth',1,'DisplayName','Decay (ignore perp)','MarkerSize',5);
 h.Plots.FitResult = plot([0 1],[0 0],'r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitResult_ignore = plot([0 1],[0 0],'--r','Visible','off','LineWidth',2,'DisplayName','Fit (ignore)');
 h.Plots.FitResult_Perp = plot([0 1],[0 0],'b','LineWidth',2,'Visible','off','DisplayName','Fit (perp)');
@@ -238,7 +238,7 @@ h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 
 h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2,'DisplayName','Fit (ignore)');
 
-linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
+linkaxes([h.Result_Plot, h.Residuals_Plot, h.Result_Plot_Aniso],'x');
 
 %%% dummy panel to hide plots
 h.HidePanel = uibuttongroup(...
@@ -4169,6 +4169,7 @@ else
                 if strcmp(h.Microtime_Plot.YScale,'log')
                     %ax(i).YScale = 'log';
                 end
+                aniso_plot = i;
             case 'Microtime_Plot'
                 ax(i).Position = [0.125 0.28 0.845 0.58];
                 ax(i).XTickLabels = [];
@@ -4221,6 +4222,15 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
     %%% Make table from fittable and save as txt
     tab = cell2table(h.FitPar_Table.Data(:,1),'RowNames',h.FitPar_Table.RowName,'VariableNames',{'Result'});
     writetable(tab,GenerateName([FileName(1:end-4) a c '.txt'],1),'WriteRowNames',true,'Delimiter','\t');
+end
+
+%%% also make an extra anisotropy plot if anisotropy model was fit
+if strfind(TauFitData.FitType,'Anisotropy')
+    f2 = figure('Position',[200,100,450,275],'color',[1 1 1], 'Name', 'Anisotropy');
+    axes_copy = copyobj(ax(aniso_plot),f2);
+    axes_copy.Position = [75,55,350,200];
+    f2.PaperPositionMode = 'auto';
+    print(f2, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c '_aniso' b],1))
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
