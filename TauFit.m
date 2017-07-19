@@ -4142,7 +4142,7 @@ for i = 1:numel(ax)
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'}))
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -4225,7 +4225,7 @@ if ~isequal(obj,  h.Microtime_Plot_Export) %%% Exporting fit result
 end
 
 %%% also make an extra anisotropy plot if anisotropy model was fit
-if strfind(TauFitData.FitType,'Anisotropy')
+if any(strfind(TauFitData.FitType,'Anisotropy')) && ~(h.Result_Plot_Aniso.Parent == h.HidePanel)
     f2 = figure('Position',[200,100,450,275],'color',[1 1 1], 'Name', 'Anisotropy');
     axes_copy = copyobj(ax(aniso_plot),f2);
     axes_copy.Position = [75,55,350,200];
