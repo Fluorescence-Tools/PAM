@@ -109,6 +109,7 @@ h.Phasor_Panel = uibuttongroup(...
 h.Phasor_Plot = axes(...
     'Parent',h.Phasor_Panel,...
     'Units','normalized',...
+    'NextPlot','add',...
     'Position',[0.1 0.1 0.86 0.86]);
 h.Phasor_Image = image(ones(1,1,3));
 h.Phasor_Image.HitTest = 'off';
@@ -682,10 +683,11 @@ SpectralData.G = [];
 SpectralData.S = [];
 SpectralData.Phasor = [];
 SpectralData.PhasorROI = [];
-SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)});
+SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)},'Phasor',[0 0]);
 SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1);
 
 h.SpeciesPlots = [];
+h.SpeciesPhasor = [];
 h.FilterPlots = [];
 
 guidata(h.SpectralImage,h);
@@ -771,7 +773,15 @@ switch mode
         
         SpectralData.Species(1).Data = sum(sum(double(sum(SpectralData.Data,4)),2),1);
         SpectralData.Species(1).Data = SpectralData.Species(1).Data/max(SpectralData.Species(1).Data(:));
+        
+        G = reshape(cos(2*pi*(1:size(SpectralData.Species(1).Data,3))/size(SpectralData.Species(1).Data,3)),1,1,[]);
+        S = reshape(sin(2*pi*(1:size(SpectralData.Species(1).Data,3))/size(SpectralData.Species(1).Data,3)),1,1,[]);
+        SpectralData.Species(1).Phasor(1) = sum(SpectralData.Species(1).Data.*G)/sum(SpectralData.Species(1).Data);
+        SpectralData.Species(1).Phasor(2) = sum(SpectralData.Species(1).Data.*S)/sum(SpectralData.Species(1).Data);
+        
         SpectralData.Filter(1).Data = ones(1,1,size(SpectralData.Data,3),1);
+        
+        
         
         %%% Adjusts slider and frame range
         h.Frame_Slider.Min=0;
@@ -795,7 +805,6 @@ switch mode
         Plot_Spectral([],[],0);
         
     case 2 %%% Loads files into database
-        
         
     case 4 %%% Loads species
         %%%% This is a test version and will be adjusted for the final
@@ -834,8 +843,13 @@ switch mode
             SpectralData.Species(end+1).Data = reshape((sum(sum(sum(Data,4),2),1)),1,1,[],1);
             SpectralData.Species(end).Data = SpectralData.Species(end).Data./max(SpectralData.Species(end).Data(:));
             SpectralData.Species(end).Name = FileName{i}(1:end-4);
-            h.Species_List.String{end+1} = SpectralData.Species(end).Name;
             
+            G = reshape(cos(2*pi*(1:size(SpectralData.Species(end).Data,3))/size(SpectralData.Species(end).Data,3)),1,1,[]);
+            S = reshape(sin(2*pi*(1:size(SpectralData.Species(end).Data,3))/size(SpectralData.Species(end).Data,3)),1,1,[]);
+            SpectralData.Species(end).Phasor(1) = sum(SpectralData.Species(end).Data.*G)/sum(SpectralData.Species(end).Data);
+            SpectralData.Species(end).Phasor(2) = sum(SpectralData.Species(end).Data.*S)/sum(SpectralData.Species(end).Data);
+            
+            h.Species_List.String{end+1} = SpectralData.Species(end).Name;     
         end
         
         
@@ -1188,12 +1202,21 @@ if any(mode == 2)
         else
             h.SpeciesPlots{i}.YData = SpectralData.Species(i).Data;
         end
+        %%% Updates phasor data
+        if numel(h.SpeciesPhasor) < i
+            h.SpeciesPhasor{i} = scatter(h.Phasor_Plot, SpectralData.Species(i).Phasor(1),SpectralData.Species(i).Phasor(2),'CData',h.SpeciesPlots{i}.Color);
+        else
+            h.SpeciesPhasor{i}.XData = SpectralData.Species(i).Phasor(1);
+            h.SpeciesPhasor{i}.YData = SpectralData.Species(i).Phasor(2);
+        end
         
         %%% Shows only selected species
         if any(i==Sel)
             h.SpeciesPlots{i}.Visible = 'on';
+            h.SpeciesPhasor{i}.Visible = 'on';
         else
             h.SpeciesPlots{i}.Visible = 'off';
+            h.SpeciesPhasor{i}.Visible = 'off';
         end
     end
     
@@ -1424,7 +1447,7 @@ switch event
             return;
         end
         
-        %%% Deletes all assisiated filters
+        %%% Deletes all associated filters
         Filter = [];
         for i = 1:numel(SpectralData.Filter)
             if ~isempty(intersect(SpectralData.Filter(i).Species,Sel))
@@ -1448,11 +1471,19 @@ switch event
             if numel(h.SpeciesPlots) >= i && isvalid(h.SpeciesPlots{i})
                 delete(h.SpeciesPlots{i});
             end
+            if numel(h.SpeciesPhasor) >= i && isvalid(h.SpeciesPhasor{i})
+                delete(h.SpeciesPhasor{i});
+            end
         end
         %%% Removes deleted plots
         for i= numel(h.SpeciesPlots):-1:1
             if ~isvalid(h.SpeciesPlots{i})
                 h.SpeciesPlots(i)=[];
+            end
+        end
+        for i= numel(h.SpeciesPhasor):-1:1
+            if ~isvalid(h.SpeciesPhasor{i})
+                h.SpeciesPhasor(i)=[];
             end
         end
         guidata(h.SpectralImage,h);
