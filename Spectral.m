@@ -911,7 +911,7 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
         %%% Scale image
         if h.Autoscale.Value %%% Autoscaling
             %%% Transforms intensity image to 64 bits
-            Image = round(63*(Image-min(Image(:)))/(max(Image(:))-min(Image(:))))+1;
+            Int = round(63*(Image-min(Image(:)))/(max(Image(:))-min(Image(:))))+1;
             
         else %%% Manual scaling
             Min = str2double(h.Scale{1}.String);
@@ -926,10 +926,12 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
             end
             
             %%% Transforms intensity image to 64 bits
-            Image = round(63*(Image-Min)/(Max-Min))+1;
+            Int = round(63*(Image-Min)/(Max-Min))+1;
         end
+        Int(Int<1) = 1;
+        Int(Int>64) = 64;
         %%% Applies colormap
-        Image = reshape(Map(Image(:),:),size(Image,1),size(Image,2),3);
+        Image = reshape(Map(Int(:),:),size(Image,1),size(Image,2),3);
         
         %%% Applies ROI filter to image
         if any(cell2mat(strfind({h.Phasor_ROI.Visible},'on')))
