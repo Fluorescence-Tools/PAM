@@ -2453,8 +2453,9 @@ end
 function Phasor_Move(~,e,mode,Start,Key)
 global PhasorData
 %%% Only executes, if Phasor is the current figure
-if strcmp('Phasor',get(gcf,'Tag'))
-    h=guidata(gcf);
+Fig = gcf;
+if strcmp('Phasor',get(Fig,'Tag'))
+    h=guidata(Fig);
     Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
     switch mode
         case 1 %%% Shows info about current cursor position
@@ -2489,7 +2490,7 @@ if strcmp('Phasor',get(gcf,'Tag'))
             XLim=h.Phasor_Plot.XLim;
             YLim=h.Phasor_Plot.YLim;
             %%% Only ecexutes inside plot bounds
-            if (Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<XLim(2))
+            if (Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<YLim(2))
                 %%% Zooms in by sqrt(2)
                 if e.VerticalScrollCount<0
                     h.Phasor_Plot.XLim=[mean(XLim)-diff(XLim)/sqrt(8),mean(XLim)+diff(XLim)/sqrt(8)];

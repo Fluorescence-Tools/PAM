@@ -3,6 +3,7 @@ global UserValues SpectralData
 h.SpectralImage = findobj('Tag','SpectralImage');
 
 addpath(genpath(['.' filesep 'bfmatlab']));
+addpath(genpath(['.' filesep 'functions']));
 
 if ~isempty(h.SpectralImage) % Creates new figure, if none exists
     figure(h.SpectralImage);
@@ -33,6 +34,9 @@ h.SpectralImage = figure(...
     'Toolbar','figure',...
     'UserData',[],...
     'BusyAction','cancel',...
+    'WindowButtonUpFcn',@Stop_All,...
+    'WindowScrollWheelFcn',{@Phasor_Move,3,[],[]},...
+    'KeyPressFcn',{@Phasor_Key,1},...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
     'CloseRequestFcn',@Close_Filter,...
     'Visible','on');
@@ -68,7 +72,7 @@ h.Load_Database = uimenu(...
 h.Text = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Image Plot and Display %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Image Plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Plot panel 1
@@ -105,11 +109,46 @@ h.Phasor_Panel = uibuttongroup(...
 h.Phasor_Plot = axes(...
     'Parent',h.Phasor_Panel,...
     'Units','normalized',...
-    'Position',[0.01 0.01 0.98 0.98]);
-h.Phasor_Image = image(zeros(1,1,3));
+    'Position',[0.1 0.1 0.86 0.86]);
+h.Phasor_Image = image(ones(1,1,3));
+h.Phasor_Image.HitTest = 'off';
+
 h.Phasor_Plot.DataAspectRatio = [1 1 1];
-h.Phasor_Plot.XTick = [];
-h.Phasor_Plot.YTick = [];
+h.Phasor_Plot.YColor = Look.Fore;
+h.Phasor_Plot.XColor = Look.Fore;
+h.Phasor_Plot.YLabel.String = 's';
+h.Phasor_Plot.XLabel.String = 'g';
+h.Phasor_Plot.YLabel.Color = Look.Fore;
+h.Phasor_Plot.XLabel.Color = Look.Fore;
+h.Phasor_Plot.YDir = 'normal';
+h.Phasor_Plot.XLim =[-1.01 1.01];
+h.Phasor_Plot.YLim =[-1.01 1.01];
+h.Phasor_Plot.ButtonDownFcn = {@Phasor_Click,[]};
+
+
+%%% Initializes ROIs
+ROI_Color = [1 0 0; 0 1 0; 0 0 1; 1 1 0; 1 0 1; 0 1 1];
+for i=1:6
+    %%% Rectangular ROIS
+    h.Phasor_ROI(i,1)=rectangle(...
+        'Parent',h.Phasor_Plot,...
+        'Position',[0 0 0 0],...
+        'HitTest','off',...
+        'Visible','off',...
+        'EdgeColor',ROI_Color(i,:));
+    %%% Elipsiod ROIS
+    h.Phasor_ROI(i,2)=line(...
+        'Parent',h.Phasor_Plot,...
+        'XData',[0 0],...
+        'YData',[0 0],...
+        'HitTest','off',...
+        'Visible','off',...
+        'Color',ROI_Color(i,:));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Image and Phasor display settings    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 
 %%% Image display panel
 h.Display_Panel = uibuttongroup(...
@@ -263,6 +302,75 @@ h.Scale{2} = uicontrol(...
     'String','100');
 
 
+%%%% Phasor Settings
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',14,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.47 0.4 0.06],...
+    'String','Phasor Settings:');
+
+%%%% Colormap selection
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.37 0.2 0.06],...
+    'String','Colormap:');
+
+h.Phasor_Colormap = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','popup',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',2,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.2 0.37 0.18 0.06],...
+    'Callback',{@Plot_Spectral,4},...
+    'String',{'Gray','Jet','Hot'});
+
+%%%% Colormap selection
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.4 0.37 0.2 0.06],...
+    'String','Threshold:');
+
+h.Phasor_TH{1} = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.6 0.37 0.18 0.06],...
+    'Callback',{@Calculate_Phasor},...
+    'String','100');
+
+h.Phasor_TH{2} = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.8 0.37 0.18 0.06],...
+    'Callback',{@Calculate_Phasor},...
+    'String','0');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Tabs for Species and Filters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -471,9 +579,109 @@ h.Database_Tab = uitab(...
     'Units','normalized');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Defines custom cursor shapes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+SpectralData.Cursor=[];
+%%%%1
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point(5,8:11)=1;
+Point(6,7:11)=1;
+Point(7,6:11)=1;
+Point(8,[5:7 10:11])=1;
+Point(9,[5:6 10:11])=1;
+Point(10:14,10:11)=1;
+Point(15:16,7:14)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{1}=Point;
+
+%%%%2
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(10:16,5:6)=1;
+Point(5:11,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{2}=Point;
+
+%%%%3
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(5:16,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{3}=Point;
+
+%%%%4
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point(5:16,10:11)=1;
+Point(5:11,5:6)=1;
+Point(10:11,5:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{4}=Point;
+
+%%%%5
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(5:11,5:6)=1;
+Point(11:16,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{5}=Point;
+
+%%%%6
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(5:16,5:6)=1;
+Point(11:16,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{6}=Point;
+
+%%%%7
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point(5:6,5:11)=1;
+Point(5:16,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{7}=Point;
+
+%%%%8
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(5:16,10:11)=1;
+Point(5:16,5:6)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{8}=Point;
+
+%%%%9
+Point=zeros(16);
+Point(1:8,1:2)=1;
+Point(1:2,1:8)=1;
+Point([5:6 10:11 15:16],5:11)=1;
+Point(5:10,5:6)=1;
+Point(5:16,10:11)=1;
+Point(Point==0)=NaN;
+SpectralData.Cursor{9}=Point;
 %% Saves guidata and initializes global variable %%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 SpectralData.Data = [];
+SpectralData.Int = [];
+SpectralData.G = [];
+SpectralData.S = [];
+SpectralData.Phasor = [];
+SpectralData.PhasorROI = [];
 SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)});
 SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1);
 
@@ -506,6 +714,8 @@ end
 delete(Obj);
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%% Loading Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for loading data and species
 %%% mode 1: load data
@@ -557,6 +767,7 @@ switch mode
         SpectralData.FileName = FileName{1};
         
         SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),30,[]);
+        SpectralData.Int = squeeze(sum(double(sum(SpectralData.Data,3)),4));
         
         SpectralData.Species(1).Data = sum(sum(double(sum(SpectralData.Data,4)),2),1);
         SpectralData.Species(1).Data = SpectralData.Species(1).Data/max(SpectralData.Species(1).Data(:));
@@ -576,6 +787,10 @@ switch mode
                 Calc_Filter([],[],2,SpectralData.Filter(i).Species);
             end
         end
+        
+        %% Calculates Spectral Phasor for current data
+        Calculate_Phasor;
+        
         
         Plot_Spectral([],[],0);
         
@@ -629,6 +844,10 @@ switch mode
 end
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%  Plotting Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for displaying data
 function Plot_Spectral(~,~,mode)
@@ -637,7 +856,7 @@ h = guidata(findobj('Tag','SpectralImage'));
 
 %%% Updates everything
 if isempty(mode) || any(mode==0)
-    mode = 1:3;
+    mode = 1:4;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -665,12 +884,13 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
             
             %%% Applies filter weighting
             if FilterMode == 1
-                Image = single(SpectralData.Data);
+                Image = SpectralData.Int;
             else
                 Image = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
+                %%% Summs over spectral information
+                Image = squeeze(sum(sum(Image,3),4));
             end
-            %%% Summs over spectral information
-            Image = squeeze(sum(sum(Image,3),4));
+            
             
         else %%% Single Frame
             Image = single(SpectralData.Data(:,:,:,Frame)) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, 1);
@@ -678,15 +898,21 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
             Image = squeeze(sum(Image,3));
         end
         
-        %%% Plots Image
-        h.Spectral_Image.CData = Image;
-        h.Spectral_Image.CDataMapping = 'scaled';
+        %%% Set image colormap
+        switch ColormapMode
+            case 1
+                Map = gray(64);
+            case 2
+                Map = jet(64);
+            case 3
+                Map = hot(64);
+        end
         
-        h.Image_Plot.XLim = [0.5 size(h.Spectral_Image.CData,2)+0.5];
-        h.Image_Plot.YLim = [0.5 size(h.Spectral_Image.CData,1)+0.5];
         %%% Scale image
         if h.Autoscale.Value %%% Autoscaling
-            h.Image_Plot.CLimMode = 'auto';
+            %%% Transforms intensity image to 64 bits
+            Image = round(63*(Image-min(Image(:)))/(max(Image(:))-min(Image(:))))+1;
+            
         else %%% Manual scaling
             Min = str2double(h.Scale{1}.String);
             Max = str2double(h.Scale{2}.String);
@@ -698,19 +924,39 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
                 Max = Min+1;
                 h.Scale{2}.String = num2str(Max);
             end
-            h.Image_Plot.CLim = [Min Max];
+            
+            %%% Transforms intensity image to 64 bits
+            Image = round(63*(Image-Min)/(Max-Min))+1;
         end
+        %%% Applies colormap
+        Image = reshape(Map(Image(:),:),size(Image,1),size(Image,2),3);
         
-        %%% Set image colormap
-        switch ColormapMode
-            case 1
-                Map = 'gray';
-            case 2
-                Map = 'jet';
-            case 3
-                Map = 'hot';
-        end
-        colormap(h.Image_Plot,Map);
+        %%% Applies ROI filter to image
+        if any(cell2mat(strfind({h.Phasor_ROI.Visible},'on')))
+            Color = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2),3);
+            Mask = zeros(size(SpectralData.Int,1),size(SpectralData.Int,2));
+            for i=1:6
+                if strcmp(h.Phasor_ROI(i,1).Visible,'on') || strcmp(h.Phasor_ROI(i,2).Visible,'on')
+                    %%% Sets pixels color to sum of ROI colors
+                    Color(:,:,1) = Color(:,:,1) + SpectralData.PhasorROI(:,:,i) .* h.Phasor_ROI(i,1).EdgeColor(1);
+                    Color(:,:,2) = Color(:,:,2) + SpectralData.PhasorROI(:,:,i) .* h.Phasor_ROI(i,1).EdgeColor(2);
+                    Color(:,:,3) = Color(:,:,3) + SpectralData.PhasorROI(:,:,i) .* h.Phasor_ROI(i,1).EdgeColor(3);
+                    %%% Sum of ROI per pixel
+                    Mask = Mask + SpectralData.PhasorROI(:,:,i);
+                end
+            end
+            %%% Rescales to average ROI color
+            Mask = repmat(Mask,1,1,3);
+            Color = Color./Mask;
+            if ColormapMode == 1
+                %%% Scales ROI color with intensity
+                Image(Mask>0) = Image(Mask>0) .* Color(Mask>0);
+            else
+                %%% Uses Plane ROI color
+                Image(Mask>0) = Color(Mask>0);
+            end
+            
+        end 
         
     elseif ColormapMode == 4 %%% Plots up to three filters in RGB
         %%% Turns on image recalculation when variable filter is selected
@@ -917,14 +1163,14 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
                 Image(:,:,2) = Image_G; 
                 Image(:,:,1) = Image_R;  
         end
-        
+
+    end
         %%% Plots image and rescalses size
         h.Spectral_Image.CData = Image;
         h.Spectral_Image.CDataMapping = 'direct';
         
         h.Image_Plot.XLim = [0.5 size(h.Spectral_Image.CData,2)+0.5];
         h.Image_Plot.YLim = [0.5 size(h.Spectral_Image.CData,1)+0.5];
-    end
 
 end
 
@@ -981,6 +1227,26 @@ if any(mode == 3)
     
     
 end
+
+%% Uppdates Phasor plot
+if any(mode == 4) && ~isempty(SpectralData.Phasor)
+    
+    %%% Plots phasor histogram
+    h.Phasor_Image.CData = SpectralData.Phasor;
+    h.Phasor_Image.XData = linspace(-1, 1, 200);
+    h.Phasor_Image.YData = linspace(-1, 1, 200);
+    h.Phasor_Image.AlphaData = SpectralData.Phasor>0;
+    %%% Sets histogram colormap
+    switch h.Phasor_Colormap.Value
+        case 1
+            colormap(h.Phasor_Plot,'gray');
+        case 2
+            colormap(h.Phasor_Plot,'jet');
+        case 3
+            colormap(h.Phasor_Plot,'hot');
+    end  
+end
+
 guidata(h.SpectralImage,h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1029,6 +1295,9 @@ end
 Plot_Spectral([],[],1);
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%% FIlter and Species Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for the interaction with the filter list
 function Filter_Callback(obj, e)
@@ -1116,6 +1385,7 @@ switch event
             h.PlottedData.String{Sel} = Name{1};
         end
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for the interaction with the filter list
 function Species_Callback(obj, e)
@@ -1203,8 +1473,6 @@ switch event
     case 'filters' %%% Calculates new filters
         Calc_Filter([],[],2);
 end
-
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for creating new filters
@@ -1294,9 +1562,268 @@ end
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%% Phasor Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function to recalculate phasor histogram
+function Calculate_Phasor(~,~)
+global SpectralData
+h = guidata(findobj('Tag','SpectralImage'));
+
+%%% Extracts threshold
+TH(1) = str2double(h.Phasor_TH{1}.String);
+TH(2) = str2double(h.Phasor_TH{2}.String);
+
+%%% Calculates and normalizes phasor data
+G = reshape(cos(2*pi*(1:size(SpectralData.Data,3))/size(SpectralData.Data,3)),1,1,[]);
+S = reshape(sin(2*pi*(1:size(SpectralData.Data,3))/size(SpectralData.Data,3)),1,1,[]);
+SpectralData.G = sum(double(sum(SpectralData.Data,4)).*repmat(G,size(SpectralData.Data,1),size(SpectralData.Data,2),1),3);
+SpectralData.G = SpectralData.G./SpectralData.Int;
+SpectralData.S = sum(double(sum(SpectralData.Data,4)).*repmat(S,size(SpectralData.Data,1),size(SpectralData.Data,2),1),3);
+SpectralData.S = SpectralData.S./SpectralData.Int;
+
+%%% Applies threshold
+Use = SpectralData.Int>=TH(1);
+if TH(2)>0 && TH(2)>TH(1)
+    Use = Use & SpectralData.Int<=TH(2);
+end
+G = SpectralData.G(Use);
+S = SpectralData.S(Use);
+
+%%% Creates histogram
+SpectralData.Phasor = reshape(histcounts(floor((G+1)*100)*200 + (S+1)*100,linspace(0,40000,40001)),200,200);
+
+%%% ROIs selected
+SpectralData.PhasorROI=zeros(size(SpectralData.Int,1),size(SpectralData.Int,2),6);
+for i=1:6
+    if strcmp(h.Phasor_ROI(i,1).Visible,'on')
+        Pos=h.Phasor_ROI(i,1).Position;
+        %%% Generates ROI map
+        SpectralData.PhasorROI(:,:,i)= SpectralData.G>=Pos(1) &...
+            SpectralData.G<=(Pos(1)+Pos(3)) &...
+            SpectralData.S>=Pos(2) &...
+            SpectralData.S<=(Pos(2)+Pos(4)) &...
+            Use;
+        
+    elseif strcmp(h.Phasor_ROI(i,2).Visible,'on')
+        %%% Determins position of ROI
+        x=round(100*(h.Phasor_ROI(i,2).XData+1));
+        y=round(100*(h.Phasor_ROI(i,2).YData+1));
+        x(x<1)=1; y(y<1)=1;
+        Map=zeros(200);
+        %%% Transforms ROI position into pixelmap
+        Map(sub2ind(size(Map),x,y))=1;
+        %%% Fills ROI pixelmap
+        Map=mod(cumsum(Map),2);
+        %%% Finds valid pixel
+        G=round((SpectralData.G+1)*100);
+        G(isnan(G) | G<1)=1;
+        S=round((SpectralData.S+1)*100);
+        S(isnan(S) | S<1)=1;
+        
+        Index=sub2ind(size(Map),G,S);
+        %%% Generates ROI map
+        SpectralData.PhasorROI(:,:,i) = Map(Index) & Use;
+    end
+end
+
+%%% Plots phasor
+Plot_Spectral([],[],[1 4]);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions for phasor plot mouse-clicks
+function Phasor_Click(~,~,Key)
+h=guidata(findobj('Tag','SpectralImage'));
+
+%%% Checks, which mouse button was clicked
+Type=h.SpectralImage.SelectionType;
+if isempty(Key)
+    %% Normal mouse clicks    
+    switch Type
+        case 'normal' %%% Left mouse button
+            %% Pans plot while holding left mouse button
+            %%% Gets starting position
+            Pos=h.Phasor_Plot.CurrentPoint;
+            %%% Disables further mouse click callbacks
+            h.Phasor_Plot.ButtonDownFcn=[];
+            %%% Changes mouse move callback to panning
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,2,Pos(1,1:2),[]};  
+        case 'extend' %%% Middle mouse button\ left+right mouse buttons
+            %% Resets limits by pressing middle mouse button
+            h.Phasor_Plot.XLim=[-1.01 1.01];
+            h.Phasor_Plot.YLim=[-1.01 1.01];                     
+    end
+elseif Key>0 && Key <=6
+   %% ROI selection mouse clicks
+   switch Type
+       case 'normal' %%% Rectangular ROI selection
+           h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
+           [h.Phasor_ROI(Key,:).Visible] = deal('off');
+           h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};          
+       case 'alt' %%% Ellipsoid ROI
+           [h.Phasor_ROI(Key,:).Visible] = deal('off');
+           h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
+   end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions for phasor plot mouse movement
+function Phasor_Move(~,e,mode,Start,Key)
+%%% Only executes, if Phasor is the current figure
+Fig = gcf;
+if strcmp('SpectralImage',get(Fig,'Tag'))
+    h=guidata(Fig);
+    Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
+    switch mode
+        case 2 %%% Pans the plot around (hold left mouse button)
+            h.Phasor_Plot.XLim=h.Phasor_Plot.XLim-(Pos(1)-Start(1));
+            h.Phasor_Plot.YLim=h.Phasor_Plot.YLim-(Pos(2)-Start(2));
+            pause(0.01);
+        case 3 %%% Zooms (via mouse scroll
+            %%% Calculates current cursor position relative to limits
+            XLim=h.Phasor_Plot.XLim;
+            YLim=h.Phasor_Plot.YLim;
+            %%% Only ecexutes inside plot bounds
+            if (Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<YLim(2))
+                %%% Zooms in by sqrt(2)
+                if e.VerticalScrollCount<0
+                    h.Phasor_Plot.XLim=[mean(XLim)-diff(XLim)/sqrt(8),mean(XLim)+diff(XLim)/sqrt(8)];
+                    h.Phasor_Plot.YLim=[mean(YLim)-diff(YLim)/sqrt(8),mean(YLim)+diff(YLim)/sqrt(8)];
+                    %%% Zooms out by sqrt(2)
+                elseif e.VerticalScrollCount>0
+                    h.Phasor_Plot.XLim=[mean(XLim)-diff(XLim)/sqrt(2),mean(XLim)+diff(XLim)/sqrt(2)];
+                    h.Phasor_Plot.YLim=[mean(YLim)-diff(YLim)/sqrt(2),mean(YLim)+diff(YLim)/sqrt(2)];
+                end
+            end
+        case 4 %%% Generates a rectangular ROI
+            %%% Disables callback, to avoit multiple executions
+            h.SpectralImage.WindowButtonMotionFcn=[];
+            %%% Resizes ROI rectangle         
+            h.Phasor_ROI(Key,1).Position=[min([Start(1) Pos(1)]),min([Start(2) Pos(2)]),abs(Start(1)-Pos(1)),abs(Start(2)-Pos(2))];
+            
+            %%% Make ROI rectangle visible
+            if all(h.Phasor_ROI(Key,1).Position(3:4)>0)
+                h.Phasor_ROI(Key,1).Visible='on';
+            else
+                h.Phasor_ROI(Key,1).Visible='off';
+            end
+            %%% Enables callback
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,Start,Key}; 
+        case 5 %%% Generates a elliposidal ROI
+            %%% Disables callback, to avoit multiple executions
+            h.SpectralImage.WindowButtonMotionFcn=[];
+            %%% Ony executes, if mouse moved
+            if all((Pos-Start)~=0)
+                
+                Pixel=100;
+                Width=0.1;
+                
+                %%% Generates vector, connecting start and end
+                x1=linspace(Start(1),Pos(1),Pixel);
+                y1=linspace(Start(2),Pos(2),Pixel);
+                
+                %%% Creates circle
+                x=cos(2*pi*(0:0.01:1));
+                y=sin(2*pi*(0:0.01:1));
+                x2=[];y2=[];
+               
+                %%% Applies circle around each point on line
+                for i=1:Pixel
+                    x2(end+1:end+numel(x))=round(Pixel*(Width*x+x1(i)));
+                    y2(end+1:end+numel(y))=round(Pixel*(Width*y+y1(i)));
+                end
+                %%% Transforms points to integers
+                Xmin=min(x2)-1; x2=x2-Xmin;
+                Ymin=min(y2)-1; y2=y2-Ymin;
+                %%% Draws circles into a pixelmap
+                Map1=zeros(max(x2),max(y2));
+                Map1(sub2ind(size(Map1),x2,y2))=1;
+                %%% Only uses edgepoints in map
+                Map2=zeros(size(Map1));
+                for j=1:size(Map1,2)
+                    Map2(find(Map1(:,j),1,'first'),j)=1;
+                    Map2(find(Map1(:,j),1,'last'),j)=1;
+                end
+                %%% Transforms pixelmat to coordinates
+                [x,y]=find(Map2);
+                %%% Shifts coordinates to right position
+                x=(x+Xmin)/Pixel; 
+                y=(y+Ymin)/Pixel;
+                %%% Updates ROI object
+                h.Phasor_ROI(Key,2).XData=[x(1:2:end); flipud(x(2:2:end)); x(1)];
+                h.Phasor_ROI(Key,2).YData=[y(1:2:end); flipud(y(2:2:end)); y(1)];
+                h.Phasor_ROI(Key,2).UserData = [Start, Pos];
+                %%% Makes ROI visible
+                h.Phasor_ROI(Key,2).Visible='on';
+            else
+                %%% Hides ROI, if no ROI was selected
+                h.Phasor_ROI(Key,2).Visible='off';
+            end
+            %%% Enables callback            
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,Start,Key}; 
+
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions for phasor plot mouse clicks
+function Phasor_Key(~,e,mode)
+h=guidata(findobj('Tag','SpectralImage'));
+global SpectralData
+switch mode
+    case 1
+        %% Key press callback
+        %%% Makes numpad and normal number keys equal
+        if ~isempty(strfind(e.Key,'numpad'))
+            Key=str2double(e.Key(7:end));
+        else
+            Key=str2double(e.Key);
+        end
+        %%% Checks, if keys 0-6 were pressed
+        if ~isnan(Key) && Key<=6 && Key>=0
+            %%% Defines key release callback to stop
+            h.SpectralImage.KeyReleaseFcn={@Phasor_Key,2};
+            %%% Disables further key press callbacks
+            h.SpectralImage.KeyPressFcn=[];
+            %%% Changes cursor shape
+            if Key~=0
+                h.SpectralImage.Pointer='custom';
+                h.SpectralImage.PointerShapeCData=SpectralData.Cursor{Key};
+                h.Phasor_Plot.ButtonDownFcn={@Phasor_Click,Key};
+            else
+                h.Phasor.Pointer='crosshair';
+                h.Phasor_Plot.ButtonDownFcn={@Phasor_Click,Key};
+            end
+        end
+        
+    otherwise
+        %% Key Release callback
+        h.SpectralImage.KeyReleaseFcn=[];
+        h.SpectralImage.KeyPressFcn={@Phasor_Key,1};
+        h.SpectralImage.Pointer='arrow';
+        h.Phasor_Plot.ButtonDownFcn={@Phasor_Click,[]};
+        Calculate_Phasor;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Mouse button release callback %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Stop_All(~,~)
+Fig = findobj('Tag','SpectralImage');
+figure(Fig);
+h=guidata(Fig);
+%%% Sets standard mouse click callback (in case it was changed/disabled)
+h.Phasor_Plot.ButtonDownFcn={@Phasor_Click,[]};
+%%% Updates plot, if new ROI was selected
+if ~isempty(h.SpectralImage.WindowButtonMotionFcn) 
+    h.SpectralImage.Pointer='arrow';
+    h.SpectralImage.WindowButtonMotionFcn={};
+end
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%% Filter Exporting Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that applies filters and saves the data
 function Save_Filtered (~,~,mode)
@@ -1350,7 +1877,7 @@ for i=1:numel(Sel)
                     for k=1:size(SpectralData.Data,2)
                         Filter = Calc_Filter([],[],3,SpectralData.Filter(Sel(i)).Species,squeeze(Data(j,k,:)));
                         Filter = reshape(Filter(:,1),1,1,[],1);
-                        Stack(j,k,:) = squeeze(sum(double(SpectralData.Data(j,k,:,:)) .* repmat(Filter,[1,1,1,size(Stack,4)]),3));
+                        Stack(j,k,:) = squeeze(sum(double(SpectralData.Data(j,k,:,:)) .* repmat(Filter,[1,1,1,size(Stack,3)]),3));
                     end
                 end
                 
@@ -1359,7 +1886,39 @@ for i=1:numel(Sel)
                 Stack = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
                 Stack = squeeze(sum(Stack,3));
             end
+        case 3 %%% Applies phasor ROI based filtering
+            %%% Initializes data cells
+            Stack = zeros(size(SpectralData.Data,1),size(SpectralData.Data,2),size(SpectralData.Data,4));
             
+            %%% Checks, if simple filter was used
+            if numel(SpectralData.Filter(Sel(i)).Species)>1
+                %%% Summs up all frames
+                Data = squeeze(double(sum(SpectralData.Data,4)));
+
+                %%% Recalculates filter for each ROI
+                %%% This calculates the filters for each filter, although
+                %%% each one is used at least twice.
+                %%% I will try to remove this redundancy at some point
+                for j=1:6
+                    if any(any(SpectralData.PhasorROI(:,:,j)>0))
+                        %%% Applies ROI to Data
+                        ROI = Data.*repmat(SpectralData.PhasorROI(:,:,j),1,1,size(SpectralData.Data,3));
+                        ROI = squeeze(sum(sum(ROI,1),2));
+                        
+                        Filter = Calc_Filter([],[],3,SpectralData.Filter(Sel(i)).Species,ROI);
+                        Filter = reshape(Filter(:,1),1,1,[],1);
+                        Stack = Stack +... %%% Sumas up to average overlap
+                            squeeze(sum(...
+                            single(SpectralData.Data)... %%% Data
+                            .* repmat(Filter,[size(Data,1),size(Data,2),1,size(Stack,3)])... %%% Filter
+                            .* repmat(SpectralData.PhasorROI(:,:,j),[1,1,size(Filter,3),size(Stack,3)]),3)); %%% ROI
+                    end
+                end
+                %%% Averages ROI overlap
+                Stack = Stack ./ repmat(sum(SpectralData.PhasorROI,3),1,1,size(Stack,3));
+                %%% Sets pixels outside of ROIs to zero
+                Stack(isinf(Stack) | isnan(Stack)) = 0;
+            end
     end
     
     
@@ -1377,6 +1936,8 @@ for i=1:numel(Sel)
             File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '.tif']);
         case 2
             File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_SR.tif']);
+        case 3
+            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_ROI.tif']);
     end
     
     %%% Creates info data
@@ -1416,4 +1977,11 @@ for i=1:numel(Sel)
     TIFF_handle.close()
     
 end
+
+
+
+
+
+
+
 
