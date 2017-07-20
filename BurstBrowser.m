@@ -4058,12 +4058,13 @@ if obj ~= h.DatabaseBB.List
             end
             for i = 1:numel(subdir)
                 files = dir([pathname filesep subdir(i).name]);
-                files = files(3:end);
                 if ~isempty(files) %%% ensure that there are files in this subfolder
                     for j = 1:numel(files)
-                        if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
-                            FileName{end+1} = files(j).name;
-                            PathName{end+1} = [pathname filesep subdir(i).name];
+                        if ~( strcmp(files(j).name,'.') || strcmp(files(j).name,'..') )
+                            if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
+                                FileName{end+1} = files(j).name;
+                                PathName{end+1} = [pathname filesep subdir(i).name];
+                            end
                         end
                     end
                 end
