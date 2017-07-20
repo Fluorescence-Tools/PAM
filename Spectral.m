@@ -1630,7 +1630,6 @@ end
 %%% Plots phasor
 Plot_Spectral([],[],[1 4]);
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for phasor plot mouse-clicks
 function Phasor_Click(~,~,Key)
@@ -1837,7 +1836,7 @@ if all(Path==0)
 end
 
 for i=1:numel(Sel)
-    
+    %% Calculates the filtered data
     Full = uint16(squeeze(sum(SpectralData.Data,3)));
     
     switch mode
@@ -1845,8 +1844,7 @@ for i=1:numel(Sel)
             %%% Applies filter
             Filter = single(SpectralData.Filter(Sel(i)).Data);
             Stack = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
-            Stack = squeeze(sum(Stack,3));
-            
+            Stack = squeeze(sum(Stack,3));           
         case 2 %%% Apply pixel-by pixel filters
             %%% Initializes data cells
             Stack = zeros(size(SpectralData.Data,1),size(SpectralData.Data,2),size(SpectralData.Data,4));
@@ -1905,8 +1903,15 @@ for i=1:numel(Sel)
                         ROI = Data.*repmat(SpectralData.PhasorROI(:,:,j),1,1,size(SpectralData.Data,3));
                         ROI = squeeze(sum(sum(ROI,1),2));
                         
-                        Filter = Calc_Filter([],[],3,SpectralData.Filter(Sel(i)).Species,ROI);
-                        Filter = reshape(Filter(:,1),1,1,[],1);
+                        if numel(SpectralData.Filter(Sel(i)).Species)==1 && SpectralData.Filter(Sel(i)).Species ==1
+                            %%% Simple filter was used
+                            Filter = SpectralData.Filter(Sel(i)).Filter;
+                        else
+                            %%% Complex filter is recalculated for the data
+                            Filter = Calc_Filter([],[],3,SpectralData.Filter(Sel(i)).Species,ROI);
+                            Filter = reshape(Filter(:,1),1,1,[],1);
+                        end
+                        
                         Stack = Stack +... %%% Sumas up to average overlap
                             squeeze(sum(...
                             single(SpectralData.Data)... %%% Data
