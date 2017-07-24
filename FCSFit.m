@@ -1676,13 +1676,25 @@ for i=1:size(FCSMeta.Plots,1)
         XMin=find(FCSMeta.Data{i,1}>=str2double(h.Fit_Min.String),1,'first');
         XMax=find(FCSMeta.Data{i,1}<=str2double(h.Fit_Max.String),1,'last');
         if Normalization_Method ~= 7 && Normalization_Method ~= 3
-            %max(data+error bar)
-            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-            %min(data-error bar)
-            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            if Plot_Errorbars
+                %max(data+error bar)
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                %min(data-error bar)
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            else
+                %max(data)
+                YMax=max([YMax, max(FCSMeta.Data{i,2}(XMin:XMax))/B]);
+                %min(data)
+                YMin=min([YMin, min(FCSMeta.Data{i,2}(XMin:XMax))/B]);
+            end
         else % substract offset
-            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            if Plot_Errorbars
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            else
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
+            end
         end
         RMax=max([RMax, max(Residuals(XMin:XMax))]);
         RMin=min([RMin, min(Residuals(XMin:XMax))]);        
