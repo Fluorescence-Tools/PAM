@@ -166,12 +166,19 @@ switch mode
                 %%% Determines number of channels
                 C_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
                 N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
-            elseif numel(Sep) == 2 %%% Single Frame
+            elseif numel(Sep) == 2 %%% Single Frame or SIngle Channel
                 
-                N_F = 1;
-                %%% Determines number of channels
-                C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
-                N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
+                if isempty(strfind(Data{1,1}{1,2}(Sep(2):end),'C')) %%% Single Color
+                    %%% Determines number of channels
+                    F_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
+                    N_F = str2double(Data{1,1}{1,2}(Sep(2)+F_Sep:end));
+                    N_C  = 1;
+                else %%% Single Frame
+                    N_F = 1;
+                    %%% Determines number of channels
+                    C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
+                    N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
+                end
             else
                 msgbox('Inavalid data type')
                 return;
