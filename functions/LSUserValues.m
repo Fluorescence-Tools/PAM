@@ -325,6 +325,14 @@ if Mode==0 %%% Loads user values
         S.File.Custom_Filetype = 'none';
     end
     P.File.Custom_Filetype = S.File.Custom_Filetype;
+    
+    %%% Custom filetypes for MIA
+    if ~isfield(S.File, 'MIA_Custom_Filetype')
+        disp('WARNING: UserValues structure incomplete, field "MIA_Custom_Filetype" missing');
+        S.File.MIA_Custom_Filetype = 'none';
+    end
+    P.File.MIA_Custom_Filetype = S.File.MIA_Custom_Filetype;
+    
     %% Notepad - for GUI specific notes
     %%% Checks, if Notepad field exists
     if ~isfield(S, 'Notepad')

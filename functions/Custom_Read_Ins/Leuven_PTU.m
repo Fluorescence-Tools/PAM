@@ -154,5 +154,4 @@ else
     FileInfo.Lines=size(FileInfo.LineTimes,2);
 FileInfo.Pixels=FileInfo.Lines;
 end
-FileInfo.Lines=size(FileInfo.LineTimes,2);
-FileInfo.Pixels=FileInfo.Lines;
+
