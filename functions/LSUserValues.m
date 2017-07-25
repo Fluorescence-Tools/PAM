@@ -2308,6 +2308,19 @@ if Mode==0 %%% Loads user values
         S.MIA.AutoNames = 1;
     end
     P.MIA.AutoNames = S.MIA.AutoNames;
+    
+    %%% Custom Filetype settings
+    if ~isfield(S.MIA, 'Custom')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom" missing');
+        S.MIA.Custom = [];
+    end    
+    P.MIA.Custom = S.MIA.Custom;
+    
+    if ~isfield(S.MIA.Custom, 'Zeiss_CZI')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom.Zeiss_CZI" missing');
+        S.MIA.Custom.Zeiss_CZI = {'1','2'};
+    end
+    P.MIA.Custom.Zeiss_CZI = S.MIA.Custom.Zeiss_CZI;
 
     %% Trace
     if ~isfield(S, 'Trace')
