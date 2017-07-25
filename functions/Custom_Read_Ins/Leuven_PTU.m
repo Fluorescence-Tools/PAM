@@ -133,7 +133,6 @@ for i=1:numel(FileName)
         %%% Enables image plotting
         h.MT.Use_Image.Value = 1;
         h.MT.Use_Lifetime.Value = 1;
-        UserValues.Settings.Pam.Use_Lifetime = 1;
         UserValues.Settings.Pam.Use_Image = 1;
     else % point PTU data
         FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
@@ -167,6 +166,7 @@ else
     FileInfo.Lines=size(FileInfo.LineTimes,2);
 FileInfo.Pixels=FileInfo.Lines;
 end
-FileInfo.Lines=size(FileInfo.LineTimes,2);
-FileInfo.Pixels=FileInfo.Lines;
+
 LSUserValues(1);
+Calculate_Settings = PAM ('Calculate_Settings');
+Calculate_Settings(h.MT.Use_Image,[]);
