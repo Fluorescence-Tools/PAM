@@ -148,8 +148,8 @@ for i=1:6
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Image and Phasor display settings    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%% Image and Phasor display settings
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Image display panel
 h.Display_Panel = uibuttongroup(...
@@ -533,8 +533,21 @@ h.Save_Homo_Filter = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Callback', {@Save_Filtered,1},...
-    'Position',[0.02 0.22 0.46 0.12],...
+    'Position',[0.02 0.42 0.46 0.12],...
     'String','Save filtered data');
+
+%%% Button to save selected filters
+h.Save_Phasor_Filter = uicontrol(...
+    'Parent',h.SF_Tab,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',14,...
+    'HorizontalAlignment','center',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback', {@Save_Filtered,3},...
+    'Position',[0.02 0.22 0.46 0.12],...
+    'String','Save phasor resolved data');
 
 %%% Button to save selected filters
 h.Save_Hetero_Filter = uicontrol(...
@@ -734,7 +747,7 @@ switch mode
         %%%% version
         
         %% Get filenames
-        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        [FileName,Path,Type] = uigetfile({'*.czi','*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
@@ -748,27 +761,72 @@ switch mode
         LSUserValues(1);
         
         SpectralData.Data = [];
-        
-        %% Loads all frames
-        SpectralData.Data=uint16.empty(0,0,0);
-        for i=1:numel(FileName)
-            Info=imfinfo(fullfile(Path,FileName{i}));
-            
-            %%% Automatically updates image properties
-            TIFF_Handle = Tiff(fullfile(Path,FileName{i}),'r'); % Open tif reference
-            Frames = 1:numel(Info);
-            
-            for j=Frames
-                TIFF_Handle.setDirectory(j);
-                SpectralData.Data(:,:,end+1) = TIFF_Handle.read();
-            end
-            TIFF_Handle.close(); % Close tif reference
+        %% Loads Data
+        switch Type
+            case 1 %%% Zeiss CZI files
+                for i=1:numel(FileName)
+                    %%% Loads Data
+                    Data = bfopen(fullfile(Path,FileName{i}));
+                    
+                    %%% Finds positions of plane/channel/time seperators
+                    Sep = strfind(Data{1,1}{1,2},';');
+                    
+                    if numel(Sep) == 3 %%% Normal mode
+                        %%% Determines number of frames
+                        F_Sep = strfind(Data{1,1}{1,2}(Sep(3):end),'/');
+                        N_F = str2double(Data{1,1}{1,2}(Sep(3)+F_Sep:end));
+                        
+                        %%% Determines number of channels
+                        C_Sep = strfind(Data{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
+                        N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
+                    elseif numel(Sep) == 2 %%% Single Frame or Single Channel
+                        if ~isempty(strfind(Data{1,1}{1,2}(Sep(2):end),'C')) %%% Single Color
+                            %%% Determines number of channels
+                            C_Sep = strfind(Data{1,1}{1,2}(Sep(2):end),'/');
+                            N_C = str2double(Data{1,1}{1,2}(Sep(2)+C_Sep:end));
+                            N_F  = 1;
+                        else %%% Single Frame
+                            msgbox('Inavalid data type')
+                            return;
+                        end
+                    else
+                        msgbox('Inavalid data type')
+                        return;
+                    end
+                    
+                    for j=1:size(Data{1,1},1)
+                        %%% Current channel
+                        C = mod(j-1,N_C)+1;
+                        %%% Current frame
+                        F = floor((j-1)/N_C)+1;
+                        %%% Adds data
+                        SpectralData.Data(:,:,C,F) = uint16(Data{1,1}{j,1});
+                    end
+                end
+                
+            case 2 %%% Tiff based files created with simulations
+                SpectralData.Data=uint16.empty(0,0,0);
+                for i=1:numel(FileName)
+                    Info=imfinfo(fullfile(Path,FileName{i}));
+                    
+                    %%% Automatically updates image properties
+                    TIFF_Handle = Tiff(fullfile(Path,FileName{i}),'r'); % Open tif reference
+                    Frames = 1:numel(Info);
+                    
+                    for j=Frames
+                        TIFF_Handle.setDirectory(j);
+                        SpectralData.Data(:,:,end+1) = TIFF_Handle.read();
+                    end
+                    TIFF_Handle.close(); % Close tif reference
+                end
+                SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),30,[]);
         end
         
+        %% Calculates Metadata
         SpectralData.Path = Path;
         SpectralData.FileName = FileName{1};
         
-        SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),30,[]);
+        
         SpectralData.Int = squeeze(sum(double(sum(SpectralData.Data,3)),4));
         
         SpectralData.Species(1).Data = sum(sum(double(sum(SpectralData.Data,4)),2),1);
@@ -810,7 +868,7 @@ switch mode
         %%%% This is a test version and will be adjusted for the final
         %%%% version
         
-        [FileName,Path] = uigetfile({'*.tif'}, 'Load TIFF data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        [FileName,Path,Type] = uigetfile({'*.czi','*.tif'}, 'Load species data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
@@ -823,23 +881,64 @@ switch mode
             FileName={FileName};
         end
         
-        
         %% Loads all frames
         
         for i=1:numel(FileName)
-            Info=imfinfo(fullfile(Path,FileName{i}));
-            
-            %%% Automatically updates image properties
-            TIFF_Handle = Tiff(fullfile(Path,FileName{i}),'r'); % Open tif reference
-            Frames = 1:numel(Info);
-            Data=uint16.empty(0,0,0);
-            for j=Frames
-                TIFF_Handle.setDirectory(j);
-                Data(:,:,end+1) = TIFF_Handle.read();
+            switch Type
+                case 1 %%% Zeiss CZI data
+                    %%% Loads Data
+                    Data_Raw = bfopen(fullfile(Path,FileName{i}));
+                    
+                    %%% Finds positions of plane/channel/time seperators
+                    Sep = strfind(Data_Raw{1,1}{1,2},';');
+                    
+                    if numel(Sep) == 3 %%% Normal mode
+                        %%% Determines number of frames
+                        F_Sep = strfind(Data_Raw{1,1}{1,2}(Sep(3):end),'/');
+                        N_F = str2double(Data_Raw{1,1}{1,2}(Sep(3)+F_Sep:end));
+                        
+                        %%% Determines number of channels
+                        C_Sep = strfind(Data_Raw{1,1}{1,2}(Sep(2):(Sep(3)-1)),'/');
+                        N_C = str2double(Data_Raw{1,1}{1,2}(Sep(2)+C_Sep:(Sep(3)-1)));
+                    elseif numel(Sep) == 2 %%% Single Frame or Single Channel
+                        if ~isempty(strfind(Data_Raw{1,1}{1,2}(Sep(2):end),'C')) %%% Single Color
+                            %%% Determines number of channels
+                            C_Sep = strfind(Data_Raw{1,1}{1,2}(Sep(2):end),'/');
+                            N_C = str2double(Data_Raw{1,1}{1,2}(Sep(2)+C_Sep:end));
+                            N_F  = 1;
+                        else %%% Single Frame
+                            msgbox('Inavalid data type')
+                            return;
+                        end
+                    else
+                        msgbox('Inavalid data type')
+                        return;
+                    end
+                    
+                    Data = zeros(size(Data_Raw{1,1}{1,1},1),size(Data_Raw{1,1}{1,1},1),N_C,N_F,'uint16');
+                    for j=1:size(Data_Raw{1,1},1)
+                        %%% Current channel
+                        C = mod(j-1,N_C)+1;
+                        %%% Current frame
+                        F = floor((j-1)/N_C)+1;
+                        %%% Adds data
+                        Data(:,:,C,F) = uint16(Data_Raw{1,1}{j,1});
+                    end
+                case 2 %%% Tiff based data              
+                    Info=imfinfo(fullfile(Path,FileName{i}));
+                    
+                    %%% Automatically updates image properties
+                    TIFF_Handle = Tiff(fullfile(Path,FileName{i}),'r'); % Open tif reference
+                    Frames = 1:numel(Info);
+                    Data=uint16.empty(0,0,0);
+                    for j=Frames
+                        TIFF_Handle.setDirectory(j);
+                        Data(:,:,end+1) = TIFF_Handle.read();
+                    end
+                    TIFF_Handle.close(); % Close tif reference
+                    Data = reshape(Data,size(Data,1),size(Data,2),30,[]);
+                    
             end
-            TIFF_Handle.close(); % Close tif reference
-            Data = reshape(Data,size(Data,1),size(Data,2),30,[]);
-            
             SpectralData.Species(end+1).Data = reshape((sum(sum(sum(Data,4),2),1)),1,1,[],1);
             SpectralData.Species(end).Data = SpectralData.Species(end).Data./max(SpectralData.Species(end).Data(:));
             SpectralData.Species(end).Name = FileName{i}(1:end-4);
@@ -849,7 +948,7 @@ switch mode
             SpectralData.Species(end).Phasor(1) = sum(SpectralData.Species(end).Data.*G)/sum(SpectralData.Species(end).Data);
             SpectralData.Species(end).Phasor(2) = sum(SpectralData.Species(end).Data.*S)/sum(SpectralData.Species(end).Data);
             
-            h.Species_List.String{end+1} = SpectralData.Species(end).Name;     
+            h.Species_List.String{end+1} = SpectralData.Species(end).Name;
         end
         
         
@@ -972,7 +1071,7 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
                 Image(Mask>0) = Color(Mask>0);
             end
             
-        end 
+        end
         
     elseif ColormapMode == 4 %%% Plots up to three filters in RGB
         %%% Turns on image recalculation when variable filter is selected
@@ -1112,7 +1211,7 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
                 
                 %%% Plots Image
                 Image = repmat(Image,1,1,3);
-                Image(:,:,2) = Image_G;                
+                Image(:,:,2) = Image_G;
                 
             case 3 %%% Plots three channels in RGB
                 for i = 1:3
@@ -1176,18 +1275,18 @@ if any(mode == 1) && ~isempty(SpectralData.Data)
                 
                 %%% Plots Image
                 Image = repmat(Image,1,1,3);
-                Image(:,:,2) = Image_G; 
-                Image(:,:,1) = Image_R;  
+                Image(:,:,2) = Image_G;
+                Image(:,:,1) = Image_R;
         end
-
-    end
-        %%% Plots image and rescalses size
-        h.Spectral_Image.CData = Image;
-        h.Spectral_Image.CDataMapping = 'direct';
         
-        h.Image_Plot.XLim = [0.5 size(h.Spectral_Image.CData,2)+0.5];
-        h.Image_Plot.YLim = [0.5 size(h.Spectral_Image.CData,1)+0.5];
-
+    end
+    %%% Plots image and rescalses size
+    h.Spectral_Image.CData = Image;
+    h.Spectral_Image.CDataMapping = 'direct';
+    
+    h.Image_Plot.XLim = [0.5 size(h.Spectral_Image.CData,2)+0.5];
+    h.Image_Plot.YLim = [0.5 size(h.Spectral_Image.CData,1)+0.5];
+    
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1269,7 +1368,7 @@ if any(mode == 4) && ~isempty(SpectralData.Phasor)
             colormap(h.Phasor_Plot,'jet');
         case 3
             colormap(h.Phasor_Plot,'hot');
-    end  
+    end
 end
 
 guidata(h.SpectralImage,h);
@@ -1671,7 +1770,7 @@ h=guidata(findobj('Tag','SpectralImage'));
 %%% Checks, which mouse button was clicked
 Type=h.SpectralImage.SelectionType;
 if isempty(Key)
-    %% Normal mouse clicks    
+    %% Normal mouse clicks
     switch Type
         case 'normal' %%% Left mouse button
             %% Pans plot while holding left mouse button
@@ -1680,23 +1779,23 @@ if isempty(Key)
             %%% Disables further mouse click callbacks
             h.Phasor_Plot.ButtonDownFcn=[];
             %%% Changes mouse move callback to panning
-            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,2,Pos(1,1:2),[]};  
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,2,Pos(1,1:2),[]};
         case 'extend' %%% Middle mouse button\ left+right mouse buttons
             %% Resets limits by pressing middle mouse button
             h.Phasor_Plot.XLim=[-1.01 1.01];
-            h.Phasor_Plot.YLim=[-1.01 1.01];                     
+            h.Phasor_Plot.YLim=[-1.01 1.01];
     end
 elseif Key>0 && Key <=6
-   %% ROI selection mouse clicks
-   switch Type
-       case 'normal' %%% Rectangular ROI selection
-           h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
-           [h.Phasor_ROI(Key,:).Visible] = deal('off');
-           h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};          
-       case 'alt' %%% Ellipsoid ROI
-           [h.Phasor_ROI(Key,:).Visible] = deal('off');
-           h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
-   end
+    %% ROI selection mouse clicks
+    switch Type
+        case 'normal' %%% Rectangular ROI selection
+            h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
+            [h.Phasor_ROI(Key,:).Visible] = deal('off');
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
+        case 'alt' %%% Ellipsoid ROI
+            [h.Phasor_ROI(Key,:).Visible] = deal('off');
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1731,7 +1830,7 @@ if strcmp('SpectralImage',get(Fig,'Tag'))
         case 4 %%% Generates a rectangular ROI
             %%% Disables callback, to avoit multiple executions
             h.SpectralImage.WindowButtonMotionFcn=[];
-            %%% Resizes ROI rectangle         
+            %%% Resizes ROI rectangle
             h.Phasor_ROI(Key,1).Position=[min([Start(1) Pos(1)]),min([Start(2) Pos(2)]),abs(Start(1)-Pos(1)),abs(Start(2)-Pos(2))];
             
             %%% Make ROI rectangle visible
@@ -1741,7 +1840,7 @@ if strcmp('SpectralImage',get(Fig,'Tag'))
                 h.Phasor_ROI(Key,1).Visible='off';
             end
             %%% Enables callback
-            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,Start,Key}; 
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,4,Start,Key};
         case 5 %%% Generates a elliposidal ROI
             %%% Disables callback, to avoit multiple executions
             h.SpectralImage.WindowButtonMotionFcn=[];
@@ -1759,7 +1858,7 @@ if strcmp('SpectralImage',get(Fig,'Tag'))
                 x=cos(2*pi*(0:0.01:1));
                 y=sin(2*pi*(0:0.01:1));
                 x2=[];y2=[];
-               
+                
                 %%% Applies circle around each point on line
                 for i=1:Pixel
                     x2(end+1:end+numel(x))=round(Pixel*(Width*x+x1(i)));
@@ -1780,7 +1879,7 @@ if strcmp('SpectralImage',get(Fig,'Tag'))
                 %%% Transforms pixelmat to coordinates
                 [x,y]=find(Map2);
                 %%% Shifts coordinates to right position
-                x=(x+Xmin)/Pixel; 
+                x=(x+Xmin)/Pixel;
                 y=(y+Ymin)/Pixel;
                 %%% Updates ROI object
                 h.Phasor_ROI(Key,2).XData=[x(1:2:end); flipud(x(2:2:end)); x(1)];
@@ -1792,9 +1891,9 @@ if strcmp('SpectralImage',get(Fig,'Tag'))
                 %%% Hides ROI, if no ROI was selected
                 h.Phasor_ROI(Key,2).Visible='off';
             end
-            %%% Enables callback            
-            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,Start,Key}; 
-
+            %%% Enables callback
+            h.SpectralImage.WindowButtonMotionFcn={@Phasor_Move,5,Start,Key};
+            
     end
 end
 
@@ -1847,7 +1946,7 @@ h=guidata(Fig);
 %%% Sets standard mouse click callback (in case it was changed/disabled)
 h.Phasor_Plot.ButtonDownFcn={@Phasor_Click,[]};
 %%% Updates plot, if new ROI was selected
-if ~isempty(h.SpectralImage.WindowButtonMotionFcn) 
+if ~isempty(h.SpectralImage.WindowButtonMotionFcn)
     h.SpectralImage.Pointer='arrow';
     h.SpectralImage.WindowButtonMotionFcn={};
 end
@@ -1877,7 +1976,7 @@ for i=1:numel(Sel)
             %%% Applies filter
             Filter = single(SpectralData.Filter(Sel(i)).Data);
             Stack = single(SpectralData.Data) .* repmat(Filter, size(SpectralData.Data,1),size(SpectralData.Data,2), 1, size(SpectralData.Data,4));
-            Stack = squeeze(sum(Stack,3));           
+            Stack = squeeze(sum(Stack,3));
         case 2 %%% Apply pixel-by pixel filters
             %%% Initializes data cells
             Stack = zeros(size(SpectralData.Data,1),size(SpectralData.Data,2),size(SpectralData.Data,4));
@@ -1925,7 +2024,7 @@ for i=1:numel(Sel)
             if numel(SpectralData.Filter(Sel(i)).Species)>1
                 %%% Summs up all frames
                 Data = squeeze(double(sum(SpectralData.Data,4)));
-
+                
                 %%% Recalculates filter for each ROI
                 %%% This calculates the filters for each filter, although
                 %%% each one is used at least twice.
