@@ -747,7 +747,7 @@ switch mode
         %%%% version
         
         %% Get filenames
-        [FileName,Path,Type] = uigetfile({'*.czi','*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
@@ -819,7 +819,7 @@ switch mode
                     end
                     TIFF_Handle.close(); % Close tif reference
                 end
-                SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),30,[]);
+                SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),36,[]);
         end
         
         %% Calculates Metadata
@@ -868,7 +868,7 @@ switch mode
         %%%% This is a test version and will be adjusted for the final
         %%%% version
         
-        [FileName,Path,Type] = uigetfile({'*.czi','*.tif'}, 'Load species data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load species data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
         
         if all(Path==0)
             return
@@ -936,7 +936,7 @@ switch mode
                         Data(:,:,end+1) = TIFF_Handle.read();
                     end
                     TIFF_Handle.close(); % Close tif reference
-                    Data = reshape(Data,size(Data,1),size(Data,2),30,[]);
+                    Data = reshape(Data,size(Data,1),size(Data,2),36,[]);
                     
             end
             SpectralData.Species(end+1).Data = reshape((sum(sum(sum(Data,4),2),1)),1,1,[],1);
