@@ -1850,7 +1850,7 @@ for i=1:size(MIAFitMeta.Plots,1)
             end
         else
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)*B;
-            ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)*B;
+            ResidualsY = (MIAFitMeta.Plots{i,5}.YData-MIAFitMeta.Plots{i,6}.YData)*B;
             
             if h.Omit_Center.Value
                 ResidualsX((floor((X+1)/2))) = 0;
@@ -1892,21 +1892,21 @@ for i=1:size(MIAFitMeta.Plots,1)
              MIAFitMeta.Plots{i,3}.XData(floor((X+1)/2)) = [];
              MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)) = [];
              MIAFitMeta.Plots{i,4}.XData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,5}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,5}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.XData(floor((Y+1)/2)) = [];
              if isfield(MIAFitMeta.Plots{i,5}, 'YNegativeDelta')
-                 MIAFitMeta.Plots{i,5}.YNegativeDelta(floor((X+1)/2)) = [];
-                 MIAFitMeta.Plots{i,5}.YPositiveDelta(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.YNegativeDelta(floor((Y+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.YPositiveDelta(floor((Y+1)/2)) = [];
              else
-                 MIAFitMeta.Plots{i,5}.LData(floor((X+1)/2)) = [];
-                 MIAFitMeta.Plots{i,5}.UData(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.LData(floor((Y+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.UData(floor((Y+1)/2)) = [];
              end
-             MIAFitMeta.Plots{i,6}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,6}.XData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,7}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,7}.XData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,8}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,8}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,6}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,6}.XData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.XData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.XData(floor((Y+1)/2)) = [];
              
         end
         
