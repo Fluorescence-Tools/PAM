@@ -76,6 +76,12 @@ h.Mia_Load_Pam = uimenu(...
     'Label','...data from PAM',...
     'Callback',{@Mia_Load,2},...
     'Tag','Load_Mia_Pam');
+%%% Load custom data format
+h.Mia_Load_Custom = uimenu(...
+    'Parent',h.Mia_Load,...
+    'Label','...custom data format',...
+    'Callback',{@MIA_CustomFileType,2},...
+    'Tag','Load_Mia_Custom');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Panel for progressbar
@@ -1252,7 +1258,7 @@ h.Mia_Image.Settings.Correction_Add_Frames = uicontrol(...
 h.Mia_Image.Settings.Orientation_Tab= uitab(...
     'Parent',h.Mia_Image.Settings.Tabs,...
     'Tag','MI_Orientation_SettingsTab',...
-    'Title','Orientation');
+    'Title','Orientation & Type');
 h.Mia_Image.Settings.Orientation_Panel = uibuttongroup(...
     'Parent',h.Mia_Image.Settings.Orientation_Tab,...
     'Tag','Mia_Orientation_Settings_Panel',...
@@ -1267,11 +1273,11 @@ h.Text{end+1} = uicontrol(...
     'Parent',h.Mia_Image.Settings.Orientation_Panel,...
     'Style','text',...
     'Units','normalized',...
-    'FontSize',14,...
+    'FontSize',12,...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.9, 0.8 0.06],...
+    'Position',[0.02 0.9, 0.9 0.06],...
     'String','Change Orientation of Channel 2');
 %%% pushbutton for horizontal mirroring
 h.Mia_Image.Settings.Orientation_Flip_Hor = uicontrol(...
@@ -1309,6 +1315,7 @@ h.Mia_Image.Settings.Orientation_Rotate = uicontrol(...
     'Value',0,...
     'Position',[0.02 0.67, 0.47 0.06],...
     'String','Rotate');
+
 %%% Popupmenu for rotation direction
 h.Mia_Image.Settings.Orientation_Rotate_Dir = uicontrol(...
     'Parent',h.Mia_Image.Settings.Orientation_Panel,...
@@ -1324,6 +1331,59 @@ if ismac
     h.Mia_Image.Settings.Orientation_Rotate_Dir.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.Orientation_Rotate_Dir.BackgroundColor = [1 1 1];
 end
+
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',14,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.56, 0.9 0.06],...
+    'String','Custom Filtetype:');
+
+%%% Allows custom Filetype selection
+Customdir = [PathToApp filesep 'functions' filesep 'MIA' filesep 'ReadIN'];
+if ~(exist(Customdir,'dir') == 7)
+    mkdir(Customdir);
+end
+%%% Finds all matlab files in profiles directory
+Custom_Methods = what(Customdir);
+Custom_Methods = ['none'; Custom_Methods.m(:)];
+Custom_Value = 1;
+for i=2:numel(Custom_Methods)
+    Custom_Methods{i}=Custom_Methods{i}(1:end-2);
+    if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
+        Custom_Value = i;
+    end
+end
+
+%%% Popupmenu for rotation direction
+h.Mia_Image.Settings.FileType = uicontrol(...
+    'Parent',h.Mia_Image.Settings.Orientation_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String', Custom_Methods,...
+    'UserData',{[],[],[]},...
+    'Value',Custom_Value,...
+    'Callback',{@MIA_CustomFileType,1},...
+    'Position',[0.02 0.48, 0.41 0.05] );
+if ismac
+    h.Mia_Image.Settings.FileType.ForegroundColor = [0 0 0];
+    h.Mia_Image.Settings.FileType.BackgroundColor = [1 1 1];
+end
+MIA_CustomFileType(h.Mia_Image.Settings.FileType,[],1);
+h.Mia_Image.Settings.Custom = h.Mia_Image.Settings.FileType.UserData{3};
+%%% Creates objects for custom filetype settings
+
+
+
+
 %% Calculations tab container
 h.Mia_Image.Calculations_Panel = uibuttongroup(...
     'Parent',h.Mia_Image.Tab,...
@@ -4374,6 +4434,10 @@ for i=1:2
                 Filter=ones(Box)/prod(Box);
                 MIAData.Data{i,2}=MIAData.Data{i,2}-imfilter(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),Filter,'replicate');    
         end
+        
+        %%% Removes NaNs from file
+        %%% Sometimes happens with filtered data
+        MIAData.Data{i,2}(isnan(MIAData.Data{i,2})) = 0;
     end   
 end
 
@@ -6827,7 +6891,7 @@ if any(FileName~=0)
     else
         cmap=colormap(obj.Parent);
         r=cmap(:,1)*255; g=cmap(:,2)*255; b=cmap(:,3)*255;
-        CData = round(Image/max(Image(:))*(size(cmap,1)-1))+1;
+        CData = round((Image-min(Image(:)))/(max(Image(:))-min(Image(:)))*(size(cmap,1)-1))+1;
         Image(:,:,1) = reshape(r(CData),size(CData));
         Image(:,:,2) = reshape(g(CData),size(CData));
         Image(:,:,3) = reshape(b(CData),size(CData));
@@ -6841,3 +6905,71 @@ if any(FileName~=0)
     
     imwrite(uint8(Image),fullfile(PathName,FileName));
 end
+
+
+
+function MIA_CustomFileType(obj,~,mode)
+h = guidata(findobj('Tag','Mia'));
+global UserValues
+switch mode
+    case 1 %%% MIA is initialized or selection is changed
+        
+        %%% Clears previous custom file info
+        for i=numel(obj.UserData{3}):-1:1
+            %%% Deletes custom settings UIs
+            if isvalid(obj.UserData{3}(i))
+                delete(obj.UserData{3}(i));
+            end
+        end
+        obj.UserData = {[],[],[]};
+        
+        %%% Updates UserValues
+        UserValues.File.MIA_Custom_Filetype = obj.String(obj.Value);
+        LSUserValues(1);
+        
+        %%% Stops execution, if no custom file type was selected
+        if obj.Value == 1
+            return;
+        end
+        
+        %%% Retrieves the function handle of the custom filetype
+        Function = str2func(obj.String{obj.Value});
+        %%% Tells function to create settings UI
+        %%% Out: cell array containing:
+        %%% 1: File extension
+        %%% 2: File description
+        %%% 3: Settings object handels
+        %%% 4: Function handle
+        Out = Function(1);
+        Out{4} = Function;
+        %%% Stores custom filetype info
+        if isempty(h)
+            obj.UserData = Out;
+        else
+            obj.UserData = Out;
+            h.Mia_Image.Settings.Custom = Out{3};
+            guidata(h.Mia,h);
+        end
+
+        
+    case 2 %%% New data is loaded
+        %%% Stops execution for no selected custom filetype
+        if h.Mia_Image.Settings.FileType.Value == 1 
+           return; 
+        end
+        %%% Gets function handle
+        Function = h.Mia_Image.Settings.FileType.UserData{4};
+        %%% Executed data loading
+        Function(2);
+        
+        
+        Progress(1);
+        
+        %%% Updates plots
+        Mia_ROI([],[],1)
+
+
+end
+
+
+

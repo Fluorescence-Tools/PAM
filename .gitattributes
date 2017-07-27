@@ -26,3 +26,4 @@
 *.fig binary
 *.doctree binary
 *.pptx binary
+*.jar binary

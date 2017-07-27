@@ -259,6 +259,11 @@ if Mode==0 %%% Loads user values
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
     
+    if ~isfield(S.File,'Spectral_Standard')
+        S.File.Spectral_Standard=[];
+    end
+    P.File.Spectral_Standard = S.File.Spectral_Standard;
+    
     %%% substructure to save file histories
     if ~isfield(S.File,'FileHistory')
         S.File.FileHistory=[];
@@ -320,6 +325,14 @@ if Mode==0 %%% Loads user values
         S.File.Custom_Filetype = 'none';
     end
     P.File.Custom_Filetype = S.File.Custom_Filetype;
+    
+    %%% Custom filetypes for MIA
+    if ~isfield(S.File, 'MIA_Custom_Filetype')
+        disp('WARNING: UserValues structure incomplete, field "MIA_Custom_Filetype" missing');
+        S.File.MIA_Custom_Filetype = 'none';
+    end
+    P.File.MIA_Custom_Filetype = S.File.MIA_Custom_Filetype;
+    
     %% Notepad - for GUI specific notes
     %%% Checks, if Notepad field exists
     if ~isfield(S, 'Notepad')
@@ -2295,6 +2308,19 @@ if Mode==0 %%% Loads user values
         S.MIA.AutoNames = 1;
     end
     P.MIA.AutoNames = S.MIA.AutoNames;
+    
+    %%% Custom Filetype settings
+    if ~isfield(S.MIA, 'Custom')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom" missing');
+        S.MIA.Custom = [];
+    end    
+    P.MIA.Custom = S.MIA.Custom;
+    
+    if ~isfield(S.MIA.Custom, 'Zeiss_CZI')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom.Zeiss_CZI" missing');
+        S.MIA.Custom.Zeiss_CZI = {'1','2'};
+    end
+    P.MIA.Custom.Zeiss_CZI = S.MIA.Custom.Zeiss_CZI;
 
     %% Trace
     if ~isfield(S, 'Trace')
@@ -2314,6 +2340,10 @@ if Mode==0 %%% Loads user values
         S.Trace.AccPar = 1;
     end
     P.Trace.AccPar = S.Trace.AccPar;
+    
+    %% Spectral
+    
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
