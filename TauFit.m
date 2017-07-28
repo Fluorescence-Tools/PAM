@@ -4583,6 +4583,10 @@ switch TauFitData.BAMethod
         Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
         idx_tauGG = strcmp('Lifetime D [ns]',BurstData.NameArray);
         idx_tauRR = strcmp('Lifetime A [ns]',BurstData.NameArray);
+        if (sum(idx_tauGG)==0)
+            idx_tauGG = strcmp('Lifetime GG [ns]',BurstData.NameArray);
+            idx_tauRR = strcmp('Lifetime RR [ns]',BurstData.NameArray);
+        end
         % will be zeros if lifetime is not included
         if UserValues.TauFit.IncludeChannel(1)
             BurstData.DataArray(:,idx_tauGG) = lifetime(:,1);
