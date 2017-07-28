@@ -6548,7 +6548,9 @@ else
 end
 
 % Update no. bursts
-set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts (' num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts, '...
+                                num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,14)*10)/10) ' /s ('...
+                                num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
 if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
