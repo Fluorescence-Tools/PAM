@@ -2709,6 +2709,9 @@ else
                 % get parameter names in correct order
                 param_names = repmat(h.FitTab.Table.ColumnName(2:3:end-1)',size(PDAMeta.FitParams,1),1);
                 param_names = cellfun(@(x) x(11:end-4),param_names,'UniformOutput',false);
+                if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1   
+                    param_names = [param_names repmat({'sigmaF'},size(param_names,1),1)];
+                end
                 names = param_names(1,PDAMeta.Global); 
                 if UserValues.PDA.HalfGlobal
                     % put the half-globally linked parameter after the global ones
@@ -2767,10 +2770,10 @@ else
 end
 % make confidence intervals available in base workspace
 if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
-    assignin('base','ConfInt_Jac',PDAMeta.ConfInt_Jac);
+    assignin('base','ConfInt_Jac',[fitpar' PDAMeta.ConfInt_Jac']);
     if obj == h.Menu.EstimateErrorMCMC
-        assignin('base','ConfInt_MCMC',PDAMeta.ConfInt_MCMC);
-        assignin('base','MCMC_mean',PDAMeta.MCMC_mean);
+        assignin('base','ConfInt_MCMC',[fitpar' PDAMeta.ConfInt_MCMC']);
+        assignin('base','MCMC_mean',[fitpar' PDAMeta.MCMC_mean']);
     end
 end
     
