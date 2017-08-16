@@ -13789,7 +13789,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
@@ -13859,7 +13859,7 @@ switch obj
             end
         end
         delete(axes_copy.Children(del));
-        if strcmp(axes_copy.Children(end-1).Visible,'on') || (h.MultiselectOnCheckbox.UserData && strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter'))
+        if (h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)
             %%% Multiplot is used (first stair plot is visible)
             %%% delete all invisible plots
             del = false(numel(axes_copy.Children),1);
