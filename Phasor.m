@@ -3110,9 +3110,9 @@ for i=Images %%% Plots Phasor Data
                 case 3
                     FractionColor=[0 0 0; hsv(32)];
                 case 4
-                    FractionColor(1:17,1) = [0; linspace(0,1,16)';ones(16,1) ];
-                    FractionColor(1:17,2) = [0; ones(18,1); linspace(1,0,16)'];
-                    FractionColor(1:17,3) = zeros(33,1);
+                    FractionColor(:,1) = [0; linspace(0,1,16)';ones(16,1) ];
+                    FractionColor(:,2) = [0; ones(16,1); linspace(1,0,16)'];
+                    FractionColor(:,3) = zeros(33,1);
                 case 5
                     if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
                         FractionColor=[0 0 0; Phasor_Colormap];
@@ -3156,8 +3156,8 @@ for i=Images %%% Plots Phasor Data
             
             %%% Removes pixels below threshold
             ROI=roi>0 &...
-                PhasorData.Data{PhasorData.Plot(PhasorData.Plot(i))}.Intensity >= THmin &...
-                PhasorData.Data{PhasorData.Plot(PhasorData.Plot(i))}.Intensity <= THmax;
+                PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
+                PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;
             ROI=repmat(ROI,[1 1 3]);
             Mask=reshape(FractionColor(roi+1,:),size(Image));
 
