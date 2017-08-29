@@ -698,6 +698,7 @@ SpectralData.Phasor = [];
 SpectralData.PhasorROI = [];
 SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)},'Phasor',[0 0]);
 SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1);
+SpectralData.Meta = [];
 
 h.SpeciesPlots = [];
 h.SpeciesPhasor = [];
@@ -761,6 +762,7 @@ switch mode
         LSUserValues(1);
         
         SpectralData.Data = [];
+        SpectralData.Meta = [];
         %% Loads Data
         switch Type
             case 1 %%% Zeiss CZI files
@@ -768,6 +770,28 @@ switch mode
                 for i=1:numel(FileName)
                     %%% Loads Data
                     Data = bfopen(fullfile(Path,FileName{i}));
+                    
+                    %%% Reads MetaData
+                    FileInfo  = czifinfo(fullfile(Path,FileName{i}));
+                    Info = FileInfo.metadataXML;
+                    
+                    %%%FrameTime
+                    Start = strfind(Info,'<FrameTime>');
+                    Stop = strfind(Info,'</FrameTime>');
+                    SpectralData.Meta.Frame = Info(Start+11:Stop-1);
+                    %%%LineTime => seems to be off, so I don't read it in
+                    %             Start = strfind(Info,'<LineTime>');
+                    %             Stop = strfind(Info,'</LineTime>');
+                    %             h.Mia_Image.Settings.Image_Line.String = Info(Start+10:Stop-1);
+                    %             h.Mia_ICS.Fit_Table.Data(15,:) = {Info(Start+10:Stop-1);};
+                    %%%PixelTime
+                    Start = strfind(Info,'<PixelTime>');
+                    Stop = strfind(Info,'</PixelTime>');
+                    PixelTime = str2double(Info(Start+11:Stop-1))*10^6;
+                    SpectralData.Meta.Pixel = num2str(PixelTime);
+
+                    SpectralData.Meta.Line = '3';
+                    SpectralData.Meta.Size = '50.2';
                     
                     %%% Finds positions of plane/channel/time seperators
                     Sep = strfind(Data{1,1}{1,2},';');
@@ -883,8 +907,8 @@ switch mode
             FileName={FileName};
         end
         
+        SpectralData.Meta = [];
         %% Loads all frames
-        
         for i=1:numel(FileName)
             switch Type
                 case 1 %%% Zeiss CZI data
@@ -2089,13 +2113,26 @@ for i=1:numel(Sel)
     Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
     Tagstruct.SamplesPerPixel = 1;
     Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-    Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
-        'FrameTime [s]: 0.1 \n',...
-        'LineTime [ms]: 1 \n',...
-        'PixelTime [us]: 10 \n',...
-        'PixelSize [nm]: 50 \n',...
-        'RLICS_Scale: ' num2str(Max-Min) '\n',...
-        'RLICS_Offset: ' num2str(Min) '\n'];
+    
+    %%% Write image information into TIFF header
+    if isempty (SpectralData.Meta)
+        Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
+            'FrameTime [s]: 0.1 \n',...
+            'LineTime [ms]: 1 \n',...
+            'PixelTime [us]: 10 \n',...
+            'PixelSize [nm]: 50 \n',...
+            'RLICS_Scale: ' num2str(Max-Min) '\n',...
+            'RLICS_Offset: ' num2str(Min) '\n'];
+    else
+        Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
+            'FrameTime [s]: ' SpectralData.Meta.Frame '\n',...
+            'LineTime [ms]: ' SpectralData.Meta.Line '\n',...
+            'PixelTime [us]: ' SpectralData.Meta.Pixel '\n',...
+            'PixelSize [nm]: ' SpectralData.Meta.Size '\n',...
+            'RLICS_Scale: ' num2str(Max-Min) '\n',...
+            'RLICS_Offset: ' num2str(Min) '\n'];        
+    end
+    
     TIFF_handle = Tiff(File, 'w');
     TIFF_handle.setTag(Tagstruct);
     

@@ -153,6 +153,28 @@ switch mode
             MIAData.FileName{2}{i}=FileName{i};
             
             %javaaddpath(fullfile(pwd,'functions','bfmatlab','bioformats_package.jar'));
+            
+            %%% Reads MetaData
+            FileInfo  = czifinfo(fullfile(Path,FileName{i}));
+            Info = FileInfo.metadataXML;
+            
+            %%%FrameTime
+            Start = strfind(Info,'<FrameTime>');
+            Stop = strfind(Info,'</FrameTime>');            
+            h.Mia_Image.Settings.Image_Frame.String = Info(Start+11:Stop-1);
+            %%%LineTime => seems to be off, so I don't read it in
+%             Start = strfind(Info,'<LineTime>');
+%             Stop = strfind(Info,'</LineTime>');            
+%             h.Mia_Image.Settings.Image_Line.String = Info(Start+10:Stop-1);
+%             h.Mia_ICS.Fit_Table.Data(15,:) = {Info(Start+10:Stop-1);};
+            %%%PixelTime
+            Start = strfind(Info,'<PixelTime>');
+            Stop = strfind(Info,'</PixelTime>');  
+            PixelTime = str2double(Info(Start+11:Stop-1))*10^6;
+            h.Mia_Image.Settings.Image_Pixel.String = num2str(PixelTime);
+            h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(PixelTime)};
+                        
+            
             Data = bfopen(fullfile(Path,FileName{i}));
             
             %%% Finds positions of plane/channel/time seperators
