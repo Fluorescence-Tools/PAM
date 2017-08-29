@@ -80,7 +80,7 @@ h.Mia_Load_Pam = uimenu(...
 h.Mia_Load_Custom = uimenu(...
     'Parent',h.Mia_Load,...
     'Label','...custom data format',...
-    'Callback',{@MIA_CustomFileType,2},...
+    'Callback',{@Mia_Load,3},...
     'Tag','Load_Mia_Custom');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2970,6 +2970,9 @@ switch mode
             
             TIFF_Handle = Tiff(fullfile(Path1,FileName1{i}),'r'); % Open tif reference
             
+            %%% If RLICS or RSICS was used, the data contains the
+            %%% unfiltered data first. MIA can load the unfiltere or the
+            %%% filtered data
             if isempty(MIAData.RLICS) 
                 Frames = 1:numel(Info);
             elseif ~isempty(MIAData.RLICS) && mode==1
@@ -2986,13 +2989,15 @@ switch mode
                         h.Mia_Progress_Text,...
                         ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName1)) ' for Channel 1']);
                 end
+                %%% Reads the actual data
                 TIFF_Handle.setDirectory(j);
                 MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
+                %%% Adjusts range for RLICS and RSICS data
+                if ~isempty(MIAData.RLICS) && mode==1.5
+                    MIAData.Data{1,1}(:,:,end)=single(MIAData.Data{1,1}(:,:,end))/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
+                end
             end
             TIFF_Handle.close(); % Close tif reference   
-        end
-        if ~isempty(MIAData.RLICS) && mode==1.5
-            MIAData.Data{1,1}=single(MIAData.Data{1,1})/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
         end
         %% Updates frame settings for channel 1
         %%% Unlinks framses
@@ -3009,7 +3014,7 @@ switch mode
         h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
         h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
-        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=1;  
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;  
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
         MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
         %% Stops function, if only one channel was loaded and clear channel 2
@@ -3069,15 +3074,15 @@ switch mode
                 end
                 TIFF_Handle.setDirectory(j);
                 MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
+                %%% Adjusts for RLICS and RSICS range
+                MIAData.Data{2,1}(:,:,end)=single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
             end
         end
-        if ~isempty(MIAData.RLICS) && mode==1.5 && size(MIAData.RLICS,1)==2
-            MIAData.Data{2,1}=single(MIAData.Data{2,1})/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
-        end
+
         %%% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
-        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=0;
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=0;
         h.Plots.ROI(2).Position=[10 10 200 200];
         h.Plots.ROI(4).Position=[10 10 200 200];
@@ -3215,7 +3220,7 @@ switch mode
         h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
         h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
-        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
         MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
         %% Stops function, if only one channel was loaded and clear channel 2
@@ -3272,7 +3277,7 @@ switch mode
         %% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
-        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=0;
         h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=0;
         h.Plots.ROI(2).Position=[10 10 200 200];       
         
@@ -3290,6 +3295,9 @@ switch mode
         Progress(1);  
         %%% Updates plots
         Mia_ROI([],[],1)
+        
+    case 3 %%% Loads custom data formats
+        MIA_CustomFileType([],[],2);
               
 end
 
@@ -6907,7 +6915,9 @@ if any(FileName~=0)
 end
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Function for exporting various things %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function MIA_CustomFileType(obj,~,mode)
 h = guidata(findobj('Tag','Mia'));
 global UserValues
@@ -6950,8 +6960,7 @@ switch mode
             h.Mia_Image.Settings.Custom = Out{3};
             guidata(h.Mia,h);
         end
-
-        
+       
     case 2 %%% New data is loaded
         %%% Stops execution for no selected custom filetype
         if h.Mia_Image.Settings.FileType.Value == 1 

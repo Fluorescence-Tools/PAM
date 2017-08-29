@@ -150,6 +150,7 @@ switch mode
             h.Mia_ICS.Fit_Table.Data(11,:) = {'50'};
             
             MIAData.FileName{1}{i}=FileName{i};
+            MIAData.FileName{2}{i}=FileName{i};
             
             %javaaddpath(fullfile(pwd,'functions','bfmatlab','bioformats_package.jar'));
             Data = bfopen(fullfile(Path,FileName{i}));
@@ -221,7 +222,7 @@ switch mode
         h.Mia_Image.Settings.Channel_Frame_Slider(1).SliderStep=[1./size(MIAData.Data{1,1},3),10/size(MIAData.Data{1,1},3)];
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Max=size(MIAData.Data{1,1},3);
         h.Mia_Image.Settings.ROI_Frames.String=['1:' num2str(size(MIAData.Data{1,1},3))];
-        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=1;
+        h.Mia_Image.Settings.Channel_Frame_Slider(1).Value=0;
         h.Mia_Image.Settings.Channel_Frame_Slider(1).Min=0;
         MIAData.Use=ones(2,size(MIAData.Data{1,1},3));
         
@@ -229,7 +230,7 @@ switch mode
             %%% Updates frame settings for channel 2
             h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
             h.Mia_Image.Settings.Channel_Frame_Slider(2).Max=size(MIAData.Data{2,1},3);
-            h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=1;
+            h.Mia_Image.Settings.Channel_Frame_Slider(2).Value=0;
             h.Mia_Image.Settings.Channel_Frame_Slider(2).Min=0;
             h.Plots.ROI(2).Position=[10 10 200 200];
             h.Plots.ROI(4).Position=[10 10 200 200];
