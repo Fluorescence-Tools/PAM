@@ -764,6 +764,7 @@ switch mode
         %% Loads Data
         switch Type
             case 1 %%% Zeiss CZI files
+                Frame=0;
                 for i=1:numel(FileName)
                     %%% Loads Data
                     Data = bfopen(fullfile(Path,FileName{i}));
@@ -800,8 +801,9 @@ switch mode
                         %%% Current frame
                         F = floor((j-1)/N_C)+1;
                         %%% Adds data
-                        SpectralData.Data(:,:,C,F) = uint16(Data{1,1}{j,1});
+                        SpectralData.Data(:,:,C,F+Frame) = uint16(Data{1,1}{j,1});
                     end
+                    Frame = size(SpectralData.Data,4);
                 end
                 
             case 2 %%% Tiff based files created with simulations
@@ -1357,6 +1359,7 @@ if any(mode == 4) && ~isempty(SpectralData.Phasor)
     
     %%% Plots phasor histogram
     h.Phasor_Image.CData = SpectralData.Phasor;
+    h.Phasor_Image.CDataMapping = 'scaled'; 
     h.Phasor_Image.XData = linspace(-1, 1, 200);
     h.Phasor_Image.YData = linspace(-1, 1, 200);
     h.Phasor_Image.AlphaData = SpectralData.Phasor>0;
