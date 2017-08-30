@@ -228,10 +228,10 @@ h.Plots.Int(2,2) = line(...
     'Color',[1 0 0]);
 
 h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
-h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Counts';
+h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Countsrate [kHz]';
 h.Mia_Image.Intensity_Axes.XLabel.Color = Look.Fore;
 h.Mia_Image.Intensity_Axes.YLabel.Color = Look.Fore;
-h.Mia_Image.Intensity_Axes.YLabel.UserData = 0;
+h.Mia_Image.Intensity_Axes.YLabel.UserData = 1;
 h.Mia_Image.Intensity_Axes.YLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
 h.Mia_Image.Intensity_Axes.XLabel.UserData = 1;
 h.Mia_Image.Intensity_Axes.XLabel.ButtonDownFcn = {@MIA_Various,[1 2]};
@@ -668,7 +668,7 @@ h.Mia_Image.Settings.Image_Frame = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Update_Plots, [5 6],1:3},...
+    'Callback',{@Update_Plots, [4 5 6],1:3},...
     'Position',[0.45 0.92, 0.2 0.06],...
     'String','1');
 %%% Text
@@ -3825,8 +3825,17 @@ if any(mode==4)
         h.Plots.PCH(1,2).YData = [0 0];
     else
         %% Updates Intensity and PCH plots on Image Tab
-        h.Plots.Int(1,1).XData = 1:size(MIAData.Data{1,1},3);
-        h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
+        if h.Mia_Image.Intensity_Axes.XLabel.UserData == 0
+            h.Plots.Int(1,1).XData = (1:size(MIAData.Data{1,1},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            h.Plots.Int(1,2).XData = (1:size(MIAData.Data{1,1},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            h.Mia_Image.Intensity_Axes.XLabel.String = 'Time [s]';
+        else
+            h.Plots.Int(1,1).XData = 1:size(MIAData.Data{1,1},3);
+            h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
+            h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
+        end
+        h.Mia_Image.Intensity_Axes.XLim = h.Plots.Int(1,1).XData([1 end]);
+        
         
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
             h.Plots.Int(1,1).YData = mean(mean(MIAData.Data{1,1},2),1);
@@ -3859,7 +3868,7 @@ if any(mode==4)
             h.Plots.PCH(1,2).XData = 0:Max;
             
             h.Plots.PCH(1,2).YData = histc(MIAData.Data{1,2}(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3))), 0:Max);
-            if h.Mia_Image.PCH_Axes.YLabel.UserData == 0;
+            if h.Mia_Image.PCH_Axes.YLabel.UserData == 0
                 h.Mia_Image.PCH_Axes.YScale = 'Lin';
             else
                 h.Mia_Image.PCH_Axes.YScale = 'Log';
@@ -3963,8 +3972,16 @@ if any(mode==4)
         h.Plots.PCH(2,2).Visible = 'off';
     else
         %% Updates Intensity and PCH plots on Image Tab
-        h.Plots.Int(2,1).XData = 1:size(MIAData.Data{2,1},3);
-        h.Plots.Int(2,2).XData = 1:size(MIAData.Data{2,2},3);
+        %% Updates Intensity and PCH plots on Image Tab
+        if h.Mia_Image.Intensity_Axes.XLabel.UserData == 0
+            h.Plots.Int(2,1).XData = (1:size(MIAData.Data{2,1},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            h.Plots.Int(2,2).XData = (1:size(MIAData.Data{2,1},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
+            h.Mia_Image.Intensity_Axes.XLabel.String = 'Time [s]';
+        else
+            h.Plots.Int(2,1).XData = 1:size(MIAData.Data{2,1},3);
+            h.Plots.Int(2,2).XData = 1:size(MIAData.Data{2,2},3);
+            h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
+        end
         h.Plots.Int(2,1).Visible = 'on';
         h.Plots.Int(2,2).Visible = 'on';
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
