@@ -405,6 +405,17 @@ h.Phasor_TH{2} = uicontrol(...
     'Callback',{@Calculate_Phasor},...
     'String','0');
 
+h.Phasor_Save = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.27 0.18 0.06],...
+    'Callback',{@Save_Phasor},...
+    'String','Save Phasor');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Tabs for Species and Filters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2212,6 +2223,35 @@ drawnow;
 
 
 
+function Save_Phasor(~,~)
+h = guidata(findobj('Tag','SpectralImage'));
+global SpectralData UserValues
 
+PathName = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
+if all(PathName==0)
+    return;
+end
+
+FileName = [SpectralData.FileName(1:end-4) '.phs'];
+
+%%% Creates data to save and saves referenced file
+Freq = size(SpectralData.Data,3);
+FileNames = SpectralData.FileName;
+Path = SpectralData.Path;
+Imagetime = 1;
+Frames = size(SpectralData.Data,4);
+Lines = size(SpectralData.Data,1);
+Pixels = size(SpectralData.Data,2);
+Fi = atan(SpectralData.S./SpectralData.G); Fi(isnan(Fi))=0;
+M = sqrt(SpectralData.S.^2+SpectralData.G.^2); M(isnan(M))=0;
+TauP = zeros(size(SpectralData.S));
+TauM = zeros(size(SpectralData.S));
+Type = 10;
+Mean_LT = squeeze(mean(sum(SpectralData.Data,4),3));
+
+g=SpectralData.G;
+s=SpectralData.S;
+Intensity =squeeze(sum(sum(SpectralData.Data,3),4));
+save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
 
 

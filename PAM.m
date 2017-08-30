@@ -6751,7 +6751,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.g=squeeze(sum(g.*Intensity,3)./sum(Intensity,3));
         PamMeta.s=squeeze(sum(s.*Intensity,3)./sum(Intensity,3));
         PamMeta.Fi=atan(PamMeta.s./PamMeta.g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
-        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
+        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
         PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
         PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
         

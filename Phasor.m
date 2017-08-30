@@ -1677,6 +1677,7 @@ PhasorData.Plot=zeros(10,1);
 PhasorData.PlotType=0;
 PhasorData.Timer=cputime;
 PhasorData.Selected_Region=[];
+PhasorData.Type = 1;
 
 %%% Applies ROI settings to ROIS
 for i=1:6
@@ -1812,7 +1813,7 @@ global PhasorData UserValues
 LSUserValues(0);
 
 %%% Choose files to load
-[FileName,PathName] = uigetfile({'*.phr'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'on');
+[FileName,PathName,Type] = uigetfile({'*.phr'; '*.phs'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'on');
 %%% Tranforms to cell array, if only one file was selected
 if ~iscell(FileName)
     FileName = {FileName};
@@ -1824,6 +1825,28 @@ end
 %%% Saves Path
 UserValues.File.PhasorPath=PathName;
 LSUserValues(1);
+
+%%% Removes Lifetime/Spectral data if the other was loaded
+if PhasorData.Type ~= Type
+    PhasorData.Data=[];
+    PhasorData.Files={};
+    PhasorData.List={};
+    PhasorData.Selected=[];
+    PhasorData.Plot=zeros(10,1);
+    PhasorData.PlotType=0;
+    PhasorData.Timer=cputime;
+    PhasorData.Selected_Region=[];
+    PhasorData.Type = Type;
+    switch PhasorData.Type
+        case 1
+            h.Phasor_Plot.XLim = [-0.1 1.2];
+            h.Phasor_Plot.YLim = [-0.1 1.2];
+        case 2
+            h.Phasor_Plot.XLim = [-1 1];
+            h.Phasor_Plot.YLim = [-1 1];
+    end
+end
+
 free=[];
 for i=1:numel(FileName)
     %%% Loades Data
@@ -2978,26 +3001,52 @@ if Main
         end
     end
     %%%% Removes all pixels oudside of reasonable bounds
-    s=s(g>-0.1); g=g(g>-0.1);
-    s=s(g<=1.2); g=g(g<=1.2);
-    g=g(s>-0.1); s=s(s>-0.1);
-    g=g(s<=1.2); s=s(s<=1.2);
+    switch PhasorData.Type
+        case 1 %%% Lifetime Data
+            s=s(g>-0.1); g=g(g>-0.1);
+            s=s(g<=1.2); g=g(g<=1.2);
+            g=g(s>-0.1); s=s(s>-0.1);
+            g=g(s<=1.2); s=s(s<=1.2);
+        case 2 %%% Spectral Data
+            s=s(g>-1); g=g(g>-1);
+            s=s(g<=1); g=g(g<=1);
+            g=g(s>-1); s=s(s>-1);
+            g=g(s<=1); s=s(s<=1);            
+    end
     %%% Removes all pixel at (0,0) (usually NaN)
     NaNs=~(s==0 & g==0);
     g=g(NaNs); s=s(NaNs);
-    
-    
+      
     if ~isempty(g)
         %%% Histograms phasor plot
-        g=floor(Pixel*(g+0.1));
-        s=floor(Pixel*(s+0.1));
-        Hist=g+1.3*Pixel*s;
-        Phasor=histc(Hist,0:((1.3*Pixel)^2-1));
-        %%% Applies colormap to phasor
-        Phasor=ceil(128*Phasor/max(Phasor)+1);
-        PhasorImage=reshape(PhasorColor(Phasor,:),1.3*Pixel,1.3*Pixel,3);
+        switch PhasorData.Type
+            case 1 %%% Lifetime Data
+                g=floor(Pixel*(g+0.1));
+                s=floor(Pixel*(s+0.1));
+                Hist=g+1.3*Pixel*s;
+                Phasor=histc(Hist,0:((1.3*Pixel)^2-1));
+                %%% Applies colormap to phasor
+                Phasor=ceil(128*Phasor/max(Phasor)+1);
+                PhasorImage=reshape(PhasorColor(Phasor,:),1.3*Pixel,1.3*Pixel,3);
+                h.Phasor_Hist.XData = linspace(-0.1,1.2,size(PhasorImage,2));
+                h.Phasor_Hist.YData = linspace(-0.1,1.2,size(PhasorImage,1));
+                h.Universal_Circle.XData = 0:0.01:1;
+                h.Universal_Circle.YData = sqrt((0:0.01:1)-(0:0.01:1).^2);
+            case 2 %%% Spectral Data
+                g=floor(Pixel*(g+1)/2);
+                s=floor(Pixel*(s+1)/2);
+                Hist=g+Pixel*s;
+                Phasor=histcounts(Hist,0:(Pixel)^2);
+                %%% Applies colormap to phasor
+                Phasor=ceil(128*Phasor/max(Phasor)+1);
+                PhasorImage=reshape(PhasorColor(Phasor,:),Pixel,Pixel,3);
+                h.Phasor_Hist.XData = linspace(-1,1,size(PhasorImage,2));
+                h.Phasor_Hist.YData = linspace(-1,1,size(PhasorImage,1));
+                h.Universal_Circle.XData = [-1:0.01:1, 1:-0.01:-1];
+                h.Universal_Circle.YData = [sqrt(1-(-1:0.01:1).^2), -sqrt(1-(1:-0.01:-1).^2)];
+        end
         %%% Updates phasor plot
-        h.Phasor_Hist.CData=permute(PhasorImage,[2 1 3]);
+        h.Phasor_Hist.CData=permute(PhasorImage,[2 1 3]); 
     end
     
 end
