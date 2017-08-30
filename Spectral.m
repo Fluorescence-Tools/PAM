@@ -786,7 +786,7 @@ switch mode
             return
         end
         %%% Updates Progressbar
-        h.Spectral_Progress_Axes.Color = [1 0 0];
+        %h.Spectral_Progress_Axes.Color = [1 0 0];
         h.Spectral_Progress_Text.String = 'Loading Data';
         drawnow;
         
@@ -805,8 +805,8 @@ switch mode
                 Frame=0;
                 for i=1:numel(FileName)
                     %%% Loads Data
-                    Data = bfopen(fullfile(Path,FileName{i}));
-                    
+                    Data = bfopen(fullfile(Path,FileName{i}),h.Spectral_Progress_Axes,h.Spectral_Progress_Text,i,numel(FileName));
+                    h.Spectral_Progress_Text.String = 'Updating MetaData';
                     %%% Reads MetaData
                     FileInfo  = czifinfo(fullfile(Path,FileName{i}));
                     Info = FileInfo.metadataXML;
@@ -884,6 +884,7 @@ switch mode
                 SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),36,[]);
         end
         
+        h.Spectral_Progress_Text.String = 'Updating MetaData';
         %% Calculates Metadata
         SpectralData.Path = Path;
         SpectralData.FileName = FileName{1};
@@ -936,7 +937,6 @@ switch mode
             return
         end
         %%% Updates Progressbar
-        h.Spectral_Progress_Axes.Color = [1 0 0];
         h.Spectral_Progress_Text.String = 'Loading Species';
         drawnow;
         
@@ -954,8 +954,9 @@ switch mode
             switch Type
                 case 1 %%% Zeiss CZI data
                     %%% Loads Data
-                    Data_Raw = bfopen(fullfile(Path,FileName{i}));
-                    
+                    Data_Raw = bfopen(fullfile(Path,FileName{i}),h.Spectral_Progress_Axes,h.Spectral_Progress_Text,i,numel(FileName));
+                    h.Spectral_Progress_Text.String = 'Updating MetaData';
+                    drawnow;
                     %%% Finds positions of plane/channel/time seperators
                     Sep = strfind(Data_Raw{1,1}{1,2},';');
                     
@@ -1022,7 +1023,8 @@ switch mode
         Plot_Spectral([],[],2);
         
 end
-h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
+%h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
+Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
 h.Spectral_Progress_Text.String = SpectralData.FileName;
 drawnow;
 

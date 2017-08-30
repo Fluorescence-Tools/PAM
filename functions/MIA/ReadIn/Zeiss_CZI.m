@@ -175,7 +175,7 @@ switch mode
             h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(PixelTime)};
                         
             
-            Data = bfopen(fullfile(Path,FileName{i}));
+            Data = bfopen(fullfile(Path,FileName{i}),h.Mia_Progress_Axes,h.Mia_Progress_Text,i,numel(FileName));
             
             %%% Finds positions of plane/channel/time seperators
             Sep = strfind(Data{1,1}{1,2},';');

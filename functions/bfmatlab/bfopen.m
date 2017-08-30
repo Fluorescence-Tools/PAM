@@ -114,14 +114,14 @@ bfInitLogging();
 r = bfGetReader(id, stitchFiles);
 
 % Test plane size
-if nargin >=4
-    planeSize = javaMethod('getPlaneSize', 'loci.formats.FormatTools', ...
-                           r, varargin{3}, varargin{4});
-else
-    planeSize = javaMethod('getPlaneSize', 'loci.formats.FormatTools', r);
-end
+% if nargin >=4
+%     planeSize = javaMethod('getPlaneSize', 'loci.formats.FormatTools', ...
+%                            r, varargin{3}, varargin{4});
+% else
+planeSize = javaMethod('getPlaneSize', 'loci.formats.FormatTools', r);
+% end
 
-if planeSize/(1024)^3 >= 2,
+if planeSize/(1024)^3 >= 2
     error(['Image plane too large. Only 2GB of data can be extracted '...
         'at one time. You can workaround the problem by opening '...
         'the plane in tiles.']);
@@ -146,8 +146,19 @@ for s = 1:numSeries
         if mod(i, 72) == 1
             fprintf('\n    ');
         end
-        fprintf('.');
-        arr = bfGetPlane(r, i, varargin{:});
+        
+        if nargin>1
+            if mod(i,100)==0
+                %%% Updates progress bar
+                Progress(((i-1)+(varargin{3}-1)*numImages)/(numImages*varargin{4}),...
+                    varargin{1},...
+                    varargin{2},...
+                    ['Loading Frame ' num2str(i) ' of ' num2str(numImages) ' in File ' num2str(varargin{3}) ' of ' num2str(varargin{4})]);
+            end
+        else
+            fprintf('.');
+        end
+        arr = bfGetPlane(r, i);
 
         % retrieve color map data
         if bpp == 1
