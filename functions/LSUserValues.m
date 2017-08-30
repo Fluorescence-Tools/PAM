@@ -2273,9 +2273,9 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.Correct_Add_Values = S.MIA.Correct_Add_Values;
 
-    if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=2 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
+    if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=4 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int" missing');
-        S.MIA.AR_Int = [10 1000];
+        S.MIA.AR_Int = [0 0 0 0];
     end
     P.MIA.AR_Int = S.MIA.AR_Int;
 
