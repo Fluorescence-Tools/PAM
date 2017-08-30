@@ -72,6 +72,38 @@ h.Load_Database = uimenu(...
 h.Text = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Panel for progressbar
+h.Spectral_Progress_Panel = uibuttongroup(...
+    'Parent',h.SpectralImage,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.005 0.965 0.99 0.03]);
+%%% Axes for progressbar
+h.Spectral_Progress_Axes = axes(...
+    'Parent',h.Spectral_Progress_Panel,...
+    'Units','normalized',...
+    'Color',Look.Control,...
+    'Position',[0 0 1 1]);
+h.Spectral_Progress_Axes.XTick=[]; h.Spectral_Progress_Axes.YTick=[];
+%%% Progress and filename text
+h.Spectral_Progress_Text=text(...
+    'Parent',h.Spectral_Progress_Axes,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'FontWeight','bold',...
+    'String','Nothing loaded',...
+    'Interpreter','none',...
+    'HorizontalAlignment','center',...
+    'BackgroundColor','none',...
+    'Color',Look.Fore,...
+    'Position',[0.5 0.5]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Image Plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,7 +115,7 @@ h.Plot_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.005 0.505 0.29 0.49]);
+    'Position',[0.005 0.485 0.29 0.475]);
 
 %%% Main Image plot
 h.Image_Plot = axes(...
@@ -103,7 +135,7 @@ h.Phasor_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.305 0.505 0.29 0.49]);
+    'Position',[0.305 0.485 0.29 0.475]);
 
 %%% Main Image plot
 h.Phasor_Plot = axes(...
@@ -159,7 +191,7 @@ h.Display_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.605 0.505 0.39 0.49]);
+    'Position',[0.605 0.485 0.39 0.475]);
 
 
 h.Text{end+1} = uicontrol(...
@@ -379,7 +411,7 @@ h.Phasor_TH{2} = uicontrol(...
 h.Main_Tabs = uitabgroup(...
     'Parent',h.SpectralImage,...
     'Units','normalized',...
-    'Position',[0.005 0.005 0.59 0.49]);
+    'Position',[0.005 0.005 0.59 0.475]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Tab for Species %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -475,7 +507,7 @@ h.Filter_Plot.XLabel.Color = Look.Fore;
 h.Control_Tabs = uitabgroup(...
     'Parent',h.SpectralImage,...
     'Units','normalized',...
-    'Position',[0.605 0.005 0.39 0.49]);
+    'Position',[0.605 0.005 0.39 0.475]);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -753,6 +785,10 @@ switch mode
         if all(Path==0)
             return
         end
+        %%% Updates Progressbar
+        h.Spectral_Progress_Axes.Color = [1 0 0];
+        h.Spectral_Progress_Text.String = 'Loading Data';
+        drawnow;
         
         %%% Transforms FileName into cell array
         if ~iscell(FileName)
@@ -899,6 +935,11 @@ switch mode
         if all(Path==0)
             return
         end
+        %%% Updates Progressbar
+        h.Spectral_Progress_Axes.Color = [1 0 0];
+        h.Spectral_Progress_Text.String = 'Loading Species';
+        drawnow;
+        
         UserValues.File.Spectral_Standard = Path;
         LSUserValues(1);
         
@@ -981,6 +1022,9 @@ switch mode
         Plot_Spectral([],[],2);
         
 end
+h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
+h.Spectral_Progress_Text.String = SpectralData.FileName;
+drawnow;
 
 
 
@@ -1986,13 +2030,18 @@ end
 %%% Function that applies filters and saves the data
 function Save_Filtered (~,~,mode)
 h = guidata(findobj('Tag','SpectralImage'));
-global SpectralData
+global SpectralData UserValues
 
 Sel = h.Filter_List.Value;
 Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
 if all(Path==0)
     return;
 end
+
+%%% Updates Progressbar
+h.Spectral_Progress_Axes.Color = [1 0 0];
+h.Spectral_Progress_Text.String = 'Saving Filtered Data';
+drawnow;
 
 for i=1:numel(Sel)
     %% Calculates the filtered data
@@ -2155,7 +2204,9 @@ for i=1:numel(Sel)
     
 end
 
-
+h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
+h.Spectral_Progress_Text.String = SpectralData.FileName;
+drawnow;
 
 
 
