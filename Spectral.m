@@ -446,6 +446,10 @@ h.Species_List = uicontrol(...
     'KeyPressFcn',{@Species_Callback},...
     'Callback',{@Plot_Spectral,2},...
     'Position',[0.01 0.01 0.28 0.98],...
+    'ToolTipString', ['<html>Controls: <br>',...
+                        '<i>r</i>: rename species <br>'...
+                        '<i>f</i>: calculate filter of selected species <br>'...
+                        '<i>del</i>: delete selected species and corresponding filters'],...
     'Style','listbox');
 
 %%% Axis for plotting species spectra
@@ -489,7 +493,12 @@ h.Filter_List = uicontrol(...
     'Max',5,...
     'Callback',{@Plot_Spectral,[1,3]},...
     'KeyPressFcn',{@Filter_Callback},...
-    'Position',[0.01 0.01 0.28 0.78],...
+    'Position',[0.01 0.01 0.28 0.98],...
+    'ToolTipString', ['<html>Controls: <br>',...
+                        '<i>r</i>: rename filter <br>'...
+                        '<i>del</i>: delete selected filters <br>'...
+                        '<i>+</i> or <i>leftarrow</i>: use selected filters for calculations <br>',...
+                        '<i>-</i> or <i>rightarrow</i>: do not use selected filters for calculations'],...
     'Style','listbox');
 
 %%% Axis for plotting species spectra
@@ -635,6 +644,24 @@ h.Database_Tab = uitab(...
     'ForegroundColor', [0 0 0],....
     'Units','normalized');
 
+%%% List containing the species
+h.Database = uicontrol(...
+    'Parent',h.Database_Tab,...
+    'Units','normalized',...
+    'BackgroundColor', Look.List,...
+    'ForegroundColor', Look.ListFore,...
+    'FontSize',12,...
+    'String','',...
+    'Max',5,...
+    'KeyPressFcn',{@Database_Callback},...
+    'Position',[0.01 0.01 0.70 0.98],...
+    'Style','listbox');
+
+%     'ToolTipString', ['<html>Controls: <br>',...
+%                         '<i>r</i>: rename species <br>'...
+%                         '<i>f</i>: calculate filter of selected species <br>'...
+%                         '<i>del</i>: delete selected species and corresponding filters'],...
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Defines custom cursor shapes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -740,8 +767,9 @@ SpectralData.S = [];
 SpectralData.Phasor = [];
 SpectralData.PhasorROI = [];
 SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)},'Phasor',[0 0]);
-SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1);
+SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1,'Use',0);
 SpectralData.Meta = [];
+SpectralData.DB = struct([]);
 
 h.SpeciesPlots = [];
 h.SpeciesPhasor = [];
@@ -781,18 +809,21 @@ delete(Obj);
 %%% mode 2: load data into database
 %%% mode 3: not used yet; might be used for automatic loading from database
 %%% mode 4: load species data
-function Load_Data(~,~,mode)
+function Load_Data(~,~,mode,Input)
 global SpectralData UserValues
 h = guidata(findobj('Tag','SpectralImage'));
 
 switch mode
     case 1 %%% Normal data loading
-        %%%% This is a test version and will be adjusted for the final
-        %%%% version
         
         %% Get filenames
-        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
-        
+        if nargin<4
+            [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        else
+            FileName = SpectralData.DB(Input).File;
+            Path = SpectralData.DB(Input).Path;
+            Type = SpectralData.DB(Input).Type;
+        end
         if all(Path==0)
             return
         end
@@ -937,6 +968,31 @@ switch mode
         Plot_Spectral([],[],0);
         
     case 2 %%% Loads files into database
+        %% Get filenames
+        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        
+        %%% Stops if none is selected
+        if all(Path==0)
+            return
+        end
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName)
+            FileName={FileName};
+        end
+        UserValues.File.Spectral_Standard = Path;
+        LSUserValues(1);
+        
+        for i=1:numel(FileName)
+           SpectralData.DB(end+1).File = FileName{i};
+           SpectralData.DB(end).Path = Path;
+           SpectralData.DB(end).Type = Type;
+           Suffix = strfind(FileName{i},'.');
+           SpectralData.DB(end).Name = FileName{i}(1:(Suffix-1)); %%% Name to be displayed and used for saving
+           SpectralData.DB(end).Linked = 0; %%%This will be eventually used to link files and treat them as one
+           
+           
+           h.Database.String{end+1} = SpectralData.DB(end).Name;
+        end
         
     case 4 %%% Loads species
         %%%% This is a test version and will be adjusted for the final
@@ -1034,10 +1090,12 @@ switch mode
         Plot_Spectral([],[],2);
         
 end
-%h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
-Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
-h.Spectral_Progress_Text.String = SpectralData.FileName;
-drawnow;
+
+if ~isempty(SpectralData.Data)
+    Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
+    h.Spectral_Progress_Text.String = SpectralData.FileName;
+    drawnow;
+end
 
 
 
@@ -1505,7 +1563,7 @@ Plot_Spectral([],[],1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%% FIlter and Species Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%% Filter and Species Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for the interaction with the filter list
 function Filter_Callback(obj, e)
@@ -1521,6 +1579,10 @@ switch e.EventName
                 event = 'delete';
             case 'r' %%% rename filter
                 event = 'rename';
+            case {'add','rightarrow'} %%% use filter
+                event = 'use';
+            case {'subtract','leftarrow'} %%% un-use filter
+                event = 'un-use';
         end
         
 end
@@ -1574,7 +1636,20 @@ switch event
             h.PlottedData.Value = h.PlottedData.Value - sum(h.PlottedData.Value > Sel);
         end
         Plot_Spectral([],[],[1,3]);
+    case 'use' %%% Filter will be used for calculations
+        Sel = obj.Value;
         
+        for i=Sel
+            SpectralData.Filter(i).Use = 1;
+            h.Filter_List.String{i} = ['<HTML><FONT color="red">' SpectralData.Filter(i).Name '</Font></html>'];
+        end
+    case 'un-use' %%% Filter will no longer be used for calculations  
+        Sel = obj.Value;
+        
+        for i=Sel
+            SpectralData.Filter(i).Use = 0;
+            h.Filter_List.String{i} = SpectralData.Filter(i).Name;
+        end
     case 'rename'
         Sel = obj.Value;
         %%% ignores the first entry
@@ -1589,7 +1664,11 @@ switch event
         Name = inputdlg('Pleas enter new filter name','Rename filter',1,{SpectralData.Filter(Sel).Name});
         if ~isempty(Name)
             SpectralData.Filter(Sel).Name = Name{1};
-            h.Filter_List.String{Sel} = Name{1};
+            if SpectralData.Filter(Sel).Use
+                h.Filter_List.String{Sel} = ['<HTML><FONT color="red">' Name{1} '</Font></html>'];
+            else
+                h.Filter_List.String{Sel} = Name{1};
+            end
             h.PlottedData.String{Sel} = Name{1};
         end
 end
@@ -1693,7 +1772,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for creating new filters
 function Filter = Calc_Filter(~,~,mode,Sel,Spectrum)
-
 global SpectralData
 switch mode
     case 1 %%% Create a simple rectangular filter based on the imput
@@ -1710,7 +1788,7 @@ switch mode
         %%% Creates name for filter
         SpectralData.Filter(end).Name = ['Simple_' num2str(min(Bins)) 'to' num2str(max(Bins))];
         SpectralData.Filter(end).Species = 1;
-        
+        SpectralData.Filter(end).Use = 0;
         h.Filter_List.String{end+1} = SpectralData.Filter(end).Name;
         h.PlottedData.String{end+1} = SpectralData.Filter(end).Name;
         
@@ -1751,6 +1829,7 @@ switch mode
                 SpectralData.Filter(end+1).Data(1,1,:,1) = Filter(:,i);
                 SpectralData.Filter(end).Name = SpectralData.Species(Sel(i)).Name;
                 SpectralData.Filter(end).Species = [Sel(i) Sel(Sel~=Sel(i))];
+                SpectralData.Filter(end).Use = 0;
                 h.Filter_List.String{end+1} = SpectralData.Filter(end).Name;
                 h.PlottedData.String{end+1} = SpectralData.Filter(end).Name;
             end
@@ -2041,14 +2120,24 @@ end
 %%%%%%%%%%%%%%%% Filter Exporting Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that applies filters and saves the data
-function Save_Filtered (~,~,mode)
+function Save_Filtered (~,~,mode,Input)
 h = guidata(findobj('Tag','SpectralImage'));
 global SpectralData UserValues
 
-Sel = h.Filter_List.Value;
-Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
-if all(Path==0)
-    return;
+%%% Uses filters maked for use
+Sel = find([SpectralData.Filter.Use]);
+
+if nargin<4
+    Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
+    if all(Path==0)
+        return;
+    end
+else
+    %%% Uses Filtered sub-folder for Database
+    Path = fullfile(SpectralData.DB(Input).Path,'Filtered');
+    if ~exist(Path, 'dir')
+        mkdir(Path);
+    end
 end
 
 %%% Updates Progressbar
@@ -2157,13 +2246,19 @@ for i=1:numel(Sel)
     Stack=uint16((Stack-Min)./(Max-Min)*2^16);
     
     %%% Adjusts filename
+    if nargin<4
+        File = SpectralData.FileName(1:end-4);
+    else
+        File = SpectralData.DB(Input).Name;
+    end
+    
     switch mode
-        case 1
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '.tif']);
+        case 1      
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '.tif']);
         case 2
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_SR.tif']);
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '_SR.tif']);
         case 3
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_ROI.tif']);
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '_ROI.tif']);
     end
     
     %%% Creates info data
@@ -2222,6 +2317,66 @@ h.Spectral_Progress_Text.String = SpectralData.FileName;
 drawnow;
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Interactions with the database %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Database_Callback(obj,e)
+h = guidata(findobj('Tag','SpectralImage'));
+global SpectralData
+
+event = 'nothing';
+%%% Determine action
+switch e.EventName
+    case 'KeyPress' %%% key was pressed
+        switch e.Key
+            case {'delete' 'backspace'} %%% delete species
+                event = 'delete';
+            case 'r'
+                event = 'rename'; %%% rename species
+            case 'return'
+                event = 'save'; %%% saves filtered data
+        end
+end
+
+%%% Execute action
+switch event
+    case 'delete' %%% Deletes entries
+        Sel = obj.Value;
+        SpectralData.DB(Sel)=[];
+        h.Database.String(Sel)=[];       
+    case 'rename' %%% Renames first selected entries
+        %%% Only uses the first enty
+        Sel = obj.Value(1); 
+        
+        %%% Iputdialog to type ne name
+        Name = inputdlg('Pleas enter new file name','Rename file',1,{SpectralData.DB(Sel).Name});
+        if ~isempty(Name)
+            SpectralData.DB(Sel).Name = Name{1};
+            h.Database.String{Sel} = Name{1};
+        end
+    case 'save' %%% Loads data and saves filtered data
+        Sel = obj.Value;
+        
+        for i=Sel
+           %%% Marks files that will be saved
+           h.Database.String{i} = ['<HTML><FONT color="red">' SpectralData.DB(i).Name '</Font></html>'];
+           SpectralData.DB(i).Name
+        end
+        
+        for i = Sel
+           %%% Indicates current file
+           h.Database.Value = i;
+           
+           %%% Loads data
+           Load_Data([],[],1,i)
+           %%% Saves filtered data
+           Save_Filtered ([],[],1,i)
+           
+           %%% Marks previous files as saved
+           h.Database.String{i} = ['<HTML><FONT color="green">' SpectralData.DB(i).Name '</Font></html>'];
+        end
+        
+end
 
 function Save_Phasor(~,~)
 h = guidata(findobj('Tag','SpectralImage'));
@@ -2253,5 +2408,6 @@ g=SpectralData.G;
 s=SpectralData.S;
 Intensity =squeeze(sum(sum(SpectralData.Data,3),4));
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+
 
 
