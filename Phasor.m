@@ -122,6 +122,16 @@ end
         'HitTest','off',...
         'Visible','off',...
         'Color',[0 0 0]);
+    %%% Triangle Line
+    h.Phasor_Triangle=line(...
+        'Parent',h.Phasor_Plot,...
+        'XData',[0 1 0 0],...
+        'YData',[0 1 1 0],...
+        'HitTest','off',...
+        'Visible','off',...
+        'Color',[0 0 0]);
+    
+    
     %%% Initializes FRET lines
     h.Phasor_FRET(1,1)=line(...
         'Parent',h.Phasor_Plot,...
@@ -797,6 +807,24 @@ end
             'Style', 'edit',...
             'String','0');
     end
+    
+    %%% Box to change Triangle color
+    h.ROI_Color{8} = uicontrol(...
+        'Parent',h.ROI_Panel,...
+        'Units','normalized',...
+        'Position',[0.01 0.1 0.1 0.09],...
+        'BackgroundColor', UserValues.Phasor.Settings_ROIColor(7,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_ROIColor(7,:))>=1.5),[1 3]),...
+        'Tag',['ROI_Color',num2str(7)],...
+        'FontSize',12,...
+        'Enable','inactive',...
+        'Style', 'edit',...
+        'ButtonDownFcn',{@ROI_Look,1,8},...
+        'ToolTipString', ['<html>Activate ROI: <br>',...
+        '<b>Left/Right mouse button:</b> Toggle Triangle<br>'...
+        '<b>Middle mouse button:</b> Change Triangle line color (not the associated colormap)<br>'],...
+        'String','Triangle');
+    
     %% Tab for FRET calculations
     h.FRET_Tab=uitab(...
         'title','FRET',...
@@ -1770,32 +1798,67 @@ PhasorData.Cursor=[];
     Point(Point==0)=NaN;
     PhasorData.Cursor{6}=Point;  
     
-    %%%%7
+    %%%%7 display R
     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point(5:6,5:11)=1;
+%     Point(5:16,10:11)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point(5:6,5:11)=1;
-    Point(5:16,10:11)=1;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(4:10,15:16)=1;
+    Point(11:12,5:16)=1;
+    Point(12,6:8)=1;
+    Point(13,8:10)=1;
+    Point(14,10:12)=1;
+    Point(15,12:14)=1;
+    Point(16,14:16)=1;
     Point(Point==0)=NaN;
     PhasorData.Cursor{7}=Point;
     
-    %%%%8
-    Point=zeros(16);
+    %%%%8 display G
+     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point([5:6 10:11 15:16],5:11)=1;
+%     Point(5:16,10:11)=1;
+%     Point(5:16,5:6)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point([5:6 10:11 15:16],5:11)=1;
-    Point(5:16,10:11)=1;
-    Point(5:16,5:6)=1;
-    Point(Point==0)=NaN;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(15:16,5:16)=1;
+    Point(4:7,15:16)=1;
+    Point(11:16,15:16)=1;
+    Point(11:12,11:16)=1;
+%     Point(1:5,14:16)=1;
+%     Point(9:16,14:16)=1;
+%     Point(9:11,10:16)=1;
+
+     Point(Point==0)=NaN;
     PhasorData.Cursor{8}=Point;  
     
-    %%%%9
+    %%%%9 display B
     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point([5:6 10:11 15:16],5:11)=1;
+%     Point(5:10,5:6)=1;
+%     Point(5:16,10:11)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point([5:6 10:11 15:16],5:11)=1;
-    Point(5:10,5:6)=1;
-    Point(5:16,10:11)=1;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(15:16,5:16)=1;
+    Point(4:9,15:16)=1;
+    Point(11:16,15:16)=1;
+    Point(9:11,5:14)=1;
+    Point(9,16)=0;
+    Point(4,16)=0;
+    Point(11,16)=0;
+    Point(16,16)=0;
     Point(Point==0)=NaN;
     PhasorData.Cursor{9}=Point;  
 %%    
@@ -2447,15 +2510,30 @@ elseif Key>0 && Key <=6
    switch Type
        case 'normal' %%% Rectangular ROI selection
            h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
-           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};          
        case 'alt' %%% Ellipsoid ROI
-           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
    end
-    
+elseif Key>=7
+    %% Triangle selection
+    switch Key
+        case 7
+            h.Phasor_Triangle.XData([1 4]) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData([1 4]) = h.Phasor_Plot.CurrentPoint(1,2);
+        case 8
+            h.Phasor_Triangle.XData(2) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData(2) = h.Phasor_Plot.CurrentPoint(1,2);
+        case 9
+            h.Phasor_Triangle.XData(3) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData(3) = h.Phasor_Plot.CurrentPoint(1,2);
+    end
+    h.Phasor_Triangle.Visible = 'on';
+    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+    Plot_Phasor([],[],0,1:10);
 elseif Key==0
-    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible] = deal('off');
+    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
     switch Type
         case 'normal'
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6,h.Phasor_Plot.CurrentPoint(1,1:2)};
@@ -2661,6 +2739,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% 0:      Fraction line definition
 %%% 1-6:    ROI selection
+%%% 7:      Triangle selection
 function Phasor_Key(~,e,mode)
 h=guidata(findobj('Tag','Phasor'));
 global PhasorData
@@ -2674,7 +2753,7 @@ switch mode
             Key=str2double(e.Key);
         end
         %%% Checks, if keys 0-6 were pressed
-        if ~isnan(Key) && Key<=6 && Key>=0
+        if ~isnan(Key) && Key<=9 && Key>=0
             %%% Defines key release callback to stop
             h.Phasor.KeyReleaseFcn={@Phasor_Key,2};
             %%% Disables further key press callbacks
@@ -2890,7 +2969,7 @@ else
 end
 
 %%% Deactivate ROIs and Fraction line
-[h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible]=deal('off');
+[h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible]=deal('off');
 %%% Updates Images
 Plot_Phasor([],[],0,1:10);
 
@@ -3182,7 +3261,7 @@ for i=Images %%% Plots Phasor Data
             
             %%% Calculates rotation coefficients
             k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
-            %%% Rotats fraction line
+            %%% Rotates fraction line
             Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
             %%% transforms complex number to phasor
             x = real(Complex_Line);
@@ -3209,7 +3288,64 @@ for i=Images %%% Plots Phasor Data
                 PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;
             ROI=repmat(ROI,[1 1 3]);
             Mask=reshape(FractionColor(roi+1,:),size(Image));
-
+        elseif strcmp(h.Phasor_Triangle.Visible,'on')
+            for t=1:3
+                %%% Reference point
+                x_ref = h.Phasor_Triangle.XData(mod(t+1,3)+1);
+                y_ref = h.Phasor_Triangle.YData(mod(t+1,3)+1);
+                
+                %%% Opposite line
+                x=h.Phasor_Triangle.XData(t:(t+1));
+                y=h.Phasor_Triangle.YData(t:(t+1));
+                
+                
+                %%% transforms phasor to complex number
+                Complex_Line = x+sqrt(-1)*y;
+                Complex_Ref = x_ref+sqrt(-1)*y_ref;
+                
+                %%% Calculates rotation coefficients
+                k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+                %%% Rotates line and point
+                Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+                Complex_Ref = Complex_Ref*Scale*(1+k*sqrt(-1));
+                
+                %%% transforms complex number to phasor
+                x = real(Complex_Line);
+                y = imag(Complex_Line);
+                
+                x_ref = real(Complex_Ref);
+                y_ref = imag(Complex_Ref);
+                
+                %%% Transforms phasor into a complex number
+                Complex = PhasorData.Data{PhasorData.Plot(i)}.g + sqrt(-1)*PhasorData.Data{PhasorData.Plot(i)}.s;
+                %%% Rotates Phasor
+                Complex = Complex*Scale*(1+k*sqrt(-1));
+                %%% transforms complex back to phasor
+                g = real(Complex);
+                s = imag(Complex);
+                
+                Dist_ref = x(1)-x_ref;
+                F(:,:,mod(t+1,3)+1) = (x(1)-g)/Dist_ref;
+            end
+            R = F(:,:,1);
+            G = F(:,:,2);
+            B = F(:,:,3);
+            
+            R(G>=1 | B>=1)=0; R(R<0)=0;
+            G(R>=1 | B>=1)=0; G(G<0)=0;
+            B(G>=1 | R>=1)=0; B(B<0)=0;
+            
+            Mask(:,:,1) = R;
+            Mask(:,:,2) = G;
+            Mask(:,:,3) = B;
+            Mask = Mask.*repmat(1./sum(Mask,3),1,1,3);
+            %%% Applies contrast
+            Mask = sqrt(Mask);
+            %Mask = log10(Mask*9+1);
+            
+            ROI = repmat(PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
+                  PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax,1,1,3);
+            
         elseif strcmp(h.Phasor_FRET(1,1).Visible,'on') && h.FRET_Use.Value==2
             %% FRET line
             
@@ -3315,7 +3451,7 @@ for i=Images %%% Plots Phasor Data
     end
 end
 
- %% Calculates and plots Intensity information
+%% Calculates and plots Intensity information
 if isempty(Images) %%% Plots Intensity plot
     %%% Extracts Intensity, g and s data
     Sel = h.List.Value;    
@@ -3532,7 +3668,8 @@ switch mode
                     end
                     h.Phasor_ROI(ROI,2).Visible='off';
                     h.Phasor_Fraction.Visible='off';
-                else
+                    h.Phasor_Triangle.Visible ='off';
+                elseif ROI==7
                     if strcmp(h.Phasor_Fraction.Visible,'on')
                         h.Phasor_Fraction.Visible='off';
                     else
@@ -3542,6 +3679,18 @@ switch mode
                         h.Phasor_ROI(i,1).Visible='off';
                         h.Phasor_ROI(i,2).Visible='off';
                     end
+                    h.Phasor_Triangle.Visible ='off';
+                elseif ROI==8
+                    if strcmp(h.Phasor_Triangle.Visible,'on')
+                        h.Phasor_Triangle.Visible='off';
+                    else
+                        h.Phasor_Triangle.Visible='on';
+                    end
+                    for i=1:6
+                        h.Phasor_ROI(i,1).Visible='off';
+                        h.Phasor_ROI(i,2).Visible='off';
+                    end
+                    h.Phasor_Fraction.Visible ='off';
                 end
                 [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible] = deal('off');
                 Plot_Phasor([],[],0,1:10);
@@ -3555,7 +3704,7 @@ switch mode
                     end
                     h.Phasor_ROI(ROI,1).Visible='off';
                     h.Phasor_Fraction.Visible='off';
-                else
+                elseif ROI==7
                     if strcmp(h.Phasor_Fraction.Visible,'on')
                         h.Phasor_Fraction.Visible='off';
                     else
@@ -3565,8 +3714,19 @@ switch mode
                         h.Phasor_ROI(i,1).Visible='off';
                         h.Phasor_ROI(i,2).Visible='off';
                     end
+                elseif ROI==8
+                    if strcmp(h.Phasor_Triangle.Visible,'on')
+                        h.Phasor_Triangle.Visible='off';
+                    else
+                        h.Phasor_Triangle.Visible='on';
+                    end
+                    for i=1:6
+                        h.Phasor_ROI(i,1).Visible='off';
+                        h.Phasor_ROI(i,2).Visible='off';
+                    end
+                    h.Phasor_Fraction.Visible ='off';
                 end
-                [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible] = deal('off');
+                [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible,h.Phasor_Triangle.Visible] = deal('off');
                 Plot_Phasor([],[],0,1:10);               
             case 'extend'
                 %% Middle click:    Changes ROI\Fraction line color 
