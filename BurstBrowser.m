@@ -14380,7 +14380,7 @@ switch obj
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
-                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
                         end
                     end
@@ -14408,7 +14408,7 @@ switch obj
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
-                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
                         end
                     end
