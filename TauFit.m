@@ -74,7 +74,8 @@ h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted micro
     'Callback',@Export);
 h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
     'Callback',@Export,'Separator','on');
-    
+h.Menu.Conf_Int_Menu = uimenu(h.TauFit,'Label','Determine confidence intervals',...
+    'Callback',@Start_Fit,'Separator','off');
 
 
 %% Main Fluorescence Decay Plot
@@ -820,7 +821,7 @@ if strcmp(method,'ensemble')
         h.PIEChannelPer_Popupmenu.Value = 1;
     end
     %%% Popup Menu for Fit Method Selection
-    h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
+    h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Stretched Exponential',...
     'Distribution','Distribution plus Donor only','Fit Anisotropy',...
     'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
     'Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'};
@@ -987,7 +988,7 @@ if exist('bh','var')
             'ForegroundColor',Look.Fore,...
             'FontSize',10);
         %%% Popup Menu for Fit Method Selection
-        h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials',...
+        h.FitMethods = {'Single Exponential','Biexponential','Three Exponentials','Stretched Exponential',...
             'Distribution','Distribution plus Donor only','Fit Anisotropy',...
             'Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp rot)',...
             'Fit Anisotropy (2 exp lifetime, 2 exp rot)',...
@@ -1265,15 +1266,17 @@ h.Output_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'Tag','Output_Panel');
 
+ToolTip_average_lifetime = '<html><b>Mean Lifetime Fraction</b> is the amplitude-weighted average lifetime, given by:<br>&lt;&tau;&gt;<sub>amp</sub> = &Sigma;&alpha;<sub>i</sub>&tau;<sub>i</sub>, where &alpha; is the amplitude.<br><b>Mean Lifetime Int</b> is the intensity-weighted average lifetime.<br>Every lifetime species is weighted by the intensity fraction given by:<br>f<sub>i</sub>= &alpha;<sub>i</sub>&tau;<sub>i</sub>/&Sigma;&alpha;<sub>j</sub>&tau;<sub>j</sub><br>i.e.&lt;&tau;&gt;<sub>int</sub> = &Sigma;f<sub>i</sub>&tau;<sub>i</sub></html>';
 h.Output_Text = uicontrol(...
     'Parent',h.Output_Panel,...
     'Style','text',...
     'Units','normalized',...
     'Position',[0 0 1 1],...
     'String','',...
-    'FontSize',10,...
+    'FontSize',9,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
+    'TooltipString',ToolTip_average_lifetime
     'HorizontalAlignment','left',...
     'Tag','Output_Text');
 %%% Tab containing settings
@@ -1781,7 +1784,7 @@ if strcmp(UserValues.TauFit.PIEChannelSelection{1},UserValues.TauFit.PIEChannelS
     if h.FitMethod_Popupmenu.Value > 5
         h.FitMethod_Popupmenu.Value = 1;
     end
-    h.FitMethod_Popupmenu.String = h.FitMethods(1:5);
+    h.FitMethod_Popupmenu.String = h.FitMethods(1:6);
 else
     set([h.ShiftPer_Edit,h.ShiftPer_Text,h.ShiftPer_Slider,...%%% perp sliders
         h.ScatrelShift_Edit,h.ScatrelShift_Text,h.ScatrelShift_Slider,...
@@ -2434,16 +2437,22 @@ MI_Bins = TauFitData.MI_Bins;
 
 opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
-    case h.Fit_Button
+    case {h.Fit_Button, h.Menu.Conf_Int_Menu}
         %%% Read out parameters
         x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
         lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
         ub = cell2mat(h.FitPar_Table.Data(1:end-1,3))';
         fixed = cell2mat(h.FitPar_Table.Data(1:end-1,4));
-        if all(fixed) %%% all parameters fixed, instead just plot the current values
+        if obj == h.Fit_Button
+            if all(fixed) %%% all parameters fixed, instead just plot the current values
+                fit = 0;
+            else
+                fit = 1;
+            end
+            conf_int = 0;
+        elseif obj == h.Menu.Conf_Int_Menu
             fit = 0;
-        else
-            fit = 1;
+            conf_int = 1;
         end
         
         switch TauFitData.FitType
@@ -2477,6 +2486,10 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);   
+                elseif conf_int
+                    fun = @fitfun_1exp;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -2542,6 +2555,10 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    fun = @fitfun_2exp;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -2574,9 +2591,10 @@ switch obj
                 f1 = amp1./(amp1+amp2);
                 f2 = amp2./(amp1+amp2);
                 meanTau = FitResult{1}*f1+FitResult{2}*f2;
-                
+                meanTau_Fraction = FitResult{1}*FitResult{3} + FitResult{2}*(1-FitResult{3});
                 % Also update status text
-                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau),['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                    ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
@@ -2628,6 +2646,10 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    fun = @fitfun_3exp;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -2670,9 +2692,12 @@ switch obj
                 f3 = amp3./(amp1+amp2+amp3);
                 
                 meanTau = FitResult{1}*f1+FitResult{2}*f2+FitResult{3}*f3;
+                meanTau_Fraction = FitResult{1}*FitResult{4} + FitResult{2}*FitResult{5} + (1-FitResult{4}-FitResult{5})*FitResult{3};
                 % FitResult{4} = amp1;
                 % FitResult{5} = amp2;
-                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'], ...
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                    sprintf('Mean Lifetime Int: %.2f ns',meanTau), ...
+                    ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'], ...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.'],...
                     ['Intensity fraction of Tau3: ' sprintf('%2.2f',100*f3) ' %.']};
                 
@@ -2696,6 +2721,86 @@ switch obj
                 UserValues.TauFit.FitParams{chan}(6) = FitResult{6};
                 UserValues.TauFit.FitParams{chan}(8) = FitResult{7};
                 UserValues.TauFit.IRFShift{chan} = FitResult{8};
+            case 'Stretched Exponential'
+                %%% Parameter:
+                %%% tau    - Lifetime
+                %%% beta    - distribution parameter
+                %%% scatter - Scatter Background (IRF pattern)
+                %%% Convert Lifetimes
+                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
+                lb(1:3) = round(lb(1)/TauFitData.TACChannelWidth);
+                ub(1:3) = round(ub(1)/TauFitData.TACChannelWidth);
+                %%% estimate error assuming Poissonian statistics
+                if UserValues.TauFit.use_weighted_residuals
+                    sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
+                else
+                    sigma_est = ones(1,numel(Decay(ignore:end)));
+                end
+                
+                if fit
+                    %%% fit for different IRF offsets and compare the results
+                    x = cell(numel(shift_range,1));
+                    residuals = cell(numel(shift_range,1));
+                    count = 1;
+                    for i = shift_range
+                        %%% Update Progressbar
+                        Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
+                        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
+                        [x{count}, ~, residuals{count}] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                        x{count} = interlace(x0,x{count},fixed);
+                        count = count +1;
+                    end
+                    chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
+                    [~,best_fit] = min(chi2);
+                elseif conf_int
+                    fun = @fitfun_stretched_exp;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                else % plot only
+                    x = {x0};
+                    best_fit = 1;
+                end
+                
+                FitFun = fitfun_stretched_exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
+                wres = (Decay-FitFun);
+                if UserValues.TauFit.use_weighted_residuals
+                    wres = wres./sqrt(Decay);
+                end
+                
+                %%% split by ignore region
+                FitFun_ignore = FitFun(1:ignore);
+                FitFun = FitFun(ignore:end);
+                wres_ignore = wres(1:ignore);
+                wres = wres(ignore:end);
+                Decay_ignore = Decay(1:ignore);
+                Decay = Decay(ignore:end);
+                
+                %%% Update FitResult
+                FitResult = num2cell([x{best_fit} shift_range(best_fit)]');
+                %%% Convert Lifetimes to Nanoseconds
+                FitResult{1} = FitResult{1}.*TauFitData.TACChannelWidth;
+                h.FitPar_Table.Data(:,1) = FitResult;
+                
+                % species-weighted meanTau = tau/beta*gammafunction(1/beta)
+                meanTau_Fraction = (FitResult{1}/FitResult{2})*gamma(1/FitResult{2});
+                % intensity-weighted meanTau =  tau*gamma(2/beta)/gamma(1/beta)
+                meanTau = FitResult{1}*gamma(2/FitResult{2})/gamma(1/FitResult{2});
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),sprintf('Mean Lifetime Int: %.2f ns',meanTau)};
+
+                fix = cell2mat(h.FitPar_Table.Data(1:end,4));
+                if save_fix
+                UserValues.TauFit.FitFix{chan}(1) = fix(1);
+                UserValues.TauFit.FitFix{chan}(23) = fix(2);
+                UserValues.TauFit.FitFix{chan}(6) = fix(3);
+                UserValues.TauFit.FitFix{chan}(8) = fix(4);
+                UserValues.TauFit.FitFix{chan}(10) = fix(5);
+                end
+                UserValues.TauFit.FitParams{chan}(1) = FitResult{1};
+                UserValues.TauFit.FitParams{chan}(23) = FitResult{2};
+                UserValues.TauFit.FitParams{chan}(6) = FitResult{3};
+                UserValues.TauFit.FitParams{chan}(8) = FitResult{4};
+                UserValues.TauFit.IRFShift{chan} = FitResult{5};
             case 'Distribution'
                 %%% Parameter:
                 %%% Center R
@@ -2731,6 +2836,10 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    fun = @fitfun_dist;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -2808,6 +2917,10 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay(ignore:end))-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                 elseif conf_int
+                    fun = @fitfun_dist_donly;
+                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -2913,6 +3026,8 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    disp('Not implemented yet.'); return;               
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3032,6 +3147,8 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    disp('Not implemented yet.'); return;   
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3169,6 +3286,8 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    disp('Not implemented yet.'); return;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3292,6 +3411,8 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    disp('Not implemented yet.'); return;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3434,6 +3555,8 @@ switch obj
                     end
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
+                elseif conf_int
+                    disp('Not implemented yet.'); return;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -4925,13 +5048,14 @@ Parameters = cell(7,1);
 Parameters{1} = {'Tau [ns]','Scatter','Background','IRF Shift'};
 Parameters{2} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Scatter','Background','IRF Shift'};
 Parameters{3} = {'Tau1 [ns]','Tau2 [ns]','Tau3 [ns]','Fraction 1','Fraction 2','Scatter','Background','IRF Shift'};
-Parameters{4} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{5} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
-Parameters{6} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{7} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{8} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{9} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
-Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{4} = {'Tau [ns]','beta','Scatter','Background','IRF Shift'};
+Parameters{5} = {'Center R [A]','Sigma R [A]','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{6} = {'Center R [A]','Sigma R [A]','Fraction Donly','Scatter','Background','R0 [A]','TauD0 [ns]','IRF Shift'};
+Parameters{7} = {'Tau [ns]','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{8} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho [ns]','r0','r_infinity','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{9} = {'Tau [ns]','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{10} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
+Parameters{11} = {'Tau1 [ns]','Tau2 [ns]','Fraction 1','Rho1 [ns]','Rho2 [ns]','r0','r_infinity1','r_infinity2','Scatter Par','Scatter Per','Background Par', 'Background Per', 'l1','l2','IRF Shift'};
 %%% Initial Data - Store the StartValues as well as LB and UB
 tau1 = UserValues.TauFit.FitParams{chan}(1);
 tau2 = UserValues.TauFit.FitParams{chan}(2);
@@ -4957,6 +5081,7 @@ R = UserValues.TauFit.FitParams{chan}(19);
 sigR = UserValues.TauFit.FitParams{chan}(20);
 FD0 = UserValues.TauFit.FitParams{chan}(21);
 rinf2 = UserValues.TauFit.FitParams{chan}(22);
+beta = UserValues.TauFit.FitParams{chan}(23);
 
 tau1f = UserValues.TauFit.FitFix{chan}(1);
 tau2f = UserValues.TauFit.FitFix{chan}(2);
@@ -4980,22 +5105,24 @@ Rf = UserValues.TauFit.FitFix{chan}(19);
 sigRf = UserValues.TauFit.FitFix{chan}(20);
 FD0f = UserValues.TauFit.FitFix{chan}(21);
 rinf2f = UserValues.TauFit.FitFix{chan}(22);
+betaf = UserValues.TauFit.FitFix{chan}(23);
 
 StartPar = cell(7,1);
 StartPar{1} = {tau1,0,Inf,tau1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
 StartPar{2} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
 StartPar{3} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;tau3,0,Inf,tau3f;F1,0,1,F1f;F2,0,1,F2f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
-StartPar{4} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
-StartPar{5} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
-StartPar{6} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{4} = {tau1,0,Inf,tau1f;beta,0,Inf,betaf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;IRF,0,0,IRFf};
+StartPar{5} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
+StartPar{6} = {R,0,Inf,Rf;sigR,0,Inf,sigRf;FD0,0,1,FD0f;ScatPar,0,1,ScatParf;BackPar,0,1,BackParf;R0,0,Inf,R0f;tauD0,0,Inf,tauD0f;IRF,0,0,IRFf};
+StartPar{7} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{7} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{8} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{8} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{9} = {tau1,0,Inf,tau1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{9} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
-StartPar{10} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
+StartPar{11} = {tau1,0,Inf,tau1f;tau2,0,Inf,tau2f;F1,0,1,F1f;Rho1,0,Inf,Rho1f;Rho2,0,Inf,Rho2f;r0,0,0.4,r0f;rinf,0,0.4,rinff;rinf2,0,0.4,rinf2f;ScatPar,0,1,ScatParf;ScatPer,0,1,ScatPerf...
     ;BackPar,0,1,BackParf;BackPer,0,1,BackPerf;l1,0,1,l1f;l2,0,1,l2f;IRF,0,0,IRFf};
 startpar = StartPar{model};
 names = Parameters{model};
@@ -5493,3 +5620,15 @@ switch obj
         res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1)];
         Mat2clip(res);
 end
+
+%%% funtion to determine 95% confidence intervals on parameters
+function ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub, Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range)
+x = {x0};
+best_fit = 1;
+opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',100,'MaxIteration',10);
+xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type};
+[x,~,residuals,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+    x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+
+alpha = 0.05; %95% confidence interval
+ConfInt = nlparci(x,residuals,'jacobian',jacobian,'alpha',alpha);
