@@ -883,7 +883,7 @@ if strcmp(method,'ensemble')
         'Checked','off',...
         'Callback',@Start_Fit);
     h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-        'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
+        'Label','Fit Anisotropy (2 exp lifetime with independent anisotropy)',...
         'Checked','off',...
         'Callback',@Start_Fit);
     h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -3888,11 +3888,13 @@ switch obj
         if number_of_exponentials == 1
             tres_aniso = @(x,xdata) (x(2)-x(3))*exp(-xdata./x(1)) + x(3);
             param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,0];
-            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
+            [param,~,res,~,~,~,jacobian] = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 0 -1],[Inf,1,1]);
+            parameter_names = {'rho','r0','r_inf'};
         elseif number_of_exponentials == 2
             tres_aniso = @(x,xdata) ((x(2)-x(4)).*exp(-xdata./x(1)) + x(4)).*exp(-xdata./x(3));
             param0 = [1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.4,8/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1];
-            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
+            [param,~,res,~,~,~,jacobian] = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,[0 -0.4 0 -0.4],[Inf,1,Inf,1]);
+            parameter_names = {'rho1','r0','rho2','r_p'};
         elseif number_of_exponentials == 0
             %%% ask to fix the lifetimes
             lifetimes = [UserValues.TauFit.FitParams{chan}(1),UserValues.TauFit.FitParams{chan}(2)]; 
@@ -3912,7 +3914,8 @@ switch obj
             end
             opt = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E4);
             param0 = [0.5,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.4,0.1,1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,0.1,3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins];
-            param = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub,opt);
+            [param,~,res,~,~,~,jacobian] = lsqcurvefit(tres_aniso,param0,x,Aniso_fit,lb,ub,opt);
+            parameter_names = {'Ampl. Ratio','tau1','tau2','r0,1','r_inf,1','rho1','r_inf,2','rho2'};
         end
         
         x_fitres = ignore:numel(Aniso);
@@ -3922,6 +3925,27 @@ switch obj
         Aniso_ignore = Aniso(1:ignore);
         
         TACtoTime = TauFitData.TACChannelWidth;%1/TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+        
+        %%% calculate confidence intervals
+        alpha = 0.05; %95% confidence interval
+        ConfInt = nlparci(param,res,'jacobian',jacobian,'alpha',alpha);
+        %%% convert lifetimes
+        param_ns = param;
+        switch number_of_exponentials
+            case 1
+                lt = 1;
+            case 2
+                lt = [1,3];
+            case 0
+                lt = [2,3,6,8];
+        end
+        param_ns(lt) = TACtoTime*param_ns(lt);
+        ConfInt(lt,:) = TACtoTime*ConfInt(lt,:)
+        %%% print confidence intervals to command line and clipboard
+        tab = table(param_ns',ConfInt(:,1),ConfInt(:,2),'VariableNames',{'Value','LB','UB'},...
+            'RowName',parameter_names);
+        disp(tab);
+        
         %%% Update Plot
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
@@ -4004,10 +4028,11 @@ switch obj
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0];
             if h.UseWeightedResiduals_Menu.Value
                 weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0],[Inf,Inf,Inf]);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0],[Inf,Inf,Inf]);
             else
-                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0],[Inf,Inf,Inf]);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0],[Inf,Inf,Inf]);
             end
+            parameter_names = {'I0','tau','offset'};
         elseif number_of_exponentials == 2
             %%% param is
             %%% I0, tau1, tau2, Fraction1, offset
@@ -4015,10 +4040,11 @@ switch obj
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.5,0];
             if h.UseWeightedResiduals_Menu.Value
                 weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
             else
-                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
             end
+            parameter_names = {'I0','tau1','tau2','Fraction1','offset'};
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
@@ -4028,10 +4054,11 @@ switch obj
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
             if h.UseWeightedResiduals_Menu.Value
                 weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
             else
-                [param,~,res] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+                [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
             end
+            parameter_names = {'I0','tau1','tau2','tau3','Fraction1','Fraction2','offset'};
         end
         
         x_fitres = ignore:numel(Decay);
@@ -4040,6 +4067,18 @@ switch obj
         Decay_ignore = Decay(1:ignore);
         
         TACtoTime = TauFitData.TACChannelWidth;%TauFitData.MI_Bins*TauFitData.TACRange*1e9;
+        
+        %%% calculate confidence intervals
+        alpha = 0.05; %95% confidence interval
+        ConfInt = nlparci(param,res,'jacobian',jacobian,'alpha',alpha);
+        %%% convert lifetimes
+        param_ns = param;
+        param_ns(1+(1:number_of_exponentials)) = TACtoTime*param_ns(1+(1:number_of_exponentials));
+        ConfInt(1+(1:number_of_exponentials),:) = TACtoTime*ConfInt(1+(1:number_of_exponentials),:)
+        %%% print confidence intervals to command line and clipboard
+        tab = table(param_ns',ConfInt(:,1),ConfInt(:,2),'VariableNames',{'Value','LB','UB'},...
+            'RowName',parameter_names);
+        disp(tab);
         %%% Update Plot
         h.Microtime_Plot.Parent = h.HidePanel;
         h.Result_Plot.Parent = h.TauFit_Panel;
@@ -4076,9 +4115,11 @@ switch obj
                     f1 = amp1./(amp1+amp2);
                     f2 = amp2./(amp1+amp2);
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2);
-
+                    meanTau_Fraction = param(2)*TACtoTime*param(4) + (1-param(4))*param(3)*TACtoTime;
                     % update status text
-                    h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                    h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                        sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                        ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 case 3
                     amp1 = param(2)*TACtoTime*param(5); amp2 = param(3)*TACtoTime*param(6); amp3 = param(4)*TACtoTime*(1-param(5)-param(6));
@@ -4086,9 +4127,11 @@ switch obj
                     f2 = amp2./(amp1+amp2+amp3);
                     f3 = amp3./(amp1+amp2+amp3);
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2+param(4)*f3);
-
+                    meanTau_Fraction = param(2)*TACtoTime*param(5)+ param(3)*TACtoTime*param(6)+ param(4)*TACtoTime*(1-param(5)-param(6));
                     % update status text
-                    h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                    h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                        sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                        ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.'],['Intensity fraction of Tau3: ' sprintf('%2.2f',100*f3) ' %.']};
             end
         end
