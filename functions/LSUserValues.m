@@ -1328,24 +1328,25 @@ if Mode==0 %%% Loads user values
     % 20 sigR
     % 21 FD0
     % 22 rinf2 (used for "Dip and Rise" model)
+    % 23 beta parameter for stretched exponential
     
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams = {params,params,params,params};
         S.TauFit.FitFix = {fix,fix,fix,fix};
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     if numel(S.TauFit.FitParams{4}) ~= 53
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams{4} = params;
         S.TauFit.FitFix{4} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     if numel(S.TauFit.FitParams) < 5
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams{end+1} = params;
         S.TauFit.FitFix{end+1} = fix;

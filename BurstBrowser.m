@@ -14380,7 +14380,7 @@ switch obj
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
-                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
                         end
                     end
@@ -14408,7 +14408,7 @@ switch obj
                     % change the grayscale of the bars and remove the line
                     for k = 1:numel(panel_copy.Children(i).Children)
                         if strcmp(panel_copy.Children(i).Children(k).Type,'bar')
-                            panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
+                            %panel_copy.Children(i).Children(k).FaceColor = [0.7 0.7 0.7];
                             panel_copy.Children(i).Children(k).LineStyle = 'none';
                         end
                     end
@@ -14693,7 +14693,7 @@ file = BurstMeta.SelectedFile;
 if directly_save
     if ask_file
         %%% Get Path to save File
-        FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.tif','TIFF File'};
+        FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.eps','EPS File';'*.tif','TIFF File'};
         [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(getPrintPath(),FigureName));       
         if FileName == 0
             delete(hfig);
@@ -14716,7 +14716,7 @@ if directly_save
     switch FilterIndex
         case 1
             print(hfig,fullfile(PathName,FileName),'-dpng',sprintf('-r%d',dpi),'-painters');
-        case 2
+        case {2,3}
             % Make changing paper type possible
             set(hfig,'PaperType','<custom>');
             
@@ -14729,9 +14729,13 @@ if directly_save
             set(hfig,'PaperPosition',[0,0,position(3:4)]);
             set(hfig,'PaperSize',position(3:4));
             set(hfig,'InvertHardCopy', 'off');
-            
-            print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
-        case 3
+            switch FilterIndex
+                case 2
+                    print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
+                case 3
+                    print(hfig,fullfile(PathName,FileName),'-deps');
+            end
+        case 4
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
     end
     
