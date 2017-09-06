@@ -3053,7 +3053,12 @@ switch obj
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
                 elseif conf_int
-                    disp('Not implemented yet.'); return;               
+                    fun = @fitfun_aniso;
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked);
+                    ConfInt(1:2,:) = ConfInt(1:2,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3175,7 +3180,12 @@ switch obj
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
                 elseif conf_int
-                    disp('Not implemented yet.'); return;   
+                    fun = @fitfun_2lt_aniso;
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked);
+                    ConfInt([1,2,4],:) = ConfInt([1,2,4],:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3211,9 +3221,11 @@ switch obj
                 f1 = amp1./(amp1+amp2);
                 f2 = amp2./(amp1+amp2);
                 meanTau = FitResult{1}*f1+FitResult{2}*f2;
-               
+                meanTau_Fraction = FitResult{3}*FitResult{1} + (1-FitResult{3})*FitResult{2};
                 % Also update status text
-                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau),['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                    sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                    ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
@@ -3315,7 +3327,12 @@ switch obj
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
                 elseif conf_int
-                    disp('Not implemented yet.'); return;
+                    fun = @fitfun_aniso_2rot;
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked);
+                    ConfInt([1,2,3],:) = ConfInt([1,2,3],:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3441,7 +3458,12 @@ switch obj
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
                 elseif conf_int
-                    disp('Not implemented yet.'); return;
+                    fun = @fitfun_2lt_aniso_2rot;
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked);
+                    ConfInt([1,2,4,5],:) = ConfInt([1,2,4,5],:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3479,9 +3501,11 @@ switch obj
                 f1 = amp1./(amp1+amp2);
                 f2 = amp2./(amp1+amp2);
                 meanTau = FitResult{1}*f1+FitResult{2}*f2;
-                
+                meanTau_Fraction = FitResult{3}*FitResult{1} + (1-FitResult{3})*FitResult{2};
                 % Also update status text
-                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                    sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                    ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
@@ -3586,7 +3610,12 @@ switch obj
                     chi2 = cellfun(@(x) sum(x.^2)/(numel(Decay_stacked)-numel(x0)),residuals);
                     [~,best_fit] = min(chi2);
                 elseif conf_int
-                    disp('Not implemented yet.'); return;
+                    fun = @fitfun_2lt_2aniso_independent;
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                        Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked);
+                    ConfInt([1,2,4,5],:) = ConfInt([1,2,4,5],:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
@@ -3624,9 +3653,11 @@ switch obj
                 f1 = amp1./(amp1+amp2);
                 f2 = amp2./(amp1+amp2);
                 meanTau = FitResult{1}*f1+FitResult{2}*f2;
-                
+                meanTau_Fraction = FitResult{3}*FitResult{1} + (1-FitResult{3})*FitResult{2};
                 % Also update status text
-                h.Output_Text.String = {sprintf('Mean Lifetime: %.2f ns',meanTau), ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
+                h.Output_Text.String = {sprintf('Mean Lifetime Fraction: %.2f ns',meanTau_Fraction),...
+                    sprintf('Mean Lifetime Int: %.2f ns',meanTau),...
+                    ['Intensity fraction of Tau1: ' sprintf('%2.2f',100*f1) '%.'],...
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 
                 h.FitPar_Table.Data(:,1) = FitResult;
@@ -5711,6 +5742,17 @@ opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',10000,'MaxIteration',1
 xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
 [x,~,residuals,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) fun(interlace(x0,x,fixed),xdata)./sigma_est,...
     x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+
+alpha = 0.05; %95% confidence interval
+ConfInt = nlparci(x,residuals,'jacobian',jacobian,'alpha',alpha);
+x = {interlace(x0,x,fixed)};
+
+%%% funtion to determine 95% confidence intervals on parameters
+function [ConfInt, x] = determine_confidence_intervals_aniso(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub, Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range, G, Decay_stacked)
+opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',10000,'MaxIteration',1000);
+xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range,ignore,G,Conv_Type};
+[x,~,residuals,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) fun(interlace(x0,x,fixed),xdata)./sigma_est,...
+        x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
 
 alpha = 0.05; %95% confidence interval
 ConfInt = nlparci(x,residuals,'jacobian',jacobian,'alpha',alpha);
