@@ -74,8 +74,6 @@ h.Menu.Export_MIPattern = uimenu(h.Menu.Export_Menu,'Label','Export fitted micro
     'Callback',@Export);
 h.Menu.Save_To_Dec = uimenu(h.Menu.Export_Menu,'Label','Save to *.dec file',...
     'Callback',@Export,'Separator','on');
-h.Menu.Conf_Int_Menu = uimenu(h.TauFit,'Label','Determine confidence intervals',...
-    'Callback',@Start_Fit,'Separator','off');
 
 
 %% Main Fluorescence Decay Plot
@@ -1184,6 +1182,10 @@ h.FitResultToClip = uimenu(...
     'Parent',h.FitResultToClip_Menu,...
     'Label','Copy Fit Result to Clipboard',...
     'Callback',@Export);
+h.ConfIntToClip = uimenu(...
+    'Parent',h.FitResultToClip_Menu,...
+    'Label','Calculate Confidence Intervals and Copy Fit Result to Clipboard',...
+    'Callback',@Start_Fit);
 h.FitPar_Table.UIContextMenu = h.FitResultToClip_Menu;
 %%% Edit Boxes for Correction Factors
 h.G_factor_text = uicontrol(...
@@ -2437,7 +2439,7 @@ MI_Bins = TauFitData.MI_Bins;
 
 opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
-    case {h.Fit_Button, h.Menu.Conf_Int_Menu}
+    case {h.Fit_Button, h.ConfIntToClip }
         %%% Read out parameters
         x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
         lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
@@ -2450,7 +2452,7 @@ switch obj
                 fit = 1;
             end
             conf_int = 0;
-        elseif obj == h.Menu.Conf_Int_Menu
+        elseif obj == h.ConfIntToClip 
             fit = 0;
             conf_int = 1;
         end
@@ -2488,11 +2490,15 @@ switch obj
                     [~,best_fit] = min(chi2);   
                 elseif conf_int
                     fun = @fitfun_1exp;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(1,:) = ConfInt(1,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
@@ -2557,11 +2563,15 @@ switch obj
                     [~,best_fit] = min(chi2);
                 elseif conf_int
                     fun = @fitfun_2exp;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(1:2,:) = ConfInt(1:2,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
@@ -2648,11 +2658,15 @@ switch obj
                     [~,best_fit] = min(chi2);
                 elseif conf_int
                     fun = @fitfun_3exp;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(1:3,:) = ConfInt(1:3,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
@@ -2755,11 +2769,15 @@ switch obj
                     [~,best_fit] = min(chi2);
                 elseif conf_int
                     fun = @fitfun_stretched_exp;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(1,:) = ConfInt(1,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_stretched_exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
@@ -2838,11 +2856,15 @@ switch obj
                     [~,best_fit] = min(chi2);
                 elseif conf_int
                     fun = @fitfun_dist;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(6,:) = ConfInt(6,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
@@ -2919,11 +2941,15 @@ switch obj
                     [~,best_fit] = min(chi2);
                  elseif conf_int
                     fun = @fitfun_dist_donly;
-                    ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
+                    shift_range = TauFitData.IRFShift{chan};
+                    best_fit = 1;
+                    [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub,...
                         Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range);
+                    ConfInt(7,:) = ConfInt(7,:)*TauFitData.TACChannelWidth;
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
@@ -3031,6 +3057,7 @@ switch obj
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
@@ -3152,6 +3179,7 @@ switch obj
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
@@ -3291,6 +3319,7 @@ switch obj
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
@@ -3416,6 +3445,7 @@ switch obj
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
@@ -3560,6 +3590,7 @@ switch obj
                 else % plot only
                     x = {x0};
                     best_fit = 1;
+                    shift_range = TauFitData.IRFShift{chan};
                 end
                 
                 %%% remove ignore range from decay
@@ -3831,6 +3862,16 @@ switch obj
 
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
+        
+        if obj == h.ConfIntToClip
+            %%% push fit result and confidence intervals to clip board
+            CI = repmat({'NA'},size(h.FitPar_Table.Data,1),2);
+            CI(find(~fixed),:) = num2cell(ConfInt);
+            %%% get fit result from table, concatenate with parameter names and
+            %%% copy to clipboard using Mat2clip function
+            res = [h.FitPar_Table.RowName,h.FitPar_Table.Data(:,1), CI];
+            Mat2clip(res);
+        end
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
         if obj == h.Fit_Aniso_2exp
             number_of_exponentials = 2;
@@ -5622,13 +5663,12 @@ switch obj
 end
 
 %%% funtion to determine 95% confidence intervals on parameters
-function ConfInt = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub, Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range)
-x = {x0};
-best_fit = 1;
-opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',100,'MaxIteration',10);
-xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type};
-[x,~,residuals,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+function [ConfInt, x] = determine_confidence_intervals(fun,x0,fixed,sigma_est,Decay,ignore,lb,ub, Conv_Type, ShiftParams, IRFPattern, ScatterPattern, MI_Bins, shift_range)
+opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',10000,'MaxIteration',1000);
+xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
+[x,~,residuals,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) fun(interlace(x0,x,fixed),xdata)./sigma_est,...
     x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
 
 alpha = 0.05; %95% confidence interval
 ConfInt = nlparci(x,residuals,'jacobian',jacobian,'alpha',alpha);
+x = {interlace(x0,x,fixed)};
