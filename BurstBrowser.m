@@ -6548,9 +6548,10 @@ else
 end
 
 % Update no. bursts
-set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts, '...
-                                num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' /s ('...
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts ('...
                                 num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
+h.text_nobursts.TooltipString = [num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' bursts per second'];
+                            
 if h.DisplayAverage.Value == 1
     h.axes_1d_x_text.Visible = 'on';
     h.axes_1d_y_text.Visible = 'on';
@@ -10532,6 +10533,13 @@ TauFitData.FileName = BurstData{file}.FileName;
 TauFitData.Path = BurstData{file}.PathName;
 %%% Read out the bursts contained in the different species selections
 valid = UpdateCuts([BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)],file);
+
+%%% bootstrapping for selecting a random subset of bursts
+%if 1
+%    valid = find(valid);
+%    valid = valid(randi(numel(valid),size(valid,1),size(valid,2)));
+%    valid = valid(1:floor(numel(valid)/4));
+%end
 
 Progress(0,h.Progress_Axes,h.Progress_Text,'Preparing Microtime Histograms...');
 
