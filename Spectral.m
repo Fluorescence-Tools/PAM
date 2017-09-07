@@ -868,8 +868,16 @@ switch mode
                     PixelTime = str2double(Info(Start+11:Stop-1))*10^6;
                     SpectralData.Meta.Pixel = num2str(PixelTime);
 
+                    %%% Value for line time seems very wrong
                     SpectralData.Meta.Line = '3';
-                    SpectralData.Meta.Size = '50.2';
+                    
+                    %%% Pixel Size
+                    Start = strfind(Info,'<Scaling>');
+                    Stop = strfind(Info,'</Scaling>');
+                    Scaling = Info(Start+10:Stop-1);
+                    Start = strfind(Scaling,'<Value>');
+                    Stop = strfind(Scaling,'</Value>');                    
+                    SpectralData.Meta.Size = num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
                     
                     %%% Finds positions of plane/channel/time seperators
                     Sep = strfind(Data{1,1}{1,2},';');
