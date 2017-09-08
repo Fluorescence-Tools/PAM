@@ -16425,7 +16425,7 @@ color = lines(numel(datatoplot));
 scat_col = color(id_val,:);
 %%% randomize scatter data clouds
 order = randperm(size(score,1));
-scatter(score(order,1),score(order,2),1,scat_col(order,:),'Marker','.','MarkerFaceColor',color(i,:));
+scatter(score(order,1),score(order,2),10,scat_col(order,:),'Marker','.','MarkerFaceColor',color(i,:));
 for i = 1:numel(datatoplot)
     p(i) = plot(mean(score(id_val==i,1)),mean(score(id_val==i,2)),'o','MarkerFaceColor',color(i,:),'MarkerEdgeColor','k','MarkerSize',10);
 end
