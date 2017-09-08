@@ -1525,7 +1525,7 @@ switch mode
                             Data2(Data2>64)=64;
                             Data2(Data2<1)=1;
                         else
-                            Data2 = ceil(63*(Data-min(min(Data2)))/(max(max(Data2))-min(min(Data2)))+1);
+                            Data2 = ceil(63*(Data2-min(min(Data2)))/(max(max(Data2))-min(min(Data2)))+1);
                         end
                         Color = jet(64);
                         Data2 = Color(Data2(:),:);

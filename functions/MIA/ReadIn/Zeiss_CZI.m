@@ -174,6 +174,15 @@ switch mode
             h.Mia_Image.Settings.Image_Pixel.String = num2str(PixelTime);
             h.Mia_ICS.Fit_Table.Data(13,:) = {num2str(PixelTime)};
                         
+            %%%PixelSize
+            Start = strfind(Info,'<Scaling>');
+            Stop = strfind(Info,'</Scaling>');
+            Scaling = Info(Start+10:Stop-1);
+            Start = strfind(Scaling,'<Value>');
+            Stop = strfind(Scaling,'</Value>');
+            
+            h.Mia_Image.Settings.Image_Size.String = num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
+            h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);};
             
             Data = bfopen(fullfile(Path,FileName{i}),h.Mia_Progress_Axes,h.Mia_Progress_Text,i,numel(FileName));
             
