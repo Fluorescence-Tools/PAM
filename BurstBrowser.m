@@ -16418,7 +16418,7 @@ id_val = id(val);
 
 %%% plot in different colors
 f = figure('Units','pixel','Position',[100,100,1000,400],'Color',[1,1,1]);
-ax(1) = subplot(1,2,1);set(gca,'FontSize',14);
+ax(1) = subplot(1,2,1);
 hold on;
 color = lines(numel(datatoplot));
 %%% define scatter colors
@@ -16462,5 +16462,5 @@ for i = 1:numel(c)
     c(i).Units = 'pixel';
 end
 f.Position(4) = f.Position(4)+40;
-
+set(ax,'FontSize',14);
 hl.Position(2) = ax(1).Position(2)+ax(1).Position(4)+10;
