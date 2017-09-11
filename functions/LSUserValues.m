@@ -2317,9 +2317,9 @@ if Mode==0 %%% Loads user values
     end    
     P.MIA.Custom = S.MIA.Custom;
     
-    if ~isfield(S.MIA.Custom, 'Zeiss_CZI')
+    if ~isfield(S.MIA.Custom, 'Zeiss_CZI') || numel(S.MIA.Custom.Zeiss_CZI)<3
         disp('WARNING: UserValues structure incomplete, field "MIA.Custom.Zeiss_CZI" missing');
-        S.MIA.Custom.Zeiss_CZI = {'1','2'};
+        S.MIA.Custom.Zeiss_CZI = {'1','2',1};
     end
     P.MIA.Custom.Zeiss_CZI = S.MIA.Custom.Zeiss_CZI;
 

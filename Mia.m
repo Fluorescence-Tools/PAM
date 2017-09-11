@@ -1799,7 +1799,7 @@ h.Mia_Additional.Image(1).DataAspectRatio=[1 1 1];
 h.Mia_Additional.Image(1).XTick=[];
 h.Mia_Additional.Image(1).YTick=[];
 colormap(h.Mia_Additional.Image(1),gray);
-h.Mia_Additional.Image(1,2) = colorbar;
+h.Mia_Additional.Image(1,2) = colorbar(h.Mia_Additional.Image(1));
 h.Mia_Additional.Image(1,2).YColor = Look.Fore;
 
 h.Plots.ROI(3)=rectangle(...
@@ -1831,7 +1831,7 @@ h.Mia_Additional.Image(2).DataAspectRatio=[1 1 1];
 h.Mia_Additional.Image(2).XTick=[];
 h.Mia_Additional.Image(2).YTick=[];
 colormap(h.Mia_Additional.Image(2),gray);
-h.Mia_Additional.Image(2,2) = colorbar;
+h.Mia_Additional.Image(2,2) = colorbar(h.Mia_Additional.Image(2));
 h.Mia_Additional.Image(2,2).YColor = Look.Fore;
 
 h.Plots.ROI(4)=rectangle(...

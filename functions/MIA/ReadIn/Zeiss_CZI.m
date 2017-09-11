@@ -12,14 +12,15 @@ end
 %%%%
 %%%% mode = 1: This sets up the czi custom filetype. Tow editboxes are
 %%%% created that are used to define the channels used for the first and
-%%%% second MIA channels.
+%%%% second MIA channels. A checkbox is created to toggle plotting of the
+%%%% spectrum histogram 
 %%%% 
 %%%% mode = 2: This loads the actual data. It uses the bfmatlab functions
 %%%% of the bioformats toolbox.
 %%%% Currently, the string in the first output of the bfopen function is
 %%%% used to determine the number of channels and number of frames
 %%%%
-%%% mode = 3: This simply saves the channel settings to UserValues
+%%%% mode = 3: This simply saves the channel settings to UserValues
 
 
 
@@ -49,6 +50,18 @@ switch mode
             'String', UserValues.MIA.Custom.Zeiss_CZI{2},...
             'Callback', {@Zeiss_CZI,3},...
             'Position',[0.72 0.48, 0.25 0.05] );
+        Out{3}(3) = uicontrol(...
+            'Parent',findobj('Tag','Mia_Orientation_Settings_Panel'),...
+            'Style','checkbox',...
+            'Units','normalized',...
+            'FontSize',12,...
+            'Value', UserValues.MIA.Custom.Zeiss_CZI{3},...
+            'BackgroundColor', UserValues.Look.Back,...
+            'ForegroundColor', UserValues.Look.Fore,...
+            'String', 'Show spectrum histogram',...
+            'Callback', {@Zeiss_CZI,3},...
+            'Position',[0.02 0.40, 0.9 0.05] );
+        
          
     case 2 %%% Load Data
         h = guidata(findobj('Tag','Mia'));
@@ -139,6 +152,8 @@ switch mode
         h.Plots.NB(5).CData=zeros(1,1);
         
         %% Loads all frames for channels
+        Spectrum = cell(numel(FileName),1);
+        Spectral_Range = cell(numel(FileName),1);
         for i=1:numel(FileName)
             
             h.Mia_Image.Settings.Image_Frame.String = '1';
@@ -157,6 +172,7 @@ switch mode
             %%% Reads MetaData
             FileInfo  = czifinfo(fullfile(Path,FileName{i}));
             Info = FileInfo.metadataXML;
+            
             
             %%%FrameTime
             Start = strfind(Info,'<FrameTime>');
@@ -216,11 +232,27 @@ switch mode
                 return;
             end
             
+            %%%Spectral range
+            Start = strfind(Info,'<DetectorWavelengthRange>');
+            Stop = strfind(Info,'</DetectorWavelengthRange>');
+            if ~isempty(Start) && ~isempty(Stop)
+                RangeInfo = Info(Start+25:Stop-1);
+                Range(1) = str2double(RangeInfo(strfind(RangeInfo,'<WavelengthStart>')+17:strfind(RangeInfo,'</WavelengthStart>')-1))*10^9;
+                Range(2) = str2double(RangeInfo(strfind(RangeInfo,'<WavelengthEnd>')+15:strfind(RangeInfo,'</WavelengthEnd>')-1))*10^9;
+                Bin_Width = (Range(2)-Range(1))/N_C;
+                Spectral_Range{i} = linspace(Range(1)+0.5*Bin_Width,Range(2)-0.5*Bin_Width,N_C);
+            else
+                Spectral_Range{i}=1:N_C;
+            end
+            
+            
             %%% Adds data to global variable
             MIAData.Data{1,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
             if ~isempty(Channel2) && min(Channel2)<=N_C
                 MIAData.Data{2,1} = zeros( size(Data{1,1}{1,1},1),size(Data{1,1}{1,1},2),N_F,'uint16');
             end
+            
+            Spectrum{i} = zeros(N_C,1);
             for j=1:size(Data{1,1},1)
                 %%% Current channel
                 C = mod(j-1,N_C)+1;
@@ -235,8 +267,49 @@ switch mode
                 if ~isempty(intersect(Channel2,C))
                     MIAData.Data{2,1}(:,:,F) = MIAData.Data{2,1}(:,:,F)+uint16(Data{1,1}{j,1});
                 end
+                
+                %%% Calculates averaged spectrum for displaying
+                Spectrum{i}(C)=Spectrum{i}(C)+sum(double(Data{1,1}{j,1}(:)));
+                
             end
+            Spectrum{i}=Spectrum{i}/sum(Spectrum{i});
         end
+        
+        if h.Mia_Image.Settings.Custom(3).Value
+            Fig = figure;
+            set(Fig, 'color', 'w')
+            Axis = axes(Fig);
+            Axis.NextPlot = 'add';
+            Axis.Color = 'w';
+            Axis.XLabel.String = 'Wavelength [nm]';
+            Axis.YLabel.String = 'Normalized intensity';
+            
+            XLim = [10^9 0];
+            Bins = 1;
+            for i=1:numel(Spectrum)
+                Spec{i} = plot(Spectral_Range{i},Spectrum{i});
+                if min(Spectral_Range{i})<XLim(1)
+                    XLim(1)= min(Spectral_Range{i});
+                end
+                if max(Spectral_Range{i})>XLim(2)
+                    XLim(2)= max(Spectral_Range{i});
+                end
+                if numel(Spectral_Range{1})>Bins
+                    Bins = numel(Spectral_Range{1});
+                end
+            end
+            Axis.XLim = XLim;
+            Axis2 = axes('Parent',Fig,...
+                        'Position',Axis.Position,...
+                        'XAxisLocation','top',...
+                        'YLim', Axis.YLim,...
+                        'XLim',[1 Bins],...
+                        'Color','none');
+            Axis2.XLabel.String = 'Spectral Bins';
+            Axis2.YLabel.String = 'Normalized intensity';
+            grid minor       
+        end
+
         
         %% Updates frame settings for channels
         %%% Unlinks framses
@@ -282,6 +355,7 @@ switch mode
         h = guidata(findobj('Tag','Mia'));
         UserValues.MIA.Custom.Zeiss_CZI{1} = h.Mia_Image.Settings.Custom(1).String;
         UserValues.MIA.Custom.Zeiss_CZI{2} = h.Mia_Image.Settings.Custom(2).String;
+        UserValues.MIA.Custom.Zeiss_CZI{3} = h.Mia_Image.Settings.Custom(3).Value;
         LSUserValues(1);
 end
     

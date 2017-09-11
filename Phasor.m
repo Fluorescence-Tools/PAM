@@ -3340,8 +3340,10 @@ for i=Images %%% Plots Phasor Data
             Mask(:,:,3) = B;
             Mask = Mask.*repmat(1./sum(Mask,3),1,1,3);
             %%% Applies contrast
-            Mask = sqrt(Mask);
+            %Mask = sqrt(Mask);
             %Mask = log10(Mask*9+1);
+            %Mask = Mask./repmat(max(Mask,[],3),1,1,3);
+            %Mask = Mask(max(Mask(:)));
             
             ROI = repmat(PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
                   PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax,1,1,3);
