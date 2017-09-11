@@ -11580,7 +11580,7 @@ global BurstData UserValues BurstMeta
 if ~isempty(obj)
     if ~isobject(obj)
         h = guidata(findobj('Tag','BurstBrowser'));
-        obj = h.FRET_Export_All_Menu;
+        obj = 'None';
     else
         h = guidata(obj);
     end
@@ -11592,7 +11592,7 @@ if ~isempty(obj)
                 BurstMeta.SelectedFile = i;
                 %%% Make sure to apply corrections
                 ApplyCorrections(obj,[]);
-                Export_FRET_Hist([],[],'Export FRET Histogram');
+                Export_FRET_Hist([],[],'Export FRET Efficiency Histogram');
             end
             BurstMeta.SelectedFile = sel_file;
         case h.FRET_Export_Sel_Menu;
@@ -11606,8 +11606,18 @@ if ~isempty(obj)
                 BurstData{file}.SelectedSpecies = [species(i),subspecies(i)];
                 %%% Make sure to apply corrections
                 ApplyCorrections(obj,[],h,0);
-                Export_FRET_Hist([],[],'Export FRET Histogram');
+                Export_FRET_Hist([],[],'Export FRET Efficiency Histogram');
                 BurstData{file}.SelectedSpecies = sel_species;
+            end
+            BurstMeta.SelectedFile = sel_file;
+        otherwise %% java menu item
+             %%% loop over all files
+            sel_file = BurstMeta.SelectedFile;
+            for i = 1:numel(BurstData);
+                BurstMeta.SelectedFile = i;
+                %%% Make sure to apply corrections
+                ApplyCorrections(h.BurstBrowser,[]);
+                Export_FRET_Hist([],[]);
             end
             BurstMeta.SelectedFile = sel_file;
     end
@@ -11634,7 +11644,7 @@ else
         obj.Label = mode;
     end
     switch obj.Label
-        case 'Export FRET Histogram'
+        case 'Export FRET Efficiency Histogram'
             switch BurstData{file}.BAMethod
                 case {1,2}
                     E = BurstData{file}.DataCut(:,1);
@@ -11647,7 +11657,7 @@ else
                     %%% Save E array in *.his file
                     save(fullfile(getPrintPath(),filename),'EGR','EBG','EBR');
             end
-        case 'Export FRET Histogram (Time Series)'
+        case 'Export FRET Efficiency Histogram (Time Series)'
             %%% export a time series in specific binnig
             %%% query binning
             timebin = inputdlg('Enter time bin in minutes:','Specifiy time bin',1,{'10'});
@@ -16411,7 +16421,7 @@ val = val & (score(:,1) > prctile(score(:,1),alpha/2)) &...
     (score(:,1) < prctile(score(:,1),100-alpha/2)) &...
     (score(:,2) > prctile(score(:,2),alpha/2)) &...
     (score(:,2) < prctile(score(:,2),100-alpha/2));
-sum(val)/numel(val)
+
 data_val = data_val(val,:);
 id_val = id(val);
 [coeff,score,latent] = pca(data_val);
@@ -16462,5 +16472,6 @@ for i = 1:numel(c)
     c(i).Units = 'pixel';
 end
 f.Position(4) = f.Position(4)+40;
-set(ax,'FontSize',14);
+FontSize = 14; if ispc; FontSize = FontSize/1.25;end
+set(ax,'FontSize',FontSize);
 hl.Position(2) = ax(1).Position(2)+ax(1).Position(4)+10;
