@@ -16470,8 +16470,10 @@ xlim([0.5,6.5]);
 c = get(f,'Children');
 for i = 1:numel(c)
     c(i).Units = 'pixel';
+    c(i).Position(2) = c(i).Position(2) + 10;
 end
-f.Position(4) = f.Position(4)+40;
+f.Position(4) = f.Position(4)+50;
 FontSize = 14; if ispc; FontSize = FontSize/1.25;end
 set(ax,'FontSize',FontSize);
+set(ax,'Color',[1,1,1]);
 hl.Position(2) = ax(1).Position(2)+ax(1).Position(4)+10;
