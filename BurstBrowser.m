@@ -15365,6 +15365,26 @@ for k = 1:numel(file) %loop through all selected species
     end
     colormap(colormap(h.BurstBrowser));
     
+    %%% fix plots overlaying on axes
+    if ~UserValues.BurstBrowser.Display.PlotGridAboveData
+        % find 2d axes
+        ax2d = {};
+        for i = 1:numel(hfigallinone.Children)
+            if  strcmp(hfigallinone.Children(i).Type,'axes')
+                if any(strcmp(get(hfigallinone.Children(i).Children,'Type'),'image'))
+                    ax2d{end+1} = hfigallinone.Children(i);
+                end
+            end
+        end
+        for i = 1:numel(ax2d)
+            %%% create dummy axis to prevent data overlapping the axis
+            ax_dummy = axes('Parent',hfigallinone,'Units',ax2d{i}.Units,'Position',ax2d{i}.Position);
+            %linkaxes([ax2d ax_dummy]);
+            set(ax_dummy,'Color','none','XTick',ax2d{i}.XTick,'YTick',ax2d{i}.YTick,'XTickLabel',[],'YTickLabel',[],...
+                'LineWidth',1,'Box','on','XLim',ax2d{i}.XLim, 'YLim', ax2d{i}.YLim);
+        end
+    end
+    
     %%% add colorbar
     cbar = colorbar('peer', hfigallinone.Children(1),'Location','north','Color',[0 0 0]); 
     cbar.Units = 'pixel';
