@@ -2466,7 +2466,7 @@ if sum(PDAMeta.Global) == 0
                 %%% get error bars from jacobian
                 PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
                 %call fminunc at final point with 1 iteration to get hessian
-                PDAMeta.Fixed = fixed;
+                %PDAMeta.Fixed = fixed;
                 fitopts = optimoptions('lsqnonlin','MaxIter',1);
                 [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar(~fixed),LB(~fixed),UB(~fixed),fitopts);
                 ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian,'alpha',alpha);
@@ -2770,7 +2770,9 @@ else
 end
 % make confidence intervals available in base workspace
 if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
-    assignin('base','ConfInt_Jac',[fitpar' PDAMeta.ConfInt_Jac']);
+    conf_int_jac = zeros(size(fitpar,1),size(fitpar,2));
+    conf_int_jac(~fixed) = PDAMeta.ConfInt_Jac(:,i);
+    assignin('base','ConfInt_Jac',[fitpar' conf_int_jac']);
     if obj == h.Menu.EstimateErrorMCMC
         assignin('base','ConfInt_MCMC',[fitpar' PDAMeta.ConfInt_MCMC']);
         assignin('base','MCMC_mean',[fitpar' PDAMeta.MCMC_mean']);
