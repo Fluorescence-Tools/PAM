@@ -11474,7 +11474,7 @@ MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
 xProx = linspace(-0.1,1.1,61);
-timebin = {10E-3,5E-3,2.5E-3,2E-3,1.5E-3,1E-3,0.5E-3,0.3E-3,0.2E-3};
+timebin = {10E-3,5E-3,2E-3,1E-3,0.5E-3,0.25E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
