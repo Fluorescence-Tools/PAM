@@ -167,9 +167,6 @@ else
 FileInfo.Pixels=FileInfo.Lines;
 end
 
-<<<<<<< HEAD
 LSUserValues(1);
 Calculate_Settings = PAM ('Calculate_Settings');
 Calculate_Settings(h.MT.Use_Image,[]);
-=======
->>>>>>> refs/remotes/origin/Spectral
