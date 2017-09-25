@@ -11,7 +11,7 @@ The i in the formula comes from MIAFit and accounts for the
 %%%-------------------------PARAMETER DEFINITION------------------------%%% 
 Param(1): A_mob             = 1;     LB = 0;      UB = Inf; 
 Param(2): w_r_mob[nm]       = 200;   LB = 0;      UB = Inf;g
-Param(3): D[�m�]            = 0.01;  LB = 0;      UB = Inf;g
+Param(3): D[&mu;m<sup>2</sup>/s]            = 0.01;  LB = 0;      UB = Inf;g
 Param(4): A_immob           = 1;     LB = 0;      UB = Inf; 
 Param(5): w_r_im[nm]        = 200;   LB = 0;      UB = Inf;g
 Param(6): I0                = 0;     LB = -Inf;   UB = Inf;

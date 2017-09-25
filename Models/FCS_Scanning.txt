@@ -5,12 +5,12 @@ One component, 3D normal diffusion FCS model with circular scanning.
 |gamma|*|N|*|Trip amplitude|*|Trip time|*|xy diffusion|*|z diffusion|*|Scanning|+|Offset|
 %%%-------------------------PARAMETER DEFINITION------------------------%%%
 Param(1): N             = 1;    LB = 0;     UB = Inf;
-Param(2): D[�m^2/s]     = 373;  LB = 0;     UB = Inf;   
-Param(3): w_r[�m]      = 0.2;  LB = 0;     UB = Inf;f
-Param(4): w_z[�m]      = 1;	LB = 0;     UB = Inf;f
-Param(5): tauT[�s]      = 1;	LB = 0;     UB = Inf;
+Param(2): D[&mu;m<sup>2</sup>/s]     = 373;  LB = 0;     UB = Inf;   
+Param(3): w<sub>r</sub>[&mu;m]      = 0.2;  LB = 0;     UB = Inf;f
+Param(4): w<sub>z</sub>[&mu;m]      = 1;	LB = 0;     UB = Inf;f
+Param(5): tauT[&mu;s]      = 1;	LB = 0;     UB = Inf;
 Param(6): Trip          = 0.01; LB = 0;     UB = 1;
-Param(7): diam[�m]     = 1;    LB = 0;     UB = Inf;
+Param(7): diam[&mu;m]     = 1;    LB = 0;     UB = Inf;
 Param(8): freq[kHz]    = 1;    LB = 0;     UB = Inf;
 Param(9): y0            = 0;    LB = -1;    UB = 1;
 %%%------------------------BRIGHTNESS DEFINITION------------------------%%%

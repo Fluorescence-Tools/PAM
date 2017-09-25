@@ -1,0 +1,29 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+Model for fitting FRET dynamics between two states (Torres Levitus 2007) 
+Load three correlations in this order: DonorxDonor, FRETxFRET and DonorxFRET
+Params a b c have to be fixed to 0 or 1 depending on which curve is fitted (a = 1 for DonorxDonor etc...)
+Diffusion part is a simple 3D diffusion model
+
+    |gamma    |*|N    |*|Trip amplitude   |*|Trip time        | *|xy diffusion        | *|z diffusion                     | |Offset|    
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): N1            = 0.0001;     LB = 0;   UB = Inf;
+Param(2): N2            = 0.0001;     LB = 0;    UB = Inf;
+Param(3): N3            = 0.0001;     LB = 0;    UB = Inf;
+Param(4): a             = 0;     LB = 0;    UB = Inf;
+Param(5): k<sub>12</sub>[s<sup>-1</sup>]    = 1;     LB = 0;    UB = Inf;
+Param(6): k<sub>21</sub>[s<sup>-1</sup>]    = 1;     LB = 0;    UB = Inf;
+Param(7): E1            = 0.5;     LB = 0;    UB = 1;
+Param(8): E2            = 0.5;     LB = 0;    UB = 1;
+Param(9): D[&mu;m<sup>2</sup>/s]     = 50;   LB = 0;	UB = Inf;   
+Param(10): w<sub>r</sub>[&mu;m]       = 0.2;   LB = 0;	UB = Inf;
+Param(11): w<sub>z</sub>[&mu;m]       = 1;	LB = 0;   UB = Inf;
+Param(12): b             = 0;    LB = 0;    UB = Inf;
+Param(13): c             = 0;    LB = 0;    UB = Inf;
+Param(14): y0            = 0;     LB = -1;  UB = 1;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/(P(1)+P(2)+P(3)); %the +0.0001 is be able to put N1,2,3 to zero if you are not using this component
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=P(4).*((1/sqrt(8))*(1/P(1))*(1+((P(5)*P(6)*((P(7)-P(8))^2))/((P(6)*(1-P(7))+P(5)*(1-P(8)))^2)).*exp(-(P(5)+P(6))*x)).*(1./(1+4*(P(9)*1e-12)*x/(P(10)*1e-6)^2)).*(1./sqrt(1+4*(P(9)*1e-12)*x/(P(11)*1e-6)^2)))
++P(12).*((1/sqrt(8))*(1/P(2))*(1+((P(5)*P(6)*((P(7)-P(8))^2))/((P(6)*P(7)+P(5)*P(8))^2)).*exp(-(P(5)+P(6))*x)).*(1./(1+4*(P(9)*1e-12)*x/(P(10)*1e-6)^2)).*(1./sqrt(1+4*(P(9)*1e-12)*x/(P(11)*1e-6)^2)))
++P(13).*((1/sqrt(8))*(1/P(3))*(1-((P(5)*P(6)*((P(7)-P(8))^2))/((P(6)*(1-P(7))+P(5)*(1-P(8)))*(P(6)*P(7)+P(5)*P(8)))).*exp(-(P(5)+P(6))*x)).*(1./(1+4*(P(9)*1e-12)*x/(P(10)*1e-6)^2)).*(1./sqrt(1+4*(P(9)*1e-12)*x/(P(11)*1e-6)^2)))
++P(14);

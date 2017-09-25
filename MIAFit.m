@@ -36,7 +36,7 @@ h.MIAFit = figure(...
     'Toolbar','figure',...
     'UserData',[],...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_MIAFit,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','on');
 
 %%% Sets background of axes and other things
@@ -468,52 +468,6 @@ h.Export_Font = uicontrol(...
     'UserData',UserValues.MIAFit.Export_Font,...
     'Position',[0.5 0.75 0.29 0.1]);
 
-
-% %%% Text for font name
-% uicontrol(...
-%     'Parent',h.Setting_Panel,...
-%     'Units','normalized',...
-%     'FontSize',12,...
-%     'BackgroundColor', Look.Back,...
-%     'ForegroundColor', Look.Fore,...
-%     'HorizontalAlignment','left',...
-%     'Style','text',...
-%     'String','Font name:',...
-%     'Position',[0.5 0.75 0.06 0.1]);
-% 
-% %%% Editbox for font name
-% h.Export_FontName = uicontrol(...
-%     'Parent',h.Setting_Panel,...
-%     'Units','normalized',...
-%     'FontSize',12,...
-%     'BackgroundColor', Look.Control,...
-%     'ForegroundColor', Look.Fore,...
-%     'HorizontalAlignment','left',...
-%     'Style','edit',...
-%     'String','Arial',...
-%     'Position',[0.56 0.75 0.13 0.1]);
-% %%% Text for font size
-% uicontrol(...
-%     'Parent',h.Setting_Panel,...
-%     'Units','normalized',...
-%     'FontSize',12,...
-%     'BackgroundColor', Look.Back,...
-%     'ForegroundColor', Look.Fore,...
-%     'HorizontalAlignment','left',...
-%     'Style','text',...
-%     'String','Font size:',...
-%     'Position',[0.695 0.75 0.06 0.1]);
-% %%% Editbox for font size
-% h.Export_FontSize = uicontrol(...
-%     'Parent',h.Setting_Panel,...
-%     'Units','normalized',...
-%     'FontSize',12,...
-%     'BackgroundColor', Look.Control,...
-%     'ForegroundColor', Look.Fore,...
-%     'Style','edit',...
-%     'String','10',...
-%     'Position',[0.755 0.75 0.04 0.1]);
-
 %%% Text for error limits
 uicontrol(...
     'Parent',h.Setting_Panel,...
@@ -559,6 +513,43 @@ h.Export_Alpha = uicontrol(...
     'String',UserValues.MIAFit.Export_Alpha,...
     'Callback', @(src,event) LSUserValues(1,src,{'String','MIAFit','Export_Alpha'}),...
     'Position',[0.945 0.75 0.04 0.1]);
+
+%%% Checkbox to select manual scaling
+h.ManualScale = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Style','checkbox',...
+    'String','Use manual scale:',...
+    'Value',0,...
+    'Callback',@Update_Plots,...
+    'Position',[0.38 0.88 0.12 0.1]);
+    %'Callback', @(src,event) LSUserValues(1,src,{'String','MIAFit','Export_Alpha'}),...
+    
+%%% Editboxes to set manual scaling
+h.ManualScale_Min = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Style','edit',...
+    'String','-0.05',...
+    'Callback',@Update_Plots,...
+    'Position',[0.38 0.75 0.04 0.1]);  
+h.ManualScale_Max = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Style','edit',...
+    'String','1',...
+    'Callback',@Update_Plots,...
+    'Position',[0.43 0.75 0.04 0.1]);
+
 
 
 %%% Names for export plot types
@@ -874,25 +865,6 @@ Load_Fit([],[],0);
 Update_Style([],[],0);
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_MIAFit(Obj,~)
-clear global -regexp MIAFitData MIAFitMeta
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-Pam=findobj('Tag','Pam');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(Pam) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1137,7 +1109,10 @@ for i=1:NParams
     MIAFitMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
     
     Start = strfind(Text{i+Param_Start},'=');
-    Stop = strfind(Text{i+Param_Start},';');
+    %Stop = strfind(Text{i+Param_Start},';');
+    % Filter more specifically (this enables the use of html greek
+    % letters like &mu; etc.)
+    [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
     
     %%% Reads starting value
     MIAFitMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
@@ -1294,6 +1269,11 @@ switch mode
                         H.Axes{i,j}.XLabel.String = 'Pixel Lag {\it\xi{}}';
                         H.Axes{i,j}.YLabel.String = 'G({\it\xi{}},0)';
                         H.Res{i,j}.XLim = [x(1) x(end)];
+                        if h.ManualScale.Value
+                            H.Axes{i,j}.YLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+                        else
+                            H.Axes{i,j}.YLimMode = 'auto';
+                        end
                         
                         if h.Fit_Weights.Value
                             H.Res{i,j}.YLabel.String = 'W. Res.';
@@ -1333,6 +1313,11 @@ switch mode
                         H.Axes{i,j}.XLabel.String = 'Pixel Lag {\it\psi{}}';
                         H.Axes{i,j}.YLabel.String = 'G(0,{\it\psi{}})';
                         H.Res{i,j}.XLim = [y(1) y(end)];
+                        if h.ManualScale.Value
+                            H.Axes{i,j}.YLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+                        else
+                            H.Axes{i,j}.YLimMode = 'auto';
+                        end
                         if h.Fit_Weights.Value
                             H.Res{i,j}.YLabel.String = 'W. Res.';
                         else
@@ -1377,6 +1362,11 @@ switch mode
                         H.Axes{i,j}.XLim = [min([y(1),x(1)]), max([x(end),y(end)])];
                         H.Axes{i,j}.XLabel.String = 'Pixel Lag {\it\xi{}}, {\it\psi{}}';
                         H.Axes{i,j}.YLabel.String = 'G({\it\xi{}},0), G(0,{\it\psi{}})';
+                        if h.ManualScale.Value
+                            H.Axes{i,j}.YLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+                        else
+                            H.Axes{i,j}.YLimMode = 'auto';
+                        end
                         H.Res{i,j}.XLim = [min([y(1),x(1)]), max([x(end),y(end)])];
                         if h.Fit_Weights.Value
                             H.Res{i,j}.YLabel.String = 'W. Res.';
@@ -1530,7 +1520,13 @@ switch mode
                                 end                                   
                         end
                         Data2 = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
-                        Data2 = ceil(63*(Data2-min(min(Data2)))/(max(max(Data2))-min(min(Data2)))+1);
+                        if h.ManualScale.Value
+                            Data2 = ceil(63*(Data2-str2double(h.ManualScale_Min.String))/(str2double(h.ManualScale_Max.String)-str2double(h.ManualScale_Min.String))+1);
+                            Data2(Data2>64)=64;
+                            Data2(Data2<1)=1;
+                        else
+                            Data2 = ceil(63*(Data2-min(min(Data2)))/(max(max(Data2))-min(min(Data2)))+1);
+                        end
                         Color = jet(64);
                         Data2 = Color(Data2(:),:);
                         Data2 = reshape(Data2,[size(x,1),size(x,2),3]);
@@ -1546,8 +1542,12 @@ switch mode
                         H.Axes{i,j}.XLim = [x(1) x(end)];
                         H.Axes{i,j}.YLim = [y(1) x(end)]; 
                         H.Axes{i,j}.View = View; %[45 25];
-                        ZScale = max(max(Data)) - min(min(Data));
-                        H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001]; 
+                        if h.ManualScale.Value
+                            H.Axes{i,j}.ZLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+                        else
+                            ZScale = max(max(Data)) - min(min(Data));
+                            H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001];
+                        end
                         H.Axes{i,j}.XLabel.String = '{\it\xi{}}';    
                         H.Axes{i,j}.XLabel.Units = 'Points';
                         H.Axes{i,j}.XLabel.Position(2) = H.Axes{i,j}.XLabel.Position(2)+0.07*Size;
@@ -1614,8 +1614,12 @@ switch mode
                         H.Axes{i,j}.YLim = [y(1) x(end)]; 
                         H.Axes{i,j}.CLim = [-ErrorLim ErrorLim];
                         H.Axes{i,j}.View = View;
-                        ZScale = max(max(Data)) - min(min(Data));
-                        H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001]; 
+                        if h.ManualScale.Value
+                            H.Axes{i,j}.ZLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+                        else
+                            ZScale = max(max(Data)) - min(min(Data));
+                            H.Axes{i,j}.ZLim = [min(min(Data))-0.1*ZScale max(max(Data))+0.1*ZScale+0.00000001];
+                        end
                         H.Axes{i,j}.XLabel.String = '{\it\xi{}}';    
                         H.Axes{i,j}.XLabel.Units = 'Points';
                         H.Axes{i,j}.XLabel.Position(2) = H.Axes{i,j}.XLabel.Position(2)+0.07*Size;
@@ -1796,14 +1800,24 @@ for i=1:size(MIAFitMeta.Plots,1)
         %% Updates on axis data plot values 
         MIAFitMeta.Plots{i,1}.XData = x(1,:);    
         MIAFitMeta.Plots{i,1}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;
-        MIAFitMeta.Plots{i,1}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
-        MIAFitMeta.Plots{i,1}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B; 
-        MIAFitMeta.Plots{i,4}.XData = x(1,:);    
-        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B; 
+        if isfield(MIAFitMeta.Plots{i,1}, 'YNegativeDelta')
+            MIAFitMeta.Plots{i,1}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+            MIAFitMeta.Plots{i,1}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+        else
+            MIAFitMeta.Plots{i,1}.LData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+            MIAFitMeta.Plots{i,1}.UData = MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))/B;
+        end
+        MIAFitMeta.Plots{i,4}.XData = x(1,:);
+        MIAFitMeta.Plots{i,4}.YData = MIAFitData.Data{i,1}(Center(1), Center(2)+x(1,:))/B;
         MIAFitMeta.Plots{i,5}.XData = y(:,1);
         MIAFitMeta.Plots{i,5}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;
-        MIAFitMeta.Plots{i,5}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
-        MIAFitMeta.Plots{i,5}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        if isfield(MIAFitMeta.Plots{i,5},'YNegativeDelta')
+            MIAFitMeta.Plots{i,5}.YNegativeDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+            MIAFitMeta.Plots{i,5}.YPositiveDelta = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        else
+            MIAFitMeta.Plots{i,5}.LData = MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+            MIAFitMeta.Plots{i,5}.UData= MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
+        end
         MIAFitMeta.Plots{i,8}.XData = y(:,1);
         MIAFitMeta.Plots{i,8}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B; 
         if h.Omit_Center.Value
@@ -1831,7 +1845,7 @@ for i=1:size(MIAFitMeta.Plots,1)
                OUT(floor((size(OUT,1)+1)/2)+1,:))/2; 
         end
         MIAFitMeta.Plots{i,2}.XData=x(1,:);        
-        MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;     
+        MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;           
         MIAFitMeta.Plots{i,6}.XData=y(:,1);
         MIAFitMeta.Plots{i,6}.YData=OUT(:,1-min(min(x)))/B;
         %% Calculates weighted residuals and plots them
@@ -1856,7 +1870,7 @@ for i=1:size(MIAFitMeta.Plots,1)
             end
         else
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)*B;
-            ResidualsY = (MIAFitMeta.Plots{i,4}.YData-MIAFitMeta.Plots{i,5}.YData)*B;
+            ResidualsY = (MIAFitMeta.Plots{i,5}.YData-MIAFitMeta.Plots{i,6}.YData)*B;
             
             if h.Omit_Center.Value
                 ResidualsX((floor((X+1)/2))) = 0;
@@ -1879,7 +1893,43 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,3}.XData=x(1,:); 
         MIAFitMeta.Plots{i,3}.YData=ResidualsX; 
         MIAFitMeta.Plots{i,7}.XData=y(:,1); 
-        MIAFitMeta.Plots{i,7}.YData=ResidualsY;      
+        MIAFitMeta.Plots{i,7}.YData=ResidualsY;   
+        
+        %% Removes center point, if it is to be omitted
+        if h.Omit_Center.Value
+             MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,1}.XData(floor((X+1)/2)) = [];
+             if isfield(MIAFitMeta.Plots{i,1}, 'YNegativeDelta')
+                 MIAFitMeta.Plots{i,1}.YNegativeDelta(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.YPositiveDelta(floor((X+1)/2)) = [];
+             else
+                 MIAFitMeta.Plots{i,1}.LData(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.UData(floor((X+1)/2)) = [];
+             end
+             MIAFitMeta.Plots{i,2}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,2}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,3}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,3}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,4}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,5}.XData(floor((Y+1)/2)) = [];
+             if isfield(MIAFitMeta.Plots{i,5}, 'YNegativeDelta')
+                 MIAFitMeta.Plots{i,5}.YNegativeDelta(floor((Y+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.YPositiveDelta(floor((Y+1)/2)) = [];
+             else
+                 MIAFitMeta.Plots{i,5}.LData(floor((Y+1)/2)) = [];
+                 MIAFitMeta.Plots{i,5}.UData(floor((Y+1)/2)) = [];
+             end
+             MIAFitMeta.Plots{i,6}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,6}.XData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,7}.XData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = [];
+             MIAFitMeta.Plots{i,8}.XData(floor((Y+1)/2)) = [];
+             
+        end
+        
         %% Calculates Chi^2 and updates table
         h.Fit_Table.CellEditCallback = [];
         if h.Omit_Center.Value
@@ -1910,7 +1960,7 @@ for i=1:size(MIAFitMeta.Plots,1)
         end
         
         %% Updates 2D plot
-        if i == h.Plot2D.Value
+        if sum(Active(1:i)) == h.Plot2D.Value
             Color = jet(64);
             %% Plots main 2D plot surface
             h.Plots.Main.XData = x(1,:);
@@ -1925,13 +1975,23 @@ for i=1:size(MIAFitMeta.Plots,1)
             %%% Calculates color for main plot faces            
             Data = ZData;
             Data = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
-            Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+            if h.ManualScale.Value
+                Data = ceil(63*(Data-str2double(h.ManualScale_Min.String))/(str2double(h.ManualScale_Max.String)-str2double(h.ManualScale_Min.String))+1);
+                Data(Data>64)=64;
+                Data(Data<1)=1;
+            else
+                Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+            end
             Data(isnan(Data))=1;
             Data = Color(Data(:),:);
             Data = reshape(Data,[size(x,1),size(x,2),3]);
             h.Plots.Main.CData = Data;
             %%% Rescales plot
+            if h.ManualScale.Value
+            Range = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)]; 
+            else
             Range = [min(min(h.Plots.Main.ZData)), max(max(h.Plots.Main.ZData))+1e-30];
+            end
             h.Full_Main_Axes.XLim = [min(min(x)) max(max(x))+1e-30];
             h.Full_Main_Axes.YLim = [min(min(y)) max(max(y))+1e-30];
             h.Full_Main_Axes.ZLim = [Range(1)-0.1*diff(Range), Range(2)+0.1*diff(Range)];
@@ -2006,7 +2066,7 @@ for i=1:size(MIAFitMeta.Plots,1)
                     Data(Data >  ErrorLim) =  ErrorLim;
                     
                     if numel(unique(Data(:)))>1
-                       Data = ceil(63*(Data-min(min(Data)))/(max(max(Data))-min(min(Data)))+1);
+                       Data = ceil(63*(Data+ErrorLim)/(2*ErrorLim)+1);
                     else
                        Data(:) = 64; 
                     end
@@ -2057,8 +2117,14 @@ end
 drawnow;
 
 %%% Updates axes limits
-h.X_Axes.XLim = [min(min(x)), max(max(x))]; h.X_Axes.YLimMode ='Auto';
-h.Y_Axes.XLim = [min(min(y)), max(max(y))]; h.Y_Axes.YLimMode ='Auto';
+if h.ManualScale.Value
+    h.X_Axes.YLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+    h.Y_Axes.YLim = [str2double(h.ManualScale_Min.String), str2double(h.ManualScale_Max.String)];
+else
+    h.X_Axes.XLim = [min(min(x)), max(max(x))]; h.X_Axes.YLimMode ='Auto';
+    h.Y_Axes.XLim = [min(min(y)), max(max(y))]; h.Y_Axes.YLimMode ='Auto';
+end
+
 h.XRes_Axes.XLim = [min(min(x)), max(max(x))]; h.XRes_Axes.YLimMode ='Auto';
 h.YRes_Axes.XLim = [min(min(y)), max(max(y))]; h.YRes_Axes.YLimMode ='Auto';
 
@@ -2105,7 +2171,7 @@ switch mode
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
         %%% 2: Countrate of file
-        %%% 3: Brightness if file
+        %%% 3: Brightness of file
         %%% 4:3:end: Parameter value
         %%% 5:3:end: Checkbox to fix parameter
         %%% 6:3:end: Checkbox to fit parameter globaly
@@ -2235,7 +2301,7 @@ end
 
 %%% Calculates brightness for all files
 for i=1:size(MIAFitMeta.Params,2)
-    P=MIAFitMeta.Params(:,:); %#ok<NASGU>
+    P=MIAFitMeta.Params(:,i); %#ok<NASGU>
     eval(MIAFitMeta.Model.Brightness);
     h.Fit_Table.Data{i,3}=num2str(mean(MIAFitData.Counts{i})*B);
 end

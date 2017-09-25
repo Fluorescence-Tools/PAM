@@ -1,0 +1,33 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+Simple RICS model. 
+-> One 3D diffusion component.
+-> Triplet/blinking terms. 
+-> No Shift between correlations.
+-> Imm fraction
+
+     |Offset|+|gamma|  / |N|*...
+      |Diffusion xy    chi shift         psi shift              w_r                |...
+      |Diffusion z     chi shift         psi shift              w_z                |...
+      |Scanning distance of pixels   / w_r^2  + 4D*(chi shift     + psi shift)|;
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): N                 = 1;	LB = 0;     UB = Inf;   
+Param(2): D[&mu;m<sup>2</sup>/s]          = 10;	LB = 0;     UB = Inf;
+Param(3): w<sub>r</sub>[&mu;m]           = 0.2;	LB = 0;     UB = Inf;
+Param(4): w<sub>z</sub>[&mu;m]           = 1;	LB = 0;     UB = Inf;
+Param(5): y0                = 0;    LB = -Inf;  UB = Inf;
+Param(6): Px[nm]            = 50.2;	LB = 0;     UB = Inf;f
+Param(7): t<sub>pix</sub>[&mu;s]        = 8.19;	LB = 0;     UB = Inf;f
+Param(8): t<sub>line</sub>[ms]        = 4.92;	LB = 0;     UB = Inf;f
+Param(9): tauT[&mu;s]      = 1;	LB = 0;   UB = Inf;f
+Param(10): Trip          = 0;  LB = 0;	UB = 1;f
+Param(11): N<sub>imm</sub>		    = 0; 	LB = 0;	    UB = Inf;f
+Param(12): w<sub>imm</sub>	    = 0.2;	LB = 0;	    UB = Inf;f
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B = 1/P(1); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT = P(5) + 2.^(-3/2)./(P(1)+P(9))^2*((P(1)
+    .*(1+((P(10)/(1-P(10))*exp(-(abs(x*P(7)*10^-6+y*P(8)*10^-3))/P(9)/1e-6))))
+    .*(1+4*P(2)*10^-12*(abs(x*P(7)*10^-6+y*P(8)*10^-3))/(P(3)*10^-6)^2).^(-1)
+    .*(1+4*P(2)*10^-12*(abs(x*P(7)*10^-6+y*P(8)*10^-3))/(P(4)*10^-6)^2).^(-0.5)
+    .*exp(-(P(6)*10^-9)^2*(x.^2+y.^2)./((P(3)*10^-6)^2+4*P(2)*10^-12*(abs(x*P(7)*10^-6+y*P(8)*10^-3)))))
+    + (P(11).*exp(-(P(6)*10^-9)^2/(P(12)*10^-6)^2.*((x/P(6)).^2+(y/P(6)).^2))));
