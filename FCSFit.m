@@ -236,7 +236,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
-        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset';'Fit N 3D * brightness'},...
+        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset';'Fit N 3D * brightness';'Time minus offset'},...
         'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
@@ -1628,16 +1628,20 @@ for i=1:size(FCSMeta.Plots,1)
                 if isnan(B) || B==0 || isinf(B)
                     B=1;
                 end
-            case 6
+            case {6,9}
                 %% Normalizes to timepoint closest to set value
                 h.Norm_Time.Visible='on';
                 T=find(FCSMeta.Data{i,1}>=str2double(h.Norm_Time.String),1,'first');
                 B=FCSMeta.Data{i,2}(T);
+                if  Normalization_Method == 9
+                    P = FCSMeta.Params(:,i);
+                    B = B - P(end);
+                end
             case 8
                 
         end      
         %% Updates data plot y values
-        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
             FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
@@ -1654,7 +1658,7 @@ for i=1:size(FCSMeta.Plots,1)
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
-        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
             FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
