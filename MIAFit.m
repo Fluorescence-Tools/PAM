@@ -2762,7 +2762,7 @@ for i=find(Active)'
       case {2,4} %% center or points
           oo=1;
           for o = -omit+1:omit-1
-              OUT(x==o,y==0) = Omit(k,oo);
+              OUT(x==o & y==0) = Omit(k,oo);
               oo=oo+1;
           end
       case 3 %% line
