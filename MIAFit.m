@@ -234,7 +234,7 @@ h.Normalize = uicontrol(...
     'String',{'None';'Fit N 3D';'Fit G(0)';'Fit N 2D'; 'Point X\Y'},...
     'Value',UserValues.MIAFit.NormalizationMethod,...
     'Callback',@Update_Plots,...
-    'Position',[0.082 0.52 0.06 0.1]);
+    'Position',[0.082 0.51 0.06 0.1]);
 if ismac
     h.Normalize.ForegroundColor = [0 0 0];
     h.Normalize.BackgroundColor = [1 1 1];
@@ -265,32 +265,49 @@ h.Norm_Y = uicontrol(...
     'Visible','off',...
     'Callback',@Update_Plots,...
     'Position',[0.19 0.51 0.04 0.1]);
-%%% Checkbox to omit center point
-h.Omit_Center = uicontrol(...
+%%% Text
+uicontrol(...
     'Parent',h.Setting_Panel,...
-    'Tag','Omit_Center',...
+    'Tag','Setting_Panel',...
     'Units','normalized',...
     'FontSize',12,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Style','checkbox',...
+    'HorizontalAlignment','left',...
+    'Style','text',...
+    'String','Omit:',...
+    'Position',[0.002 0.37 0.08 0.1]);
+%%% Popupmenu to choose omit method
+h.Omit = uicontrol(...
+    'Parent',h.Setting_Panel,...
+    'Tag','Omit',...
+    'Units','normalized',...
+    'FontSize',10,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Style','popupmenu',...
+    'String',{'None';'Center';'Line';'Points'},...
     'Value',UserValues.MIAFit.Omit,...
-    'String','Omit center',...
     'Callback',@Update_Plots,...
-    'Position',[0.002 0.37 0.1 0.1]);
-%%% Checkbox to omit middle line
-h.Omit_Center_Line = uicontrol(...
+    'Position',[0.082 0.37 0.06 0.1]);
+if ismac
+    h.Omit.ForegroundColor = [0 0 0];
+    h.Omit.BackgroundColor = [1 1 1];
+end
+%%% Editbox to set X points to be omitted
+h.Omit_X = uicontrol(...
     'Parent',h.Setting_Panel,...
-    'Tag','Omit_Center_Line',...
+    'Tag','Omit_X',...
     'Units','normalized',...
     'FontSize',12,...
-    'BackgroundColor', Look.Back,...
+    'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Style','checkbox',...
-    'Value',UserValues.MIAFit.Omit_Center_Line,...
-    'String','Omit center line',...
+    'Style','edit',...
+    'String','3',...
+    'Visible','off',...
+    'Tooltipstring', 'Enter "1" for omitting only the center point',...
     'Callback',@Update_Plots,...
-    'Position',[0.002 0.23 0.1 0.1]);
+    'Position',[0.145 0.37 0.04 0.1]);
 %%% Checkbox to hide legend
 h.Hide_Legend = uicontrol(...
     'Parent',h.Setting_Panel,...
@@ -303,7 +320,7 @@ h.Hide_Legend = uicontrol(...
     'Value',UserValues.MIAFit.Hide_Legend,...
     'String','Hide Legend',...
     'Callback',@Update_Plots,...
-    'Position',[0.002 0.09 0.1 0.1]);
+    'Position',[0.002 0.23 0.1 0.1]);
 %%% Optimization settings
 uicontrol(...
     'Parent',h.Setting_Panel,...
@@ -356,7 +373,7 @@ h.Termination = uicontrol(...
     'HorizontalAlignment','left',...
     'Style','text',...
     'String','',...
-    'Position',[0.35 0.01 0.13 0.98]);
+    'Position',[0.15 0.1 0.25 0.1]);
 
 %%% Text for export size
 uicontrol(...
@@ -1380,9 +1397,9 @@ switch mode
                         switch Type
                             case 7 %%% Correlation image
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit_Center_Line.Value
+                                if h.Omit.Value == 3 %% line
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                elseif h.Omit_Center.Value
+                                elseif h.Omit.Value == 2 %% center
                                     Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
                                         (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
                                          Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
@@ -1390,11 +1407,11 @@ switch mode
                             case 8 %%% Fit image
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                                if h.Omit_Center.Value
+                                if h.Omit.Value == 2 %% center
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                         OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit_Center_Line.Value
+                                elseif h.Omit.Value == 3 %% line
                                     OUT(floor((size(OUT,1)+1)/2),:) =...
                                         (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
@@ -1404,21 +1421,21 @@ switch mode
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
-                                if h.Omit_Center.Value
+                                if h.Omit.Value == 2 %% center
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                         OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                                elseif h.Omit_Center_Line.Value
+                                elseif h.Omit.Value == 3 %% line
                                     OUT(floor((size(OUT,1)+1)/2),:) =...
                                         (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 Weights = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit_Center_Line.Value
+                                if h.Omit.Value == 3 %% line
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
                                     Weights(floor((size(Weights,1)+1)/2),:) = inf;
-                                elseif h.Omit_Center.Value
+                                elseif h.Omit.Value == 2 %% center
                                     Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                          Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
@@ -1469,9 +1486,9 @@ switch mode
                         switch Type
                             case 10 %%% Correlation surf
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit_Center_Line.Value
+                                if h.Omit.Value == 3 %% line
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                elseif h.Omit_Center.Value
+                                elseif h.Omit.Value == 2 %% center
                                     Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
                                         (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
                                         Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
@@ -1479,11 +1496,11 @@ switch mode
                             case 11 %%% Fit surf
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                                if h.Omit_Center.Value
+                                if h.Omit.Value == 2 %% center
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                         OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit_Center_Line.Value
+                                elseif h.Omit.Value == 3 %% line
                                     OUT(floor((size(OUT,1)+1)/2),:) =...
                                         (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
@@ -1493,21 +1510,21 @@ switch mode
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
-                                if h.Omit_Center.Value
+                                if h.Omit.Value == 2 %% center
                                     OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                         OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit_Center_Line.Value
+                                elseif h.Omit.Value == 3 %% line
                                     OUT(floor((size(OUT,1)+1)/2),:) =...
                                         (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
                                         OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 Weights = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit_Center_Line.Value
+                                if h.Omit.Value == 3 %% line
                                     Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
                                     Weights(floor((size(Weights,1)+1)/2),:) = inf;
-                                elseif h.Omit_Center.Value
+                                elseif h.Omit.Value == 2 %% center
                                     Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                         (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                         Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
@@ -1562,10 +1579,10 @@ switch mode
                         %%% Extract Data
                         Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         Error = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                        if h.Omit_Center_Line.Value
+                        if h.Omit.Value == 3 %% line
                             Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
                             Error(floor((size(Error,1)+1)/2),:) = inf;
-                        elseif h.Omit_Center.Value
+                        elseif h.Omit.Value == 2 %% center
                             Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
                                 (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
                                  Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
@@ -1574,11 +1591,11 @@ switch mode
                                                
                         P=MIAFitMeta.Params(:,File);
                         OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                        if h.Omit_Center.Value
+                        if h.Omit.Value == 2 %% center
                             OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
                                 (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
                                 OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                        elseif h.Omit_Center_Line.Value
+                        elseif h.Omit.Value == 3 %% line
                             OUT(floor((size(OUT,1)+1)/2),:) =...
                                 (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
                                 OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
@@ -1719,25 +1736,19 @@ y = y - ceil(max(max(y))/2);
 Plot_Errorbars = h.Fit_Errorbars.Value;
 Normalization_Method = h.Normalize.Value;
 
-%%% take care that only either omit center OR omit center line is checked
-if ~isempty(obj)
-    if obj == h.Omit_Center
-        if h.Omit_Center.Value == 1
-            h.Omit_Center_Line.Value = 0;
-        end
-    elseif obj == h.Omit_Center_Line
-        if h.Omit_Center_Line.Value == 1
-            h.Omit_Center.Value = 0;
-        end
-    end
+switch h.Omit.Value
+    case 4 %points
+        omit = str2double(h.Omit_X.String);
+    case 2 %center
+        omit = 1;
 end
+
 %%% store in UserValues
 UserValues.MIAFit.Fit_X = str2double(h.Fit_X.String);
 UserValues.MIAFit.Fit_Y = str2double(h.Fit_Y.String);
 UserValues.MIAFit.Plot_Errorbars = Plot_Errorbars;
 UserValues.MIAFit.NormalizationMethod = Normalization_Method;
-UserValues.MIAFit.Omit = h.Omit_Center.Value;
-UserValues.MIAFit.Omit_Center_Line = h.Omit_Center_Line.Value;
+UserValues.MIAFit.Omit = h.Omit.Value;
 UserValues.MIAFit.Hide_Legend = h.Hide_Legend.Value;
 UserValues.MIAFit.Export_Error = h.Export_ErrorLim.String;
 LSUserValues(1);
@@ -1819,74 +1830,73 @@ for i=1:size(MIAFitMeta.Plots,1)
             MIAFitMeta.Plots{i,5}.UData= MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))/B;
         end
         MIAFitMeta.Plots{i,8}.XData = y(:,1);
-        MIAFitMeta.Plots{i,8}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B; 
-        if h.Omit_Center.Value
-            MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
-            MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
-            MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
-            MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
-        elseif h.Omit_Center_Line.Value
-            MIAFitMeta.Plots{i,1}.YData = (MIAFitData.Data{i,1}(Center(1)-1, Center(2)+x(1,:))+MIAFitData.Data{i,1}(Center(1)+1, Center(2)+x(1,:)))/B/2;
-            MIAFitMeta.Plots{i,4}.YData = (MIAFitData.Data{i,1}(Center(1)-1, Center(2)+x(1,:))+MIAFitData.Data{i,1}(Center(1)+1, Center(2)+x(1,:)))/B/2;
-            MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
-            MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
+        MIAFitMeta.Plots{i,8}.YData = MIAFitData.Data{i,1}(Center(1)+y(:,1), Center(2))/B;
+        h.Omit_X.Visible='off';
+        switch h.Omit.Value
+            case 3 %% line
+                MIAFitMeta.Plots{i,1}.YData = (MIAFitData.Data{i,1}(Center(1)-1, Center(2)+x(1,:))+MIAFitData.Data{i,1}(Center(1)+1, Center(2)+x(1,:)))/B/2;
+                MIAFitMeta.Plots{i,4}.YData = (MIAFitData.Data{i,1}(Center(1)-1, Center(2)+x(1,:))+MIAFitData.Data{i,1}(Center(1)+1, Center(2)+x(1,:)))/B/2;
+                MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
+                MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
+            case {2,4} %% center or points
+                h.Omit_X.Visible='on';
+                MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+omit))/2;
+                MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
+                MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
+                MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
         end
+        
         %% Calculates fit y data and updates fit plot
         P=MIAFitMeta.Params(:,i);
         OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
         OUT=real(OUT);
-        if h.Omit_Center.Value
-           OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-               (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-               OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; 
-        elseif h.Omit_Center_Line.Value
-           OUT(floor((size(OUT,1)+1)/2),:) =...
-               (OUT(floor((size(OUT,1)+1)/2)-1,:) + ...
-               OUT(floor((size(OUT,1)+1)/2)+1,:))/2; 
+        switch h.Omit.Value
+            case 3 %% line
+                OUT(floor((size(OUT,1)+1)/2),:) =...
+                    (OUT(floor((size(OUT,1)+1)/2)-1,:)  + ...
+                    OUT(floor((size(OUT,1)+1)/2)+1,:)) /2;
+            case {2, 4} %% center or points
+                OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                    (OUT(floor((size(OUT,1)+1)/2), floor((size(OUT,2)+1)/2)-omit)  + ...
+                    OUT(floor((size(OUT,1)+1)/2), floor((size(OUT,2)+1)/2)+omit)) /2;
         end
-        MIAFitMeta.Plots{i,2}.XData=x(1,:);        
+        MIAFitMeta.Plots{i,2}.XData=x(1,:);
         MIAFitMeta.Plots{i,2}.YData=OUT(1-min(min(y)),:)/B;           
         MIAFitMeta.Plots{i,6}.XData=y(:,1);
         MIAFitMeta.Plots{i,6}.YData=OUT(:,1-min(min(x)))/B;
+        
         %% Calculates weighted residuals and plots them
         if h.Fit_Weights.Value
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)./MIAFitData.Data{i,2}(Center(1), Center(2)+x(1,:))*B;   
             ResidualsY = (MIAFitMeta.Plots{i,5}.YData-MIAFitMeta.Plots{i,6}.YData)./MIAFitData.Data{i,2}(Center(1)+y(:,1), Center(2))'*B;
-            if h.Omit_Center.Value
-                ResidualsX((floor((X+1)/2))) = 0;
-                ResidualsY((floor((Y+1)/2))) = 0;
-                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                Chisqr((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
-                Chisqr = sum(sum((Chisqr./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
-            elseif h.Omit_Center_Line.Value
-                ResidualsX((floor((X+1)/2))) = 0;
-                ResidualsY((floor((Y+1)/2))) = 0;
-                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                Chisqr((floor((Y+1)/2)),:) = 0;
-                Chisqr = sum(sum((Chisqr./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
-            else
-                Chisqr = sum(sum(((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT)...
-                    ./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
+            Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+            switch h.Omit.Value
+                case 3 %% line
+                    ResidualsX(floor((X+1)/2)) = 0;
+                    ResidualsY(floor((Y+1)/2)) = 0;
+                    Chisqr((floor((Y+1)/2)),:) = 0;
+                case {2, 4} %% center or points
+                    ResidualsX(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
+                    ResidualsY(floor((Y+1)/2)) = 0;
+                    Chisqr(floor((Y+1)/2),floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
             end
+            Chisqr = sum(sum((Chisqr./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))).^2));
         else
             ResidualsX = (MIAFitMeta.Plots{i,1}.YData-MIAFitMeta.Plots{i,2}.YData)*B;
             ResidualsY = (MIAFitMeta.Plots{i,5}.YData-MIAFitMeta.Plots{i,6}.YData)*B;
-            
-            if h.Omit_Center.Value
-                ResidualsX((floor((X+1)/2))) = 0;
-                ResidualsY((floor((Y+1)/2))) = 0;
-                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                Chisqr((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
-                Chisqr = sum(sum(Chisqr));
-            elseif h.Omit_Center_Line.Value
-                ResidualsX((floor((X+1)/2))) = 0;
-                ResidualsY((floor((Y+1)/2))) = 0;
-                Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                Chisqr((floor((Y+1)/2)),:) = 0;
-                Chisqr = sum(sum(Chisqr));
-            else
-                Chisqr = sum(sum((MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))-OUT).^2));
+            Chisqr = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
+            switch h.Omit.Value
+                case 3 %% line
+                    ResidualsX(floor((X+1)/2)) = 0;
+                    ResidualsY(floor((Y+1)/2)) = 0;
+                    Chisqr(floor((Y+1)/2),:) = 0;
+                case {2, 4} %% center or points
+                    ResidualsX(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
+                    ResidualsY(floor((Y+1)/2)) = 0;
+                    Chisqr(floor((Y+1)/2),floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
             end
+            Chisqr = sum(sum(Chisqr.^2));
+            
         end
         ResidualsX(ResidualsX==inf | isnan(ResidualsX)) = 0;
         ResidualsY(ResidualsY==inf | isnan(ResidualsY)) = 0;
@@ -1896,22 +1906,23 @@ for i=1:size(MIAFitMeta.Plots,1)
         MIAFitMeta.Plots{i,7}.YData=ResidualsY;   
         
         %% Removes center point, if it is to be omitted
-        if h.Omit_Center.Value
-             MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,1}.XData(floor((X+1)/2)) = [];
+        switch h.Omit.Value 
+            case {2,4} %% center or point
+             MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,1}.XData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
              if isfield(MIAFitMeta.Plots{i,1}, 'YNegativeDelta')
-                 MIAFitMeta.Plots{i,1}.YNegativeDelta(floor((X+1)/2)) = [];
-                 MIAFitMeta.Plots{i,1}.YPositiveDelta(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.YNegativeDelta(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+                 MIAFitMeta.Plots{i,1}.YPositiveDelta(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
              else
-                 MIAFitMeta.Plots{i,1}.LData(floor((X+1)/2)) = [];
-                 MIAFitMeta.Plots{i,1}.UData(floor((X+1)/2)) = [];
+                 MIAFitMeta.Plots{i,1}.LData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+                 MIAFitMeta.Plots{i,1}.UData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
              end
-             MIAFitMeta.Plots{i,2}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,2}.XData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,3}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,3}.XData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)) = [];
-             MIAFitMeta.Plots{i,4}.XData(floor((X+1)/2)) = [];
+             MIAFitMeta.Plots{i,2}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,2}.XData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,3}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,3}.XData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
+             MIAFitMeta.Plots{i,4}.XData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = [];
              MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = [];
              MIAFitMeta.Plots{i,5}.XData(floor((Y+1)/2)) = [];
              if isfield(MIAFitMeta.Plots{i,5}, 'YNegativeDelta')
@@ -1932,12 +1943,13 @@ for i=1:size(MIAFitMeta.Plots,1)
         
         %% Calculates Chi^2 and updates table
         h.Fit_Table.CellEditCallback = [];
-        if h.Omit_Center.Value
-            Chisqr = Chisqr/(numel(x)-2-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
-        elseif h.Omit_Center_Line.Value
-            Chisqr = Chisqr/(numel(x)-1-X-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
-        else
-            Chisqr = Chisqr/(numel(x)-1-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+        switch h.Omit.Value
+            case {2,4} %% center or point
+                Chisqr = Chisqr/(numel(x)-2*omit-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+            case 3 %% line
+                Chisqr = Chisqr/(numel(x)-1-X-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
+            otherwise
+                Chisqr = Chisqr/(numel(x)-1-sum(~cell2mat(h.Fit_Table.Data(i,5:3:end-1))));
         end
         h.Fit_Table.Data{i,end}=num2str(Chisqr);
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -1966,10 +1978,12 @@ for i=1:size(MIAFitMeta.Plots,1)
             h.Plots.Main.XData = x(1,:);
             h.Plots.Main.YData = y(:,1);
             ZData = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))./B;
-            if h.Omit_Center_Line.Value
-                ZData(floor((size(ZData,1)+1)/2),:) = (ZData(floor((size(ZData,1)+1)/2)-1,:)+ZData(floor((size(ZData,1)+1)/2)+1,:))/2;
-            elseif h.Omit_Center.Value
-                ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)) = (ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)-1)+ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)+1))/2;
+            switch h.Omit.Value
+                case 3 %% line
+                    ZData(floor((size(ZData,1)+1)/2),:) = (ZData(floor((size(ZData,1)+1)/2)-1,:)+ZData(floor((size(ZData,1)+1)/2)+1,:))/2;
+                case {2,4} %% center or points
+                    ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)-omit+1:floor((size(ZData,2)+1)/2)+omit-1)...
+                        = (ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)-omit)+ZData(floor((size(ZData,1)+1)/2),floor((size(ZData,2)+1)/2)+omit))/2;
             end
             h.Plots.Main.ZData = ZData;
             %%% Calculates color for main plot faces            
@@ -2015,10 +2029,11 @@ for i=1:size(MIAFitMeta.Plots,1)
                     removeprop(h.Full_Link,'DataAspectRatio');
                     removeprop(h.Full_Link,'ZLim');
                     Data = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                    if h.Omit_Center.Value
-                        Data((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
-                    elseif h.Omit_Center_Line.Value
-                        Data(floor((Y+1)/2),:) = 0;
+                    switch h.Omit.Value
+                        case {2,4} %% center or points
+                            Data(floor((Y+1)/2),floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
+                        case 3 %% line
+                            Data(floor((Y+1)/2),:) = 0;
                     end
                     if h.Fit_Weights.Value
                        Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))));                    
@@ -2050,13 +2065,14 @@ for i=1:size(MIAFitMeta.Plots,1)
                     h.Plots.Fit.ZData = Data;
                     %%% Calculates color for fit plot faces
                     Data = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))) - OUT;
-                    if h.Omit_Center.Value
-                        Data((floor((Y+1)/2)),(floor((X+1)/2))) = 0;
-                    elseif h.Omit_Center_Line.Value
-                        Data((floor((Y+1)/2)),:) = 0;
+                    switch h.Omit.Value
+                        case {2,4} %% center or points
+                            Data(floor((Y+1)/2),floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = 0;
+                        case 3 %% line
+                            Data(floor((Y+1)/2),:) = 0;
                     end
                     if h.Fit_Weights.Value
-                       Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))));                    
+                        Data = (Data./MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x)))));
                     end
                     Data = (Data + circshift(Data,[0 -1]) + circshift(Data,[-1 0]) + circshift(Data,[-1 -1]))/4;
                     
@@ -2536,6 +2552,15 @@ LSUserValues(1);
 %%% Optimization settings
 opts=optimset('Display','off','TolFun',TolFun,'MaxIter',MaxIter);
 
+switch h.Omit.Value
+    case 4 %points
+        omit = str2double(h.Omit_X.String);
+    case 2 %center
+        omit = 1;
+    otherwise
+        omit = [];
+end
+
 %%% Determines x and y data
 x = str2double(h.Fit_X.String);
 y = str2double(h.Fit_Y.String);
@@ -2551,12 +2576,13 @@ if sum(Global)==0
         Center = ceil((size(MIAFitData.Data{i,1})+1)/2);        
         ZData = MIAFitData.Data{i,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
         EData = MIAFitData.Data{i,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))));
-        if h.Omit_Center.Value
-            Omit = MIAFitData.Data{i,1}(Center(1), Center(2));
-        elseif h.Omit_Center_Line.Value
-            Omit = MIAFitData.Data{i,1}(Center(1), Center(2)+(min(min(x)):max(max(x))));
-        else
-            Omit = [];
+        switch h.Omit.Value
+            case {2,4} %% center
+                Omit = MIAFitData.Data{i,1}(Center(1), Center(2)-omit+1:Center(2)+omit-1);
+            case 3 %% line
+                Omit = MIAFitData.Data{i,1}(Center(1), Center(2)+(min(min(x)):max(max(x))));
+            otherwise
+                Omit = [];
         end
         %%% Disables weights
         if ~Use_Weights
@@ -2567,9 +2593,7 @@ if sum(Global)==0
         Lb=lb(~Fixed(i,:));
         Ub=ub(~Fixed(i,:));        
         %%% Performs fit
-        tic;
-        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i,h},ZData./EData,Lb,Ub,opts);
-        toc;
+        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i,h,omit},ZData./EData,Lb,Ub,opts);
         %%% Updates parameters
         MIAFitMeta.Params(~Fixed(i,:),i)=Fitted_Params;
     end  
@@ -2595,12 +2619,13 @@ else
         EData = [EData;edata(:)];
         X = [X; x(:)];
         Y = [Y; y(:)];
-        if h.Omit_Center.Value
-            Omit = [Omit; MIAFitData.Data{i,1}(Center(1), Center(2))];
-        elseif h.Omit_Center_Line.Value
-            Omit = [Omit; MIAFitData.Data{i,1}(Center(1),Center(2)+(min(min(x)):max(max(x))))];
-        else
-            Omit = [];
+        switch h.Omit.Value
+            case {2,4} %% center or points
+                Omit = [Omit; MIAFitData.Data{i,1}(Center(1), Center(2)-omit+1:Center(2)+omit-1)];
+            case 3 %% line
+                Omit = [Omit; MIAFitData.Data{i,1}(Center(1),Center(2)+(min(min(x)):max(max(x))))];
+            otherwise
+                Omit = [];
         end
         Points(end+1) = numel(x);
         %%% Concaternates initial values and bounds for non fixed parameters
@@ -2609,7 +2634,7 @@ else
         Ub=[Ub ub(~Fixed(i,:) & ~Global)];
     end
     %%% Performs fit
-    [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Global,Fit_Params,{X,Y,EData,Omit,Points,h},ZData./EData,Lb,Ub,opts);
+    [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Global,Fit_Params,{X,Y,EData,Omit,Points,h,omit},ZData./EData,Lb,Ub,opts);
     %%% Updates parameters
     MIAFitMeta.Params(Global,:)=repmat(Fitted_Params(1:sum(Global)),[1 size(MIAFitMeta.Params,2)]) ;
     Fitted_Params(1:sum(Global))=[];
@@ -2669,6 +2694,7 @@ Omit = Data{4};
 i = Data{5};
 h = Data{6};
 Fixed = cell2mat(h.Fit_Table.Data(i,5:3:end-1));
+omit = Data{7};
 
 P = zeros(numel(Fixed),1);
 %%% Assigns fitting parameters to unfixed parameters of fit
@@ -2677,10 +2703,11 @@ P(~Fixed) = Fit_Params;
 P(Fixed) = MIAFitMeta.Params(Fixed,i);
 %%% Applies function on parameters
 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-if h.Omit_Center.Value
-    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) = Omit;
-elseif h.Omit_Center_Line.Value
-    OUT(floor((size(OUT,1)+1)/2),:) = Omit;
+switch h.Omit.Value
+    case {2,4} %% center or points
+        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) = Omit;
+    case 3 %% line
+        OUT(floor((size(OUT,1)+1)/2),:) = Omit;
 end
 %%% Applies weights
 Out=OUT./Weights;
@@ -2707,6 +2734,7 @@ Weights=Data{3};
 Omit = Data{4};
 Points=Data{5};
 h = Data{6};
+omit = Data{7};
 
 %%% Determines, which parameters are fixed, global and which files to use
 Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end));
@@ -2730,11 +2758,17 @@ for i=find(Active)'
   X(1:Points(k))=[]; Y(1:Points(k)) = []; 
   %%% Calculates function for current file
   OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-  if h.Omit_Center.Value
-      OUT(x==0 & y==0) = Omit(k);
-  elseif h.Omit_Center_Line.Value
-      OUT(y==0) = Omit(k,:);
+  switch h.Omit.Value
+      case {2,4} %% center or points
+          oo=1;
+          for o = -omit+1:omit-1
+              OUT(x==o,y==0) = Omit(k,oo);
+              oo=oo+1;
+          end
+      case 3 %% line
+          OUT(y==0) = Omit(k,:);
   end
+  
   Out=[Out;OUT]; 
   k=k+1;
 end
