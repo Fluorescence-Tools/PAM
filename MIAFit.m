@@ -909,7 +909,7 @@ if mode==1 || Type == 4
 end
 for i=1:numel(FileName)
     switch Type
-        case 1 %% MIA correlation file based on .mat file
+        case 1 %% MIA correlation file based on .miacor file
             MIAFitData.FileName{end+1} = FileName{i};
             load([PathName FileName{i}],'-mat','Data');
             MIAFitData.Data{end+1,1} = Data{1}; %#ok<USENS>
