@@ -562,7 +562,11 @@ end
         'Label','Export Phasor Histogram',...
         'Tag','ExportROIs',...
         'Callback',@List_Callback);
-    
+    h.Export_LifetimeIm = uimenu(...
+        'Parent',h.List_Menu,...
+        'Label','Export Lifetime Images',...
+        'Tag','ExportLifetimeImages',...
+        'Callback',@List_Callback);    
     %%% Listbox of all loaded files
     h.List = uicontrol(...
         'Parent',h.Settings_Panel,...
@@ -2381,6 +2385,18 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             YData = h.Universal_Circle.YData;
             assignin('base','Circle_XData',XData);
             assignin('base','Circle_YData',YData);
+        case h.Export_LifetimeIm %%% Exports TauM, TauP and Intensity Values
+            Sel = h.List.Value;           
+            for i=Sel                
+                TauP=PhasorData.Data{i}.TauP;
+                TauM=PhasorData.Data{i}.TauM;
+                Intensity=PhasorData.Data{i}.Intensity;
+                [FileName,Path] = uiputfile('*.mat', PhasorData.Files{i, 1}, PhasorData.Files{i, 2});
+                if ~(isequal(FileName,0) || isequal(Path,0))
+                    f = strcat(Path,FileName);
+                    save(f,'TauP', 'TauM','Intensity');
+                end
+            end
     end
 end
 
