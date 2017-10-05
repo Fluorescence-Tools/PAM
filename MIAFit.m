@@ -1163,6 +1163,13 @@ if isempty(MIAFitData.FileName) && any(mode==[1,4])
     return;
 end
 
+switch h.Omit.Value
+    case 4 %points
+        omit = str2double(h.Omit_X.String);
+    case 2 %center
+        omit = 1;
+end
+
 switch mode
     case 1 %%% Export plots to figure
         Size = str2double(h.Export_Size.String);
@@ -1397,49 +1404,53 @@ switch mode
                         switch Type
                             case 7 %%% Correlation image
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit.Value == 3 %% line
-                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                elseif h.Omit.Value == 2 %% center
-                                    Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
-                                        (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
-                                         Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
+                                switch h.Omit.Value
+                                    case 3 %% line
+                                        Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                    case {2,4} %% center or points
+                                        Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit+1:floor((size(Data,2)+1)/2)+omit-1) =...
+                                            (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+omit) + ...
+                                            Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit))/2;
                                 end
                             case 8 %%% Fit image
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                                if h.Omit.Value == 2 %% center
-                                    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit.Value == 3 %% line
-                                    OUT(floor((size(OUT,1)+1)/2),:) =...
-                                        (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
-                                        OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
+                                switch h.Omit.Value
+                                    case {2,4} %% center or point
+                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2;
+                                    case h.Omit.Value == 3 %% line
+                                        OUT(floor((size(OUT,1)+1)/2),:) =...
+                                            (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
+                                            OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = real(OUT)/B;
                             case 9 %%% Residuals image
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
-                                if h.Omit.Value == 2 %% center
-                                    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                                elseif h.Omit.Value == 3 %% line
-                                    OUT(floor((size(OUT,1)+1)/2),:) =...
-                                        (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
-                                        OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
+                                switch h.Omit.Value
+                                    case {2, 4} %% center or points
+                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2;
+                                    case 3 %% line
+                                        OUT(floor((size(OUT,1)+1)/2),:) =...
+                                            (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
+                                            OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 Weights = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit.Value == 3 %% line
-                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                    Weights(floor((size(Weights,1)+1)/2),:) = inf;
-                                elseif h.Omit.Value == 2 %% center
-                                    Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                         Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                                    Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =inf;
+                                switch h.Omit.Value
+                                    case 3 %% line
+                                        Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                        Weights(floor((size(Weights,1)+1)/2),:) = inf;
+                                    case {2,4} %% center or points
+                                        Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2;
+                                        Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =inf;
                                 end
                                 if h.Fit_Weights.Value
                                     Data = ((Data-Out)./Weights);
@@ -1486,49 +1497,53 @@ switch mode
                         switch Type
                             case 10 %%% Correlation surf
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit.Value == 3 %% line
-                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                elseif h.Omit.Value == 2 %% center
-                                    Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
-                                        (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
-                                        Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
+                                switch h.Omit.Value
+                                    case 3 %% line
+                                        Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                    case {2,4} %% center or points
+                                        Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit+1:floor((size(Data,2)+1)/2)+omit-1) =...
+                                            (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+omit) + ...
+                                            Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit))/2;
                                 end
                             case 11 %%% Fit surf
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                                if h.Omit.Value == 2 %% center
-                                    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit.Value == 3 %% line
-                                    OUT(floor((size(OUT,1)+1)/2),:) =...
-                                        (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
-                                        OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
+                                switch h.Omit.Value
+                                    case {2,4} %% center or points
+                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2; 
+                                    case 3 %% line
+                                        OUT(floor((size(OUT,1)+1)/2),:) =...
+                                            (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
+                                            OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = real(OUT)/B;
                             case 12 %%% Residuals surf
                                 P=MIAFitMeta.Params(:,File);
                                 OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
                                 Out = real(OUT)/B;
-                                if h.Omit.Value == 2 %% center
-                                    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2; %#ok<AGROW>
-                                elseif h.Omit.Value == 3 %% line
-                                    OUT(floor((size(OUT,1)+1)/2),:) =...
-                                        (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
-                                        OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
+                                switch h.Omit.Value
+                                    case {2,4} %% center or points
+                                        OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2; 
+                                    case 3 %% line
+                                        OUT(floor((size(OUT,1)+1)/2),:) =...
+                                            (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
+                                            OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
                                 end
                                 Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                                 Weights = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                                if h.Omit.Value == 3 %% line
-                                    Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                                    Weights(floor((size(Weights,1)+1)/2),:) = inf;
-                                elseif h.Omit.Value == 2 %% center
-                                    Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                        (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                        Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                                    Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =inf;
+                                switch h.Omit.Value
+                                    case 3 %% line
+                                        Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                        Weights(floor((size(Weights,1)+1)/2),:) = inf;
+                                    case {2,4} %% center or points
+                                        Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                            (Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                            Data(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2;
+                                        Weights(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =inf;
                                 end
                                 if h.Fit_Weights.Value
                                     Data = ((Data-Out)./Weights);
@@ -1579,27 +1594,29 @@ switch mode
                         %%% Extract Data
                         Data = MIAFitData.Data{File,1}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
                         Error = MIAFitData.Data{File,2}(Center(1)+(min(min(y)):max(max(y))), Center(2)+(min(min(x)):max(max(x))))/B;
-                        if h.Omit.Value == 3 %% line
-                            Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
-                            Error(floor((size(Error,1)+1)/2),:) = inf;
-                        elseif h.Omit.Value == 2 %% center
-                            Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)) =...
-                                (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+1) + ...
-                                 Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-1))/2;
-                            Error(floor((size(Error,1)+1)/2),floor((size(Error,2)+1)/2)) =inf;
+                        switch h.Omit.Value
+                            case 3 %% line
+                                Data(floor((size(Data,1)+1)/2),:) = (Data(floor((size(Data,1)+1)/2)-1,:)+Data(floor((size(Data,1)+1)/2)+1,:))/2;
+                                Error(floor((size(Error,1)+1)/2),:) = inf;
+                            case {2,4} %% center or points
+                                Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit+1:floor((size(Data,2)+1)/2)+omit-1) =...
+                                    (Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)+omit) + ...
+                                    Data(floor((size(Data,1)+1)/2),floor((size(Data,2)+1)/2)-omit))/2;
+                                Error(floor((size(Error,1)+1)/2),floor((size(Error,2)+1)/2)-omit+1:floor((size(Error,2)+1)/2)+omit-1) =inf;
                         end
-                                               
+                        
                         P=MIAFitMeta.Params(:,File);
                         OUT = feval(MIAFitMeta.Model.Function,P,x,y,i);
-                        if h.Omit.Value == 2 %% center
-                            OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)) =...
-                                (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+1) + ...
-                                OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-1))/2;
-                        elseif h.Omit.Value == 3 %% line
-                            OUT(floor((size(OUT,1)+1)/2),:) =...
-                                (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
-                                OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
-                        end                        
+                        switch h.Omit.Value
+                            case {2,4} %% center or points
+                                OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit+1:floor((size(OUT,2)+1)/2)+omit-1) =...
+                                    (OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)+omit) + ...
+                                    OUT(floor((size(OUT,1)+1)/2),floor((size(OUT,2)+1)/2)-omit))/2;
+                            case 3 %% line
+                                OUT(floor((size(OUT,1)+1)/2),:) =...
+                                    (OUT(floor((size(OUT,1)+1)/2-1),:) + ...
+                                    OUT(floor((size(OUT,1)+1)/2)+1,:))/2;
+                        end
                         Data2 = ((Data-OUT/B)./Error);
                         Data2 = (Data2 + circshift(Data2,[0 -1]) + circshift(Data2,[-1 0]) + circshift(Data2,[-1 -1]))/4;
                         ErrorLim = str2double(h.Export_ErrorLim.String);
