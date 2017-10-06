@@ -3330,6 +3330,7 @@ for i=Images %%% Plots Phasor Data
             R = F(:,:,1);
             G = F(:,:,2);
             B = F(:,:,3);
+            clear F;
             
             R(G>=1 | B>=1)=0; R(R<0)=0;
             G(R>=1 | B>=1)=0; G(G<0)=0;
@@ -3436,6 +3437,7 @@ for i=Images %%% Plots Phasor Data
             %%% Uses flat mask color for all other colormaps
             Image(ROI)=Mask(ROI);
         end
+        clear Mask;
         
         %%% Uses applies selected region to Single plot
         if i==10
