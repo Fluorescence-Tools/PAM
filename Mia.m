@@ -5265,14 +5265,14 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Correlation Type (Arbitrary region == 3)
             InfoAll(i).Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
             switch h.Mia_Image.Settings.ROI_FramesUse.Value
-                case [1 2] %%% All/Selected frames
+                case {1 2} %%% All/Selected frames
                     %%% Mean intensity [counts]
-                    InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,frames))); %Waldi
+                    %InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,frames))); %Waldi
                     InfoAll(i).AR = [];
                 case 3 %%% Arbitrary region
                     %%% Mean intensity of selected pixels [counts]
                     Image = double(MIAData.Data{i,2}(:,:,frames));
-                    InfoAll(i).Mean = mean(Image(Use{i}));
+                    %InfoAll(i).Mean = mean(Image(Use{i}));
                     %%% Arbitrary region information
                     InfoAll(i).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
                     InfoAll(i).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
@@ -5322,7 +5322,7 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Correlation Type (Arbitrary region == 3)
             InfoAll(3).Type = h.Mia_Image.Calculations.Cor_Type.String{h.Mia_Image.Calculations.Cor_Type.Value};
             switch h.Mia_Image.Settings.ROI_FramesUse.Value
-                case [1 2] %%% All/Selected frames
+                case {1,2} %%% All/Selected frames
                     %%% Mean intensity [counts]
                     InfoAll(3).Mean = (mean2(double(MIAData.Data{1,2}(:,:,frames))) + mean2(double(MIAData.Data{2,2}(:,:,frames))))/2;
                     InfoAll(3).AR = [];
@@ -5890,7 +5890,7 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     %%% Correlation Type (Arbitrary region == 3)
     Info.Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
     switch h.Mia_Image.Settings.ROI_FramesUse.Value
-        case [1 2] %%% All/Selected frames
+        case {1,2} %%% All/Selected frames
             %%% Mean intensity [counts]
             Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
             Info.AR = [];
@@ -6242,14 +6242,14 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         %%% Correlation Type (Arbitrary region == 3)
         InfoAll(i).Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
         switch h.Mia_Image.Settings.ROI_FramesUse.Value
-            case [1 2] %%% All/Selected frames
+            case {1,2} %%% All/Selected frames
                 %%% Mean intensity [counts]
-                InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+                %InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
                 InfoAll(i).AR = [];
             case 3 %%% Arbitrary region
                 %%% Mean intensity of selected pixels [counts]
                 Image = double(MIAData.Data{i,2}(:,:,Frames));
-                InfoAll(i).Mean = mean(Image(Use{i}));
+                %InfoAll(i).Mean = mean(Image(Use{i}));
                 %%% Arbitrary region information
                 InfoAll(i).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
                 InfoAll(i).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
@@ -6293,7 +6293,7 @@ if any(h.Mia_Image.Calculations.Cor_Save_STICS.Value == [3 4])
         %%% Correlation Type (Arbitrary region == 3)
         InfoAll(3).Type = h.Mia_Image.Calculations.Cor_Type.String{h.Mia_Image.Calculations.Cor_Type.Value};
         switch h.Mia_Image.Settings.ROI_FramesUse.Value
-            case [1 2] %%% All/Selected frames
+            case {1,2} %%% All/Selected frames
                 %%% Mean intensity [counts]
                 InfoAll(3).Mean = (mean2(double(MIAData.Data{1,2}(:,:,Frames))) + mean2(double(MIAData.Data{2,2}(:,:,Frames))))/2;
                 InfoAll(3).AR = [];

@@ -1856,7 +1856,13 @@ for i=1:size(MIAFitMeta.Plots,1)
                 MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
                 MIAFitMeta.Plots{i,8}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)-1)+MIAFitMeta.Plots{i,4}.YData(floor((Y+1)/2)+1))/2;
             case {2,4} %% center or points
-                h.Omit_X.Visible='on';
+                switch h.Omit.Value
+                    case 2
+                        h.Omit_X.Visible='off';
+                    case 4
+                        h.Omit_X.Visible='on';
+                end
+                        
                 MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+omit))/2;
                 MIAFitMeta.Plots{i,4}.YData(floor((X+1)/2)-omit+1:floor((X+1)/2)+omit-1) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-omit)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
                 MIAFitMeta.Plots{i,5}.YData(floor((Y+1)/2)) = (MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)-1)+MIAFitMeta.Plots{i,1}.YData(floor((X+1)/2)+1))/2;
