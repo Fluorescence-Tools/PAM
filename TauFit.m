@@ -3894,7 +3894,7 @@ switch obj
                 lt = [2,3,6,8];
         end
         param_ns(lt) = TACtoTime*param_ns(lt);
-        ConfInt(lt,:) = TACtoTime*ConfInt(lt,:)
+        ConfInt(lt,:) = TACtoTime*ConfInt(lt,:);
         %%% print confidence intervals to command line and clipboard
         tab = table(param_ns',ConfInt(:,1),ConfInt(:,2),'VariableNames',{'Value','LB','UB'},...
             'RowName',parameter_names);

@@ -3428,7 +3428,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                         [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
-                        PamMeta.Image{i} = double(flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1])));
+                        PamMeta.Image{i} = double(PamMeta.Image{i});
                     end
                     
                     %% Calculate mean arival time image

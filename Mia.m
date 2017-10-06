@@ -1475,7 +1475,7 @@ h.Mia_Image.Calculations.Cor_Save_ICS = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.51 0.82, 0.47 0.06],...
-    'String',{'Do not save','Save as .miacor','Save as TIFF'});
+    'String',{'Do not save','Save as .miacor','Save as TIFF', 'Save blockwise analysis as .miacor'});
 if ismac
     h.Mia_Image.Settings.ROI_AR_Same.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.ROI_AR_Same.BackgroundColor = [1 1 1];
@@ -1529,8 +1529,8 @@ h.Mia_Image.Calculations.Cor_Save_STICS = uicontrol(...
     'Position',[0.51 0.62, 0.47 0.06],...
     'String',{'Do not save','Save as iMSD(.mcor)','Save as STICS (.stcor)','Both'});
 if ismac
-    h.Mia_Image.Calculations.Cor_Save_SICS.ForegroundColor = [0 0 0];
-    h.Mia_Image.Calculations.Cor_Save_SICS.BackgroundColor = [1 1 1];
+    h.Mia_Image.Calculations.Cor_Save_STICS.ForegroundColor = [0 0 0];
+    h.Mia_Image.Calculations.Cor_Save_STICS.BackgroundColor = [1 1 1];
 end
 h.Text{end+1} = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Cor_Panel,...
@@ -1541,9 +1541,9 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.54, 0.76 0.06],...
-    'String','Max Lag [Frames]:');
-%%% Button to start spatio-temporal correlation
-h.Mia_Image.Calculations.Cor_STICS_Frames = uicontrol(...
+    'String','Window [Frames]:');
+%%% Edit box to choose the n.o. lags to calculate (STICS) or the window size (RICS)
+h.Mia_Image.Calculations.Cor_ICS_Window = uicontrol(...
     'Parent', h.Mia_Image.Calculations.Cor_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -1551,6 +1551,26 @@ h.Mia_Image.Calculations.Cor_STICS_Frames = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.78 0.54, 0.2 0.06],...
+    'String','20');
+h.Text{end+1} = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Cor_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.44, 0.76 0.06],...
+    'String','Offset [Frames]:');
+%%% Edit box to choose the n.o. frames to slide from one window to the other (RICS)
+h.Mia_Image.Calculations.Cor_ICS_Offset = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.Cor_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.78 0.44, 0.2 0.06],...
     'String','20');
 %%% Checkbox to switch between automatic\manual filenames
 h.Mia_Image.Calculations.Save_Name = uicontrol(...
@@ -1562,7 +1582,7 @@ h.Mia_Image.Calculations.Save_Name = uicontrol(...
     'Callback', @(src,event) LSUserValues(1,src,{'Value','MIA','AutoNames'}),...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.02 0.46, 0.7 0.06],...
+    'Position',[0.02 0.36, 0.7 0.06],...
     'String','Use automatic filename');
 %% Perform N&B calculation tab
 %%% Tab and panel for perform correlation UIs
@@ -5176,7 +5196,7 @@ elseif h.Mia_Image.Settings.Correction_Subtract.Value==4
 else
     Correct=1;
 end
-%%% Applies amplidute correction
+%%% Applies amplitude correction
 for i=1:size(MIAData.Cor)
     if ~isempty(MIAData.Cor{i})
         MIAData.Cor{i}=MIAData.Cor{i}*Correct;
@@ -5188,414 +5208,446 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
     if ~isdir(fullfile(UserValues.File.MIAPath,'Mia'))
         mkdir(fullfile(UserValues.File.MIAPath,'Mia'))
     end
-    DataAll=cell(3,2);
-    InfoAll = struct;
-    %% Gets auto correlations data to save
-    for i = Auto        
-        %%% File name information
-        InfoAll(i).File = MIAData.FileName{i};
-        InfoAll(i).Path = UserValues.File.MIAPath;
-        %%% ROI and TOI
-        InfoAll(i).Frames = Frames;
-        From = h.Plots.ROI(1).Position(1:2)+0.5;
-        To = From+h.Plots.ROI(1).Position(3:4)-1;
-        InfoAll(i).ROI = [From To];
-        %%% Pixel [us], Line [ms] and Frametime [s]
-        InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
-        %%% Pixel size
-        InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
-        %%% Correction information
-        InfoAll(i).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
-        if h.Mia_Image.Settings.Correction_Subtract.Value == 4
-            InfoAll(i).Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+    
+    if h.Mia_Image.Calculations.Cor_Save_ICS.Value ~= 4 %% normal saving
+        Window = numel(Frames);
+        Offset = numel(Frames);
+        Blocks = 1;
+    else  %% save blockwise .miacor
+        % Window size
+        if str2double(h.Mia_Image.Calculations.Cor_ICS_Window.String) == 0
+            h.Mia_Image.Calculations.Cor_ICS_Window.String = num2str(floor(numel(Frames)/5));
         end
-        InfoAll(i).Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
-        if h.Mia_Image.Settings.Correction_Add.Value == 5
-            InfoAll(i).Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+        Window = str2double(h.Mia_Image.Calculations.Cor_ICS_Window.String);
+        % Offset size
+        if str2double(h.Mia_Image.Calculations.Cor_ICS_Offset.String) == 0
+            h.Mia_Image.Calculations.Cor_ICS_Offset.String = num2str(Window);
         end
-        %%% Correlation Type (Arbitrary region == 3)
-        InfoAll(i).Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
-        switch h.Mia_Image.Settings.ROI_FramesUse.Value
-            case [1 2] %%% All/Selected frames
-                %%% Mean intensity [counts]
-                InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
-                InfoAll(i).AR = [];
-            case 3 %%% Arbitrary region
-                %%% Mean intensity of selected pixels [counts]
-                Image = double(MIAData.Data{i,2}(:,:,Frames));
-                InfoAll(i).Mean = mean(Image(Use{i}));
-                %%% Arbitrary region information
-                InfoAll(i).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-                InfoAll(i).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-                InfoAll(i).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-                InfoAll(i).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-                InfoAll(i).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-                InfoAll(i).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-                InfoAll(i).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-                InfoAll(i).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-                InfoAll(i).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-                InfoAll(i).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
-        end
-        %%% Mean intensity
-        InfoAll(i).Counts = MeanInt(i);     
-        %%% Averaged correlation
-        DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1},3);
-        %%% Error of correlation
-        if size(MIAData.Cor{floor(1.5*i),1},3)>1
-            DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1},0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1},3));
-        else
-            DataAll{i,2} = MIAData.Cor{floor(1.5*i),1};
+        Offset = str2double(h.Mia_Image.Calculations.Cor_ICS_Offset.String);
+        % n.o. blocks
+        Blocks = floor((numel(Frames)-Window+Offset)/Offset);
+        if Blocks < 1 %% reset values to make it work
+            h.Mia_Image.Calculations.Cor_ICS_Window.String = num2str(floor(numel(Frames)/5));
+            Window = str2double(h.Mia_Image.Calculations.Cor_ICS_Window.String);
+            h.Mia_Image.Calculations.Cor_ICS_Offset.String = num2str(Window);
+            Offset = str2double(h.Mia_Image.Calculations.Cor_ICS_Offset.String);
+            Blocks = floor((numel(Frames)-Window+Offset)/Offset);
         end
     end
-    %% Gets cross correlation data to save
-    if Cross == 1
-        %%% File name information
-        InfoAll(3).File = MIAData.FileName{1};
-        InfoAll(3).Path = UserValues.File.MIAPath;
-        %%% ROI and TOI
-        InfoAll(3).Frames = Frames;
-        From=h.Plots.ROI(1).Position(1:2)+0.5;
-        To=From+h.Plots.ROI(1).Position(3:4)-1;
-        InfoAll(3).ROI = [From To];
-        %%% Pixel [us], Line [ms] and Frametime [s]
-        InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
-        %%% Pixel size
-        InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
-        %%% Correction information
-        InfoAll(3).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
-        if h.Mia_Image.Settings.Correction_Subtract.Value == 4
-            InfoAll(3).Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
-        end
-        InfoAll(3).Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
-        if h.Mia_Image.Settings.Correction_Add.Value == 5
-            InfoAll(3).Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
-        end
-        %%% Correlation Type (Arbitrary region == 3)
-        InfoAll(3).Type = h.Mia_Image.Calculations.Cor_Type.String{h.Mia_Image.Calculations.Cor_Type.Value};
-        switch h.Mia_Image.Settings.ROI_FramesUse.Value
-            case [1 2] %%% All/Selected frames
-                %%% Mean intensity [counts]
-                InfoAll(3).Mean = (mean2(double(MIAData.Data{1,2}(:,:,Frames))) + mean2(double(MIAData.Data{2,2}(:,:,Frames))))/2;
-                InfoAll(3).AR = [];
-            case 3 %%% Arbitrary region
-                %%% Mean intensity of selected pixels [counts]
-                Image1 = double(MIAData.Data{1,2}(:,:,Frames));
-                Image2 = double(MIAData.Data{2,2}(:,:,Frames));
-                InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
-                %%% Arbitrary region information
-                InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
-                InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
-                InfoAll(3).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
-                InfoAll(3).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
-                InfoAll(3).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
-                InfoAll(3).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
-                InfoAll(3).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
-                InfoAll(3).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
-                InfoAll(3).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
-                InfoAll(3).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
-        end
-        %%% Mean intensity
-        InfoAll(3).Counts = sum(MeanInt);
-        %%% Averaged correlation
-        DataAll{3,1} = mean(MIAData.Cor{2,1},3);
-        %%% Error of correlation
-        DataAll{3,2} = std(MIAData.Cor{2,1},0,3)./sqrt(size(MIAData.Cor{2,1},3));
-    end
-    %% Saves correlations
-    switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
-        case 2 %%% .miacor filetype
-            %% Creates new filename
-            %%% Removes file extension
-            switch MIAData.Type
-                case {1,1.5, 2}
-                    FileName=MIAData.FileName{1}{1}(1:end-4);
+
+    for b = 1:Blocks
+        frames = Frames(1+(b-1)*Offset:(b-1)*Offset+Window);
+        DataAll=cell(3,2);
+        InfoAll = struct;
+        %% Gets auto correlation data to save
+        for i = Auto
+            %%% File name information
+            InfoAll(i).File = MIAData.FileName{i};
+            InfoAll(i).Path = UserValues.File.MIAPath;
+            %%% ROI and TOI
+            InfoAll(i).Frames = frames;
+            From = h.Plots.ROI(1).Position(1:2)+0.5;
+            To = From+h.Plots.ROI(1).Position(3:4)-1;
+            InfoAll(i).ROI = [From To];
+            %%% Pixel [us], Line [ms] and Frametime [s]
+            InfoAll(i).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
+            %%% Pixel size
+            InfoAll(i).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            %%% Correction information
+            InfoAll(i).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
+            if h.Mia_Image.Settings.Correction_Subtract.Value == 4
+                InfoAll(i).Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
             end
-            
-            if ~h.Mia_Image.Calculations.Save_Name.Value
-                [FileName,PathName] = uiputfile([FileName '.miacor'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
-                if numel(FileName)>11 && (strcmp(FileName(end-11:end),'_ACF1.miacor') || strcmp(FileName(end-11:end),'_ACF2.miacor')) 
-                    FileName=FileName(1:end-12);
-                    
-                elseif numel(FileName)>10 && strcmp(FileName(end-10:end),'_CCF.miacor')
-                    FileName=FileName(1:end-11);
-                else
-                    FileName=FileName(1:end-7);
-                end
-                Current_FileName1=fullfile(PathName,[FileName '_ACF1.miacor']);
-                Current_FileName2=fullfile(PathName,[FileName '_ACF2.miacor']);
-                Current_FileName3=fullfile(PathName,[FileName '_CCF.miacor']);
-                Current_FileName4=fullfile(PathName,[FileName '_Info.txt']);
-                
+            InfoAll(i).Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
+            if h.Mia_Image.Settings.Correction_Add.Value == 5
+                InfoAll(i).Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+            end
+            %%% Correlation Type (Arbitrary region == 3)
+            InfoAll(i).Type = h.Mia_Image.Settings.ROI_FramesUse.String{h.Mia_Image.Settings.ROI_FramesUse.Value};
+            switch h.Mia_Image.Settings.ROI_FramesUse.Value
+                case [1 2] %%% All/Selected frames
+                    %%% Mean intensity [counts]
+                    InfoAll(i).Mean = mean2(double(MIAData.Data{i,2}(:,:,frames))); %Waldi
+                    InfoAll(i).AR = [];
+                case 3 %%% Arbitrary region
+                    %%% Mean intensity of selected pixels [counts]
+                    Image = double(MIAData.Data{i,2}(:,:,frames));
+                    InfoAll(i).Mean = mean(Image(Use{i}));
+                    %%% Arbitrary region information
+                    InfoAll(i).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
+                    InfoAll(i).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
+                    InfoAll(i).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
+                    InfoAll(i).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
+                    InfoAll(i).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+                    InfoAll(i).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+                    InfoAll(i).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+                    InfoAll(i).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+                    InfoAll(i).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
+                    InfoAll(i).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+            end
+            %%% Mean intensity
+            InfoAll(i).Counts = MeanInt(i); %Waldi
+            %%% Averaged correlation
+            DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3);
+            %%% Error of correlation
+            if size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3)>1
+                DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3));
             else
-                %%% Generates filename
-                Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.miacor']);
-                Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.miacor']);
-                Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.miacor']);
-                Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
-                %%% Checks, if file already exists and create new filename
-                if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                    k=1;
-                    %%% Adds 1 to filename
-                    Current_FileName1=[Current_FileName1(1:end-7) '_' num2str(k) '.miacor'];
-                    Current_FileName2=[Current_FileName2(1:end-7) '_' num2str(k) '.miacor'];
-                    Current_FileName3=[Current_FileName3(1:end-7) '_' num2str(k) '.miacor'];
-                    Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
-                    %%% Increases counter, until no file is found
-                    while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                        k=k+1;
-                        Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                        Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                        Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
-                        Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                DataAll{i,2} = MIAData.Cor{floor(1.5*i),1}(:,:,frames);
+            end
+        end
+        %% Gets cross correlation data to save
+        if Cross == 1
+            %%% File name information
+            InfoAll(3).File = MIAData.FileName{1};
+            InfoAll(3).Path = UserValues.File.MIAPath;
+            %%% ROI and TOI
+            InfoAll(3).Frames = frames;
+            From=h.Plots.ROI(1).Position(1:2)+0.5;
+            To=From+h.Plots.ROI(1).Position(3:4)-1;
+            InfoAll(3).ROI = [From To];
+            %%% Pixel [us], Line [ms] and Frametime [s]
+            InfoAll(3).Times = [str2double(h.Mia_Image.Settings.Image_Pixel.String) str2double(h.Mia_Image.Settings.Image_Line.String) str2double(h.Mia_Image.Settings.Image_Frame.String)];
+            %%% Pixel size
+            InfoAll(3).Size = str2double(h.Mia_Image.Settings.Image_Size.String);
+            %%% Correction information
+            InfoAll(3).Correction.SubType = h.Mia_Image.Settings.Correction_Subtract.String{h.Mia_Image.Settings.Correction_Subtract.Value};
+            if h.Mia_Image.Settings.Correction_Subtract.Value == 4
+                InfoAll(3).Correction.SubROI = [str2double(h.Mia_Image.Settings.Correction_Subtract_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Subtract_Frames.String)];
+            end
+            InfoAll(3).Correction.AddType = h.Mia_Image.Settings.Correction_Add.String{h.Mia_Image.Settings.Correction_Add.Value};
+            if h.Mia_Image.Settings.Correction_Add.Value == 5
+                InfoAll(3).Correction.AddROI = [str2double(h.Mia_Image.Settings.Correction_Add_Pixel.String) str2double(h.Mia_Image.Settings.Correction_Add_Frames.String)];
+            end
+            %%% Correlation Type (Arbitrary region == 3)
+            InfoAll(3).Type = h.Mia_Image.Calculations.Cor_Type.String{h.Mia_Image.Calculations.Cor_Type.Value};
+            switch h.Mia_Image.Settings.ROI_FramesUse.Value
+                case [1 2] %%% All/Selected frames
+                    %%% Mean intensity [counts]
+                    InfoAll(3).Mean = (mean2(double(MIAData.Data{1,2}(:,:,frames))) + mean2(double(MIAData.Data{2,2}(:,:,frames))))/2;
+                    InfoAll(3).AR = [];
+                case 3 %%% Arbitrary region
+                    %%% Mean intensity of selected pixels [counts]
+                    Image1 = double(MIAData.Data{1,2}(:,:,frames));
+                    Image2 = double(MIAData.Data{2,2}(:,:,frames));
+                    InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
+                    %%% Arbitrary region information
+                    InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
+                    InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
+                    InfoAll(3).AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
+                    InfoAll(3).AR.Int_Min(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(2).String);
+                    InfoAll(3).AR.Int_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Max.String);
+                    InfoAll(3).AR.Int_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Int_Fold_Min.String);
+                    InfoAll(3).AR.Var_Fold_Max = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.String);
+                    InfoAll(3).AR.Var_Fold_Min = str2double(h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.String);
+                    InfoAll(3).AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
+                    InfoAll(3).AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
+            end
+            %%% Mean intensity
+            InfoAll(3).Counts = sum(MeanInt);
+            %%% Averaged correlation
+            DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,frames),3);
+            %%% Error of correlation
+            DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,frames),3));
+        end
+        %% Saves correlations
+        switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
+            case {2,4} %%% .miacor filetype
+                
+                %% Creates new filename
+                %%% Removes file extension
+                switch MIAData.Type
+                    case {1,1.5, 2}
+                        FileName=MIAData.FileName{1}{1}(1:end-4);
+                end
+                
+                if ~h.Mia_Image.Calculations.Save_Name.Value
+                    %%% Manually enter a filename
+                    [FileName,PathName] = uiputfile([FileName '.miacor'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+                    if numel(FileName)>11 && (strcmp(FileName(end-11:end),'_ACF1_1.miacor') || strcmp(FileName(end-11:end),'_ACF2_1.miacor'))
+                        FileName=FileName(1:end-12);
+                        
+                    elseif numel(FileName)>10 && strcmp(FileName(end-10:end),'_CCF_1.miacor')
+                        FileName=FileName(1:end-11);
+                    else
+                        FileName=FileName(1:end-7);
+                    end
+                    Current_FileName1=fullfile(PathName,[FileName '_ACF1_1.miacor']);
+                    Current_FileName2=fullfile(PathName,[FileName '_ACF2_1.miacor']);
+                    Current_FileName3=fullfile(PathName,[FileName '_CCF_1.miacor']);
+                    Current_FileName4=fullfile(PathName,[FileName '_Info_1.txt']);
+                    
+                else
+                    %%% Automatically generate filename
+                    Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1_1.miacor']);
+                    Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2_1.miacor']);
+                    Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF_1.miacor']);
+                    Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info_1.txt']);
+                    %%% Checks, if file already exists and create new filename
+                    if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName1=[Current_FileName1(1:end-9) '_' num2str(k) '.miacor'];
+                        Current_FileName2=[Current_FileName2(1:end-9) '_' num2str(k) '.miacor'];
+                        Current_FileName3=[Current_FileName3(1:end-9) '_' num2str(k) '.miacor'];
+                        Current_FileName4=[Current_FileName4(1:end-6) '_' num2str(k) '.txt'];
+                        %%% Increases counter, until no file is found
+                        while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                            k=k+1;
+                            Current_FileName1=[Current_FileName1(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                            Current_FileName2=[Current_FileName2(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                            Current_FileName3=[Current_FileName3(1:end-(7+numel(num2str(k-1)))) num2str(k) '.miacor'];
+                            Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                        end
                     end
                 end
-            end
-            %%% Saves Auto correlations
-            for i=Auto
-                Info = InfoAll(i); %#ok<NASGU>
-                Data = DataAll(i,:); %#ok<NASGU>
-                if i==1
-                    save(Current_FileName1,'Info','Data');
-                else
-                    save(Current_FileName2,'Info','Data');
-                end
-            end
-            %%% Saves Cross correlations
-            if Cross
-                Info = InfoAll(3); %#ok<NASGU>
-                Data = DataAll(3,:); %#ok<NASGU>
-                save(Current_FileName3,'Info','Data');
-            end 
-            
-            %% Saves info file
-            FID = fopen(Current_FileName4,'w');
-            if Cross
-                Info = InfoAll(3);
-            else
-                Info = InfoAll(Auto);
-            end
-            fprintf(FID,'%s\n','Image Correlation info file');
-            %%% Pixel\Line\Frame times
-            fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
-            fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
-            fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
-            %%% Pixel size
-            fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
-            %%% Region of interest
-            fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
-            %%% Counts per pixel
-            fprintf(FID,'%s\t%f\n', 'Mean counts per pixel:',Info.Counts);
-            %%% Frames used
-            fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
-            %%% Subtraction used
-            switch h.Mia_Image.Settings.Correction_Subtract.Value
-                case 1
-                    fprintf(FID,'%s\n','Nothing subtracted');
-                case 2
-                    fprintf(FID,'%s\n','Frame mean subtracted');
-                case 3
-                    fprintf(FID,'%s\n','Pixel mean subtracted');
-                case 4
-                    fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
-            end
-            %%% Addition used
-            switch h.Mia_Image.Settings.Correction_Subtract.Value
-                case 1
-                    fprintf(FID,'%s\n','Nothing added');
-                case 2
-                    fprintf(FID,'%s\n','Total mean added');
-                case 3
-                    fprintf(FID,'%s\n','Frame mean added');
-                case 4
-                    fprintf(FID,'%s\n','Pixel mean added');
-                case 5
-                    fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
-            end
-            %%% Arbitrary region
-            if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-                fprintf(FID,'%s\n','Arbitrary region used:');
-                fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ', InfoAll(i).AR.Int_Min(2));
-                fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ', InfoAll(i).AR.Int_Max(2));
-                fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
-                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
-
-            end            
-            fclose(FID);     
-            
-        case 3 %%% .tif + .txt files
-            %% Creates new filename
-            %%% Removes file extension
-            switch MIAData.Type
-                case {1,2}
-                    FileName=MIAData.FileName{1}{1}(1:end-4);
-            end
-            if ~h.Mia_Image.Calculations.Save_Name.Value
-                [FileName,PathName] = uiputfile([FileName '.tif'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
-                if numel(FileName)>8 && (strcmp(FileName(end-8:end),'_ACF1.tif') || strcmp(FileName(end-8:end),'_ACF2.tif'))
-                    FileName=FileName(1:end-9);
-                    
-                elseif numel(FileName)>7 && strcmp(FileName(end-7:end),'_CCF.tif')
-                    FileName=FileName(1:end-8);
-                else
-                    FileName=FileName(1:end-4);
-                end
-                Current_FileName1=fullfile(PathName,[FileName '_ACF1.tif']);
-                Current_FileName2=fullfile(PathName,[FileName '_ACF2.tif']);
-                Current_FileName3=fullfile(PathName,[FileName '_CCF.tif']);
-                Current_FileName4=fullfile(PathName,[FileName '_Info.txt']);
-                
-            else
-                
-                
-                %%% Generates filename
-                Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.tif']);
-                Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.tif']);
-                Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.tif']);
-                Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
-                %%% Checks, if file already exists and create new filename
-                if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
-                    k=1;
-                    %%% Adds 1 to filename
-                    Current_FileName1=[Current_FileName1(1:end-4) '_' num2str(k) '.tif'];
-                    Current_FileName2=[Current_FileName2(1:end-4) '_' num2str(k) '.tif'];
-                    Current_FileName3=[Current_FileName3(1:end-4) '_' num2str(k) '.tif'];
-                    Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
-                    %%% Increases counter, until no file is found
-                    while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
-                        k=k+1;
-                        Current_FileName1=[Current_FileName1(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                        Current_FileName2=[Current_FileName2(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                        Current_FileName3=[Current_FileName3(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
-                        Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                %%% Saves Auto correlations
+                for i=Auto
+                    Info = InfoAll(i); %#ok<NASGU>
+                    Data = DataAll(i,:); %#ok<NASGU>
+                    if i==1
+                        save(Current_FileName1,'Info','Data');
+                    else
+                        save(Current_FileName2,'Info','Data');
                     end
                 end
-            end
-            %% Saves info file
-            FID = fopen(Current_FileName4,'w');
-            if Cross
-                Info = InfoAll(3);
-            else
-                Info = InfoAll(Auto);
-            end
-            fprintf(FID,'%s\n','Image Correlation info file');
-            %%% Pixel\Line\Frame times
-            fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
-            fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
-            fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
-            %%% Pixel size
-            fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
-            %%% Region of interest
-            fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
-            %%% Counts per pixel
-            fprintf(FID,'%s\t%f\n', 'Mean counts per pixel:',Info.Counts);
-            %%% Frames used
-            fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
-            %%% Subtraction used
-            switch h.Mia_Image.Settings.Correction_Subtract.Value
-                case 1
-                    fprintf(FID,'%s\n','Nothing subtracted');
-                case 2
-                    fprintf(FID,'%s\n','Frame mean subtracted');
-                case 3
-                    fprintf(FID,'%s\n','Pixel mean subtracted');
-                case 4
-                    fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
-            end
-            %%% Addition used
-            switch h.Mia_Image.Settings.Correction_Subtract.Value
-                case 1
-                    fprintf(FID,'%s\n','Nothing added');
-                case 2
-                    fprintf(FID,'%s\n','Total mean added');
-                case 3
-                    fprintf(FID,'%s\n','Frame mean added');
-                case 4
-                    fprintf(FID,'%s\n','Pixel mean added');
-                case 5
-                    fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
-            end
-            %%% Arbitrary region
-            if h.Mia_Image.Settings.ROI_FramesUse.Value==3
-                fprintf(FID,'%s\n','Arbitrary region used:');
-                fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ',InfoAll(i).AR.Int_Min(2));
-                fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ',InfoAll(i).AR.Int_Max(2));
-                fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
-                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
-                fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
-
-            end            
-            fclose(FID);           
-            %% Saves correlation TIFFs
-            for i=Auto
-                %%% Resizes double to 16bit uint
-                Data{1} = DataAll{i,1};
-                Min(1) = min(min(Data{1}));
-                Max(1) = max(max(Data{1}));
-                Data{1} = uint16(2^16*(Data{1}-Min(1))/(Max(1)-Min(1)));
-                Data{2} = DataAll{i,2};
-                Min(2) = min(min(Data{2}));
-                Max(2) = max(max(Data{2}));
-                Data{2} = uint16(2^16*(Data{2}-Min(2))/(Max(2)-Min(2)));                
-                %%% Creates header information
-                TiffStruct.ImageWidth = size(Data{1},2);
-                TiffStruct.ImageLength = size(Data{1},1);
-                TiffStruct.BitsPerSample = 16;
-                TiffStruct.Photometric = Tiff.Photometric.MinIsBlack;
-                TiffStruct.Compression = Tiff.Compression.LZW;
-                TiffStruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-                TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(i).Counts, InfoAll(i).Times(1)]);
-                %%% Creates new TIFF file
-                if i==1
-                    
-                    t = Tiff(Current_FileName1,'w');                   
-                else
-                    t = Tiff(Current_FileName2,'w');
+                %%% Saves Cross correlations
+                if Cross
+                    Info = InfoAll(3); %#ok<NASGU>
+                    Data = DataAll(3,:); %#ok<NASGU>
+                    save(Current_FileName3,'Info','Data');
                 end
-                %%% Saves correlation as 2 frames (Cor and Error)
-                t.setTag(TiffStruct);
-                t.write(Data{1});
-                t.writeDirectory();
-                TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(i).Counts, InfoAll(i).Times(1)]);
-                t.setTag(TiffStruct);
-                t.write(Data{2});
-                t.close();
-            end
-            if Cross
-                %%% Resizes double to 16bit uint
-                Data{1} = DataAll{3,1};
-                Min(1) = min(min(Data{1}));
-                Max(1) = max(max(Data{1}));
-                Data{1} = uint16(2^16*(Data{1}-Min(1))/(Max(1)-Min(1)));
-                Data{2} = DataAll{i,2};
-                Min(2) = min(min(Data{2}));
-                Max(2) = max(max(Data{2}));
-                Data{2} = uint16(2^16*(Data{2}-Min(2))/(Max(2)-Min(2)));                
-                %%% Creates header information
-                TiffStruct.ImageWidth = size(Data{1},2);
-                TiffStruct.ImageLength = size(Data{1},1);
-                TiffStruct.BitsPerSample = 16;
-                TiffStruct.Photometric = Tiff.Photometric.MinIsBlack;
-                TiffStruct.Compression = Tiff.Compression.LZW;
-                TiffStruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-                TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(3).Counts, InfoAll(3).Times(1)]);
-                %%% Creates new TIFF file
-                t = Tiff(Current_FileName3,'w');
-                %%% Saves correlation as 2 frames (Cor and Error)
-                t.setTag(TiffStruct);
-                t.write(Data{1});
-                t.writeDirectory();
-                TiffStruct.ImageDescription = num2str([round(2^16/(Max(2)-Min(2))), Min(2)]);
-                t.setTag(TiffStruct);
-                t.write(Data{2});
-                t.close();          
-            end
-            
-        otherwise
+                
+                %% Saves info file
+                FID = fopen(Current_FileName4,'w');
+                if Cross
+                    Info = InfoAll(3);
+                else
+                    Info = InfoAll(Auto);
+                end
+                fprintf(FID,'%s\n','Image Correlation info file');
+                %%% Pixel\Line\Frame times
+                fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
+                fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+                fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+                %%% Pixel size
+                fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+                %%% Region of interest
+                fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+                %%% Counts per pixel
+                fprintf(FID,'%s\t%f\n', 'Mean counts per pixel:',Info.Counts);
+                %%% Frames used
+                fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+                %%% Subtraction used
+                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                    case 1
+                        fprintf(FID,'%s\n','Nothing subtracted');
+                    case 2
+                        fprintf(FID,'%s\n','Frame mean subtracted');
+                    case 3
+                        fprintf(FID,'%s\n','Pixel mean subtracted');
+                    case 4
+                        fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+                end
+                %%% Addition used
+                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                    case 1
+                        fprintf(FID,'%s\n','Nothing added');
+                    case 2
+                        fprintf(FID,'%s\n','Total mean added');
+                    case 3
+                        fprintf(FID,'%s\n','Frame mean added');
+                    case 4
+                        fprintf(FID,'%s\n','Pixel mean added');
+                    case 5
+                        fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+                end
+                %%% Arbitrary region
+                if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+                    fprintf(FID,'%s\n','Arbitrary region used:');
+                    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ', InfoAll(i).AR.Int_Min(2));
+                    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ', InfoAll(i).AR.Int_Max(2));
+                    fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
+                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
+                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
+                    
+                end
+                fclose(FID);
+                
+                
+            case 3 %%% .tif + .txt files
+                %% Creates new filename
+                %%% Removes file extension
+                switch MIAData.Type
+                    case {1,2}
+                        FileName=MIAData.FileName{1}{1}(1:end-4);
+                end
+                if ~h.Mia_Image.Calculations.Save_Name.Value
+                    [FileName,PathName] = uiputfile([FileName '.tif'], 'Save correlation as', [UserValues.File.MIAPath,'Mia']);
+                    if numel(FileName)>8 && (strcmp(FileName(end-8:end),'_ACF1.tif') || strcmp(FileName(end-8:end),'_ACF2.tif'))
+                        FileName=FileName(1:end-9);
+                        
+                    elseif numel(FileName)>7 && strcmp(FileName(end-7:end),'_CCF.tif')
+                        FileName=FileName(1:end-8);
+                    else
+                        FileName=FileName(1:end-4);
+                    end
+                    Current_FileName1=fullfile(PathName,[FileName '_ACF1.tif']);
+                    Current_FileName2=fullfile(PathName,[FileName '_ACF2.tif']);
+                    Current_FileName3=fullfile(PathName,[FileName '_CCF.tif']);
+                    Current_FileName4=fullfile(PathName,[FileName '_Info.txt']);
+                    
+                else
+                    
+                    
+                    %%% Generates filename
+                    Current_FileName1=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.tif']);
+                    Current_FileName2=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.tif']);
+                    Current_FileName3=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.tif']);
+                    Current_FileName4=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
+                    %%% Checks, if file already exists and create new filename
+                    if  exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file') || exist(Current_FileName4,'file')
+                        k=1;
+                        %%% Adds 1 to filename
+                        Current_FileName1=[Current_FileName1(1:end-4) '_' num2str(k) '.tif'];
+                        Current_FileName2=[Current_FileName2(1:end-4) '_' num2str(k) '.tif'];
+                        Current_FileName3=[Current_FileName3(1:end-4) '_' num2str(k) '.tif'];
+                        Current_FileName4=[Current_FileName4(1:end-4) '_' num2str(k) '.txt'];
+                        %%% Increases counter, until no file is found
+                        while exist(Current_FileName1,'file')  || exist(Current_FileName2,'file') || exist(Current_FileName3,'file')
+                            k=k+1;
+                            Current_FileName1=[Current_FileName1(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                            Current_FileName2=[Current_FileName2(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                            Current_FileName3=[Current_FileName3(1:end-(4+numel(num2str(k-1)))) num2str(k) '.tif'];
+                            Current_FileName4=[Current_FileName4(1:end-(4+numel(num2str(k-1)))) num2str(k) '.txt'];
+                        end
+                    end
+                end
+                %% Saves info file
+                FID = fopen(Current_FileName4,'w');
+                if Cross
+                    Info = InfoAll(3);
+                else
+                    Info = InfoAll(Auto);
+                end
+                fprintf(FID,'%s\n','Image Correlation info file');
+                %%% Pixel\Line\Frame times
+                fprintf(FID,'%s\t%f\n', 'Pixel time [us]:',Info.Times(1));
+                fprintf(FID,'%s\t%f\n', 'Line  time [ms]:',Info.Times(2));
+                fprintf(FID,'%s\t%f\n', 'Frame time [s] :',Info.Times(3));
+                %%% Pixel size
+                fprintf(FID,'%s\t%f\n', 'Pixel size [nm]:',Info.Size);
+                %%% Region of interest
+                fprintf(FID,'%s\t%u,%u,%u,%u\t%s\n', 'Region used [px]:',Info.ROI, 'X Start, Y Start, X Stop, Y Stop');
+                %%% Counts per pixel
+                fprintf(FID,'%s\t%f\n', 'Mean counts per pixel:',Info.Counts);
+                %%% Frames used
+                fprintf(FID,['%s\t',repmat('%u\t',[1 numel(Info.Frames)]) '\n'],'Frames Used:',Info.Frames);
+                %%% Subtraction used
+                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                    case 1
+                        fprintf(FID,'%s\n','Nothing subtracted');
+                    case 2
+                        fprintf(FID,'%s\n','Frame mean subtracted');
+                    case 3
+                        fprintf(FID,'%s\n','Pixel mean subtracted');
+                    case 4
+                        fprintf(FID,'%s\t%u%s\t%u%s\n','Moving average subtracted:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+                end
+                %%% Addition used
+                switch h.Mia_Image.Settings.Correction_Subtract.Value
+                    case 1
+                        fprintf(FID,'%s\n','Nothing added');
+                    case 2
+                        fprintf(FID,'%s\n','Total mean added');
+                    case 3
+                        fprintf(FID,'%s\n','Frame mean added');
+                    case 4
+                        fprintf(FID,'%s\n','Pixel mean added');
+                    case 5
+                        fprintf(FID,'%s\t%u%s%u%s\n','Moving average added:', InfoAll(i).Correction.SubROI(1), ' Pixel', InfoAll(i).Correction.SubROI(2),' Frames');
+                end
+                %%% Arbitrary region
+                if h.Mia_Image.Settings.ROI_FramesUse.Value==3
+                    fprintf(FID,'%s\n','Arbitrary region used:');
+                    fprintf(FID,'%s\t%f\n','Minimal average intensity [kHz]:',InfoAll(i).AR.Int_Min(1), '; ',InfoAll(i).AR.Int_Min(2));
+                    fprintf(FID,'%s\t%f\n','Maximal average intensity [kHz]:',InfoAll(i).AR.Int_Max(1), '; ',InfoAll(i).AR.Int_Max(2));
+                    fprintf(FID,'%s\t%u,%u\n','Subregions size:',InfoAll(i).AR.Var_SubSub,InfoAll(i).AR.Var_Sub);
+                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal intensity deviation:',InfoAll(i).AR.Int_Fold_Min,InfoAll(i).AR.Int_Fold_Max);
+                    fprintf(FID,'%s\t%f,%f\n','Minimal\Maximal variance deviation:',InfoAll(i).AR.Var_Fold_Min,InfoAll(i).AR.Var_Fold_Max);
+                    
+                end
+                fclose(FID);
+                %% Saves correlation TIFFs
+                for i=Auto
+                    %%% Resizes double to 16bit uint
+                    Data{1} = DataAll{i,1};
+                    Min(1) = min(min(Data{1}));
+                    Max(1) = max(max(Data{1}));
+                    Data{1} = uint16(2^16*(Data{1}-Min(1))/(Max(1)-Min(1)));
+                    Data{2} = DataAll{i,2};
+                    Min(2) = min(min(Data{2}));
+                    Max(2) = max(max(Data{2}));
+                    Data{2} = uint16(2^16*(Data{2}-Min(2))/(Max(2)-Min(2)));
+                    %%% Creates header information
+                    TiffStruct.ImageWidth = size(Data{1},2);
+                    TiffStruct.ImageLength = size(Data{1},1);
+                    TiffStruct.BitsPerSample = 16;
+                    TiffStruct.Photometric = Tiff.Photometric.MinIsBlack;
+                    TiffStruct.Compression = Tiff.Compression.LZW;
+                    TiffStruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+                    TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(i).Counts, InfoAll(i).Times(1)]);
+                    %%% Creates new TIFF file
+                    if i==1
+                        
+                        t = Tiff(Current_FileName1,'w');
+                    else
+                        t = Tiff(Current_FileName2,'w');
+                    end
+                    %%% Saves correlation as 2 frames (Cor and Error)
+                    t.setTag(TiffStruct);
+                    t.write(Data{1});
+                    t.writeDirectory();
+                    TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(i).Counts, InfoAll(i).Times(1)]);
+                    t.setTag(TiffStruct);
+                    t.write(Data{2});
+                    t.close();
+                end
+                if Cross
+                    %%% Resizes double to 16bit uint
+                    Data{1} = DataAll{3,1};
+                    Min(1) = min(min(Data{1}));
+                    Max(1) = max(max(Data{1}));
+                    Data{1} = uint16(2^16*(Data{1}-Min(1))/(Max(1)-Min(1)));
+                    Data{2} = DataAll{i,2};
+                    Min(2) = min(min(Data{2}));
+                    Max(2) = max(max(Data{2}));
+                    Data{2} = uint16(2^16*(Data{2}-Min(2))/(Max(2)-Min(2)));
+                    %%% Creates header information
+                    TiffStruct.ImageWidth = size(Data{1},2);
+                    TiffStruct.ImageLength = size(Data{1},1);
+                    TiffStruct.BitsPerSample = 16;
+                    TiffStruct.Photometric = Tiff.Photometric.MinIsBlack;
+                    TiffStruct.Compression = Tiff.Compression.LZW;
+                    TiffStruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+                    TiffStruct.ImageDescription = num2str([round(2^16/(Max(1)-Min(1))), Min(1), InfoAll(3).Counts, InfoAll(3).Times(1)]);
+                    %%% Creates new TIFF file
+                    t = Tiff(Current_FileName3,'w');
+                    %%% Saves correlation as 2 frames (Cor and Error)
+                    t.setTag(TiffStruct);
+                    t.write(Data{1});
+                    t.writeDirectory();
+                    TiffStruct.ImageDescription = num2str([round(2^16/(Max(2)-Min(2))), Min(2)]);
+                    t.setTag(TiffStruct);
+                    t.write(Data{2});
+                    t.close();
+                end
+                
+            otherwise
+        end
+        
     end
-
 end
-
 
 
 
@@ -5997,7 +6049,7 @@ switch (h.Mia_Image.Settings.ROI_FramesUse.Value)
 end
 
 
-MaxLag = str2double(h.Mia_Image.Calculations.Cor_STICS_Frames.String);
+MaxLag = str2double(h.Mia_Image.Calculations.Cor_ICS_Window.String);
 h.Mia_STICS.Lag_Slider.Max = MaxLag;
 h.Mia_STICS.Lag_Slider.SliderStep = [1/MaxLag 1/MaxLag];
 

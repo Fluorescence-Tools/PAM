@@ -6556,7 +6556,8 @@ else
 end
 
 % Update no. bursts
-set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts ('...
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts, '...
+                                num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' /s ('...
                                 num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
 if sum(strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)) == 1
     h.text_nobursts.TooltipString = [num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' bursts per second'];
@@ -11473,7 +11474,7 @@ MT = BurstTCSPCData{file}.Macrotime(BurstData{file}.Selected);
 CH = BurstTCSPCData{file}.Channel(BurstData{file}.Selected);
 
 xProx = linspace(-0.1,1.1,61);
-timebin = {3E-3,2.5E-3,2E-3,1.5E-3,1E-3,0.5E-3,0.3E-3,0.2E-3};
+timebin = {10E-3,5E-3,2E-3,1E-3,0.5E-3,0.25E-3};
 for t = 1:numel(timebin)
     %%% 1.) Bin BurstData according to time bin
     
@@ -15365,6 +15366,26 @@ for k = 1:numel(file) %loop through all selected species
     end
     colormap(colormap(h.BurstBrowser));
     
+    %%% fix plots overlaying on axes
+    if ~UserValues.BurstBrowser.Display.PlotGridAboveData
+        % find 2d axes
+        ax2d = {};
+        for i = 1:numel(hfigallinone.Children)
+            if  strcmp(hfigallinone.Children(i).Type,'axes')
+                if any(strcmp(get(hfigallinone.Children(i).Children,'Type'),'image'))
+                    ax2d{end+1} = hfigallinone.Children(i);
+                end
+            end
+        end
+        for i = 1:numel(ax2d)
+            %%% create dummy axis to prevent data overlapping the axis
+            ax_dummy = axes('Parent',hfigallinone,'Units',ax2d{i}.Units,'Position',ax2d{i}.Position);
+            %linkaxes([ax2d ax_dummy]);
+            set(ax_dummy,'Color','none','XTick',ax2d{i}.XTick,'YTick',ax2d{i}.YTick,'XTickLabel',[],'YTickLabel',[],...
+                'LineWidth',1,'Box','on','XLim',ax2d{i}.XLim, 'YLim', ax2d{i}.YLim);
+        end
+    end
+    
     %%% add colorbar
     cbar = colorbar('peer', hfigallinone.Children(1),'Location','north','Color',[0 0 0]); 
     cbar.Units = 'pixel';
@@ -15845,7 +15866,9 @@ switch mode
                     if ~isempty(files) %%% ensure that there are files in this subfolder
                         for j = 1:numel(files)
                             if ~files(j).isdir %%% is a file
-                                if strcmp(files(j).name(end-3:end),'.bur') %%% check for bur extension
+                                %%% check for bur extension
+                                [~,~,ext] = fileparts(files(j).name);
+                                if strcmp(ext,'.bur') %%% check for bur extension
                                     FileName{end+1} = files(j).name;
                                     PathName{end+1} = [pathname filesep subdir(i).name];
                                 end
@@ -15855,7 +15878,9 @@ switch mode
                                 files_subfolder = files_subfolder(3:end);
                                 if ~isempty(files_subfolder)
                                     for k = 1:numel(files_subfolder)
-                                        if strcmp(files_subfolder(k).name(end-3:end),'.bur') %%% check for bur extension
+                                        %%% check for bur extension
+                                        [~,~,ext] = fileparts(files_subfolder(k).name);
+                                        if strcmp(ext,'.bur') 
                                             FileName{end+1} = files_subfolder(k).name;
                                             PathName{end+1} = subfolder;
                                         end
@@ -15913,33 +15938,43 @@ switch mode
         end
     case 3 %% Load database
         Path = UserValues.File.BurstBrowserDatabasePath;
-        [FileName, Path] = uigetfile({'*.bdb', 'Burst Database file (*.bdb)';'*.dab','PAM Database file (*.dab)'}, 'Choose database to load',Path,'MultiSelect', 'off');
-        if FileName == 0
-            return;
+        [FileName, Path] = uigetfile({'*.bdb', 'Burst Database file (*.bdb)';'*.dab','PAM Database file (*.dab)'}, 'Choose database to load',Path,'MultiSelect', 'on');
+        if ~iscell(FileName)
+            if  FileName == 0
+                return;
+            end
+        end
+        if ~iscell(FileName)
+            FileName = {FileName};
         end
         %%% store path in BurstMeta
         UserValues.File.BurstBrowserDatabasePath = Path;
-        db = load('-mat',fullfile(Path,FileName)); db = db.s;
-        %%% do check of database
-        % check for non *.bur files
-        % check for non-existing files/invalid paths
-        valid = true(size(db.database,1),1);
-        for i = 1:size(db.database,1)
-            if ~strcmp(db.database{i,1}(end-3:end),'.bur') || ~(exist([db.database{i,2} filesep db.database{i,1}],'file')==2)
-                valid(i) = false;
+        DB = [];
+        list_of_files = [];
+        for i = 1:numel(FileName)
+            db = load('-mat',fullfile(Path,FileName{i})); db = db.s;
+            %%% do check of database
+            % check for non *.bur files
+            % check for non-existing files/invalid paths
+            valid = true(size(db.database,1),1);
+            for i = 1:size(db.database,1)
+                if ~strcmp(db.database{i,1}(end-3:end),'.bur') || ~(exist([db.database{i,2} filesep db.database{i,1}],'file')==2)
+                    valid(i) = false;
+                end
             end
+            if sum(valid) == 0
+                disp('Database file does not contain *.bur files or files are not accessible.');
+                return;
+            end
+            % remove invalid
+            db.str = db.str(valid); db.database=db.database(valid,:);
+            DB = [DB; db.database];
+            list_of_files  = [list_of_files; db.str];
+            clear db;
         end
-        if sum(valid) == 0
-            disp('Database file does not contain *.bur files or files are not accessible.');
-            return;
-        end
-        % remove invalid
-        db.str = db.str(valid); db.database=db.database(valid,:);
-        BurstMeta.Database = db.database;
-        h.DatabaseBB.List.String = db.str;
+        BurstMeta.Database = DB;
+        h.DatabaseBB.List.String = list_of_files;
         h.DatabaseBB.List.Value = 1;
-        clear db;
-        
         if size(BurstMeta.Database, 1) > 0
             % reenable save
             h.DatabaseBB.Save.Enable = 'on';
