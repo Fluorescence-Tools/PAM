@@ -3121,8 +3121,11 @@ switch mode
                 TIFF_Handle.setDirectory(j);
                 MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
                 %%% Adjusts for RLICS and RSICS range
-                MIAData.Data{2,1}(:,:,end)=single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
+                if ~isempty(MIAData.RLICS) && mode==1.5
+                    MIAData.Data{2,1}(:,:,end)=single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
+                end
             end
+            TIFF_Handle.close(); % Close tif reference
         end
 
         %%% Updates frame settings for channel 2
