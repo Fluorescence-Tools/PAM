@@ -4417,7 +4417,7 @@ for i=1:2
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
             case 2 %%% Total ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
-                if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3;
+                if h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(nanmean(nanmean(Add)));
@@ -4730,7 +4730,7 @@ switch mode
                     MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
                 end
         end
-        Mia_Correct([],[],0);
+        Mia_Correct([],[],1);
     case 2 %%% Unselect Region for general manual seletion
         ROI = imfreehand;
         Mask = createMask(ROI);
@@ -4771,7 +4771,7 @@ switch mode
                     MIAData.MS{2,1} = MIAData.MS{1,2} & MIAData.MS{2,2};
                 end
         end
-        Mia_Correct([],[],0);
+        Mia_Correct([],[],1);
     case 3 %%% Clear Region for general manual seletion
         for i=1:size(MIAData.Data,1)
             MIAData.MS{i,2} = true(str2double(h.Mia_Image.Settings.ROI_SizeY.String),str2double(h.Mia_Image.Settings.ROI_SizeX.String));
