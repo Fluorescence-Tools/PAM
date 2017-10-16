@@ -9614,6 +9614,7 @@ if nargin<3 % calculate the shift
         
         % shift plot (red)
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
+        h.MI.Calib_Axes_Shift.YLimMode = 'auto';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
         
