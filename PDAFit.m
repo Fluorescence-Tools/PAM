@@ -2471,7 +2471,7 @@ if sum(PDAMeta.Global) == 0
                 [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar(~fixed),LB(~fixed),UB(~fixed),fitopts);
                 ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian,'alpha',alpha);
                 ci = (ci(:,2)-ci(:,1))/2;
-                PDAMeta.ConfInt_Jac(:,i) = ci;
+                PDAMeta.ConfInt_Jac = ci;
                 %%% Alternative implementations using fminunc and fmincon to estimate the hessian
                 % fitopts = optimoptions('fminunc','MaxIter',1,'Algorithm','quasi-newton');
                 % [~,~,~,~,~,hessian] = fminunc(fitfun,fitpar(~fixed),fitopts);
@@ -2771,7 +2771,7 @@ end
 % make confidence intervals available in base workspace
 if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
     conf_int_jac = zeros(size(fitpar,1),size(fitpar,2));
-    conf_int_jac(~fixed) = PDAMeta.ConfInt_Jac(:,i);
+    conf_int_jac(~fixed) = PDAMeta.ConfInt_Jac;
     assignin('base','ConfInt_Jac',[fitpar' conf_int_jac']);
     if obj == h.Menu.EstimateErrorMCMC
         assignin('base','ConfInt_MCMC',[fitpar' PDAMeta.ConfInt_MCMC']);
