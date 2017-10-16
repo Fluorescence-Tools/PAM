@@ -7,8 +7,10 @@ hE_ini = histc(BurstData{file}.DataCut(val,1),x);
 
 start = Start(BurstData{file}.Selected);
 stop = Stop(BurstData{file}.Selected);
+%%% average start and stop to obtain mean time
+arrival_time = (start+stop)/2;
 
-stp = stop(val);
+stp = arrival_time(val);
 val_idx = find(val);
 if isempty(val_idx)
     hE = zeros(numel(x),1);
@@ -22,7 +24,7 @@ if val_idx(end) == numel(start) %% Catch case where burst is last of measurement
 end
 
 for i = 1:numel(stp)
-    while (start(val_idx(i)+1)-stp(i) >= T(1)) && (stop(val_idx(i)+1)-stp(i) <= T(2))
+    while (arrival_time(val_idx(i)+1)-stp(i) >= T(1)) && (arrival_time(val_idx(i)+1)-stp(i) <= T(2))
         rec(val_idx(i)+1) = 1;
         val_idx(i) = val_idx(i) + 1;
         n(i) = n(i)+1;
