@@ -5511,6 +5511,21 @@ clicked = hTree.getSelectedNodes;
 if isempty(clicked)
     return;
 end
+
+if numel(clicked) > 1
+    %%% if more than one element was selected -> Multiselection for multiplot
+    %%% remove all top level species
+    valid = true(numel(clicked),1);
+    for i = 1:numel(clicked)
+        if clicked(i).getLevel < 2
+            valid(i) = false;
+        end
+    end
+    clicked = clicked(valid);
+    %%% update the selection to reflect the filtering
+    hTree.setSelectedNodes(clicked);
+end
+
 clicked = clicked(1);
 %%% find out what exact node was clicked on with relation to array of
 %%% species names
