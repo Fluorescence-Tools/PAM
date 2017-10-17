@@ -5534,7 +5534,15 @@ switch clicked.getLevel
         end
         file = find(file);
         BurstMeta.SelectedFile = file;
-        BurstData{file}.SelectedSpecies = [0,0];
+        % default to the stored species selection for this file
+        if all(BurstData{BurstMeta.SelectedFile}.SelectedSpecies == [0,0])
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.File(BurstMeta.SelectedFile));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) == 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+        end
+        
         %%% enable/disable gui elements based on type of file
         if BurstData{file}.APBS == 1
             %%% Enable the donor only lifetime checkbox
