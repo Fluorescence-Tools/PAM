@@ -14134,7 +14134,7 @@ switch obj
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','Axes_General');
-            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
@@ -14538,7 +14538,7 @@ switch obj
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
-            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim)
