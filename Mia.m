@@ -6999,9 +6999,9 @@ function Mia_Export(obj,~)
 global UserValues
 h = guidata(findobj('Tag','Mia'));
 
-if ~strcmp(h.Mia.SelectionType,'extend')
-   return; 
-end
+% if ~strcmp(h.Mia.SelectionType,'extend')
+%    return; 
+% end
 [FileName,PathName] = uiputfile({'*.tif'}, 'Save TIFF as', UserValues.File.ExportPath);
 if any(FileName~=0)
     UserValues.File.ExportPath=PathName;
