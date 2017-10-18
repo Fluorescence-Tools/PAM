@@ -5511,6 +5511,21 @@ clicked = hTree.getSelectedNodes;
 if isempty(clicked)
     return;
 end
+
+if numel(clicked) > 1
+    %%% if more than one element was selected -> Multiselection for multiplot
+    %%% remove all top level species
+    valid = true(numel(clicked),1);
+    for i = 1:numel(clicked)
+        if clicked(i).getLevel < 2
+            valid(i) = false;
+        end
+    end
+    clicked = clicked(valid);
+    %%% update the selection to reflect the filtering
+    hTree.setSelectedNodes(clicked);
+end
+
 clicked = clicked(1);
 %%% find out what exact node was clicked on with relation to array of
 %%% species names
@@ -5534,7 +5549,15 @@ switch clicked.getLevel
         end
         file = find(file);
         BurstMeta.SelectedFile = file;
-        BurstData{file}.SelectedSpecies = [0,0];
+        % default to the stored species selection for this file
+        if all(BurstData{BurstMeta.SelectedFile}.SelectedSpecies == [0,0])
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.File(BurstMeta.SelectedFile));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) == 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(max([1,BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)])));
+        elseif BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2) > 1
+            h.SpeciesList.Tree.setSelectedNode(h.SpeciesList.Species{BurstMeta.SelectedFile}(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(1)).getChildAt(BurstData{BurstMeta.SelectedFile}.SelectedSpecies(2)-2));
+        end
+        
         %%% enable/disable gui elements based on type of file
         if BurstData{file}.APBS == 1
             %%% Enable the donor only lifetime checkbox
@@ -14111,7 +14134,7 @@ switch obj
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','Axes_General');
-            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim);
@@ -14515,7 +14538,7 @@ switch obj
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
-            ax_dummy = axes('Parent',panel_copy,'Units','normalized','Position',ax2d.Position);
+            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim)
