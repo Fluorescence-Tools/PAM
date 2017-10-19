@@ -3025,6 +3025,7 @@ switch mode
                 Frames = 1:numel(Info)/2;
             else
                 Frames = (numel(Info)/2+1):numel(Info);
+                MIAData.Data{1,1} = single(MIAData.Data{1,1});
             end
             
             for j=Frames
@@ -3037,10 +3038,13 @@ switch mode
                 end
                 %%% Reads the actual data
                 TIFF_Handle.setDirectory(j);
-                MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
+                
                 %%% Adjusts range for RLICS and RSICS data
                 if ~isempty(MIAData.RLICS) && mode==1.5
-                    MIAData.Data{1,1}(:,:,end)=single(MIAData.Data{1,1}(:,:,end))/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
+                    MIAData.Data{1,1}(:,:,end+1) = single(TIFF_Handle.read());
+                    MIAData.Data{1,1}(:,:,end)= MIAData.Data{1,1}(:,:,end)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
+                else
+                    MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
                 end
             end
             TIFF_Handle.close(); % Close tif reference   
@@ -3108,6 +3112,7 @@ switch mode
                 Frames = 1:numel(Info)/2;
             else
                 Frames = (numel(Info)/2+1):numel(Info);
+                MIAData.Data{2,1} = single(MIAData.Data{2,1});
             end
             
             for j=Frames
@@ -3119,10 +3124,13 @@ switch mode
                         ['Loading Frame ' num2str(j) ' of ' num2str(numel(Info)) ' in File ' num2str(i) ' of ' num2str(numel(FileName2)) ' for Channel 2']);
                 end
                 TIFF_Handle.setDirectory(j);
-                MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
+                
                 %%% Adjusts for RLICS and RSICS range
                 if ~isempty(MIAData.RLICS) && mode==1.5
+                    MIAData.Data{2,1}(:,:,end+1) = single(TIFF_Handle.read());
                     MIAData.Data{2,1}(:,:,end)=single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
+                else
+                    MIAData.Data{2,1}(:,:,end+1) = TIFF_Handle.read();
                 end
             end
             TIFF_Handle.close(); % Close tif reference
