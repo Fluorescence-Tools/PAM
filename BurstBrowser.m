@@ -14131,6 +14131,10 @@ switch obj
         if UserValues.BurstBrowser.Display.ColorMapInvert
             colormap(flipud(colormap));
         end
+        %%% check if occurrence scale in BurstBrowser is visible
+        if strcmp(h.colorbar.Visible,'off')
+            cbar.Visible = 'off';
+        end
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','Axes_General');
