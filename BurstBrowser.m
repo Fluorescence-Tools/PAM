@@ -7472,6 +7472,18 @@ axes(h.axes_general);
 %%% mix histograms
 [zz,color] = overlay_colored(H);
 
+%%% remove old plots
+for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
+    try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end;
+    try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end;
+end
+BurstMeta.Plots.MultiScatter.h1dx = [];
+BurstMeta.Plots.MultiScatter.h1dy = [];
+%%% additionally, delete all left-over stair plots (those are multi-species
+%%% plots, which sometimes are not deleted by the above code...)
+delete(h.axes_1d_x.Children(1:end-12));
+delete(h.axes_1d_y.Children(1:end-12));
+
 %%% plot
 set(BurstMeta.Plots.Main_Plot,'Visible','off');
 set(BurstMeta.Plots.Main_histX,'Visible','off');
