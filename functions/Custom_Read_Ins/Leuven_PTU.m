@@ -167,6 +167,59 @@ else
 FileInfo.Pixels=FileInfo.Lines;
 end
 
+guillermo = 1;
+thresh = 1;
+histo = 1;
+
+if guillermo == 1
+    % FileInfo.ClockPeriod is the macrotime clock in seconds
+    det = 3;% det is the detector ID in pam
+    rout = 1;% rout is the routing ID in pam
+    binsize = 100;% bin is the number of adjacent photons between which the average count rate is calculated
+    
+    if thresh == 1
+        low = 0.5;% low is the lower intensity threshold in kHz
+        high = 15;% high is the higher intensity threshold in kHz
+        
+        %% change units
+        low = 1/(low*1000*FileInfo.ClockPeriod); %seconds between photons
+        high = 1/(high*1000*FileInfo.ClockPeriod); %s
+        
+        index = [];
+        
+        for i = 1:(round(numel(TcspcData.MT{det,rout})/binsize)-1)
+            if (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize > low
+                % time difference between photons is larger than the lower intensity threshold
+                index = [index ((i-1)*binsize+1:(i*binsize))];
+            elseif (TcspcData.MT{det,rout}(i*bin)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
+                % time difference between photons is smaller than the lower intensity threshold
+                index = [index ((i-1)*binsize+1:(i*binsize))];
+            end
+        end
+        
+        TcspcData.MI{det,rout}(index) = [];
+        TcspcData.MT{det,rout}(index) = [];
+    end
+    if histo == 1
+        IRFoffset = 100; % offset of the IRF from zero in units of TAC channels
+        TACres = 1024; %ps/TAC channel
+        
+        bins = floor(size(TcspcData.MT{det,rout},1)/binsize);
+        CR = zeros(bins,0);
+        LT = zeros(bins,0);
+        for i = 1:bins
+            CR = binsize/((TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))*FileInfo.ClockPeriod)*1000; %average count rate between 'binsize' photons in kHz
+            LT = (mean(TcspcData.MI{det,rout}(i*binsize)-TcspcData.MI{det,rout}((i-1)*binsize+1))-IRFoffset)*TACres/1000; %average foton arrival in ns between 'binsize' photons
+        end
+        
+        hfig = figure;
+        hax = axes(hfig);
+        bar(hax, CR, LT)
+        xlabel('count rate [kHz]')
+        ylabel('mean foton arrival time [ns]') 
+    end
+end
+
 LSUserValues(1);
 Calculate_Settings = PAM ('Calculate_Settings');
 Calculate_Settings(h.MT.Use_Image,[]);
