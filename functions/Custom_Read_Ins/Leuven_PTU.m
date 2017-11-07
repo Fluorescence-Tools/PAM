@@ -167,78 +167,77 @@ else
 FileInfo.Pixels=FileInfo.Lines;
 end
 
-guillermo = 1;
-thresh = 0;
-histo = 1;
 
-if guillermo == 1
-    % FileInfo.ClockPeriod is the macrotime clock in seconds
-    det = 3;% det is the detector ID in pam
-    rout = 1;% rout is the routing ID in pam
-    binsize = 100;% binsize is the number of adjacent photons between which the average count rate is calculated
+thresh = 0;
+histog = 0;
+
+% FileInfo.ClockPeriod is the macrotime clock in seconds
+det = 3;% det is the detector ID in pam
+rout = 1;% rout is the routing ID in pam
+binsize = 100;% binsize is the number of adjacent photons between which the average count rate is calculated
+
+if thresh == 1 % do intensity thresholding of the data prior to loading it
+    low = 0.5;% low is the lower intensity threshold in kHz
+    high = 15;% high is the higher intensity threshold in kHz
     
-    if thresh == 1
-        low = 0.5;% low is the lower intensity threshold in kHz
-        high = 15;% high is the higher intensity threshold in kHz
-        
-        %% change units
-        low = 1/(low*1000*FileInfo.ClockPeriod); %seconds between photons
-        high = 1/(high*1000*FileInfo.ClockPeriod); %s
-        
-        index = [];
-        
-        for i = 1:(round(numel(TcspcData.MT{det,rout})/binsize)-1)
-            if (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize > low
-                % time difference between photons is larger than the lower intensity threshold
-                index = [index ((i-1)*binsize+1:(i*binsize))];
-            elseif (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
-                % time difference between photons is smaller than the lower intensity threshold
-                index = [index ((i-1)*binsize+1:(i*binsize))];
-            end
+    %% change units
+    low = 1/(low*1000*FileInfo.ClockPeriod); %seconds between photons
+    high = 1/(high*1000*FileInfo.ClockPeriod); %s
+    
+    index = [];
+    
+    for i = 1:(round(numel(TcspcData.MT{det,rout})/binsize)-1)
+        if (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize > low
+            % time difference between photons is larger than the lower intensity threshold
+            index = [index ((i-1)*binsize+1:(i*binsize))];
+        elseif (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
+            % time difference between photons is smaller than the lower intensity threshold
+            index = [index ((i-1)*binsize+1:(i*binsize))];
         end
-        
-        TcspcData.MI{det,rout}(index) = [];
-        TcspcData.MT{det,rout}(index) = [];
     end
-    if histo == 1 % make a count rate vs lifetime plot
-        IRFoffset = 0; % offset of the IRF from zero in units of TAC channels
-        TACres = 1E12*FileInfo.TACRange/FileInfo.MI_Bins; %ps/TAC channel
-        histogramwidth = 50;
-        
-        bins = floor(size(TcspcData.MT{det,rout},1)/binsize);
-        CR = zeros(bins,0); %mean count rate per bin
-        LT = zeros(bins,0); %mean lifetime per bin
-        for i = 1:bins
-            CR(i) = binsize/((TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))*FileInfo.ClockPeriod)/1000; %average count rate between 'binsize' photons in kHz
-            LT(i) = (mean(TcspcData.MI{det,rout}(i*binsize)-TcspcData.MI{det,rout}((i-1)*binsize+1))-IRFoffset)*TACres/1000; %average foton arrival in ns between 'binsize' photons
-        end
-        
-        
-        histoCR = (max(CR)/histogramwidth:max(CR)/histogramwidth:max(CR))-max(CR)/histogramwidth/2;
-        histo = cell(numel(histoCR),1);
-        for i = 1:numel(CR)
-            [mini, index] = min(abs(histoCR-CR(i))); %find in which count rate bin the current element belongs
-            histo{index} = [histo{index} LT(i)];
-        end
-        histoLT = zeros(numel(histoCR),1);
-        errLT = zeros(numel(histoCR),1);
-        j = [];
-        for i = 1:numel(histoCR)
-            histoLT(i) = mean(histo{i});
-            errLT(i) = std(histo{i})/sqrt(numel(histo{i}));
-            if numel(histo{i})<5
-                j = [j i];
-            end
-        end
-        histoCR(j)=[]; %remove all entries that are not good anyway
-        histoLT(j)=[];
-        errLT(j)=[];
-        hfig = figure;
-        hax = axes(hfig);
-        errorbar(hax, histoCR, histoLT,errLT,'bo')  %errLT is the standard error of the mean
-        xlabel('local count rate [kHz]')
-        ylabel('mean foton arrival time [ns]') 
+    
+    TcspcData.MI{det,rout}(index) = [];
+    TcspcData.MT{det,rout}(index) = [];
+end
+
+if histog == 1 % make a count rate vs lifetime plot
+    IRFoffset = 0; % offset of the IRF from zero in units of TAC channels
+    TACres = 1E12*FileInfo.TACRange/FileInfo.MI_Bins; %ps/TAC channel
+    histogramwidth = 50;
+    
+    bins = floor(size(TcspcData.MT{det,rout},1)/binsize);
+    CR = zeros(bins,0); %mean count rate per bin
+    LT = zeros(bins,0); %mean lifetime per bin
+    for i = 1:bins
+        CR(i) = binsize/((TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))*FileInfo.ClockPeriod)/1000; %average count rate between 'binsize' photons in kHz
+        LT(i) = (mean(TcspcData.MI{det,rout}(i*binsize)-TcspcData.MI{det,rout}((i-1)*binsize+1))-IRFoffset)*TACres/1000; %average foton arrival in ns between 'binsize' photons
     end
+    
+    
+    histoCR = (max(CR)/histogramwidth:max(CR)/histogramwidth:max(CR))-max(CR)/histogramwidth/2;
+    histo = cell(numel(histoCR),1);
+    for i = 1:numel(CR)
+        [mini, index] = min(abs(histoCR-CR(i))); %find in which count rate bin the current element belongs
+        histo{index} = [histo{index} LT(i)];
+    end
+    histoLT = zeros(numel(histoCR),1);
+    errLT = zeros(numel(histoCR),1);
+    j = [];
+    for i = 1:numel(histoCR)
+        histoLT(i) = mean(histo{i});
+        errLT(i) = std(histo{i})/sqrt(numel(histo{i}));
+        if numel(histo{i})<5
+            j = [j i];
+        end
+    end
+    histoCR(j)=[]; %remove all entries that are not good anyway
+    histoLT(j)=[];
+    errLT(j)=[];
+    hfig = figure;
+    hax = axes(hfig);
+    errorbar(hax, histoCR, histoLT,errLT,'bo')  %errLT is the standard error of the mean
+    xlabel('local count rate [kHz]')
+    ylabel('mean foton arrival time [ns]')
 end
 
 LSUserValues(1);
