@@ -191,7 +191,7 @@ if guillermo == 1
             if (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize > low
                 % time difference between photons is larger than the lower intensity threshold
                 index = [index ((i-1)*binsize+1:(i*binsize))];
-            elseif (TcspcData.MT{det,rout}(i*bin)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
+            elseif (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
                 % time difference between photons is smaller than the lower intensity threshold
                 index = [index ((i-1)*binsize+1:(i*binsize))];
             end
