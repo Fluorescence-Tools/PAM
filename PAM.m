@@ -4051,11 +4051,23 @@ if any(mode==3)
             end
             %%% Mean arrival time image
         case 2
-            h.Plots.Image.CData=PamMeta.Lifetime{Sel};
+            if UserValues.Settings.Pam.ToggleTACTime
+                rescale = (1E9*FileInfo.TACRange/FileInfo.MI_Bins);
+                h.Image.Colorbar.YLabel.String = 'Mean arrival time [ns]';
+            else
+                rescale = 1;
+                h.Image.Colorbar.YLabel.String = 'Counts';
+            end
+            [Max, index] = max(PamMeta.MI_Hist{Sel});
+            offset = h.Plots.MI_All{Sel}.XData(index);
+            %h.Plots.Image.CData=filter2(fspecial('disk',1),(round((PamMeta.Lifetime{Sel}-offset).*rescale)));
+            tmp = PamMeta.Lifetime{Sel}-offset;
+            tmp(tmp<0)=0; tmp = round(tmp.*rescale);
+            h.Plots.Image.CData = medfilt2(tmp,[3 3]);
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
-                Min=0.1*max(max(PamMeta.Image{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                Min = 0;%0.1*max(max(h.Plots.Image.CData))-1; %%% -1 is for 0 intensity images
+                h.Image.Axes.CLim=[min(min(h.Plots.Image.CData(h.Plots.Image.CData>Min))), max(max(h.Plots.Image.CData(h.Plots.Image.CData>Min)))+1];
             end
             %%% Lifetime from phase
         case 3
@@ -10276,7 +10288,8 @@ switch e.Key
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 3
                 assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
-                imagesc(PamMeta.Lifetime{i});
+                %imagesc(PamMeta.Lifetime{i});
+                imagesc(h.Plots.Image.CData);
             end
         end
         %%% gives focus back to Pam
