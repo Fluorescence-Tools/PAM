@@ -830,6 +830,8 @@ if isempty(h)
         'FontSize',12,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
+        'Enable','off',...
+        'Visible','off',...
         'Callback',[]);
     
    %%% 1d pda data tab
@@ -999,7 +1001,8 @@ function load_data(hObject,~)
 global tcPDAstruct UserValues
 LSUserValues(0);
 handles = guidata(hObject);
-[FileName, PathName] = uigetfile('*.tcpda', 'select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM';'*.txt','Text-based tcPDA file'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+
 if ~isequal(FileName,0)
     UserValues.tcPDA.PathName = PathName;
     UserValues.tcPDA.FileName = FileName;
@@ -1009,7 +1012,13 @@ end
 LSUserValues(1);
 tcPDAstruct = [];%clearvars -global tcPDAstruct
 
-load('-mat',fullfile(PathName,FileName)); %%% overwrites existing tcPDAstruct
+switch FilterIndex
+    case 1
+        load('-mat',fullfile(PathName,FileName)); %%% overwrites existing tcPDAstruct
+    case 2
+        load_from_txt(fullfile(PathName,FileName));
+end
+
 tcPDAstruct.FullFileName = fullfile(PathName,FileName);
 handles.Figure.Name = ['tcPDA - ' FileName];
 
@@ -1125,6 +1134,47 @@ popupmenu_ngauss_callback(handles.popupmenu_ngauss,[])
 PlotData(handles);
 reset_plot([],[],handles);
 view_curve(handles);
+
+function load_from_txt(filename)
+global tcPDAstruct
+fid = fopen(filename);
+tline = fgetl(fid);
+i=1;
+timebin = [];
+data_start = [];
+while ischar(tline)
+    tline = fgetl(fid);
+    i = i + 1;
+    if strcmp(tline(1:3),'NBB')
+        data_start = i;
+        break;
+    else
+        % try to find the timebin
+        if strfind(tline,'timebin')
+            timebin = sscanf(tline,'timebin = %d');
+        end
+    end
+end
+fclose(fid);
+if isempty(timebin)
+    disp('No timebin found in file. Specify in header in units of milliseconds as "timebin = 1".');
+end
+if isempty(data_start)
+    disp('No data found. Data must be preceded by a line with content "NBB, NBG, NBR, NGG, NGR".');
+end
+
+% read the data
+data_matrix = dlmread(filename,',',data_start,0);
+
+% construct tcPDAstruct variable
+tcPDAstruct = struct;
+tcPDAstruct.NBB = data_matrix(:,1);
+tcPDAstruct.NBG = data_matrix(:,2);
+tcPDAstruct.NBR = data_matrix(:,3);
+tcPDAstruct.NGG = data_matrix(:,4);
+tcPDAstruct.NGR = data_matrix(:,5);
+tcPDAstruct.timebin = timebin;
+tcPDAstruct.duration = ones(size(data_matrix,1),1).*timebin;
 
 function [valid] = Cut_Data(Obj,~)
 global tcPDAstruct
