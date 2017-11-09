@@ -3487,7 +3487,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                                 rescale = 1;
                             end
                             [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
-                            offset = h.Plots.MI_All{i}.XData(index); %offset of the IRF with respect to TCSPC channel zero
+                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index); %offset of the IRF with respect to TCSPC channel zero
                             tmp = PamMeta.Lifetime{i}-offset;
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
