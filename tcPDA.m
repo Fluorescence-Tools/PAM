@@ -4459,6 +4459,56 @@ Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.t
 %%% callback function of 2c pda table
 function table_2cpdadata_callback(obj,e)
 
+%%% evaluate 2C PDA likelihood
+function evaluate_2C_pda_likelihood(input)
+n_gauss = 1; % read out number of populations
+steps = 10;
+n_sigma = 3; %%% how many sigma to sample distribution width?
+L = cell(n_gauss,1); %%% Likelihood per Gauss
+for j = 1:n_gauss
+    %%% define Gaussian distribution of distances
+    xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
+    PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
+    PR = PR'./sum(PR);
+    %%% Calculate E values for R grid
+    E = 1./(1+(xR./R0).^6);
+    epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+    
+    %%% Calculate the vector of likelihood values
+    P = eval_prob_2c_bg(NG,NF,...
+        PDAMeta.NBG{file},PDAMeta.NBR{file},...
+        PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
+        epsGR');
+    P = log(P) + repmat(log(PR'),numel(NG),1);
+    Lmax = max(P,[],2);
+    P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
+    
+    if h.SettingsTab.Use_Brightness_Corr.Value
+        %%% Add Brightness Correction Probabilty here
+        P = P + log(PN_scaled{j}(NG + NF));
+    end
+    %%% Treat case when all burst produced zero probability
+    P(isnan(P)) = -Inf;
+    L{j} = P;
+end
+
+%%% normalize amplitudes
+fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+PA = fitpar(PDAMeta.Comp{file},1);
+
+
+L = horzcat(L{:});
+L = L + repmat(log(PA'),numel(NG),1);
+Lmax = max(L,[],2);
+L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
+%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+%%% Reset these values to -Inf
+L(isnan(L)) = -Inf;
+logL = sum(L);
+%%% since the algorithm minimizes, it is important to minimize the negative
+%%% log likelihood, i.e. maximize the likelihood
+logL = -logL;
+
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
 FileName = 1;
