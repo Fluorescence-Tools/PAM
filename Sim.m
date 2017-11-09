@@ -33,7 +33,7 @@ h.Sim = figure(...
     'defaultTextFontName',Look.Font,...
     'UserData',[],...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_Sim,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','on');
 
 %%% Sets background of axes and other things
@@ -1442,24 +1442,7 @@ guidata(h.Sim,h);
 
 File_List_Callback([],[],3);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions that executes upon closing of Sim window %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Sim(Obj,~)
-clear global -regexp SimData
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Pam=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Pam) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that recalculates and adjusts simulation parameters %%%%%%%%%%
@@ -2229,7 +2212,7 @@ advanced = any([...
     ]);
 %% basic simulation 
 if ~advanced
-    for i = 1:numel(SimData.Species);
+    for i = 1:numel(SimData.Species)
         if ~SimData.Start %%% Aborts Simulation
            return; 
         end
@@ -2275,7 +2258,7 @@ if ~advanced
         end
 
         %%% Determins barrier type and map (for quenching, barriers, ect.)
-        Map_Type = h.Sim_Barrier.Value;
+        Map_Type = SimData.Species(i).Barrier;
         switch Map_Type
             case 1 %%% Free Diffusion
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)

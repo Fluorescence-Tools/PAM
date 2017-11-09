@@ -38,7 +38,7 @@ end
         'WindowScrollWheelFcn',{@Phasor_Move,3,[],[]},...
         'WindowButtonUpFcn',@Stop_All,...
         'KeyPressFcn',{@Phasor_Key,1},...
-        'CloseRequestFcn',@Close_Phasor,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
     %%% Sets background of axes and other things
     whitebg(Look.Fore);
@@ -122,6 +122,16 @@ end
         'HitTest','off',...
         'Visible','off',...
         'Color',[0 0 0]);
+    %%% Triangle Line
+    h.Phasor_Triangle=line(...
+        'Parent',h.Phasor_Plot,...
+        'XData',[0 1 0 0],...
+        'YData',[0 1 1 0],...
+        'HitTest','off',...
+        'Visible','off',...
+        'Color',[0 0 0]);
+    
+    
     %%% Initializes FRET lines
     h.Phasor_FRET(1,1)=line(...
         'Parent',h.Phasor_Plot,...
@@ -129,7 +139,9 @@ end
         'YData',[0 0],...
         'HitTest','off',...
         'Visible','off',...
-        'Color',[0 1 0]);
+        'LineWidth', str2double(UserValues.Phasor.Settings_FRETWidth{1}),...
+        'LineStyle',UserValues.Phasor.Settings_FRETStyle{1},...
+        'Color',UserValues.Phasor.Settings_FRETColor(1,:));
     h.Phasor_FRET(1,2)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',0,...
@@ -137,16 +149,19 @@ end
         'HitTest','off',...
         'LineStyle','none',...
         'LineWidth',2,...
-        'Marker','x',...
+        'MarkerSize', str2double(UserValues.Phasor.Settings_FRETSize{1}),...
+        'Marker', UserValues.Phasor.Settings_FRETMarker{1},...
         'Visible','off',...
-        'Color',[0 1 0]);
+        'Color',UserValues.Phasor.Settings_FRETColor(1,:));
     h.Phasor_FRET(2,1)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',[0 0],...
         'YData',[0 0],...
         'HitTest','off',...
         'Visible','off',...
-        'Color',[1 0 0]);
+        'LineWidth', str2double(UserValues.Phasor.Settings_FRETWidth{2}),...
+        'LineStyle', UserValues.Phasor.Settings_FRETStyle{2},...
+        'Color',UserValues.Phasor.Settings_FRETColor(2,:));
     h.Phasor_FRET(2,2)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',0,...
@@ -154,16 +169,19 @@ end
         'HitTest','off',...
         'LineStyle','none',...
         'LineWidth',2,...
-        'Marker','x',...
+        'MarkerSize', str2double(UserValues.Phasor.Settings_FRETSize{2}),...
+        'Marker', UserValues.Phasor.Settings_FRETMarker{2},...
         'Visible','off',...
-        'Color',[1 0 0]);
+        'Color',UserValues.Phasor.Settings_FRETColor(2,:));
     h.Phasor_FRET(3,1)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',[0.5 0],...
         'YData',[0.5 0],...
         'HitTest','off',...
         'Visible','off',...
-        'Color',[0 0 1]);
+        'LineWidth', str2double(UserValues.Phasor.Settings_FRETWidth{3}),...
+        'LineStyle', UserValues.Phasor.Settings_FRETStyle{3},...
+        'Color',UserValues.Phasor.Settings_FRETColor(3,:));
     h.Phasor_FRET(3,2)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',0,...
@@ -171,16 +189,19 @@ end
         'HitTest','off',...
         'LineStyle','none',...
         'LineWidth',2,...
-        'Marker','x',...
+        'MarkerSize', str2double(UserValues.Phasor.Settings_FRETSize{3}),...
+        'Marker', UserValues.Phasor.Settings_FRETMarker{3},...
         'Visible','off',...
-        'Color',[0 0 1]);
+        'Color',UserValues.Phasor.Settings_FRETColor(3,:));
     h.Phasor_FRET(4,1)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',[0 0],...
         'YData',[0 0],...
         'HitTest','off',...
         'Visible','off',...
-        'Color',[1 0 0]);
+        'LineWidth', str2double(UserValues.Phasor.Settings_FRETWidth{4}),...
+        'LineStyle', UserValues.Phasor.Settings_FRETStyle{4},...
+        'Color',UserValues.Phasor.Settings_FRETColor(4,:));
     h.Phasor_FRET(4,2)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',0,...
@@ -188,17 +209,19 @@ end
         'HitTest','off',...
         'LineStyle','none',...
         'LineWidth',2,...
-        'Marker','x',...
+        'MarkerSize', str2double(UserValues.Phasor.Settings_FRETSize{4}),...
+        'Marker', UserValues.Phasor.Settings_FRETMarker{4},...
         'Visible','off',...
-        'Color',[1 0 0]);
+        'Color',UserValues.Phasor.Settings_FRETColor(4,:));
     h.Phasor_FRET(5,1)=line(...
         'Parent',h.Phasor_Plot,...
         'XData',0,...
         'YData',0,...
         'HitTest','off',...
-        'LineWidth',2,...
+        'LineWidth', str2double(UserValues.Phasor.Settings_FRETWidth{4}),...
+        'LineStyle', UserValues.Phasor.Settings_FRETStyle{4},...
         'Visible','off',...
-        'Color',[1 0 0]);
+        'Color',UserValues.Phasor.Settings_FRETColor(4,:));
     %%% Context menu for phasor plot 
     h.Phasor_Plot_Menu = uicontextmenu;
     h.Phasor_Plot_FRET = uimenu(...
@@ -539,7 +562,11 @@ end
         'Label','Export Phasor Histogram',...
         'Tag','ExportROIs',...
         'Callback',@List_Callback);
-    
+    h.Export_LifetimeIm = uimenu(...
+        'Parent',h.List_Menu,...
+        'Label','Export Lifetime Images',...
+        'Tag','ExportLifetimeImages',...
+        'Callback',@List_Callback);    
     %%% Listbox of all loaded files
     h.List = uicontrol(...
         'Parent',h.Settings_Panel,...
@@ -784,6 +811,24 @@ end
             'Style', 'edit',...
             'String','0');
     end
+    
+    %%% Box to change Triangle color
+    h.ROI_Color{8} = uicontrol(...
+        'Parent',h.ROI_Panel,...
+        'Units','normalized',...
+        'Position',[0.01 0.1 0.1 0.09],...
+        'BackgroundColor', UserValues.Phasor.Settings_ROIColor(7,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_ROIColor(7,:))>=1.5),[1 3]),...
+        'Tag',['ROI_Color',num2str(7)],...
+        'FontSize',12,...
+        'Enable','inactive',...
+        'Style', 'edit',...
+        'ButtonDownFcn',{@ROI_Look,1,8},...
+        'ToolTipString', ['<html>Activate ROI: <br>',...
+        '<b>Left/Right mouse button:</b> Toggle Triangle<br>'...
+        '<b>Middle mouse button:</b> Change Triangle line color (not the associated colormap)<br>'],...
+        'String','Triangle');
+    
     %% Tab for FRET calculations
     h.FRET_Tab=uitab(...
         'title','FRET',...
@@ -958,8 +1003,8 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'Position',[0.01 0.55 0.15 0.07],...
-        'BackgroundColor', [0 1 0],...
-        'ForegroundColor', Look.Fore,...
+        'BackgroundColor', UserValues.Phasor.Settings_FRETColor(1,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_FRETColor(1,:))>=1.5),[1 3]),...
         'Style', 'edit',...
         'Enable','inactive',...
         'String','Donor',...
@@ -972,7 +1017,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','2',...
+        'String',UserValues.Phasor.Settings_FRETWidth{1},...
         'Callback',{@FRET_Look,2,1});
     h.FRET_Line(1,3) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -982,7 +1027,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','--',...
+        'String',UserValues.Phasor.Settings_FRETStyle{1},...
         'Callback',{@FRET_Look,3,1});
     h.FRET_Line(1,4) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -992,7 +1037,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','x',...
+        'String',UserValues.Phasor.Settings_FRETMarker{1},...
         'Callback',{@FRET_Look,4,1});
     h.FRET_Line(1,5) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1002,7 +1047,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','6',...
+        'String',UserValues.Phasor.Settings_FRETSize{1},...
         'Callback',{@FRET_Look,5,1});
     %%% Controls for mixture line and marker
     h.FRET_Line(2,1) = uicontrol(...
@@ -1010,8 +1055,8 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'Position',[0.01 0.46 0.15 0.07],...
-        'BackgroundColor', [1 0 0],...
-        'ForegroundColor', Look.Fore,...
+        'BackgroundColor', UserValues.Phasor.Settings_FRETColor(2,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_FRETColor(2,:))>=1.5),[1 3]),...
         'Style', 'edit',...
         'Enable','inactive',...
         'String','FRET',...
@@ -1024,7 +1069,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','2',...
+        'String',UserValues.Phasor.Settings_FRETWidth{2},...
         'Callback',{@FRET_Look,2,2});
     h.FRET_Line(2,3) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1034,7 +1079,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','--',...
+                'String',UserValues.Phasor.Settings_FRETStyle{2},...
         'Callback',{@FRET_Look,3,2});
     h.FRET_Line(2,4) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1044,7 +1089,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','x',...
+        'String',UserValues.Phasor.Settings_FRETMarker{2},...
         'Callback',{@FRET_Look,4,2});
     h.FRET_Line(2,5) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1054,7 +1099,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','6',...
+        'String',UserValues.Phasor.Settings_FRETSize{2},...
         'Callback',{@FRET_Look,5,2});
     %%% Controls for background line and marker
     h.FRET_Line(3,1) = uicontrol(...
@@ -1062,8 +1107,8 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'Position',[0.01 0.37 0.15 0.07],...
-        'BackgroundColor', [0 0 1],...
-        'ForegroundColor', Look.Fore,...
+        'BackgroundColor', UserValues.Phasor.Settings_FRETColor(3,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_FRETColor(3,:))>=1.5),[1 3]),...
         'Style', 'edit',...
         'Enable','inactive',...
         'String','Background',...
@@ -1076,7 +1121,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','2',...
+        'String',UserValues.Phasor.Settings_FRETWidth{3},...
         'Callback',{@FRET_Look,2,3});
     h.FRET_Line(3,3) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1086,7 +1131,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','--',...
+        'String',UserValues.Phasor.Settings_FRETStyle{3},...
         'Callback',{@FRET_Look,3,3});
     h.FRET_Line(3,4) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1096,7 +1141,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','x',...
+        'String',UserValues.Phasor.Settings_FRETMarker{3},...
         'Callback',{@FRET_Look,4,3});
     h.FRET_Line(3,5) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1106,7 +1151,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','6',...
+        'String',UserValues.Phasor.Settings_FRETSize{3},...
         'Callback',{@FRET_Look,5,3});
     %%% Controls for fret line and marker
     h.FRET_Line(4,1) = uicontrol(...
@@ -1114,8 +1159,8 @@ end
         'Units','normalized',...
         'FontSize',12,...
         'Position',[0.01 0.28 0.15 0.07],...
-        'BackgroundColor', [1 0 0],...
-        'ForegroundColor', Look.Fore,...
+        'BackgroundColor', UserValues.Phasor.Settings_FRETColor(4,:),...
+        'ForegroundColor', repmat(~(sum(UserValues.Phasor.Settings_FRETColor(4,:))>=1.5),[1 3]),...
         'Style', 'edit',...
         'Enable','inactive',...
         'String','Mixture',...
@@ -1128,7 +1173,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','2',...
+        'String',UserValues.Phasor.Settings_FRETWidth{4},...
         'Callback',{@FRET_Look,2,4});
     h.FRET_Line(4,3) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1138,7 +1183,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','--',...
+        'String',UserValues.Phasor.Settings_FRETStyle{4},...
         'Callback',{@FRET_Look,3,4});
     h.FRET_Line(4,4) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1148,7 +1193,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','x',...
+        'String',UserValues.Phasor.Settings_FRETMarker{4},...
         'Callback',{@FRET_Look,4,4});
     h.FRET_Line(4,5) = uicontrol(...
         'Parent',h.FRET_Panel,...
@@ -1158,7 +1203,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'edit',...
-        'String','6',...
+        'String',UserValues.Phasor.Settings_FRETSize{4},...
         'Callback',{@FRET_Look,5,4});
     
     h.FRET_Pos(1,1) = uicontrol(...
@@ -1227,6 +1272,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'popupmenu',...
+        'Value', UserValues.Phasor.Settings_FRETLineColor,...
         'String',{'Jet';'Hot';'HSV';'Custom'},...
         'Callback',{@Calc_FRET,8});
     if ismac
@@ -1289,7 +1335,7 @@ end
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style', 'Edit',...
-        'String','0.05',...
+        'String', UserValues.Phasor.Settings_FRETRadius,...
         'Callback',{@Calc_FRET,8});
     %% Export settings tab
     h.Export_Tab=uitab(...
@@ -1663,6 +1709,7 @@ PhasorData.Plot=zeros(10,1);
 PhasorData.PlotType=0;
 PhasorData.Timer=cputime;
 PhasorData.Selected_Region=[];
+PhasorData.Type = 1;
 
 %%% Applies ROI settings to ROIS
 for i=1:6
@@ -1755,56 +1802,71 @@ PhasorData.Cursor=[];
     Point(Point==0)=NaN;
     PhasorData.Cursor{6}=Point;  
     
-    %%%%7
+    %%%%7 display R
     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point(5:6,5:11)=1;
+%     Point(5:16,10:11)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point(5:6,5:11)=1;
-    Point(5:16,10:11)=1;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(4:10,15:16)=1;
+    Point(11:12,5:16)=1;
+    Point(12,6:8)=1;
+    Point(13,8:10)=1;
+    Point(14,10:12)=1;
+    Point(15,12:14)=1;
+    Point(16,14:16)=1;
     Point(Point==0)=NaN;
     PhasorData.Cursor{7}=Point;
     
-    %%%%8
-    Point=zeros(16);
+    %%%%8 display G
+     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point([5:6 10:11 15:16],5:11)=1;
+%     Point(5:16,10:11)=1;
+%     Point(5:16,5:6)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point([5:6 10:11 15:16],5:11)=1;
-    Point(5:16,10:11)=1;
-    Point(5:16,5:6)=1;
-    Point(Point==0)=NaN;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(15:16,5:16)=1;
+    Point(4:7,15:16)=1;
+    Point(11:16,15:16)=1;
+    Point(11:12,11:16)=1;
+%     Point(1:5,14:16)=1;
+%     Point(9:16,14:16)=1;
+%     Point(9:11,10:16)=1;
+
+     Point(Point==0)=NaN;
     PhasorData.Cursor{8}=Point;  
     
-    %%%%9
+    %%%%9 display B
     Point=zeros(16);
+%     Point(1:8,1:2)=1;
+%     Point(1:2,1:8)=1;
+%     Point([5:6 10:11 15:16],5:11)=1;
+%     Point(5:10,5:6)=1;
+%     Point(5:16,10:11)=1;
     Point(1:8,1:2)=1;
     Point(1:2,1:8)=1;
-    Point([5:6 10:11 15:16],5:11)=1;
-    Point(5:10,5:6)=1;
-    Point(5:16,10:11)=1;
+    Point(4:16,5:6)=1;
+    Point(4:5,5:16)=1;
+    Point(15:16,5:16)=1;
+    Point(4:9,15:16)=1;
+    Point(11:16,15:16)=1;
+    Point(9:11,5:14)=1;
+    Point(9,16)=0;
+    Point(4,16)=0;
+    Point(11,16)=0;
+    Point(16,16)=0;
     Point(Point==0)=NaN;
     PhasorData.Cursor{9}=Point;  
 %%    
 guidata(h.Phasor,h); 
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes Phasor and deletes global variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Phasor(Obj,~)
-clear global -regexp PhasorData
-Pam=findobj('Tag','Pam');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
 
 
 
@@ -1818,7 +1880,7 @@ global PhasorData UserValues
 LSUserValues(0);
 
 %%% Choose files to load
-[FileName,PathName] = uigetfile({'*.phr'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'on');
+[FileName,PathName,Type] = uigetfile({'*.phr'; '*.phs'}, 'Choose a referenced data file', UserValues.File.PhasorPath, 'MultiSelect', 'on');
 %%% Tranforms to cell array, if only one file was selected
 if ~iscell(FileName)
     FileName = {FileName};
@@ -1830,6 +1892,28 @@ end
 %%% Saves Path
 UserValues.File.PhasorPath=PathName;
 LSUserValues(1);
+
+%%% Removes Lifetime/Spectral data if the other was loaded
+if PhasorData.Type ~= Type
+    PhasorData.Data=[];
+    PhasorData.Files={};
+    PhasorData.List={};
+    PhasorData.Selected=[];
+    PhasorData.Plot=zeros(10,1);
+    PhasorData.PlotType=0;
+    PhasorData.Timer=cputime;
+    PhasorData.Selected_Region=[];
+    PhasorData.Type = Type;
+    switch PhasorData.Type
+        case 1
+            h.Phasor_Plot.XLim = [-0.1 1.2];
+            h.Phasor_Plot.YLim = [-0.1 1.2];
+        case 2
+            h.Phasor_Plot.XLim = [-1 1];
+            h.Phasor_Plot.YLim = [-1 1];
+    end
+end
+
 free=[];
 for i=1:numel(FileName)
     %%% Loades Data
@@ -2110,78 +2194,138 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
                 end
             end
         case h.Export_Fraction %%% Exports histogram along fraction line
-            
-            Pixel=str2double(h.Phasor_Res.String);
-            THmin=str2double(h.THmin.String);
-            THmax=str2double(h.THmax.String);
-            Sel = h.List.Value;
-                        
-            
-            %%% Calculate Map
-            Width=str2double(h.ROI_Size{7}.String);
-            
-            if strcmp(h.Phasor_Fraction.Visible,'on') %%% Fraction Line
-                x=h.Phasor_Fraction.XData;
-                y=h.Phasor_Fraction.YData;
-                x=linspace(x(1),x(2),str2double(h.Export_Line_Points.String));
-                y=linspace(y(1),y(2),str2double(h.Export_Line_Points.String));
-            elseif strcmp(h.Phasor_FRET(2,1).Visible, 'on') %%%FRET line
+           
+            if strcmp(h.Phasor_FRET(2,1).Visible, 'on') %%%FRET line
+                
+                Pixel=str2double(h.Phasor_Res.String);
+                THmin=str2double(h.THmin.String);
+                THmax=str2double(h.THmax.String);
+                Sel = h.List.Value;
+
+                %%% Calculate Map
+                Width=str2double(h.ROI_Size{7}.String);
+                
                 x=h.Phasor_FRET(2,1).XData;
                 y=h.Phasor_FRET(2,1).YData;
                 PT=interparc(str2double(h.Export_Line_Points.String),x,y);
                 x=PT(:,1); y=PT(:,2);
-            else
-                return;
-            end
-            
-            step=1/Pixel;
-            X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
-            Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
-            Z1 = single(reshape(x,[1, 1,numel(x)]));
-            Z2 = single(reshape(y,[1, 1,numel(y)]));
-            
-            Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
-            Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
-
-            [Min,Ind]=min(double(Dist),[],3);
-            Map=(Ind.*(Min<=Width))';
-            
-            j=1;
-            for i=Sel
-                %%% Finds valid pixel
-                G=round((PhasorData.Data{i}.g+0.1)*Pixel);
-                G(isnan(G) | G<1)=1;
-                S=round((PhasorData.Data{i}.s+0.1)*Pixel);
-                S(isnan(S) | S<1)=1;
-                %%% Generates ROI map
-                roi=Map(sub2ind(size(Map),G,S));
-                roi = roi.*(~PhasorData.Selected_Region{i} &...
-                    PhasorData.Data{i}.Intensity >= THmin &...
-                    PhasorData.Data{i}.Intensity <= THmax);
-                Fraction.ROI = roi;
-                Fraction.Hist = hist(roi(roi>0),1:str2double(h.Export_Line_Points.String))';
+                
+                step=1/Pixel;
+                X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
+                Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
+                Z1 = single(reshape(x,[1, 1,numel(x)]));
+                Z2 = single(reshape(y,[1, 1,numel(y)]));
+                
+                Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
+                Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
+                
+                [Min,Ind]=min(double(Dist),[],3);
+                Map=(Ind.*(Min<=Width))';
+                
+                j=1;
+                for i=Sel
+                    %%% Finds valid pixel
+                    G=round((PhasorData.Data{i}.g+0.1)*Pixel);
+                    G(isnan(G) | G<1)=1;
+                    S=round((PhasorData.Data{i}.s+0.1)*Pixel);
+                    S(isnan(S) | S<1)=1;
+                    %%% Generates ROI map
+                    roi=Map(sub2ind(size(Map),G,S));
+                    roi = roi.*(~PhasorData.Selected_Region{i} &...
+                        PhasorData.Data{i}.Intensity >= THmin &...
+                        PhasorData.Data{i}.Intensity <= THmax);
+                    Fraction.ROI = roi;
+                    Fraction.Hist = hist(roi(roi>0),1:str2double(h.Export_Line_Points.String))';
+                    Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
+                    
+                    AVG=0;
+                    Name=PhasorData.Files{i,1};
+                    while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
+                        AVG=AVG+1;
+                        Name=Name(1:end-6);
+                    end
+                    
+                    if ~isstrprop(Name(1), 'alpha')
+                        Name = ['File_' Name];
+                    end
+                    
+                    if AVG==0
+                        assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
+                    else
+                        assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
+                    end
+                    
+                    Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
+                end
+                assignin('base','Fraction_Total',Fraction_Total);
+            elseif strcmp(h.Phasor_Fraction.Visible,'on') %%% Fraction Line
+                %%% Rotation with complex numbers
+                THmin=str2double(h.THmin.String);
+                THmax=str2double(h.THmax.String);
+                Sel = h.List.Value;
+                Width=str2double(h.ROI_Size{7}.String);
+                
+                x=h.Phasor_Fraction.XData;
+                y=h.Phasor_Fraction.YData;
                 Fraction.Lim = [x(1) y(1) x(end) y(end) THmin THmax Width];
+                %%% transforms phasor to complex number
+                Complex_Line = x+sqrt(-1)*y;
                 
-                AVG=0;
-                Name=PhasorData.Files{i,1};                
-                while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
-                    AVG=AVG+1;
-                    Name=Name(1:end-6);
+                %%% Calculates rotation coefficients
+                k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+                %%% Rotats fraction line
+                Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+                %%% transforms complex number to phasor
+                x = real(Complex_Line);
+                y = imag(Complex_Line);
+  
+                
+                %%% Calculates position for each selected file
+                j=1;
+                for i=Sel
+                   %%% Transforms phasor into a complex number
+                   Complex = PhasorData.Data{i}.g + sqrt(-1)*PhasorData.Data{i}.s;
+                   %%% Rotates Phasor
+                   Complex = Complex*Scale*(1+k*sqrt(-1));
+                   %%% transforms complex back to phasor
+                   g = real(Complex);
+                   s = imag(Complex);
+                   
+                   %%% Position relative to the line
+                   Pos = (s-y(1))/(y(2)-y(1));
+                   Dist = abs(x(1)-g);
+                   
+                   %%% Removes pixels below threshold and too far away
+                   Pos(PhasorData.Data{i}.Intensity < THmin |...
+                       PhasorData.Data{i}.Intensity > THmax |...
+                       Dist > Width) = NaN;
+                   
+                   Fraction.ROI = Pos;
+                   Fraction.Hist = histcounts(Pos,linspace(0,1,str2double(h.Export_Line_Points.String)+1))';
+                   
+                   %%% adjusts name for exporting
+                   AVG=0;
+                   Name=PhasorData.Files{i,1};
+                   while numel(Name)>5 && strcmp(Name((end-5):end),' (Avg)')
+                       AVG=AVG+1;
+                       Name=Name(1:end-6);
+                   end
+                   if ~isstrprop(Name(1), 'alpha')
+                       Name = ['File_' Name];
+                   end
+                   
+                   %%% exports individual data to workspace
+                   if AVG==0
+                       assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
+                   else
+                       assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
+                   end
+                   
+                   %%% exports collected data to workspace
+                   Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
+                   assignin('base','Fraction_Total',Fraction_Total);
                 end
-                
-                if ~isstrprop(Name(1), 'alpha')
-                   Name = ['File_' Name]; 
-                end
-                
-                if AVG==0
-                    assignin('base',[Name(1:end-4) '_Fraction'],Fraction);
-                else
-                    assignin('base',[Name(1:end-4) '_AVG' num2str(AVG) '_Fraction'],Fraction);
-                end
-                
-                Fraction_Total(:,j)=Fraction.Hist; j=j+1; %#ok<AGROW>
-            end
-            assignin('base','Fraction_Total',Fraction_Total);
+            end           
         case h.Export_Hist %%% Exports full histogram to workspace
             Pixel=str2double(h.Phasor_Res.String);
             THmin=str2double(h.THmin.String);
@@ -2241,6 +2385,18 @@ elseif ~isempty(h.List.String) && ~isprop(e,'Key') %%% UIContextMenu
             YData = h.Universal_Circle.YData;
             assignin('base','Circle_XData',XData);
             assignin('base','Circle_YData',YData);
+        case h.Export_LifetimeIm %%% Exports TauM, TauP and Intensity Values
+            Sel = h.List.Value;           
+            for i=Sel                
+                TauP=PhasorData.Data{i}.TauP;
+                TauM=PhasorData.Data{i}.TauM;
+                Intensity=PhasorData.Data{i}.Intensity;
+                [FileName,Path] = uiputfile('*.mat', PhasorData.Files{i, 1}, PhasorData.Files{i, 2});
+                if ~(isequal(FileName,0) || isequal(Path,0))
+                    f = strcat(Path,FileName);
+                    save(f,'TauP', 'TauM','Intensity');
+                end
+            end
     end
 end
 
@@ -2370,15 +2526,30 @@ elseif Key>0 && Key <=6
    switch Type
        case 'normal' %%% Rectangular ROI selection
            h.Phasor_ROI(Key,1).Position=[h.Phasor_Plot.CurrentPoint(1,1:2) 0 0];
-           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,4,h.Phasor_Plot.CurrentPoint(1,1:2),Key};          
        case 'alt' %%% Ellipsoid ROI
-           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+           [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(Key,:).Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
            h.Phasor.WindowButtonMotionFcn={@Phasor_Move,5,h.Phasor_Plot.CurrentPoint(1,1:2),Key};
    end
-    
+elseif Key>=7
+    %% Triangle selection
+    switch Key
+        case 7
+            h.Phasor_Triangle.XData([1 4]) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData([1 4]) = h.Phasor_Plot.CurrentPoint(1,2);
+        case 8
+            h.Phasor_Triangle.XData(2) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData(2) = h.Phasor_Plot.CurrentPoint(1,2);
+        case 9
+            h.Phasor_Triangle.XData(3) = h.Phasor_Plot.CurrentPoint(1,1);
+            h.Phasor_Triangle.YData(3) = h.Phasor_Plot.CurrentPoint(1,2);
+    end
+    h.Phasor_Triangle.Visible = 'on';
+    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI(:).Visible,h.Phasor_Fraction.Visible] = deal('off');
+    Plot_Phasor([],[],0,1:10);
 elseif Key==0
-    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible] = deal('off');
+    [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible, h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible] = deal('off');
     switch Type
         case 'normal'
             h.Phasor.WindowButtonMotionFcn={@Phasor_Move,6,h.Phasor_Plot.CurrentPoint(1,1:2)};
@@ -2399,8 +2570,9 @@ end
 function Phasor_Move(~,e,mode,Start,Key)
 global PhasorData
 %%% Only executes, if Phasor is the current figure
-if strcmp('Phasor',get(gcf,'Tag'))
-    h=guidata(gcf);
+Fig = gcf;
+if strcmp('Phasor',get(Fig,'Tag'))
+    h=guidata(Fig);
     Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
     switch mode
         case 1 %%% Shows info about current cursor position
@@ -2435,7 +2607,7 @@ if strcmp('Phasor',get(gcf,'Tag'))
             XLim=h.Phasor_Plot.XLim;
             YLim=h.Phasor_Plot.YLim;
             %%% Only ecexutes inside plot bounds
-            if (Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<XLim(2))
+            if (Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<YLim(2))
                 %%% Zooms in by sqrt(2)
                 if e.VerticalScrollCount<0
                     h.Phasor_Plot.XLim=[mean(XLim)-diff(XLim)/sqrt(8),mean(XLim)+diff(XLim)/sqrt(8)];
@@ -2583,6 +2755,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% 0:      Fraction line definition
 %%% 1-6:    ROI selection
+%%% 7:      Triangle selection
 function Phasor_Key(~,e,mode)
 h=guidata(findobj('Tag','Phasor'));
 global PhasorData
@@ -2596,7 +2769,7 @@ switch mode
             Key=str2double(e.Key);
         end
         %%% Checks, if keys 0-6 were pressed
-        if ~isnan(Key) && Key<=6 && Key>=0
+        if ~isnan(Key) && Key<=9 && Key>=0
             %%% Defines key release callback to stop
             h.Phasor.KeyReleaseFcn={@Phasor_Key,2};
             %%% Disables further key press callbacks
@@ -2647,6 +2820,7 @@ h.Phasor.WindowButtonMotionFcn={@Phasor_Move,1,[],[]};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 function Calc_FRET(~,~,mode)
 h = guidata(findobj('Tag','Phasor'));
+global UserValues
 
 Pos=h.Phasor_Plot.CurrentPoint(1,1:2);
 
@@ -2795,6 +2969,8 @@ h.Phasor_FRET(3,2).YData=BG_Pos(2);
 h.Phasor_FRET(4,2).XData=FRET_Pos(1);
 h.Phasor_FRET(4,2).YData=FRET_Pos(2);
 Radius=str2double(h.FRET_Size.String);
+UserValues.Phasor.Settings_FRETRadius = h.FRET_Size.String;
+LSUserValues(1);
 h.Phasor_FRET(5,1).XData=Radius*cos(0:0.01:2*pi)+FRET_Pos(1);
 h.Phasor_FRET(5,1).YData=Radius*sin(0:0.01:2*pi)+FRET_Pos(2);
 
@@ -2809,7 +2985,7 @@ else
 end
 
 %%% Deactivate ROIs and Fraction line
-[h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible]=deal('off');
+[h.Phasor_ROI.Visible,h.Phasor_Fraction.Visible,h.Phasor_Triangle.Visible]=deal('off');
 %%% Updates Images
 Plot_Phasor([],[],0,1:10);
 
@@ -2920,26 +3096,52 @@ if Main
         end
     end
     %%%% Removes all pixels oudside of reasonable bounds
-    s=s(g>-0.1); g=g(g>-0.1);
-    s=s(g<=1.2); g=g(g<=1.2);
-    g=g(s>-0.1); s=s(s>-0.1);
-    g=g(s<=1.2); s=s(s<=1.2);
+    switch PhasorData.Type
+        case 1 %%% Lifetime Data
+            s=s(g>-0.1); g=g(g>-0.1);
+            s=s(g<=1.2); g=g(g<=1.2);
+            g=g(s>-0.1); s=s(s>-0.1);
+            g=g(s<=1.2); s=s(s<=1.2);
+        case 2 %%% Spectral Data
+            s=s(g>-1); g=g(g>-1);
+            s=s(g<=1); g=g(g<=1);
+            g=g(s>-1); s=s(s>-1);
+            g=g(s<=1); s=s(s<=1);            
+    end
     %%% Removes all pixel at (0,0) (usually NaN)
     NaNs=~(s==0 & g==0);
     g=g(NaNs); s=s(NaNs);
-    
-    
+      
     if ~isempty(g)
         %%% Histograms phasor plot
-        g=floor(Pixel*(g+0.1));
-        s=floor(Pixel*(s+0.1));
-        Hist=g+1.3*Pixel*s;
-        Phasor=histc(Hist,0:((1.3*Pixel)^2-1));
-        %%% Applies colormap to phasor
-        Phasor=ceil(128*Phasor/max(Phasor)+1);
-        PhasorImage=reshape(PhasorColor(Phasor,:),1.3*Pixel,1.3*Pixel,3);
+        switch PhasorData.Type
+            case 1 %%% Lifetime Data
+                g=floor(Pixel*(g+0.1));
+                s=floor(Pixel*(s+0.1));
+                Hist=g+1.3*Pixel*s;
+                Phasor=histc(Hist,0:((1.3*Pixel)^2-1));
+                %%% Applies colormap to phasor
+                Phasor=ceil(128*Phasor/max(Phasor)+1);
+                PhasorImage=reshape(PhasorColor(Phasor,:),1.3*Pixel,1.3*Pixel,3);
+                h.Phasor_Hist.XData = linspace(-0.1,1.2,size(PhasorImage,2));
+                h.Phasor_Hist.YData = linspace(-0.1,1.2,size(PhasorImage,1));
+                h.Universal_Circle.XData = 0:0.01:1;
+                h.Universal_Circle.YData = sqrt((0:0.01:1)-(0:0.01:1).^2);
+            case 2 %%% Spectral Data
+                g=floor(Pixel*(g+1)/2);
+                s=floor(Pixel*(s+1)/2);
+                Hist=g+Pixel*s;
+                Phasor=histcounts(Hist,0:(Pixel)^2);
+                %%% Applies colormap to phasor
+                Phasor=ceil(128*Phasor/max(Phasor)+1);
+                PhasorImage=reshape(PhasorColor(Phasor,:),Pixel,Pixel,3);
+                h.Phasor_Hist.XData = linspace(-1,1,size(PhasorImage,2));
+                h.Phasor_Hist.YData = linspace(-1,1,size(PhasorImage,1));
+                h.Universal_Circle.XData = [-1:0.01:1, 1:-0.01:-1];
+                h.Universal_Circle.YData = [sqrt(1-(-1:0.01:1).^2), -sqrt(1-(1:-0.01:-1).^2)];
+        end
         %%% Updates phasor plot
-        h.Phasor_Hist.CData=permute(PhasorImage,[2 1 3]);
+        h.Phasor_Hist.CData=permute(PhasorImage,[2 1 3]); 
     end
     
 end
@@ -2967,7 +3169,6 @@ else
     Images = [];
 end
 Map=cell(6,1);
-Z1=[];
 for i=Images %%% Plots Phasor Data
     if PhasorData.Plot(i)~=0 
         %%% Changes the plot title
@@ -3047,15 +3248,15 @@ for i=Images %%% Plots Phasor Data
             %%% Determines Fraction line colormap
             switch h.Fraction_Color.Value
                 case 1
-                    FractionColor=[0 0 0; jet(16)];
+                    FractionColor=[0 0 0; jet(32)];
                 case 2
-                    FractionColor=[0 0 0; hot(16)];
+                    FractionColor=[0 0 0; hot(32)];
                 case 3
-                    FractionColor=[0 0 0; hsv(16)];
+                    FractionColor=[0 0 0; hsv(32)];
                 case 4
-                    FractionColor(1:17,1) = [0; linspace(0,1,8)';ones(8,1) ];
-                    FractionColor(1:17,2) = [0; ones(8,1); linspace(1,0,8)'];
-                    FractionColor(1:17,3) = zeros(17,1);
+                    FractionColor(:,1) = [0; linspace(0,1,16)';ones(16,1) ];
+                    FractionColor(:,2) = [0; ones(16,1); linspace(1,0,16)'];
+                    FractionColor(:,3) = zeros(33,1);
                 case 5
                     if ~isempty(Phasor_Colormap) && size(Phasor_Colormap,1)>1 && size(Phasor_Colormap,2)==3 %%% Uses new colormap
                         FractionColor=[0 0 0; Phasor_Colormap];
@@ -3066,42 +3267,104 @@ for i=Images %%% Plots Phasor Data
                         FractionColor=[0 0 0; UserValues.Phasor.Colormap];
                     end
             end
+            %%% Rotation with complex numbers
+            Width=str2double(h.ROI_Size{7}.String);
             
-            if isempty(Z1)
-                %%% Calculate Map
-                Width=str2double(h.ROI_Size{7}.String);
-                x=h.Phasor_Fraction.XData;
-                y=h.Phasor_Fraction.YData;
-                x=linspace(x(1),x(2),size(FractionColor,1)-1);
-                y=linspace(y(1),y(2),size(FractionColor,1)-1);
-                
-                step=1/Pixel;
-                X=-0.1:step:1.2; X = single(reshape(X,[1, numel(X),1]));
-                Y=-0.1:step:1.2; Y = single(reshape(Y,[numel(Y),1 ,1]));
-                Z1 = single(reshape(x,[1, 1,numel(x)]));
-                Z2 = single(reshape(y,[1, 1,numel(y)]));
-                
-                Dist =  (repmat(X,size(Y,1),1,size(Z1,3))-repmat(Z1,size(Y,1),size(X,2),1)).^2;
-                Dist = sqrt(Dist + (repmat(Y,1,size(X,2),size(Z2,3))-repmat(Z2,size(Y,1),size(X,2),1)).^2);
-                
-                %                 [X1,Y1,Z1]=meshgrid(X,Y,x);
-                %                 [~,~,Z2]=meshgrid(X,Y,y);
-                %                 Dist=sqrt((X1-Z1).^2+(Y1-Z2).^2);
-                [Min,Ind]=min(Dist,[],3);
-                Map=(Ind.*(Min<=Width))';
-            end
-            %%% Finds valid pixel
-            G=round((PhasorData.Data{PhasorData.Plot(i)}.g+0.1)*Pixel);
-            G(isnan(G) | G<1)=1;
-            S=round((PhasorData.Data{PhasorData.Plot(i)}.s+0.1)*Pixel);
-            S(isnan(S) | S<1)=1;
-            %%% Generates ROI map
-            roi=Map(sub2ind(size(Map),G,S));
+            x=h.Phasor_Fraction.XData;
+            y=h.Phasor_Fraction.YData;
+            %%% transforms phasor to complex number
+            Complex_Line = x+sqrt(-1)*y;
+            
+            %%% Calculates rotation coefficients
+            k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+            %%% Rotates fraction line
+            Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+            %%% transforms complex number to phasor
+            x = real(Complex_Line);
+            y = imag(Complex_Line);
+            
+            %%% Transforms phasor into a complex number
+            Complex = PhasorData.Data{PhasorData.Plot(i)}.g + sqrt(-1)*PhasorData.Data{PhasorData.Plot(i)}.s;
+            %%% Rotates Phasor
+            Complex = Complex*Scale*(1+k*sqrt(-1));
+            %%% transforms complex back to phasor
+            g = real(Complex);
+            s = imag(Complex);
+            
+            %%% position relative to line
+            roi = ceil((s-y(1))/(y(2)-y(1))*(size(FractionColor,1)-1));
+            %%% removes points too far away
+            Dist = abs(x(1)-g);
+            
+            roi(roi<0 | roi > size(FractionColor,1)-1 | Dist > Width ) = 0;
+            
+            %%% Removes pixels below threshold
             ROI=roi>0 &...
                 PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
                 PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax;
             ROI=repmat(ROI,[1 1 3]);
             Mask=reshape(FractionColor(roi+1,:),size(Image));
+        elseif strcmp(h.Phasor_Triangle.Visible,'on')
+            for t=1:3
+                %%% Reference point
+                x_ref = h.Phasor_Triangle.XData(mod(t+1,3)+1);
+                y_ref = h.Phasor_Triangle.YData(mod(t+1,3)+1);
+                
+                %%% Opposite line
+                x=h.Phasor_Triangle.XData(t:(t+1));
+                y=h.Phasor_Triangle.YData(t:(t+1));
+                
+                
+                %%% transforms phasor to complex number
+                Complex_Line = x+sqrt(-1)*y;
+                Complex_Ref = x_ref+sqrt(-1)*y_ref;
+                
+                %%% Calculates rotation coefficients
+                k=diff(x)/diff(y); Scale = 1/sqrt(k^2+1);
+                %%% Rotates line and point
+                Complex_Line = Complex_Line*Scale*(1+k*sqrt(-1));
+                Complex_Ref = Complex_Ref*Scale*(1+k*sqrt(-1));
+                
+                %%% transforms complex number to phasor
+                x = real(Complex_Line);
+                y = imag(Complex_Line);
+                
+                x_ref = real(Complex_Ref);
+                y_ref = imag(Complex_Ref);
+                
+                %%% Transforms phasor into a complex number
+                Complex = PhasorData.Data{PhasorData.Plot(i)}.g + sqrt(-1)*PhasorData.Data{PhasorData.Plot(i)}.s;
+                %%% Rotates Phasor
+                Complex = Complex*Scale*(1+k*sqrt(-1));
+                %%% transforms complex back to phasor
+                g = real(Complex);
+                s = imag(Complex);
+                
+                Dist_ref = x(1)-x_ref;
+                F(:,:,mod(t+1,3)+1) = (x(1)-g)/Dist_ref;
+            end
+            R = F(:,:,1);
+            G = F(:,:,2);
+            B = F(:,:,3);
+            clear F;
+            
+            R(G>=1 | B>=1)=0; R(R<0)=0;
+            G(R>=1 | B>=1)=0; G(G<0)=0;
+            B(G>=1 | R>=1)=0; B(B<0)=0;
+            
+            Mask(:,:,1) = R;
+            Mask(:,:,2) = G;
+            Mask(:,:,3) = B;
+            Mask = Mask.*repmat(1./sum(Mask,3),1,1,3);
+            %%% Applies contrast
+            %Mask = sqrt(Mask);
+            %Mask = log10(Mask*9+1);
+            %Mask = Mask./repmat(max(Mask,[],3),1,1,3);
+            %Mask = Mask(max(Mask(:)));
+            
+            ROI = repmat(PhasorData.Data{PhasorData.Plot(i)}.Intensity >= THmin &...
+                  PhasorData.Data{PhasorData.Plot(i)}.Intensity <= THmax,1,1,3);
+            
         elseif strcmp(h.Phasor_FRET(1,1).Visible,'on') && h.FRET_Use.Value==2
             %% FRET line
             
@@ -3190,6 +3453,7 @@ for i=Images %%% Plots Phasor Data
             %%% Uses flat mask color for all other colormaps
             Image(ROI)=Mask(ROI);
         end
+        clear Mask;
         
         %%% Uses applies selected region to Single plot
         if i==10
@@ -3207,7 +3471,7 @@ for i=Images %%% Plots Phasor Data
     end
 end
 
- %% Calculates and plots Intensity information
+%% Calculates and plots Intensity information
 if isempty(Images) %%% Plots Intensity plot
     %%% Extracts Intensity, g and s data
     Sel = h.List.Value;    
@@ -3424,7 +3688,8 @@ switch mode
                     end
                     h.Phasor_ROI(ROI,2).Visible='off';
                     h.Phasor_Fraction.Visible='off';
-                else
+                    h.Phasor_Triangle.Visible ='off';
+                elseif ROI==7
                     if strcmp(h.Phasor_Fraction.Visible,'on')
                         h.Phasor_Fraction.Visible='off';
                     else
@@ -3434,6 +3699,18 @@ switch mode
                         h.Phasor_ROI(i,1).Visible='off';
                         h.Phasor_ROI(i,2).Visible='off';
                     end
+                    h.Phasor_Triangle.Visible ='off';
+                elseif ROI==8
+                    if strcmp(h.Phasor_Triangle.Visible,'on')
+                        h.Phasor_Triangle.Visible='off';
+                    else
+                        h.Phasor_Triangle.Visible='on';
+                    end
+                    for i=1:6
+                        h.Phasor_ROI(i,1).Visible='off';
+                        h.Phasor_ROI(i,2).Visible='off';
+                    end
+                    h.Phasor_Fraction.Visible ='off';
                 end
                 [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible] = deal('off');
                 Plot_Phasor([],[],0,1:10);
@@ -3447,7 +3724,7 @@ switch mode
                     end
                     h.Phasor_ROI(ROI,1).Visible='off';
                     h.Phasor_Fraction.Visible='off';
-                else
+                elseif ROI==7
                     if strcmp(h.Phasor_Fraction.Visible,'on')
                         h.Phasor_Fraction.Visible='off';
                     else
@@ -3457,8 +3734,19 @@ switch mode
                         h.Phasor_ROI(i,1).Visible='off';
                         h.Phasor_ROI(i,2).Visible='off';
                     end
+                elseif ROI==8
+                    if strcmp(h.Phasor_Triangle.Visible,'on')
+                        h.Phasor_Triangle.Visible='off';
+                    else
+                        h.Phasor_Triangle.Visible='on';
+                    end
+                    for i=1:6
+                        h.Phasor_ROI(i,1).Visible='off';
+                        h.Phasor_ROI(i,2).Visible='off';
+                    end
+                    h.Phasor_Fraction.Visible ='off';
                 end
-                [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible] = deal('off');
+                [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible,h.Phasor_Triangle.Visible] = deal('off');
                 Plot_Phasor([],[],0,1:10);               
             case 'extend'
                 %% Middle click:    Changes ROI\Fraction line color 
@@ -3551,7 +3839,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function FRET_Look(~,~,mode,Line)
 h=guidata(findobj('Tag','Phasor'));
-
+global UserValues
 switch mode
     case 1 %% Changes FRET line color
         Type=h.Phasor.SelectionType;
@@ -3571,6 +3859,7 @@ switch mode
                     if Line==4
                         h.Phasor_FRET(5,1).Color=Color;
                     end
+                    UserValues.Phasor.Settings_FRETColor (Line,1:3) = Color;
                 end
         end
     case 2 %% Changes FRET line width
@@ -3578,13 +3867,18 @@ switch mode
         if Line==4
             h.Phasor_FRET(5,1).LineWidth=str2double(h.FRET_Line(4,2).String);
         end
+        UserValues.Phasor.Settings_FRETWidth{Line} = h.FRET_Line(Line,2).String;
     case 3 %% Changes FRET line style
         h.Phasor_FRET(Line,1).LineStyle=h.FRET_Line(Line,3).String;
+        UserValues.Phasor.Settings_FRETStyle{Line} = h.FRET_Line(Line,3).String;
     case 4 %% Changes FRET marker style
         h.Phasor_FRET(Line,2).Marker=h.FRET_Line(Line,4).String;
+        UserValues.Phasor.Settings_FRETMarker{Line} = h.FRET_Line(Line,4).String;
     case 5 %% Changes FRET marker size
-        h.Phasor_FRET(Line,2).MarkerSize=str2double(h.FRET_Line(Line,5).String);        
+        h.Phasor_FRET(Line,2).MarkerSize=str2double(h.FRET_Line(Line,5).String); 
+        UserValues.Phasor.Settings_FRETSize{Line} = h.FRET_Line(Line,5).String;
 end
+LSUserValues(1);
 
 
        
