@@ -3486,7 +3486,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             else
                                 rescale = 1;
                             end
-                            [Max, index] = max(PamMeta.MI_Hist{i});
+                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
                             offset = h.Plots.MI_All{i}.XData(index); %offset of the IRF with respect to TCSPC channel zero
                             tmp = PamMeta.Lifetime{i}-offset;
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
@@ -4068,6 +4068,7 @@ if any(mode==3)
             h.Plots.Image.CData=PamMeta.Image{Sel};
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
+                h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
         %%% Mean arrival time image
