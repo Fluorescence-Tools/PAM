@@ -4572,7 +4572,7 @@ if isfield(tcPDAstruct,'twocolordata')
     data = cell(numel(tcPDAstruct.twocolordata.Data),10);
     for i = 1:numel(tcPDAstruct.twocolordata.Data)
         data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},tcPDAstruct.twocolordata.Distance{i},tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
-            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitation_GR,...
+            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitationProb,...
             tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
             tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
             tcPDAstruct.twocolordata.timebin(i),'False'};
@@ -4599,6 +4599,29 @@ switch e.Indices(2)
         %%% update table and plot
         update_2cPDAData_table();
         plot_2cPDAData();
+    case 3
+        %%% update distance variable
+        tcPDAstruct.twocolordata.Distance{e.Indices(1)} = e.NewData;
+    case 4
+        %%% update Gamma_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Gamma_GR = e.NewData;
+    case 5
+        %%% update CrossTalk_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.CrossTalk_GR = e.NewData;
+    case 6
+        %%% update DirectExcitationProb variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.DirectExcitationProb = e.NewData;
+    case 7
+        %%% update Background_GG variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGpar = e.NewData/2;
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGperp = e.NewData/2;
+    case 8
+        %%% update Background_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRpar = e.NewData/2;
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRperp = e.NewData/2;
+    case 9
+        %%% update timebin variable
+        tcPDAstruct.twocolordata.timebin(i) = e.NewData;
 end
 
 function plot_2cPDAData()
