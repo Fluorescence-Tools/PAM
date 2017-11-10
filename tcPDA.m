@@ -107,10 +107,10 @@ if isempty(h)
     'BackgroundColor', UserValues.Look.Back,...
     'Tag','tab_corrections'); 
     
-    handles.tab_2cpdadata = uitab(handles.tabgroup_side,...
+    handles.tab_PDAData = uitab(handles.tabgroup_side,...
     'title','1D PDA data',...
     'BackgroundColor', UserValues.Look.Back,...
-    'Tag','tab_2cpdadata'); 
+    'Tag','tab_2cPDAData'); 
     
     %%% fit progress axes
     handles.fit_progress_panel = uibuttongroup(...
@@ -835,37 +835,37 @@ if isempty(h)
         'Callback',[]);
     
    %%% 1d pda data tab
-   handles.panel_2cpdadata = uibuttongroup(...
+   handles.panel_2cPDAData = uibuttongroup(...
         'BackgroundColor',UserValues.Look.Back,...
-        'Parent',handles.tab_2cpdadata,...
+        'Parent',handles.tab_PDAData,...
         'Units','normalized',...
         'Position',[0 0 1 1],...
-        'Tag','panel_2cpdadata');
+        'Tag','panel_2cPDAData');
     
-   handles.add_2cpdadata = uicontrol('Style','pushbutton',...
-        'Parent',handles.panel_2cpdadata,...
+   handles.add_2cPDAData = uicontrol('Style','pushbutton',...
+        'Parent',handles.panel_2cPDAData,...
         'Units','normalized',...
         'Position',[0.05 0.9 0.25 0.05],...
         'String','Load 2C PDA data',...
-        'Tag','add_2cpdadata',...
+        'Tag','add_2cPDAData',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'Callback',@add_2cpdadata);
+        'Callback',@add_2cPDAData);
     
     cnames = {'Use','File','Dist','<html>&gamma;</html>','ct','de','BG don','BG acc','timebin','Del'};
     cformat = {'logical','char',{'GR','BG','BR'},'numeric','numeric','numeric','numeric','numeric','numeric','logical'};
     cedit = [true,false,true,true,true,true,true,true,false,true];
     data = {true,'test','GR',1,0,0,0,0,1,false};
     cwidth = {40,'auto',60,40,40,40,50,50,50,40};
-    handles.table_2cpdadata = uitable(...
-        'Parent',handles.panel_2cpdadata,...
+    handles.table_2cPDAData = uitable(...
+        'Parent',handles.panel_2cPDAData,...
         'Units','normalized',...
         'Position',[0 0 1 0.8],...
         'RowName',[],...
         'ColumnName',cnames,...
         'ColumnEditable',cedit,...
         'ColumnFormat',cformat,...
-        'CellEditCallback',@table_2cpdadata_callback,...
+        'CellEditCallback',@table_2cPDAData_callback,...
         'ColumnWidth',cwidth,...
         'Data',data);
         
@@ -4451,13 +4451,106 @@ if gaussian
 end
 
 %%% function to add 2color data
-function add_2cpdadata()
-global tcPDAstruct
-Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName)
+function add_2cPDAData(obj,eData)
+global tcPDAstruct UserValues
 
+%%$ Load or Add data
+Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName)
+if isempty(Files)
+    return;
+end
+FileName = Files(:,1);
+PathName = Files(:,2);
+%%% Only executes, if at least one file was selected
+if all(FileName{1}==0)
+    return
+end
+for i = 1:numel(FileName)
+    if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
+        load('-mat',fullfile(PathName{i},FileName{i}));
+        tcPDAstruct.twocolordata.FileName{end+1} = FileName{i};
+        tcPDAstruct.twocolordata.PathName{end+1} = PathName{i};
+        if exist('PDA','var') % file has not been saved before in GlobalPDAFit
+            % PDA %structure
+            % .NGP
+            % ....
+            % .NR
+            % .Corrections %structure
+            %       .CrossTalk_GR
+            %       .DirectExcitation_GR
+            %       .Gamma_GR
+            %       .Beta_GR
+            %       .GfactorGreen
+            %       .GfactorRed
+            %       .DonorLifetime
+            %       .AcceptorLifetime
+            %       .FoersterRadius
+            %       .LinkerLength
+            %       .r0_green
+            %       .r0_red
+            %       ... maybe more in future
+            % .Background %structure
+            %       .Background_GGpar
+            %       .Background_GGperp
+            %       .Background_GRpar
+            %       .Background_GRperp
+            %       ... maybe more in future
+            % NOTE: direct excitation correction in Burst analysis is NOT the
+            % same as PDA, therefore we put it to zero. In PDA, this factor
+            % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
+            % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
+            % corrected double labeled molecule having no FRET at all.
+            tcPDAstruct.twocolordata.Data{end+1} = PDA;
+            tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Corrections');
+            tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Background');
+            tcPDAstruct.twocolordata.timebin(end+1) = timebin;
+            tcPDAstruct.twocolordata.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
+            tcPDAstruct.twocolordata.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
+            if isfield(PDA,'BrightnessReference')
+                if ~isempty(PDA.BrightnessReference.N)
+                    tcPDAstruct.twocolordata.BrightnessReference = PDA.BrightnessReference;
+                    tcPDAstruct.twocolordata.BrightnessReference.PN = histcounts(tcPDAstruct.twocolordata.BrightnessReference.N,1:(max(tcPDAstruct.twocolordata.BrightnessReference.N)+1));
+                end
+            end
+            if isfield(PDA,'Type') %%% Type distinguishes between whole measurement and burstwise
+                tcPDAstruct.twocolordata.Type{end+1} = PDA.Type;
+            else
+                tcPDAstruct.twocolordata.Type{end+1} = 'Burst';
+            end
+            clear PDA timebin
+            tcPDAstruct.twocolordata.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
+        elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains SavedData
+            % SavedData %structure
+            %   .Data %cell
+            %       .NGP
+            %       ....
+            %       .NR
+            %   .Corrections %structure
+            %           see above
+            %   .Background %structure
+            %           see above
+            %   .FitParams %1 x 47 cell
+            tcPDAstruct.twocolordata.Data{end+1} = SavedData.Data;
+            tcPDAstruct.twocolordata.timebin(end+1) = SavedData.timebin;
+            tcPDAstruct.twocolordata.Corrections{end+1} = SavedData.Corrections;
+            tcPDAstruct.twocolordata.Background{end+1} = SavedData.Background;
+            if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
+                tcPDAstruct.twocolordata.Type{end+1} = SavedData.Type;
+            else
+                tcPDAstruct.twocolordata.Type{end+1} = 'Burst';
+            end
+            % load fit table data from files
+            tcPDAstruct.twocolordata.FitTable{end+1} = SavedData.FitTable;        
+        end
+    else
+        errorstr{a} = ['File ' FileName{i} ' on path ' PathName{i} ' could not be found. File omitted from database.'];
+        a = a+1;
+    end       
+end
+disp(errorstr);
 
 %%% callback function of 2c pda table
-function table_2cpdadata_callback(obj,e)
+function table_2cPDAData_callback(obj,e)
 
 %%% evaluate 2C PDA likelihood
 function evaluate_2C_pda_likelihood(input)
@@ -4508,6 +4601,10 @@ logL = sum(L);
 %%% since the algorithm minimizes, it is important to minimize the negative
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
+
+function determine_MLE_global()
+%%% combine the likelihoods of two-color and three-color measurements
+%%% possible to use weighting
 
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
