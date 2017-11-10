@@ -91,6 +91,11 @@ if isempty(h)
         'BackgroundColor', UserValues.Look.Back,...
         'Tag','tab_bayesian');
     
+    handles.tab_twocolorPDAData = uitab(handles.tabgroup,...
+        'title','Two-Color Data Sets',...
+        'BackgroundColor', UserValues.Look.Back,...
+        'Tag','tab_twocolorPDAData');
+    
     handles.tabgroup_side = uitabgroup(...
     'Parent',handles.Figure,...
     'Tag','Side_Tab',...
@@ -4465,6 +4470,18 @@ PathName = Files(:,2);
 if all(FileName{1}==0)
     return
 end
+
+if ~isfield(tcPDAstruct,'twocolordata')
+    tcPDAstruct.twocolordata = struct;
+    tcPDAstruct.twocolordata.FileName = [];
+    tcPDAstruct.twocolordata.PathName = [];
+    tcPDAstruct.twocolordata.Data = [];
+    tcPDAstruct.twocolordata.timebin = [];
+    tcPDAstruct.twocolordata.Corrections = [];
+    tcPDAstruct.twocolordata.Background = [];
+    tcPDAstruct.twocolordata.Type = [];
+    tcPDAstruct.twocolordata.FitTable = [];
+end
 for i = 1:numel(FileName)
     if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
         load('-mat',fullfile(PathName{i},FileName{i}));
@@ -4503,15 +4520,9 @@ for i = 1:numel(FileName)
             tcPDAstruct.twocolordata.Data{end+1} = PDA;
             tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Corrections');
             tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Background');
-            tcPDAstruct.twocolordata.timebin(end+1) = timebin;
+            tcPDAstruct.twocolordata.timebin(end+1) = timebin*1000;
             tcPDAstruct.twocolordata.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
             tcPDAstruct.twocolordata.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
-            if isfield(PDA,'BrightnessReference')
-                if ~isempty(PDA.BrightnessReference.N)
-                    tcPDAstruct.twocolordata.BrightnessReference = PDA.BrightnessReference;
-                    tcPDAstruct.twocolordata.BrightnessReference.PN = histcounts(tcPDAstruct.twocolordata.BrightnessReference.N,1:(max(tcPDAstruct.twocolordata.BrightnessReference.N)+1));
-                end
-            end
             if isfield(PDA,'Type') %%% Type distinguishes between whole measurement and burstwise
                 tcPDAstruct.twocolordata.Type{end+1} = PDA.Type;
             else
@@ -4531,7 +4542,7 @@ for i = 1:numel(FileName)
             %           see above
             %   .FitParams %1 x 47 cell
             tcPDAstruct.twocolordata.Data{end+1} = SavedData.Data;
-            tcPDAstruct.twocolordata.timebin(end+1) = SavedData.timebin;
+            tcPDAstruct.twocolordata.timebin(end+1) = SavedData.timebin*1000;
             tcPDAstruct.twocolordata.Corrections{end+1} = SavedData.Corrections;
             tcPDAstruct.twocolordata.Background{end+1} = SavedData.Background;
             if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
@@ -4547,7 +4558,21 @@ for i = 1:numel(FileName)
         a = a+1;
     end       
 end
-disp(errorstr);
+update_2cPDAData_table()
+
+function update_2cPDAData_table()
+global tcPDAstruct
+h = guidata(gcbo);
+
+data = cell(numel(tcPDAstruct.twocolordata.Data),10);
+for i = 1:numel(tcPDAstruct.twocolordata.Data)
+    data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},'GR',tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
+        tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitation_GR,...
+        tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
+        tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
+        tcPDAstruct.twocolordata.timebin(i),'False'};
+end
+h.table_2cPDAData.Data = data;
 
 %%% callback function of 2c pda table
 function table_2cPDAData_callback(obj,e)
