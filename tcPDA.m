@@ -4559,6 +4559,7 @@ for i = 1:numel(FileName)
     end       
 end
 update_2cPDAData_table()
+plot_2cPDAData()
 
 function update_2cPDAData_table()
 global tcPDAstruct
@@ -4576,6 +4577,20 @@ h.table_2cPDAData.Data = data;
 
 %%% callback function of 2c pda table
 function table_2cPDAData_callback(obj,e)
+
+function plot_2cPDAData()
+global tcPDAstruct
+h = guidata(gcbo);
+parent = h.tab_twocolorPDAData;
+delete(parent.Children);
+nbins = str2double(h.nbins_edit.String);
+for i = 1:n
+    subplot(n,1,i,'Parent',parent,'XColor',[1,1,1],'YColor',[1,1,1]);
+    xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
+    title(tcPDAstruct.twocolordata.FileName{i},'Color',[1,1,1],'Interpreter','none');
+    %%% histogram the data
+    
+end
 
 %%% evaluate 2C PDA likelihood
 function evaluate_2C_pda_likelihood(input)
