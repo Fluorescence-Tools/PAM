@@ -1061,7 +1061,7 @@ handles.min_n_edit.String = num2str(tcPDAstruct.N_min);
 handles.max_n_edit.String = num2str(tcPDAstruct.N_max);
 handles.popupmenu_ngauss.Value = tcPDAstruct.n_gauss;
 handles.nbins_edit.String = num2str(tcPDAstruct.nbins);
-
+handles.table_2cPDAData.Data = [];
 if ~isfield(tcPDAstruct,'fitdata')
     value_dummy = [1,50,2,50,2,50,2,0,0,0]';
     fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
@@ -1139,6 +1139,8 @@ popupmenu_ngauss_callback(handles.popupmenu_ngauss,[])
 PlotData(handles);
 reset_plot([],[],handles);
 view_curve(handles);
+update_2cPDAData_table();
+plot_2cPDAData();
 
 function load_from_txt(filename)
 global tcPDAstruct
@@ -4460,7 +4462,7 @@ function add_2cPDAData(obj,eData)
 global tcPDAstruct UserValues
 
 %%$ Load or Add data
-Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName)
+Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName);
 if isempty(Files)
     return;
 end
@@ -4481,12 +4483,14 @@ if ~isfield(tcPDAstruct,'twocolordata')
     tcPDAstruct.twocolordata.Background = [];
     tcPDAstruct.twocolordata.Type = [];
     tcPDAstruct.twocolordata.FitTable = [];
+    tcPDAstruct.twocolordata.Distance = [];
 end
 for i = 1:numel(FileName)
     if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
         load('-mat',fullfile(PathName{i},FileName{i}));
         tcPDAstruct.twocolordata.FileName{end+1} = FileName{i};
         tcPDAstruct.twocolordata.PathName{end+1} = PathName{i};
+        tcPDAstruct.twocolordata.Distance{end+1} = 'GR';
         if exist('PDA','var') % file has not been saved before in GlobalPDAFit
             % PDA %structure
             % .NGP
@@ -4564,32 +4568,61 @@ plot_2cPDAData()
 function update_2cPDAData_table()
 global tcPDAstruct
 h = guidata(gcbo);
-
-data = cell(numel(tcPDAstruct.twocolordata.Data),10);
-for i = 1:numel(tcPDAstruct.twocolordata.Data)
-    data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},'GR',tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
-        tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitation_GR,...
-        tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
-        tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
-        tcPDAstruct.twocolordata.timebin(i),'False'};
+if isfield(tcPDAstruct,'twocolordata')
+    data = cell(numel(tcPDAstruct.twocolordata.Data),10);
+    for i = 1:numel(tcPDAstruct.twocolordata.Data)
+        data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},tcPDAstruct.twocolordata.Distance{i},tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
+            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitation_GR,...
+            tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
+            tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
+            tcPDAstruct.twocolordata.timebin(i),'False'};
+    end
+    h.table_2cPDAData.Data = data;
 end
-h.table_2cPDAData.Data = data;
 
 %%% callback function of 2c pda table
 function table_2cPDAData_callback(obj,e)
+global tcPDAstruct
+switch e.Indices(2)
+    case 10 %%% delete data set
+        i = e.Indices(1);
+        tcPDAstruct.twocolordata.Data(i) = [];
+        tcPDAstruct.twocolordata.FileName(i) = [];
+        tcPDAstruct.twocolordata.PathName(i) = [];
+        tcPDAstruct.twocolordata.timebin(i) = [];
+        tcPDAstruct.twocolordata.Corrections(i) = [];
+        tcPDAstruct.twocolordata.Background(i) = [];
+        tcPDAstruct.twocolordata.Type(i) = [];
+        tcPDAstruct.twocolordata.FitTable(i) = [];
+        tcPDAstruct.twocolordata.Ehist(i) = [];
+        tcPDAstruct.twocolordata.Distance(i) = [];
+        %%% update table and plot
+        update_2cPDAData_table();
+        plot_2cPDAData();
+end
 
 function plot_2cPDAData()
 global tcPDAstruct
 h = guidata(gcbo);
 parent = h.tab_twocolorPDAData;
 delete(parent.Children);
-nbins = str2double(h.nbins_edit.String);
-for i = 1:n
-    subplot(n,1,i,'Parent',parent,'XColor',[1,1,1],'YColor',[1,1,1]);
-    xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
-    title(tcPDAstruct.twocolordata.FileName{i},'Color',[1,1,1],'Interpreter','none');
-    %%% histogram the data
-    
+if isfield(tcPDAstruct,'twocolordata')
+    nbins = str2double(h.nbins_edit.String);
+    n = numel(tcPDAstruct.twocolordata.Data);
+    tcPDAstruct.twocolordata.Ehist = [];
+    for i = 1:n
+        subplot(n,1,i,'Parent',parent);
+        %%% histogram the data
+        tcPDAstruct.twocolordata.Ehist{i} = histc(tcPDAstruct.twocolordata.Data{i}.NF./(tcPDAstruct.twocolordata.Data{i}.NF+tcPDAstruct.twocolordata.Data{i}.NG),...
+            linspace(0,1,nbins+1));
+        tcPDAstruct.twocolordata.Ehist{i}(end-1) = tcPDAstruct.twocolordata.Ehist{i}(end-1) + tcPDAstruct.twocolordata.Ehist{i}(end);
+        tcPDAstruct.twocolordata.Ehist{i}(end) = [];
+        %%% plot the histogram
+        bar(tcPDAstruct.x_axis_bar,tcPDAstruct.twocolordata.Ehist{i},'EdgeColor','none','FaceColor',[0.5,0.5,0.5],'BarWidth',1);
+        set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
+        xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
+        title(tcPDAstruct.twocolordata.FileName{i},'Color',[1,1,1],'Interpreter','none');
+    end
 end
 
 %%% evaluate 2C PDA likelihood
