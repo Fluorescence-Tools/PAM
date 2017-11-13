@@ -4649,7 +4649,8 @@ if isfield(tcPDAstruct,'twocolordata')
 end
 
 %%% evaluate 2C PDA likelihood
-function evaluate_2C_pda_likelihood(input)
+function L = evaluate_2C_pda_likelihood()
+%%% loop over all 1d data sets that are set to active, add up the likelihood
 n_gauss = 1; % read out number of populations
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
