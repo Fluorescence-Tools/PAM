@@ -13054,17 +13054,21 @@ end
 
 function [out, func, xval] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR)
 global BurstData BurstMeta
-res = 100;
-xval = linspace(0,tauD,100);
+res = 10;
+xval = linspace(0,tauD,1000);
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
-RBG = linspace(0*R0BG,4*R0BG,res);
-RBR = linspace(0*R0BR,4*R0BR,res);
+[RBG, RBR] = meshgrid(linspace(0*R0BG,4*R0BG,100),linspace(0*R0BR,4*R0BR,100));
+RBG = RBG(:);
+RBR = RBR(:);
+%RBG = linspace(0*R0BG,4*R0BG,res);
+%RBR = linspace(0*R0BR,4*R0BR,res);
+n = numel(RBG);
 %for every R calculate gaussian distribution
-p = zeros(res,res,res);
-rBG = zeros(res,res,res);
-rBR = zeros(res,res,res);
-for j = 1:res
-    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-4*sBG,RBG(j)+4*sBG,res),linspace(RBR(j)-4*sBR,RBR(j)+4*sBR,res));
+p = zeros(res,res,n);
+rBG = zeros(res,res,n);
+rBR = zeros(res,res,n);
+for j = 1:n
+    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-3*sBG,RBG(j)+3*sBG,res),linspace(RBR(j)-3*sBR,RBR(j)+3*sBR,res));
     dummy = exp(-( ((xRBG-RBG(j)).^2)./(2*sBG^2) + ((xRBR-RBR(j)).^2)./(2*sBR^2) ));
     dummy(xRBG < 0) = 0;
     dummy(xRBR < 0) = 0;
@@ -13075,8 +13079,8 @@ for j = 1:res
 end
 
 %calculate lifetime distribution
-tau = zeros(res,res,res);
-for j = 1:res
+tau = zeros(res,res,n);
+for j = 1:n
     %%% first calculate the Efficiencies B->G and B->R
     EBG = 1./((rBG(:,:,j)./R0BG).^6 + 1);
     EBR = 1./((rBR(:,:,j)./R0BR).^6 + 1);
@@ -13088,23 +13092,25 @@ for j = 1:res
 end
 
 %calculate species weighted taux
-taux = zeros(1,res);
-for j = 1:res
+taux = zeros(1,n);
+for j = 1:n
     taux(j) = sum(sum(p(:,:,j).*tau(:,:,j)));
 end
 
 %calculate intensity weighted tauf
-tauf = zeros(1,res);
-for j = 1:res
+tauf = zeros(1,n);
+for j = 1:n
     tauf(j) = sum(sum(p(:,:,j).*(tau(:,:,j).^2)))./taux(j);
 end
 
-%coefficients = polyfit(tauf,taux,3);
-%out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% we need the fitting here because of unambiguity between tauf and taux
+coefficients = polyfit(tauf,taux,3);
+out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% figure;plot(xval,out);hold on;plot(xval,1-interp1(tauf,taux,xval)./tauD)
 
-out = 1-interp1(tauf,taux,xval)./tauD;
-out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
-out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
+%out = 1-interp1(tauf,taux,xval)./tauD;
+%out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
+%out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
