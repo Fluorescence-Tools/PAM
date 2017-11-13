@@ -13103,7 +13103,11 @@ for j = 1:n
     tauf(j) = sum(sum(p(:,:,j).*(tau(:,:,j).^2)))./taux(j);
 end
 
-% we need the fitting here because of unambiguity between tauf and taux
+% we need the fitting here because of ambiguity between tauf and taux
+% similar taux values can have different tauf values, e.g. one can not
+% distinguish between donor (B) quenching due to close G and far R, or close R
+% and far G, which will have different effect on the relation between tauf
+% and taux due to the mixing.
 coefficients = polyfit(tauf,taux,3);
 out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
 % figure;plot(xval,out);hold on;plot(xval,1-interp1(tauf,taux,xval)./tauD)
