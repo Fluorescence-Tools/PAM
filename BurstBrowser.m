@@ -5664,21 +5664,21 @@ species = BurstData{file}.SelectedSpecies;
 % distinguish between top level ('Species') or SpeciesGroup 
 % using name --> level = 0,1
 if all(species == [0,0])
-    level = 0;
+    return;
 elseif species(2) == 1
     level = 1;
-else
-    return;
+elseif species(2) > 1
+    level = 2;
 end
 
 switch level
-    case 0
+    case 1
         %add a species group to top level
         name = ['Species ' num2str(size(BurstData{file}.SpeciesNames,1)+1)];
         BurstData{file}.SpeciesNames{end+1,1} = name;
         BurstData{file}.Cut{end+1,1} = {};
         BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
-    case 1
+    case 2
         % add species to species group
         % check if species group exists
         if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
