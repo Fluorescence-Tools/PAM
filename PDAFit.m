@@ -4481,6 +4481,7 @@ switch mode
         s.path = PDAData.PathName;
         %s.str = h.PDADatabase.List.String;
         save(fullfile(Path,File),'s');
+        UserValues.File.PDAPath = Path;
 end
 
 % Updates GUI elements
