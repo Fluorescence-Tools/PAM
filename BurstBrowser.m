@@ -695,6 +695,16 @@ if isempty(hfig)
     else
         h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
     end
+    h.MultiPlotButtonMenu_ToggleDisplayTotal = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleDisplayTotal',...
+        'Label','Display sum of all populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+    end
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
         'Parent',h.BurstBrowser,...
@@ -5398,6 +5408,17 @@ switch obj
         UpdatePlot([],[],h);
         UpdateLifetimePlots([],[],h);
         PlotLifetimeInd([],[],h);
+   case h.MultiPlotButtonMenu_ToggleDisplayTotal
+        switch h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked
+            case 'off'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = true;
+            case 'on'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = false;
+        end
+        UpdatePlot([],[],h);
+        PlotLifetimeInd([],[],h); 
 end
 LSUserValues(1);
 
@@ -6373,9 +6394,11 @@ if ~advanced
             BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        end
         %%% hide normal 1d plots
         set(BurstMeta.Plots.Main_histX,'Visible','off');
         set(BurstMeta.Plots.Main_histY,'Visible','off');
@@ -6395,7 +6418,11 @@ if ~advanced
             end
             str{i} = strrep(name,'_',' ');  
         end
-        legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
         if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
@@ -12316,9 +12343,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
             BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
     elseif gcbo == h.MultiPlotButton
         [zz,color] = overlay_colored(H);
         del = false(numel(h.axes_lifetime_ind_2d.Children),1);
@@ -12397,7 +12426,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         str{i} = strrep(name,'_',' ');  
     end
     if gcbo ~= h.MultiPlotButton
-        legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     elseif gcbo ==  h.MultiPlotButton
         legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     end
