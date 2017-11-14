@@ -4484,6 +4484,7 @@ if ~isfield(tcPDAstruct,'twocolordata')
     tcPDAstruct.twocolordata.Type = [];
     tcPDAstruct.twocolordata.FitTable = [];
     tcPDAstruct.twocolordata.Distance = [];
+    tcPDAstruct.twocolordata.Ehist = [];
 end
 for i = 1:numel(FileName)
     if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
@@ -4491,6 +4492,7 @@ for i = 1:numel(FileName)
         tcPDAstruct.twocolordata.FileName{end+1} = FileName{i};
         tcPDAstruct.twocolordata.PathName{end+1} = PathName{i};
         tcPDAstruct.twocolordata.Distance{end+1} = 'GR';
+        tcPDAstruct.twocolordata.Ehist{end+1} = [];
         if exist('PDA','var') % file has not been saved before in GlobalPDAFit
             % PDA %structure
             % .NGP
@@ -4651,6 +4653,8 @@ end
 %%% evaluate 2C PDA likelihood
 function L = evaluate_2C_pda_likelihood()
 %%% loop over all 1d data sets that are set to active, add up the likelihood
+
+
 n_gauss = 1; % read out number of populations
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
