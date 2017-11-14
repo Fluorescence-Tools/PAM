@@ -3808,7 +3808,9 @@ else
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
-    fprintf(fID,[repmat('%.3f\t',1,6) '%.3f\n'],tmp.parameterstable{2,:});
+    for i = 2:size(tmp.parameterstable,1)
+        fprintf(fID,[repmat('%.3f\t',1,6) '%.3f\n'],tmp.parameterstable{i,:});
+    end
     fprintf(fID,'\nSettings:\n');
     settings = [fieldnames(tmp.settings), struct2cell(tmp.settings)];
     for i = 1:size(settings,1)
