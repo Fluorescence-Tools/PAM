@@ -318,7 +318,7 @@ if isempty(h.GlobalPDAFit)
         'LineWidth',Look.AxWidth,...
         'YLimMode','auto',...
         'XLimMode','auto');
-    xlabel('Distance [A]','Color',Look.Fore);
+    xlabel('Distance [?]','Color',Look.Fore);
     ylabel('Probability','Color',Look.Fore);
     
     
