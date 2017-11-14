@@ -873,7 +873,18 @@ if isempty(h)
         'CellEditCallback',@table_2cPDAData_callback,...
         'ColumnWidth',cwidth,...
         'Data',data);
-        
+    
+    handles.use_2cPDAData_checkbox = uicontrol('Style','checkbox',...
+        'Parent',handles.panel_2cPDAData,...
+        'Units','normalized',...
+        'Position',[0.05 0.8 0.4 0.05],...
+        'String','Use 2C PDA data (global analysis)',...
+        'Tag','use_2cPDAData_checkbox',...
+        'BackgroundColor',UserValues.Look.Control,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Value',0,...
+        'Callback',[]);
+    
     %%% store guidata
     guidata(handles.Figure,handles);
     
@@ -4460,7 +4471,7 @@ end
 %%% function to add 2color data
 function add_2cPDAData(obj,eData)
 global tcPDAstruct UserValues
-
+h = guidata(gco);
 %%$ Load or Add data
 Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName);
 if isempty(Files)
@@ -4564,6 +4575,7 @@ for i = 1:numel(FileName)
         a = a+1;
     end       
 end
+h.use_2cPDAData_checkbox.Value = 1;
 update_2cPDAData_table()
 plot_2cPDAData()
 
@@ -4624,6 +4636,16 @@ switch e.Indices(2)
     case 9
         %%% update timebin variable
         tcPDAstruct.twocolordata.timebin(i) = e.NewData;
+    case 1
+        if strcmp(e.PreviousData,'True')
+            obj.Data{e.Indices(1),e.Indices(2)} = 'False';
+        else
+            obj.Data{e.Indices(1),e.Indices(2)} = 'True';
+        end
+        if all(strcmp(obj.Data(:,1),'False'))
+            h = guidata(obj);
+            h.use_2cPDAData_checkbox.Value = 0;
+        end
 end
 
 function plot_2cPDAData()
@@ -4651,11 +4673,27 @@ if isfield(tcPDAstruct,'twocolordata')
 end
 
 %%% evaluate 2C PDA likelihood
-function L = evaluate_2C_pda_likelihood()
+function neg_logL = evaluate_2C_pda_likelihood(fitpar)
+global tcPDAstruct
+
+active = find(tcPDAstruct.active_2C);
+
+L_per_dataset = cell(numel(active),1);
+
 %%% loop over all 1d data sets that are set to active, add up the likelihood
+for i = active
+    %%% what distance?
+    
+    %%% get parameters
+    
+    
+end
 
+function logL = determine_MLE_2color(dataset,fitpar)
+global tcPDAstruct
+%%% get the photon counts, background count distributions and correction factors
 
-n_gauss = 1; % read out number of populations
+n_gauss = tcPDAstruct.n_gauss; % read out number of populations
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
 L = cell(n_gauss,1); %%% Likelihood per Gauss
@@ -4667,7 +4705,7 @@ for j = 1:n_gauss
     %%% Calculate E values for R grid
     E = 1./(1+(xR./R0).^6);
     epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
-    
+
     %%% Calculate the vector of likelihood values
     P = eval_prob_2c_bg(NG,NF,...
         PDAMeta.NBG{file},PDAMeta.NBR{file},...
@@ -4676,11 +4714,7 @@ for j = 1:n_gauss
     P = log(P) + repmat(log(PR'),numel(NG),1);
     Lmax = max(P,[],2);
     P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
-    
-    if h.SettingsTab.Use_Brightness_Corr.Value
-        %%% Add Brightness Correction Probabilty here
-        P = P + log(PN_scaled{j}(NG + NF));
-    end
+
     %%% Treat case when all burst produced zero probability
     P(isnan(P)) = -Inf;
     L{j} = P;
@@ -4703,9 +4737,25 @@ logL = sum(L);
 %%% log likelihood, i.e. maximize the likelihood
 logL = -logL;
 
-function determine_MLE_global()
+function [P_global] = determine_MLE_global(fitpar)
 %%% combine the likelihoods of two-color and three-color measurements
 %%% possible to use weighting
+
+%%% 3 color likelihood
+P_3C = (-1)*determine_MLE_mc_dist_3d_cor(fitpar);
+
+%%% 2 color likelihood
+P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
+
+%%% combine using weights
+w_3C = 1; w_2C = 1;
+P_3C = P_3C + log(w_3C);
+P_2C = P_2C + log(w_2C);
+if P_3C > P_2C
+    P_global = P_3C + log(1+exp(P_2C-P_3C));
+else
+    P_global = P_2C + log(1+exp(P_3C-P_2C));
+end
 
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
