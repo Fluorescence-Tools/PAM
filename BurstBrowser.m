@@ -5688,7 +5688,7 @@ switch level
         if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
             % find out number of existing species for species group
             num_species= sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
-            name = ['Species ' num2str(num_species)];
+            name = ['Subspecies ' num2str(num_species)];
             BurstData{file}.SpeciesNames{species(1),num_species+1} = name;
             BurstData{file}.Cut{species(1),num_species+1} = BurstData{file}.Cut{species(1),1};
             BurstData{file}.SelectedSpecies(2) = num_species+1;
@@ -5739,19 +5739,22 @@ switch level
         BurstData{file}.SpeciesNames(species(1),:) = [];
         BurstData{file}.Cut(species(1),:) = [];
         BurstData{file}.SelectedSpecies(1)=species(1)-1;
-    case 2
-        %%% remove only the one field and shift right of it to the left
-        BurstData{file}.SpeciesNames{species(1),species(2)} = [];
-        temp = BurstData{file}.SpeciesNames(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.SpeciesNames(species(1),:) = [];
-        BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
-        
-        BurstData{file}.Cut{species(1),species(2)} = [];
-        temp = BurstData{file}.Cut(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.Cut(species(1),:) = [];
-        BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+    case 2 %%% subspecies
+        %%% only remove if there is more than 1 subspecies left
+        if sum(cellfun(@(x) ~isempty(x),BurstData{file}.SpeciesNames(species(1),:))) >= 3
+            %%% remove only the one field and shift right of it to the left
+            BurstData{file}.SpeciesNames{species(1),species(2)} = [];
+            temp = BurstData{file}.SpeciesNames(species(1),:);
+            temp = temp(~cellfun(@isempty,temp));
+            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
+
+            BurstData{file}.Cut{species(1),species(2)} = [];
+            temp = BurstData{file}.Cut(species(1),:);
+            temp = temp(cellfun(@iscell,temp));
+            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+        end
 end
 
 UpdateSpeciesList(h);
