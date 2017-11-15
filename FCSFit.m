@@ -851,7 +851,7 @@ switch Type
                 E = E.EGR;
             end
             Data.E = E;
-            his = histcounts(E,x);
+            his = histcounts(E,x)';
             Data.Cor_Average = his./sum(his)./min(diff(x));
             error = sqrt(his)./sum(his)./min(diff(x));
             Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
