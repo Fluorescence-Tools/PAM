@@ -4630,7 +4630,7 @@ for i = 1:numel(FileName)
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
-        S.BurstData.SpeciesNames{2} = 'Subpecies 1';
+        S.BurstData.SpeciesNames{2} = 'Subspecies 1';
         S.BurstData.SpeciesNames{3} = 'Subspecies 2';
         S.BurstData.SelectedSpecies = [1,1];
     elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
@@ -5673,15 +5673,25 @@ end
 
 switch level
     case 1
-        %add a species group to top level
+        % add a species group to top level
+        % use default cut template
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                %%% FRET efficiency and stoichiometry basic cuts
+                Cut = {{'FRET Efficiency',-0.1,1.1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
+            case {3,4}
+                %%% 3color, only do FRET GR and Stoichiometry cuts
+                Cut = {{'FRET Efficiency GR',-0.1,1.1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
+                    {'Stoichiometry BG',-0.1,1.1,true,false},{'Stoichiometry BR',-0.1,1.1,true,false}};
+        end
         name = ['Species ' num2str(size(BurstData{file}.SpeciesNames,1)+1)];
         BurstData{file}.SpeciesNames{end+1,1} = name;
-        BurstData{file}.Cut{end+1,1} = {};
+        BurstData{file}.Cut{end+1,1} = Cut;
         BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
         %%% add two subspecies
         BurstData{file}.SpeciesNames{end,2} = 'Subspecies 1';
         BurstData{file}.SpeciesNames{end,3} = 'Subspecies 2';
-        BurstData{file}.Cut{end,2} = {}; BurstData{file}.Cut{end,3} = {};
+        BurstData{file}.Cut{end,2} = Cut; BurstData{file}.Cut{end,3} = Cut;
     case 2
         % add species to species group
         % check if species group exists
