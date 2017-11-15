@@ -4630,8 +4630,8 @@ for i = 1:numel(FileName)
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
-        S.BurstData.SpeciesNames{2} = 'Species 1';
-        S.BurstData.SpeciesNames{3} = 'Species 2';
+        S.BurstData.SpeciesNames{2} = 'Subpecies 1';
+        S.BurstData.SpeciesNames{3} = 'Subspecies 2';
         S.BurstData.SelectedSpecies = [1,1];
     elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
         if isfield(S.BurstData,'SelectedSpecies')
@@ -5678,6 +5678,10 @@ switch level
         BurstData{file}.SpeciesNames{end+1,1} = name;
         BurstData{file}.Cut{end+1,1} = {};
         BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
+        %%% add two subspecies
+        BurstData{file}.SpeciesNames{end,2} = 'Subspecies 1';
+        BurstData{file}.SpeciesNames{end,3} = 'Subspecies 2';
+        BurstData{file}.Cut{end,2} = {}; BurstData{file}.Cut{end,3} = {};
     case 2
         % add species to species group
         % check if species group exists
