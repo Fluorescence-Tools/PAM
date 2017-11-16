@@ -1555,6 +1555,11 @@ switch (selected_tab)
          else
             tcPDAstruct.grid = 0;
             calculate_background(); 
+            if handles.use_2cPDAData_checkbox.Value
+                % update two color background count distributions
+                tcPDAstruct.active_2C = cell2mat(cellfun(@(x) strcmp(x,'True'),handles.table_2cPDAData.Data(:,1),'UniformOutput',false));
+                evaluate_background_2C();
+            end
             %%% check if gpu is available (sometimes it locks up...)
             tcPDAstruct.GPU_locked = false;
             try 
@@ -1570,22 +1575,27 @@ switch (selected_tab)
                     tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
             end
              
-            %opts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','PlotFcns',@optimplotfval,'FinDiffRelStep',0.1);
-            %fitpar = fmincon(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar, [],[],A,b,LB,UB,[],opts);
+            if ~handles.use_2cPDAData_checkbox.Value
+                %%% no global fit
+                fitfun = @(x) determine_MLE_dist_3d_cor(x);
+            else
+                %%% global fit using two color data set
+                fitfun = @(x) determine_MLE_global(x);
+            end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Simplex'
                     fitopts = optimset('MaxFunEvals', 1E6,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fminsearchbnd(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar,LB,UB,fitopts);
+                    fitpar = fminsearchbnd(fitfun, fitpar,LB,UB,fitopts);
                 case 'Pattern Search'
                     plotfun = @(optimvalues,flag) UpdateFitProgress(optimvalues,flag,[],[],@plot_after_fit,@UpdateFitTable);
                     opts = psoptimset('Cache','on','Display','iter','PlotFcns',plotfun);%,'UseParallel','always');
-                    fitpar = patternsearch(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar, [],[],A,b,LB,UB,[],opts);
+                    fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
                 case 'Gradient-based'
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','FinDiffRelStep',0.1,'PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fmincon(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar,[],[],A,b,LB,UB,[],fitopts);
+                    fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                 case 'Gradient-based (global)'
                     opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter','PlotFcns',plotfun);%@optimplotfvalPDA);
-                    problem = createOptimProblem('fmincon','objective',@(x) determine_MLE_mc_dist_3d_cor(x),'x0',fitpar,'lb',LB,'ub',UB,'Aeq',A,'beq',b,'options',opts);
+                    problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'lb',LB,'ub',UB,'Aeq',A,'beq',b,'options',opts);
                     gs = GlobalSearch;
                     fitpar = run(gs,problem);
             end
@@ -2421,7 +2431,7 @@ for i = 1:numel(fitpar)/10
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
 
-function [ P_result ] = determine_MLE_mc_dist_3d_cor(fitpar)
+function [ P_result ] = determine_MLE_dist_3d_cor(fitpar)
 global tcPDAstruct
 
 %10 fit par:
@@ -4155,7 +4165,7 @@ if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
 end
 
 priorfun = @(x) 1;
-probfun = @(x) (-1)*determine_MLE_mc_dist_3d_cor(x); 
+probfun = @(x) (-1)*determine_MLE_dist_3d_cor(x); 
 plot_params = ~fixed;
 
 switch mcmc_method
@@ -4677,25 +4687,44 @@ function neg_logL = evaluate_2C_pda_likelihood(fitpar)
 global tcPDAstruct
 
 active = find(tcPDAstruct.active_2C);
-
+n_gauss = tcPDAstruct.n_gauss;
 L_per_dataset = cell(numel(active),1);
 
 %%% loop over all 1d data sets that are set to active, add up the likelihood
-for i = active
+for i = active'
     %%% what distance?
+    dist = tcPDAstruct.twocolordata.Distance{i};
+    %%% get fit parameters
     
-    %%% get parameters
-    
-    
+    switch dist
+        case 'GR'
+            sel = [1,2,3];
+        case 'BG'
+            sel = [1,4,5];
+        case 'BR'
+            sel = [1,6,7];
+    end
+    fitpar_filtered = [];
+    for j = 1:n_gauss
+        fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
+    end
+    %%% compute likelihood
+    L_per_dataset{i} = determine_MLE_2color(i,fitpar_filtered);
 end
+neg_logL = sum(horzcat(L_per_dataset{:}));
 
 function logL = determine_MLE_2color(dataset,fitpar)
 global tcPDAstruct
-%%% get the photon counts, background count distributions and correction factors
-
 n_gauss = tcPDAstruct.n_gauss; % read out number of populations
 steps = 10;
 n_sigma = 3; %%% how many sigma to sample distribution width?
+%%% get the photon counts, background count distributions and correction factors
+R0 = tcPDAstruct.twocolordata.Corrections{dataset}.FoersterRadius;
+cr = tcPDAstruct.twocolordata.Corrections{dataset}.CrossTalk_GR;
+de = tcPDAstruct.twocolordata.Corrections{dataset}.DirectExcitationProb;
+gamma = tcPDAstruct.twocolordata.Corrections{dataset}.Gamma_GR;
+NG = tcPDAstruct.twocolordata.Data{dataset}.NG;
+NF = tcPDAstruct.twocolordata.Data{dataset}.NF;
 L = cell(n_gauss,1); %%% Likelihood per Gauss
 for j = 1:n_gauss
     %%% define Gaussian distribution of distances
@@ -4708,8 +4737,8 @@ for j = 1:n_gauss
 
     %%% Calculate the vector of likelihood values
     P = eval_prob_2c_bg(NG,NF,...
-        PDAMeta.NBG{file},PDAMeta.NBR{file},...
-        PDAMeta.PBG{file}',PDAMeta.PBR{file}',...
+        tcPDAstruct.twocolordata.NBG{dataset},tcPDAstruct.twocolordata.NBR{dataset},...
+        tcPDAstruct.twocolordata.PBG{dataset}',tcPDAstruct.twocolordata.PBR{dataset}',...
         epsGR');
     P = log(P) + repmat(log(PR'),numel(NG),1);
     Lmax = max(P,[],2);
@@ -4721,9 +4750,7 @@ for j = 1:n_gauss
 end
 
 %%% normalize amplitudes
-fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
-PA = fitpar(PDAMeta.Comp{file},1);
-
+PA = fitpar(:,1)./sum(fitpar(:,1));
 
 L = horzcat(L{:});
 L = L + repmat(log(PA'),numel(NG),1);
@@ -4742,7 +4769,7 @@ function [P_global] = determine_MLE_global(fitpar)
 %%% possible to use weighting
 
 %%% 3 color likelihood
-P_3C = (-1)*determine_MLE_mc_dist_3d_cor(fitpar);
+P_3C = (-1)*determine_MLE_dist_3d_cor(fitpar);
 
 %%% 2 color likelihood
 P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
@@ -4751,10 +4778,48 @@ P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
 w_3C = 1; w_2C = 1;
 P_3C = P_3C + log(w_3C);
 P_2C = P_2C + log(w_2C);
-if P_3C > P_2C
-    P_global = P_3C + log(1+exp(P_2C-P_3C));
-else
-    P_global = P_2C + log(1+exp(P_3C-P_2C));
+
+P_global = P_3C + P_2C;
+P_global = P_global*(-1); %negLogL
+
+function evaluate_background_2C()
+global tcPDAstruct
+
+for i = 1:numel(tcPDAstruct.active_2C)
+    %%% evaluate the background probabilities
+    % timebin is given in units of milliseconds
+    background_counts_GG = (tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp)*...
+        tcPDAstruct.twocolordata.timebin(i);
+    background_counts_GR = (tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp)*...
+        tcPDAstruct.twocolordata.timebin(i);
+    maxN = max(tcPDAstruct.twocolordata.Data{i}.NG + tcPDAstruct.twocolordata.Data{i}.NF);
+    BGgg = poisspdf(0:1:maxN,background_counts_GG);
+    BGgr = poisspdf(0:1:maxN,background_counts_GR);
+    method = 'cdf';
+    switch method
+        case 'pdf'
+            %determine boundaries for background inclusion
+            BGgg(BGgg<1E-2) = [];
+            BGgr(BGgr<1E-2) = [];
+        case 'cdf'
+            %%% evaluate the background probabilities
+            CDF_BGgg = poisscdf(0:1:maxN,background_counts_GG);
+            CDF_BGgr = poisscdf(0:1:maxN,background_counts_GR);
+            %determine boundaries for background inclusion
+            threshold = 0.95;
+            BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
+            BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+    end
+    PBG = BGgg./sum(BGgg);
+    PBR = BGgr./sum(BGgr);
+    NBG = numel(BGgg)-1;
+    NBR = numel(BGgr)-1;
+
+    % assign to global 
+    tcPDAstruct.twocolordata.PBG{i} = PBG;
+    tcPDAstruct.twocolordata.PBR{i} = PBR;
+    tcPDAstruct.twocolordata.NBG{i} = NBG;
+    tcPDAstruct.twocolordata.NBR{i} = NBR;
 end
 
 %%% function to get multiple files until user cancels
