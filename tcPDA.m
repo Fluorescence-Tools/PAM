@@ -4835,6 +4835,7 @@ function [P_global] = determine_MLE_global(fitpar)
 
 %%% 3 color likelihood
 P_3C = (-1)*determine_MLE_dist_3d_cor(fitpar);
+% 3 color likelihood has prior included! i.e. P_3C = log(L_3C) + log(prior)
 
 %%% 2 color likelihood
 P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
