@@ -1151,7 +1151,7 @@ PlotData(handles);
 reset_plot([],[],handles);
 view_curve(handles);
 update_2cPDAData_table();
-plot_2cPDAData();
+plot_2cPDAData(1);
 
 function load_from_txt(filename)
 global tcPDAstruct
@@ -3204,7 +3204,7 @@ switch (selected_tab)
         end
         
         chi2 = determine_chi2_2C_mc_dist_cor(fitpar);  
-    case handles.tab_3d %full 3d fit
+    case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
         fitpar = [];
         
@@ -3217,6 +3217,12 @@ switch (selected_tab)
         fitpar = fix_covariance_matrix_fitpar(fitpar);
         
         chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
+        
+        if isfield(tcPDAstruct,'twocolordata')
+            plot_2cPDAData(2);
+        end
+    otherwise
+        chi2 = 0;
 end
 if isfield(tcPDAstruct,'plots')
     handles.text_chi2.String = sprintf('Chi2 = %.2f',tcPDAstruct.plots.chi2);
@@ -4587,7 +4593,7 @@ for i = 1:numel(FileName)
 end
 h.use_2cPDAData_checkbox.Value = 1;
 update_2cPDAData_table()
-plot_2cPDAData()
+plot_2cPDAData(1)
 
 function update_2cPDAData_table()
 global tcPDAstruct
@@ -4622,7 +4628,7 @@ switch e.Indices(2)
         tcPDAstruct.twocolordata.Distance(i) = [];
         %%% update table and plot
         update_2cPDAData_table();
-        plot_2cPDAData();
+        plot_2cPDAData(1);
     case 3
         %%% update distance variable
         tcPDAstruct.twocolordata.Distance{e.Indices(1)} = e.NewData;
@@ -4656,18 +4662,25 @@ switch e.Indices(2)
             h = guidata(obj);
             h.use_2cPDAData_checkbox.Value = 0;
         end
+        plot_2cPDAData(1);
 end
 
-function plot_2cPDAData()
+function plot_2cPDAData(mode)
 global tcPDAstruct
 h = guidata(gcbo);
+if nargin < 1
+    mode = 1;
+end
+% mode = 1 -> on data load, plot histograms
+% mode = 2 -> view curve/after fit, generate histograms
 parent = h.tab_twocolorPDAData;
 delete(parent.Children);
 if isfield(tcPDAstruct,'twocolordata')
     nbins = str2double(h.nbins_edit.String);
-    n = numel(tcPDAstruct.twocolordata.Data);
+    active = find(cell2mat(cellfun(@(x) strcmp(x,'True'),h.table_2cPDAData.Data(:,1),'UniformOutput',false)));
+    n = numel(active);
     tcPDAstruct.twocolordata.Ehist = [];
-    for i = 1:n
+    for i = active'
         subplot(n,1,i,'Parent',parent);
         %%% histogram the data
         tcPDAstruct.twocolordata.Ehist{i} = histc(tcPDAstruct.twocolordata.Data{i}.NF./(tcPDAstruct.twocolordata.Data{i}.NF+tcPDAstruct.twocolordata.Data{i}.NG),...
@@ -4679,6 +4692,41 @@ if isfield(tcPDAstruct,'twocolordata')
         set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
         xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
         title(tcPDAstruct.twocolordata.FileName{i},'Color',[1,1,1],'Interpreter','none');
+    end
+    if mode == 2 % mode = 2 -> view curve/after fit, generate histograms
+        % calculate fit histograms
+        for i = active'
+            %%% what distance?
+            dist = tcPDAstruct.twocolordata.Distance{i};
+            %%% get fit parameters
+            fitpar = [];
+            for j = 1:tcPDAstruct.n_gauss
+                fitpar = [fitpar; tcPDAstruct.fitdata.param{j}(:)];
+            end
+            switch dist
+                case 'GR'
+                    sel = [1,2,3];
+                case 'BG'
+                    sel = [1,4,5];
+                case 'BR'
+                    sel = [1,6,7];
+            end
+            fitpar_filtered = [];
+            for j = 1:tcPDAstruct.n_gauss;
+                fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
+            end
+            fitpar_filtered = fitpar_filtered';
+            fitpar_filtered = fitpar_filtered(:);
+            % compute histogram
+            calculate_2c_histogram_mc(i,fitpar_filtered);
+        end
+        % update plots
+        ax = flipud(h.tab_twocolorPDAData.Children);
+        for i = 1:numel(active)
+            axes(ax(i)); hold on;
+            stairs(tcPDAstruct.x_axis_stair,[tcPDAstruct.twocolordata.H_res{active(i)};tcPDAstruct.twocolordata.H_res{active(i)}(end)],...
+                'LineWidth',2,'Color',[0,0,0]);
+        end
     end
 end
 
@@ -4695,7 +4743,6 @@ for i = active'
     %%% what distance?
     dist = tcPDAstruct.twocolordata.Distance{i};
     %%% get fit parameters
-    
     switch dist
         case 'GR'
             sel = [1,2,3];
@@ -4821,6 +4868,71 @@ for i = 1:numel(tcPDAstruct.active_2C)
     tcPDAstruct.twocolordata.NBG{i} = NBG;
     tcPDAstruct.twocolordata.NBR{i} = NBR;
 end
+
+function calculate_2c_histogram_mc(dataset,fitpar)
+global tcPDAstruct UserValues
+nbins = UserValues.tcPDA.nbins;
+%this ensures that the same random numbers are generated in each fitting
+%step to reduce stochastic noise
+rng('shuffle');
+
+N_gauss = numel(fitpar)/3;
+%one color fit
+for i = 1:N_gauss
+    A(i) =fitpar((i-1)*3+1);
+    RDA(i) = fitpar((i-1)*3+2);
+    sigma_RDA(i) = fitpar((i-1)*3+3);
+end
+
+A = A./sum(A);
+
+%read corrections
+mBG_gg = tcPDAstruct.twocolordata.Background{dataset}.Background_GGpar + tcPDAstruct.twocolordata.Background{dataset}.Background_GGperp;
+mBG_gr = tcPDAstruct.twocolordata.Background{dataset}.Background_GRpar + tcPDAstruct.twocolordata.Background{dataset}.Background_GRperp;
+cr = tcPDAstruct.twocolordata.Corrections{dataset}.CrossTalk_GR;
+de = tcPDAstruct.twocolordata.Corrections{dataset}.DirectExcitationProb;
+gamma = tcPDAstruct.twocolordata.Corrections{dataset}.Gamma_GR;
+R0 = tcPDAstruct.twocolordata.Corrections{dataset}.FoersterRadius;
+sampling = tcPDAstruct.sampling;
+BSD_GX = tcPDAstruct.twocolordata.Data{dataset}.NG + tcPDAstruct.twocolordata.Data{dataset}.NF;
+dur = tcPDAstruct.twocolordata.timebin(dataset)*ones(numel(BSD_GX),1);
+H_meas = tcPDAstruct.twocolordata.Ehist{dataset};
+
+PRH = cell(sampling,N_gauss);
+for j = 1:N_gauss
+    parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+        r = normrnd(RDA(j),sigma_RDA(j),numel(BSD_GX),1);
+        E = 1./(1+(r./R0).^6);
+        eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+        BG_gg = poissrnd(mBG_gg.*dur);
+        BG_gr = poissrnd(mBG_gr.*dur);
+        BSD_GX_bg = BSD_GX-BG_gg-BG_gr;
+        PRH{i,j} = (binornd(BSD_GX_bg,eps)+BG_gr)./BSD_GX;
+    end
+end
+
+for i = 1:N_gauss
+    H_res_dummy(:,i) = histc(vertcat(PRH{:,i}),linspace(0,1,nbins+1))/sampling;
+    H_res_dummy(end-1,i) = H_res_dummy(end-1,i) + H_res_dummy(end,i);
+end
+
+H_res_dummy = H_res_dummy(1:nbins,:);
+H_res = zeros(nbins,1);
+for i = 1:N_gauss
+    H_res = H_res + A(i).*H_res_dummy(:,i);
+end
+H_res = sum(H_meas)*H_res./sum(H_res);
+
+%calculate chi2
+error = sqrt(H_meas); error(error == 0) = 1;
+dev = (H_res-H_meas)./error;
+chi2 = sum(dev.^2)./sum(H_meas~=0);
+tcPDAstruct.twocolordata.chi2(dataset) = chi2;
+tcPDAstruct.twocolordata.dev{dataset} = dev;
+
+tcPDAstruct.twocolordata.H_res{dataset} = H_res;
+tcPDAstruct.twocolordata.H_res_individual{dataset} = H_res_dummy;
+tcPDAstruct.twocolordata.A_res{dataset} = A;
 
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
