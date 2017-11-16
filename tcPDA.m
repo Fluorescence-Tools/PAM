@@ -942,6 +942,7 @@ switch hObject
         UserValues.tcPDA.sampling = str2double(get(handles.sampling_edit,'String'));
     case handles.nbins_edit
         UserValues.tcPDA.nbins = str2double(get(handles.nbins_edit,'String'));
+        tcPDAstruct.nbins = UserValues.tcPDA.nbins;
         calculate_histograms();
         PlotData(handles);
         view_curve(handles);
@@ -997,8 +998,8 @@ handles = guidata(hObject);
 fit_tcPDA(handles)
 
 function calculate_histograms()
-global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+global tcPDAstruct
+nbins = tcPDAstruct.nbins;
 
 tcPDAstruct.H_meas = histcn([tcPDAstruct.EBG,tcPDAstruct.EBR,tcPDAstruct.EGR],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
 tcPDAstruct.H_meas(:,:,end-1) = tcPDAstruct.H_meas(:,:,end-1) + tcPDAstruct.H_meas(:,:,end);
@@ -1149,9 +1150,9 @@ calculate_histograms();
 popupmenu_ngauss_callback(handles.popupmenu_ngauss,[])
 PlotData(handles);
 reset_plot([],[],handles);
-view_curve(handles);
 update_2cPDAData_table();
 plot_2cPDAData(1);
+view_curve(handles);
 
 function load_from_txt(filename)
 global tcPDAstruct
@@ -1492,7 +1493,7 @@ switch (selected_tab)
         end
         %update table
         UpdateFitTable(handles); 
-    case handles.tab_3d %full 3d fit
+    case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
         fitpar = [];
         LB = [];
@@ -1879,7 +1880,7 @@ end
 
 function [ chi2 ] = determine_chi2_1C_mc_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -1957,7 +1958,7 @@ end
 
 function [ chi2 ] = determine_chi2_2C_mc_dist_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -2146,7 +2147,7 @@ end
 
 function [ chi2 ] = determine_chi2_mc_dist_3d_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -3122,7 +3123,7 @@ function save_fitstate(handles,obj)
 global tcPDAstruct UserValues
 switch obj
     case handles.button_save_fitstate
-        tcPDAstruct.nbins = UserValues.tcPDA.nbins;
+        %tcPDAstruct.nbins = UserValues.tcPDA.nbins;
         save(tcPDAstruct.FullFileName,'tcPDAstruct');
     case handles.button_save_fitstate_external
         fit_data = tcPDAstruct.fitdata;
@@ -4680,18 +4681,18 @@ if isfield(tcPDAstruct,'twocolordata')
     active = find(cell2mat(cellfun(@(x) strcmp(x,'True'),h.table_2cPDAData.Data(:,1),'UniformOutput',false)));
     n = numel(active);
     tcPDAstruct.twocolordata.Ehist = [];
-    for i = active'
+    for i = 1:numel(active)
         subplot(n,1,i,'Parent',parent);
         %%% histogram the data
-        tcPDAstruct.twocolordata.Ehist{i} = histc(tcPDAstruct.twocolordata.Data{i}.NF./(tcPDAstruct.twocolordata.Data{i}.NF+tcPDAstruct.twocolordata.Data{i}.NG),...
+        tcPDAstruct.twocolordata.Ehist{active(i)} = histc(tcPDAstruct.twocolordata.Data{active(i)}.NF./(tcPDAstruct.twocolordata.Data{active(i)}.NF+tcPDAstruct.twocolordata.Data{active(i)}.NG),...
             linspace(0,1,nbins+1));
-        tcPDAstruct.twocolordata.Ehist{i}(end-1) = tcPDAstruct.twocolordata.Ehist{i}(end-1) + tcPDAstruct.twocolordata.Ehist{i}(end);
-        tcPDAstruct.twocolordata.Ehist{i}(end) = [];
+        tcPDAstruct.twocolordata.Ehist{active(i)}(end-1) = tcPDAstruct.twocolordata.Ehist{active(i)}(end-1) + tcPDAstruct.twocolordata.Ehist{active(i)}(end);
+        tcPDAstruct.twocolordata.Ehist{active(i)}(end) = [];
         %%% plot the histogram
-        bar(tcPDAstruct.x_axis_bar,tcPDAstruct.twocolordata.Ehist{i},'EdgeColor','none','FaceColor',[0.5,0.5,0.5],'BarWidth',1);
+        bar(tcPDAstruct.x_axis_bar,tcPDAstruct.twocolordata.Ehist{active(i)},'EdgeColor','none','FaceColor',[0.5,0.5,0.5],'BarWidth',1);
         set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
         xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
-        title(tcPDAstruct.twocolordata.FileName{i},'Color',[1,1,1],'Interpreter','none');
+        title(tcPDAstruct.twocolordata.FileName{active(i)},'Color',[1,1,1],'Interpreter','none');
     end
     if mode == 2 % mode = 2 -> view curve/after fit, generate histograms
         % calculate fit histograms
@@ -4724,8 +4725,16 @@ if isfield(tcPDAstruct,'twocolordata')
         ax = flipud(h.tab_twocolorPDAData.Children);
         for i = 1:numel(active)
             axes(ax(i)); hold on;
+            %%% plot total histogram
             stairs(tcPDAstruct.x_axis_stair,[tcPDAstruct.twocolordata.H_res{active(i)};tcPDAstruct.twocolordata.H_res{active(i)}(end)],...
                 'LineWidth',2,'Color',[0,0,0]);
+            %%% plot subpopulations
+            if tcPDAstruct.n_gauss > 1
+                for k = 1:tcPDAstruct.n_gauss
+                    stairs(tcPDAstruct.x_axis_stair,tcPDAstruct.twocolordata.A_res{active(i)}(k)*[tcPDAstruct.twocolordata.H_res_individual{active(i)}(:,k);tcPDAstruct.twocolordata.H_res_individual{active(i)}(end,k)],...
+                        'LineWidth',2,'Color',h.color_str{k});
+                end
+            end
         end
     end
 end
@@ -4871,7 +4880,7 @@ end
 
 function calculate_2c_histogram_mc(dataset,fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
