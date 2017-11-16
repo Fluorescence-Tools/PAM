@@ -857,9 +857,9 @@ if isempty(h)
         'ForegroundColor',UserValues.Look.Fore,...
         'Callback',@add_2cPDAData);
     
-    cnames = {'Use','File','Dist','<html>&gamma;</html>','ct','de','BG don','BG acc','timebin','Del'};
-    cformat = {'logical','char',{'GR','BG','BR'},'numeric','numeric','numeric','numeric','numeric','numeric','logical'};
-    cedit = [true,false,true,true,true,true,true,true,false,true];
+    cnames = {'Use','File','Dist','<html>&gamma;</html>','ct','de','R0','BG don','BG acc','timebin','Del'};
+    cformat = {'logical','char',{'GR','BG','BR'},'numeric','numeric','numeric','numeric','numeric','numeric','numeric','logical'};
+    cedit = [true,false,true,true,true,true,true,true,true,false,true];
     data = {true,'test','GR',1,0,0,0,0,1,false};
     cwidth = {40,'auto',60,40,40,40,50,50,50,40};
     handles.table_2cPDAData = uitable(...
@@ -4609,10 +4609,11 @@ function update_2cPDAData_table()
 global tcPDAstruct
 h = guidata(gcbo);
 if isfield(tcPDAstruct,'twocolordata')
-    data = cell(numel(tcPDAstruct.twocolordata.Data),10);
+    data = cell(numel(tcPDAstruct.twocolordata.Data),11);
     for i = 1:numel(tcPDAstruct.twocolordata.Data)
         data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},tcPDAstruct.twocolordata.Distance{i},tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
-            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitationProb,...
+            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitationProb,....
+            tcPDAstruct.twocolordata.Corrections{i}.FoersterRadius,...
             tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
             tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
             tcPDAstruct.twocolordata.timebin(i),'False'};
@@ -4624,7 +4625,7 @@ end
 function table_2cPDAData_callback(obj,e)
 global tcPDAstruct
 switch e.Indices(2)
-    case 10 %%% delete data set
+    case 11 %%% delete data set
         i = e.Indices(1);
         tcPDAstruct.twocolordata.Data(i) = [];
         tcPDAstruct.twocolordata.FileName(i) = [];
@@ -4652,14 +4653,17 @@ switch e.Indices(2)
         %%% update DirectExcitationProb variable
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.DirectExcitationProb = e.NewData;
     case 7
+        %%% update FoersterRaidues variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.FoersterRadius = e.NewData;
+    case 8
         %%% update Background_GG variable
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGpar = e.NewData/2;
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGperp = e.NewData/2;
-    case 8
+    case 9
         %%% update Background_GR variable
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRpar = e.NewData/2;
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRperp = e.NewData/2;
-    case 9
+    case 10
         %%% update timebin variable
         tcPDAstruct.twocolordata.timebin(i) = e.NewData;
     case 1
