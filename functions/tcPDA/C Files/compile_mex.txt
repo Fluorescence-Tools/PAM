@@ -38,3 +38,6 @@ setenv('MW_NVCC_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\b
 setenv('CUDA_LIB_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64')
 setenv('CUDA_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5')
 mex -g -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg_cuda.cu"
+
+on linux :
+mexcuda -largeArrayDims -v -O -I"C Files/src" "C Files/src/eval_prob_3c_bg_cuda.cu"
