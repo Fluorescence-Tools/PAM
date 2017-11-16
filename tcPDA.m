@@ -4155,7 +4155,11 @@ end
 
 tcPDAstruct.grid = 0;
 calculate_background();
-
+if handles.use_2cPDAData_checkbox.Value
+    % update two color background count distributions
+    tcPDAstruct.active_2C = cell2mat(cellfun(@(x) strcmp(x,'True'),handles.table_2cPDAData.Data(:,1),'UniformOutput',false));
+    evaluate_background_2C();
+end
 %%% check if gpu is available (sometimes it locks up...)
 tcPDAstruct.GPU_locked = false;
 try 
@@ -4172,7 +4176,12 @@ if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
 end
 
 priorfun = @(x) 1;
-probfun = @(x) (-1)*determine_MLE_dist_3d_cor(x); 
+if ~handles.use_2cPDAData_checkbox.Value
+    %%% no globa fit
+    probfun = @(x) (-1)*determine_MLE_dist_3d_cor(x); 
+else
+    probfun = @(x) (-1)*determine_MLE_global(x); 
+end
 plot_params = ~fixed;
 
 switch mcmc_method
