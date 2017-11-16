@@ -1200,7 +1200,7 @@ global tcPDAstruct
 if ~isfield(tcPDAstruct,'NBB')
     return;
 end
-handles = guidata(findobj('Tag','tcPDA'));
+handles = guidata(gcbo);
 N_total = tcPDAstruct.NBB+tcPDAstruct.NBG+tcPDAstruct.NBR+tcPDAstruct.NGG+tcPDAstruct.NGR;
 N_min = str2double(handles.min_n_edit.String);
 N_max = str2double(handles.max_n_edit.String);
