@@ -4643,6 +4643,7 @@ switch e.Indices(2)
     case 3
         %%% update distance variable
         tcPDAstruct.twocolordata.Distance{e.Indices(1)} = e.NewData;
+        plot_2cPDAData(1);
     case 4
         %%% update Gamma_GR variable
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Gamma_GR = e.NewData;
@@ -4706,6 +4707,7 @@ if isfield(tcPDAstruct,'twocolordata')
         set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
         xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
         title(tcPDAstruct.twocolordata.FileName{active(i)},'Color',[1,1,1],'Interpreter','none');
+        legend(tcPDAstruct.twocolordata.Distance{active(i)});
     end
     if mode == 2 % mode = 2 -> view curve/after fit, generate histograms
         % calculate fit histograms
@@ -4726,7 +4728,7 @@ if isfield(tcPDAstruct,'twocolordata')
                     sel = [1,6,7];
             end
             fitpar_filtered = [];
-            for j = 1:tcPDAstruct.n_gauss;
+            for j = 1:tcPDAstruct.n_gauss
                 fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
             end
             fitpar_filtered = fitpar_filtered';
@@ -4735,7 +4737,7 @@ if isfield(tcPDAstruct,'twocolordata')
             calculate_2c_histogram_mc(i,fitpar_filtered);
         end
         % update plots
-        ax = flipud(h.tab_twocolorPDAData.Children);
+        ax = flipud(findobj('Parent',h.tab_twocolorPDAData,'Type','axes'));
         for i = 1:numel(active)
             axes(ax(i)); hold on;
             %%% plot total histogram
@@ -4773,12 +4775,14 @@ for i = active'
         case 'BR'
             sel = [1,6,7];
     end
-    fitpar_filtered = [];
+    fitpar_filtered = zeros(n_gauss,3);
     for j = 1:n_gauss
-        fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
+        fitpar_filtered(j,:) = fitpar((j-1)*10+sel);
     end
     %%% compute likelihood
+    tic
     L_per_dataset{i} = determine_MLE_2color(i,fitpar_filtered);
+    toc
 end
 neg_logL = sum(horzcat(L_per_dataset{:}));
 
