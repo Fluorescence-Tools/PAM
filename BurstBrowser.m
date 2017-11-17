@@ -695,6 +695,16 @@ if isempty(hfig)
     else
         h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
     end
+    h.MultiPlotButtonMenu_ToggleDisplayTotal = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleDisplayTotal',...
+        'Label','Display sum of all populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+    end
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
         'Parent',h.BurstBrowser,...
@@ -4620,8 +4630,8 @@ for i = 1:numel(FileName)
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
-        S.BurstData.SpeciesNames{2} = 'Species 1';
-        S.BurstData.SpeciesNames{3} = 'Species 2';
+        S.BurstData.SpeciesNames{2} = 'Subspecies 1';
+        S.BurstData.SpeciesNames{3} = 'Subspecies 2';
         S.BurstData.SelectedSpecies = [1,1];
     elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
         if isfield(S.BurstData,'SelectedSpecies')
@@ -5398,6 +5408,17 @@ switch obj
         UpdatePlot([],[],h);
         UpdateLifetimePlots([],[],h);
         PlotLifetimeInd([],[],h);
+   case h.MultiPlotButtonMenu_ToggleDisplayTotal
+        switch h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked
+            case 'off'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = true;
+            case 'on'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = false;
+        end
+        UpdatePlot([],[],h);
+        PlotLifetimeInd([],[],h); 
 end
 LSUserValues(1);
 
@@ -5643,27 +5664,41 @@ species = BurstData{file}.SelectedSpecies;
 % distinguish between top level ('Species') or SpeciesGroup 
 % using name --> level = 0,1
 if all(species == [0,0])
-    level = 0;
+    return;
 elseif species(2) == 1
     level = 1;
-else
-    return;
+elseif species(2) > 1
+    level = 2;
 end
 
 switch level
-    case 0
-        %add a species group to top level
+    case 1
+        % add a species group to top level
+        % use default cut template
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                %%% FRET efficiency and stoichiometry basic cuts
+                Cut = {{'FRET Efficiency',-0.1,1.1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
+            case {3,4}
+                %%% 3color, only do FRET GR and Stoichiometry cuts
+                Cut = {{'FRET Efficiency GR',-0.1,1.1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
+                    {'Stoichiometry BG',-0.1,1.1,true,false},{'Stoichiometry BR',-0.1,1.1,true,false}};
+        end
         name = ['Species ' num2str(size(BurstData{file}.SpeciesNames,1)+1)];
         BurstData{file}.SpeciesNames{end+1,1} = name;
-        BurstData{file}.Cut{end+1,1} = {};
+        BurstData{file}.Cut{end+1,1} = Cut;
         BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
-    case 1
+        %%% add two subspecies
+        BurstData{file}.SpeciesNames{end,2} = 'Subspecies 1';
+        BurstData{file}.SpeciesNames{end,3} = 'Subspecies 2';
+        BurstData{file}.Cut{end,2} = Cut; BurstData{file}.Cut{end,3} = Cut;
+    case 2
         % add species to species group
         % check if species group exists
         if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
             % find out number of existing species for species group
             num_species= sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
-            name = ['Species ' num2str(num_species)];
+            name = ['Subspecies ' num2str(num_species)];
             BurstData{file}.SpeciesNames{species(1),num_species+1} = name;
             BurstData{file}.Cut{species(1),num_species+1} = BurstData{file}.Cut{species(1),1};
             BurstData{file}.SelectedSpecies(2) = num_species+1;
@@ -5714,19 +5749,22 @@ switch level
         BurstData{file}.SpeciesNames(species(1),:) = [];
         BurstData{file}.Cut(species(1),:) = [];
         BurstData{file}.SelectedSpecies(1)=species(1)-1;
-    case 2
-        %%% remove only the one field and shift right of it to the left
-        BurstData{file}.SpeciesNames{species(1),species(2)} = [];
-        temp = BurstData{file}.SpeciesNames(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.SpeciesNames(species(1),:) = [];
-        BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
-        
-        BurstData{file}.Cut{species(1),species(2)} = [];
-        temp = BurstData{file}.Cut(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.Cut(species(1),:) = [];
-        BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+    case 2 %%% subspecies
+        %%% only remove if there is more than 1 subspecies left
+        if sum(cellfun(@(x) ~isempty(x),BurstData{file}.SpeciesNames(species(1),:))) >= 3
+            %%% remove only the one field and shift right of it to the left
+            BurstData{file}.SpeciesNames{species(1),species(2)} = [];
+            temp = BurstData{file}.SpeciesNames(species(1),:);
+            temp = temp(~cellfun(@isempty,temp));
+            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
+
+            BurstData{file}.Cut{species(1),species(2)} = [];
+            temp = BurstData{file}.Cut(species(1),:);
+            temp = temp(cellfun(@iscell,temp));
+            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+        end
 end
 
 UpdateSpeciesList(h);
@@ -6373,9 +6411,11 @@ if ~advanced
             BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        end
         %%% hide normal 1d plots
         set(BurstMeta.Plots.Main_histX,'Visible','off');
         set(BurstMeta.Plots.Main_histY,'Visible','off');
@@ -6395,7 +6435,11 @@ if ~advanced
             end
             str{i} = strrep(name,'_',' ');  
         end
-        legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
         if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
@@ -12316,9 +12360,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
             BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
     elseif gcbo == h.MultiPlotButton
         [zz,color] = overlay_colored(H);
         del = false(numel(h.axes_lifetime_ind_2d.Children),1);
@@ -12397,7 +12443,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         str{i} = strrep(name,'_',' ');  
     end
     if gcbo ~= h.MultiPlotButton
-        legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     elseif gcbo ==  h.MultiPlotButton
         legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     end
@@ -13054,17 +13104,21 @@ end
 
 function [out, func, xval] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR)
 global BurstData BurstMeta
-res = 100;
-xval = linspace(0,tauD,100);
+res = 10;
+xval = linspace(0,tauD,1000);
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
-RBG = linspace(0*R0BG,4*R0BG,res);
-RBR = linspace(0*R0BR,4*R0BR,res);
+[RBG, RBR] = meshgrid(linspace(0*R0BG,4*R0BG,100),linspace(0*R0BR,4*R0BR,100));
+RBG = RBG(:);
+RBR = RBR(:);
+%RBG = linspace(0*R0BG,4*R0BG,res);
+%RBR = linspace(0*R0BR,4*R0BR,res);
+n = numel(RBG);
 %for every R calculate gaussian distribution
-p = zeros(res,res,res);
-rBG = zeros(res,res,res);
-rBR = zeros(res,res,res);
-for j = 1:res
-    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-4*sBG,RBG(j)+4*sBG,res),linspace(RBR(j)-4*sBR,RBR(j)+4*sBR,res));
+p = zeros(res,res,n);
+rBG = zeros(res,res,n);
+rBR = zeros(res,res,n);
+for j = 1:n
+    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-3*sBG,RBG(j)+3*sBG,res),linspace(RBR(j)-3*sBR,RBR(j)+3*sBR,res));
     dummy = exp(-( ((xRBG-RBG(j)).^2)./(2*sBG^2) + ((xRBR-RBR(j)).^2)./(2*sBR^2) ));
     dummy(xRBG < 0) = 0;
     dummy(xRBR < 0) = 0;
@@ -13075,8 +13129,8 @@ for j = 1:res
 end
 
 %calculate lifetime distribution
-tau = zeros(res,res,res);
-for j = 1:res
+tau = zeros(res,res,n);
+for j = 1:n
     %%% first calculate the Efficiencies B->G and B->R
     EBG = 1./((rBG(:,:,j)./R0BG).^6 + 1);
     EBR = 1./((rBR(:,:,j)./R0BR).^6 + 1);
@@ -13088,23 +13142,29 @@ for j = 1:res
 end
 
 %calculate species weighted taux
-taux = zeros(1,res);
-for j = 1:res
+taux = zeros(1,n);
+for j = 1:n
     taux(j) = sum(sum(p(:,:,j).*tau(:,:,j)));
 end
 
 %calculate intensity weighted tauf
-tauf = zeros(1,res);
-for j = 1:res
+tauf = zeros(1,n);
+for j = 1:n
     tauf(j) = sum(sum(p(:,:,j).*(tau(:,:,j).^2)))./taux(j);
 end
 
-%coefficients = polyfit(tauf,taux,3);
-%out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% we need the fitting here because of ambiguity between tauf and taux
+% similar taux values can have different tauf values, e.g. one can not
+% distinguish between donor (B) quenching due to close G and far R, or close R
+% and far G, which will have different effect on the relation between tauf
+% and taux due to the mixing.
+coefficients = polyfit(tauf,taux,3);
+out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% figure;plot(xval,out);hold on;plot(xval,1-interp1(tauf,taux,xval)./tauD)
 
-out = 1-interp1(tauf,taux,xval)./tauD;
-out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
-out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
+%out = 1-interp1(tauf,taux,xval)./tauD;
+%out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
+%out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end

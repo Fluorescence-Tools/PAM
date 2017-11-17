@@ -2160,7 +2160,7 @@ h.Image.Axes = axes(...
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
-h.Image.Colorbar.YLabel.String = 'Counts';
+h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
 h.Image.Colorbar.YLabel.ButtonDownFcn = @Misc;
 colormap(jet);
 h.Image.Colorbar.Color=Look.Fore;
@@ -3455,6 +3455,14 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                         [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
                         PamMeta.Image{i} = flipud(permute(reshape(double(PamMeta.Image{i}),FileInfo.Pixels,FileInfo.Lines),[2 1]));
+                        if isfield(FileInfo, 'LineStops')
+                            pixtime = mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines;
+                            frames = size(FileInfo.LineStops,1);
+                        else
+                            pixtime = mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2;
+                            frames = size(FileInfo.ImageTimes,1);
+                        end
+                        PamMeta.Image{i} = PamMeta.Image{i}/pixtime/frames/1000;
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3472,6 +3480,17 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
                             %%% Sets NaNs to 0 for empty pixels
                             PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
+                            %%% Make the display of Lifetime a bit better
+                            if UserValues.Settings.Pam.ToggleTACTime
+                                rescale = (1E9*FileInfo.TACRange/FileInfo.MI_Bins);
+                            else
+                                rescale = 1;
+                            end
+                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
+                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index); %offset of the IRF with respect to TCSPC channel zero
+                            tmp = PamMeta.Lifetime{i}-offset;
+                            tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
+                            PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
@@ -3618,6 +3637,8 @@ elseif obj == h.MT.Use_TimeTrace
     %%% change x axis of microtime plots between TCSPC channel and time in ns
 elseif obj == h.MT.ToggleTACTime
     UserValues.Settings.Pam.ToggleTACTime=h.MT.ToggleTACTime.Value;
+    Update_Data([],[],0,0,3);
+    Update_Display([],[],3);
     Update_Display([],[],4);
     %%% When changing trace bin size
 elseif obj == h.MT.Binning
@@ -4048,16 +4069,17 @@ if any(mode==3)
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
+                h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
-            %%% Mean arrival time image
+        %%% Mean arrival time image
         case 2
-            h.Plots.Image.CData=PamMeta.Lifetime{Sel};
+            h.Plots.Image.CData = PamMeta.Lifetime{Sel};
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
-                Min=0.1*max(max(PamMeta.Image{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                Min = 0;%0.1*max(max(PamMeta.Lifetime{Sel}))-1; %%% -1 is for 0 intensity images
+                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Lifetime{Sel}>Min)))+1];
             end
-            %%% Lifetime from phase
+        %%% Lifetime from phase
         case 3
             h.Plots.Image.CData=PamMeta.TauP;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
@@ -4065,7 +4087,7 @@ if any(mode==3)
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
                 h.Image.Axes.CLim=[min(min(PamMeta.TauP(PamMeta.Phasor_Int>Min))), max(max(PamMeta.TauP(PamMeta.Phasor_Int>Min)))+1];
             end
-            %%% Lifetime from modulation
+        %%% Lifetime from modulation
         case 4
             h.Plots.Image.CData=PamMeta.TauM;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
@@ -4089,6 +4111,18 @@ if any(mode==3)
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
                 h.Image.Axes.CLim=[min(min(PamMeta.s(PamMeta.Phasor_Int>Min))), max(max(PamMeta.s(PamMeta.Phasor_Int>Min)))+1];
             end
+    end
+    switch h.Image.Type.Value %label the colorbar correctly
+        case 1
+            h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
+        case {2,3,4}
+            if UserValues.Settings.Pam.ToggleTACTime
+                h.Image.Colorbar.YLabel.String = 'Mean arrival time [ns]';
+            else
+                h.Image.Colorbar.YLabel.String = 'TCSPC channel';
+            end
+        otherwise
+            h.Image.Colorbar.YLabel.String = 'Counts';
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];

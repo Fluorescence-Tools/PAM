@@ -1947,6 +1947,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Normalize_Multiplot was incomplete');
     end
     P.BurstBrowser.Settings.Normalize_Multiplot = S.BurstBrowser.Settings.Normalize_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Display_Total_Multiplot subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Display_Total_Multiplot')
+        S.BurstBrowser.Settings.Display_Total_Multiplot=true;
+        disp('UserValues.BurstBrowser.Settings.Display_Total_Multiplot was incomplete');
+    end
+    P.BurstBrowser.Settings.Display_Total_Multiplot = S.BurstBrowser.Settings.Display_Total_Multiplot;
     %%% Check, if BurstBrowser.Settings.UseFilePathForExport subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'UseFilePathForExport')
         S.BurstBrowser.Settings.UseFilePathForExport=true;
