@@ -4643,6 +4643,7 @@ switch e.Indices(2)
     case 3
         %%% update distance variable
         tcPDAstruct.twocolordata.Distance{e.Indices(1)} = e.NewData;
+        plot_2cPDAData(1);
     case 4
         %%% update Gamma_GR variable
         tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Gamma_GR = e.NewData;
@@ -4706,6 +4707,7 @@ if isfield(tcPDAstruct,'twocolordata')
         set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
         xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
         title(tcPDAstruct.twocolordata.FileName{active(i)},'Color',[1,1,1],'Interpreter','none');
+        legend(tcPDAstruct.twocolordata.Distance{active(i)});
     end
     if mode == 2 % mode = 2 -> view curve/after fit, generate histograms
         % calculate fit histograms
