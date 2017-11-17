@@ -4773,12 +4773,14 @@ for i = active'
         case 'BR'
             sel = [1,6,7];
     end
-    fitpar_filtered = [];
+    fitpar_filtered = zeros(n_gauss,3);
     for j = 1:n_gauss
-        fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
+        fitpar_filtered(j,:) = fitpar((j-1)*10+sel);
     end
     %%% compute likelihood
+    tic
     L_per_dataset{i} = determine_MLE_2color(i,fitpar_filtered);
+    toc
 end
 neg_logL = sum(horzcat(L_per_dataset{:}));
 
