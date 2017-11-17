@@ -4728,7 +4728,7 @@ if isfield(tcPDAstruct,'twocolordata')
                     sel = [1,6,7];
             end
             fitpar_filtered = [];
-            for j = 1:tcPDAstruct.n_gauss;
+            for j = 1:tcPDAstruct.n_gauss
                 fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
             end
             fitpar_filtered = fitpar_filtered';
@@ -4737,7 +4737,7 @@ if isfield(tcPDAstruct,'twocolordata')
             calculate_2c_histogram_mc(i,fitpar_filtered);
         end
         % update plots
-        ax = flipud(h.tab_twocolorPDAData.Children);
+        ax = flipud(findobj('Parent',h.tab_twocolorPDAData,'Type','axes'));
         for i = 1:numel(active)
             axes(ax(i)); hold on;
             %%% plot total histogram
