@@ -877,7 +877,7 @@ if isempty(h)
     handles.use_2cPDAData_checkbox = uicontrol('Style','checkbox',...
         'Parent',handles.panel_2cPDAData,...
         'Units','normalized',...
-        'Position',[0.05 0.8 0.9 0.05],...
+        'Position',[0.05 0.85 0.9 0.05],...
         'String','Use 2C PDA data (global analysis)',...
         'Tag','use_2cPDAData_checkbox',...
         'BackgroundColor',UserValues.Look.Back,...
@@ -885,6 +885,17 @@ if isempty(h)
         'Value',0,...
         'Callback',[]);
     
+     handles.norm_likelihood_checkbox = uicontrol('Style','checkbox',...
+        'Parent',handles.panel_2cPDAData,...
+        'Units','normalized',...
+        'Position',[0.05 0.8 0.9 0.05],...
+        'String','Normalize likelihood for global analysis',...
+        'ToolTipString','Uses geometric mean of the likelihood for each dataset.',...
+        'Tag','norm_likelihood_checkbox',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Value',0,...
+        'Callback',[]);
     %%% store guidata
     guidata(handles.Figure,handles);
     
@@ -1064,6 +1075,16 @@ end
 if ~isfield(tcPDAstruct,'nbins')
     tcPDAstruct.nbins = 50;
 end
+if ~isfield(tcPDAstruct,'norm_likelihood')
+    tcPDAstruct.norm_likelihood = 0;
+end
+if ~isfield(tcPDAstruct,'norm_likelihood')
+    tcPDAstruct.norm_likelihood = 0;
+end
+if ~isfield(tcPDAstruct,'use_2color_data')
+    tcPDAstruct.use_2color_data = 0;
+end
+
 %%% set gui values
 handles.sampling_edit.String = num2str(tcPDAstruct.sampling);
 handles.checkbox_stochasticlabeling.Value = tcPDAstruct.use_stochasticlabeling;
@@ -1074,6 +1095,8 @@ handles.max_n_edit.String = num2str(tcPDAstruct.N_max);
 handles.popupmenu_ngauss.Value = tcPDAstruct.n_gauss;
 handles.nbins_edit.String = num2str(tcPDAstruct.nbins);
 handles.table_2cPDAData.Data = [];
+handles.norm_likelihood_checkbox.Value = tcPDAstruct.norm_likelihood;
+handles.use_2cPDAData_checkbox.Value = tcPDAstruct.use_2color_data;
 if ~isfield(tcPDAstruct,'fitdata')
     value_dummy = [1,50,2,50,2,50,2,0,0,0]';
     fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
@@ -1366,6 +1389,8 @@ tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
+tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
 if tcPDAstruct.BrightnessCorrection
     %%% Prepare PofN for Brightness Reference
     if ~isfield(tcPDAstruct,'BrightnessReference')
@@ -1581,7 +1606,7 @@ switch (selected_tab)
                 fitfun = @(x) determine_MLE_3color(x) + evaluate_prior(x);
             else
                 %%% global fit using two color data set
-                fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);
+                fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);                
             end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Simplex'
@@ -4782,9 +4807,10 @@ for i = active'
         fitpar_filtered(j,:) = fitpar((j-1)*10+sel);
     end
     %%% compute likelihood
-    tic
     L_per_dataset{i} = determine_MLE_2color(i,fitpar_filtered);
-    toc
+    if tcPDAstruct.norm_likelihood
+        L_per_dataset{i} = L_per_dataset{i}./numel(tcPDAstruct.twocolordata.Data{i}.NG);
+    end
 end
 neg_logL = sum(horzcat(L_per_dataset{:}));
 
@@ -4840,17 +4866,20 @@ logL = sum(L);
 logL = -logL;
 
 function [P_global] = determine_MLE_global(fitpar)
+global tcPDAstruct
 %%% combine the likelihoods of two-color and three-color measurements
-%%% possible to use weighting
+%%% option to normalize using the geometric mean (done in
+%%% evaluate_2C_pda_likelihood function for two color data sets)
 
 %%% 3 color likelihood
-P_3C = (-1)*determine_MLE_3color(fitpar);
-
+P_3C = determine_MLE_3color(fitpar);
+if tcPDAstruct.norm_likelihood
+    P_3C = P_3C./numel(tcPDAstruct.NBB);
+end
 %%% 2 color likelihood
-P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
+P_2C = evaluate_2C_pda_likelihood(fitpar);
 
 P_global = P_3C + P_2C;
-P_global = P_global*(-1); %negLogL
 
 function evaluate_background_2C()
 global tcPDAstruct
