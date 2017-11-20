@@ -4850,11 +4850,6 @@ P_3C = (-1)*determine_MLE_3color(fitpar);
 %%% 2 color likelihood
 P_2C = (-1)*evaluate_2C_pda_likelihood(fitpar);
 
-%%% combine using weights
-w_3C = 1; w_2C = 1;
-P_3C = P_3C + log(w_3C);
-P_2C = P_2C + log(w_2C);
-
 P_global = P_3C + P_2C;
 P_global = P_global*(-1); %negLogL
 
