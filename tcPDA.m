@@ -1578,10 +1578,10 @@ switch (selected_tab)
              
             if ~handles.use_2cPDAData_checkbox.Value
                 %%% no global fit
-                fitfun = @(x) determine_MLE_dist_3d_cor(x);
+                fitfun = @(x) determine_MLE_3color(x) + evaluate_prior(x);
             else
                 %%% global fit using two color data set
-                fitfun = @(x) determine_MLE_global(x);
+                fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);
             end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Simplex'
@@ -2432,7 +2432,7 @@ for i = 1:numel(fitpar)/10
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
 
-function [ P_result ] = determine_MLE_dist_3d_cor(fitpar)
+function [ P_result ] = determine_MLE_3color(fitpar)
 global tcPDAstruct
 
 %10 fit par:
@@ -2517,22 +2517,6 @@ for j=1:N_gauss
     P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param);
 end
 
-%%% evaluate the prior
-logPrior = 0;
-if tcPDAstruct.use_stochasticlabeling
-    N_gauss = N_gauss/2;
-end
-for j=1:N_gauss
-    use_prior = tcPDAstruct.fitdata.use_prior{j};
-    prior_center = tcPDAstruct.fitdata.prior_center{j};
-    prior_sigma = tcPDAstruct.fitdata.prior_sigma{j};
-    for k = 1:numel(use_prior)
-        if use_prior(k)
-            logPrior = logPrior + log(normpdf(fitpar((j-1)*10+k),prior_center(k),prior_sigma(k)));
-        end
-    end
-end
-
 if tcPDAstruct.BrightnessCorrection
         %%% If brightness correction is to be performed, determine the relative
         %%% brightness based on current distance and correction factors
@@ -2588,7 +2572,6 @@ P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
 %%% Reset these values to -Inf
 P_res(isnan(P_res)) = -Inf;
 P_result = sum(P_res);
-P_result = P_result + logPrior;
 %%% since the algorithm minimizes, it is important to minimize the negative
 %%% log likelihood, i.e. maximize the likelihood
 P_result = -P_result;
@@ -2606,6 +2589,25 @@ n_data = numel(tcPDAstruct.fbb);
 %%% P_result is already -lnL
 tcPDAstruct.BIC = 2*P_result + n_param*log(n_data);
 tcPDAstruct.logL = -P_result;
+
+function neg_logL = evaluate_prior(fitpar)
+global tcPDAstruct
+%%% evaluate the prior
+logPrior = 0;
+if tcPDAstruct.use_stochasticlabeling
+    N_gauss = N_gauss/2;
+end
+for j=1:tcPDAstruct.n_gauss
+    use_prior = tcPDAstruct.fitdata.use_prior{j};
+    prior_center = tcPDAstruct.fitdata.prior_center{j};
+    prior_sigma = tcPDAstruct.fitdata.prior_sigma{j};
+    for k = 1:numel(use_prior)
+        if use_prior(k)
+            logPrior = logPrior + log(normpdf(fitpar((j-1)*10+k),prior_center(k),prior_sigma(k)));
+        end
+    end
+end
+neg_logL = -logPrior;
 
 function P_res = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param)
 global tcPDAstruct UserValues
@@ -4178,9 +4180,9 @@ end
 priorfun = @(x) 1;
 if ~handles.use_2cPDAData_checkbox.Value
     %%% no globa fit
-    probfun = @(x) (-1)*determine_MLE_dist_3d_cor(x); 
+    probfun = @(x) (-1)*(determine_MLE_3color(x) + evaluate_prior(x)); 
 else
-    probfun = @(x) (-1)*determine_MLE_global(x); 
+    probfun = @(x) (-1)*(determine_MLE_global(x) + evaluate_prior(x)); 
 end
 plot_params = ~fixed;
 
@@ -4842,7 +4844,7 @@ function [P_global] = determine_MLE_global(fitpar)
 %%% possible to use weighting
 
 %%% 3 color likelihood
-P_3C = (-1)*determine_MLE_dist_3d_cor(fitpar);
+P_3C = (-1)*determine_MLE_3color(fitpar);
 % 3 color likelihood has prior included! i.e. P_3C = log(L_3C) + log(prior)
 
 %%% 2 color likelihood
