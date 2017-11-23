@@ -4202,12 +4202,12 @@ if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
         tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
 end
 
-priorfun = @(x) 1;
+priorfun = @(x) (-1)*evaluate_prior(x);
 if ~handles.use_2cPDAData_checkbox.Value
     %%% no globa fit
-    probfun = @(x) (-1)*(determine_MLE_3color(x) + evaluate_prior(x)); 
+    probfun = @(x) (-1)*determine_MLE_3color(x); 
 else
-    probfun = @(x) (-1)*(determine_MLE_global(x) + evaluate_prior(x)); 
+    probfun = @(x) (-1)*determine_MLE_global(x); 
 end
 plot_params = ~fixed;
 
