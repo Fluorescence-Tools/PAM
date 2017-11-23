@@ -4124,6 +4124,8 @@ handles.draw_samples_button.Enable = 'off';
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
+tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
 mcmc_method = handles.mcmc_method.Value;
 n_samples = str2double(handles.n_samples_edit.String);
 
