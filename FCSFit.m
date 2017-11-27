@@ -390,7 +390,31 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'HorizontalAlignment','left',...
         'Style','text',...
         'String','',...
-        'Position',[0.35 0.01 0.13 0.98]);    
+        'Position',[0.2 0.01 0.14 0.75]);
+    
+    %%% Textbox containing the name of the current fit model
+    h.Loaded_Model_Name = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Loaded_Model',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'Style','text',...
+        'String','',...
+        'Position',[0.35 0.62 0.24 0.36]);    
+    h.Loaded_Model_Description = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Loaded_Model',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'Style','text',...
+        'String','',...
+        'Position',[0.35 0.01 0.65 0.61]);  
     
     %%% Text for export size
     uicontrol(...
@@ -1032,7 +1056,7 @@ save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_S
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
 global FCSMeta UserValues PathToApp
-
+h = guidata(findobj('Tag','FCSFit'));
 FileName=[];
 FilterIndex = 1;
 if mode
@@ -1069,15 +1093,24 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
     Text=Text{1};
     
+    %%% Finds line, at which model description starts
+    Desc_Start = find(~cellfun(@isempty,strfind(Text,'-MODEL DESCRIPTION-')),1);
     %%% Finds line, at which parameter definition starts
     Param_Start=find(~cellfun(@isempty,strfind(Text,'-PARAMETER DEFINITION-')),1);
     %%% Finds line, at which function definition starts
     Fun_Start=find(~cellfun(@isempty,strfind(Text,'-FIT FUNCTION-')),1);
     B_Start=find(~cellfun(@isempty,strfind(Text,'-BRIGHTNESS DEFINITION-')),1);
+    %%% Read model description
+    if Param_Start - Desc_Start > 1 %%% at least one line of description
+        description = Text(Desc_Start+1:Param_Start-1);
+    else
+        description = {};
+    end
     %%% Defines the number of parameters
     NParams=B_Start-Param_Start-1;
     FCSMeta.Model=[];
     FCSMeta.Model.Name=FileName;
+    FCSMeta.Model.Description = description;
     FCSMeta.Model.Brightness=Text{B_Start+1};
     %%% Concaternates the function string
     FCSMeta.Model.Function=[];
@@ -1116,6 +1149,12 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     
     %%% Updates table to new model
     Update_Table([],[],0);
+    %%% Updates model text
+    [~,name,~] = fileparts(FCSMeta.Model.Name);
+    name_text = {'Loaded Fit Model:';name;};
+    h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
+    h.Loaded_Model_Description.String = sprintf('%s\n',description{:});
+    h.Loaded_Model_Description.TooltipString = sprintf('%s\n',description{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2383,7 +2422,6 @@ switch obj
         FCSMeta.Data=[];
         FCSMeta.Params=[];
         FCSMeta.Plots=cell(0);
-        %h.Fit_Table.RowName(1:end-3)=[];
         h.Fit_Table.Data(1:end-3,:)=[];
         h.Style_Table.RowName(1:end-1,:)=[];
         h.Style_Table.Data(1:end-1,:)=[];
@@ -2406,6 +2444,8 @@ switch obj
         UserValues.FCSFit.FRETbin = data.Settings.FRETbin;
         UserValues.FCSFit.PlotStyles = data.Settings.PlotStyles;
         UserValues.FCSFit.PlotStyleAll = data.Settings.PlotStyleAll;
+        UserValues.File.FCS_Standard = FCSMeta.Model.Name;
+        LSUserValues(1);
         clear data
         %%% update GUI according to loaded settings
         h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
@@ -2423,8 +2463,13 @@ switch obj
         %%% Updates table and plot data and style to new size
         Update_Style([],[],0);
         Update_Style([],[],1);
-        Update_Table([],[],1);
-        
+        Update_Table([],[],0);
+        %%% Updates model text
+        [~,name,~] = fileparts(FCSMeta.Model.Name);
+        name_text = {'Loaded Fit Model:';name;};
+        h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
+        h.Loaded_Model_Description.String = sprintf('%s\n',FCSMeta.Model.Description{:});
+        h.Loaded_Model_Description.TooltipString = sprintf('%s\n',FCSMeta.Model.Description{:});
     case h.SaveSession
         %%% get filename
         [FileName, PathName] = uiputfile({'*.fcs','FCSFit Session (*.fcs)'},'Save Session as ...',fullfile(UserValues.File.FCSPath,[FCSData.FileName{1},'.fcs']));
