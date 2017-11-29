@@ -67,6 +67,8 @@ else
     end
 end
 
-plot_after_fit(handles);
-%update table
-UpdateFitTable(handles);
+if tcPDAstruct.live_plot_update
+    plot_after_fit(handles);
+    %update table
+    UpdateFitTable(handles);
+end
