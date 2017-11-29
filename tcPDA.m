@@ -3444,8 +3444,14 @@ cbar = colorbar('Position',[0.97 , 0.6,0.01,0.3]);
 htext = text(1.06,0.955,'w_{res}','Units','normalized','FontSize',fontsize_label);
 
 %color = {[0 180 0]/255 [220 0 0 ]/255 'b' 'c' 'm'};
-color = lines(n_gauss);
-color = mat2cell(color,ones(size(color,1),1),size(color,2));
+%color = lines(n_gauss);
+%color = mat2cell(color,ones(size(color,1),1),size(color,2));
+color = handles.color_str;
+if ~tcPDAstruct.use_stochasticlabeling
+    plots = 1:10;
+else
+    plots = [1,6,2,7,3,8,4,9,5,10];
+end
 
 axes(ha(4));
 set(gca,'Color','w');
@@ -3460,9 +3466,11 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
     end
 end
+
+
 data = tcPDAstruct.plots.H_res_3d_bg;
 data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
@@ -3504,7 +3512,7 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
     end
 end
 data = tcPDAstruct.plots.H_res_3d_br;
@@ -3543,11 +3551,21 @@ xlabel('PR_{GR}','FontSize',fontsize_label);
 set(gca,'FontSize',fontsize_ticks);    
 hold on;
 %bar(tcPDAstruct.x_axis,tcPDAstruct.plots.H_res_3d_gr,'BarWidth',1,'EdgeColor','k','LineWidth',2,'FaceColor','none');
-if n_gauss > 1  
-    for i = 1:n_gauss
-        data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-        data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+if ~tcPDAstruct.use_stochasticlabeling
+    if n_gauss > 1  
+        for i = 1:n_gauss
+            data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data(end+1) = data(end);
+            stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        end
+    end
+else
+    if n_gauss > 1  
+        for i = 1:2:n_gauss % only plot every second 
+            data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data(end+1) = data(end);
+            stairs(x_axis_stairs,data,'Color',color{(i+1)/2},'LineWidth',2);
+        end
     end
 end
 data = tcPDAstruct.plots.H_res_3d_gr;
@@ -3687,8 +3705,7 @@ corYZ = covYZ./sqrt(VarY*VarZ);
 fontsize_label = 15;
 fontsize_ticks = 15;
 IsoLineHeight = 0.32;
-color = lines(n_gauss);
-color = mat2cell(color,ones(size(color,1),1),size(color,2));
+color = handles.color_str;
 disp('Correlation coefficients: ');
 
 axes(ha(1));
@@ -3750,8 +3767,8 @@ end
 pp = squeeze(sum(PDF,2)); set(ha(3),'CLim',[0,max(pp(:))]);
 
 
-%colormap(1 - colormap(gray));
-colormap([1,1,1;jetvar]);
+colormap(1 - colormap(gray));
+%colormap([1,1,1;jetvar]);
 for i = 1:numel(ha)
     set(ha(i),'Layer','top','Box','on');
 end
