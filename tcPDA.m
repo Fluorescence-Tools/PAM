@@ -1854,13 +1854,17 @@ tcPDAstruct.n_gauss = n_gauss;
 str_dummy = {'<html><b>Amplitude','<html><b>R<sub>GR</sub>','<html><b>&sigma;<sub>GR</sub>','<html><b>R<sub>BG</sub>',...
     '<html><b>&sigma;<sub>BG</sub>','<html><b>R<sub>BR</sub>','<html><b>&sigma;<sub>BR</sub>',...
      '<html><b>cov<sub>BG/BR</sub>','<html><b>cov<sub>BG/GR</sub>','<html><b>cov<sub>BR/GR</sub>'};
-
+colors = 255*lines(5);
 nparams = numel(str_dummy);
 NameCell = {};
 for i = 1:n_gauss
     %NameCell = {NameCell{:} str_dummy{:} ''};
     for j = 1:numel(str_dummy)
-        Data{(i-1)*(nparams+1)+j,1} = str_dummy{j};
+        if j == 1 %%% add color to Amplitude string
+            Data{(i-1)*(nparams+1)+j,1} = [str_dummy{j}(1:9) sprintf('<font color=rgb(%u,%u,%u)>',round(colors(i,:))) str_dummy{j}(10:end)];
+        else
+            Data{(i-1)*(nparams+1)+j,1} = str_dummy{j};
+        end
         Data{(i-1)*(nparams+1)+j,2} = tcPDAstruct.fitdata.param{i}(j);
         Data{(i-1)*(nparams+1)+j,3} = tcPDAstruct.fitdata.fixed{i}(j);
         Data{(i-1)*(nparams+1)+j,4} = tcPDAstruct.fitdata.LB{i}(j);
