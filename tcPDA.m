@@ -3714,7 +3714,7 @@ pp = squeeze(sum(PDF,2)); set(ha(3),'CLim',[0,max(pp(:))]);
 
 
 %colormap(1 - colormap(gray));
-colormap(jetvar);
+colormap([1,1,1;jetvar]);
 for i = 1:numel(ha)
     set(ha(i),'Layer','top','Box','on');
 end
