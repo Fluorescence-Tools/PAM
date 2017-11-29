@@ -2634,6 +2634,10 @@ P_result = sum(P_res);
 %%% log likelihood, i.e. maximize the likelihood
 P_result = -P_result;
 
+if tcPDAstruct.use_stochasticlabeling
+    %%% reset N_gauss to number of populations
+    N_gauss = N_gauss/2;
+end
 %%% Update Fit Parameter in global struct
 for i = 1:N_gauss
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
@@ -2652,9 +2656,6 @@ function neg_logL = evaluate_prior(fitpar)
 global tcPDAstruct
 %%% evaluate the prior
 logPrior = 0;
-if tcPDAstruct.use_stochasticlabeling
-    N_gauss = N_gauss/2;
-end
 for j=1:tcPDAstruct.n_gauss
     use_prior = tcPDAstruct.fitdata.use_prior{j};
     prior_center = tcPDAstruct.fitdata.prior_center{j};
