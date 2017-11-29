@@ -25,8 +25,8 @@ end
 if isempty(h)
     %GUI definition
     handles.colormap = [1,0,0;0.986666679382324,0.0533333346247673,0.0533333346247673;0.973333358764648,0.106666669249535,0.106666669249535;0.959999978542328,0.159999996423721,0.159999996423721;0.946666657924652,0.213333338499069,0.213333338499069;0.933333337306976,0.266666680574417,0.266666680574417;0.920000016689301,0.319999992847443,0.319999992847443;0.906666696071625,0.373333334922791,0.373333334922791;0.893333315849304,0.426666676998138,0.426666676998138;0.879999995231628,0.480000019073486,0.480000019073486;0.866666674613953,0.533333361148834,0.533333361148834;0.853333353996277,0.586666703224182,0.586666703224182;0.840000033378601,0.639999985694885,0.639999985694885;0.826666653156281,0.693333327770233,0.693333327770233;0.813333332538605,0.746666669845581,0.746666669845581;0.800000011920929,0.800000011920929,0.800000011920929;0.812500000000000,0.812500000000000,0.812500000000000;0.824999988079071,0.824999988079071,0.824999988079071;0.837500035762787,0.837500035762787,0.837500035762787;0.850000023841858,0.850000023841858,0.850000023841858;0.862500011920929,0.862500011920929,0.862500011920929;0.875000000000000,0.875000000000000,0.875000000000000;0.887499988079071,0.887499988079071,0.887499988079071;0.899999976158142,0.899999976158142,0.899999976158142;0.912500023841858,0.912500023841858,0.912500023841858;0.925000011920929,0.925000011920929,0.925000011920929;0.937500000000000,0.937500000000000,0.937500000000000;0.949999988079071,0.949999988079071,0.949999988079071;0.962499976158142,0.962499976158142,0.962499976158142;0.975000023841858,0.975000023841858,0.975000023841858;0.987500011920929,0.987500011920929,0.987500011920929;1,1,1;0.987500011920929,0.987500011920929,0.987500011920929;0.975000023841858,0.975000023841858,0.975000023841858;0.962499976158142,0.962499976158142,0.962499976158142;0.949999988079071,0.949999988079071,0.949999988079071;0.937500000000000,0.937500000000000,0.937500000000000;0.925000011920929,0.925000011920929,0.925000011920929;0.912500023841858,0.912500023841858,0.912500023841858;0.899999976158142,0.899999976158142,0.899999976158142;0.887499988079071,0.887499988079071,0.887499988079071;0.875000000000000,0.875000000000000,0.875000000000000;0.862500011920929,0.862500011920929,0.862500011920929;0.850000023841858,0.850000023841858,0.850000023841858;0.837500035762787,0.837500035762787,0.837500035762787;0.824999988079071,0.824999988079071,0.824999988079071;0.812500000000000,0.812500000000000,0.812500000000000;0.800000011920929,0.800000011920929,0.800000011920929;0.750000000000000,0.750000000000000,0.812500000000000;0.699999988079071,0.699999988079071,0.824999988079071;0.650000035762787,0.650000035762787,0.837500035762787;0.600000023841858,0.600000023841858,0.850000023841858;0.550000011920929,0.550000011920929,0.862500011920929;0.500000000000000,0.500000000000000,0.875000000000000;0.450000017881393,0.450000017881393,0.887499988079071;0.400000005960465,0.400000005960465,0.899999976158142;0.349999994039536,0.349999994039536,0.912500023841858;0.300000011920929,0.300000011920929,0.925000011920929;0.250000000000000,0.250000000000000,0.937500000000000;0.200000002980232,0.200000002980232,0.949999988079071;0.150000005960464,0.150000005960464,0.962499976158142;0.100000001490116,0.100000001490116,0.975000023841858;0.0500000007450581,0.0500000007450581,0.987500011920929;0,0,1];
-    handles.color_str = lines(10);
-    handles.color_str = mat2cell(handles.color_str,ones(size(handles.color_str,1),1),size(handles.color_str,2));
+    color_str = [lines(5);lines(5)*0.75];
+    handles.color_str = mat2cell(color_str,ones(size(color_str,1),1),size(color_str,2));
     %define main window
     handles.Figure = figure(...
     'Units','normalized',...
@@ -1888,9 +1888,7 @@ end
 
 %%% hides/unhides individual plots
 n_gauss = handles.popupmenu_ngauss.Value;
-if handles.checkbox_stochasticlabeling.Value
-    n_gauss = n_gauss*2;
-end
+
 %%% hide all plots
 for i = 1:10
     handles.plots.handles_H_res_1d_individual(i).Visible = 'off';
@@ -1901,26 +1899,40 @@ for i = 1:10
     handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'off';
     handles.plots.handles_H_res_3d_individual_br(i).Visible= 'off';
     handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'off';
-end
+end 
+    
 %%% unhide used plots
-if n_gauss > 1
-    if ~handles.checkbox_stochasticlabeling.Value
+if ~handles.checkbox_stochasticlabeling.Value
+    if n_gauss > 1
         for i = 1:n_gauss
             handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
         end
-    else
-        for i = 1:n_gauss/2
-            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
+        for i = 1:n_gauss
+            handles.plots.handles_H_res_2d_individual(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg_br(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg_gr(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_br_gr(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'on';
+            handles.plots.handles_H_res_3d_individual_br(i).Visible= 'on';
+            handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
         end
-    end 
+    end
+else
+    if n_gauss > 1
+        for i = 1:n_gauss
+            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
+        end
+    end
+    n_gauss = n_gauss*2;
+    plots = [1,6,2,7,3,8,4,9,5,10];
     for i = 1:n_gauss
-        handles.plots.handles_H_res_2d_individual(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_br(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_gr(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_br_gr(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'on';
-        handles.plots.handles_H_res_3d_individual_br(i).Visible= 'on';
-        handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
+        handles.plots.handles_H_res_2d_individual(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_br(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_br_gr(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg(plots(i)).Visible= 'on';
+        handles.plots.handles_H_res_3d_individual_br(plots(i)).Visible= 'on';
     end
 end
 
@@ -3037,6 +3049,19 @@ global tcPDAstruct
 if ~isfield(tcPDAstruct,'plots')
     return;
 end
+if tcPDAstruct.use_stochasticlabeling
+    %%% we have to reorder the plots to match the coloring scheme
+    %%% for the fitting, the additional stochastic labeling populations are
+    %%% interlaced, i.e.:
+    %%% Normal: 1, ,3, ,5, ,7, ,9,
+    %%% Addit.:  ,2, ,4, ,6, ,8, ,10
+    %%% the first 5 plots are for the normal populations, the last 5 for
+    %%% the additonal populations, i.e. map to:
+    plots = [1,6,2,7,3,8,4,9,5,10];
+else
+    %%% normal order
+    plots = 1:10;
+end
 % 1d plot
 if isfield(tcPDAstruct.plots,'H_res_gr')
     set(handles.plots.handle_1d_fit,'YData',[tcPDAstruct.plots.H_res_gr;tcPDAstruct.plots.H_res_gr(end)],'XData',tcPDAstruct.x_axis_stair);
@@ -3051,7 +3076,7 @@ end
 if isfield(tcPDAstruct.plots,'H_res_2d')
     if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
-            set(handles.plots.handles_H_res_2d_individual(i),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+            set(handles.plots.handles_H_res_2d_individual(plots(i)),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
         end
     end
     set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
@@ -3063,21 +3088,21 @@ end
 if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_br(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+            set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
         end
     end
     set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
     
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_gr(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+            set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
         end
     end
     set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
     
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_br_gr(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+            set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
         end
     end
     set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
@@ -3086,7 +3111,7 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
             temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
-            set(handles.plots.handles_H_res_3d_individual_bg(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            set(handles.plots.handles_H_res_3d_individual_bg(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
@@ -3094,15 +3119,15 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
             temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
-            set(handles.plots.handles_H_res_3d_individual_br(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            set(handles.plots.handles_H_res_3d_individual_br(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
     set(handles.plots.handle_3d_fit_gr,'YData',[tcPDAstruct.plots.H_res_3d_gr;tcPDAstruct.plots.H_res_3d_gr(end)],'XData',tcPDAstruct.x_axis_stair);
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+        for i = 1:2:size(tcPDAstruct.plots.H_res_3d_individual,1)
             temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-            set(handles.plots.handles_H_res_3d_individual_gr(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
 end
