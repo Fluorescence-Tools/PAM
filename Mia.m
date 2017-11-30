@@ -5299,12 +5299,12 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Mean intensity
             InfoAll(i).Counts = MeanInt(i); %Waldi
             %%% Averaged correlation
-            DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3);
+            DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames)),3);
             %%% Error of correlation
-            if size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3)>1
-                DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3));
+            if size(MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames)),3)>1
+                DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames)),0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames)),3));
             else
-                DataAll{i,2} = MIAData.Cor{floor(1.5*i),1}(:,:,frames);
+                DataAll{i,2} = MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames));
             end
         end
         %% Gets cross correlation data to save
@@ -5357,9 +5357,9 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Mean intensity
             InfoAll(3).Counts = sum(MeanInt);
             %%% Averaged correlation
-            DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,frames),3);
+            DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,1:numel(frames)),3);
             %%% Error of correlation
-            DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,frames),3));
+            DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,1:numel(frames)),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,1:numel(frames)),3));
         end
         %% Saves correlations
         switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
