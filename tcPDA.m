@@ -206,7 +206,7 @@ if isempty(h)
         'ForegroundColor',UserValues.Look.TableFore,...
         'BackgroundColor',[UserValues.Look.Table1;UserValues.Look.Table2],...
         'CellEditCallback',@update_corrections);
-    
+
     %make three tabs: 1D GR, 2D PB-PR and 3D all together
     %enable only one tab during fitting (depending on what fit method is
     %selected) but re-enable other tabs after fitting is complete
@@ -272,6 +272,14 @@ if isempty(h)
         'ForegroundColor',UserValues.Look.TableFore,...
         'BackgroundColor',[UserValues.Look.Table1;UserValues.Look.Table2],...
         'CellEditCallback',@update_fit_params);
+    
+    %%% add right click menu
+    handles.fit_table_menu = uicontextmenu;
+    handles.fit_table_menu_fix_amplitudes = uimenu(handles.fit_table_menu,'Label','Fix amplitudes','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixGR = uimenu(handles.fit_table_menu,'Label','Fix GR parameters','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixAllButCovar = uimenu(handles.fit_table_menu,'Label','Fix everything except covariances','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixAllCovar = uimenu(handles.fit_table_menu,'Label','Fix all covariances','Checked','on','Callback',@fitpar_fix);
+    handles.fit_table.UIContextMenu = handles.fit_table_menu;
     
     nbins = UserValues.tcPDA.nbins+1;
     %define axes
@@ -5059,6 +5067,57 @@ tcPDAstruct.twocolordata.dev{dataset} = dev;
 tcPDAstruct.twocolordata.H_res{dataset} = H_res;
 tcPDAstruct.twocolordata.H_res_individual{dataset} = H_res_dummy;
 tcPDAstruct.twocolordata.A_res{dataset} = A;
+
+%%% function for easy toggling of fix states
+function fitpar_fix(obj,~)
+global tcPDAstruct
+h = guidata(obj);
+n_gauss = tcPDAstruct.n_gauss;
+
+%%% toggle checked state
+if strcmp(obj.Checked,'off')
+    obj.Checked = 'on';
+    fix = true; %fix
+else
+    obj.Checked = 'off';
+    fix = false; %unfix
+end
+data = h.fit_table.Data;
+switch obj
+    case h.fit_table_menu_fixGR
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(2:3),3) = {true;true};
+            else
+                data((i-1)*11+(2:3),3) = {false;false};
+            end
+        end
+    case h.fit_table_menu_fixAllButCovar
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(1:7),3) = {true;true;true;true;true;true;true};
+            else
+                data((i-1)*11+(1:7),3) = {false;false;false;false;false;false;false};
+            end
+        end
+    case h.fit_table_menu_fixAllCovar   
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(8:10),3) = {true;true;true};
+            else
+                data((i-1)*11+(8:10),3) = {false;false;false};
+            end
+        end
+    case h.fit_table_menu_fix_amplitudes
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+1,3) = {true};
+            else
+                data((i-1)*11+1,3) = {false};
+            end
+        end
+end
+h.fit_table.Data = data;
 
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)
