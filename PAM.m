@@ -3455,14 +3455,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                         [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
                         PamMeta.Image{i} = flipud(permute(reshape(double(PamMeta.Image{i}),FileInfo.Pixels,FileInfo.Lines),[2 1]));
-                        if isfield(FileInfo, 'LineStops')
-                            pixtime = mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines;
-                            frames = size(FileInfo.LineStops,1);
-                        else
-                            pixtime = mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2;
-                            frames = size(FileInfo.ImageTimes,1);
-                        end
-                        PamMeta.Image{i} = PamMeta.Image{i}/pixtime/frames/1000;
+                        PamMeta.Image{i} = PamMeta.Image{i}/FileInfo.PixTime/FileInfo.Frames/1000;
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
