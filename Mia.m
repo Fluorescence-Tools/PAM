@@ -711,7 +711,7 @@ h.Mia_Image.Settings.Image_Pixel = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Update_Plots,[],[]},...
+    'Callback',{@Update_Plots,4,[]},...
     'Position',[0.45 0.76, 0.2 0.06],...
     'String','11.11');
 %%% Text
@@ -5903,12 +5903,20 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     switch h.Mia_Image.Settings.ROI_FramesUse.Value
         case {1,2} %%% All/Selected frames
             %%% Mean intensity [counts]
-            Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+            for i = 1:2
+                if any(Auto==i)      
+                    Info.Mean(i) = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+                end
+            end
             Info.AR = [];
         case 3 %%% Arbitrary region
             %%% Mean intensity of selected pixels [counts]
-            Image = double(MIAData.Data{i,2}(:,:,Frames));
-            Info.Mean = mean(Image(Use{i}));
+            for i = 1:2
+                if any(Auto==i)
+                    Image = double(MIAData.Data{i,2}(:,:,Frames));
+                    Info.Mean(i) = mean(Image(Use{i}));
+                end
+            end
             %%% Arbitrary region information
             Info.AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
             Info.AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
@@ -5921,8 +5929,7 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
             Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
             Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
     end
-    %% Saves info file
-    
+    %% Saves info file 
     if k==0
         Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
     else
