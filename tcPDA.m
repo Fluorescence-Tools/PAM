@@ -3500,6 +3500,8 @@ data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
@@ -3545,6 +3547,8 @@ data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
@@ -3599,6 +3603,8 @@ data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
