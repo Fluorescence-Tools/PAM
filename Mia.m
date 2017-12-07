@@ -4883,24 +4883,24 @@ if ~isempty(MIAData.Data)
             %%% Update Size
             Size=round([str2double(h.Mia_Image.Settings.ROI_SizeX.String) str2double(h.Mia_Image.Settings.ROI_SizeY.String)]);
             %%% Forces ROI size into bounds
-            if Size(1)>size(MIAData.Data{1,1},1) || Size(1)<1
-                Size(1)=size(MIAData.Data{1,1},1);
+            if Size(1)>size(MIAData.Data{1,1},2) || Size(1)<1
+                Size(1)=size(MIAData.Data{1,1},2);
                 h.Mia_Image.Settings.ROI_SizeX.String=num2str(Size(1));
             end
-            if Size(2)>size(MIAData.Data{1,1},2) || Size(2)<1
-                Size(2)=size(MIAData.Data{1,1},2);
+            if Size(2)>size(MIAData.Data{1,1},1) || Size(2)<1
+                Size(2)=size(MIAData.Data{1,1},1);
                 h.Mia_Image.Settings.ROI_SizeY.String=num2str(Size(2));
             end
             %%% Update Position
             Pos=round([str2double(h.Mia_Image.Settings.ROI_PosX.String) str2double(h.Mia_Image.Settings.ROI_PosY.String)]);
             %%% Forces ROI size into bounds
             Pos(Pos<1)=1;
-            if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},1)
-                Pos(1)=(size(MIAData.Data{1,1},1)-Size(1)+1);
+            if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},2)
+                Pos(1)=(size(MIAData.Data{1,1},2)-Size(1)+1);
                 h.Mia_Image.Settings.ROI_PosX.String=num2str(Pos(1));
             end
-            if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},2)
-                Pos(2)=(size(MIAData.Data{1,1},2)-Size(2)+1);
+            if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},1)
+                Pos(2)=(size(MIAData.Data{1,1},1)-Size(2)+1);
                 h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));
             end
         case 2 %%% Image was clicked
@@ -4910,12 +4910,12 @@ if ~isempty(MIAData.Data)
                     %%% Update Size
                     Size=round([str2double(h.Mia_Image.Settings.ROI_SizeX.String) str2double(h.Mia_Image.Settings.ROI_SizeY.String)]);
                     %%% Forces ROI size into bounds
-                    if Size(1)>size(MIAData.Data{1,1},1) || Size(1)<1
-                        Size(1)=size(MIAData.Data{1,1},1);
+                    if Size(1)>size(MIAData.Data{1,1},2) || Size(1)<1
+                        Size(1)=size(MIAData.Data{1,1},2);
                         h.Mia_Image.Settings.ROI_SizeX.String=num2str(Size(1));
                     end
-                    if Size(2)>size(MIAData.Data{1,1},2) || Size(2)<1
-                        Size(2)=size(MIAData.Data{1,1},2);
+                    if Size(2)>size(MIAData.Data{1,1},1) || Size(2)<1
+                        Size(2)=size(MIAData.Data{1,1},1);
                         h.Mia_Image.Settings.ROI_SizeY.String=num2str(Size(2));
                     end
                     %%% Updates position
@@ -4924,12 +4924,12 @@ if ~isempty(MIAData.Data)
                     h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));                    
                     %%% Forces ROI size into bounds
                     Pos(Pos<1)=1;
-                    if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},1)
-                        Pos(1)=(size(MIAData.Data{1,1},1)-Size(1)+1);
+                    if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},2)
+                        Pos(1)=(size(MIAData.Data{1,1},2)-Size(1)+1);
                         h.Mia_Image.Settings.ROI_PosX.String=num2str(Pos(1));
                     end
-                    if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},2)
-                        Pos(2)=(size(MIAData.Data{1,1},2)-Size(2)+1);
+                    if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},1)
+                        Pos(2)=(size(MIAData.Data{1,1},1)-Size(2)+1);
                         h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));
                     end
                 case 'alt' %%% Draw ROI
