@@ -3412,6 +3412,7 @@ hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
 zlabel('counts','FontSize',fontsize_label/1.2);
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(2));
 data = squeeze(sum(input,2));
@@ -3436,6 +3437,7 @@ hold on;
 hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(3));
 data = squeeze(sum(input,1));
@@ -3460,6 +3462,7 @@ hold on;
 hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 cbar = colorbar('Position',[0.97 , 0.6,0.01,0.3]);
 htext = text(1.06,0.955,'w_{res}','Units','normalized','FontSize',fontsize_label);
@@ -3520,6 +3523,7 @@ ax.Color = axes_bg_color;
 ylabel(ax,'counts','FontSize',fontsize_label/1.2);
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(5));
 bar(x_axis,squeeze(sum(sum(input,1),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
@@ -3563,6 +3567,7 @@ ax_wres(2).Color = axes_bg_color;
 ax.Color = axes_bg_color;
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(6));
 bar(x_axis,squeeze(sum(sum(input,1),2)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
@@ -3583,7 +3588,7 @@ if ~tcPDAstruct.use_stochasticlabeling
 else
     if n_gauss > 1  
         for i = 1:2:n_gauss % only plot every second 
-            data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data = 2*tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
             data(end+1) = data(end);
             stairs(x_axis_stairs,data,'Color',color{(i+1)/2},'LineWidth',2);
         end
@@ -3616,6 +3621,7 @@ ax_wres(3).Color = axes_bg_color;
 ax.Color = axes_bg_color;
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 for i = 4:numel(ha)
     set(ha(i),'Color',[1 1 1]);
