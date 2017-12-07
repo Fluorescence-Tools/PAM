@@ -3217,11 +3217,13 @@ switch obj
     case handles.button_save_fitstate_external
         fit_data = tcPDAstruct.fitdata;
         corrections = handles.corrections_table.Data;
+        n_gauss = tcPDAstruct.n_gauss;
+        use_stochasticlabeling = tcPDAstruct.use_stochasticlabeling;
         filename = tcPDAstruct.FullFileName;
         %remove extension
         filename = [filename(1:end-5) 'fitstate'];
         [FileName,PathName] = uiputfile({'*.fitstate','tcPDA fitstate file (*.fitstate)'},'Select filename for fitstate file',filename);
-        save(fullfile(PathName,FileName),'fit_data','corrections');
+        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','use_stochasticlabeling');
 end
 
 function load_fitstate(handles)
@@ -3250,6 +3252,17 @@ UpdateFitTable(handles);
 if exist('corrections','var') %%% corrections were saved
     handles.corrections_table.Data = corrections;
 end
+if exist('n_gauss','var') %%% n_gauss was saved
+    tcPDAstruct.n_gauss = n_gauss;
+    handles.popupmenu_ngauss.Value = n_gauss;
+    popupmenu_ngauss_callback(handles.popupmenu_ngauss,0);
+end
+if exist('use_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.use_stochasticlabeling = use_stochasticlabeling;
+    handles.checkbox_stochasticlabeling.Value = use_stochasticlabeling;
+    update_corrections(handles.checkbox_stochasticlabeling,0);
+end
+chi2 = view_curve(handles);
 
 function chi2 = view_curve(handles)
 global tcPDAstruct
