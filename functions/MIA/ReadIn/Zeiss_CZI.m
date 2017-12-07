@@ -201,9 +201,9 @@ switch mode
             h.Mia_ICS.Fit_Table.Data(11,:) = {num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);};
             
             Data = bfopen(fullfile(Path,FileName{i}),h.Mia_Progress_Axes,h.Mia_Progress_Text,i,numel(FileName));
-            for j = 1:size(Data{1,1},1) %flip x and y axes
-                Data{1,1}{j,1} = Data{1,1}{j,1}';
-            end
+%             for j = 1:size(Data{1,1},1) %flip x and y axes
+%                 Data{1,1}{j,1} = Data{1,1}{j,1}';
+%             end
             %%% Finds positions of plane/channel/time seperators
             Sep = strfind(Data{1,1}{1,2},';');
             
