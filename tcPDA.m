@@ -3704,7 +3704,7 @@ corYZ = covYZ./sqrt(VarY*VarZ);
 
 fontsize_label = 15;
 fontsize_ticks = 15;
-IsoLineHeight = 0.32;
+IsoLineHeight = 0.5;
 color = handles.color_str;
 disp('Correlation coefficients: ');
 
@@ -3766,8 +3766,14 @@ for i = 1:n_gauss
 end
 pp = squeeze(sum(PDF,2)); set(ha(3),'CLim',[0,max(pp(:))]);
 
-
-colormap(1 - gray);
+cmap = 1 -gray(100);
+beta = -0.5;
+if beta > 0
+    cmap = cmap.^(1-beta);
+elseif beta <= 0
+    cmap = cmap.^(1/(1+beta));
+end
+colormap(cmap);
 %colormap([1,1,1;jetvar]);
 for i = 1:numel(ha)
     set(ha(i),'Layer','top','Box','on');
