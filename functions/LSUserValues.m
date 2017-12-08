@@ -2099,6 +2099,12 @@ if Mode==0 %%% Loads user values
     end
     P.tcPDA.use_stochastic_labeling = S.tcPDA.use_stochastic_labeling;
     
+    if ~isfield(S.tcPDA, 'fix_stochasticlabeling')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.fix_stochasticlabeling" missing');
+        S.tcPDA.fix_stochasticlabeling = 0;
+    end
+    P.tcPDA.fix_stochasticlabeling = S.tcPDA.fix_stochasticlabeling;
+    
     if ~isfield(S.tcPDA, 'use_MLE')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.use_MLE" missing');
         S.tcPDA.use_MLE = 0;

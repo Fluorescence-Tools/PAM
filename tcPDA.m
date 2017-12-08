@@ -558,7 +558,7 @@ if isempty(h)
         'Style','checkbox',...
         'Tag','checkbox_stochasticlabeling',...
         'Units','normalized',...
-        'Position',[0.025 0.88 0.325 0.03],...
+        'Position',[0.025 0.88 0.275 0.03],...
         'String','Stochastic labeling?',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
@@ -569,12 +569,24 @@ if isempty(h)
         'Style','edit',...
         'Tag','edit_stochasticlabeling',...
         'Units','normalized',...
-        'Position',[0.35 0.88 0.15 0.03],...
+        'Position',[0.30 0.88 0.14 0.03],...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
         'FontSize',10,...
         'String',num2str(UserValues.tcPDA.stochastic_labeling_fraction),...
         'Callback',@update_corrections);
+    handles.checkbox_fix_stochasticlabeling = uicontrol('Parent',handles.tab_fit_table,...
+        'Style','checkbox',...
+        'Tag','checkbox_fix_stochasticlabeling',...
+        'Units','normalized',...
+        'Position',[0.44 0.88 0.1 0.03],...
+        'String','F?',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'FontSize',10,...
+        'Value',UserValues.tcPDA.fix_stochasticlabeling,...
+        'Callback',@update_corrections);
+    
     handles.MLE_checkbox = uicontrol('Style','checkbox',...
         'Units','normalized',...
         'Position',[0.025,0.84,0.23,0.03],...
@@ -982,11 +994,18 @@ switch hObject
         if isnan(str2double(handles.edit_stochasticlabeling.String))
             handles.edit_stochasticlabeling.String = num2str(UserValues.tcPDA.stochastic_labeling_fraction);
         else
+            if str2double(handles.edit_stochasticlabeling.String) > 1
+                handles.edit_stochasticlabeling.String = num2str(1);
+            elseif str2double(handles.edit_stochasticlabeling.String) < 0
+                handles.edit_stochasticlabeling.String = num2str(0);
+            end
             UserValues.tcPDA.stochastic_labeling_fraction = str2double(handles.edit_stochasticlabeling.String);
         end     
     case handles.checkbox_stochasticlabeling
         reset_plot([],[],handles);
         UserValues.tcPDA.use_stochastic_labeling = handles.checkbox_stochasticlabeling.Value;
+    case handles.checkbox_fix_stochasticlabeling
+        UserValues.tcPDA.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
     case handles.MLE_checkbox
         UserValues.tcPDA.use_MLE = handles.MLE_checkbox.Value;
     case handles.sigma_A_edit
@@ -1081,6 +1100,9 @@ end
 if ~isfield(tcPDAstruct,'fraction_stochasticlabeling')
     tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 end
+if ~isfield(tcPDAstruct,'fix_stochasticlabeling')
+    tcPDAstruct.fix_stochasticlabeling = handles.fix_stochasticlabeling.Value;
+end
 %if ~isfield(tcPDAstruct,'MLE')
 %    tcPDAstruct.MLE = 0;
 %end
@@ -1112,6 +1134,7 @@ end
 handles.sampling_edit.String = num2str(tcPDAstruct.sampling);
 handles.checkbox_stochasticlabeling.Value = tcPDAstruct.use_stochasticlabeling;
 handles.edit_stochasticlabeling.String = num2str(tcPDAstruct.fraction_stochasticlabeling);
+handles.fix_stochasticlabeling.Value = tcPDAstruct.fix_stochasticlabeling;
 %handles.MLE_checkbox.Value = tcPDAstruct.MLE;
 handles.min_n_edit.String = num2str(tcPDAstruct.N_min);
 handles.max_n_edit.String = num2str(tcPDAstruct.N_max);
@@ -1412,6 +1435,7 @@ StartParPool();
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
 tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
@@ -1512,6 +1536,16 @@ switch (selected_tab)
             UB = [UB; tcPDAstruct.fitdata.UB{i}(1:7)];
             fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(1:7)];
         end
+        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+            fixed(end+1) = 0;
+            LB(end+1) = 0;
+            UB(end+1) = 1;
+        end
+        
         %fix by simply setting the same upper and lower border
         LB(fixed == 1) = fitpar(fixed == 1);
         UB(fixed == 1) = fitpar(fixed == 1);
@@ -1543,6 +1577,11 @@ switch (selected_tab)
         end
         %update table
         UpdateFitTable(handles); 
+        %%% update stochastic labeling fraction
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
+            handles.edit_stochasticlabeling.String = num2str(fitpar(end));
+        end
     case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
         fitpar = [];
@@ -1557,9 +1596,19 @@ switch (selected_tab)
             UB = [UB; tcPDAstruct.fitdata.UB{i}(:)];
             fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(:)];
         end
-        
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
+        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+            fixed(end+1) = 0;
+            LB(end+1) = 0;
+            UB(end+1) = 1;
+        end
+            
+        
         %fix by simply setting the same upper and lower border
         LB(fixed == 1) = fitpar(fixed == 1);
         UB(fixed == 1) = fitpar(fixed == 1);
@@ -1661,8 +1710,11 @@ switch (selected_tab)
         end
         %update table
         UpdateFitTable(handles);
-        %%% update BIC display
-        
+        %%% update stochastic labeling fraction
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
+            handles.edit_stochasticlabeling.String = num2str(fitpar(end));
+        end        
 end
 
 fitFig = findobj('Name','Optimization PlotFcns');
@@ -1848,9 +1900,12 @@ data = get(handles.fit_table,'Data');
 for i = 1:tcPDAstruct.n_gauss
     data(((i-1)*11+1):(11*i-1),2) = mat2cell(tcPDAstruct.fitdata.param{i},ones(10,1),1);
 end
-
 set(handles.fit_table,'Data',data);
 
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    %%% also update the stochastic labeling fraction
+    handles.edit_stochasticlabeling.String = num2str(tcPDAstruct.fraction_stochasticlabeling);
+end
 
 function popupmenu_ngauss_callback(hObject,eventdata)
 global tcPDAstruct
@@ -2047,11 +2102,20 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/7;
     
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*7+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*7+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*7+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*7+3);
         Rbg(2*i-1) = fitpar((i-1)*7+4);
@@ -2059,7 +2123,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         Rbr(2*i-1) = fitpar((i-1)*7+6);
         sigma_Rbr(2*i-1) = fitpar((i-1)*7+7);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*7+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*7+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*7+2);
         sigma_Rgr(2*i) = fitpar((i-1)*7+3);
         Rbg(2*i) = fitpar((i-1)*7+6); %%% switched with RBR
@@ -2210,6 +2274,9 @@ tcPDAstruct.plots.A_2d = A;
 for i = 1:numel(fitpar)/7
     tcPDAstruct.fitdata.param{i}(1:7) = fitpar(((i-1)*7+1):((i-1)*7+7));
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 
 function [ chi2 ] = determine_chi2_mc_dist_3d_cor(fitpar)
 global tcPDAstruct UserValues
@@ -2245,10 +2312,19 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/10;
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*10+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*10+3);
         Rbg(2*i-1) = fitpar((i-1)*10+4);
@@ -2259,7 +2335,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         simga_Rbg_Rgr(2*i-1) = fitpar((i-1)*10+9);
         simga_Rbr_Rgr(2*i-1) = fitpar((i-1)*10+10);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*10+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*10+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i) = fitpar((i-1)*10+3);
         Rbg(2*i) = fitpar((i-1)*10+6); %%% switched with RBR
@@ -2497,6 +2573,9 @@ tcPDAstruct.plots.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
 for i = 1:numel(fitpar)/10
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 
 function [ P_result ] = determine_MLE_3color(fitpar)
 global tcPDAstruct
@@ -2528,11 +2607,20 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/10;
     
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*10+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*10+3);
         Rbg(2*i-1) = fitpar((i-1)*10+4);
@@ -2543,7 +2631,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         simga_Rbg_Rgr(2*i-1) = fitpar((i-1)*10+9);
         simga_Rbr_Rgr(2*i-1) = fitpar((i-1)*10+10);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*10+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*10+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i) = fitpar((i-1)*10+3);
         Rbg(2*i) = fitpar((i-1)*10+6); %%% switched with RBR
@@ -2650,7 +2738,9 @@ end
 for i = 1:N_gauss
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
-
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 %%% update BIC
 fixed = tcPDAstruct.fitdata.fixed(1:N_gauss);
 n_param = sum(~vertcat(fixed{:}));
@@ -3219,11 +3309,13 @@ switch obj
         corrections = handles.corrections_table.Data;
         n_gauss = tcPDAstruct.n_gauss;
         use_stochasticlabeling = tcPDAstruct.use_stochasticlabeling;
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+        fix_stochasticlabeling = tcPDAstruct.fix_stochasticlabeling;
         filename = tcPDAstruct.FullFileName;
         %remove extension
         filename = [filename(1:end-5) 'fitstate'];
         [FileName,PathName] = uiputfile({'*.fitstate','tcPDA fitstate file (*.fitstate)'},'Select filename for fitstate file',filename);
-        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','use_stochasticlabeling');
+        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','use_stochasticlabeling','fraction_stochasticlabeling','fix_stochasticlabeling');
 end
 
 function load_fitstate(handles)
@@ -3257,6 +3349,15 @@ if exist('n_gauss','var') %%% n_gauss was saved
     handles.popupmenu_ngauss.Value = n_gauss;
     popupmenu_ngauss_callback(handles.popupmenu_ngauss,0);
 end
+
+if exist('fraction_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+    handles.edit_stochasticlabeling.String = num2str(fraction_stochasticlabeling);
+end
+if exist('fix_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.fix_stochasticlabeling = fix_stochasticlabeling;
+    handles.checkbox_fix_stochasticlabeling.Value = fix_stochasticlabeling;
+end
 if exist('use_stochasticlabeling','var') %%% n_gauss was saved
     tcPDAstruct.use_stochasticlabeling = use_stochasticlabeling;
     handles.checkbox_stochasticlabeling.Value = use_stochasticlabeling;
@@ -3269,6 +3370,7 @@ global tcPDAstruct
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 %read correction table
 corrections = get(handles.corrections_table,'data');
@@ -3305,7 +3407,11 @@ switch (selected_tab)
         for i = 1:n_gauss
             fitpar = [fitpar; tcPDAstruct.fitdata.param{i}(1:7)];
         end
-        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+        end
         chi2 = determine_chi2_2C_mc_dist_cor(fitpar);  
     case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
@@ -3318,6 +3424,12 @@ switch (selected_tab)
         
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
+        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+        end
         
         chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
         
@@ -3590,7 +3702,7 @@ if ~tcPDAstruct.use_stochasticlabeling
         end
     end
 else
-    if n_gauss > 1  
+    if n_gauss/2 > 1  
         for i = 1:2:n_gauss % only plot every second 
             data = 2*tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
             data(end+1) = data(end);
@@ -4233,6 +4345,7 @@ handles = guidata(findobj('Tag','tcPDA'));
 handles.draw_samples_button.Enable = 'off';
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
 tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
@@ -4281,7 +4394,13 @@ for i = 1:n_gauss
     fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(:)];
     sigma_prop = [sigma_prop, s_dummy];
 end
-
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+    LB(end+1) = 0;
+    UB(end+1) = 1;
+    fixed(end+1) = 0;
+    sigma_prop(end+1) = sampleA; % use amplitude sampling width for fraction of stochastic labeling
+end
 %%% define parameter names
 param_names_dummy= {'A','R_G_R','\sigma_G_R','R_B_G','\sigma_B_G','R_B_R','\sigma_B_R','cov(BG/BR)','cov(BG/GR)','cov(BR/GR)'};
 if n_gauss == 1
@@ -4291,6 +4410,9 @@ elseif n_gauss > 1
     for i = 1:n_gauss
         param_names = horzcat(param_names,cellfun(@(x) [x '_' num2str(i)],param_names_dummy,'UniformOutput',false));
     end
+end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    param_names{end+1} = 'F_{labeling}';
 end
 
 tcPDAstruct.grid = 0;
