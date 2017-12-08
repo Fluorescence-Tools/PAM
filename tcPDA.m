@@ -1101,7 +1101,7 @@ if ~isfield(tcPDAstruct,'fraction_stochasticlabeling')
     tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 end
 if ~isfield(tcPDAstruct,'fix_stochasticlabeling')
-    tcPDAstruct.fix_stochasticlabeling = handles.fix_stochasticlabeling.Value;
+    tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 end
 %if ~isfield(tcPDAstruct,'MLE')
 %    tcPDAstruct.MLE = 0;
