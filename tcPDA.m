@@ -5115,6 +5115,10 @@ if tcPDAstruct.norm_likelihood
     P_3C = P_3C./numel(tcPDAstruct.NBB);
 end
 %%% 2 color likelihood
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    %%% remove stochastic labeling fraction for 2C likelihood
+    fitpar(end) = [];
+end
 P_2C = evaluate_2C_pda_likelihood(fitpar);
 
 P_global = P_3C + P_2C;
