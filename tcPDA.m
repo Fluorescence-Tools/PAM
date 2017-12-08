@@ -4572,6 +4572,9 @@ elseif n_gauss > 1
         param_names = horzcat(param_names,cellfun(@(x) [x '_' num2str(i)],param_names_dummy,'UniformOutput',false));
     end
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    param_names{end+1} = 'F_labeling';
+end
 param_names = param_names(~fixed);
 [path,file,~] = fileparts(tcPDAstruct.FullFileName);
 
