@@ -3127,6 +3127,7 @@ for i = 1:numel(SimData.Species)
             FRET = diag(ones(4,1));
         case 2
             FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
+            FRET(SimData.Species(i).R == 0) = 0; % fix nan values
             FRET(1:5:16) = 1;
         case 3
             FRET = diag(ones(4,1));
