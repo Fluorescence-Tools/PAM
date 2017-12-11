@@ -15498,10 +15498,6 @@ for k = 1:numel(file) %loop through all selected species
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
-    
-    if ispc
-        fontsize= fontsize/1.2;
-    end
     table_mode = 'html';
     switch table_mode
         case 'latex'
@@ -15529,28 +15525,27 @@ for k = 1:numel(file) %loop through all selected species
             t.Position = [-3.34 -0.81];
         case 'html'
             if arrangement == 1
-                fontsize = 12;
-                        table = '<html><table>';
-        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
-        table = [table '</table></html>'];
+                fontsize = 12; if ispc; fontsize = fontsize./1.2;end
+                table = '<html><table>';
+                table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '</table></html>'];
             else
-                fontsize = 8.5;
-        
-        table = '<html><table>';
-        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
-        table = [table '</table></html>'];
+                fontsize = 8.5; if ispc; fontsize = fontsize./1.2;end
+                table = '<html><table>';
+                table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '</table></html>'];
             end
             hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', Pos.table,...
                 'FontName', UserValues.Look.Font, 'String',table, 'BackgroundColor',[1,1,1], 'FontSize', fontsize);
