@@ -2446,7 +2446,6 @@ switch obj
         UserValues.FCSFit.PlotStyleAll = data.Settings.PlotStyleAll;
         UserValues.File.FCS_Standard = FCSMeta.Model.Name;
         LSUserValues(1);
-        clear data
         %%% update GUI according to loaded settings
         h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
         h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
@@ -2464,6 +2463,13 @@ switch obj
         Update_Style([],[],0);
         Update_Style([],[],1);
         Update_Table([],[],0);
+        %%% fill in active, fixed and global state
+        if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
+            h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
+            h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
+            Update_Plots;
+        end
         %%% Updates model text
         [~,name,~] = fileparts(FCSMeta.Model.Name);
         name_text = {'Loaded Fit Model:';name;};
@@ -2478,6 +2484,9 @@ switch obj
         data.FCSMeta.Plots = cell(0);
         data.FCSData = FCSData;
         data.Settings = UserValues.FCSFit;
+        data.FixState = h.Fit_Table.Data(1:end-3,6:3:end);
+        data.GlobalState = h.Fit_Table.Data(1:end-3,7:3:end);
+        data.ActiveState = h.Fit_Table.Data(1:end-3,2);
         save(fullfile(PathName,FileName),'-struct','data');
 end
 
