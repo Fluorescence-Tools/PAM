@@ -3455,7 +3455,9 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
                         [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
                         PamMeta.Image{i} = flipud(permute(reshape(double(PamMeta.Image{i}),FileInfo.Pixels,FileInfo.Lines),[2 1]));
-                        PamMeta.Image{i} = PamMeta.Image{i}/FileInfo.PixTime/FileInfo.Frames/1000;
+                        if isfield(FileInfo,'PixTime') %%% convert to kHz countrate if PixTime is available
+                            PamMeta.Image{i} = PamMeta.Image{i}/FileInfo.PixTime/FileInfo.Frames/1000;
+                        end
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
