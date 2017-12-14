@@ -3453,11 +3453,16 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
-                        PamMeta.Image{i} = flipud(permute(reshape(double(PamMeta.Image{i}),FileInfo.Pixels,FileInfo.Lines),[2 1]));
+                        [im, Bin] = CalculateImage(PIE_MT,2);
+                        im = flipud(permute(reshape(double(im),FileInfo.Pixels,FileInfo.Lines),[2 1]));
                         if isfield(FileInfo,'PixTime') %%% convert to kHz countrate if PixTime is available
-                            PamMeta.Image{i} = PamMeta.Image{i}/FileInfo.PixTime/FileInfo.Frames/1000;
+                            PamMeta.Image{i} = im/FileInfo.PixTime/FileInfo.Frames/1000;
+                            h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
+                        else
+                            PamMeta.Image{i} = im;
+                            h.Image.Colorbar.YLabel.String = 'Counts';
                         end
+                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3472,7 +3477,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             clear PIE_MI Bin;
                             
                             %%% Reshapes pixel vector to image and normalizes to nomber of photons
-                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
+                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./im;
                             %%% Sets NaNs to 0 for empty pixels
                             PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
                             %%% Make the display of Lifetime a bit better
@@ -3481,8 +3486,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             else
                                 rescale = 1;
                             end
-                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
-                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index); %offset of the IRF with respect to TCSPC channel zero
+                            [Max, index] = max(PamMeta.MI_Hist{i});
+                            offset = h.Plots.MI_All{i}.XData(index); %offset of the IRF with respect to TCSPC channel zero
                             tmp = PamMeta.Lifetime{i}-offset;
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
