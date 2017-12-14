@@ -3486,8 +3486,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             else
                                 rescale = 1;
                             end
-                            [Max, index] = max(PamMeta.MI_Hist{i});
-                            offset = h.Plots.MI_All{i}.XData(index); %offset of the IRF with respect to TCSPC channel zero
+                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
+                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index); %offset of the IRF with respect to TCSPC channel zero
                             tmp = PamMeta.Lifetime{i}-offset;
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
@@ -3590,7 +3590,9 @@ if obj == h.MT.Use_Image
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    Update_Display([],[],3);
+    if UserValues.Settings.Pam.Use_Image
+        Update_Display([],[],3);
+    end
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
