@@ -557,6 +557,7 @@ if isempty(hfig)
     h.AddSpeciesMenuItem = javax.swing.JMenuItem('Add Species');
     h.RemoveSpeciesMenuItem = javax.swing.JMenuItem('Remove Species');
     h.RenameSpeciesMenuItem = javax.swing.JMenuItem('Rename Species');
+    h.RemoveFileMenuItem = javax.swing.JMenuItem('Remove File');
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
@@ -569,6 +570,7 @@ if isempty(hfig)
     set(h.AddSpeciesMenuItem,'ActionPerformedCallback',@AddSpecies);
     set(h.RemoveSpeciesMenuItem,'ActionPerformedCallback',@RemoveSpecies);
     set(h.RenameSpeciesMenuItem,'ActionPerformedCallback',@RenameSpecies);
+    set(h.RemoveFileMenuItem,'ActionPerformedCallback',@RemoveFile);
     set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
@@ -581,6 +583,8 @@ if isempty(hfig)
     h.SpeciesListMenu.add(h.AddSpeciesMenuItem);
     h.SpeciesListMenu.add(h.RemoveSpeciesMenuItem);
     h.SpeciesListMenu.add(h.RenameSpeciesMenuItem);
+    h.SpeciesListMenu.addSeparator;
+    h.SpeciesListMenu.add(h.RemoveFileMenuItem);
     h.SpeciesListMenu.addSeparator;
     h.SpeciesListMenu.add(h.SendToTauFit);
     h.ExportMenuItem.add(h.Export_FRET_Hist_Menu);
@@ -5746,9 +5750,12 @@ switch level
         UpdateLifetimePlots([],[],h);
     case 1
         %%% remove entire species group
-        BurstData{file}.SpeciesNames(species(1),:) = [];
-        BurstData{file}.Cut(species(1),:) = [];
-        BurstData{file}.SelectedSpecies(1)=species(1)-1;
+        %%% only remove if there are other groups left afterwards!
+        if size(BurstData{file}.SpeciesNames,1) > 1
+            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.SelectedSpecies(1)=species(1)-1;
+        end
     case 2 %%% subspecies
         %%% only remove if there is more than 1 subspecies left
         if sum(cellfun(@(x) ~isempty(x),BurstData{file}.SpeciesNames(species(1),:))) >= 3
@@ -5766,6 +5773,30 @@ switch level
             BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
         end
 end
+
+UpdateSpeciesList(h);
+h = guidata(gcf);drawnow;
+Update_fFCS_GUI([],[]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Remove File belonging to Selected Species (Right-click menu item) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function RemoveFile(obj,eventData)
+global BurstData BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+
+%%% remove file
+BurstData{file} = [];
+for i = file:(numel(BurstData)-1);
+    BurstData{i} = BurstData{i+1};
+end
+BurstData(end) = [];
+BurstMeta.SelectedFile = 1;
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
 
 UpdateSpeciesList(h);
 h = guidata(gcf);drawnow;
