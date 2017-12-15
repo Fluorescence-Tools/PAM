@@ -777,6 +777,7 @@ switch (Type)
                 UserValues.Settings.Pam.Use_Image = 1;
             else % point PTU data
                 FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
+                FileInfo.Lines = 1;
             end
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
