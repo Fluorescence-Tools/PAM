@@ -3607,6 +3607,8 @@ elseif obj == h.MT.Use_Lifetime
     if h.MT.Use_Lifetime.Value
         h.MT.Use_Image.Value=1;
         UserValues.Settings.Pam.Use_Image=1;
+    else
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent =  [];
