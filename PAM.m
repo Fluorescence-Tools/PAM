@@ -3492,9 +3492,9 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             else
                                 rescale = 1;
                             end
-                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)}(From:To));
-                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index+From-1); %offset of the IRF with respect to TCSPC channel zero
-                            tmp = PamMeta.Lifetime{i}-offset;
+                            tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
+                            [Max, index] = max(tmp(From:To));
+                            tmp = PamMeta.Lifetime{i}+index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
@@ -3586,6 +3586,7 @@ if obj == h.MT.Use_Image
     if h.MT.Use_Image.Value==0
         UserValues.Settings.Pam.Use_Lifetime=0;
         h.MT.Use_Lifetime.Value=0;
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent = [];
@@ -3843,7 +3844,7 @@ if nargin<3 || any(mode==0)
 end
 if any(mode==3)
     % if it's not imaging data, don't calculate the image
-    if isempty(FileInfo.Lines) || FileInfo.Lines < 2 || isempty(FileInfo.Pixels) || FileInfo.Pixels < 2
+    if isempty(FileInfo.Lines) || FileInfo.Lines < 2 || isempty(FileInfo.Pixels) || FileInfo.Pixels < 2 || ~h.MT.Use_Image.Value
         mode(mode == 3) = [];
     end
 end
