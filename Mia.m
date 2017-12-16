@@ -3865,7 +3865,7 @@ if any(mode==4)
             h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
             h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
         end
-        h.Mia_Image.Intensity_Axes.XLim = h.Plots.Int(1,1).XData([1 end]);
+        h.Mia_Image.Intensity_Axes.XLim = [h.Plots.Int(1,1).XData(1) h.Plots.Int(1,1).XData(end)+0.00001];
         
         
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
