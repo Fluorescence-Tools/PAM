@@ -1935,25 +1935,6 @@ switch mode
             end
         end
             
-        
-        %% Sets axes parameters
-        if h.Export_Residuals.Value
-            linkaxes([H.FCS,H.Residuals],'x');
-        end
-        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
-        H.FCS.YLim=h.FCS_Axes.YLim;
-        switch FCSMeta.DataType
-            case {'FCS','FCS averaged'}
-                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
-                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
-            case 'FRET'
-                H.FCS.XLabel.String = 'FRET efficiency';
-                H.FCS.YLabel.String = 'PDF'; 
-        end
-        if h.Export_Residuals.Value
-            H.Residuals.YLim=h.Residuals_Axes.YLim;
-            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
-        end
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
         if h.Fit_Errorbars.Value
@@ -1984,6 +1965,24 @@ switch mode
         end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
+        end
+        %% Sets axes parameters
+        if h.Export_Residuals.Value
+            linkaxes([H.FCS,H.Residuals],'x');
+        end
+        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
+        H.FCS.YLim=h.FCS_Axes.YLim;
+        switch FCSMeta.DataType
+            case {'FCS','FCS averaged'}
+                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
+                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+            case 'FRET'
+                H.FCS.XLabel.String = 'FRET efficiency';
+                H.FCS.YLabel.String = 'PDF'; 
+        end
+        if h.Export_Residuals.Value
+            H.Residuals.YLim=h.Residuals_Axes.YLim;
+            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
         end
         %% Toggles box and grid
         if h.Export_Grid.Value
