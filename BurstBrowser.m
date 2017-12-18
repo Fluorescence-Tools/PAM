@@ -4220,6 +4220,7 @@ if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
 else %%% indicate that no corrections are applied
     h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
 end
+BurstMeta.SelectedFile = 1; % select first file again
 
 UpdateCutTable(h);
 UpdateCuts();
