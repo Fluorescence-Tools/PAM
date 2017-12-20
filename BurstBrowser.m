@@ -5062,7 +5062,7 @@ end
 
 switch mode
     case 2 % 2ColorMFD
-        xE = linspace(-0.1,1,N_bins+1);
+        xE = linspace(-0.1,1.1,N_bins+1);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
             H{i} = H{i}./sum(H{i});
