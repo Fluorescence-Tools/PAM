@@ -14893,7 +14893,7 @@ if directly_save
                 case 2
                     print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
                 case 3
-                    print(hfig,fullfile(PathName,FileName),'-depsc','-painters');
+                    print('-painters',hfig,fullfile(PathName,FileName),'-depsc2');
             end
         case 4
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
