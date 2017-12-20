@@ -6655,11 +6655,11 @@ else
 end
 
 % Update no. bursts
-set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts, '...
-                                num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' /s ('...
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts ('...
                                 num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
+                            
 if sum(strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)) == 1
-    h.text_nobursts.TooltipString = [num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' bursts per second'];
+    h.text_nobursts.TooltipString = sprintf('%.1f events per second',size(BurstData{file}.DataArray,1)./BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)));
 end
 
 if h.DisplayAverage.Value == 1
