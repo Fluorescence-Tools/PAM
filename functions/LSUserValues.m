@@ -1305,6 +1305,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.YScaleLog was incomplete');
     end
     P.TauFit.YScaleLog = S.TauFit.YScaleLog;
+    %%% Checks, if TauFit.XScaleLog exists
+    if ~isfield(S.TauFit,'XScaleLog')
+        S.TauFit.XScaleLog='off';
+        disp('UserValues.TauFit.XScaleLog was incomplete');
+    end
+    P.TauFit.XScaleLog = S.TauFit.XScaleLog;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
