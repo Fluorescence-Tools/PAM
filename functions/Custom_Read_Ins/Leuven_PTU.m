@@ -182,7 +182,7 @@ if ~isempty(Header.LineStart) % Image PTU data
 end
 
 %% Thresholding or histogramming function 
-thresh = 0;
+thresh = 1;
 histog = 0;
 
 % FileInfo.ClockPeriod is the macrotime clock in seconds
@@ -191,8 +191,8 @@ rout = 1;% rout is the routing ID in pam
 binsize = 100;% binsize is the number of adjacent photons between which the average count rate is calculated
 
 if thresh == 1 % do intensity thresholding of the data prior to loading it
-    low = 0.5;% low is the lower intensity threshold in kHz
-    high = 15;% high is the higher intensity threshold in kHz
+    low = 2;% low is the lower intensity threshold in kHz
+    high = 10000;% high is the higher intensity threshold in kHz
     
     %% change units
     low = 1/(low*1000*FileInfo.ClockPeriod); %seconds between photons

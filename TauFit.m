@@ -92,10 +92,17 @@ h.TauFit_Panel = uibuttongroup(...
 h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
     h.Microtime_Plot_Menu_MIPlot,...
-    'Label','Logscale',...
+    'Label','Y Logscale',...
     'Checked', UserValues.TauFit.YScaleLog,...
-    'Tag','Plot_Logscale_MIPlot',...
-    'Callback',@ChangeYScale);
+    'Tag','Plot_YLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_MIPlot = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','X Logscale',...
+    'Checked', UserValues.TauFit.XScaleLog,...
+    'Tag','Plot_XLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+
 h.Microtime_Plot_Export = uimenu(...
     h.Microtime_Plot_Menu_MIPlot,...
     'Label','Export Plot',...
@@ -105,9 +112,14 @@ h.Microtime_Plot_Export = uimenu(...
 h.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
     h.Microtime_Plot_Menu_ResultPlot,...
-    'Label','Logscale',...
-    'Tag','Plot_Logscale_ResultPlot',...
-    'Callback',@ChangeYScale);
+    'Label','Y Logscale',...
+    'Tag','Plot_YLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_ResultPlot = uimenu(...
+    h.Microtime_Plot_Menu_ResultPlot,...
+    'Label','X Logscale',...
+    'Tag','Plot_XLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
 h.Export_Result = uimenu(...
     h.Microtime_Plot_Menu_ResultPlot,...
     'Label','Export Plot',...
@@ -252,6 +264,11 @@ h.Result_Plot_Aniso.Parent = h.HidePanel;
 if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
     h.Microtime_Plot.YScale = 'log';
     h.Result_Plot.YScale = 'log';
+    %h.Result_Plot_Aniso.YScale = 'log';
+end
+if strcmp(h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.XScale = 'log';
+    h.Result_Plot.XScale = 'log';
     %h.Result_Plot_Aniso.YScale = 'log';
 end
 %% Sliders
@@ -1463,40 +1480,61 @@ if exist('ph','var')
     end
 end
 
-function ChangeYScale(obj,~)
+function ChangeScale(obj,~)
 global UserValues
 h = guidata(obj);
-if strcmp(obj.Checked,'off')
-    %%% Set Checked
-    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
-    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
-    %%% Change Scale to Log
-    h.Microtime_Plot.YScale = 'log';
-    h.Result_Plot.YScale = 'log';
-    UserValues.TauFit.YScaleLog = 'on';
-elseif strcmp(obj.Checked,'on')
-    %%% Set Unchecked
-    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
-    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
-    %%% Change Scale to Lin
-    h.Microtime_Plot.YScale = 'lin';
-    h.Result_Plot.YScale = 'lin';
-    UserValues.TauFit.YScaleLog = 'off';
+switch obj.Tag
+    case 'Plot_YLogscale_MIPlot'
+        if strcmp(obj.Checked,'off')
+            %%% Set Checked
+            h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
+            h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
+            %%% Change Scale to Log
+            h.Microtime_Plot.YScale = 'log';
+            h.Result_Plot.YScale = 'log';
+            UserValues.TauFit.YScaleLog = 'on';
+        elseif strcmp(obj.Checked,'on')
+            %%% Set Unchecked
+            h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
+            h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
+            %%% Change Scale to Lin
+            h.Microtime_Plot.YScale = 'lin';
+            h.Result_Plot.YScale = 'lin';
+            UserValues.TauFit.YScaleLog = 'off';
+        end
+        if strcmp(h.Microtime_Plot.YScale,'log')
+            ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+                h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+                h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+            ydat = ydat(ydat > 0);
+            h.Ignore_Plot.YData = [...
+                min(ydat),...
+                h.Microtime_Plot.YLim(2)];
+        else
+            h.Ignore_Plot.YData = [...
+                0,...
+                h.Microtime_Plot.YLim(2)];
+        end
+    case 'Plot_XLogscale_MIPlot'
+        if strcmp(obj.Checked,'off')
+            %%% Set Checked
+            h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked = 'on';
+            h.Microtime_Plot_ChangeXScaleMenu_ResultPlot.Checked = 'on';
+            %%% Change Scale to Log
+            h.Microtime_Plot.XScale = 'log';
+            h.Result_Plot.XScale = 'log';
+            UserValues.TauFit.XScaleLog = 'on';
+        elseif strcmp(obj.Checked,'on')
+            %%% Set Unchecked
+            h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked = 'off';
+            h.Microtime_Plot_ChangeXScaleMenu_ResultPlot.Checked = 'off';
+            %%% Change Scale to Lin
+            h.Microtime_Plot.XScale = 'lin';
+            h.Result_Plot.XScale = 'lin';
+            UserValues.TauFit.XScaleLog = 'off';
+        end
 end
 
-if strcmp(h.Microtime_Plot.YScale,'log')
-    ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
-        h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
-        h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
-    ydat = ydat(ydat > 0);
-    h.Ignore_Plot.YData = [...
-        min(ydat),...
-        h.Microtime_Plot.YLim(2)];
-else
-    h.Ignore_Plot.YData = [...
-        0,...
-        h.Microtime_Plot.YLim(2)];
-end
 LSUserValues(1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
