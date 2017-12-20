@@ -5080,7 +5080,7 @@ switch mode
         ax.FontSize = 20;
         ax.LineWidth = 2;
         ax.Layer = 'top';
-        ax.XLim = [-0.1,1];
+        ax.XLim = [-0.1,1.1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
         ylabel('occurrence (norm.)');
