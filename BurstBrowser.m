@@ -14974,7 +14974,7 @@ file = BurstMeta.SelectedFile;
 if directly_save
     if ask_file
         %%% Get Path to save File
-        FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.eps','EPS File';'*.tif','TIFF File'};
+        FilterSpec = {'*.png','PNG File (*.png)';'*.pdf','PDF File (*.pdf)';'*.eps','EPS File (*.eps)';'*.tif','TIFF File (*.tif)';'*.fig','MATLAB figure (*.fig)'};
         [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(getPrintPath(),FigureName));       
         if FileName == 0
             delete(hfig);
@@ -15018,6 +15018,9 @@ if directly_save
             end
         case 4
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
+        case 5
+            hfig.CloseRequestFcn = [];
+            savefig(hfig,fullfile(PathName,FileName));
     end
     
     hfig.CloseRequestFcn = @(x,y) delete(x);
