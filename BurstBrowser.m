@@ -687,8 +687,20 @@ if isempty(hfig)
         'Callback',@Export_To_PDA);
     iconbutton(h.Export_To_PDA_Button,[PathToApp filesep 'images/BurstBrowser/plottype-hist.jpg']);
     
-    %%% Multiselect checkbox and multiplot button
+    %%% Context menu of multiplot button
+    % option to toggle normalization, normalization method selection, and
+    % display of sum of all populations
     h.MultiPlotButtonMenu = uicontextmenu;
+    h.MultiPlotButtonMenu_ToggleDisplayTotal = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleDisplayTotal',...
+        'Label','Display sum of all populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+    end
     h.MultiPlotButtonMenu_ToggleNormalize = uimenu(...
         h.MultiPlotButtonMenu,...
         'Tag','MultiPlotButtonMenu_ToggleNormalize',...
@@ -699,15 +711,28 @@ if isempty(hfig)
     else
         h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
     end
-    h.MultiPlotButtonMenu_ToggleDisplayTotal = uimenu(...
+    h.MultiPlotButtonMenu_ChoooseNormalize = uimenu(...
         h.MultiPlotButtonMenu,...
-        'Tag','MultiPlotButtonMenu_ToggleDisplayTotal',...
-        'Label','Display sum of all populations',...
+        'Tag','MultiPlotButtonMenu_ChoooseNormalize',...
+        'Label','Normalize to...',...
+        'Callback',[]);
+    h.MultiPlotButtonMenu_NormalizeArea = uimenu(...
+        h.MultiPlotButtonMenu_ChoooseNormalize,...
+        'Tag','MultiPlotButtonMenu_NormalizeArea',...
+        'Label','area',...
         'Callback',@UpdateOptions);
-    if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
-        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
-    else
-        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+    h.MultiPlotButtonMenu_NormalizeMaximum = uimenu(...
+        h.MultiPlotButtonMenu_ChoooseNormalize,...
+        'Tag','MultiPlotButtonMenu_NormalizeMaximum',...
+        'Label','maximum',...
+        'Callback',@UpdateOptions);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'max'
+            h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'on';
+            h.MultiPlotButtonMenu_NormalizeArea.Checked = 'off';
+        case 'area'
+            h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'off';
+            h.MultiPlotButtonMenu_NormalizeArea.Checked = 'on';
     end
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
@@ -5065,7 +5090,12 @@ switch mode
         xE = linspace(-0.1,1.1,N_bins+1);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
-            H{i} = H{i}./sum(H{i});
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                   H{i} = H{i}./sum(H{i});
+                case 'max'
+                   H{i} = H{i}./max(H{i});
+            end
         end
         
         color = lines(numel(H));
@@ -5120,11 +5150,18 @@ switch mode
         xEBR = linspace(-0.2,1,ceil(N_bins*1.2)+1);
         for i = 1:numel(EGR)
             HGR{i} = histcounts(EGR{i},xE);
-            HGR{i} = HGR{i}./sum(HGR{i});
             HBG{i} = histcounts(EBG{i},xE);
-            HBG{i} = HBG{i}./sum(HBG{i});
             HBR{i} = histcounts(EBR{i},xEBR);
-            HBR{i} = HBR{i}./sum(HBR{i});
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    HGR{i} = HGR{i}./sum(HGR{i});
+                    HBG{i} = HBG{i}./sum(HBG{i});
+                    HBR{i} = HBR{i}./sum(HBR{i});
+                case 'max'
+                    HGR{i} = HGR{i}./max(HGR{i});
+                    HBG{i} = HBG{i}./max(HBG{i});
+                    HBR{i} = HBR{i}./max(HBR{i});
+            end
         end
         
         color = lines(numel(HGR));
@@ -5204,7 +5241,12 @@ switch mode
         for i = 1:numel(P)
             if valid(i)
                 H{i} = histcounts(P{i},xP);
-                H{i} = H{i}./sum(H{i});
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        H{i} = H{i}./sum(H{i});
+                    case 'max'
+                        H{i} = H{i}./max(H{i});
+                end
             end
         end
         
@@ -5424,6 +5466,20 @@ switch obj
         end
         UpdatePlot([],[],h);
         PlotLifetimeInd([],[],h); 
+    case {h.MultiPlotButtonMenu_NormalizeMaximum, h.MultiPlotButtonMenu_NormalizeArea}
+        switch obj
+            case h.MultiPlotButtonMenu_NormalizeMaximum
+                h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'on';
+                h.MultiPlotButtonMenu_NormalizeArea.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Normalize_Method = 'max';
+            case h.MultiPlotButtonMenu_NormalizeArea
+                h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'off';
+                h.MultiPlotButtonMenu_NormalizeArea.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Normalize_Method = 'area';
+        end
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
+        PlotLifetimeInd([],[],h);
 end
 LSUserValues(1);
 
@@ -6434,8 +6490,14 @@ if ~advanced
             hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
             hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
             if normalize %obj ~= h.Fit_Gaussian_Button
-                hx{i} = hx{i}./sum(hx{i});
-                hy{i} = hy{i}./sum(hy{i});
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx{i} = hx{i}./sum(hx{i});
+                        hy{i} = hy{i}./sum(hy{i});
+                    case 'max'
+                        hx{i} = hx{i}./max(hx{i});
+                        hy{i} = hy{i}./max(hy{i});
+                end
             end
         end
         color = lines(numel(n_per_species));
@@ -7511,7 +7573,12 @@ normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species 
 if normalize
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
-        H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'area'
+                H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
+            case 'max'
+                H{i} = H{i}./max(H{i}(:))./num_species;
+        end
     end
 end
 
@@ -7612,7 +7679,12 @@ end
 hx = sum(H{1},1);
 %normalize
 if normalize
-    hx = hx./sum(hx);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'max'
+            hx = hx./max(hx);
+        case 'area'
+            hx = hx./sum(hx);
+    end 
 end
 hx = hx'; hx = [hx; hx(end)];
 xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
@@ -7625,7 +7697,12 @@ for i = 2:num_species
     hx = sum(H{i},1);
     %normalize
     if normalize
-        hx = hx./sum(hx);
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'max'
+                hx = hx./max(hx);
+            case 'area'
+                hx = hx./sum(hx);
+        end
     end
     hx = hx'; hx = [hx; hx(end)];
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
@@ -7639,7 +7716,12 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 hy = sum(H{1},2);
 %normalize
 if normalize
-    hy = hy./sum(hy);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'area'
+            hy = hy./sum(hy);
+        case 'max'
+            hy = hy./max(hy);
+    end
 end
 hy = hy'; hy = [hy, hy(end)];
 ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
@@ -7652,7 +7734,12 @@ for i = 2:num_species
     hy = sum(H{i},2);
     %normalize
     if normalize
-        hy = hy./sum(hy);
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'area'
+                hy = hy./sum(hy);
+            case 'max'
+                hy = hy./max(hy);
+        end
     end
     hy = hy'; hy = [hy, hy(end)];
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
@@ -12383,9 +12470,23 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         n_per_species = cumsum([1,(n_per_species-1)]);
         for i = 1:numel(n_per_species)-1
             hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); 
-            if normalize;hx{i} = hx{i}./sum(hx{i});end;
+            if normalize;
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx{i} = hx{i}./sum(hx{i});
+                    case 'max'
+                        hx{i} = hx{i}./max(hx{i});
+                end
+            end;
             hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
-            if normalize;hy{i} = hy{i}./sum(hy{i});end;
+            if normalize;
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hy{i} = hy{i}./sum(hy{i});
+                    case 'max'
+                        hy{i} = hy{i}./max(hy{i});
+                end
+            end;
         end
         color = lines(numel(n_per_species));
         for i = 1:numel(hx)
@@ -12421,7 +12522,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         %plot first histogram
         hx = sum(H{1},1);
         if normalize
-            hx = hx./sum(hx);
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    hx = hx./sum(hx);
+                case 'max'
+                    hx = hx./max(hx);
+            end
         end
         hx = hx'; hx = [hx; hx(end)];
         xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
@@ -12430,7 +12536,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         for i = 2:numel(H)
             hx = sum(H{i},1);
             if normalize
-                hx = hx./sum(hx);
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx = hx./sum(hx);
+                    case 'max'
+                        hx = hx./max(hx);
+                end
             end
             hx = hx'; hx = [hx; hx(end)];
             BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(xbins,hx,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
@@ -12439,7 +12550,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         %plot first histogram
         hy = sum(H{1},2);
         if normalize
-            hy = hy./sum(hy);
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    hy = hy./sum(hy);
+                case 'max'
+                    hy = hy./max(hy);
+            end
         end
         hy = [hy; hy(end)];
         ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
@@ -12448,7 +12564,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         for i = 2:numel(H)
             hy = sum(H{i},2);
             if normalize
-                hy = hy./sum(hy);
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hy = hy./sum(hy);
+                    case 'max'
+                        hy = hy./max(hy);
+                end
             end
             hy = [hy; hy(end)];
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(ybins,hy,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
