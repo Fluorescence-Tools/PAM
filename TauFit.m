@@ -1484,7 +1484,7 @@ function ChangeScale(obj,~)
 global UserValues
 h = guidata(obj);
 switch obj.Tag
-    case 'Plot_YLogscale_MIPlot'
+    case {'Plot_YLogscale_MIPlot','Plot_YLogscale_ResultPlot'}
         if strcmp(obj.Checked,'off')
             %%% Set Checked
             h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
@@ -1515,7 +1515,7 @@ switch obj.Tag
                 0,...
                 h.Microtime_Plot.YLim(2)];
         end
-    case 'Plot_XLogscale_MIPlot'
+    case {'Plot_XLogscale_MIPlot','Plot_XLogscale_ResultPlot'}
         if strcmp(obj.Checked,'off')
             %%% Set Checked
             h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked = 'on';
