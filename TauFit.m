@@ -5240,6 +5240,8 @@ if obj == h.LineStyle_Menu
 end
 if h.ShowAniso_radiobutton.Value == 1
     Update_Plots(h.ShowAniso_radiobutton,[]);
+elseif h.ShowDecaySum_radiobutton.Value == 1
+    Update_Plots(h.ShowDecaySum_radiobutton,[]);
 end
 
 function ChangeLineStyle(h)
