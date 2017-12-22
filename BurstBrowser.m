@@ -16016,7 +16016,7 @@ else
 end
 %%% A total of 3 2D gauss are considered
 [X,Y] = meshgrid(xbins,ybins);
-model = zeros(numel(xbins),numel(ybins));
+model = zeros(numel(ybins),numel(xbins));
 for i = 1:nG
     COV = [P(4+(i-1)*6),P(6+(i-1)*6);P(6+(i-1)*6),P(5+(i-1)*6)];
     [~,f] = chol(COV);
@@ -16024,7 +16024,7 @@ for i = 1:nG
         COV = fix_covariance_matrix(COV);
     end
     pdf = P(1+(i-1)*6)*mvnpdf([X(:) Y(:)],P([2:3]+(i-1)*6)',COV);
-    model = model + reshape(pdf,[numel(xbins),numel(ybins)]);
+    model = model + reshape(pdf,[numel(ybins),numel(xbins)]);
 end
 model = model./max([1,sum(sum(model))]);
 model = model.*N_datapoints;
