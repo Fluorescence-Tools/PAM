@@ -48,6 +48,9 @@ if status ~= 0
                 disp('phforge is installed.');
             end
             idx = idx + 1;
+            if idx > numel(envs)
+                break;
+            end
         end
     end
     if ~success
@@ -273,7 +276,7 @@ h5write('temp/photon_data.h5', '/nanotimes', nanotimes)
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
 filename = fullfile(FileInfo.Path, [name_old '.h5']);
 
-[status,cmdout] = system(['phforge temp/metadata.yaml temp/photon_data.h5 ' filename],'-echo');
+[status,cmdout] = system(['phforge temp/metadata.yaml temp/photon_data.h5 "' filename '"'],'-echo');
 if status ~= 0
     disp('Something went wrong while saving the Photon-HDF5 file...');
     disp(cmdout);
