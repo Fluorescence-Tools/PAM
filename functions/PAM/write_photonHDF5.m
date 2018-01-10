@@ -14,9 +14,9 @@ if status ~= 0
     end
     %%% construct anaconda python path
     if ispc
-        conda_path = [home '\anaconda\bin'];
+        conda_path = [home '\anaconda3\bin'];
     else
-        conda_path = [home '/anaconda/bin'];
+        conda_path = [home '/anaconda3/bin'];
     end
     
     %%% add conda path to system path
@@ -103,7 +103,13 @@ switch UserValues.BurstSearch.Method
         else
             lifetime = 'False';
         end
-
+        
+        excitation_alternated = true;
+        if excitation_alternated
+            excitation_alternated = {'True','True'};
+        else
+            excitation_alternated = {'False','False'};
+        end
         %% Format/Write Mandatory fields to YAML file
 
         formatSpec = ['description: %s \n'...
@@ -116,11 +122,13 @@ switch UserValues.BurstSearch.Method
         '    num_split_ch: %hd              # 1 = no beam splitting \n'...
         '    modulated_excitation: %s   # us-ALEX alternation requires True here \n'...
         '    lifetime: %s               # False = no TCSPC in detection \n'...
+        '    excitation_alternated: [%s,%s] # True for both acceptor and donor excitation \n'...
         '\n'];
 
         fileID = fopen(filename,'w');
         fprintf(fileID,formatSpec,description,num_pixels,num_spots,num_spectral_ch,...
-                num_polarization_ch,num_split_ch,modulated_excitation,lifetime);
+                num_polarization_ch,num_split_ch,modulated_excitation,lifetime,...
+                excitation_alternated{1},excitation_alternated{2});
 
 
         %% Optional fields
@@ -288,7 +296,13 @@ switch UserValues.BurstSearch.Method
         else
             lifetime = 'False';
         end
-
+        
+        excitation_alternated = true;
+        if excitation_alternated
+            excitation_alternated = {'True','True'};
+        else
+            excitation_alternated = {'False','False'};
+        end
         %% Format/Write Mandatory fields to YAML file
 
         formatSpec = ['description: %s \n'...
@@ -301,11 +315,13 @@ switch UserValues.BurstSearch.Method
         '    num_split_ch: %hd              # 1 = no beam splitting \n'...
         '    modulated_excitation: %s   # us-ALEX alternation requires True here \n'...
         '    lifetime: %s               # False = no TCSPC in detection \n'...
+        '    excitation_alternated: [%s,%s] # True for both acceptor and donor excitation \n'...
         '\n'];
 
         fileID = fopen(filename,'w');
         fprintf(fileID,formatSpec,description,num_pixels,num_spots,num_spectral_ch,...
-                num_polarization_ch,num_split_ch,modulated_excitation,lifetime);
+                num_polarization_ch,num_split_ch,modulated_excitation,lifetime,...
+                excitation_alternated{1},excitation_alternated{2});
 
 
         %% Optional fields
