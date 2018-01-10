@@ -1623,9 +1623,9 @@ switch mode
                         Data2 = round(64*(Data2+ErrorLim)/(2*ErrorLim));
                         Data2(Data2<1) = 1; Data2(Data2>64) = 64;
                         Color=zeros(64,3);
-                        Color(:,1)=[linspace(0,0.8,32), repmat(0.8,[1,32])];
-                        Color(:,2)=[linspace(0,0.8,32), linspace(0.8,0,32)];
-                        Color(:,3)=[repmat(0.8,[1,32]), linspace(0.8,0,32)];
+                        Color(:,1)=[linspace(0,1,32).^.5*.8, repmat(0.8,[1,32])];
+                        Color(:,2)=[linspace(0,1,32).^.5*.8, linspace(1,0,32).^.5*.8];
+                        Color(:,3)=[repmat(0.8,[1,32]), linspace(1,0,32).^.5*.8];
                         Data2 = Color(Data2(:),:);
                         Data2 = reshape(Data2,[size(x,1),size(x,2),3]);
                         H.Plot{i,j}=surf(...
@@ -2079,9 +2079,9 @@ for i=1:size(MIAFitMeta.Plots,1)
                     addprop(h.Full_Link,'ZLim');
                     addprop(h.Full_Link,'DataAspectRatio');
                     Color=zeros(64,3);
-                    Color(:,1)=[linspace(0,0.8,32), repmat(0.8,[1,32])];
-                    Color(:,2)=[linspace(0,0.8,32), linspace(0.8,0,32)];
-                    Color(:,3)=[repmat(0.8,[1,32]), linspace(0.8,0,32)];
+                    Color(:,1)=[linspace(0,1,32).^.5*.8, repmat(0.8,[1,32])];
+                    Color(:,2)=[linspace(0,1,32).^.5*.8, linspace(1,0,32).^.5*.8];
+                    Color(:,3)=[repmat(0.8,[1,32]), linspace(1,0,32).^.5*.8];
                     Data = OUT./B;
                     h.Plots.Fit.XData = x(1,:);
                     h.Plots.Fit.YData = y(:,1);
