@@ -458,7 +458,7 @@ switch UserValues.BurstSearch.Method
         timestamps = [];
         detectors = [];
         nanotimes = [];
-        for i = 1:size(chan,1)
+        for i = 1:numel(chan)
             timestamps = [timestamps, int64(TcspcData.MT{UserValues.PIE.Detector(chan(i)),UserValues.PIE.Router(chan(i))}')];
             detectors = [detectors, uint8((i-1)*ones(1,numel(TcspcData.MT{UserValues.PIE.Detector(chan(i)),UserValues.PIE.Router(chan(i))})))];
             nanotimes = [nanotimes, uint16(TcspcData.MI{UserValues.PIE.Detector(chan(i)),UserValues.PIE.Router(chan(i))}')];
