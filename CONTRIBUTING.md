@@ -39,3 +39,57 @@ Do you want to work on a larger feature or addition to PAM?
 * Follow the same workflow as for bugfixes by creating a *feature* branch. Choose a **clear name** for your *feature* branch. 
 * Work on your feature, while keeping you branch up-to-date with the *develop* branch.
 * Once your feature is finished, submit a merge request.
+
+Don't want to make your code publicly available (yet)?
+--------------------------------------------------------
+
+Sometimes it might make sense to work on a new feature privately for a while. This is also possible! What you have to do is:
+* Create a remote private PAM repository as a duplicate of the remote public PAM repository.
+* Create a local repository from it.
+* Add the remote public PAM repository to it as a second remote.
+
+### Preparations
+* Ensure PAM is working properly on your PC. 
+* Ensure you have the proper SSH key for your device installed (i.e. you can pull and push changes).
+
+### Creating a remote private PAM repository
+* Create a fork from the public PAM repository. This is possible on https://gitlab.com/PAM-PIE/PAM, just click the Fork button in the row below the logo. Fork to a private repo belonging to your account.
+* You now have a copy of the current state of PAM that is in a private repository on your account.
+* Make sure you change the settings of this project to Private, not Public
+
+### Creating your local private PAM repository
+* Go to the base folder in which you want to create the new local repository. 
+* Clone this locally as you do with PAM, e.g.: **!git clone https://gitlab.com/jellehendrix/PAM.git give-a-name**
+* go to e.g. the develop branch: **!git checkout develop**
+* To bring in the new updates others are making to the public PAM (you are now disconnected from that repository), add the original PAM repository as a second remote to your fork: **!git remote add original git@gitlab.com:PAM-PIE/PAM.git**
+* You can list the registered remotes to your local repository by: **!git remote -v**
+
+### Pulling from the remote public PAM repository
+Do this to get the latest changes from the public version of PAM
+* !git pull original develop
+* If you get something like "Host key verification failed." and you're sure your SSH key setting are ok, type this: **!git remote set-url original https://gitlab.com/PAM-PIE/PAM.git**
+* If files become changed after the pull, you need to add, commit and push them to the origin remote
+    * **!git add file1 file2 file3** (add specific files)
+    * or
+    * **!git add .** (adds all, keep in mind that it will then also add files that were previously not tracked, i.e. if you have some custom scripts that shouldn't be on the repo)
+    * **!git commit -m "comment on your commit"**
+    * **!git status** (tells which changes are staged for the commit, and which are not)
+    * **!git push origin develop**
+    * Notice: **!git push** will do the same if you want to push from develop to origin/develop (origin is the default remote name, and it will push by default to a branch with the same name as the local), but it is still advised to type the full command to avoid confusion! 
+
+### Pulling from the remote private PAM repository
+Do this when you start Matlab and before making any changes locally !!! 
+* **!git pull origin develop **
+
+### Pushing to the remote private PAM repository
+* **!git add file1 file2 file3*** (add specific files)
+* or
+* **!git add .** (adds all, keep in mind that it will then also add files that were previously not tracked, i.e. if you have some custom scripts that shouldn't be on the repo)
+* **!git commit -m "comment on your commit"**
+* **!git push origin develop**
+
+You now have a workflow to implement your changes in a private repository, and still keep up-to-date with the original PAM.
+
+### Merging the private and public PAM remote
+Once you are done and want to implement your changes into the public PAM, you need to push to a separate branch in the public PAM and then merge with develop or master. Please inquire with the Owner or a Master to do so!
+
