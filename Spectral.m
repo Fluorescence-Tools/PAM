@@ -72,6 +72,38 @@ h.Load_Database = uimenu(...
 h.Text = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Progressbar and file names %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Panel for progressbar
+h.Spectral_Progress_Panel = uibuttongroup(...
+    'Parent',h.SpectralImage,...
+    'Units','normalized',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HighlightColor', Look.Control,...
+    'ShadowColor', Look.Shadow,...
+    'Position',[0.005 0.965 0.99 0.03]);
+%%% Axes for progressbar
+h.Spectral_Progress_Axes = axes(...
+    'Parent',h.Spectral_Progress_Panel,...
+    'Units','normalized',...
+    'Color',Look.Control,...
+    'Position',[0 0 1 1]);
+h.Spectral_Progress_Axes.XTick=[]; h.Spectral_Progress_Axes.YTick=[];
+%%% Progress and filename text
+h.Spectral_Progress_Text=text(...
+    'Parent',h.Spectral_Progress_Axes,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'FontWeight','bold',...
+    'String','Nothing loaded',...
+    'Interpreter','none',...
+    'HorizontalAlignment','center',...
+    'BackgroundColor','none',...
+    'Color',Look.Fore,...
+    'Position',[0.5 0.5]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Image Plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,7 +115,7 @@ h.Plot_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.005 0.505 0.29 0.49]);
+    'Position',[0.005 0.485 0.29 0.475]);
 
 %%% Main Image plot
 h.Image_Plot = axes(...
@@ -103,7 +135,7 @@ h.Phasor_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.305 0.505 0.29 0.49]);
+    'Position',[0.305 0.485 0.29 0.475]);
 
 %%% Main Image plot
 h.Phasor_Plot = axes(...
@@ -159,7 +191,7 @@ h.Display_Panel = uibuttongroup(...
     'ForegroundColor', Look.Fore,...
     'HighlightColor', Look.Control,...
     'ShadowColor', Look.Shadow,...
-    'Position',[0.605 0.505 0.39 0.49]);
+    'Position',[0.605 0.485 0.39 0.475]);
 
 
 h.Text{end+1} = uicontrol(...
@@ -373,13 +405,24 @@ h.Phasor_TH{2} = uicontrol(...
     'Callback',{@Calculate_Phasor},...
     'String','0');
 
+h.Phasor_Save = uicontrol(...
+    'Parent',h.Display_Panel,...
+    'Style','pushbutton',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.01 0.27 0.18 0.06],...
+    'Callback',{@Save_Phasor},...
+    'String','Save Phasor');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Tabs for Species and Filters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 h.Main_Tabs = uitabgroup(...
     'Parent',h.SpectralImage,...
     'Units','normalized',...
-    'Position',[0.005 0.005 0.59 0.49]);
+    'Position',[0.005 0.005 0.59 0.475]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Tab for Species %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -403,6 +446,10 @@ h.Species_List = uicontrol(...
     'KeyPressFcn',{@Species_Callback},...
     'Callback',{@Plot_Spectral,2},...
     'Position',[0.01 0.01 0.28 0.98],...
+    'ToolTipString', ['<html>Controls: <br>',...
+                        '<i>r</i>: rename species <br>'...
+                        '<i>f</i>: calculate filter of selected species <br>'...
+                        '<i>del</i>: delete selected species and corresponding filters'],...
     'Style','listbox');
 
 %%% Axis for plotting species spectra
@@ -446,7 +493,12 @@ h.Filter_List = uicontrol(...
     'Max',5,...
     'Callback',{@Plot_Spectral,[1,3]},...
     'KeyPressFcn',{@Filter_Callback},...
-    'Position',[0.01 0.01 0.28 0.78],...
+    'Position',[0.01 0.01 0.28 0.98],...
+    'ToolTipString', ['<html>Controls: <br>',...
+                        '<i>r</i>: rename filter <br>'...
+                        '<i>del</i>: delete selected filters <br>'...
+                        '<i>+</i> or <i>leftarrow</i>: use selected filters for calculations <br>',...
+                        '<i>-</i> or <i>rightarrow</i>: do not use selected filters for calculations'],...
     'Style','listbox');
 
 %%% Axis for plotting species spectra
@@ -475,7 +527,7 @@ h.Filter_Plot.XLabel.Color = Look.Fore;
 h.Control_Tabs = uitabgroup(...
     'Parent',h.SpectralImage,...
     'Units','normalized',...
-    'Position',[0.605 0.005 0.39 0.49]);
+    'Position',[0.605 0.005 0.39 0.475]);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -592,6 +644,24 @@ h.Database_Tab = uitab(...
     'ForegroundColor', [0 0 0],....
     'Units','normalized');
 
+%%% List containing the species
+h.Database = uicontrol(...
+    'Parent',h.Database_Tab,...
+    'Units','normalized',...
+    'BackgroundColor', Look.List,...
+    'ForegroundColor', Look.ListFore,...
+    'FontSize',12,...
+    'String','',...
+    'Max',5,...
+    'KeyPressFcn',{@Database_Callback},...
+    'Position',[0.01 0.01 0.70 0.98],...
+    'Style','listbox');
+
+%     'ToolTipString', ['<html>Controls: <br>',...
+%                         '<i>r</i>: rename species <br>'...
+%                         '<i>f</i>: calculate filter of selected species <br>'...
+%                         '<i>del</i>: delete selected species and corresponding filters'],...
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Defines custom cursor shapes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -697,7 +767,9 @@ SpectralData.S = [];
 SpectralData.Phasor = [];
 SpectralData.PhasorROI = [];
 SpectralData.Species = struct('Name',{'Data'},'Data',{ones(1,1,30,1)},'Phasor',[0 0]);
-SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1);
+SpectralData.Filter = struct('Name',{'Full'},'Data',{ones(1,1,30,1)},'Species',1,'Use',0);
+SpectralData.Meta = [];
+SpectralData.DB = struct([]);
 
 h.SpeciesPlots = [];
 h.SpeciesPhasor = [];
@@ -737,21 +809,28 @@ delete(Obj);
 %%% mode 2: load data into database
 %%% mode 3: not used yet; might be used for automatic loading from database
 %%% mode 4: load species data
-function Load_Data(~,~,mode)
+function Load_Data(~,~,mode,Input)
 global SpectralData UserValues
 h = guidata(findobj('Tag','SpectralImage'));
 
 switch mode
     case 1 %%% Normal data loading
-        %%%% This is a test version and will be adjusted for the final
-        %%%% version
         
         %% Get filenames
-        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
-        
+        if nargin<4
+            [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        else
+            FileName = SpectralData.DB(Input).File;
+            Path = SpectralData.DB(Input).Path;
+            Type = SpectralData.DB(Input).Type;
+        end
         if all(Path==0)
             return
         end
+        %%% Updates Progressbar
+        %h.Spectral_Progress_Axes.Color = [1 0 0];
+        h.Spectral_Progress_Text.String = 'Loading Data';
+        drawnow;
         
         %%% Transforms FileName into cell array
         if ~iscell(FileName)
@@ -761,12 +840,44 @@ switch mode
         LSUserValues(1);
         
         SpectralData.Data = [];
+        SpectralData.Meta = [];
         %% Loads Data
         switch Type
             case 1 %%% Zeiss CZI files
+                Frame=0;
                 for i=1:numel(FileName)
                     %%% Loads Data
-                    Data = bfopen(fullfile(Path,FileName{i}));
+                    Data = bfopen(fullfile(Path,FileName{i}),h.Spectral_Progress_Axes,h.Spectral_Progress_Text,i,numel(FileName));
+                    h.Spectral_Progress_Text.String = 'Updating MetaData';
+                    %%% Reads MetaData
+                    FileInfo  = czifinfo(fullfile(Path,FileName{i}));
+                    Info = FileInfo.metadataXML;
+                    
+                    %%%FrameTime
+                    Start = strfind(Info,'<FrameTime>');
+                    Stop = strfind(Info,'</FrameTime>');
+                    SpectralData.Meta.Frame = Info(Start+11:Stop-1);
+                    %%%LineTime => seems to be off, so I don't read it in
+                    %             Start = strfind(Info,'<LineTime>');
+                    %             Stop = strfind(Info,'</LineTime>');
+                    %             h.Mia_Image.Settings.Image_Line.String = Info(Start+10:Stop-1);
+                    %             h.Mia_ICS.Fit_Table.Data(15,:) = {Info(Start+10:Stop-1);};
+                    %%%PixelTime
+                    Start = strfind(Info,'<PixelTime>');
+                    Stop = strfind(Info,'</PixelTime>');
+                    PixelTime = str2double(Info(Start+11:Stop-1))*10^6;
+                    SpectralData.Meta.Pixel = num2str(PixelTime);
+
+                    %%% Value for line time seems very wrong
+                    SpectralData.Meta.Line = '3';
+                    
+                    %%% Pixel Size
+                    Start = strfind(Info,'<Scaling>');
+                    Stop = strfind(Info,'</Scaling>');
+                    Scaling = Info(Start+10:Stop-1);
+                    Start = strfind(Scaling,'<Value>');
+                    Stop = strfind(Scaling,'</Value>');                    
+                    SpectralData.Meta.Size = num2str(str2double(Scaling(Start(1)+7:Stop(1)-1))*10^9);
                     
                     %%% Finds positions of plane/channel/time seperators
                     Sep = strfind(Data{1,1}{1,2},';');
@@ -800,8 +911,9 @@ switch mode
                         %%% Current frame
                         F = floor((j-1)/N_C)+1;
                         %%% Adds data
-                        SpectralData.Data(:,:,C,F) = uint16(Data{1,1}{j,1});
+                        SpectralData.Data(:,:,C,F+Frame) = uint16(Data{1,1}{j,1});
                     end
+                    Frame = size(SpectralData.Data,4);
                 end
                 
             case 2 %%% Tiff based files created with simulations
@@ -822,6 +934,7 @@ switch mode
                 SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),36,[]);
         end
         
+        h.Spectral_Progress_Text.String = 'Updating MetaData';
         %% Calculates Metadata
         SpectralData.Path = Path;
         SpectralData.FileName = FileName{1};
@@ -863,6 +976,31 @@ switch mode
         Plot_Spectral([],[],0);
         
     case 2 %%% Loads files into database
+        %% Get filenames
+        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load spectral image data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        
+        %%% Stops if none is selected
+        if all(Path==0)
+            return
+        end
+        %%% Transforms FileName into cell array
+        if ~iscell(FileName)
+            FileName={FileName};
+        end
+        UserValues.File.Spectral_Standard = Path;
+        LSUserValues(1);
+        
+        for i=1:numel(FileName)
+           SpectralData.DB(end+1).File = FileName{i};
+           SpectralData.DB(end).Path = Path;
+           SpectralData.DB(end).Type = Type;
+           Suffix = strfind(FileName{i},'.');
+           SpectralData.DB(end).Name = FileName{i}(1:(Suffix-1)); %%% Name to be displayed and used for saving
+           SpectralData.DB(end).Linked = 0; %%%This will be eventually used to link files and treat them as one
+           
+           
+           h.Database.String{end+1} = SpectralData.DB(end).Name;
+        end
         
     case 4 %%% Loads species
         %%%% This is a test version and will be adjusted for the final
@@ -873,6 +1011,10 @@ switch mode
         if all(Path==0)
             return
         end
+        %%% Updates Progressbar
+        h.Spectral_Progress_Text.String = 'Loading Species';
+        drawnow;
+        
         UserValues.File.Spectral_Standard = Path;
         LSUserValues(1);
         
@@ -881,14 +1023,15 @@ switch mode
             FileName={FileName};
         end
         
+        SpectralData.Meta = [];
         %% Loads all frames
-        
         for i=1:numel(FileName)
             switch Type
                 case 1 %%% Zeiss CZI data
                     %%% Loads Data
-                    Data_Raw = bfopen(fullfile(Path,FileName{i}));
-                    
+                    Data_Raw = bfopen(fullfile(Path,FileName{i}),h.Spectral_Progress_Axes,h.Spectral_Progress_Text,i,numel(FileName));
+                    h.Spectral_Progress_Text.String = 'Updating MetaData';
+                    drawnow;
                     %%% Finds positions of plane/channel/time seperators
                     Sep = strfind(Data_Raw{1,1}{1,2},';');
                     
@@ -954,6 +1097,12 @@ switch mode
         
         Plot_Spectral([],[],2);
         
+end
+
+if ~isempty(SpectralData.Data)
+    Progress(1,h.Spectral_Progress_Axes,h.Spectral_Progress_Text,'Done');
+    h.Spectral_Progress_Text.String = SpectralData.FileName;
+    drawnow;
 end
 
 
@@ -1357,6 +1506,7 @@ if any(mode == 4) && ~isempty(SpectralData.Phasor)
     
     %%% Plots phasor histogram
     h.Phasor_Image.CData = SpectralData.Phasor;
+    h.Phasor_Image.CDataMapping = 'scaled'; 
     h.Phasor_Image.XData = linspace(-1, 1, 200);
     h.Phasor_Image.YData = linspace(-1, 1, 200);
     h.Phasor_Image.AlphaData = SpectralData.Phasor>0;
@@ -1421,7 +1571,7 @@ Plot_Spectral([],[],1);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%% FIlter and Species Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%% Filter and Species Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for the interaction with the filter list
 function Filter_Callback(obj, e)
@@ -1437,6 +1587,10 @@ switch e.EventName
                 event = 'delete';
             case 'r' %%% rename filter
                 event = 'rename';
+            case {'add','rightarrow'} %%% use filter
+                event = 'use';
+            case {'subtract','leftarrow'} %%% un-use filter
+                event = 'un-use';
         end
         
 end
@@ -1490,7 +1644,20 @@ switch event
             h.PlottedData.Value = h.PlottedData.Value - sum(h.PlottedData.Value > Sel);
         end
         Plot_Spectral([],[],[1,3]);
+    case 'use' %%% Filter will be used for calculations
+        Sel = obj.Value;
         
+        for i=Sel
+            SpectralData.Filter(i).Use = 1;
+            h.Filter_List.String{i} = ['<HTML><FONT color="red">' SpectralData.Filter(i).Name '</Font></html>'];
+        end
+    case 'un-use' %%% Filter will no longer be used for calculations  
+        Sel = obj.Value;
+        
+        for i=Sel
+            SpectralData.Filter(i).Use = 0;
+            h.Filter_List.String{i} = SpectralData.Filter(i).Name;
+        end
     case 'rename'
         Sel = obj.Value;
         %%% ignores the first entry
@@ -1505,7 +1672,11 @@ switch event
         Name = inputdlg('Pleas enter new filter name','Rename filter',1,{SpectralData.Filter(Sel).Name});
         if ~isempty(Name)
             SpectralData.Filter(Sel).Name = Name{1};
-            h.Filter_List.String{Sel} = Name{1};
+            if SpectralData.Filter(Sel).Use
+                h.Filter_List.String{Sel} = ['<HTML><FONT color="red">' Name{1} '</Font></html>'];
+            else
+                h.Filter_List.String{Sel} = Name{1};
+            end
             h.PlottedData.String{Sel} = Name{1};
         end
 end
@@ -1609,7 +1780,6 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function for creating new filters
 function Filter = Calc_Filter(~,~,mode,Sel,Spectrum)
-
 global SpectralData
 switch mode
     case 1 %%% Create a simple rectangular filter based on the imput
@@ -1626,7 +1796,7 @@ switch mode
         %%% Creates name for filter
         SpectralData.Filter(end).Name = ['Simple_' num2str(min(Bins)) 'to' num2str(max(Bins))];
         SpectralData.Filter(end).Species = 1;
-        
+        SpectralData.Filter(end).Use = 0;
         h.Filter_List.String{end+1} = SpectralData.Filter(end).Name;
         h.PlottedData.String{end+1} = SpectralData.Filter(end).Name;
         
@@ -1667,6 +1837,7 @@ switch mode
                 SpectralData.Filter(end+1).Data(1,1,:,1) = Filter(:,i);
                 SpectralData.Filter(end).Name = SpectralData.Species(Sel(i)).Name;
                 SpectralData.Filter(end).Species = [Sel(i) Sel(Sel~=Sel(i))];
+                SpectralData.Filter(end).Use = 0;
                 h.Filter_List.String{end+1} = SpectralData.Filter(end).Name;
                 h.PlottedData.String{end+1} = SpectralData.Filter(end).Name;
             end
@@ -1957,15 +2128,30 @@ end
 %%%%%%%%%%%%%%%% Filter Exporting Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that applies filters and saves the data
-function Save_Filtered (~,~,mode)
+function Save_Filtered (~,~,mode,Input)
 h = guidata(findobj('Tag','SpectralImage'));
-global SpectralData
+global SpectralData UserValues
 
-Sel = h.Filter_List.Value;
-Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
-if all(Path==0)
-    return;
+%%% Uses filters maked for use
+Sel = find([SpectralData.Filter.Use]);
+
+if nargin<4
+    Path = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
+    if all(Path==0)
+        return;
+    end
+else
+    %%% Uses Filtered sub-folder for Database
+    Path = fullfile(SpectralData.DB(Input).Path,'Filtered');
+    if ~exist(Path, 'dir')
+        mkdir(Path);
+    end
 end
+
+%%% Updates Progressbar
+h.Spectral_Progress_Axes.Color = [1 0 0];
+h.Spectral_Progress_Text.String = 'Saving Filtered Data';
+drawnow;
 
 for i=1:numel(Sel)
     %% Calculates the filtered data
@@ -2068,13 +2254,19 @@ for i=1:numel(Sel)
     Stack=uint16((Stack-Min)./(Max-Min)*2^16);
     
     %%% Adjusts filename
+    if nargin<4
+        File = SpectralData.FileName(1:end-4);
+    else
+        File = SpectralData.DB(Input).Name;
+    end
+    
     switch mode
-        case 1
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '.tif']);
+        case 1      
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '.tif']);
         case 2
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_SR.tif']);
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '_SR.tif']);
         case 3
-            File=fullfile(Path,[SpectralData.FileName(1:end-4) '_' SpectralData.Filter(Sel(i)).Name '_ROI.tif']);
+            File=fullfile(Path,[File '_' SpectralData.Filter(Sel(i)).Name '_ROI.tif']);
     end
     
     %%% Creates info data
@@ -2086,13 +2278,26 @@ for i=1:numel(Sel)
     Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
     Tagstruct.SamplesPerPixel = 1;
     Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
-    Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
-        'FrameTime [s]: 0.1 \n',...
-        'LineTime [ms]: 1 \n',...
-        'PixelTime [us]: 10 \n',...
-        'PixelSize [nm]: 50 \n',...
-        'RLICS_Scale: ' num2str(Max-Min) '\n',...
-        'RLICS_Offset: ' num2str(Min) '\n'];
+    
+    %%% Write image information into TIFF header
+    if isempty (SpectralData.Meta)
+        Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
+            'FrameTime [s]: 0.1 \n',...
+            'LineTime [ms]: 1 \n',...
+            'PixelTime [us]: 10 \n',...
+            'PixelSize [nm]: 50 \n',...
+            'RLICS_Scale: ' num2str(Max-Min) '\n',...
+            'RLICS_Offset: ' num2str(Min) '\n'];
+    else
+        Tagstruct.ImageDescription = ['Type: ' '10' '\n',...
+            'FrameTime [s]: ' SpectralData.Meta.Frame '\n',...
+            'LineTime [ms]: ' SpectralData.Meta.Line '\n',...
+            'PixelTime [us]: ' SpectralData.Meta.Pixel '\n',...
+            'PixelSize [nm]: ' SpectralData.Meta.Size '\n',...
+            'RLICS_Scale: ' num2str(Max-Min) '\n',...
+            'RLICS_Offset: ' num2str(Min) '\n'];        
+    end
+    
     TIFF_handle = Tiff(File, 'w');
     TIFF_handle.setTag(Tagstruct);
     
@@ -2115,10 +2320,101 @@ for i=1:numel(Sel)
     
 end
 
+h.Spectral_Progress_Axes.Color = UserValues.Look.Control;
+h.Spectral_Progress_Text.String = SpectralData.FileName;
+drawnow;
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Interactions with the database %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Database_Callback(obj,e)
+h = guidata(findobj('Tag','SpectralImage'));
+global SpectralData
 
+event = 'nothing';
+%%% Determine action
+switch e.EventName
+    case 'KeyPress' %%% key was pressed
+        switch e.Key
+            case {'delete' 'backspace'} %%% delete species
+                event = 'delete';
+            case 'r'
+                event = 'rename'; %%% rename species
+            case 'return'
+                event = 'save'; %%% saves filtered data
+        end
+end
 
+%%% Execute action
+switch event
+    case 'delete' %%% Deletes entries
+        Sel = obj.Value;
+        SpectralData.DB(Sel)=[];
+        h.Database.String(Sel)=[];       
+    case 'rename' %%% Renames first selected entries
+        %%% Only uses the first enty
+        Sel = obj.Value(1); 
+        
+        %%% Iputdialog to type ne name
+        Name = inputdlg('Pleas enter new file name','Rename file',1,{SpectralData.DB(Sel).Name});
+        if ~isempty(Name)
+            SpectralData.DB(Sel).Name = Name{1};
+            h.Database.String{Sel} = Name{1};
+        end
+    case 'save' %%% Loads data and saves filtered data
+        Sel = obj.Value;
+        
+        for i=Sel
+           %%% Marks files that will be saved
+           h.Database.String{i} = ['<HTML><FONT color="red">' SpectralData.DB(i).Name '</Font></html>'];
+           SpectralData.DB(i).Name
+        end
+        
+        for i = Sel
+           %%% Indicates current file
+           h.Database.Value = i;
+           
+           %%% Loads data
+           Load_Data([],[],1,i)
+           %%% Saves filtered data
+           Save_Filtered ([],[],1,i)
+           
+           %%% Marks previous files as saved
+           h.Database.String{i} = ['<HTML><FONT color="green">' SpectralData.DB(i).Name '</Font></html>'];
+        end
+        
+end
 
+function Save_Phasor(~,~)
+h = guidata(findobj('Tag','SpectralImage'));
+global SpectralData UserValues
+
+PathName = uigetdir(SpectralData.Path, 'Select folder to save filtered TIFFs');
+if all(PathName==0)
+    return;
+end
+
+FileName = [SpectralData.FileName(1:end-4) '.phs'];
+
+%%% Creates data to save and saves referenced file
+Freq = size(SpectralData.Data,3);
+FileNames = SpectralData.FileName;
+Path = SpectralData.Path;
+Imagetime = 1;
+Frames = size(SpectralData.Data,4);
+Lines = size(SpectralData.Data,1);
+Pixels = size(SpectralData.Data,2);
+Fi = atan(SpectralData.S./SpectralData.G); Fi(isnan(Fi))=0;
+M = sqrt(SpectralData.S.^2+SpectralData.G.^2); M(isnan(M))=0;
+TauP = zeros(size(SpectralData.S));
+TauM = zeros(size(SpectralData.S));
+Type = 10;
+Mean_LT = squeeze(mean(sum(SpectralData.Data,4),3));
+
+g=SpectralData.G;
+s=SpectralData.S;
+Intensity =squeeze(sum(sum(SpectralData.Data,3),4));
+save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
 
 
