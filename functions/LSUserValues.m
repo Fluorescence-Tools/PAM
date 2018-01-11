@@ -1305,6 +1305,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.YScaleLog was incomplete');
     end
     P.TauFit.YScaleLog = S.TauFit.YScaleLog;
+    %%% Checks, if TauFit.XScaleLog exists
+    if ~isfield(S.TauFit,'XScaleLog')
+        S.TauFit.XScaleLog='off';
+        disp('UserValues.TauFit.XScaleLog was incomplete');
+    end
+    P.TauFit.XScaleLog = S.TauFit.XScaleLog;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
@@ -1953,6 +1959,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Display_Total_Multiplot was incomplete');
     end
     P.BurstBrowser.Settings.Display_Total_Multiplot = S.BurstBrowser.Settings.Display_Total_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Normalize_Method subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Normalize_Method')
+        S.BurstBrowser.Settings.Normalize_Method='area';
+        disp('UserValues.BurstBrowser.Settings.Normalize_Method was incomplete');
+    end
+    P.BurstBrowser.Settings.Normalize_Method = S.BurstBrowser.Settings.Normalize_Method;
     %%% Check, if BurstBrowser.Settings.UseFilePathForExport subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'UseFilePathForExport')
         S.BurstBrowser.Settings.UseFilePathForExport=true;

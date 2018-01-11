@@ -772,7 +772,17 @@ end
         'String','10',...
         'Callback',@Sim_Settings,...
         'Position',[0.73 0.04 0.08 0.08]);
-
+    h.Sim_Concentration = uicontrol(...
+        'Parent',h.Sim_Species_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','= 0 nM',...
+        'Callback',@Sim_Settings,...
+        'HorizontalAlignment','left',...
+        'Position',[0.83 0.04 0.17 0.08]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 
 %% Advanced parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1592,7 +1602,7 @@ switch Obj
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
-        
+        Update_Concentration(Sel);
     case h.Sim_Freq %%% Simulation Frequency changed
         SimData.General(File).Freq =  str2double(h.Sim_Freq.String);        
         for i=1:numel(h.Sim_List.String)
@@ -1767,6 +1777,7 @@ switch Obj
         SimData.Species(Sel).D=str2double(h.Sim_D.String);
     case h.Sim_N %%% Changed number of particles
         SimData.Species(Sel).N=str2double(h.Sim_N.String);
+        Update_Concentration(Sel);
     case h.Sim_wr %%% Changed lateral focus size
         for i=1:4
             SimData.Species(Sel).wr(i)=str2double(h.Sim_wr{i}.String);
@@ -1895,6 +1906,15 @@ switch Obj
 end
 
 SimData.General(File).Species = SimData.Species;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Calculate the Concentration of selected Species %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_Concentration(Sel)
+global SimData
+h = guidata(findobj('Tag','Sim'));
+c = SimData.Species(Sel).N./prod(SimData.General(Sel).BS)./1E-24./6.022E23./1E-9;
+h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Callbacks of File List %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2102,6 +2122,7 @@ switch mode
 
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
+        Update_Concentration(Sel);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -3127,6 +3148,7 @@ for i = 1:numel(SimData.Species)
             FRET = diag(ones(4,1));
         case 2
             FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
+            FRET(SimData.Species(i).R == 0) = 0; % fix nan values
             FRET(1:5:16) = 1;
         case 3
             FRET = diag(ones(4,1));

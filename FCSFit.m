@@ -906,7 +906,7 @@ switch Type
             FCSMeta.Plots{end+1,1} = errorbar(...
                 FCSMeta.Data{end,1},...
                 FCSMeta.Data{end,2},...
-                error,...
+                FCSMeta.Data{end,3},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Plots{end,2} = line(...
                 'Parent',h.FCS_Axes,...
@@ -1935,25 +1935,6 @@ switch mode
             end
         end
             
-        
-        %% Sets axes parameters
-        if h.Export_Residuals.Value
-            linkaxes([H.FCS,H.Residuals],'x');
-        end
-        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
-        H.FCS.YLim=h.FCS_Axes.YLim;
-        switch FCSMeta.DataType
-            case {'FCS','FCS averaged'}
-                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
-                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
-            case 'FRET'
-                H.FCS.XLabel.String = 'FRET efficiency';
-                H.FCS.YLabel.String = 'PDF'; 
-        end
-        if h.Export_Residuals.Value
-            H.Residuals.YLim=h.Residuals_Axes.YLim;
-            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
-        end
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
         if h.Fit_Errorbars.Value
@@ -1984,6 +1965,24 @@ switch mode
         end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
+        end
+        %% Sets axes parameters
+        if h.Export_Residuals.Value
+            linkaxes([H.FCS,H.Residuals],'x');
+        end
+        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
+        H.FCS.YLim=h.FCS_Axes.YLim;
+        switch FCSMeta.DataType
+            case {'FCS','FCS averaged'}
+                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
+                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+            case 'FRET'
+                H.FCS.XLabel.String = 'FRET efficiency';
+                H.FCS.YLabel.String = 'PDF'; 
+        end
+        if h.Export_Residuals.Value
+            H.Residuals.YLim=h.Residuals_Axes.YLim;
+            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
         end
         %% Toggles box and grid
         if h.Export_Grid.Value
@@ -2446,7 +2445,6 @@ switch obj
         UserValues.FCSFit.PlotStyleAll = data.Settings.PlotStyleAll;
         UserValues.File.FCS_Standard = FCSMeta.Model.Name;
         LSUserValues(1);
-        clear data
         %%% update GUI according to loaded settings
         h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
         h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
@@ -2464,6 +2462,13 @@ switch obj
         Update_Style([],[],0);
         Update_Style([],[],1);
         Update_Table([],[],0);
+        %%% fill in active, fixed and global state
+        if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
+            h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
+            h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
+            Update_Plots;
+        end
         %%% Updates model text
         [~,name,~] = fileparts(FCSMeta.Model.Name);
         name_text = {'Loaded Fit Model:';name;};
@@ -2478,6 +2483,9 @@ switch obj
         data.FCSMeta.Plots = cell(0);
         data.FCSData = FCSData;
         data.Settings = UserValues.FCSFit;
+        data.FixState = h.Fit_Table.Data(1:end-3,6:3:end);
+        data.GlobalState = h.Fit_Table.Data(1:end-3,7:3:end);
+        data.ActiveState = h.Fit_Table.Data(1:end-3,2);
         save(fullfile(PathName,FileName),'-struct','data');
 end
 
@@ -2492,22 +2500,22 @@ switch FCSMeta.DataType
         for i=1:numel(FCSData.FileName)
             %%% Creates new plots
             FCSMeta.Plots{end+1,1} = errorbar(...
-                FCSMeta.Data{end,1},...
-                FCSMeta.Data{end,2},...
-                FCSMeta.Data{end,3},...
+                FCSMeta.Data{i,1},...
+                FCSMeta.Data{i,2},...
+                FCSMeta.Data{i,3},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Plots{end,2} = line(...
                 'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{end,1},...
-                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
             FCSMeta.Plots{end,3} = line(...
                 'Parent',h.Residuals_Axes,...
-                'XData',FCSMeta.Data{end,1},...
-                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
             FCSMeta.Plots{end,4} = line(...
                 'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{end,1},...
-                'YData',FCSMeta.Data{end,2});
+                'XData',FCSMeta.Data{i,1},...
+                'YData',FCSMeta.Data{i,2});
         end
         %%% change the gui
         SwitchGUI(h,'FCS');
@@ -2515,21 +2523,21 @@ switch FCSMeta.DataType
         for i=1:numel(FCSData.FileName)
             %%% Creates new plots
             FCSMeta.Plots{end+1,1} = errorbar(...
-                FCSMeta.Data{end,1},...
-                FCSMeta.Data{end,2},...
-                error,...
+                FCSMeta.Data{i,1},...
+                FCSMeta.Data{i,2},...
+                FCSMeta.Data{i,3},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Plots{end,2} = line(...
                 'Parent',h.FCS_Axes,...
-                'XData',FCSMeta.Data{end,1},...
-                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
             FCSMeta.Plots{end,3} = line(...
                 'Parent',h.Residuals_Axes,...
-                'XData',FCSMeta.Data{end,1},...
-                'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
             FCSMeta.Plots{end,4} = stairs(...
-                FCSMeta.Data{end,1}-bin/2,...
-                FCSMeta.Data{end,2},...
+                FCSMeta.Data{i,1}-UserValues.FCSFit.FRETbin/2,...
+                FCSMeta.Data{i,2},...
                 'Parent',h.FCS_Axes);            
         end
         %%% change the gui

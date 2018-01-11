@@ -139,6 +139,9 @@ FileInfo.MeasurementTime = Totaltime*FileInfo.ClockPeriod;
 for i=1:(numel(FileInfo.ImageTimes)-1)
     FileInfo.LineTimes(i,:) = linspace(FileInfo.ImageTimes(i),FileInfo.ImageTimes(i+1),FileInfo.Lines+1);
 end
+FileInfo.PixTime = mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2;
+FileInfo.Frames = size(FileInfo.ImageTimes,1);
+
 
 
 

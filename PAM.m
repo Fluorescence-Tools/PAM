@@ -3365,7 +3365,7 @@ if nargin < 5
         mode = [mode, 2];
     end
     if UserValues.Settings.Pam.Use_Image == 1
-        mode = [mode, 3];
+            mode = [mode, 3];
     end
 end
 
@@ -3374,6 +3374,12 @@ end
 %%% 1 is time trace
 %%% 2 is PCH
 %%% 3 is image
+if any(mode==3)
+    % if it's not imaging data, don't calculate the image
+    if FileInfo.Lines < 2 || FileInfo.Pixels < 2
+        mode(mode == 3) = [];
+    end
+end
 h.Progress.Text.String = 'Updating meta data';
 h.Progress.Axes.Color=[1 0 0];
 drawnow;
@@ -3453,16 +3459,16 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
-                        PamMeta.Image{i} = flipud(permute(reshape(double(PamMeta.Image{i}),FileInfo.Pixels,FileInfo.Lines),[2 1]));
-                        if isfield(FileInfo, 'LineStops')
-                            pixtime = mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines;
-                            frames = size(FileInfo.LineStops,1);
+                        [im, Bin] = CalculateImage(PIE_MT,2);
+                        im = flipud(permute(reshape(double(im),FileInfo.Pixels,FileInfo.Lines),[2 1]));
+                        if isfield(FileInfo,'PixTime') %%% convert to kHz countrate if PixTime is available
+                            PamMeta.Image{i} = im/FileInfo.PixTime/FileInfo.Frames/1000;
+                            h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
                         else
-                            pixtime = mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2;
-                            frames = size(FileInfo.ImageTimes,1);
+                            PamMeta.Image{i} = im;
+                            h.Image.Colorbar.YLabel.String = 'Counts';
                         end
-                        PamMeta.Image{i} = PamMeta.Image{i}/pixtime/frames/1000;
+                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
@@ -3477,7 +3483,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             clear PIE_MI Bin;
                             
                             %%% Reshapes pixel vector to image and normalizes to nomber of photons
-                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
+                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./im;
                             %%% Sets NaNs to 0 for empty pixels
                             PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
                             %%% Make the display of Lifetime a bit better
@@ -3486,9 +3492,9 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             else
                                 rescale = 1;
                             end
-                            [Max, index] = max(PamMeta.MI_Hist{UserValues.PIE.Detector(i)});
-                            offset = h.Plots.MI_All{UserValues.PIE.Detector(i)}.XData(index); %offset of the IRF with respect to TCSPC channel zero
-                            tmp = PamMeta.Lifetime{i}-offset;
+                            tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
+                            [Max, index] = max(tmp(From:To));
+                            tmp = PamMeta.Lifetime{i}+index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
@@ -3573,13 +3579,14 @@ function Calculate_Settings(obj,~)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 Display=0;
-%%% If use_image was clicked
+%%% If Calculate image was clicked
 if obj == h.MT.Use_Image
     UserValues.Settings.Pam.Use_Image=h.MT.Use_Image.Value;
     %%% If also deactivate lifetime calculation
     if h.MT.Use_Image.Value==0
         UserValues.Settings.Pam.Use_Lifetime=0;
         h.MT.Use_Lifetime.Value=0;
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent = [];
@@ -3590,7 +3597,9 @@ if obj == h.MT.Use_Image
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    Update_Display([],[],3);
+    %if UserValues.Settings.Pam.Use_Image
+        Update_Display([],[],3);
+    %end
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
@@ -3598,6 +3607,8 @@ elseif obj == h.MT.Use_Lifetime
     if h.MT.Use_Lifetime.Value
         h.MT.Use_Image.Value=1;
         UserValues.Settings.Pam.Use_Image=1;
+    else
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent =  [];
@@ -3833,7 +3844,12 @@ h = guidata(findobj('Tag','Pam'));
 if nargin<3 || any(mode==0)
     mode=[1:5, 6, 8, 9, 10];
 end
-
+if any(mode==3)
+    % if it's not imaging data, don't calculate the image
+    if isempty(FileInfo.Lines) || FileInfo.Lines < 2 || isempty(FileInfo.Pixels) || FileInfo.Pixels < 2 || ~h.MT.Use_Image.Value
+        mode(mode == 3) = [];
+    end
+end
 
 %% PIE List update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Uses HTML to set color of each channel to selected color
