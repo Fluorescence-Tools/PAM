@@ -79,7 +79,7 @@ Do this to get the latest changes from the public version of PAM
 
 ### Pulling from the remote private PAM repository
 Do this when you start Matlab and before making any changes locally !!! 
-* **!git pull origin develop **
+* **!git pull origin develop**
 
 ### Pushing to the remote private PAM repository
 * **!git add file1 file2 file3*** (add specific files)
