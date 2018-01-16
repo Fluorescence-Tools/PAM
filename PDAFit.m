@@ -3666,6 +3666,8 @@ else
     %res_ax.GridAlpha = 0.1;
     gauss_ax.FontSize = 15;
     main_ax.Children(end).Units = 'pixel';
+    main_ax.FontSize = gauss_ax.FontSize;
+    res_ax.FontSize = gauss_ax.FontSize;
     
     set(fig,'PaperPositionMode','auto');
     print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
@@ -3712,6 +3714,8 @@ else
         %gauss_ax.GridAlpha = 0.1;
         %res_ax.GridAlpha = 0.1;
         gauss_ax.FontSize = 15;
+        main_ax.FontSize = gauss_ax.FontSize;
+        res_ax.FontSize = gauss_ax.FontSize;
         main_ax.Children(end).Units = 'pixel';
         set(fig,'PaperPositionMode','auto');
         print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.tif']),1),'-painters')
