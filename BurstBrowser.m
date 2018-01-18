@@ -16749,10 +16749,10 @@ end
 hl = legend(p,str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 
 ax(2) = subplot(1,2,2);
-b = bar(coeff(:,1:2));legend('PC1','PC2');
+b = bar(coeff(:,1:2));hl2 = legend('PC1','PC2');set(hl2,'Color','none','Box','off');
 b(1).FaceColor = [0.7,0.7,0.7];
 b(2).FaceColor = [0.3,0.3,0.3];
-set(gca,'XTickLabel',{'E','S','tauD','tauA','rD','rA'});
+set(gca,'XTickLabel',{'E','S','\tau_{D(A)}','\tau_A','r_D','r_A'});
 ylabel('weight');
 xlim([0.5,6.5]);
 
