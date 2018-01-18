@@ -1307,8 +1307,20 @@ h.Settings_Panel = uibuttongroup(...
     'ForegroundColor',Look.Fore,...
     'HighlightColor',Look.Control,...
     'ShadowColor',Look.Shadow,...
-    'Position',[0 0 1 1],...
+    'Position',[0 0.5 1 0.5],...
     'Tag','Settings_Panel');
+
+h.IRF_Cleanup_Panel = uibuttongroup(...
+    'Parent',h.Settings_Tab,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'HighlightColor',Look.Control,...
+    'ShadowColor',Look.Shadow,...
+    'Position',[0 0 1 0.5],...
+    'FontSize',12,...
+    'Tag','IRF_Cleanup_Panel',...
+    'Title','IRF cleanup');
 
 h.ConvolutionType_Text = uicontrol(...
     'Style','text',...
@@ -1385,6 +1397,31 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'FontSize',10,...
     'Tag','UseWeightedResiduals_Menu',...
     'Callback',@UpdateOptions);
+
+h.Cleanup_IRF_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.1 0.95 0.05],...
+    'String','Clean up IRF by fitting to Gamma distribution',...
+    'Value',UserValues.TauFit.cleanup_IRF,...
+    'FontSize',10,...
+    'Tag','Cleanup_IRF_Menu',...
+    'Callback',@UpdateOptions);
+
+h.Cleanup_IRF_axes = axes('Parent',h.IRF_Cleanup_Panel,...
+    'Position',[0.125,0.2,0.83,0.77],'Units','normalized','FontSize',10,'XColor',Look.Fore,'YColor',Look.Fore);
+h.Plots.IRF_cleanup.IRF_data = plot(h.Cleanup_IRF_axes,1:1:100,normpdf(1:100,20,2),'LineStyle','none','Marker','.','MarkerSize',10);
+hold on;
+h.Plots.IRF_cleanup.IRF_fit = plot(h.Cleanup_IRF_axes,1:0.1:100,normpdf(1:0.1:100,20,2),'LineStyle','-','Marker','none','MarkerSize',10,'LineWidth',2);
+h.Cleanup_IRF_axes.XLabel.String = 'Time [ns]';
+h.Cleanup_IRF_axes.YLabel.String = 'PDF';
+h.Cleanup_IRF_axes.XColor = Look.Fore;
+h.Cleanup_IRF_axes.YColor = Look.Fore;
+h.Cleanup_IRF_axes.XLabel.Color = Look.Fore;
+h.Cleanup_IRF_axes.YLabel.Color = Look.Fore;
 %% Special case for Burstwise and noMFD
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     switch TauFitData.Who
@@ -2442,10 +2479,11 @@ IRFPattern = IRFPattern'./sum(IRFPattern);
 %%% additional processing of the IRF to remove constant background
 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
 
-% fix = 1;
-% if fix
-%     IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
-% end
+cleanup_IRF = 1;
+if cleanup_IRF
+    IRFPattern_old = IRFPattern;
+    IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
+end
 
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
@@ -2456,7 +2494,11 @@ IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end));
 ShiftParams(1) = TauFitData.StartPar{chan};
 ShiftParams(2) = TauFitData.IRFShift{chan};
 ShiftParams(3) = TauFitData.Length{chan};
-ShiftParams(4) = TauFitData.IRFLength{chan};
+if ~cleanup_IRF
+    ShiftParams(4) = TauFitData.IRFLength{chan};
+else
+    ShiftParams(4) = TauFitData.Length{chan};
+end
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
@@ -5249,6 +5291,13 @@ if h.ShowAniso_radiobutton.Value == 1
 elseif h.ShowDecaySum_radiobutton.Value == 1
     Update_Plots(h.ShowDecaySum_radiobutton,[]);
 end
+switch obj
+    case h.Cleanup_IRF_Menu
+        UserValues.TauFit.cleanup_IRF = obj.Value;
+    case h.UseWeightedResiduals_Menu
+        UserValues.TauFit.use_weighted_residuals = obj.Value;
+end
+LSUserValues(1);
 
 function ChangeLineStyle(h)
 global UserValues
@@ -5714,15 +5763,19 @@ end
 %%% Useful if the IRF contains fluorescent contamination
 function IRF_fixed = fix_IRF_gamma_dist(IRF,chan)
 global TauFitData
-offset = find(IRF > max(IRF)/1000,1,'first');
-IRF_selected = IRF(offset:TauFitData.IRFLength{chan});
+IRF_selected = IRF(1:TauFitData.IRFLength{chan});
 x_irf = (1:numel(IRF_selected))';
 
-x0 = [100,100];
-f = fit(x_irf,IRF_selected,@(a,b,x) gampdf(x,a,b).*(sum(IRF_selected)./sum(gampdf(x,a,b))),'StartPoint',x0,'Lower',[0,0]);
+% the fit model is given by a gamma distribution with an additional
+% amplitude (amp) and an associated time-shift (shift)
+x0 = [10,10,max(IRF_selected),0];
+f = fit(x_irf,IRF_selected,@(a,b,amp,shift,x) amp*gampdf(x+shift,a,b),'StartPoint',x0,'Lower',[0,0,0,-Inf],'Upper',[Inf,Inf,Inf,Inf]);
+IRF_fixed = f(1:numel(IRF));
 
-IRF_fixed = circshift(f(1:numel(IRF)),[offset,0]);
-IRF_unfixed = zeros(size(IRF));
-IRF_unfixed(offset:TauFitData.IRFLength{chan}) = IRF_selected;
-
-figure;plot(IRF_unfixed);hold on; plot(IRF_fixed);
+%%% perform display update in settings tab as well, so the user can see
+%%% what has been fitted
+h = guidata(gcbo);
+h.Plots.IRF_cleanup.IRF_data.XData = (1:TauFitData.IRFLength{chan}).*TauFitData.TACChannelWidth;
+h.Plots.IRF_cleanup.IRF_data.YData = IRF_selected;
+h.Plots.IRF_cleanup.IRF_fit.XData = (1:numel(IRF)).*TauFitData.TACChannelWidth;
+h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
