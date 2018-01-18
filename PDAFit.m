@@ -1518,7 +1518,7 @@ switch mode
                 'FaceColor',[0.4 0.4 0.4],...
                 'EdgeColor','none',...
                 'BarWidth',1);
-            
+            N_bins = sum([hProx hProx(end)]);
             % make 'stairs' appear similar to 'bar'
             xProx = xProx-mean(diff(xProx))/2;
             
@@ -1547,6 +1547,7 @@ switch mode
             
             % summed fit
             PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
+            PDAMeta.Plots.Fit_Single{1,1}.YData = PDAMeta.Plots.Fit_Single{1,1}.YData*N_bins;
             PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
             PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
             
@@ -1557,6 +1558,7 @@ switch mode
                 % 7 = D only
                 % 8 = all dynamic bursts
                 PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
+                PDAMeta.Plots.Fit_Single{1,j}.YData = PDAMeta.Plots.Fit_Single{1,j}.YData*N_bins;
                 PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];
                 PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
             end
