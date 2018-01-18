@@ -1697,7 +1697,7 @@ switch mode
                 end
                 set(PDAMeta.Plots.Fit_All{i,8},...
                     'Visible', 'on',...
-                    'YData', ydatafitind);
+                    'YData', ydatafitind./sum(ydatafit));
             else
                 set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
             end
