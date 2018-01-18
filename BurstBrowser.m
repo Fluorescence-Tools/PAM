@@ -14983,6 +14983,7 @@ if directly_save
         end
         if ~UserValues.BurstBrowser.Settings.UseFilePathForExport
             UserValues.BurstBrowser.PrintPath = PathName;
+            h = guidata(findobj('Tag','BurstBrowser'));
             h.Current_PrintPath_Text.Label = PathName;
         end
         LSUserValues(1);
