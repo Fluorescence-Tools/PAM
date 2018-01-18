@@ -2441,6 +2441,12 @@ IRFPattern = IRFPattern'./sum(IRFPattern);
 
 %%% additional processing of the IRF to remove constant background
 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+
+% fix = 1;
+% if fix
+%     IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
+% end
+
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
 %%% anders, please update the above statements to what they really is
@@ -5701,3 +5707,22 @@ switch obj
         end
         Mat2clip(res);
 end
+
+
+%%% function to fit the selected range of the IRF to a gamma distribution
+%%% and extrapolate the IRFpattern from this.
+%%% Useful if the IRF contains fluorescent contamination
+function IRF_fixed = fix_IRF_gamma_dist(IRF,chan)
+global TauFitData
+offset = find(IRF > max(IRF)/1000,1,'first');
+IRF_selected = IRF(offset:TauFitData.IRFLength{chan});
+x_irf = (1:numel(IRF_selected))';
+
+x0 = [100,100];
+f = fit(x_irf,IRF_selected,@(a,b,x) gampdf(x,a,b).*(sum(IRF_selected)./sum(gampdf(x,a,b))),'StartPoint',x0,'Lower',[0,0]);
+
+IRF_fixed = circshift(f(1:numel(IRF)),[offset,0]);
+IRF_unfixed = zeros(size(IRF));
+IRF_unfixed(offset:TauFitData.IRFLength{chan}) = IRF_selected;
+
+figure;plot(IRF_unfixed);hold on; plot(IRF_fixed);
