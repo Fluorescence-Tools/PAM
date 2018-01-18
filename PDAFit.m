@@ -3849,7 +3849,8 @@ else
         main_ax.Layer = 'top';
         main_ax.XGrid = 'off';
         main_ax.YGrid = 'off';
-        set(main_ax.Children(1:end-2),'LineStyle','-','LineWidth',3);
+        set(main_ax.Children(1:end-2),'LineStyle','-');
+        set(main_ax.Children,'LineWidth',2);
         main_ax.LineWidth = 2;
         main_ax.FontSize = 20;
         res_ax.FontSize =20;
@@ -3858,7 +3859,7 @@ else
         main_ax.Children(end-1).FaceColor = [150,150,150]./255;
         res_ax.XGrid = 'off';
         res_ax.YGrid = 'off';
-        res_ax.Children(1).LineWidth = 3;
+        res_ax.Children(1).LineWidth = 2;
         main_ax.YLabel.Position(1) = -0.105;
         res_ax.YLabel.Position(1) = -0.09;
         colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
