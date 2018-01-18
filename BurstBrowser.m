@@ -4917,6 +4917,7 @@ switch obj
                 h.Current_PrintPath_Menu.Enable = 'on';
         end
 end
+h.Current_PrintPath_Text.Label = UserValues.BurstBrowser.PrintPath;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
