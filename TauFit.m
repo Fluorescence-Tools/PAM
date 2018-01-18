@@ -1057,7 +1057,7 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-            'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
+            'Label','Fit Anisotropy (2 exp lifetime with independent anisotropy)',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -1540,9 +1540,10 @@ switch obj.Tag
             UserValues.TauFit.YScaleLog = 'off';
         end
         if strcmp(h.Microtime_Plot.YScale,'log')
-            ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
-                h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
-                h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+            %ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+            %    h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+            %    h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+            ydat = [h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
             ydat = ydat(ydat > 0);
             h.Ignore_Plot.YData = [...
                 min(ydat),...
@@ -2479,9 +2480,8 @@ IRFPattern = IRFPattern'./sum(IRFPattern);
 %%% additional processing of the IRF to remove constant background
 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
 
-cleanup_IRF = 1;
+cleanup_IRF = UserValues.TauFit.cleanup_IRF;
 if cleanup_IRF
-    IRFPattern_old = IRFPattern;
     IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
 end
 
@@ -3911,6 +3911,12 @@ switch obj
         end
 
         h.Result_Plot.XLim(1) = 0;
+        if strcmp(h.Result_Plot.YScale,'log')
+            ydat = h.Plots.DecayResult.YData;
+            ydat = ydat(ydat > 0);
+            h.Result_Plot.YLim(1) = min(ydat);
+        end
+        
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
         if obj == h.Fit_Aniso_2exp
@@ -4029,7 +4035,7 @@ switch obj
         h.Residuals_Plot.YLim = [min(res) max(res)];
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Anisotropy';
-        
+ 
         %%% hide aniso plots
         h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
         h.Result_Plot_Aniso.Parent = h.HidePanel;
@@ -4114,7 +4120,7 @@ switch obj
         %%% convert lifetimes
         param_ns = param;
         param_ns(1+(1:number_of_exponentials)) = TACtoTime*param_ns(1+(1:number_of_exponentials));
-        ConfInt(1+(1:number_of_exponentials),:) = TACtoTime*ConfInt(1+(1:number_of_exponentials),:)
+        ConfInt(1+(1:number_of_exponentials),:) = TACtoTime*ConfInt(1+(1:number_of_exponentials),:);
         %%% print confidence intervals to command line and clipboard
         tab = table(param_ns',ConfInt(:,1),ConfInt(:,2),'VariableNames',{'Value','LB','UB'},...
             'RowName',parameter_names);
