@@ -4667,7 +4667,13 @@ switch TauFitData.BAMethod
                 IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                % clean up by fitting to gamma distribution
+                if UserValues.TauFit.cleanup_IRF
+                    IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.Length{chan}); % use full length then
+                else
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                end
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
@@ -4926,8 +4932,14 @@ switch TauFitData.BAMethod
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
-                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;               
+                 % clean up by fitting to gamma distribution
+                if UserValues.TauFit.cleanup_IRF
+                    IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.Length{chan}); % use full length then
+                else
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                end
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
@@ -5785,3 +5797,4 @@ h.Plots.IRF_cleanup.IRF_data.XData = (1:TauFitData.IRFLength{chan}).*TauFitData.
 h.Plots.IRF_cleanup.IRF_data.YData = IRF_selected;
 h.Plots.IRF_cleanup.IRF_fit.XData = (1:numel(IRF)).*TauFitData.TACChannelWidth;
 h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
+h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
