@@ -2875,7 +2875,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
             mcmc_mean(~fixed) = PDAMeta.MCMC_mean{i};
             ConfInt_MCMC{count} = [mcmc_mean conf_int_mcmc];
         end
-        filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:60));
+        filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
         filenames{end+1} = ['CI_' num2str(i)];
     end
     % remove unused parameters
