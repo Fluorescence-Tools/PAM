@@ -5120,7 +5120,7 @@ switch TauFitData.BAMethod
             BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
         end
 end
-save(TauFitData.FileName,'BurstData');
+save(TauFitData.FileName,'BurstData','-append');
 %%% update BurstData in PamMeta
 PamMeta.BurstData = BurstData;
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
