@@ -5606,7 +5606,11 @@ if numel(clicked) > 1
     end
     clicked = clicked(valid);
     %%% update the selection to reflect the filtering
-    hTree.setSelectedNodes(clicked);
+    if numel(clicked) > 1
+        hTree.setSelectedNodes(clicked);
+    else
+        hTree.setSelectedNode(clicked);
+    end
 end
 
 clicked = clicked(1);
