@@ -7558,6 +7558,7 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
+
 if UserValues.BurstBrowser.Display.Restrict_EandS_Range
     %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
     %%% efficiency parameter if the cut limits fall within that range
@@ -15881,6 +15882,13 @@ end
 if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
+end
+%%% fix limits for inf boundary
+if ~isfinite(limx(2))
+    limx(2) = max(x(isfinite(x)));
+end
+if ~isfinite(limy(2))
+    limy(2) = max(y(isfinite(y)));
 end
 
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
