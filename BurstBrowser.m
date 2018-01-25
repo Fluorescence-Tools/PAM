@@ -7509,7 +7509,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
             end
-
+            %%% fix infinite value
+            if ~isfinite(xlimits{i}(2))
+                xlimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+            end   
             if any(strcmp(NameArray{y{i}},CutParameters))
                 if CutState{strcmp(NameArray{y{i}},CutParameters),4} == 1 %%% Check if active
                     %%% Set x-axis limits according to cut boundaries of selected parameter
@@ -7523,6 +7526,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
             end
+            %%% fix infinite value
+            if ~isfinite(ylimits{i}(2))
+                ylimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+            end  
             if isempty(xlimits{i})
                 %selection is empty
                 xlimits{i} = [0,1];
