@@ -1518,7 +1518,7 @@ if exist('ph','var')
 end
 
 function ChangeScale(obj,~)
-global UserValues
+global UserValues TauFitData
 h = guidata(obj);
 switch obj.Tag
     case {'Plot_YLogscale_MIPlot','Plot_YLogscale_ResultPlot'}
@@ -1529,6 +1529,9 @@ switch obj.Tag
             %%% Change Scale to Log
             h.Microtime_Plot.YScale = 'log';
             h.Result_Plot.YScale = 'log';
+            if h.Cleanup_IRF_Menu.Value
+                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData);
+            end
             UserValues.TauFit.YScaleLog = 'on';
         elseif strcmp(obj.Checked,'on')
             %%% Set Unchecked
