@@ -1285,7 +1285,14 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.use_weighted_residuals was incomplete');
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
-
+    
+    %%% Checks, if TauFit.cleanup_IRF exists
+    if ~isfield(S.TauFit,'cleanup_IRF')
+        S.TauFit.cleanup_IRF=0;
+        disp('UserValues.TauFit.cleanup_IRF was incomplete');
+    end
+    P.TauFit.cleanup_IRF = S.TauFit.cleanup_IRF;
+    
     %%% Checks, if TauFit.IncludeChannel exists
     if ~isfield(S.TauFit,'IncludeChannel')
         S.TauFit.IncludeChannel=[1,1,1];

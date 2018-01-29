@@ -4917,6 +4917,7 @@ switch obj
                 h.Current_PrintPath_Menu.Enable = 'on';
         end
 end
+h.Current_PrintPath_Text.Label = UserValues.BurstBrowser.PrintPath;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5605,7 +5606,11 @@ if numel(clicked) > 1
     end
     clicked = clicked(valid);
     %%% update the selection to reflect the filtering
-    hTree.setSelectedNodes(clicked);
+    if numel(clicked) > 1
+        hTree.setSelectedNodes(clicked);
+    else
+        hTree.setSelectedNode(clicked);
+    end
 end
 
 clicked = clicked(1);
@@ -7504,7 +7509,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
             end
-
+            %%% fix infinite value
+            if ~isfinite(xlimits{i}(2))
+                xlimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+            end   
             if any(strcmp(NameArray{y{i}},CutParameters))
                 if CutState{strcmp(NameArray{y{i}},CutParameters),4} == 1 %%% Check if active
                     %%% Set x-axis limits according to cut boundaries of selected parameter
@@ -7518,6 +7526,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
             end
+            %%% fix infinite value
+            if ~isfinite(ylimits{i}(2))
+                ylimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+            end  
             if isempty(xlimits{i})
                 %selection is empty
                 xlimits{i} = [0,1];
@@ -7553,6 +7565,7 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
+
 if UserValues.BurstBrowser.Display.Restrict_EandS_Range
     %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
     %%% efficiency parameter if the cut limits fall within that range
@@ -14982,6 +14995,7 @@ if directly_save
         end
         if ~UserValues.BurstBrowser.Settings.UseFilePathForExport
             UserValues.BurstBrowser.PrintPath = PathName;
+            h = guidata(findobj('Tag','BurstBrowser'));
             h.Current_PrintPath_Text.Label = PathName;
         end
         LSUserValues(1);
@@ -15876,6 +15890,13 @@ if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
+%%% fix limits for inf boundary
+if ~isfinite(limx(2))
+    limx(2) = max(x(isfinite(x)));
+end
+if ~isfinite(limy(2))
+    limy(2) = max(y(isfinite(y)));
+end
 
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
@@ -16747,10 +16768,10 @@ end
 hl = legend(p,str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 
 ax(2) = subplot(1,2,2);
-b = bar(coeff(:,1:2));legend('PC1','PC2');
+b = bar(coeff(:,1:2));hl2 = legend('PC1','PC2');set(hl2,'Color','none','Box','off');
 b(1).FaceColor = [0.7,0.7,0.7];
 b(2).FaceColor = [0.3,0.3,0.3];
-set(gca,'XTickLabel',{'E','S','tauD','tauA','rD','rA'});
+set(gca,'XTickLabel',{'E','S','\tau_{D(A)}','\tau_A','r_D','r_A'});
 ylabel('weight');
 xlim([0.5,6.5]);
 
