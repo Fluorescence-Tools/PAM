@@ -3498,14 +3498,14 @@ if ismac
     fontsize_ticks = 1.25*fontsize_ticks;
 end
 
-w_res_limits = [-3 3];
+w_res_limits = [-5 5];
 axes(ha(1));
 %%% calculate w_res
 data = squeeze(sum(input,3));
 fit = tcPDAstruct.plots.H_res_3d_bg_br;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',0.5);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3532,7 +3532,7 @@ data = squeeze(sum(input,2));
 fit = tcPDAstruct.plots.H_res_3d_bg_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',0.5);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3558,7 +3558,7 @@ data = squeeze(sum(input,1));
 fit = tcPDAstruct.plots.H_res_3d_br_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',1);
+surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',0.5);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
