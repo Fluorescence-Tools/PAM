@@ -436,8 +436,8 @@ switch UserValues.BurstSearch.Method
         '        alex_excitation_period2: [%hd,%hd] \n'...
         '\n'...
         '        detectors_specs: \n'...
-        '            spectral_ch1: [%hd]  # list of donors detector IDs \n'...
-        '            spectral_ch2: [%hd]  # list of acceptors detector IDs'];
+        '            spectral_ch1: %hd  # list of donors detector IDs \n'...
+        '            spectral_ch2: %hd  # list of acceptors detector IDs'];
 
         fprintf(fileID,formatSpec,timestamps_unit,tcsp_unit,tcspc_num_bins,tcspc_range,...
                 measurement_type,laser_repetition_rate,alex_excitation_period1(1),...
@@ -470,11 +470,11 @@ switch UserValues.BurstSearch.Method
         clear idx
 end
 %% write photon data using temporary saving of h5 files
-h5create('temp/photon_data.h5', '/timestamps', size(timestamps), 'Datatype', 'int64')
+h5create('temp/photon_data.h5', '/timestamps', numel(timestamps), 'Datatype', 'int64')
 h5write('temp/photon_data.h5', '/timestamps', timestamps)
-h5create('temp/photon_data.h5', '/detectors', size(detectors), 'Datatype', 'uint8')
+h5create('temp/photon_data.h5', '/detectors', numel(detectors), 'Datatype', 'uint8')
 h5write('temp/photon_data.h5', '/detectors', detectors)
-h5create('temp/photon_data.h5', '/nanotimes', size(nanotimes), 'Datatype', 'uint16')
+h5create('temp/photon_data.h5', '/nanotimes', numel(nanotimes), 'Datatype', 'uint16')
 h5write('temp/photon_data.h5', '/nanotimes', nanotimes)
 
 [~, name_old, ~] = fileparts(FileInfo.FileName{1});
