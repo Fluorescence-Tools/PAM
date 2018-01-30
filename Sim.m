@@ -2158,9 +2158,9 @@ for i = 1:numel(h.Sim_File_List.String)
     if h.Sim_Scan.Value<5
         Do_PointSim;
     else
-        profile on
+        %profile on
         Do_CameraSim;
-        profile viewer
+        %profile viewer
     end
     h.Sim_File_List.Value = h.Sim_File_List.Value+1;
 end
@@ -3091,7 +3091,7 @@ end
 %%% Peforms actual simulation procedure for camera observation %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_CameraSim(~,~)
-global SimData
+global SimData PathToApp
 h = guidata(findobj('Tag','Sim'));
 Sel = h.Sim_File_List.Value(1);
 
@@ -3349,6 +3349,7 @@ for i = 1:numel(SimData.Species)
         Pos(Pos==0) = 1;
         Bleach = zeros(SimData.Species(i).Color,NoP);
         for m = 1:Frames
+            disp(m)
             Pos = Pos + round(D*randn(NoP,2));
             
             %%% Puts particles back into box;
@@ -3363,7 +3364,7 @@ for i = 1:numel(SimData.Species)
                 Out2 = (Pos(:,2) > BS(2)) | (Pos(:,2) <= 0);
             end
             
-            for k=1:NoP                
+            for k=1:NoP
                 Int = cell(SimData.Species(i).Color,1);
                 Location = cell(SimData.Species(i).Color,1);                
                 
@@ -3511,9 +3512,10 @@ for i = 1:numel(SimData.Species)
                             Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
                     end
                 end
-            end            
-        end 
-    end  
+            end
+        end
+    end
+    
 end
 
 if h.Sim_UseNoise.Value
