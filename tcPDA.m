@@ -3227,7 +3227,7 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
         if tcPDAstruct.use_stochasticlabeling
             for i = 1:2:size(tcPDAstruct.plots.H_res_3d_individual,1)
                 temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',2*tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
             end
         else
             for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
