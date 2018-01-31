@@ -4565,6 +4565,7 @@ perc = 1.96; % 95% confidence interval at 1.96 sigma
 mu = mean(samples(1:spacing:end,:),1);
 ci = prctile(samples(1:spacing:end,:),[2.5,97.5],1); %std(samples(1:spacing:end,:),1).*perc;
 number_of_samples = numel(1:spacing:size(samples,1));
+acceptance_probability = sum(abs(diff(samples(:,1)))>0)./size(samples,1);
 %%% define parameter names
 param_names_dummy= {'A','R(GR)','s(GR)','R(BG)','s(BG)','R(BR)','s(BR)','cov(BG/BR)','cov(BG/GR)','cov(BR/GR)'};
 if n_gauss == 1
@@ -4587,6 +4588,7 @@ fprintf(fid,'Number of samples:\t%d\n',size(samples,1));
 fprintf(fid,'Sampling width for amplitudes:\t%s\n',handles.sigma_A_edit.String);
 fprintf(fid,'Sampling width for distances:\t%s\n',handles.sigma_R_edit.String);
 fprintf(fid,'Sampling width for distribution widths:\t%s\n',handles.sigma_s_edit.String);
+fprintf(fid,'Acceptance probability:\t%.4f\n',acceptance_probability);
 fprintf(fid,'Spacing for sampling from chain:\t%d\n\n',spacing);
 fprintf(fid,'Parameter\tmean\tci (95%%)\n');
 for i = 1:numel(param_names)
