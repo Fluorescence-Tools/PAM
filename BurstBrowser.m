@@ -6975,7 +6975,7 @@ if obj == h.Fit_Gaussian_Button
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit_1D,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
                 
-                chi2 = sum((residuals.^2)./max(1,ydata))./(numel(ydata)-1-sum(fixed));
+                chi2 = sum((residuals.^2)./max(1,ydata))./(sum(ydata>0)-1-sum(fixed));
                 h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
                 
                 Res = zeros(1,numel(fixed));
