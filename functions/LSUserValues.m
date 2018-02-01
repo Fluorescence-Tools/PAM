@@ -1906,6 +1906,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
     end
     P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
+    %%% Check, if BurstBrowser.Settings.FitGauss_UseWeights subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FitGauss_UseWeights')
+        S.BurstBrowser.Settings.FitGauss_UseWeights=0;
+        disp('UserValues.BurstBrowser.Settings.FitGauss_UseWeights was incomplete');
+    end
+    P.BurstBrowser.Settings.FitGauss_UseWeights = S.BurstBrowser.Settings.FitGauss_UseWeights;
     %%% Check, if BurstBrowser.Settings.GaussianFitMethod subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'GaussianFitMethod')
         S.BurstBrowser.Settings.GaussianFitMethod='MLE';
