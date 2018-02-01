@@ -3999,7 +3999,7 @@ if any(mode==2)
         end
         delete(ax.Children(del));
         hfig.Color = [1,1,1];
-        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
+        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
             'FontSize',h.Progress.Text.FontSize,'Layer','top');
         colormap(h.Pam.Colormap);
         ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
@@ -4064,7 +4064,7 @@ if any(mode == 10)
             'Name',FileInfo.FileName{1});
         ax = copyobj(h.PCH.Axes,hfig);
         hfig.Color = [1,1,1];
-        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
+        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
             'FontSize',h.Progress.Text.FontSize,'Layer','top');
         colormap(h.Pam.Colormap);
         ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
