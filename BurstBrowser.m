@@ -1755,6 +1755,23 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'FontSize',12,...
         'TooltipString','If selected, you are required to manually select the start point for the fit by clicking inside the 2D plot.');
+    h.Fit_Gaussian_Use_Weights = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Callback',@UpdateOptions,...
+        'Value',UserValues.BurstBrowser.Settings.FitGaussPick,...
+        'Position',[0.6,0.8,0.4,0.08],...
+        'String','Use weights',...
+        'Parent',h.FitGaussian_Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',12,...
+        'TooltipString','<html>If selected, the least-squares fits uses weights.<br>Weights are estimated based on Poissonian counting, i.e. sqrt(N).');
+    switch UserValues.BurstBrowser.Settings.GaussianFitMethod
+        case 'MLE'
+            h.Fit_Gaussian_Use_Weights.Visible = 'off';
+        case 'LSQ'
+            h.Fit_Gaussian_Use_Weights.Visible = 'on';
+    end
     h.Fit_GaussianMethod_Popupmenu = uicontrol('Style','popup',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
@@ -1763,11 +1780,11 @@ if isempty(hfig)
         'Value',find(strcmp({'MLE','LSQ'},UserValues.BurstBrowser.Settings.GaussianFitMethod)),...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
-        'TooltipStr','Fit Method. LSQ allows fixing of parameters.');
+        'TooltipStr','Fit Method. LSQ allows fixing of parameters.'); 
     h.Fit_GaussianChi2_Text = uicontrol('Style','text',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
-        'Position',[0.6,0.8,0.4,0.08],...
+        'Position',[0.1,0.8,0.3,0.08],...
         'String','',...
         'HorizontalAlignment','center',...
         'Parent',h.FitGaussian_Panel,...
@@ -5319,6 +5336,8 @@ switch obj
         UserValues.BurstBrowser.Settings.fFCS_UseFRET = obj.Value;
     case h.Fit_Gaussian_Pick
         UserValues.BurstBrowser.Settings.FitGaussPick = obj.Value;
+    case h.Fit_Gaussian_Use_Weights
+        UserValues.BurstBrowser.Settings.FitGauss_UseWeights = obj.Value;
     case h.ApplyCorrectionsOnLoad
         UserValues.BurstBrowser.Settings.CorrectionOnLoad = obj.Value;
     case h.Fit_GaussianMethod_Popupmenu
@@ -5331,6 +5350,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatMLE;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'MLE';
                 h.Fit_GaussianChi2_Text.String = '';
+                h.Fit_Gaussian_Use_Weights.Visible = 'off';
             case 2 %%% changed to LSQ
                 h.Fit_Gaussian_Text.ColumnName = h.GUIData.ColumnNameLSQ;
                 h.Fit_Gaussian_Text.Data = h.GUIData.TableDataLSQ;
@@ -5338,6 +5358,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnWidth = h.GUIData.ColumnWidthLSQ;
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatLSQ;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'LSQ';
+                h.Fit_Gaussian_Use_Weights.Visible = 'on';
         end
         UpdateOptions(h.Fit_NGaussian_Popupmenu,[]);
     case h.Fit_NGaussian_Popupmenu
@@ -6942,6 +6963,14 @@ if obj == h.Fit_Gaussian_Button
                 
                 xdata = {xbins,sum(sum(HH)),fixed,nG,0};
                 ydata = sum(HH,1);
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit_1D,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
@@ -7040,6 +7069,15 @@ if obj == h.Fit_Gaussian_Button
                 if h.Hist_log10.Value; HH = 10.^(HH);end;
                 ydata = HH;
                 xdata = {xbins,ybins,sum(sum(ydata)),fixed,nG,0};
+                
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
@@ -15992,6 +16030,7 @@ N_datapoints = xdata{2};
 fixed = xdata{3};
 nG = xdata{4};
 plot = xdata{5};
+
 %%% x contains the parameters for fitting in order
 %%% fraction,mu1,mu2,var1,var2,cov12
 %%% i.e. 6*n_species in total
@@ -16013,6 +16052,10 @@ for i = 1:nG
 end
 model = model./max([1,sum(model)]);
 model = model.*N_datapoints;
+if numel(xdata) > 5 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{6};
+end
 
 function model = MultiGaussFit(x,xdata)
 global BurstMeta
@@ -16049,6 +16092,10 @@ for i = 1:nG
 end
 model = model./max([1,sum(sum(model))]);
 model = model.*N_datapoints;
+if numel(xdata) > 6 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{7};
+end
 
 function [covNew] = fix_covariance_matrix(cov)
 %find eigenvalue smaller 0
