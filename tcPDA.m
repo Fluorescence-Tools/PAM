@@ -3632,6 +3632,7 @@ ax.Position(4) = ax.Position(4)-0.05;
 ax_wres(1) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(1)],'x');
+linkprop([ax,ax_wres(1)],'XTick');
 data = squeeze(sum(sum(input,2),3));
 fit = tcPDAstruct.plots.H_res_3d_bg;
 error = sqrt(data); error(error==0) = 1;
@@ -3679,6 +3680,7 @@ ax.Position(4) = ax.Position(4)-0.05;
 ax_wres(2) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(2)],'x');
+linkprop([ax,ax_wres(2)],'XTick');
 data = squeeze(sum(sum(input,1),3));
 fit = tcPDAstruct.plots.H_res_3d_br;
 error = sqrt(data); error(error==0) = 1;
@@ -3735,6 +3737,7 @@ ax.Position(4) = ax.Position(4)-0.05;
 ax_wres(3) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(3)],'x');
+linkprop([ax,ax_wres(3)],'XTick');
 data = squeeze(sum(sum(input,1),2));
 fit = tcPDAstruct.plots.H_res_3d_gr;
 error = sqrt(data); error(error==0) = 1;
