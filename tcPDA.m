@@ -3308,6 +3308,8 @@ switch obj
         fit_data = tcPDAstruct.fitdata;
         corrections = handles.corrections_table.Data;
         n_gauss = tcPDAstruct.n_gauss;
+        N_min = tcPDAstruct.N_min;
+        N_max = tcPDAstruct.N_max;
         use_stochasticlabeling = tcPDAstruct.use_stochasticlabeling;
         fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
         fix_stochasticlabeling = tcPDAstruct.fix_stochasticlabeling;
@@ -3315,7 +3317,7 @@ switch obj
         %remove extension
         filename = [filename(1:end-5) 'fitstate'];
         [FileName,PathName] = uiputfile({'*.fitstate','tcPDA fitstate file (*.fitstate)'},'Select filename for fitstate file',filename);
-        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','use_stochasticlabeling','fraction_stochasticlabeling','fix_stochasticlabeling');
+        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','N_min','N_max','use_stochasticlabeling','fraction_stochasticlabeling','fix_stochasticlabeling');
 end
 
 function load_fitstate(handles)
@@ -3349,7 +3351,14 @@ if exist('n_gauss','var') %%% n_gauss was saved
     handles.popupmenu_ngauss.Value = n_gauss;
     popupmenu_ngauss_callback(handles.popupmenu_ngauss,0);
 end
-
+if exist('N_min','var') %%% N_min was saved
+    tcPDAstruct.N_min = N_min;
+    handles.min_n_edit.String = num2str(N_min);
+end
+if exist('N_max','var') %%% N_min was saved
+    tcPDAstruct.N_max = N_max;
+    handles.max_n_edit.String = num2str(N_max);
+end
 if exist('fraction_stochasticlabeling','var') %%% n_gauss was saved
     tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
     handles.edit_stochasticlabeling.String = num2str(fraction_stochasticlabeling);
