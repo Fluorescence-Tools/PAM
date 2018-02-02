@@ -3754,7 +3754,7 @@ for i =1:numel(child)
         child(i).LineWidth = 2;
     end
 end
-cbar.LineWidth = 1;
+cbar.LineWidth = 2;
 for i = 1:numel(child)
     if ~any(strcmp(child(i).Type,{'uicontextmenu','uimenu','uitoolbar'}))
         child(i).Position(1) = child(i).Position(1)+0.02;
