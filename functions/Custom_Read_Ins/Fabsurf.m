@@ -289,7 +289,7 @@ if ~isempty(startIndex) && ~isempty(endIndex)
         fid(6) = fopen([FullFileName(1:startIndex-1) '_ZScan_info' FullFileName(startIndex:endIndex) '.txt']);
         fid(7) = fopen([FullFileName(1:startIndex-1) '_ZTrack_info' FullFileName(startIndex:endIndex) '.txt']);
         fid(8) = fopen([FullFileName(1:startIndex-1) '_MFD_info' FullFileName(startIndex:endIndex) '.txt']);
-        startIndex = startIndex + 1
+        startIndex = startIndex + 1;
     end
 end
 
