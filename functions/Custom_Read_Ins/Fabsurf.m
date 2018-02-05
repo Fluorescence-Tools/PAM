@@ -275,32 +275,38 @@ if  ~exist('ToRead','var')
 end
 
 %%% Checks if and which infofile belongs to filename
-fid(1) = fopen([FullFileName(1:end-9) '_info' FullFileName(end-8:end-6) '.txt']);
-fid(2) = fopen([FullFileName(1:end-9) '_MeasureCursor_info' FullFileName(end-8:end-6) '.txt']);
-fid(3) = fopen([FullFileName(1:end-9) '_Scanning_info' FullFileName(end-8:end-6) '.txt']);
-fid(4) = fopen([FullFileName(1:end-9) '_Track_info' FullFileName(end-8:end-6) '.txt']);
-fid(5) = fopen([FullFileName(1:end-9) '_MeasureCursorSeries_info' FullFileName(end-8:end-6) '.txt']);
-fid(6) = fopen([FullFileName(1:end-10) '_info' FullFileName(end-9:end-6) '.txt']);
-fid(7) = fopen([FullFileName(1:end-10) '_MeasureCursor_info' FullFileName(end-9:end-6) '.txt']);
-fid(8) = fopen([FullFileName(1:end-10) '_Scanning_info' FullFileName(end-9:end-6) '.txt']);
-fid(9) = fopen([FullFileName(1:end-10) '_Track_info' FullFileName(end-9:end-6) '.txt']);
-fid(10) = fopen([FullFileName(1:end-10) '_MeasureCursorSeries_info' FullFileName(end-9:end-6) '.txt']);
-fid(11) = fopen([FullFileName(1:end-10) '_ZScan_info' FullFileName(end-9:end-6) '.txt']);
-fid(12) = fopen([FullFileName(1:end-10) '_ZTrack_info' FullFileName(end-9:end-6) '.txt']);
-fid(13) = fopen([FullFileName(1:end-10) '_MFD_info' FullFileName(end-9:end-6) '.txt']);
-%%% HydraHarp
-fid(14) = fopen([FullFileName(1:end-8) '_info' FullFileName(end-7:end-4) '.txt']);
-fid(15) = fopen([FullFileName(1:end-8) '_MeasureCursor_info' FullFileName(end-7:end-4) '.txt']);
-fid(16) = fopen([FullFileName(1:end-8) '_Scanning_info' FullFileName(end-7:end-4) '.txt']);
-fid(17) = fopen([FullFileName(1:end-8) '_Track_info' FullFileName(end-7:end-4) '.txt']);
-fid(18) = fopen([FullFileName(1:end-8) '_MeasureCursorSeries_info' FullFileName(end-7:end-4) '.txt']);
-fid(19) = fopen([FullFileName(1:end-8) '_ZScan_info' FullFileName(end-7:end-4) '.txt']);
-fid(20) = fopen([FullFileName(1:end-8) '_ZTrack_info' FullFileName(end-7:end-4) '.txt']);
-fid(21) = fopen([FullFileName(1:end-8) '_MFD_info' FullFileName(end-7:end-4) '.txt']);
 
-i=1;
+%%% Search for file indices with arbitrary number of digits
+[startIndex, endIndex] = regexp(FullFileName, '\d*(?=_0.spc)');
+fid(1) = -1;
+if ~isempty(startIndex) && ~isempty(endIndex)
+    while startIndex<endIndex && all(fid(:)==-1)
+        fid(1) = fopen([FullFileName(1:startIndex-1) '_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(2) = fopen([FullFileName(1:startIndex-1) '_MeasureCursor_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(3) = fopen([FullFileName(1:startIndex-1) '_Scanning_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(4) = fopen([FullFileName(1:startIndex-1) '_Track_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(5) = fopen([FullFileName(1:startIndex-1) '_MeasureCursorSeries_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(6) = fopen([FullFileName(1:startIndex-1) '_ZScan_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(7) = fopen([FullFileName(1:startIndex-1) '_ZTrack_info' FullFileName(startIndex:endIndex) '.txt']);
+        fid(8) = fopen([FullFileName(1:startIndex-1) '_MFD_info' FullFileName(startIndex:endIndex) '.txt']);
+        startIndex = startIndex + 1
+    end
+end
+
+%%% HydraHarp
+if all(fid(:)==-1)
+    fid(end+1) = fopen([FullFileName(1:end-8) '_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_MeasureCursor_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_Scanning_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_Track_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_MeasureCursorSeries_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_ZScan_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_ZTrack_info' FullFileName(end-7:end-4) '.txt']);
+    fid(end+1) = fopen([FullFileName(1:end-8) '_MFD_info' FullFileName(end-7:end-4) '.txt']);
+end
+
 FID=-1;
-while i<22
+for i= 1:numel(fid)
     if fid(i)~=-1; 
         FID=fid(i); 
         break;
