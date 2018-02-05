@@ -34,6 +34,8 @@ if nargin<9 %%% Opens Dialog box for selecting new files to be loaded
     [FileName, Path, Type] = uigetfile(Filetypes, 'Choose a TCSPC data file',UserValues.File.Path,'MultiSelect', 'on');   
     %%% Determines actually selected file type
     if Type~=0
+        Filetype_Suffix = Filetypes(Type, 1);
+        Filetype_Suffix = Filetype_Suffix{1};
         Type = Fileorder(Type);
     end
 
@@ -54,8 +56,32 @@ end
 %%% Saves Path
 UserValues.File.Path = Path;
 LSUserValues(1);
-%%% Sorts FileName by alphabetical order
-FileName=sort(FileName);
+
+%%% Sorts '*0.spc' files (Fabsurf) by chronological order
+if strcmp(Filetype_Suffix, '*0.spc')
+    %%% Gets list of files with matching suffix in directory
+    list = dir(strcat(Path, Filetype_Suffix));
+    %%% Removes files that are not selected
+    if numel(list) ~= numel(FileName)
+        for i = 1 : numel(FileName)
+            for j = 1 : numel(list)
+                if strfind(list(j).name, FileName(i))
+                    index(i)=j;
+                    break;
+                end
+            end
+        end
+        list = list(index);
+    end
+    %%% Sorts based on date and time modified
+    [datenum, index] = sort([list.datenum]);
+    FileName = {list.name};
+    FileName = FileName(index);
+else
+%%% Sorts files of other types by alphabetical order
+    FileName=sort(FileName);
+end
+
 %%% Clears previously loaded data
 FileInfo=[];
 TcspcData.MT=cell(1,1);
