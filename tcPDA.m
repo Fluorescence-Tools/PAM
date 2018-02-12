@@ -253,7 +253,34 @@ if isempty(h)
         'Parent',handles.tab_corrections,...
         'Callback',@update_corrections);
     
-
+    handles.plottype_text = uicontrol('Style','text',...
+        'Units','normalized',...
+        'Position',[0.05,0.85,0.45,0.03],...
+        'String','Plot type:',...
+        'Tag','plottype_text',...
+        'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
+            'mesh: plots the fit as a mesh in addition to the data<br>'...
+            'colormap: plots the weighted residuals as colormap on the data'],...
+        'FontSize',10,...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections);
+    
+    handles.plottype_dropdownmenu = uicontrol('Style','popupmenu',...
+        'Units','normalized',...
+        'Position',[0.5,0.85,0.25,0.03],...
+        'String',{'mesh','colormap'},...
+        'FontSize',10,...
+        'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
+            'mesh: plots the fit as a mesh in addition to the data<br>'...
+            'colormap: plots the weighted residuals as colormap on the data'],...
+        'Tag','plottype_dropdownmenu',...
+        'String',{'mesh','colormap'},...
+        'Value',1,...
+        'BackgroundColor',UserValues.Look.Control,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections,...
+        'Callback',@update_corrections);
     
     %define fit table
     str_dummy = {'<html><b>Amplitude','<html><b>R<sub>GR</sub>','<html><b>&sigma;<sub>GR</sub>','<html><b>R<sub>BG</sub>', '<html><b>&sigma;<sub>BG</sub>','<html><b>R<sub>BR</sub>','<html><b>&sigma;<sub>BR</sub>',''};
@@ -290,18 +317,19 @@ if isempty(h)
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
         'GridAlpha',0.5,...
-        'FontSize',10,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'XGrid','on',...
         'nextplot','add',...
         'YGrid','on',...
         'Box','off',...
         'XLim',[0,1],...
-        'Tag','axes_1d');
+        'Tag','axes_1d',...
+        'TickDir','out');
   
-    handles.axes_1d.XLabel.String = 'FRET efficiency GR';
+    handles.axes_1d.XLabel.String = 'PR_{GR}';
     handles.axes_1d.XLabel.Color = UserValues.Look.Fore;
-    handles.axes_1d.YLabel.String = '#';
+    handles.axes_1d.YLabel.String = 'Occurence';
     handles.axes_1d.YLabel.Color = UserValues.Look.Fore;
     handles.axes_1d.XColor = UserValues.Look.Fore;
     handles.axes_1d.YColor = UserValues.Look.Fore;
@@ -321,7 +349,7 @@ if isempty(h)
         'Position',[0.075 0.875 0.9, 0.1],...
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
-        'FontSize',10,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'Box','off',...
         'XGrid','on',...
@@ -330,7 +358,8 @@ if isempty(h)
         'XTickLabel',[],...
         'nextplot','add',...
         'XLim',[0,1],...
-        'Tag','axes_1d_res');
+        'Tag','axes_1d_res',...
+        'TickDir','out');
     handles.axes_1d_res.XLabel.String = '';
     handles.axes_1d_res.YLabel.String = 'w_{res}';
     handles.axes_1d_res.YLabel.Color = UserValues.Look.Fore;
@@ -346,7 +375,7 @@ if isempty(h)
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
         'ZColor',UserValues.Look.Fore,...
-        'FontSize',10,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'Box','off',...
         'nextplot','add',...
@@ -354,9 +383,9 @@ if isempty(h)
         'YLim',[0,1],...
         'View',[45,45],...
         'Tag','axes_2d');
-    handles.axes_2d.XLabel.String = 'P_{BG}';
+    handles.axes_2d.XLabel.String = 'PR_{BG}';
     handles.axes_2d.XLabel.Color = UserValues.Look.Fore;
-    handles.axes_2d.YLabel.String = 'P_{BR}';
+    handles.axes_2d.YLabel.String = 'PR_{BR}';
     handles.axes_2d.YLabel.Color = UserValues.Look.Fore;
     handles.axes_2d.ZLabel.String = '#';
     handles.axes_2d.ZLabel.Color = UserValues.Look.Fore;
@@ -364,7 +393,7 @@ if isempty(h)
     fit2d = peaks(nbins).^2;
     data2d = real(max(fit2d+sqrt(fit2d).*randn(nbins),0));
     handles.plots.handle_2d_data = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),data2d,'FaceAlpha',0.6,'EdgeColor','none');
-    handles.plots.handle_2d_fit = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',[0 0 0]);
+    handles.plots.handle_2d_fit = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',[1 1 1]);
     for i = 1:10
         handles.plots.handles_H_res_2d_individual(i) = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',handles.color_str{i},'Visible','off');
     end
@@ -372,7 +401,7 @@ if isempty(h)
     handles.axes_2d_res = axes('Parent',handles.tab_2d,...
         'Units','normalized',...
         'Position',[0.075 0.775 0.9 0.2],...
-        'FontSize',10,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
@@ -421,8 +450,8 @@ if isempty(h)
         %%% create axis labels and plots
         switch i
             case 1
-                ax.XLabel.String = 'P_{BR}';
-                ax.YLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{BR}';
+                ax.YLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg_br =  surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,3)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_bg_br(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,3)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -430,8 +459,8 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg_br = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,3)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 2
-                ax.XLabel.String = 'P_{GR}';
-                ax.YLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{GR}';
+                ax.YLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,2)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_bg_gr(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,2)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -439,8 +468,8 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,2)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 3
-                ax.XLabel.String = 'P_{GR}';
-                ax.YLabel.String = 'P_{BR}';
+                ax.XLabel.String = 'PR_{GR}';
+                ax.YLabel.String = 'PR_{BR}';
                 handles.plots.handle_3d_data_br_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,1)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_br_gr(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,1)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -448,7 +477,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_br_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,1)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 4
-                ax.XLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg = bar(ax,x_axis,squeeze(sum(sum(data3d,2),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,2),3));
                 for j = 1:10
@@ -457,7 +486,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg = stairs(ax,x_axis_stairs,[fit; fit(end)],'Color','k','LineWidth',2);
                 ax.YLim(1) = 0;
             case 5
-                ax.XLabel.String = 'P_{BR}';
+                ax.XLabel.String = 'PR_{BR}';
                 handles.plots.handle_3d_data_br = bar(ax,x_axis,squeeze(sum(sum(data3d,1),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,1),3));
                 for j = 1:10
@@ -466,7 +495,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_br = stairs(ax,x_axis_stairs,[fit fit(end)],'Color','k','LineWidth',2);
                 ax.YLim(1) = 0;
             case 6
-                ax.XLabel.String = 'P_{GR}';
+                ax.XLabel.String = 'PR_{GR}';
                 handles.plots.handle_3d_data_gr = bar(ax,x_axis,squeeze(sum(sum(data3d,1),2)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,1),2));
                 for j = 1:10
@@ -1041,6 +1070,8 @@ switch hObject
         MCMC_summary(handles.mcmc_spacing_edit,[]);
     case handles.live_plot_update_checkbox
         tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
+    case handles.plottype_dropdownmenu
+        plot_after_fit(handles);
 end
 LSUserValues(1);
 
@@ -1088,7 +1119,7 @@ switch FilterIndex
 end
 
 tcPDAstruct.FullFileName = fullfile(PathName,FileName);
-handles.Figure.Name = ['tcPDA - ' FileName];
+handles.Figure.Name = ['tcPDA - Loaded file: ' FileName];
 
 %initialize values
 if ~isfield(tcPDAstruct,'sampling')
@@ -1302,15 +1333,27 @@ if ~isempty(Obj) % Called from gui
 end
 
 function UpdateAxesLimits(handles)
+plottype = handles.plottype_dropdownmenu.String{handles.plottype_dropdownmenu.Value};
 
 handles.axes_1d.YLim(2) = 1.05*max([max(handles.plots.handle_1d_data.YData),max(handles.plots.handle_1d_fit.YData)]);
-handles.axes_2d.ZLim(2) = 1.05*max([max(handles.plots.handle_2d_data.ZData(:)),max(handles.plots.handle_2d_fit.ZData(:))]);
-ax = handle(handles.axes_3d(1));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_br.ZData(:)),max(handles.plots.handle_3d_fit_bg_br.ZData(:))]);
-ax = handle(handles.axes_3d(2));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_gr.ZData(:)),max(handles.plots.handle_3d_fit_bg_gr.ZData(:))]);
-ax = handle(handles.axes_3d(3));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_br_gr.ZData(:)),max(handles.plots.handle_3d_fit_br_gr.ZData(:))]);
+switch plottype
+    case 'mesh'
+        handles.axes_2d.ZLim(2) = 1.05*max([max(handles.plots.handle_2d_data.ZData(:)),max(handles.plots.handle_2d_fit.ZData(:))]);
+        ax = handle(handles.axes_3d(1));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_br.ZData(:)),max(handles.plots.handle_3d_fit_bg_br.ZData(:))]);
+        ax = handle(handles.axes_3d(2));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_gr.ZData(:)),max(handles.plots.handle_3d_fit_bg_gr.ZData(:))]);
+        ax = handle(handles.axes_3d(3));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_br_gr.ZData(:)),max(handles.plots.handle_3d_fit_br_gr.ZData(:))]);
+    case 'colormap'
+        handles.axes_2d.ZLim(2) = 1.05*max(handles.plots.handle_2d_data.ZData(:));
+        ax = handle(handles.axes_3d(1));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_bg_br.ZData(:));
+        ax = handle(handles.axes_3d(2));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_bg_gr.ZData(:));
+        ax = handle(handles.axes_3d(3));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_br_gr.ZData(:));
+end
 ax = handle(handles.axes_3d(4));
 ax.YLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg.YData),max(handles.plots.handle_3d_fit_bg.YData)]);
 ax = handle(handles.axes_3d(5));
@@ -3148,6 +3191,7 @@ global tcPDAstruct
 if ~isfield(tcPDAstruct,'plots')
     return;
 end
+plottype = handles.plottype_dropdownmenu.String{handles.plottype_dropdownmenu.Value};
 if tcPDAstruct.use_stochasticlabeling
     %%% we have to reorder the plots to match the coloring scheme
     %%% for the fitting, the additional stochastic labeling populations are
@@ -3173,15 +3217,50 @@ if isfield(tcPDAstruct.plots,'H_res_gr')
 end
 
 if isfield(tcPDAstruct.plots,'H_res_2d')
-    if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
-            set(handles.plots.handles_H_res_2d_individual(plots(i)),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+    switch plottype
+        case 'mesh'
+            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            
+            set(handles.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
+            colormap(handles.axes_2d,'parula');
+            colorbar(handles.axes_2d,'off')
 
-    set(handles.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
+            set(handles.plots.handle_2d_data,'Visible','on','EdgeColor','none','FaceAlpha',0.6,'CData',handles.plots.handle_2d_data.ZData);
+            handles.axes_2d.CLimMode = 'auto';
+            % unhide w_res axis
+            handles.axes_2d_res.Visible = 'on';
+            % reset y extent of axes_2d
+            handles.axes_2d.Position(4) = 0.65;
+            % reset x extent of axes_2d
+            handles.axes_2d.Position(3) = 0.85;
+        case 'colormap'
+            % set CData of data plot to w_res
+            set(handles.plots.handle_2d_data,'CData',tcPDAstruct.plots.dev_2d,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            % hide mesh plot and 2d dev
+            set(handles.plots.handle_2d_fit,'Visible','off');
+            set(handles.plots.handle_2d_dev,'Visible','off');
+            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.axes_2d,'CLim',[-5 5]);
+            colormap(handles.axes_2d,handles.colormap);
+            c = colorbar(handles.axes_2d,'eastoutside','Color',[1,1,1]);
+            % hide w_res axis
+            handles.axes_2d_res.Visible = 'off';
+            % upscale y extent of axes_2d
+            handles.axes_2d.Position(4) = 0.85;
+            % downscale x extent of axes_2d
+            handles.axes_2d.Position(3) = 0.85;
+    end
 end
 
 if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
