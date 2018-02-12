@@ -3253,7 +3253,7 @@ if isfield(tcPDAstruct.plots,'H_res_2d')
             end
             set(handles.axes_2d,'CLim',[-5 5]);
             colormap(handles.axes_2d,handles.colormap);
-            c = colorbar(handles.axes_2d,'eastoutside','Color',[1,1,1]);
+            colorbar(handles.axes_2d,'eastoutside','Color',[1,1,1]);
             % hide w_res axis
             handles.axes_2d_res.Visible = 'off';
             % upscale y extent of axes_2d
@@ -3264,26 +3264,91 @@ if isfield(tcPDAstruct.plots,'H_res_2d')
 end
 
 if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
+    switch plottype
+        case 'mesh'
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_bg_br,'CData',handles.plots.handle_3d_data_bg_br.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(1),'CLimMode','auto');
+            colormap(handles.axes_3d(1),'parula');
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_bg_gr,'CData',handles.plots.handle_3d_data_bg_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(2),'CLimMode','auto');
+            colormap(handles.axes_3d(2),'parula');
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_br_gr,'CData',handles.plots.handle_3d_data_br_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(3),'CLimMode','auto');
+            colormap(handles.axes_3d(3),'parula');
+            
+            colorbar(handles.axes_3d(3),'off');
+        case 'colormap'
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_br,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_bg_br.ZData;
+            fit = handles.plots.handle_3d_fit_bg_br.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_bg_br,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(1),'CLim',[-5,5]);
+            colormap(handles.axes_3d(1),handles.colormap);
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_gr,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_bg_gr.ZData;
+            fit = handles.plots.handle_3d_fit_bg_gr.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_bg_gr,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(2),'CLim',[-5,5]);
+            colormap(handles.axes_3d(2),handles.colormap);
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_br_gr,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_br_gr.ZData;
+            fit = handles.plots.handle_3d_fit_br_gr.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_br_gr,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(3),'CLim',[-5,5]);
+            colormap(handles.axes_3d(3),handles.colormap);
+            
+            c = colorbar(handles.axes_3d(3),'east','Color',[1,1,1]);
+            c.Position(1) = 0.98; c.Position(3) = 0.012;
     end
-    set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
     
     set(handles.plots.handle_3d_fit_bg,'YData',[tcPDAstruct.plots.H_res_3d_bg;tcPDAstruct.plots.H_res_3d_bg(end)],'XData',tcPDAstruct.x_axis_stair);
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
