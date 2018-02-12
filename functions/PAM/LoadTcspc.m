@@ -54,8 +54,20 @@ end
 %%% Saves Path
 UserValues.File.Path = Path;
 LSUserValues(1);
-%%% Sorts FileName by alphabetical order
-FileName=sort(FileName);
+
+%%% Sorts '*0.spc' files (Fabsurf) by chronological order
+if all(~cellfun('isempty', regexp(FileName, '_0.spc$')))
+    for i = 1 : numel(FileName)
+        FileProperty(i) = dir(strcat(Path, FileName{i}));
+    end
+    %%% Sorts based on date and time modified
+    [datenum, index] = sort([FileProperty.datenum]);
+    FileName = FileName(index);
+else
+%%% Sorts files of other types by alphabetical order
+    FileName=sort(FileName);
+end
+
 %%% Clears previously loaded data
 FileInfo=[];
 TcspcData.MT=cell(1,1);

@@ -2074,6 +2074,10 @@ h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
     'Callback',{@Update_Display,2});
+h.Trace.Trace_ExportFRETTrace_Menu = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Extract FRET efficiency trace',...
+    'Callback',{@Update_Display,2});
 h.Trace.Axes.UIContextMenu = h.Trace.Menu;
 
 if ~UserValues.Settings.Pam.Use_TimeTrace
@@ -3985,27 +3989,70 @@ if any(mode==2)
     end
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
-    if gcbo == h.Trace.Trace_Export_Menu
-        hfig = figure('Visible','on','Units','pixel',...
-            'Position',[100,100,500*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
-            'Name',FileInfo.FileName{1});
-        ax = copyobj(h.Trace.Axes,hfig);
-        %%% delete patches
-        del = false(numel(ax.Children),1);
-        for i = 1:numel(ax.Children)
-            if strcmp(ax.Children(i).Type,'patch')
-                del(i) = true;
+    if ~isempty(gcbo)
+        if any(gcbo == [h.Trace.Trace_Export_Menu,h.Trace.Trace_ExportFRETTrace_Menu])
+            hfig = figure('Visible','on','Units','pixel',...
+                'Position',[100,100,500*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
+                'Name',FileInfo.FileName{1});
+            switch gcbo
+                case h.Trace.Trace_Export_Menu
+                    ax = copyobj(h.Trace.Axes,hfig);
+                    %%% delete patches
+                    del = false(numel(ax.Children),1);
+                    for i = 1:numel(ax.Children)
+                        if strcmp(ax.Children(i).Type,'patch')
+                            del(i) = true;
+                        end
+                    end
+                    delete(ax.Children(del));
+                case h.Trace.Trace_ExportFRETTrace_Menu
+                    %%% get Donor/FRET channels
+                    pie_chan_selection = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method};
+                    switch UserValues.BurstSearch.Method
+                        case {1,2} % 2color MFD
+                           donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,2}))];
+                           fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,2}))];
+                        case {3,4} % 3color MFD, take 2color sub-channels
+                            donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,2}))];
+                            fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,2}))];
+                        case {5} % 2color no-MFD
+                            donor = find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1}));
+                            fret = find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1}));
+                    end
+                    %%% calculate FRET trace
+                    don_trace = PamMeta.Trace{donor(1)};
+                    if numel(donor) > 1
+                        don_trace = don_trace + PamMeta.Trace{donor(2)};
+                    end
+                    fret_trace = PamMeta.Trace{fret(1)};
+                    if numel(fret) > 1
+                        fret_trace = fret_trace + PamMeta.Trace{fret(2)};
+                    end
+                    E_trace = fret_trace./(fret_trace+don_trace);
+                    plot(PamMeta.TimeBins,E_trace,'LineWidth',1);
+                    ax = gca;
+                    ylabel('FRET Efficiency (uncorrected)');
+                    xlabel('Time [s]');
+            end
+            hfig.Color = [1,1,1];
+            set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
+                'FontSize',h.Progress.Text.FontSize,'Layer','top');
+            colormap(h.Pam.Colormap);
+            ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
+            hfig.Position(4) = hfig.Position(4)+25;
+            switch gcbo
+                case h.Trace.Trace_Export_Menu
+                    ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
+                    legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
+                case h.Trace.Trace_ExportFRETTrace_Menu
+                    ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';                
+                    ax.YLim = [0,1];
             end
         end
-        delete(ax.Children(del));
-        hfig.Color = [1,1,1];
-        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
-            'FontSize',h.Progress.Text.FontSize,'Layer','top');
-        colormap(h.Pam.Colormap);
-        ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
-        hfig.Position(4) = hfig.Position(4)+25;
-        ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
-        legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
     end
 end
 %% PCH plot update
