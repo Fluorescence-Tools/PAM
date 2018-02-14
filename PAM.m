@@ -2129,12 +2129,17 @@ h.PCH.PCH_2D_Menu = uimenu(...
     'Callback',{@Update_Display,10});
 h.PCH.PCH_Export_Menu = uimenu(...
     'Parent',h.PCH.Menu,...
-    'Label','Export',...
+    'Label','Export to figure',...
+    'Callback',{@Update_Display,10});
+h.PCH.PCH_Export_CSV_Menu = uimenu(...
+    'Parent',h.PCH.Menu,...
+    'Label','Export to text file',...
     'Callback',{@Update_Display,10});
 h.PCH.Axes.UIContextMenu = h.PCH.Menu;
 h.PCH.Panel.UIContextMenu = h.PCH.Menu;
 if UserValues.Settings.Pam.PCH_2D
     h.PCH.PCH_2D_Menu.Checked = 'on';
+    h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
 end
 if ~UserValues.Settings.Pam.Use_PCH
     h.PCH.Tab.Parent = [];
@@ -4101,9 +4106,11 @@ if any(mode == 10)
             case 'on'
                 obj.Checked = 'off';
                 UserValues.Settings.Pam.PCH_2D = 0;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'on';
             case 'off'
                 obj.Checked = 'on';
                 UserValues.Settings.Pam.PCH_2D = 1;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
     if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
@@ -4149,6 +4156,11 @@ if any(mode == 10)
         if ~UserValues.Settings.Pam.PCH_2D
             legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color','none');
         end
+    elseif obj == h.PCH.PCH_Export_CSV_Menu
+        % Export the selected data to a comma-separated value file (*.csv)
+        sel = h.PIE.List.Value;
+        e.Key = 'Export_PCH';
+        Pam_Export([],e,sel); % ToDo: move this to right-click menu of PIE channel and export tab in the future.
     end
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10530,7 +10542,7 @@ switch e.Key
             Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting Finished')
-    case 'Export_MicrotimePattern'
+    case 'Export_MicrotimePattern' %%% Export microtime pattern
         h.Progress.Text.String = 'Exporting';
         h.Progress.Axes.Color=[1 0 0];
         drawnow;
@@ -10579,6 +10591,41 @@ switch e.Key
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
         UserValues.File.TauFitPath = FileInfo.Path;
+        Progress(1,h.Progress.Axes,h.Progress.Text);
+    case 'Export_PCH' %%% Export PCH
+        h.Progress.Text.String = 'Exporting';
+        h.Progress.Axes.Color=[1 0 0];
+        drawnow;
+        %%% Read out PCH
+        %%% store in format:
+        %%% channel1 channel2 ...
+        %%% PCH1     PCH2     ...
+
+        PCH = zeros(max(cellfun(@numel,PamMeta.PCH(Sel))),numel(Sel)+1);
+        PCH(:,1) = 0:1:size(PCH,1)-1;
+        for i = 1:numel(Sel)
+            PCH(1:numel(PamMeta.PCH{Sel(i)}),i+1) = PamMeta.PCH{Sel(i)};
+            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
+        end
+        %%% create filename
+        [~,fileName,~] = fileparts(FileInfo.FileName{1});
+        for i = 1:numel(Sel)
+            fileName = [fileName '_' UserValues.PIE.Name{Sel(i)}];
+        end
+        fileName = [fileName '.pch'];
+        fid = fopen(fullfile(FileInfo.Path,fileName),'w');
+        %%% write header
+        %%% general info
+        fprintf(fid,'# PCH data exported from PAM\n');
+        fprintf(fid,'# Bin size [ms]:\t %g\n',UserValues.Settings.Pam.PCH_Binning);
+        %%% PIE channel names
+        fprintf(fid,'Counts,');
+        for i = 1:numel(Sel)
+            fprintf(fid,'%s,',UserValues.PIE.Name{Sel(i)});
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(fullfile(FileInfo.Path,fileName),PCH,'-append','delimiter',',','precision','%g');
         Progress(1,h.Progress.Axes,h.Progress.Text);
     case 'Eport_RLICS_TIFF' %%% Eports image stack as Lifetime Filtered TIFF
         
