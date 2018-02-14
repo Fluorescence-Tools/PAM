@@ -1623,9 +1623,9 @@ switch mode
                         Data2 = round(64*(Data2+ErrorLim)/(2*ErrorLim));
                         Data2(Data2<1) = 1; Data2(Data2>64) = 64;
                         Color=zeros(64,3);
-                        Color(:,1)=[linspace(0,0.8,32), repmat(0.8,[1,32])];
-                        Color(:,2)=[linspace(0,0.8,32), linspace(0.8,0,32)];
-                        Color(:,3)=[repmat(0.8,[1,32]), linspace(0.8,0,32)];
+                        Color(:,1)=[linspace(0,1,32).^.5*.8, repmat(0.8,[1,32])];
+                        Color(:,2)=[linspace(0,1,32).^.5*.8, linspace(1,0,32).^.5*.8];
+                        Color(:,3)=[repmat(0.8,[1,32]), linspace(1,0,32).^.5*.8];
                         Data2 = Color(Data2(:),:);
                         Data2 = reshape(Data2,[size(x,1),size(x,2),3]);
                         H.Plot{i,j}=surf(...
@@ -2079,9 +2079,9 @@ for i=1:size(MIAFitMeta.Plots,1)
                     addprop(h.Full_Link,'ZLim');
                     addprop(h.Full_Link,'DataAspectRatio');
                     Color=zeros(64,3);
-                    Color(:,1)=[linspace(0,0.8,32), repmat(0.8,[1,32])];
-                    Color(:,2)=[linspace(0,0.8,32), linspace(0.8,0,32)];
-                    Color(:,3)=[repmat(0.8,[1,32]), linspace(0.8,0,32)];
+                    Color(:,1)=[linspace(0,1,32).^.5*.8, repmat(0.8,[1,32])];
+                    Color(:,2)=[linspace(0,1,32).^.5*.8, linspace(1,0,32).^.5*.8];
+                    Color(:,3)=[repmat(0.8,[1,32]), linspace(1,0,32).^.5*.8];
                     Data = OUT./B;
                     h.Plots.Fit.XData = x(1,:);
                     h.Plots.Fit.YData = y(:,1);
@@ -2616,7 +2616,29 @@ if sum(Global)==0
         Lb=lb(~Fixed(i,:));
         Ub=ub(~Fixed(i,:));        
         %%% Performs fit
-        [Fitted_Params,~,~,Flag,~,~,~]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i,h,omit},ZData./EData,Lb,Ub,opts);
+        [Fitted_Params,~,weighted_residuals,Flag,~,~,jacobian]=lsqcurvefit(@Fit_Single,Fit_Params,{x,y,EData,Omit,i,h,omit},ZData./EData,Lb,Ub,opts);
+        %%% calculate confidence intervals
+        if 1%h.Conf_Interval.Value
+            ConfInt = zeros(size(MIAFitMeta.Params,1),2);
+            method = 1;%h.Conf_Interval_Method.Value;
+            alpha = 0.05; %95% confidence interval
+            if method == 1
+                ConfInt(~Fixed(i,:),:) = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
+            elseif method == 2
+                confint = nlparci(Fitted_Params,weighted_residuals,'jacobian',jacobian,'alpha',alpha);
+                proposal = (confint(:,2)-confint(:,1))/2; proposal = (proposal/10)';
+                %%% define log-likelihood function, which is just the negative of the chi2 divided by two! (do not use reduced chi2!!!)
+                loglikelihood = @(x) (-1/2)*sum((Fit_Single(x,{XData,EData,i,Fixed(i,:)})-YData./EData).^2);
+                %%% Sample
+                nsamples = 1E4; spacing = 1E2;
+                [samples,prob,acceptance] =  MHsample(nsamples,loglikelihood,@(x) 1,proposal,Lb,Ub,Fitted_Params,zeros(1,numel(Fitted_Params)));
+                v = numel(weighted_residuals)-numel(Fitted_Params); % number of degrees of freedom
+                perc = tinv(1-alpha/2,v);
+                ConfInt(~Fixed(i,:),:) = [(mean(samples(1:spacing:end,:))-perc*std(samples(1:spacing:end,:)))', (mean(samples(1:spacing:end,:))+perc*std(samples(1:spacing:end,:)))'];
+            end
+            MIAFitMeta.Confidence_Intervals{i} = ConfInt;
+            disp(ConfInt);
+        end
         %%% Updates parameters
         MIAFitMeta.Params(~Fixed(i,:),i)=Fitted_Params;
     end  

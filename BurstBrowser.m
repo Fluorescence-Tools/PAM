@@ -557,6 +557,7 @@ if isempty(hfig)
     h.AddSpeciesMenuItem = javax.swing.JMenuItem('Add Species');
     h.RemoveSpeciesMenuItem = javax.swing.JMenuItem('Remove Species');
     h.RenameSpeciesMenuItem = javax.swing.JMenuItem('Rename Species');
+    h.RemoveFileMenuItem = javax.swing.JMenuItem('Remove File');
     h.ExportMenuItem = javax.swing.JMenu('Export...');
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
@@ -569,6 +570,7 @@ if isempty(hfig)
     set(h.AddSpeciesMenuItem,'ActionPerformedCallback',@AddSpecies);
     set(h.RemoveSpeciesMenuItem,'ActionPerformedCallback',@RemoveSpecies);
     set(h.RenameSpeciesMenuItem,'ActionPerformedCallback',@RenameSpecies);
+    set(h.RemoveFileMenuItem,'ActionPerformedCallback',@RemoveFile);
     set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
@@ -581,6 +583,8 @@ if isempty(hfig)
     h.SpeciesListMenu.add(h.AddSpeciesMenuItem);
     h.SpeciesListMenu.add(h.RemoveSpeciesMenuItem);
     h.SpeciesListMenu.add(h.RenameSpeciesMenuItem);
+    h.SpeciesListMenu.addSeparator;
+    h.SpeciesListMenu.add(h.RemoveFileMenuItem);
     h.SpeciesListMenu.addSeparator;
     h.SpeciesListMenu.add(h.SendToTauFit);
     h.ExportMenuItem.add(h.Export_FRET_Hist_Menu);
@@ -683,8 +687,20 @@ if isempty(hfig)
         'Callback',@Export_To_PDA);
     iconbutton(h.Export_To_PDA_Button,[PathToApp filesep 'images/BurstBrowser/plottype-hist.jpg']);
     
-    %%% Multiselect checkbox and multiplot button
+    %%% Context menu of multiplot button
+    % option to toggle normalization, normalization method selection, and
+    % display of sum of all populations
     h.MultiPlotButtonMenu = uicontextmenu;
+    h.MultiPlotButtonMenu_ToggleDisplayTotal = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ToggleDisplayTotal',...
+        'Label','Display sum of all populations',...
+        'Callback',@UpdateOptions);
+    if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+    else
+        h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+    end
     h.MultiPlotButtonMenu_ToggleNormalize = uimenu(...
         h.MultiPlotButtonMenu,...
         'Tag','MultiPlotButtonMenu_ToggleNormalize',...
@@ -694,6 +710,29 @@ if isempty(hfig)
         h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'on';
     else
         h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
+    end
+    h.MultiPlotButtonMenu_ChoooseNormalize = uimenu(...
+        h.MultiPlotButtonMenu,...
+        'Tag','MultiPlotButtonMenu_ChoooseNormalize',...
+        'Label','Normalize to...',...
+        'Callback',[]);
+    h.MultiPlotButtonMenu_NormalizeArea = uimenu(...
+        h.MultiPlotButtonMenu_ChoooseNormalize,...
+        'Tag','MultiPlotButtonMenu_NormalizeArea',...
+        'Label','area',...
+        'Callback',@UpdateOptions);
+    h.MultiPlotButtonMenu_NormalizeMaximum = uimenu(...
+        h.MultiPlotButtonMenu_ChoooseNormalize,...
+        'Tag','MultiPlotButtonMenu_NormalizeMaximum',...
+        'Label','maximum',...
+        'Callback',@UpdateOptions);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'max'
+            h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'on';
+            h.MultiPlotButtonMenu_NormalizeArea.Checked = 'off';
+        case 'area'
+            h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'off';
+            h.MultiPlotButtonMenu_NormalizeArea.Checked = 'on';
     end
     %%% Define MultiPlot Button
     h.MultiPlotButton = uicontrol(...
@@ -1716,6 +1755,23 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'FontSize',12,...
         'TooltipString','If selected, you are required to manually select the start point for the fit by clicking inside the 2D plot.');
+    h.Fit_Gaussian_Use_Weights = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Callback',@UpdateOptions,...
+        'Value',UserValues.BurstBrowser.Settings.FitGaussPick,...
+        'Position',[0.6,0.8,0.4,0.08],...
+        'String','Use weights',...
+        'Parent',h.FitGaussian_Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',12,...
+        'TooltipString','<html>If selected, the least-squares fits uses weights.<br>Weights are estimated based on Poissonian counting, i.e. sqrt(N).');
+    switch UserValues.BurstBrowser.Settings.GaussianFitMethod
+        case 'MLE'
+            h.Fit_Gaussian_Use_Weights.Visible = 'off';
+        case 'LSQ'
+            h.Fit_Gaussian_Use_Weights.Visible = 'on';
+    end
     h.Fit_GaussianMethod_Popupmenu = uicontrol('Style','popup',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
@@ -1724,11 +1780,11 @@ if isempty(hfig)
         'Value',find(strcmp({'MLE','LSQ'},UserValues.BurstBrowser.Settings.GaussianFitMethod)),...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
-        'TooltipStr','Fit Method. LSQ allows fixing of parameters.');
+        'TooltipStr','Fit Method. LSQ allows fixing of parameters.'); 
     h.Fit_GaussianChi2_Text = uicontrol('Style','text',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
-        'Position',[0.6,0.8,0.4,0.08],...
+        'Position',[0.1,0.8,0.3,0.08],...
         'String','',...
         'HorizontalAlignment','center',...
         'Parent',h.FitGaussian_Panel,...
@@ -4206,6 +4262,7 @@ if UserValues.BurstBrowser.Settings.CorrectionOnLoad == 1
 else %%% indicate that no corrections are applied
     h.ApplyCorrectionsButton.ForegroundColor = [1 0 0];
 end
+BurstMeta.SelectedFile = 1; % select first file again
 
 UpdateCutTable(h);
 UpdateCuts();
@@ -4620,8 +4677,8 @@ for i = 1:numel(FileName)
         %add species to list
         S.BurstData.SpeciesNames{1} = 'Global Cuts';
         % also add two species for convenience
-        S.BurstData.SpeciesNames{2} = 'Species 1';
-        S.BurstData.SpeciesNames{3} = 'Species 2';
+        S.BurstData.SpeciesNames{2} = 'Subspecies 1';
+        S.BurstData.SpeciesNames{3} = 'Subspecies 2';
         S.BurstData.SelectedSpecies = [1,1];
     elseif isfield(S.BurstData,'Cut') %%% cuts existed, change to new format with uitree
         if isfield(S.BurstData,'SelectedSpecies')
@@ -4877,6 +4934,7 @@ switch obj
                 h.Current_PrintPath_Menu.Enable = 'on';
         end
 end
+h.Current_PrintPath_Text.Label = UserValues.BurstBrowser.PrintPath;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5047,10 +5105,15 @@ end
 
 switch mode
     case 2 % 2ColorMFD
-        xE = linspace(-0.1,1,N_bins+1);
+        xE = linspace(-0.1,1.1,N_bins+1);
         for i = 1:numel(E)
             H{i} = histcounts(E{i},xE);
-            H{i} = H{i}./sum(H{i});
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                   H{i} = H{i}./sum(H{i});
+                case 'max'
+                   H{i} = H{i}./max(H{i});
+            end
         end
         
         color = lines(numel(H));
@@ -5065,7 +5128,7 @@ switch mode
         ax.FontSize = 20;
         ax.LineWidth = 2;
         ax.Layer = 'top';
-        ax.XLim = [-0.1,1];
+        ax.XLim = [-0.1,1.1];
         ax.Units = 'pixels';
         xlabel('FRET efficiency');
         ylabel('occurrence (norm.)');
@@ -5105,11 +5168,18 @@ switch mode
         xEBR = linspace(-0.2,1,ceil(N_bins*1.2)+1);
         for i = 1:numel(EGR)
             HGR{i} = histcounts(EGR{i},xE);
-            HGR{i} = HGR{i}./sum(HGR{i});
             HBG{i} = histcounts(EBG{i},xE);
-            HBG{i} = HBG{i}./sum(HBG{i});
             HBR{i} = histcounts(EBR{i},xEBR);
-            HBR{i} = HBR{i}./sum(HBR{i});
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    HGR{i} = HGR{i}./sum(HGR{i});
+                    HBG{i} = HBG{i}./sum(HBG{i});
+                    HBR{i} = HBR{i}./sum(HBR{i});
+                case 'max'
+                    HGR{i} = HGR{i}./max(HGR{i});
+                    HBG{i} = HBG{i}./max(HBG{i});
+                    HBR{i} = HBR{i}./max(HBR{i});
+            end
         end
         
         color = lines(numel(HGR));
@@ -5189,7 +5259,12 @@ switch mode
         for i = 1:numel(P)
             if valid(i)
                 H{i} = histcounts(P{i},xP);
-                H{i} = H{i}./sum(H{i});
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        H{i} = H{i}./sum(H{i});
+                    case 'max'
+                        H{i} = H{i}./max(H{i});
+                end
             end
         end
         
@@ -5261,6 +5336,8 @@ switch obj
         UserValues.BurstBrowser.Settings.fFCS_UseFRET = obj.Value;
     case h.Fit_Gaussian_Pick
         UserValues.BurstBrowser.Settings.FitGaussPick = obj.Value;
+    case h.Fit_Gaussian_Use_Weights
+        UserValues.BurstBrowser.Settings.FitGauss_UseWeights = obj.Value;
     case h.ApplyCorrectionsOnLoad
         UserValues.BurstBrowser.Settings.CorrectionOnLoad = obj.Value;
     case h.Fit_GaussianMethod_Popupmenu
@@ -5273,6 +5350,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatMLE;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'MLE';
                 h.Fit_GaussianChi2_Text.String = '';
+                h.Fit_Gaussian_Use_Weights.Visible = 'off';
             case 2 %%% changed to LSQ
                 h.Fit_Gaussian_Text.ColumnName = h.GUIData.ColumnNameLSQ;
                 h.Fit_Gaussian_Text.Data = h.GUIData.TableDataLSQ;
@@ -5280,6 +5358,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnWidth = h.GUIData.ColumnWidthLSQ;
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatLSQ;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'LSQ';
+                h.Fit_Gaussian_Use_Weights.Visible = 'on';
         end
         UpdateOptions(h.Fit_NGaussian_Popupmenu,[]);
     case h.Fit_NGaussian_Popupmenu
@@ -5394,6 +5473,31 @@ switch obj
             case 'on'
                 h.MultiPlotButtonMenu_ToggleNormalize.Checked = 'off';
                 UserValues.BurstBrowser.Settings.Normalize_Multiplot = false;
+        end
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
+        PlotLifetimeInd([],[],h);
+   case h.MultiPlotButtonMenu_ToggleDisplayTotal
+        switch h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked
+            case 'off'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = true;
+            case 'on'
+                h.MultiPlotButtonMenu_ToggleDisplayTotal.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Display_Total_Multiplot = false;
+        end
+        UpdatePlot([],[],h);
+        PlotLifetimeInd([],[],h); 
+    case {h.MultiPlotButtonMenu_NormalizeMaximum, h.MultiPlotButtonMenu_NormalizeArea}
+        switch obj
+            case h.MultiPlotButtonMenu_NormalizeMaximum
+                h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'on';
+                h.MultiPlotButtonMenu_NormalizeArea.Checked = 'off';
+                UserValues.BurstBrowser.Settings.Normalize_Method = 'max';
+            case h.MultiPlotButtonMenu_NormalizeArea
+                h.MultiPlotButtonMenu_NormalizeMaximum.Checked = 'off';
+                h.MultiPlotButtonMenu_NormalizeArea.Checked = 'on';
+                UserValues.BurstBrowser.Settings.Normalize_Method = 'area';
         end
         UpdatePlot([],[],h);
         UpdateLifetimePlots([],[],h);
@@ -5523,7 +5627,11 @@ if numel(clicked) > 1
     end
     clicked = clicked(valid);
     %%% update the selection to reflect the filtering
-    hTree.setSelectedNodes(clicked);
+    if numel(clicked) > 1
+        hTree.setSelectedNodes(clicked);
+    else
+        hTree.setSelectedNode(clicked);
+    end
 end
 
 clicked = clicked(1);
@@ -5643,27 +5751,41 @@ species = BurstData{file}.SelectedSpecies;
 % distinguish between top level ('Species') or SpeciesGroup 
 % using name --> level = 0,1
 if all(species == [0,0])
-    level = 0;
+    return;
 elseif species(2) == 1
     level = 1;
-else
-    return;
+elseif species(2) > 1
+    level = 2;
 end
 
 switch level
-    case 0
-        %add a species group to top level
+    case 1
+        % add a species group to top level
+        % use default cut template
+        switch BurstData{file}.BAMethod
+            case {1,2,5}
+                %%% FRET efficiency and stoichiometry basic cuts
+                Cut = {{'FRET Efficiency',-0.1,1.1,true,false},{'Stoichiometry',-0.1,1.1,true,false}};
+            case {3,4}
+                %%% 3color, only do FRET GR and Stoichiometry cuts
+                Cut = {{'FRET Efficiency GR',-0.1,1.1,true,false},{'Stoichiometry GR',-0.1,1.1,true,false},...
+                    {'Stoichiometry BG',-0.1,1.1,true,false},{'Stoichiometry BR',-0.1,1.1,true,false}};
+        end
         name = ['Species ' num2str(size(BurstData{file}.SpeciesNames,1)+1)];
         BurstData{file}.SpeciesNames{end+1,1} = name;
-        BurstData{file}.Cut{end+1,1} = {};
+        BurstData{file}.Cut{end+1,1} = Cut;
         BurstData{file}.SelectedSpecies = [size(BurstData{file}.SpeciesNames,1),1];
-    case 1
+        %%% add two subspecies
+        BurstData{file}.SpeciesNames{end,2} = 'Subspecies 1';
+        BurstData{file}.SpeciesNames{end,3} = 'Subspecies 2';
+        BurstData{file}.Cut{end,2} = Cut; BurstData{file}.Cut{end,3} = Cut;
+    case 2
         % add species to species group
         % check if species group exists
         if ~isempty(BurstData{file}.SpeciesNames{species(1),species(2)})
             % find out number of existing species for species group
             num_species= sum(~cellfun(@isempty,BurstData{file}.SpeciesNames(species(1),:)));
-            name = ['Species ' num2str(num_species)];
+            name = ['Subspecies ' num2str(num_species)];
             BurstData{file}.SpeciesNames{species(1),num_species+1} = name;
             BurstData{file}.Cut{species(1),num_species+1} = BurstData{file}.Cut{species(1),1};
             BurstData{file}.SelectedSpecies(2) = num_species+1;
@@ -5711,23 +5833,53 @@ switch level
         UpdateLifetimePlots([],[],h);
     case 1
         %%% remove entire species group
-        BurstData{file}.SpeciesNames(species(1),:) = [];
-        BurstData{file}.Cut(species(1),:) = [];
-        BurstData{file}.SelectedSpecies(1)=species(1)-1;
-    case 2
-        %%% remove only the one field and shift right of it to the left
-        BurstData{file}.SpeciesNames{species(1),species(2)} = [];
-        temp = BurstData{file}.SpeciesNames(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.SpeciesNames(species(1),:) = [];
-        BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
-        
-        BurstData{file}.Cut{species(1),species(2)} = [];
-        temp = BurstData{file}.Cut(species(1),:);
-        temp = temp(~cellfun(@isempty,temp));
-        BurstData{file}.Cut(species(1),:) = [];
-        BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+        %%% only remove if there are other groups left afterwards!
+        if size(BurstData{file}.SpeciesNames,1) > 1
+            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.SelectedSpecies(1)=species(1)-1;
+        end
+    case 2 %%% subspecies
+        %%% only remove if there is more than 1 subspecies left
+        if sum(cellfun(@(x) ~isempty(x),BurstData{file}.SpeciesNames(species(1),:))) >= 3
+            %%% remove only the one field and shift right of it to the left
+            BurstData{file}.SpeciesNames{species(1),species(2)} = [];
+            temp = BurstData{file}.SpeciesNames(species(1),:);
+            temp = temp(~cellfun(@isempty,temp));
+            BurstData{file}.SpeciesNames(species(1),:) = [];
+            BurstData{file}.SpeciesNames(species(1),1:numel(temp)) = temp;
+
+            BurstData{file}.Cut{species(1),species(2)} = [];
+            temp = BurstData{file}.Cut(species(1),:);
+            temp = temp(cellfun(@iscell,temp));
+            BurstData{file}.Cut(species(1),:) = [];
+            BurstData{file}.Cut(species(1),1:numel(temp)) = temp;
+        end
 end
+
+UpdateSpeciesList(h);
+h = guidata(gcf);drawnow;
+Update_fFCS_GUI([],[]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Remove File belonging to Selected Species (Right-click menu item) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function RemoveFile(obj,eventData)
+global BurstData BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+
+file = BurstMeta.SelectedFile;
+species = BurstData{file}.SelectedSpecies;
+
+%%% remove file
+BurstData{file} = [];
+for i = file:(numel(BurstData)-1);
+    BurstData{i} = BurstData{i+1};
+end
+BurstData(end) = [];
+BurstMeta.SelectedFile = 1;
+UpdatePlot([],[],h);
+UpdateLifetimePlots([],[],h);
 
 UpdateSpeciesList(h);
 h = guidata(gcf);drawnow;
@@ -6364,8 +6516,14 @@ if ~advanced
             hx{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),1),binsx);
             hy{i} = histcounts(datapoints(n_per_species_cum(i):n_per_species_cum(i+1),2),binsy); 
             if normalize %obj ~= h.Fit_Gaussian_Button
-                hx{i} = hx{i}./sum(hx{i});
-                hy{i} = hy{i}./sum(hy{i});
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx{i} = hx{i}./sum(hx{i});
+                        hy{i} = hy{i}./sum(hy{i});
+                    case 'max'
+                        hx{i} = hx{i}./max(hx{i});
+                        hy{i} = hy{i}./max(hy{i});
+                end
             end
         end
         color = lines(numel(n_per_species));
@@ -6373,9 +6531,11 @@ if ~advanced
             BurstMeta.Plots.MultiScatter.h1dx(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_1d_y));
+        end
         %%% hide normal 1d plots
         set(BurstMeta.Plots.Main_histX,'Visible','off');
         set(BurstMeta.Plots.Main_histY,'Visible','off');
@@ -6395,7 +6555,11 @@ if ~advanced
             end
             str{i} = strrep(name,'_',' ');  
         end
-        legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_1d_x.Children(num_species+1:-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     end
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') %%% update scatter plots
         if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
@@ -6579,11 +6743,11 @@ else
 end
 
 % Update no. bursts
-set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts, '...
-                                num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' /s ('...
+set(h.text_nobursts, 'String', [num2str(sum(BurstData{file}.Selected)) ' bursts ('...
                                 num2str(round(sum(BurstData{file}.Selected/numel(BurstData{file}.Selected)*1000))/10) '% of total)']);
+                            
 if sum(strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)) == 1
-    h.text_nobursts.TooltipString = [num2str(round(sum(BurstData{file}.Selected)/BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray))*10)/10) ' bursts per second'];
+    h.text_nobursts.TooltipString = sprintf('%.1f events per second',size(BurstData{file}.DataArray,1)./BurstData{file}.DataArray(end,strcmp('Mean Macrotime [s]',BurstData{file}.NameArray)));
 end
 
 if h.DisplayAverage.Value == 1
@@ -6799,11 +6963,19 @@ if obj == h.Fit_Gaussian_Button
                 
                 xdata = {xbins,sum(sum(HH)),fixed,nG,0};
                 ydata = sum(HH,1);
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit_1D,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
                 
-                chi2 = sum((residuals.^2)./max(1,ydata))./(numel(ydata)-1-sum(fixed));
+                chi2 = sum((residuals.^2)./max(1,ydata))./(sum(ydata>0)-1-sum(fixed));
                 h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
                 
                 Res = zeros(1,numel(fixed));
@@ -6897,6 +7069,15 @@ if obj == h.Fit_Gaussian_Button
                 if h.Hist_log10.Value; HH = 10.^(HH);end;
                 ydata = HH;
                 xdata = {xbins,ybins,sum(sum(ydata)),fixed,nG,0};
+                
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
@@ -7366,7 +7547,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 xlimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}))];
             end
-
+            %%% fix infinite value
+            if ~isfinite(xlimits{i}(2))
+                xlimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,x{i})),x{i}));
+            end   
             if any(strcmp(NameArray{y{i}},CutParameters))
                 if CutState{strcmp(NameArray{y{i}},CutParameters),4} == 1 %%% Check if active
                     %%% Set x-axis limits according to cut boundaries of selected parameter
@@ -7380,6 +7564,10 @@ if ~exist('limits','var')
                 %%% set to min max
                 ylimits{i} = [min(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i})), max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}))];
             end
+            %%% fix infinite value
+            if ~isfinite(ylimits{i}(2))
+                ylimits{i}(2) = max(datatoplot{i}(isfinite(datatoplot{i}(:,y{i})),y{i}));
+            end  
             if isempty(xlimits{i})
                 %selection is empty
                 xlimits{i} = [0,1];
@@ -7415,6 +7603,7 @@ elseif exist('limits','var') %%% called with absolute limits
 %     y_boundaries(1) = max([y_boundaries(1) limits{2}(1)]);
 %     y_boundaries(2) = min([y_boundaries(2) limits{2}(2)]);
 end
+
 if UserValues.BurstBrowser.Display.Restrict_EandS_Range
     %%% hard-code limits of [-0.1,1.1] for any Stoichiometry or FRET
     %%% efficiency parameter if the cut limits fall within that range
@@ -7435,7 +7624,12 @@ normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && num_species 
 if normalize
     %%% normalize each histogram to equal proportion
     for i = 1:num_species
-        H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'area'
+                H{i} = H{i}./sum(H{i}(:))./num_species; %%% ensure that total data sums up to 1
+            case 'max'
+                H{i} = H{i}./max(H{i}(:))./num_species;
+        end
     end
 end
 
@@ -7536,7 +7730,12 @@ end
 hx = sum(H{1},1);
 %normalize
 if normalize
-    hx = hx./sum(hx);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'max'
+            hx = hx./max(hx);
+        case 'area'
+            hx = hx./sum(hx);
+    end 
 end
 hx = hx'; hx = [hx; hx(end)];
 xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
@@ -7549,7 +7748,12 @@ for i = 2:num_species
     hx = sum(H{i},1);
     %normalize
     if normalize
-        hx = hx./sum(hx);
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'max'
+                hx = hx./max(hx);
+            case 'area'
+                hx = hx./sum(hx);
+        end
     end
     hx = hx'; hx = [hx; hx(end)];
     BurstMeta.Plots.Multi.Multi_histX(i).XData = xbins;
@@ -7563,7 +7767,12 @@ set(h.axes_1d_x,'YTick',yticks(2:end));
 hy = sum(H{1},2);
 %normalize
 if normalize
-    hy = hy./sum(hy);
+    switch UserValues.BurstBrowser.Settings.Normalize_Method
+        case 'area'
+            hy = hy./sum(hy);
+        case 'max'
+            hy = hy./max(hy);
+    end
 end
 hy = hy'; hy = [hy, hy(end)];
 ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
@@ -7576,7 +7785,12 @@ for i = 2:num_species
     hy = sum(H{i},2);
     %normalize
     if normalize
-        hy = hy./sum(hy);
+        switch UserValues.BurstBrowser.Settings.Normalize_Method
+            case 'area'
+                hy = hy./sum(hy);
+            case 'max'
+                hy = hy./max(hy);
+        end
     end
     hy = hy'; hy = [hy, hy(end)];
     BurstMeta.Plots.Multi.Multi_histY(i).XData = ybins;
@@ -12307,18 +12521,34 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         n_per_species = cumsum([1,(n_per_species-1)]);
         for i = 1:numel(n_per_species)-1
             hx{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),1),binsx); 
-            if normalize;hx{i} = hx{i}./sum(hx{i});end;
+            if normalize;
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx{i} = hx{i}./sum(hx{i});
+                    case 'max'
+                        hx{i} = hx{i}./max(hx{i});
+                end
+            end;
             hy{i} = histcounts(datapoints(n_per_species(i):n_per_species(i+1),2),binsy); 
-            if normalize;hy{i} = hy{i}./sum(hy{i});end;
+            if normalize;
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hy{i} = hy{i}./sum(hy{i});
+                    case 'max'
+                        hy{i} = hy{i}./max(hy{i});
+                end
+            end;
         end
         color = lines(numel(n_per_species));
         for i = 1:numel(hx)
             BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(binsx,[hx{i},hx{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(binsy,[hy{i},hy{i}(end)],'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
         end
-        hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
-        BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
-        BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            hx_total = sum(vertcat(hx{:}),1);hy_total = sum(vertcat(hy{:}),1);
+            BurstMeta.Plots.MultiScatter.h1dx_lifetime(end+1) = handle(stairs(binsx,[hx_total,hx_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
+            BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
+        end
     elseif gcbo == h.MultiPlotButton
         [zz,color] = overlay_colored(H);
         del = false(numel(h.axes_lifetime_ind_2d.Children),1);
@@ -12343,7 +12573,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         %plot first histogram
         hx = sum(H{1},1);
         if normalize
-            hx = hx./sum(hx);
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    hx = hx./sum(hx);
+                case 'max'
+                    hx = hx./max(hx);
+            end
         end
         hx = hx'; hx = [hx; hx(end)];
         xbins = [xbins, xbins(end)+min(diff(xbins))]-min(diff(xbins))/2;
@@ -12352,7 +12587,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         for i = 2:numel(H)
             hx = sum(H{i},1);
             if normalize
-                hx = hx./sum(hx);
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hx = hx./sum(hx);
+                    case 'max'
+                        hx = hx./max(hx);
+                end
             end
             hx = hx'; hx = [hx; hx(end)];
             BurstMeta.Plots.MultiScatter.h1dx_lifetime(i) = handle(stairs(xbins,hx,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_x));
@@ -12361,7 +12601,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         %plot first histogram
         hy = sum(H{1},2);
         if normalize
-            hy = hy./sum(hy);
+            switch UserValues.BurstBrowser.Settings.Normalize_Method
+                case 'area'
+                    hy = hy./sum(hy);
+                case 'max'
+                    hy = hy./max(hy);
+            end
         end
         hy = [hy; hy(end)];
         ybins = [ybins, ybins(end)+min(diff(ybins))]-min(diff(ybins))/2;
@@ -12370,7 +12615,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         for i = 2:numel(H)
             hy = sum(H{i},2);
             if normalize
-                hy = hy./sum(hy);
+                switch UserValues.BurstBrowser.Settings.Normalize_Method
+                    case 'area'
+                        hy = hy./sum(hy);
+                    case 'max'
+                        hy = hy./max(hy);
+                end
             end
             hy = [hy; hy(end)];
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(i) = handle(stairs(ybins,hy,'Color',color(i,:),'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
@@ -12397,7 +12647,11 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         str{i} = strrep(name,'_',' ');  
     end
     if gcbo ~= h.MultiPlotButton
-        legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        if UserValues.BurstBrowser.Settings.Display_Total_Multiplot
+            legend(h.axes_lifetime_ind_1d_x.Children((num_species+1):-1:2),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        else
+            legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
+        end
     elseif gcbo ==  h.MultiPlotButton
         legend(h.axes_lifetime_ind_1d_x.Children(num_species:-1:1),str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
     end
@@ -13054,17 +13308,21 @@ end
 
 function [out, func, xval] = conversion_tau_3C(tauD,R0BG,R0BR,sBG,sBR)
 global BurstData BurstMeta
-res = 100;
-xval = linspace(0,tauD,100);
+res = 10;
+xval = linspace(0,tauD,1000);
 %range of RDA center values, i.e. 100 values in 0.1*R0 to 10*R0
-RBG = linspace(0*R0BG,4*R0BG,res);
-RBR = linspace(0*R0BR,4*R0BR,res);
+[RBG, RBR] = meshgrid(linspace(0*R0BG,4*R0BG,100),linspace(0*R0BR,4*R0BR,100));
+RBG = RBG(:);
+RBR = RBR(:);
+%RBG = linspace(0*R0BG,4*R0BG,res);
+%RBR = linspace(0*R0BR,4*R0BR,res);
+n = numel(RBG);
 %for every R calculate gaussian distribution
-p = zeros(res,res,res);
-rBG = zeros(res,res,res);
-rBR = zeros(res,res,res);
-for j = 1:res
-    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-4*sBG,RBG(j)+4*sBG,res),linspace(RBR(j)-4*sBR,RBR(j)+4*sBR,res));
+p = zeros(res,res,n);
+rBG = zeros(res,res,n);
+rBR = zeros(res,res,n);
+for j = 1:n
+    [xRBG, xRBR] = meshgrid(linspace(RBG(j)-3*sBG,RBG(j)+3*sBG,res),linspace(RBR(j)-3*sBR,RBR(j)+3*sBR,res));
     dummy = exp(-( ((xRBG-RBG(j)).^2)./(2*sBG^2) + ((xRBR-RBR(j)).^2)./(2*sBR^2) ));
     dummy(xRBG < 0) = 0;
     dummy(xRBR < 0) = 0;
@@ -13075,8 +13333,8 @@ for j = 1:res
 end
 
 %calculate lifetime distribution
-tau = zeros(res,res,res);
-for j = 1:res
+tau = zeros(res,res,n);
+for j = 1:n
     %%% first calculate the Efficiencies B->G and B->R
     EBG = 1./((rBG(:,:,j)./R0BG).^6 + 1);
     EBR = 1./((rBR(:,:,j)./R0BR).^6 + 1);
@@ -13088,23 +13346,29 @@ for j = 1:res
 end
 
 %calculate species weighted taux
-taux = zeros(1,res);
-for j = 1:res
+taux = zeros(1,n);
+for j = 1:n
     taux(j) = sum(sum(p(:,:,j).*tau(:,:,j)));
 end
 
 %calculate intensity weighted tauf
-tauf = zeros(1,res);
-for j = 1:res
+tauf = zeros(1,n);
+for j = 1:n
     tauf(j) = sum(sum(p(:,:,j).*(tau(:,:,j).^2)))./taux(j);
 end
 
-%coefficients = polyfit(tauf,taux,3);
-%out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% we need the fitting here because of ambiguity between tauf and taux
+% similar taux values can have different tauf values, e.g. one can not
+% distinguish between donor (B) quenching due to close G and far R, or close R
+% and far G, which will have different effect on the relation between tauf
+% and taux due to the mixing.
+coefficients = polyfit(tauf,taux,3);
+out = 1- ( coefficients(1).*xval.^3 + coefficients(2).*xval.^2 + coefficients(3).*xval + coefficients(4) )./tauD;
+% figure;plot(xval,out);hold on;plot(xval,1-interp1(tauf,taux,xval)./tauD)
 
-out = 1-interp1(tauf,taux,xval)./tauD;
-out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
-out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
+%out = 1-interp1(tauf,taux,xval)./tauD;
+%out(xval == 0) = 1; %%% set E to 1 at tau = 0 (interp1 returns NaN)
+%out(xval == BurstData{BurstMeta.SelectedFile}.Corrections.DonorLifetimeBlue) = 0; % lifetime = tauD is E = 0
 if nargout > 1
     func = @(x) 1-interp1(tauf,taux,x)./tauD;
 end
@@ -14761,7 +15025,7 @@ file = BurstMeta.SelectedFile;
 if directly_save
     if ask_file
         %%% Get Path to save File
-        FilterSpec = {'*.png','PNG File';'*.pdf','PDF File';'*.eps','EPS File';'*.tif','TIFF File'};
+        FilterSpec = {'*.png','PNG File (*.png)';'*.pdf','PDF File (*.pdf)';'*.eps','EPS File (*.eps)';'*.tif','TIFF File (*.tif)';'*.fig','MATLAB figure (*.fig)'};
         [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,'Choose a filename',fullfile(getPrintPath(),FigureName));       
         if FileName == 0
             delete(hfig);
@@ -14769,6 +15033,7 @@ if directly_save
         end
         if ~UserValues.BurstBrowser.Settings.UseFilePathForExport
             UserValues.BurstBrowser.PrintPath = PathName;
+            h = guidata(findobj('Tag','BurstBrowser'));
             h.Current_PrintPath_Text.Label = PathName;
         end
         LSUserValues(1);
@@ -14801,10 +15066,13 @@ if directly_save
                 case 2
                     print(hfig,fullfile(PathName,FileName),'-dpdf',sprintf('-r%d',dpi));
                 case 3
-                    print(hfig,fullfile(PathName,FileName),'-deps');
+                    print('-painters',hfig,fullfile(PathName,FileName),'-depsc2');
             end
         case 4
             print(hfig,fullfile(PathName,FileName),'-dtiff',sprintf('-r%d',dpi));
+        case 5
+            hfig.CloseRequestFcn = [];
+            savefig(hfig,fullfile(PathName,FileName));
     end
     
     hfig.CloseRequestFcn = @(x,y) delete(x);
@@ -15438,10 +15706,6 @@ for k = 1:numel(file) %loop through all selected species
     cbar.Ticks = [];
     cbar.TickLabels = [];
     
-    
-    if ispc
-        fontsize= fontsize/1.2;
-    end
     table_mode = 'html';
     switch table_mode
         case 'latex'
@@ -15469,28 +15733,27 @@ for k = 1:numel(file) %loop through all selected species
             t.Position = [-3.34 -0.81];
         case 'html'
             if arrangement == 1
-                fontsize = 12;
-                        table = '<html><table>';
-        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
-        table = [table '</table></html>'];
+                fontsize = 12; if ispc; fontsize = fontsize./1.2;end
+                table = '<html><table>';
+                table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '</table></html>'];
             else
-                fontsize = 8.5;
-        
-        table = '<html><table>';
-        table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-        table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-        table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-        table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-        table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
-        table = [table '</table></html>'];
+                fontsize = 8.5; if ispc; fontsize = fontsize./1.2;end
+                table = '<html><table>';
+                table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '</table></html>'];
             end
             hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', Pos.table,...
                 'FontName', UserValues.Look.Font, 'String',table, 'BackgroundColor',[1,1,1], 'FontSize', fontsize);
@@ -15665,6 +15928,13 @@ if nargin < 5
     limx = [min(x(isfinite(x))) max(x(isfinite(x)))];
     limy = [min(y(isfinite(y))) max(y(isfinite(y)))];
 end
+%%% fix limits for inf boundary
+if ~isfinite(limx(2))
+    limx(2) = max(x(isfinite(x)));
+end
+if ~isfinite(limy(2))
+    limy(2) = max(y(isfinite(y)));
+end
 
 valid = (x >= limx(1)) & (x <= limx(2)) & (y >= limy(1)) & (y <= limy(2));
 x = x(valid);
@@ -15760,6 +16030,7 @@ N_datapoints = xdata{2};
 fixed = xdata{3};
 nG = xdata{4};
 plot = xdata{5};
+
 %%% x contains the parameters for fitting in order
 %%% fraction,mu1,mu2,var1,var2,cov12
 %%% i.e. 6*n_species in total
@@ -15781,6 +16052,10 @@ for i = 1:nG
 end
 model = model./max([1,sum(model)]);
 model = model.*N_datapoints;
+if numel(xdata) > 5 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{6};
+end
 
 function model = MultiGaussFit(x,xdata)
 global BurstMeta
@@ -15805,7 +16080,7 @@ else
 end
 %%% A total of 3 2D gauss are considered
 [X,Y] = meshgrid(xbins,ybins);
-model = zeros(numel(xbins),numel(ybins));
+model = zeros(numel(ybins),numel(xbins));
 for i = 1:nG
     COV = [P(4+(i-1)*6),P(6+(i-1)*6);P(6+(i-1)*6),P(5+(i-1)*6)];
     [~,f] = chol(COV);
@@ -15813,10 +16088,14 @@ for i = 1:nG
         COV = fix_covariance_matrix(COV);
     end
     pdf = P(1+(i-1)*6)*mvnpdf([X(:) Y(:)],P([2:3]+(i-1)*6)',COV);
-    model = model + reshape(pdf,[numel(xbins),numel(ybins)]);
+    model = model + reshape(pdf,[numel(ybins),numel(xbins)]);
 end
 model = model./max([1,sum(sum(model))]);
 model = model.*N_datapoints;
+if numel(xdata) > 6 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{7};
+end
 
 function [covNew] = fix_covariance_matrix(cov)
 %find eigenvalue smaller 0
@@ -16536,10 +16815,10 @@ end
 hl = legend(p,str,'Interpreter','none','FontSize',12,'Box','off','Color','none');
 
 ax(2) = subplot(1,2,2);
-b = bar(coeff(:,1:2));legend('PC1','PC2');
+b = bar(coeff(:,1:2));hl2 = legend('PC1','PC2');set(hl2,'Color','none','Box','off');
 b(1).FaceColor = [0.7,0.7,0.7];
 b(2).FaceColor = [0.3,0.3,0.3];
-set(gca,'XTickLabel',{'E','S','tauD','tauA','rD','rA'});
+set(gca,'XTickLabel',{'E','S','\tau_{D(A)}','\tau_A','r_D','r_A'});
 ylabel('weight');
 xlim([0.5,6.5]);
 

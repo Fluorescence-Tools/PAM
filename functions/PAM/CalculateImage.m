@@ -39,7 +39,8 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
     
 else %%% Image data with additional line/frame stop markers and other more complex setups
     Pixeltimes=[];
-    for i=1:(numel(FileInfo.ImageTimes))
+    for i=1:(numel(FileInfo.ImageTimes)-1)
+        %for i=1:(numel(FileInfo.ImageTimes))
         for j=1:FileInfo.Lines
             Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineStops(i,j),FileInfo.Pixels+1);
         end
@@ -56,9 +57,11 @@ else %%% Image data with additional line/frame stop markers and other more compl
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
             Bin=uint32(Bin);
+            
+            Image(mod(1:numel(Image),FileInfo.Pixels+1)==0)=[];
             %%% Reshapes pixel vector to image
-            Image = flipud(permute(reshape(Image,FileInfo.Pixels+1,FileInfo.Lines),[2 1]));
-            Image = Image(:,1:end-1);
+            %Image = flipud(permute(reshape(Image,FileInfo.Pixels+1,FileInfo.Lines),[2 1]));
+            %Image = Image(:,1:end-1);
         case 3 %%% Full image
             [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
             Image = flipud(permute(reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,[]),[2 1 3]));

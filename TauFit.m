@@ -92,10 +92,17 @@ h.TauFit_Panel = uibuttongroup(...
 h.Microtime_Plot_Menu_MIPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_MIPlot = uimenu(...
     h.Microtime_Plot_Menu_MIPlot,...
-    'Label','Logscale',...
+    'Label','Y Logscale',...
     'Checked', UserValues.TauFit.YScaleLog,...
-    'Tag','Plot_Logscale_MIPlot',...
-    'Callback',@ChangeYScale);
+    'Tag','Plot_YLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_MIPlot = uimenu(...
+    h.Microtime_Plot_Menu_MIPlot,...
+    'Label','X Logscale',...
+    'Checked', UserValues.TauFit.XScaleLog,...
+    'Tag','Plot_XLogscale_MIPlot',...
+    'Callback',@ChangeScale);
+
 h.Microtime_Plot_Export = uimenu(...
     h.Microtime_Plot_Menu_MIPlot,...
     'Label','Export Plot',...
@@ -105,9 +112,14 @@ h.Microtime_Plot_Export = uimenu(...
 h.Microtime_Plot_Menu_ResultPlot = uicontextmenu;
 h.Microtime_Plot_ChangeYScaleMenu_ResultPlot = uimenu(...
     h.Microtime_Plot_Menu_ResultPlot,...
-    'Label','Logscale',...
-    'Tag','Plot_Logscale_ResultPlot',...
-    'Callback',@ChangeYScale);
+    'Label','Y Logscale',...
+    'Tag','Plot_YLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
+h.Microtime_Plot_ChangeXScaleMenu_ResultPlot = uimenu(...
+    h.Microtime_Plot_Menu_ResultPlot,...
+    'Label','X Logscale',...
+    'Tag','Plot_XLogscale_ResultPlot',...
+    'Callback',@ChangeScale);
 h.Export_Result = uimenu(...
     h.Microtime_Plot_Menu_ResultPlot,...
     'Label','Export Plot',...
@@ -252,6 +264,11 @@ h.Result_Plot_Aniso.Parent = h.HidePanel;
 if strcmp(h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked,'on')
     h.Microtime_Plot.YScale = 'log';
     h.Result_Plot.YScale = 'log';
+    %h.Result_Plot_Aniso.YScale = 'log';
+end
+if strcmp(h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked,'on')
+    h.Microtime_Plot.XScale = 'log';
+    h.Result_Plot.XScale = 'log';
     %h.Result_Plot_Aniso.YScale = 'log';
 end
 %% Sliders
@@ -1040,7 +1057,7 @@ if exist('bh','var')
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_DipAndRise = uimenu('Parent',h.Fit_Aniso_Menu,...
-            'Label','"Fit Anisotropy (2 exp lifetime with independent anisotropy)"',...
+            'Label','Fit Anisotropy (2 exp lifetime with independent anisotropy)',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Aniso_Button.UIContextMenu = h.Fit_Aniso_Menu;
@@ -1290,8 +1307,20 @@ h.Settings_Panel = uibuttongroup(...
     'ForegroundColor',Look.Fore,...
     'HighlightColor',Look.Control,...
     'ShadowColor',Look.Shadow,...
-    'Position',[0 0 1 1],...
+    'Position',[0 0.5 1 0.5],...
     'Tag','Settings_Panel');
+
+h.IRF_Cleanup_Panel = uibuttongroup(...
+    'Parent',h.Settings_Tab,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'HighlightColor',Look.Control,...
+    'ShadowColor',Look.Shadow,...
+    'Position',[0 0 1 0.5],...
+    'FontSize',12,...
+    'Tag','IRF_Cleanup_Panel',...
+    'Title','IRF cleanup');
 
 h.ConvolutionType_Text = uicontrol(...
     'Style','text',...
@@ -1368,6 +1397,31 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'FontSize',10,...
     'Tag','UseWeightedResiduals_Menu',...
     'Callback',@UpdateOptions);
+
+h.Cleanup_IRF_Menu = uicontrol(...
+    'Style','checkbox',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'BackgroundColor',Look.Back,...
+    'ForegroundColor',Look.Fore,...
+    'Position',[0.05 0.1 0.95 0.05],...
+    'String','Clean up IRF by fitting to Gamma distribution',...
+    'Value',UserValues.TauFit.cleanup_IRF,...
+    'FontSize',10,...
+    'Tag','Cleanup_IRF_Menu',...
+    'Callback',@UpdateOptions);
+
+h.Cleanup_IRF_axes = axes('Parent',h.IRF_Cleanup_Panel,...
+    'Position',[0.125,0.2,0.83,0.77],'Units','normalized','FontSize',10,'XColor',Look.Fore,'YColor',Look.Fore);
+h.Plots.IRF_cleanup.IRF_data = plot(h.Cleanup_IRF_axes,1:1:100,normpdf(1:100,20,2),'LineStyle','none','Marker','.','MarkerSize',10);
+hold on;
+h.Plots.IRF_cleanup.IRF_fit = plot(h.Cleanup_IRF_axes,1:0.1:100,normpdf(1:0.1:100,20,2),'LineStyle','-','Marker','none','MarkerSize',10,'LineWidth',2);
+h.Cleanup_IRF_axes.XLabel.String = 'Time [ns]';
+h.Cleanup_IRF_axes.YLabel.String = 'PDF';
+h.Cleanup_IRF_axes.XColor = Look.Fore;
+h.Cleanup_IRF_axes.YColor = Look.Fore;
+h.Cleanup_IRF_axes.XLabel.Color = Look.Fore;
+h.Cleanup_IRF_axes.YLabel.Color = Look.Fore;
 %% Special case for Burstwise and noMFD
 if any(strcmp(TauFitData.Who,{'Burstwise','BurstBrowser'}))
     switch TauFitData.Who
@@ -1463,40 +1517,65 @@ if exist('ph','var')
     end
 end
 
-function ChangeYScale(obj,~)
-global UserValues
+function ChangeScale(obj,~)
+global UserValues TauFitData
 h = guidata(obj);
-if strcmp(obj.Checked,'off')
-    %%% Set Checked
-    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
-    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
-    %%% Change Scale to Log
-    h.Microtime_Plot.YScale = 'log';
-    h.Result_Plot.YScale = 'log';
-    UserValues.TauFit.YScaleLog = 'on';
-elseif strcmp(obj.Checked,'on')
-    %%% Set Unchecked
-    h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
-    h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
-    %%% Change Scale to Lin
-    h.Microtime_Plot.YScale = 'lin';
-    h.Result_Plot.YScale = 'lin';
-    UserValues.TauFit.YScaleLog = 'off';
+switch obj.Tag
+    case {'Plot_YLogscale_MIPlot','Plot_YLogscale_ResultPlot'}
+        if strcmp(obj.Checked,'off')
+            %%% Set Checked
+            h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'on';
+            h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'on';
+            %%% Change Scale to Log
+            h.Microtime_Plot.YScale = 'log';
+            h.Result_Plot.YScale = 'log';
+            if h.Cleanup_IRF_Menu.Value
+                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData);
+            end
+            UserValues.TauFit.YScaleLog = 'on';
+        elseif strcmp(obj.Checked,'on')
+            %%% Set Unchecked
+            h.Microtime_Plot_ChangeYScaleMenu_MIPlot.Checked = 'off';
+            h.Microtime_Plot_ChangeYScaleMenu_ResultPlot.Checked = 'off';
+            %%% Change Scale to Lin
+            h.Microtime_Plot.YScale = 'lin';
+            h.Result_Plot.YScale = 'lin';
+            UserValues.TauFit.YScaleLog = 'off';
+        end
+        if strcmp(h.Microtime_Plot.YScale,'log')
+            %ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
+            %    h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
+            %    h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+            ydat = [h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
+            ydat = ydat(ydat > 0);
+            h.Ignore_Plot.YData = [...
+                min(ydat),...
+                h.Microtime_Plot.YLim(2)];
+        else
+            h.Ignore_Plot.YData = [...
+                0,...
+                h.Microtime_Plot.YLim(2)];
+        end
+    case {'Plot_XLogscale_MIPlot','Plot_XLogscale_ResultPlot'}
+        if strcmp(obj.Checked,'off')
+            %%% Set Checked
+            h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked = 'on';
+            h.Microtime_Plot_ChangeXScaleMenu_ResultPlot.Checked = 'on';
+            %%% Change Scale to Log
+            h.Microtime_Plot.XScale = 'log';
+            h.Result_Plot.XScale = 'log';
+            UserValues.TauFit.XScaleLog = 'on';
+        elseif strcmp(obj.Checked,'on')
+            %%% Set Unchecked
+            h.Microtime_Plot_ChangeXScaleMenu_MIPlot.Checked = 'off';
+            h.Microtime_Plot_ChangeXScaleMenu_ResultPlot.Checked = 'off';
+            %%% Change Scale to Lin
+            h.Microtime_Plot.XScale = 'lin';
+            h.Result_Plot.XScale = 'lin';
+            UserValues.TauFit.XScaleLog = 'off';
+        end
 end
 
-if strcmp(h.Microtime_Plot.YScale,'log')
-    ydat = [h.Plots.IRF_Par.YData,h.Plots.IRF_Per.YData,...
-        h.Plots.Scat_Par.YData, h.Plots.Scat_Per.YData,...
-        h.Plots.Decay_Par.YData,h.Plots.Decay_Per.YData];
-    ydat = ydat(ydat > 0);
-    h.Ignore_Plot.YData = [...
-        min(ydat),...
-        h.Microtime_Plot.YLim(2)];
-else
-    h.Ignore_Plot.YData = [...
-        0,...
-        h.Microtime_Plot.YLim(2)];
-end
 LSUserValues(1)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2403,6 +2482,12 @@ IRFPattern = IRFPattern'./sum(IRFPattern);
 
 %%% additional processing of the IRF to remove constant background
 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
+
+cleanup_IRF = UserValues.TauFit.cleanup_IRF;
+if cleanup_IRF
+    IRFPattern = fix_IRF_gamma_dist(IRFPattern,chan);
+end
+
 %%% The IRF is also adjusted in the Fit dynamically from the total scatter
 %%% pattern and start,length, and shift values stored in ShiftParams -
 %%% anders, please update the above statements to what they really is
@@ -2412,7 +2497,11 @@ IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end));
 ShiftParams(1) = TauFitData.StartPar{chan};
 ShiftParams(2) = TauFitData.IRFShift{chan};
 ShiftParams(3) = TauFitData.Length{chan};
-ShiftParams(4) = TauFitData.IRFLength{chan};
+if ~cleanup_IRF
+    ShiftParams(4) = TauFitData.IRFLength{chan};
+else
+    ShiftParams(4) = TauFitData.Length{chan};
+end
 %ShiftParams(5) = TauFitData.ScatShift{chan}; %anders, please see if I correctly introduced the scatshift in the models
 
 %%% initialize inputs for fit
@@ -2433,7 +2522,7 @@ ignore = TauFitData.Ignore{chan};
 h.Progress_Text.String = 'Fitting...';
 MI_Bins = TauFitData.MI_Bins;
 
-opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
+%opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
     case {h.Fit_Button}
         %%% Read out parameters
@@ -2474,7 +2563,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2542,7 +2631,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2631,7 +2720,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2737,7 +2826,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2819,7 +2908,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2899,7 +2988,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3007,7 +3096,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3129,7 +3218,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3270,7 +3359,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3396,7 +3485,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3542,7 +3631,7 @@ switch obj
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
                         [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed),opts);
+                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3825,6 +3914,12 @@ switch obj
         end
 
         h.Result_Plot.XLim(1) = 0;
+        if strcmp(h.Result_Plot.YScale,'log')
+            ydat = h.Plots.DecayResult.YData;
+            ydat = ydat(ydat > 0);
+            h.Result_Plot.YLim(1) = min(ydat);
+        end
+        
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
     case {h.Fit_Aniso_Button,h.Fit_Aniso_2exp,h.Fit_DipAndRise}
         if obj == h.Fit_Aniso_2exp
@@ -3943,7 +4038,7 @@ switch obj
         h.Residuals_Plot.YLim = [min(res) max(res)];
         h.Result_Plot.XLim(1) = 0;
         h.Result_Plot.YLabel.String = 'Anisotropy';
-        
+ 
         %%% hide aniso plots
         h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
         h.Result_Plot_Aniso.Parent = h.HidePanel;
@@ -4028,7 +4123,7 @@ switch obj
         %%% convert lifetimes
         param_ns = param;
         param_ns(1+(1:number_of_exponentials)) = TACtoTime*param_ns(1+(1:number_of_exponentials));
-        ConfInt(1+(1:number_of_exponentials),:) = TACtoTime*ConfInt(1+(1:number_of_exponentials),:)
+        ConfInt(1+(1:number_of_exponentials),:) = TACtoTime*ConfInt(1+(1:number_of_exponentials),:);
         %%% print confidence intervals to command line and clipboard
         tab = table(param_ns',ConfInt(:,1),ConfInt(:,2),'VariableNames',{'Value','LB','UB'},...
             'RowName',parameter_names);
@@ -4575,7 +4670,13 @@ switch TauFitData.BAMethod
                 IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
                 IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                % clean up by fitting to gamma distribution
+                if UserValues.TauFit.cleanup_IRF
+                    IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.Length{chan}); % use full length then
+                else
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                end
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
@@ -4834,8 +4935,14 @@ switch TauFitData.BAMethod
                 IRFPattern = G{chan}*(1-3*l2)*hIRF_par(1:TauFitData.Length{chan}) + (2-3*l1)*hIRF_per(1:TauFitData.Length{chan});
                 IRFPattern = IRFPattern./sum(IRFPattern);
                 %%% additional processing of the IRF to remove constant background
-                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;
-                Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                IRFPattern = IRFPattern - mean(IRFPattern(end-round(numel(IRFPattern)/10):end)); IRFPattern(IRFPattern<0) = 0;               
+                 % clean up by fitting to gamma distribution
+                if UserValues.TauFit.cleanup_IRF
+                    IRFPattern = fix_IRF_gamma_dist(IRFPattern',chan)';
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.Length{chan}); % use full length then
+                else
+                    Irf =  IRFPattern((TauFitData.StartPar{chan}+1):TauFitData.IRFLength{chan});
+                end
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
@@ -5016,7 +5123,7 @@ switch TauFitData.BAMethod
             BurstData.DataArray(:,idx_tauRR) = lifetime(:,3);
         end
 end
-save(TauFitData.FileName,'BurstData');
+save(TauFitData.FileName,'BurstData','-append');
 %%% update BurstData in PamMeta
 PamMeta.BurstData = BurstData;
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
@@ -5202,7 +5309,16 @@ if obj == h.LineStyle_Menu
 end
 if h.ShowAniso_radiobutton.Value == 1
     Update_Plots(h.ShowAniso_radiobutton,[]);
+elseif h.ShowDecaySum_radiobutton.Value == 1
+    Update_Plots(h.ShowDecaySum_radiobutton,[]);
 end
+switch obj
+    case h.Cleanup_IRF_Menu
+        UserValues.TauFit.cleanup_IRF = obj.Value;
+    case h.UseWeightedResiduals_Menu
+        UserValues.TauFit.use_weighted_residuals = obj.Value;
+end
+LSUserValues(1);
 
 function ChangeLineStyle(h)
 global UserValues
@@ -5661,3 +5777,27 @@ switch obj
         end
         Mat2clip(res);
 end
+
+
+%%% function to fit the selected range of the IRF to a gamma distribution
+%%% and extrapolate the IRFpattern from this.
+%%% Useful if the IRF contains fluorescent contamination
+function IRF_fixed = fix_IRF_gamma_dist(IRF,chan)
+global TauFitData
+IRF_selected = IRF(1:TauFitData.IRFLength{chan});
+x_irf = (1:numel(IRF_selected))';
+
+% the fit model is given by a gamma distribution with an additional
+% amplitude (amp) and an associated time-shift (shift)
+x0 = [10,10,max(IRF_selected),0];
+f = fit(x_irf,IRF_selected,@(a,b,amp,shift,x) amp*gampdf(x+shift,a,b),'StartPoint',x0,'Lower',[0,0,0,-Inf],'Upper',[Inf,Inf,Inf,Inf]);
+IRF_fixed = f(1:numel(IRF));
+
+%%% perform display update in settings tab as well, so the user can see
+%%% what has been fitted
+h = guidata(gcbo);
+h.Plots.IRF_cleanup.IRF_data.XData = (1:TauFitData.IRFLength{chan}).*TauFitData.TACChannelWidth;
+h.Plots.IRF_cleanup.IRF_data.YData = IRF_selected;
+h.Plots.IRF_cleanup.IRF_fit.XData = (1:numel(IRF)).*TauFitData.TACChannelWidth;
+h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
+h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];

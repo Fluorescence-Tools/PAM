@@ -1285,7 +1285,14 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.use_weighted_residuals was incomplete');
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
-
+    
+    %%% Checks, if TauFit.cleanup_IRF exists
+    if ~isfield(S.TauFit,'cleanup_IRF')
+        S.TauFit.cleanup_IRF=0;
+        disp('UserValues.TauFit.cleanup_IRF was incomplete');
+    end
+    P.TauFit.cleanup_IRF = S.TauFit.cleanup_IRF;
+    
     %%% Checks, if TauFit.IncludeChannel exists
     if ~isfield(S.TauFit,'IncludeChannel')
         S.TauFit.IncludeChannel=[1,1,1];
@@ -1305,6 +1312,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.YScaleLog was incomplete');
     end
     P.TauFit.YScaleLog = S.TauFit.YScaleLog;
+    %%% Checks, if TauFit.XScaleLog exists
+    if ~isfield(S.TauFit,'XScaleLog')
+        S.TauFit.XScaleLog='off';
+        disp('UserValues.TauFit.XScaleLog was incomplete');
+    end
+    P.TauFit.XScaleLog = S.TauFit.XScaleLog;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
@@ -1893,6 +1906,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
     end
     P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
+    %%% Check, if BurstBrowser.Settings.FitGauss_UseWeights subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FitGauss_UseWeights')
+        S.BurstBrowser.Settings.FitGauss_UseWeights=0;
+        disp('UserValues.BurstBrowser.Settings.FitGauss_UseWeights was incomplete');
+    end
+    P.BurstBrowser.Settings.FitGauss_UseWeights = S.BurstBrowser.Settings.FitGauss_UseWeights;
     %%% Check, if BurstBrowser.Settings.GaussianFitMethod subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'GaussianFitMethod')
         S.BurstBrowser.Settings.GaussianFitMethod='MLE';
@@ -1947,6 +1966,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Normalize_Multiplot was incomplete');
     end
     P.BurstBrowser.Settings.Normalize_Multiplot = S.BurstBrowser.Settings.Normalize_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Display_Total_Multiplot subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Display_Total_Multiplot')
+        S.BurstBrowser.Settings.Display_Total_Multiplot=true;
+        disp('UserValues.BurstBrowser.Settings.Display_Total_Multiplot was incomplete');
+    end
+    P.BurstBrowser.Settings.Display_Total_Multiplot = S.BurstBrowser.Settings.Display_Total_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Normalize_Method subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Normalize_Method')
+        S.BurstBrowser.Settings.Normalize_Method='area';
+        disp('UserValues.BurstBrowser.Settings.Normalize_Method was incomplete');
+    end
+    P.BurstBrowser.Settings.Normalize_Method = S.BurstBrowser.Settings.Normalize_Method;
     %%% Check, if BurstBrowser.Settings.UseFilePathForExport subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'UseFilePathForExport')
         S.BurstBrowser.Settings.UseFilePathForExport=true;

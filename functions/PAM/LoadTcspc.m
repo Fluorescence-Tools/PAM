@@ -54,8 +54,20 @@ end
 %%% Saves Path
 UserValues.File.Path = Path;
 LSUserValues(1);
-%%% Sorts FileName by alphabetical order
-FileName=sort(FileName);
+
+%%% Sorts '*0.spc' files (Fabsurf) by chronological order
+if all(~cellfun('isempty', regexp(FileName, '_0.spc$')))
+    for i = 1 : numel(FileName)
+        FileProperty(i) = dir(strcat(Path, FileName{i}));
+    end
+    %%% Sorts based on date and time modified
+    [datenum, index] = sort([FileProperty.datenum]);
+    FileName = FileName(index);
+else
+%%% Sorts files of other types by alphabetical order
+    FileName=sort(FileName);
+end
+
 %%% Clears previously loaded data
 FileInfo=[];
 TcspcData.MT=cell(1,1);
@@ -125,6 +137,7 @@ switch (Type)
         FileInfo.Lines = [];
         FileInfo.LineTimes = [];
         FileInfo.Pixels = [];
+        FileInfo.PixTime = [];
         FileInfo.ScanFreq = 1000;
         FileInfo.FileName = FileName;
         FileInfo.Path = Path;
@@ -424,6 +437,11 @@ switch (Type)
             end
         end
         
+        if ~isempty(FileInfo.ImageTimes) && ~isempty(FileInfo.Lines)
+            FileInfo.PixTime = mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2;
+            FileInfo.Frames = size(FileInfo.ImageTimes,1);
+        end
+        
         if ~isempty(MI_Bins) && MI_Bins>1 %%% Sets number of MI bins to value from .set file (or fixed)
             FileInfo.MI_Bins = MI_Bins;
         else %%% Reads highest used MI and usen 2^n bins
@@ -656,9 +674,11 @@ switch (Type)
         FileInfo.Lines=10;
         FileInfo.Pixels=10;
         FileInfo.LineTimes=[];
+        FileInfo.LineStops=[];
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
+        FileInfo.Frames=0;
         
         %%% Initializes microtime and macotime arrays
         if strcmp(UserValues.Detector.Auto,'off')
@@ -682,11 +702,14 @@ switch (Type)
                 end
             end
         end
-        MaxMT = 0;
         %%% Reads all selected files
         for i=1:numel(FileName)
+            MaxMT = 0;
+            if any(~cellfun(@isempty,TcspcData.MT(:)))
+                MaxMT = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))));
+            end
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i) ' of ' num2str(numel(FileName))]);
-
+            
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .spc file
@@ -734,38 +757,45 @@ switch (Type)
                 FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
             end
             
-            if ~isempty(Header.LineIndices) % Image PTU data
-                Pixels=round(mean(diff(Header.FrameIndices))/mean(diff(Header.LineIndices)));
-                if numel(Header.LineIndices)<Pixels*numel(Header.FrameIndices)
-                    Header.LineIndices(Header.LineIndices>Header.FrameIndices(end))=[];
-                    Header.FrameIndices(end)=[];
+            if ~isempty(Header.LineStart) % Image PTU data
+                %%% remove the last incomplete frame
+                %Header.LineStart(Header.LineStart>Header.FrameStart(end))=[];
+                
+                % cumulative n.o. frames
+                f = size(Header.FrameStart,2);
+                FileInfo.Frames = FileInfo.Frames + f;
+                
+                %%% create actual image and line times
+                FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart+MaxMT)'*FileInfo.ClockPeriod];
+                lstart = reshape((Header.LineStart+MaxMT),[],f)'*FileInfo.ClockPeriod;
+                lstop = reshape((Header.LineStop+MaxMT),[],f)'*FileInfo.ClockPeriod;
+                FileInfo.LineTimes=[FileInfo.LineTimes; lstart];
+                FileInfo.LineStops=[FileInfo.LineStops; lstop];
+                
+                %%% image info
+                if i == 1
+                    FileInfo.Lines = size(lstart,2);
+                    FileInfo.Pixels = FileInfo.Lines;
+                    FileInfo.PixTime = mean(mean(lstop-lstart))./FileInfo.Lines;
                 else
-                    Header.LineIndices= Header.LineIndices(1:Pixels*numel(Header.FrameIndices));
+                    if ~isequal(FileInfo.Lines, size(lstart,2))
+                        msgbox('Image files are not equally sized!'), return;
+                    end
                 end
-                    
-                FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameIndices+MaxMT)*FileInfo.ClockPeriod];              
-                FileInfo.LineTimes=[FileInfo.LineTimes; reshape((Header.LineIndices+MaxMT),[],numel(Header.FrameIndices))'*FileInfo.ClockPeriod];
+                
+                %%% Enables image plotting
+                h.MT.Use_Image.Value = 1;
+                h.MT.Use_Lifetime.Value = 1;
+                UserValues.Settings.Pam.Use_Image = 1;
             else % point PTU data
                 FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
+                FileInfo.Lines = 1;
             end
-            MaxMT = MaxMT + ceil(Header.MeasurementTime*1E-3/FileInfo.ClockPeriod);
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
-        if isempty(FileInfo.LineTimes) %%%Point Measurements
-            FileInfo.ImageTimes = linspace(0,FileInfo.MeasurementTime,i+1);
-            FileInfo.LineTimes  = repmat(reshape(linspace(0,FileInfo.ImageTimes(2),11),1,[]),[numel(FileInfo.ImageTimes)-1,1]);
-            for i=2:size(FileInfo.LineTimes,1)
-                FileInfo.LineTimes(i,:)=FileInfo.LineTimes(i,:)+FileInfo.ImageTimes(i);
-            end
-        else
-           FileInfo.ImageTimes(end+1)=max([FileInfo.ImageTimes,MaxMT*FileInfo.ClockPeriod]);
-           FileInfo.LineTimes(:,end+1)= FileInfo.ImageTimes(2:end);
-        end
-        FileInfo.Lines=size(FileInfo.LineTimes,2)-1;
-        FileInfo.Pixels=FileInfo.Lines;
     case 7 %%% .h5 files in PhotonHDF5 file format
         FileInfo.FileType = 'PhotonHDF5';
         %%% General FileInfo

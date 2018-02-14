@@ -18,7 +18,6 @@ function PDAFit(~,~)
 %   2017 - FAB Lab Munich - Don C. Lamb
 
 %%% TO DO:
-%%% Fix Brightness correction
 %%% Implement donor only for MLE and MC fitting
 
 global UserValues PDAMeta PDAData
@@ -941,6 +940,7 @@ if isempty(h.GlobalPDAFit)
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
         'Value',0,...
+        'enable','off',...
         'FontSize',12,...
         'String','Brightness Correction',...
         'Tooltipstring', '',...
@@ -992,6 +992,7 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
+        'enable','off',...
         'String','Deconvolute background',...
         'Value',UserValues.PDA.DeconvoluteBackground,...
         'Callback', {@Update_Plots, 0},...
@@ -1372,6 +1373,7 @@ switch mode
             end
             PDAMeta.Plots.Data_All{i}.YData(1) = mini;
             PDAMeta.Plots.Data_All{i}.YData(end) = maxi;
+            PDAMeta.Plots.Data_All{i}.YData = PDAMeta.Plots.Data_All{i}.YData./sum(PDAMeta.Plots.Data_All{i}.YData);
             set(h.AllTab.Main_Axes, 'XLim', lims)
             set(h.AllTab.Res_Axes, 'XLim', lims)
             % residuals plot
@@ -1516,7 +1518,7 @@ switch mode
                 'FaceColor',[0.4 0.4 0.4],...
                 'EdgeColor','none',...
                 'BarWidth',1);
-            
+            N_bins = sum([hProx hProx(end)]);
             % make 'stairs' appear similar to 'bar'
             xProx = xProx-mean(diff(xProx))/2;
             
@@ -1545,6 +1547,7 @@ switch mode
             
             % summed fit
             PDAMeta.Plots.Fit_Single{1,1} = copyobj(PDAMeta.Plots.Fit_All{i,1}, h.SingleTab.Main_Axes);
+            PDAMeta.Plots.Fit_Single{1,1}.YData = PDAMeta.Plots.Fit_Single{1,1}.YData*N_bins;
             PDAMeta.Plots.Fit_Single{1,1}.Color = 'k';%only define those properties that are different to the all tab
             PDAMeta.Plots.Fit_Single{1,1}.XData = xProx;
             
@@ -1555,6 +1558,7 @@ switch mode
                 % 7 = D only
                 % 8 = all dynamic bursts
                 PDAMeta.Plots.Fit_Single{1,j} = copyobj(PDAMeta.Plots.Fit_All{i,j}, h.SingleTab.Main_Axes);
+                PDAMeta.Plots.Fit_Single{1,j}.YData = PDAMeta.Plots.Fit_Single{1,j}.YData*N_bins;
                 PDAMeta.Plots.Fit_Single{1,j}.Color = [0.2 0.2 0.2];
                 PDAMeta.Plots.Fit_Single{1,j}.XData = xProx;
             end
@@ -1600,53 +1604,6 @@ switch mode
             PDAMeta.Plots.Gauss_Single{1,1}.Color = 'k';
         end
     case 4
-        %% change active checkbox 
-        %PDAMeta.PreparationDone = 0; %recalculate histogram (why?)
-        for i = 1:numel(PDAData.FileName)
-            if cell2mat(h.FitTab.Table.Data(i,1))
-                %active
-                tex = 'on';
-            else
-                tex = 'off';
-            end
-            PDAMeta.Plots.Data_All{i}.Visible = tex;
-            if sum(PDAMeta.Plots.Res_All{i}.YData) ~= 0
-                % data has been fitted before
-                PDAMeta.Plots.Res_All{i}.Visible = tex;
-            end
-            PDAMeta.Plots.BSD_All{i}.Visible = tex;
-            for j = 1:8
-                % 1 = all
-                % 2:6 = substates
-                % 7 = D only
-                % 8 = all dynamic bursts
-                if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0;
-                    % data has been fitted before and component exists
-                    PDAMeta.Plots.Fit_All{i,j}.Visible = tex;
-                    PDAMeta.Plots.Gauss_All{i,j}.Visible = tex;
-                end  
-            end
-            % Update the 'Single' tab plots
-            if isempty(Active)
-                PDAMeta.Plots.Data_Single.Visible = 'off';
-                if sum(PDAMeta.Plots.Res_Single.YData) ~= 0
-                    % data has been fitted before
-                    PDAMeta.Plots.Res_Single.Visible = 'off';
-                end
-                PDAMeta.Plots.BSD_Single.Visible = 'off';
-                for j = 1:8
-                    % 1 = all
-                    % 2:6 = substates
-                    % 7 = D only
-                    % 8 = all dynamic bursts
-                    if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
-                        % data has been fitted before and component exists
-                        PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
-                        PDAMeta.Plots.Gauss_Single{1,j}.Visible = 'off';
-                    end
-                end
-            end
-        end
     case 1
         %% Update plots post fitting
         FitTable = cellfun(@str2double,h.FitTab.Table.Data);
@@ -1666,6 +1623,7 @@ switch mode
             catch
                 continue;
             end
+            
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
                 % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
@@ -1700,7 +1658,7 @@ switch mode
             %%% Update All Plot
             set(PDAMeta.Plots.Fit_All{i,1},...
                 'Visible', 'on',...
-                'YData', ydatafit);
+                'YData', ydatafit./sum(ydatafit));
             set(PDAMeta.Plots.Res_All{i},...
                 'Visible', 'on',...
                 'YData', real(ydatares));
@@ -1714,7 +1672,7 @@ switch mode
                 end
                 set(PDAMeta.Plots.Fit_All{i,c+1},...
                     'Visible', 'on',...
-                    'YData', ydatafitind);
+                    'YData', ydatafitind./sum(ydatafit));
             end
             %%% donor only plot (plot #7)
             if PDAMeta.FitParams(i,16) > 0 %%% donor only existent
@@ -1726,7 +1684,7 @@ switch mode
                     ydatafitind = [PDAMeta.hFit_Donly{i}'; PDAMeta.hFit_Donly{i}(end)];
                 end
                 PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
-                PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind;
+                PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind./sum(ydatafit);
             else
                 PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
             end
@@ -1742,7 +1700,7 @@ switch mode
                 end
                 set(PDAMeta.Plots.Fit_All{i,8},...
                     'Visible', 'on',...
-                    'YData', ydatafitind);
+                    'YData', ydatafitind./sum(ydatafit));
             else
                 set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
             end
@@ -1797,9 +1755,15 @@ switch mode
                 else
                     set(PDAMeta.Plots.Fit_Single{1,8},'Visible', 'off');
                 end
-                set(PDAMeta.Chi2_Single,...
-                    'Visible','on',...
-                    'String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
+                try
+                    set(PDAMeta.Chi2_Single,...
+                        'Visible','on',...
+                        'String', ['\chi^2_{red.} = ' sprintf('%1.2f',PDAMeta.chi2(i))]);
+                catch
+                    set(PDAMeta.Chi2_Single,...
+                        'Visible','on',...
+                        'String', '\chi^2_{red.} = N/A');
+                end
                 % file is shown on the 'Single' tab
                 set(PDAMeta.Plots.Gauss_Single{1,1},...
                     'Visible', 'on',...
@@ -1859,7 +1823,7 @@ switch mode
             end
             set(PDAMeta.Plots.Fit_All{i,c+1},...
                 'Visible', 'on',...
-                'YData', ydatafitind);
+                'YData', ydatafitind./sum(ydatafit));
         end
         if h.SettingsTab.DynamicModel.Value
             % plot the summed dynamic component
@@ -1872,13 +1836,13 @@ switch mode
             end
             set(PDAMeta.Plots.Fit_All{i,8},...
                 'Visible', 'on',...
-                'YData', ydatafitind);
+                'YData', ydatafitind./sum(ydatafit));
         else
             set(PDAMeta.Plots.Fit_All{i,8},'Visible', 'off');
         end
         set(PDAMeta.Plots.Fit_All{i,1},...
             'Visible', 'on',...
-            'YData', ydatafit);
+            'YData', ydatafit./sum(ydatafit));
         
         if i == Active(h.SingleTab.Popup.Value)
             set(PDAMeta.Plots.Res_Single,...
@@ -1905,7 +1869,9 @@ switch mode
                         ydatafitind = [PDAMeta.hFit_Donly{i}'; PDAMeta.hFit_Donly{i}(end)];
                     end
                     PDAMeta.Plots.Fit_All{i,7}.Visible = 'on';
-                    PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind;
+                    PDAMeta.Plots.Fit_All{i,7}.YData = ydatafitind./sum(ydatafit);
+                    PDAMeta.Plots.Fit_Single{i,7}.Visible = 'on';
+                    PDAMeta.Plots.Fit_Single{i,7}.YData = ydatafitind;
                 else
                     PDAMeta.Plots.Fit_All{i,7}.Visible = 'off';
                 end
@@ -1938,7 +1904,55 @@ switch mode
         end
 end
 
-% store settings in UserValues
+%% update active status 
+%PDAMeta.PreparationDone = 0; %recalculate histogram (why?)
+for i = 1:numel(PDAData.FileName)
+    if cell2mat(h.FitTab.Table.Data(i,1))
+        %active
+        tex = 'on';
+    else
+        tex = 'off';
+    end
+    PDAMeta.Plots.Data_All{i}.Visible = tex;
+    if sum(PDAMeta.Plots.Res_All{i}.YData) ~= 0
+        % data has been fitted before
+        PDAMeta.Plots.Res_All{i}.Visible = tex;
+    end
+    PDAMeta.Plots.BSD_All{i}.Visible = tex;
+    for j = 1:8
+        % 1 = all
+        % 2:6 = substates
+        % 7 = D only
+        % 8 = all dynamic bursts
+        if sum(PDAMeta.Plots.Fit_All{i,j}.YData) ~= 0;
+            % data has been fitted before and component exists
+            PDAMeta.Plots.Fit_All{i,j}.Visible = tex;
+            PDAMeta.Plots.Gauss_All{i,j}.Visible = tex;
+        end  
+    end
+    % Update the 'Single' tab plots
+    if isempty(Active)
+        PDAMeta.Plots.Data_Single.Visible = 'off';
+        if sum(PDAMeta.Plots.Res_Single.YData) ~= 0
+            % data has been fitted before
+            PDAMeta.Plots.Res_Single.Visible = 'off';
+        end
+        PDAMeta.Plots.BSD_Single.Visible = 'off';
+        for j = 1:8
+            % 1 = all
+            % 2:6 = substates
+            % 7 = D only
+            % 8 = all dynamic bursts
+            if sum(PDAMeta.Plots.Fit_Single{1,j}.YData) ~= 0;
+                % data has been fitted before and component exists
+                PDAMeta.Plots.Fit_Single{1,j}.Visible = 'off';
+                PDAMeta.Plots.Gauss_Single{1,j}.Visible = 'off';
+            end
+        end
+    end
+end
+        
+%% store settings in UserValues
 UserValues.PDA.NoBins = h.SettingsTab.NumberOfBins_Edit.String;
 UserValues.PDA.MinPhotons = h.SettingsTab.NumberOfPhotMin_Edit.String;
 UserValues.PDA.MaxPhotons = h.SettingsTab.NumberOfPhotMax_Edit.String;
@@ -1974,7 +1988,7 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 h.FitTab.Table.Enable='off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
-
+Update_Plots(obj,[],3); % reset plots
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');
@@ -1983,6 +1997,15 @@ try
     PDAMeta = rmfield(PDAMeta, 'R0');
     PDAMeta = rmfield(PDAMeta, 'directexc');
     PDAMeta = rmfield(PDAMeta, 'gamma');
+    if isfield(PDAMeta,'ConfInt_Jac')
+        PDAMeta = rmfield(PDAMeta, 'ConfInt_Jac');
+    end
+    if isfield(PDAMeta,'ConfInt_MCMC')
+        PDAMeta = rmfield(PDAMeta, 'ConfInt_MCMC');
+    end
+    if isfield(PDAMeta,'MCMC_mean')
+        PDAMeta = rmfield(PDAMeta, 'MCMC_mean');
+    end
 end
 allsame = 1;
 calc = 1;
@@ -2122,11 +2145,11 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 Progress((i-1)/sum(PDAMeta.Active),h.AllTab.Progress.Axes,h.AllTab.Progress.Text,'Preparing Probability Library...');
                 Progress((i-1)/sum(PDAMeta.Active),h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Preparing Probability Library...');
                 % generate a P(NF) cube given fixed initial values of NF, N and given particular values of eps 
-                pause(0.2)
-                tic;
+                %pause(0.2)
+                %tic;
                 PNF = calc_PNF(NF(:),N(:),eps(:),numel(NF));
                 PNF = reshape(PNF,size(eps,1),size(eps,2),size(eps,3));
-                toc
+                %toc
                 %PNF = binopdf(NF, N, eps);
                 % binopdf(X,N,P) returns the binomial probability density function with parameters N and P at the values in X.
                 %%% Also calculate distribution for donor only
@@ -2351,7 +2374,27 @@ PDAMeta.MCMC_mean = [];
 % passing them into the fit function and fixing their UB&LB to their initial value (used in PDAFit)
 % not passing them into the fit function, but just calling their values inside the fit function (used in FCSFit and global PDAFit)
 
-if sum(PDAMeta.Global) == 0
+%%% check if global fitting should be performed
+do_global = false;
+if sum(PDAMeta.Global) > 0
+    do_global = true;
+else %%% check if fix sigma at fraction of R option is enable
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value
+        %%% if it is not fixed, optimize globally!
+        if ~h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value
+            %%% but only if multiple files are fit at once
+            if sum(PDAMeta.Active) > 1
+                do_global = true;
+            end
+        end
+    end
+end
+% if do_global
+%     disp('Global fit');
+% else
+%     disp('Non-global fit');
+% end
+if ~do_global
     %% One-curve-at-a-time fitting
     fit_counter = 0;
     for i = find(PDAMeta.Active)'
@@ -2412,7 +2455,7 @@ if sum(PDAMeta.Global) == 0
             case 'MonteCarlo'
                 %msgbox('doesnt work yet')
                 %return
-                fitfun = @(x) PDAMonteCarloFit_Single(x);
+                fitfun = @(x) PDAMonteCarloFit_Single(x,h);
         end
                 
         switch obj
@@ -2424,7 +2467,7 @@ if sum(PDAMeta.Global) == 0
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                     case {'MLE','MonteCarlo'}
                         %%% For Updating the Result Plot, use MC sampling
-                        PDAMonteCarloFit_Single(fitpar);
+                        PDAMonteCarloFit_Single(fitpar,h);
                     case 'Histogram Library'
                         PDAHistogramFit_Single(fitpar,h);
                 end
@@ -2433,8 +2476,9 @@ if sum(PDAMeta.Global) == 0
                 switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
                     case {'MLE','MonteCarlo'}
                         %%% For Updating the Result Plot, use MC sampling
-                        PDAMonteCarloFit_Single(fitpar);
+                        PDAMonteCarloFit_Single(fitpar,h);
                     case 'Histogram Library'
+                        PDAMeta.FitInProgress = 1;
                         PDAHistogramFit_Single(fitpar,h);
                 end
                 %% Do Fit
@@ -2467,11 +2511,19 @@ if sum(PDAMeta.Global) == 0
                 PDAMeta.FitInProgress = 2; % set to two to indicate error estimation based on gradient (only compute hessian with respect to non-fixed parameters)
                 %call fminunc at final point with 1 iteration to get hessian
                 %PDAMeta.Fixed = fixed;
-                fitopts = optimoptions('lsqnonlin','MaxIter',1);
-                [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar(~fixed),LB(~fixed),UB(~fixed),fitopts);
-                ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian,'alpha',alpha);
-                ci = (ci(:,2)-ci(:,1))/2;
-                PDAMeta.ConfInt_Jac = ci;
+                switch h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value}
+                    case 'Histogram Library'
+                        fitopts = optimoptions('lsqnonlin','MaxIter',1);
+                        [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar(~fixed),LB(~fixed),UB(~fixed),fitopts);
+                        ci = nlparci(fitpar(~fixed),residual,'jacobian',jacobian,'alpha',alpha);
+                        ci = (ci(:,2)-ci(:,1))/2;
+                        PDAMeta.ConfInt_Jac{i}= ci;
+                    case 'MLE'
+                        disp('Jacobian-based estimate is not available for MLE fit.');
+                        PDAMeta.ConfInt_Jac = [];
+                end
+                
+                
                 %%% Alternative implementations using fminunc and fmincon to estimate the hessian
                 % fitopts = optimoptions('fminunc','MaxIter',1,'Algorithm','quasi-newton');
                 % [~,~,~,~,~,hessian] = fminunc(fitfun,fitpar(~fixed),fitopts);
@@ -2485,12 +2537,21 @@ if sum(PDAMeta.Global) == 0
                         data = inputdlg({'Number of samples:','Spacing for statistical independence:'},'Specify MCMC sampling parameters',1,{'1000','10'});
                         data = cellfun(@str2double,data);
                         nsamples = data(1); spacing = data(2);
-                        proposal = ci'/10;
+                        if strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'Histogram Library')
+                            proposal = ci'/10;
+                        else
+                            % estimate proposal based on fit values
+                            proposal = fitpar(~fixed)*0.01;
+                        end
                         [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',fixed',~fixed',cellfun(@(x) x(11:end-4),h.FitTab.Table.ColumnName(2:3:end-1),'UniformOutput',false));
-                        v = numel(residual)-numel(fitpar(~fixed)); % number of degrees of freedom
-                        perc = tinv(1-alpha/2,v);
-                        PDAMeta.ConfInt_MCMC(:,i) = perc*std(samples(1:spacing:end,~fixed))';
-                        PDAMeta.MCMC_mean(:,i) = mean(samples(1:spacing:end,~fixed))';
+                        if exist('residual','var')
+                            v = numel(residual)-numel(fitpar(~fixed)); % number of degrees of freedom
+                            perc = tinv(1-alpha/2,v);
+                        else
+                            perc = 1.96; % 95% CI
+                        end
+                        PDAMeta.ConfInt_MCMC{i} = perc*std(samples(1:spacing:end,~fixed))';
+                        PDAMeta.MCMC_mean{i} = mean(samples(1:spacing:end,~fixed))';
                 end
                 PDAMeta.FitInProgress = 0; % disable fit
         end
@@ -2500,7 +2561,7 @@ if sum(PDAMeta.Global) == 0
                 %PDAMeta.chi2 = PDAHistogramFit_Single(fitpar);
             case 'MLE'
                 %%% For Updating the Result Plot, use MC sampling
-                PDAMeta.chi2(i) = PDAMonteCarloFit_Single(fitpar);
+                PDAMeta.chi2(i) = PDAMonteCarloFit_Single(fitpar,h);
                 %%% Update Plots
                 h.FitTab.Bar.YData = PDAMeta.hFit;
                 h.Res_Bar.YData = PDAMeta.w_res;
@@ -2576,6 +2637,7 @@ else
         PDAMeta.Fixed(:,end+1) = h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value;
         PDAMeta.LB(:,end+1) = 0;
         PDAMeta.UB(:,end+1) = 1;
+        fraction = PDAMeta.FitParams(end);
     end 
     
     fitpar = PDAMeta.FitParams(1,PDAMeta.Global);
@@ -2703,7 +2765,7 @@ else
             fitopts = optimoptions('lsqnonlin','MaxIter',1);
             [~,~,residual,~,~,~,jacobian] = lsqnonlin(fitfun,fitpar,LB,UB,fitopts);
             ci = nlparci(fitpar,residual,'jacobian',jacobian,'alpha',alpha);
-            ci = (ci(:,2)-ci(:,1))/2; ci = ci';PDAMeta.ConfInt_Jac = ci;
+            ci = (ci(:,2)-ci(:,1))/2; ci = ci';
             if obj ==  h.Menu.EstimateErrorMCMC %%% additionally, refine by doing mcmc sampling
                 PDAMeta.FitInProgress = 3; %%% indicate to get loglikelihood instead chi2
                 % get parameter names in correct order
@@ -2741,12 +2803,13 @@ else
                     ci(1:sum(PDAMeta.SampleGlobal))=[];
                 end
             end
-
+            count = 1;
             for i=find(PDAMeta.Active)'
-                err(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+                err(count, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                 ci(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+                PDAMeta.ConfInt_Jac{count} = err(count,~PDAMeta.Fixed(i,:));
+                count = count + 1;
             end
-            PDAMeta.ConfInt_MCMC = err;
             if obj == h.Menu.EstimateErrorMCMC
                 %%% Sort MCMC_mean value back to fit parameters
                 MCMC_mean(:,PDAMeta.Global)=repmat(m_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -2763,19 +2826,74 @@ else
                     m_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
                 end
                 MCMC_mean(MCMC_mean == 0) = PDAMeta.FitParams(MCMC_mean == 0);
-                PDAMeta.MCMC_mean = MCMC_mean;
+                PDAMeta.MCMC_mean{i} = MCMC_mean;
             end
             PDAMeta.FitInProgress = 0; % disable fit
     end
 end
 % make confidence intervals available in base workspace
 if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
-    conf_int_jac = zeros(size(fitpar,1),size(fitpar,2));
-    conf_int_jac(~fixed) = PDAMeta.ConfInt_Jac;
-    assignin('base','ConfInt_Jac',[fitpar' conf_int_jac']);
+    %%% initialize names cell array
+    if ~h.SettingsTab.DynamicModel.Value
+        names = {'A1';'R1';'sigma1';'A2';'R2';'sigma2';'A3';'R3';'sigma3';...
+            'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+    else
+        names = {'k12';'R1';'sigma1';'k21';'R2';'sigma2';'A3';'R3';'sigma3';...
+            'A4';'R4';'sigma4';'A5';'R5';'sigma5';'Fraction D-only'};
+    end
+    if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+        names{end+1} = 'sigma at fraction  of R';
+    end
+    filenames = [];
+    ConfInt_Jac = cell(sum(PDAMeta.Active),1);
+    ConfInt_MCMC = cell(sum(PDAMeta.Active),1);
+    count = 0;
+    lim = 0;
+    for i = find(PDAMeta.Active)' % loop over files
+        count = count + 1;
+        fitpar = PDAMeta.FitParams(i,:);
+        fixed = PDAMeta.Fixed(i,:);
+        if ~do_global
+            if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
+                fitpar(end+1) = fraction;
+                if h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value == 0
+                    fixed(end+1) = false;
+                else
+                    fixed(end+1) = true;
+                end
+            end
+        end
+        lim = max(lim,find(~fixed,1,'last'));
+        if ~isempty(PDAMeta.ConfInt_Jac{i})
+            confint_jac = zeros(numel(fitpar),1);
+            confint_jac(~fixed) = PDAMeta.ConfInt_Jac{i};
+            ConfInt_Jac{count} = [fitpar' confint_jac];
+        end
+        if obj == h.Menu.EstimateErrorMCMC
+            conf_int_mcmc = zeros(numel(fitpar),1);
+            conf_int_mcmc(~fixed) = PDAMeta.ConfInt_MCMC{i};
+            mcmc_mean = zeros(numel(fitpar),1);
+            mcmc_mean(~fixed) = PDAMeta.MCMC_mean{i};
+            ConfInt_MCMC{count} = [mcmc_mean conf_int_mcmc];
+        end
+        filenames{end+1} = matlab.lang.makeValidName(PDAData.FileName{i}(1:min(60,numel(PDAData.FileName{i}))));
+        filenames{end+1} = ['CI_' num2str(i)];
+    end
+    % remove unused parameters
+    for i = 1:numel(ConfInt_Jac)
+        ConfInt_Jac{i} = ConfInt_Jac{i}(1:lim,:);
+        if obj == h.Menu.EstimateErrorMCMC
+            ConfInt_MCMC{i} = ConfInt_MCMC{i}(1:lim,:);
+        end
+    end
+    filenames = matlab.lang.makeUniqueStrings(filenames);
+    assignin('base','ConfInt_Jac',ConfInt_Jac);
+    tab_jac = cell2table(num2cell(horzcat(ConfInt_Jac{:})),'RowNames',names(1:lim),'VariableNames',filenames);
+    assignin('base','tab_jac',tab_jac);
     if obj == h.Menu.EstimateErrorMCMC
-        assignin('base','ConfInt_MCMC',[fitpar' PDAMeta.ConfInt_MCMC']);
-        assignin('base','MCMC_mean',[fitpar' PDAMeta.MCMC_mean']);
+        assignin('base','ConfInt_MCMC',ConfInt_MCMC);
+        tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names,'VariableNames',filenames);
+        assignin('base','tab_mcmc',tab_mcmc);
     end
 end
     
@@ -2813,7 +2931,7 @@ if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so 
         %%% add sigma fraction to end
         fitpar_dummy = [PDAMeta.FitParams(i,:), str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String)];
         fixed = [PDAMeta.Fixed(i,:), h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
-        fitpar_dummy(~fixed) = fitpar;
+        fitpar_dummy(~fixed) = fitpar; %overwrite input fitparameters
     else
         fitpar_dummy = PDAMeta.FitParams(i,:);
         fitpar_dummy(~PDAMeta.Fixed(i,:)) = fitpar;
@@ -3423,10 +3541,8 @@ set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. logL = ' sprintf('%1.2f',m
 PDAMeta.Last_logL = mean_logL;
 
 % Model for Monte Carle based fitting (not global) 
-function [chi2] = PDAMonteCarloFit_Single(fitpar)
+function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
-h = guidata(findobj('Tag','GlobalPDAFit'));
-
 %%% Aborts Fit
 drawnow;
 if ~PDAMeta.FitInProgress
@@ -3574,8 +3690,23 @@ if h.SettingsTab.LiveUpdate.Value
     Update_Plots([],[],5)
 end
 tex = ['Fitting Histogram ' num2str(file) ' of ' num2str(sum(PDAMeta.Active))];
-Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
-Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
+
+if PDAMeta.FitInProgress == 2 %%% return the residuals instead of chi2
+    chi2 = w_res;
+elseif PDAMeta.FitInProgress == 3 %%% return the loglikelihood
+    switch h.SettingsTab.Chi2Method_Popupmenu.Value
+        case 2 %%% Assume gaussian error on data, normal chi2
+            loglikelihood = (-1/2)*sum(w_res.^2); %%% loglikelihood is the negative of chi2 divided by two
+        case 1 %%% Assume poissonian error on data, MLE poissonian
+            %%% compute loglikelihood without normalization to P(x|x)
+            log_term = PDAMeta.hProx{i}.*log(hFit);log_term(isnan(log_term)) = 0;
+            loglikelihood = sum(log_term-hFit);
+    end
+    chi2 = loglikelihood;
+end
+
+%Progress(1/chi2, h.AllTab.Progress.Axes, h.AllTab.Progress.Text, tex);
+%Progress(1/chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text, tex);
 
 % Model for Monte Carle based fitting (global) 
 function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
@@ -3630,7 +3761,7 @@ Path = uigetdir(fullfile(UserValues.File.PDAPath),...
 if Path == 0
     return
 else
-    Path = GenerateName(fullfile(Path, [datestr(now,'yymmdd') ' GlobalPDAFit']),2);
+    Path = GenerateName(fullfile(Path, [datestr(now,'yymmdd') ' PDAFit']),2);
     % All tab
     fig = figure('Position',[100 ,100 ,900, 425],...
         'Color',[1 1 1],...
@@ -3664,7 +3795,9 @@ else
     gauss_ax.Position = [650 70 225 290];
     %gauss_ax.GridAlpha = 0.1;
     %res_ax.GridAlpha = 0.1;
-    gauss_ax.FontSize = 15;
+    gauss_ax.FontSize = 18;
+    main_ax.FontSize = 18;
+    res_ax.FontSize = 18;
     main_ax.Children(end).Units = 'pixel';
     
     set(fig,'PaperPositionMode','auto');
@@ -3712,6 +3845,39 @@ else
         %gauss_ax.GridAlpha = 0.1;
         %res_ax.GridAlpha = 0.1;
         gauss_ax.FontSize = 15;
+        
+        %%% more style updates
+        main_ax.Layer = 'top';
+        main_ax.XGrid = 'off';
+        main_ax.YGrid = 'off';
+        set(main_ax.Children(1:end-2),'LineStyle','-');
+        set(main_ax.Children,'LineWidth',2);
+        main_ax.LineWidth = 2;
+        main_ax.FontSize = 20;
+        res_ax.FontSize =20;
+        res_ax.YLabel.Position(1) = -0.07;
+        res_ax.LineWidth = 2;
+        main_ax.Children(end-1).FaceColor = [150,150,150]./255;
+        res_ax.XGrid = 'off';
+        res_ax.YGrid = 'off';
+        res_ax.Children(1).LineWidth = 2;
+        main_ax.YLabel.Position(1) = -0.105;
+        res_ax.YLabel.Position(1) = -0.09;
+        colors = lines(7); yellow = colors(3,:); colors(3,:) = [];
+        for j = 2:7
+            main_ax.Children(j).Color = colors(8-j,:);
+        end
+        main_ax.Children(1).Color = yellow; % dynamic mixing component
+        uistack(main_ax.Children(8),'top')
+        gauss_ax.FontSize = 20;
+        gauss_ax.Layer = 'top';
+        gauss_ax.XGrid = 'off';
+        gauss_ax.YGrid = 'off';
+        gauss_ax.LineWidth = 2;
+        gauss_ax.XLabel.String = 'Distance [A]';
+        uistack(gauss_ax.Children(7),'top');
+        set(gauss_ax.Children,'LineWidth',3);
+        
         main_ax.Children(end).Units = 'pixel';
         set(fig,'PaperPositionMode','auto');
         print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.tif']),1),'-painters')
@@ -3808,7 +3974,9 @@ else
     end
     fprintf(fID,'Parameters:\n');
     fprintf(fID,[repmat('%s\t',1,6) '%s\n'],tmp.parameterstable{1,:});
-    fprintf(fID,[repmat('%.3f\t',1,6) '%.3f\n'],tmp.parameterstable{2,:});
+    for i = 2:size(tmp.parameterstable,1)
+        fprintf(fID,[repmat('%.3f\t',1,6) '%.3f\n'],tmp.parameterstable{i,:});
+    end
     fprintf(fID,'\nSettings:\n');
     settings = [fieldnames(tmp.settings), struct2cell(tmp.settings)];
     for i = 1:size(settings,1)
@@ -4001,6 +4169,13 @@ switch mode
                 h.FitTab.Table.Data(1:end-2,e.Indices(2)-2)=h.FitTab.Table.Data(e.Indices(1),e.Indices(2)-2);
                 %%% Unfixes all files to prohibit fixed and global
                 h.FitTab.Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
+            elseif e.Indices(2) == 1
+                %% Active was changed
+                if strcmp(e.EventName,'CellSelection')
+                    h.FitTab.Table.Data(1:end-2,1) = deal({~NewData});
+                else
+                    h.FitTab.Table.Data(1:end-2,1) = deal({NewData});
+                end
             end
         elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=4 && e.Indices(1)<size(h.FitTab.Table.Data,1)-1
             %% Global was changed => Applies to all files
@@ -4042,13 +4217,14 @@ switch mode
             else
                 %% Not global => only changes value
             end
-        elseif e.Indices(2)==1
+        end
+        if e.Indices(2)==1
             %% Active was changed
             %%% check if at least one fit is still active
-            if sum(cell2mat(h.FitTab.Table.Data(1:end-3,1))) > 0
+            if sum(cell2mat(h.FitTab.Table.Data(1:end-3,1))) >= 0
                 h.FitTab.Table.Enable='off';
                 pause(0.2)
-                Update_Plots([],[],4)
+                %Update_Plots([],[],4)
                 Update_Plots([],[],2) % to display the correct one on the single tab
                 h.FitTab.Table.Enable='on';
             else
@@ -4481,10 +4657,12 @@ switch mode
         s.path = PDAData.PathName;
         %s.str = h.PDADatabase.List.String;
         save(fullfile(Path,File),'s');
+        UserValues.File.PDAPath = Path;
 end
 
 % Updates GUI elements
 function Update_GUI(obj,~)
+global UserValues
 h = guidata(obj);
 
 if obj == h.SettingsTab.FixSigmaAtFractionOfR
@@ -4515,6 +4693,9 @@ if obj == h.SettingsTab.FixSigmaAtFractionOfR
             h.FitTab.Table.ColumnEditable(9:9:end) = deal(true);
             h.FitTab.Table.ColumnEditable(10:9:end) = deal(true);
     end
+    h.SettingsTab.SigmaAtFractionOfR_edit.ForegroundColor = [0,0,0];
+    h.SettingsTab.SigmaAtFractionOfR_edit.BackgroundColor = [1,1,1];
+    drawnow;
 elseif obj == h.SettingsTab.DynamicModel
     switch h.SettingsTab.DynamicModel.Value
         case 1 %%% switched to dynamic

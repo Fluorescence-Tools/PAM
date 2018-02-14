@@ -711,7 +711,7 @@ h.Mia_Image.Settings.Image_Pixel = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Callback',{@Update_Plots,[],[]},...
+    'Callback',{@Update_Plots,4,[]},...
     'Position',[0.45 0.76, 0.2 0.06],...
     'String','11.11');
 %%% Text
@@ -3865,7 +3865,7 @@ if any(mode==4)
             h.Plots.Int(1,2).XData = 1:size(MIAData.Data{1,2},3);
             h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
         end
-        h.Mia_Image.Intensity_Axes.XLim = h.Plots.Int(1,1).XData([1 end]);
+        h.Mia_Image.Intensity_Axes.XLim = [h.Plots.Int(1,1).XData(1) h.Plots.Int(1,1).XData(end)+0.00001];
         
         
         if h.Mia_Image.Intensity_Axes.YLabel.UserData == 0
@@ -4883,24 +4883,24 @@ if ~isempty(MIAData.Data)
             %%% Update Size
             Size=round([str2double(h.Mia_Image.Settings.ROI_SizeX.String) str2double(h.Mia_Image.Settings.ROI_SizeY.String)]);
             %%% Forces ROI size into bounds
-            if Size(1)>size(MIAData.Data{1,1},1) || Size(1)<1
-                Size(1)=size(MIAData.Data{1,1},1);
+            if Size(1)>size(MIAData.Data{1,1},2) || Size(1)<1
+                Size(1)=size(MIAData.Data{1,1},2);
                 h.Mia_Image.Settings.ROI_SizeX.String=num2str(Size(1));
             end
-            if Size(2)>size(MIAData.Data{1,1},2) || Size(2)<1
-                Size(2)=size(MIAData.Data{1,1},2);
+            if Size(2)>size(MIAData.Data{1,1},1) || Size(2)<1
+                Size(2)=size(MIAData.Data{1,1},1);
                 h.Mia_Image.Settings.ROI_SizeY.String=num2str(Size(2));
             end
             %%% Update Position
             Pos=round([str2double(h.Mia_Image.Settings.ROI_PosX.String) str2double(h.Mia_Image.Settings.ROI_PosY.String)]);
             %%% Forces ROI size into bounds
             Pos(Pos<1)=1;
-            if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},1)
-                Pos(1)=(size(MIAData.Data{1,1},1)-Size(1)+1);
+            if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},2)
+                Pos(1)=(size(MIAData.Data{1,1},2)-Size(1)+1);
                 h.Mia_Image.Settings.ROI_PosX.String=num2str(Pos(1));
             end
-            if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},2)
-                Pos(2)=(size(MIAData.Data{1,1},2)-Size(2)+1);
+            if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},1)
+                Pos(2)=(size(MIAData.Data{1,1},1)-Size(2)+1);
                 h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));
             end
         case 2 %%% Image was clicked
@@ -4910,12 +4910,12 @@ if ~isempty(MIAData.Data)
                     %%% Update Size
                     Size=round([str2double(h.Mia_Image.Settings.ROI_SizeX.String) str2double(h.Mia_Image.Settings.ROI_SizeY.String)]);
                     %%% Forces ROI size into bounds
-                    if Size(1)>size(MIAData.Data{1,1},1) || Size(1)<1
-                        Size(1)=size(MIAData.Data{1,1},1);
+                    if Size(1)>size(MIAData.Data{1,1},2) || Size(1)<1
+                        Size(1)=size(MIAData.Data{1,1},2);
                         h.Mia_Image.Settings.ROI_SizeX.String=num2str(Size(1));
                     end
-                    if Size(2)>size(MIAData.Data{1,1},2) || Size(2)<1
-                        Size(2)=size(MIAData.Data{1,1},2);
+                    if Size(2)>size(MIAData.Data{1,1},1) || Size(2)<1
+                        Size(2)=size(MIAData.Data{1,1},1);
                         h.Mia_Image.Settings.ROI_SizeY.String=num2str(Size(2));
                     end
                     %%% Updates position
@@ -4924,12 +4924,12 @@ if ~isempty(MIAData.Data)
                     h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));                    
                     %%% Forces ROI size into bounds
                     Pos(Pos<1)=1;
-                    if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},1)
-                        Pos(1)=(size(MIAData.Data{1,1},1)-Size(1)+1);
+                    if (Pos(1)+Size(1)-1)>size(MIAData.Data{1,1},2)
+                        Pos(1)=(size(MIAData.Data{1,1},2)-Size(1)+1);
                         h.Mia_Image.Settings.ROI_PosX.String=num2str(Pos(1));
                     end
-                    if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},2)
-                        Pos(2)=(size(MIAData.Data{1,1},2)-Size(2)+1);
+                    if (Pos(2)+Size(2)-1)>size(MIAData.Data{1,1},1)
+                        Pos(2)=(size(MIAData.Data{1,1},1)-Size(2)+1);
                         h.Mia_Image.Settings.ROI_PosY.String=num2str(Pos(2));
                     end
                 case 'alt' %%% Draw ROI
@@ -5299,12 +5299,12 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Mean intensity
             InfoAll(i).Counts = MeanInt(i); %Waldi
             %%% Averaged correlation
-            DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3);
+            DataAll{i,1} = mean(MIAData.Cor{floor(1.5*i),1}(:,:,(1:numel(frames))+(b-1)*Offset),3);
             %%% Error of correlation
-            if size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3)>1
-                DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1}(:,:,frames),3));
+            if size(MIAData.Cor{floor(1.5*i),1}(:,:,1:numel(frames)),3)>1
+                DataAll{i,2} = std(MIAData.Cor{floor(1.5*i),1}(:,:,(1:numel(frames))+(b-1)*Offset),0,3)./sqrt(size(MIAData.Cor{floor(1.5*i),1}(:,:,(1:numel(frames))+(b-1)*Offset),3));
             else
-                DataAll{i,2} = MIAData.Cor{floor(1.5*i),1}(:,:,frames);
+                DataAll{i,2} = MIAData.Cor{floor(1.5*i),1}(:,:,(1:numel(frames))+(b-1)*Offset);
             end
         end
         %% Gets cross correlation data to save
@@ -5357,9 +5357,9 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
             %%% Mean intensity
             InfoAll(3).Counts = sum(MeanInt);
             %%% Averaged correlation
-            DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,frames),3);
+            DataAll{3,1} = mean(MIAData.Cor{2,1}(:,:,(1:numel(frames))+(b-1)*Offset),3);
             %%% Error of correlation
-            DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,frames),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,frames),3));
+            DataAll{3,2} = std(MIAData.Cor{2,1}(:,:,1:numel(frames)),0,3)./sqrt(size(MIAData.Cor{2,1}(:,:,(1:numel(frames))+(b-1)*Offset),3));
         end
         %% Saves correlations
         switch h.Mia_Image.Calculations.Cor_Save_ICS.Value
@@ -5903,12 +5903,20 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
     switch h.Mia_Image.Settings.ROI_FramesUse.Value
         case {1,2} %%% All/Selected frames
             %%% Mean intensity [counts]
-            Info.Mean = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+            for i = 1:2
+                if any(Auto==i)      
+                    Info.Mean(i) = mean2(double(MIAData.Data{i,2}(:,:,Frames)));
+                end
+            end
             Info.AR = [];
         case 3 %%% Arbitrary region
             %%% Mean intensity of selected pixels [counts]
-            Image = double(MIAData.Data{i,2}(:,:,Frames));
-            Info.Mean = mean(Image(Use{i}));
+            for i = 1:2
+                if any(Auto==i)
+                    Image = double(MIAData.Data{i,2}(:,:,Frames));
+                    Info.Mean(i) = mean(Image(Use{i}));
+                end
+            end
             %%% Arbitrary region information
             Info.AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
             Info.AR.Int_Max(2) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(2).String);
@@ -5921,8 +5929,7 @@ if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
             Info.AR.Var_Sub=str2double(h.Mia_Image.Settings.ROI_AR_Sub2.String);
             Info.AR.Var_SubSub=str2double(h.Mia_Image.Settings.ROI_AR_Sub1.String);
     end
-    %% Saves info file
-    
+    %% Saves info file 
     if k==0
         Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_Info.txt']);
     else
