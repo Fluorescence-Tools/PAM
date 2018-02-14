@@ -4113,7 +4113,7 @@ if any(mode == 10)
         end
         guidata(h.Pam,h);
         h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value))),1])];
+        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
         h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
         h.PCH.Axes.YLabel.String = 'Frequency';
         h.PCH.Axes.YScale = 'log';
