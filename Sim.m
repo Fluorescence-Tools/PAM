@@ -2445,8 +2445,6 @@ if ~advanced
         MI_total{i,4} = cell2mat(MI4);
         clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
         
-        %%% we need to adjust the MIbins here
-        MI_Bins = 4*2^14+1;
         stop(Update);
     end
 
@@ -2458,6 +2456,8 @@ if ~advanced
     end
 
     if h.Sim_UseNoise.Value
+        %%% we need to adjust the MIbins here
+        MI_Bins = 4*2^14+1;
         for i=1:4
             if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
                AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
