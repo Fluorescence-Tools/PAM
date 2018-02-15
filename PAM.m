@@ -33,7 +33,7 @@ s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' file
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );
 s.addText( 30, 50, 'PAM - PIE Analysis with MATLAB', 'FontSize', 30, 'Color', [1 1 1] );
-s.addText( 30, 80, 'v1.0', 'FontSize', 20, 'Color', [1 1 1] );
+s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
 s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 
 %%% Disables negative values for log plot warning
@@ -2129,12 +2129,17 @@ h.PCH.PCH_2D_Menu = uimenu(...
     'Callback',{@Update_Display,10});
 h.PCH.PCH_Export_Menu = uimenu(...
     'Parent',h.PCH.Menu,...
-    'Label','Export',...
+    'Label','Export to figure',...
+    'Callback',{@Update_Display,10});
+h.PCH.PCH_Export_CSV_Menu = uimenu(...
+    'Parent',h.PCH.Menu,...
+    'Label','Export to text file',...
     'Callback',{@Update_Display,10});
 h.PCH.Axes.UIContextMenu = h.PCH.Menu;
 h.PCH.Panel.UIContextMenu = h.PCH.Menu;
 if UserValues.Settings.Pam.PCH_2D
     h.PCH.PCH_2D_Menu.Checked = 'on';
+    h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
 end
 if ~UserValues.Settings.Pam.Use_PCH
     h.PCH.Tab.Parent = [];
@@ -2227,7 +2232,7 @@ h.Text{end+1} = uicontrol(...
     'Units','normalized',...
     'FontSize',12,...
     'HorizontalAlignment','left',...
-    'String','Binning size for trace [ms]:',...
+    'String','Bin size for trace [ms]:',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.92 0.34 0.06]);
@@ -2243,6 +2248,28 @@ h.MT.Binning = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.28 0.92 0.1 0.06]);
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String', 'Bin size for PCH [ms]:',...
+    'Position',[0.6 0.92 0.25 0.08]);
+%%% Selects, how many microtime tabs to generate
+h.MT.Binning_PCH = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String', '1',...
+    'Callback',@Calculate_Settings,...
+    'Position',[0.85 0.92 0.05 0.08]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2419,7 +2446,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String', 'Microtime tabs:',...
-    'Position',[0.6 0.72 0.15 0.08]);
+    'Position',[0.6 0.72 0.25 0.08]);
 %%% Selects, how many microtime tabs to generate
 h.MI.NTabs = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2430,7 +2457,7 @@ h.MI.NTabs = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String', '1',...
     'Callback',{@Update_Detector_Channels, [0,1]},...
-    'Position',[0.75 0.72 0.05 0.08]);
+    'Position',[0.85 0.72 0.05 0.08]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2441,7 +2468,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String', 'Plots per tab:',...
-    'Position',[0.6 0.62 0.15 0.08]);
+    'Position',[0.6 0.62 0.25 0.08]);
 %%% Selects, how many plots per microtime tabs to generate
 h.MI.NPlots = uicontrol(...
     'Parent', h.MT.Settings_Panel,...
@@ -2452,7 +2479,7 @@ h.MI.NPlots = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String', '1',...
     'Callback',{@Update_Detector_Channels, [0,1]},...
-    'Position',[0.75 0.62 0.05 0.08]);
+    'Position',[0.85 0.62 0.05 0.08]);
 %% Various tabs (PIE Channels, general information, settings etc.) %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Macrotime tabs container
@@ -3436,7 +3463,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
@@ -3447,9 +3474,9 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                         end
                     end
                     if any(mode==2)
-                        %%% Calculate PCH for PIE channel (currently hard coded to 1 ms)
+                        %%% Calculate PCH for PIE channel
                         if h.MT.Use_PCH.Value
-                            TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
+                            TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
                             if ~isempty(PIE_MT)
                                 PamMeta.TracePCH{i} = histc(PIE_MT,TimeBinsPCH);
                                 PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
@@ -3521,7 +3548,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
-                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
                 PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
@@ -3548,7 +3575,7 @@ for i=find(UserValues.PIE.Detector==0)
     PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
     if UserValues.Settings.Pam.Use_PCH
-        TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
+        TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
         trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
@@ -3660,6 +3687,11 @@ elseif obj == h.MT.Binning
     UserValues.Settings.Pam.MT_Binning=str2double(h.MT.Binning.String);
     Update_Data([],[],0,0,1);
     Update_Display([],[],2);
+    %%% When changing PCH bin size
+elseif obj == h.MT.Binning_PCH
+    UserValues.Settings.Pam.PCH_Binning=str2double(h.MT.Binning_PCH.String);
+    Update_Data([],[],0,0,2);
+    Update_Display([],[],10);
     %%% When changing trace sectioning type
 elseif obj == h.MT.Trace_Sectioning
     UserValues.Settings.Pam.MT_Trace_Sectioning=h.MT.Trace_Sectioning.Value;
@@ -3985,7 +4017,7 @@ if any(mode==2)
     h.Plots.Trace = {};
     for t = h.PIE.List.Value
         %%% create plot
-        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins,PamMeta.Trace{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
+        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins(1:end-1)+min(diff(PamMeta.TimeBins))/2,PamMeta.Trace{t}(1:end-1),'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
     end
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
@@ -4074,9 +4106,11 @@ if any(mode == 10)
             case 'on'
                 obj.Checked = 'off';
                 UserValues.Settings.Pam.PCH_2D = 0;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'on';
             case 'off'
                 obj.Checked = 'on';
                 UserValues.Settings.Pam.PCH_2D = 1;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
     if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
@@ -4086,24 +4120,26 @@ if any(mode == 10)
         end
         guidata(h.Pam,h);
         h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value))),1])];
-        h.PCH.Axes.XLabel.String = 'Counts per ms';
+        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
+        h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
         h.PCH.Axes.YLabel.String = 'Frequency';
         h.PCH.Axes.YScale = 'log';
         h.PCH.Axes.DataAspectRatioMode = 'auto';
     else
         sel = h.PIE.List.Value;
         sel = sel(1:2);
-        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)});
-        h.Plots.PCH{end+1} = imagesc(x(1:end-1)+min(diff(x))/2,y(1:end-1)+min(diff(y))/2,log10(H),'Parent',h.PCH.Axes);
+        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
+            0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
+        h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
+            x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
         h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
         guidata(h.Pam,h);
         h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.XLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
-        h.PCH.Axes.YLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
-        h.PCH.Axes.XLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(1)} ')'];
-        h.PCH.Axes.YLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(2)} ')'];
-        h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
+        h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+        h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
+        h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
+        h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
+        %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
     end
     if obj == h.PCH.PCH_Export_Menu
         hfig = figure('Visible','on','Units','pixel',...
@@ -4120,6 +4156,11 @@ if any(mode == 10)
         if ~UserValues.Settings.Pam.PCH_2D
             legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color','none');
         end
+    elseif obj == h.PCH.PCH_Export_CSV_Menu
+        % Export the selected data to a comma-separated value file (*.csv)
+        sel = h.PIE.List.Value;
+        e.Key = 'Export_PCH';
+        Pam_Export([],e,sel); % ToDo: move this to right-click menu of PIE channel and export tab in the future.
     end
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5644,6 +5685,7 @@ global UserValues
 h=guidata(findobj('Tag','Pam'));
 
 h.MT.Binning.String=UserValues.Settings.Pam.MT_Binning;
+h.MT.Binning_PCH.String=UserValues.Settings.Pam.PCH_Binning;
 h.MT.Time_Section.String=UserValues.Settings.Pam.MT_Time_Section;
 h.MT.Number_Section.String=UserValues.Settings.Pam.MT_Number_Section;
 
@@ -10500,7 +10542,7 @@ switch e.Key
             Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting Finished')
-    case 'Export_MicrotimePattern'
+    case 'Export_MicrotimePattern' %%% Export microtime pattern
         h.Progress.Text.String = 'Exporting';
         h.Progress.Axes.Color=[1 0 0];
         drawnow;
@@ -10549,6 +10591,41 @@ switch e.Key
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
         UserValues.File.TauFitPath = FileInfo.Path;
+        Progress(1,h.Progress.Axes,h.Progress.Text);
+    case 'Export_PCH' %%% Export PCH
+        h.Progress.Text.String = 'Exporting';
+        h.Progress.Axes.Color=[1 0 0];
+        drawnow;
+        %%% Read out PCH
+        %%% store in format:
+        %%% channel1 channel2 ...
+        %%% PCH1     PCH2     ...
+
+        PCH = zeros(max(cellfun(@numel,PamMeta.PCH(Sel))),numel(Sel)+1);
+        PCH(:,1) = 0:1:size(PCH,1)-1;
+        for i = 1:numel(Sel)
+            PCH(1:numel(PamMeta.PCH{Sel(i)}),i+1) = PamMeta.PCH{Sel(i)};
+            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
+        end
+        %%% create filename
+        [~,fileName,~] = fileparts(FileInfo.FileName{1});
+        for i = 1:numel(Sel)
+            fileName = [fileName '_' UserValues.PIE.Name{Sel(i)}];
+        end
+        fileName = [fileName '.pch'];
+        fid = fopen(fullfile(FileInfo.Path,fileName),'w');
+        %%% write header
+        %%% general info
+        fprintf(fid,'# PCH data exported from PAM\n');
+        fprintf(fid,'# Bin size [ms]:\t %g\n',UserValues.Settings.Pam.PCH_Binning);
+        %%% PIE channel names
+        fprintf(fid,'Counts,');
+        for i = 1:numel(Sel)
+            fprintf(fid,'%s,',UserValues.PIE.Name{Sel(i)});
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(fullfile(FileInfo.Path,fileName),PCH,'-append','delimiter',',','precision','%g');
         Progress(1,h.Progress.Axes,h.Progress.Text);
     case 'Eport_RLICS_TIFF' %%% Eports image stack as Lifetime Filtered TIFF
         
