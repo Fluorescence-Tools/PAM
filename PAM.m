@@ -3463,7 +3463,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
-                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
@@ -3548,7 +3548,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
-                PamMeta.TracePCH{i} = zeros(numel(0:1E-3:FileInfo.MeasurementTime),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
                 PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
