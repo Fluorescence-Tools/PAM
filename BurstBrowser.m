@@ -14592,54 +14592,6 @@ switch obj
             end
         end
         FigureName = 'LifetimePlots';
-%     case h.ExportEvsTau_Menu
-%         AspectRatio = 1;
-%         pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
-%         hfig = figure('Position',pos,'Color',[1 1 1]);
-%         %%% Copy axes to figure
-%         axes_copy = copyobj(h.axes_EvsTauGG,hfig);
-%         axes_copy.Position = [0.17 0.17 0.8 0.8];
-%         axes_copy.Title.Visible = 'off';
-%         axes_copy.XLabel.String = '\tau_{D(A)} [ns]';
-%         %%% set Background Color to white
-%         axes_copy.Color = [1 1 1];
-%         %%% change X/YColor Color Color
-%         axes_copy.XColor = [0,0,0];
-%         axes_copy.YColor = [0,0,0];
-%         axes_copy.XLabel.Color = [0,0,0];
-%         axes_copy.YLabel.Color = [0,0,0];
-%         axes_copy.Layer = 'top';
-%         %%% Update ColorMap
-%         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-%             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
-%         else
-%             colormap(UserValues.BurstBrowser.Display.ColorMap);
-%         end
-%         FigureName = 'E vs. TauGG';
-%         axes_copy.Layer = 'top';
-%     case h.ExportEvsTauBB_Menu
-%         AspectRatio = 1;
-%         pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
-%         hfig = figure('Position',pos,'Color',[1 1 1]);
-%         %%% Copy axes to figure
-%         axes_copy = copyobj(h.axes_E_BtoGRvsTauBB,hfig);
-%         axes_copy.Position = [0.17 0.17 0.8 0.8];
-%         axes_copy.Title.Visible = 'off';
-%         %%% set Background Color to white
-%         axes_copy.Color = [1 1 1];
-%         %%% change X/YColor Color Color
-%         axes_copy.XColor = [0,0,0];
-%         axes_copy.YColor = [0,0,0];
-%         axes_copy.XLabel.Color = [0,0,0];
-%         axes_copy.YLabel.Color = [0,0,0];
-%         axes_copy.Layer = 'top';
-%         %%% Update ColorMap
-%         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-%             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
-%         else
-%             colormap(UserValues.BurstBrowser.Display.ColorMap);
-%         end
-%         FigureName = 'E vs. TauBB';
     case h.Export2DLifetime_Menu
         AspectRatio = 1;
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
@@ -14698,7 +14650,9 @@ switch obj
                         else
                              maxY = 0;
                              for k = 1:numel(panel_copy.Children(i).Children)-1
-                                 maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                 if strcmp(panel_copy.Children(i).Children(k).Visible,'on')
+                                    maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                 end
                              end
                              panel_copy.Children(i).YLim = [0, maxY*1.05];
                              color_bar = false;
@@ -14727,7 +14681,9 @@ switch obj
                         else
                             maxY = 0;
                             for k = 1:numel(panel_copy.Children(i).Children)-1
-                                maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                if strcmp(panel_copy.Children(i).Children(k).Visible,'on')
+                                    maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                end
                             end
                             panel_copy.Children(i).YLim = [0, maxY*1.05];
                         end
