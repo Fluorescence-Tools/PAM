@@ -4017,7 +4017,7 @@ if any(mode==2)
     h.Plots.Trace = {};
     for t = h.PIE.List.Value
         %%% create plot
-        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins,PamMeta.Trace{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
+        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins(1:end-1)+min(diff(PamMeta.TimeBins))/2,PamMeta.Trace{t}(1:end-1),'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
     end
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
