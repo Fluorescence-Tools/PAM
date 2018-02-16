@@ -1755,6 +1755,23 @@ if isempty(hfig)
         'ForegroundColor', Look.Fore,...
         'FontSize',12,...
         'TooltipString','If selected, you are required to manually select the start point for the fit by clicking inside the 2D plot.');
+    h.Fit_Gaussian_Use_Weights = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Callback',@UpdateOptions,...
+        'Value',UserValues.BurstBrowser.Settings.FitGaussPick,...
+        'Position',[0.6,0.8,0.4,0.08],...
+        'String','Use weights',...
+        'Parent',h.FitGaussian_Panel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'FontSize',12,...
+        'TooltipString','<html>If selected, the least-squares fits uses weights.<br>Weights are estimated based on Poissonian counting, i.e. sqrt(N).');
+    switch UserValues.BurstBrowser.Settings.GaussianFitMethod
+        case 'MLE'
+            h.Fit_Gaussian_Use_Weights.Visible = 'off';
+        case 'LSQ'
+            h.Fit_Gaussian_Use_Weights.Visible = 'on';
+    end
     h.Fit_GaussianMethod_Popupmenu = uicontrol('Style','popup',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
@@ -1763,11 +1780,11 @@ if isempty(hfig)
         'Value',find(strcmp({'MLE','LSQ'},UserValues.BurstBrowser.Settings.GaussianFitMethod)),...
         'Parent',h.FitGaussian_Panel,...
         'FontSize',12,...
-        'TooltipStr','Fit Method. LSQ allows fixing of parameters.');
+        'TooltipStr','Fit Method. LSQ allows fixing of parameters.'); 
     h.Fit_GaussianChi2_Text = uicontrol('Style','text',...
         'Units','normalized',...
         'Callback',@UpdateOptions,...
-        'Position',[0.6,0.8,0.4,0.08],...
+        'Position',[0.1,0.8,0.3,0.08],...
         'String','',...
         'HorizontalAlignment','center',...
         'Parent',h.FitGaussian_Panel,...
@@ -5319,6 +5336,8 @@ switch obj
         UserValues.BurstBrowser.Settings.fFCS_UseFRET = obj.Value;
     case h.Fit_Gaussian_Pick
         UserValues.BurstBrowser.Settings.FitGaussPick = obj.Value;
+    case h.Fit_Gaussian_Use_Weights
+        UserValues.BurstBrowser.Settings.FitGauss_UseWeights = obj.Value;
     case h.ApplyCorrectionsOnLoad
         UserValues.BurstBrowser.Settings.CorrectionOnLoad = obj.Value;
     case h.Fit_GaussianMethod_Popupmenu
@@ -5331,6 +5350,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatMLE;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'MLE';
                 h.Fit_GaussianChi2_Text.String = '';
+                h.Fit_Gaussian_Use_Weights.Visible = 'off';
             case 2 %%% changed to LSQ
                 h.Fit_Gaussian_Text.ColumnName = h.GUIData.ColumnNameLSQ;
                 h.Fit_Gaussian_Text.Data = h.GUIData.TableDataLSQ;
@@ -5338,6 +5358,7 @@ switch obj
                 h.Fit_Gaussian_Text.ColumnWidth = h.GUIData.ColumnWidthLSQ;
                 h.Fit_Gaussian_Text.ColumnFormat = h.GUIData.ColumnFormatLSQ;
                 UserValues.BurstBrowser.Settings.GaussianFitMethod = 'LSQ';
+                h.Fit_Gaussian_Use_Weights.Visible = 'on';
         end
         UpdateOptions(h.Fit_NGaussian_Popupmenu,[]);
     case h.Fit_NGaussian_Popupmenu
@@ -6942,11 +6963,19 @@ if obj == h.Fit_Gaussian_Button
                 
                 xdata = {xbins,sum(sum(HH)),fixed,nG,0};
                 ydata = sum(HH,1);
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit_1D,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
                 
-                chi2 = sum((residuals.^2)./max(1,ydata))./(numel(ydata)-1-sum(fixed));
+                chi2 = sum((residuals.^2)./max(1,ydata))./(sum(ydata>0)-1-sum(fixed));
                 h.Fit_GaussianChi2_Text.String = sprintf('red. Chi2 = %.2f',chi2);
                 
                 Res = zeros(1,numel(fixed));
@@ -7040,6 +7069,15 @@ if obj == h.Fit_Gaussian_Button
                 if h.Hist_log10.Value; HH = 10.^(HH);end;
                 ydata = HH;
                 xdata = {xbins,ybins,sum(sum(ydata)),fixed,nG,0};
+                
+                if UserValues.BurstBrowser.Settings.FitGauss_UseWeights
+                    %%% add Poissonian error (sqrt(N))
+                    err = sqrt(ydata);
+                    err(err == 0) = 1;
+                    xdata{end+1} = err;
+                    ydata = ydata./err;
+                end
+                
                 BurstMeta.GaussianFit.Params = x0;
                 opt = optimoptions('lsqcurvefit','MaxFunEvals',10000);
                 [x,~,residuals] = lsqcurvefit(@MultiGaussFit,x0(~fixed),xdata,ydata,lb(~fixed),ub(~fixed),opt);
@@ -14554,54 +14592,6 @@ switch obj
             end
         end
         FigureName = 'LifetimePlots';
-%     case h.ExportEvsTau_Menu
-%         AspectRatio = 1;
-%         pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
-%         hfig = figure('Position',pos,'Color',[1 1 1]);
-%         %%% Copy axes to figure
-%         axes_copy = copyobj(h.axes_EvsTauGG,hfig);
-%         axes_copy.Position = [0.17 0.17 0.8 0.8];
-%         axes_copy.Title.Visible = 'off';
-%         axes_copy.XLabel.String = '\tau_{D(A)} [ns]';
-%         %%% set Background Color to white
-%         axes_copy.Color = [1 1 1];
-%         %%% change X/YColor Color Color
-%         axes_copy.XColor = [0,0,0];
-%         axes_copy.YColor = [0,0,0];
-%         axes_copy.XLabel.Color = [0,0,0];
-%         axes_copy.YLabel.Color = [0,0,0];
-%         axes_copy.Layer = 'top';
-%         %%% Update ColorMap
-%         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-%             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
-%         else
-%             colormap(UserValues.BurstBrowser.Display.ColorMap);
-%         end
-%         FigureName = 'E vs. TauGG';
-%         axes_copy.Layer = 'top';
-%     case h.ExportEvsTauBB_Menu
-%         AspectRatio = 1;
-%         pos = [100,100, round(1.2*0.5*size_pixels),round(1.2*0.5*size_pixels*AspectRatio)];
-%         hfig = figure('Position',pos,'Color',[1 1 1]);
-%         %%% Copy axes to figure
-%         axes_copy = copyobj(h.axes_E_BtoGRvsTauBB,hfig);
-%         axes_copy.Position = [0.17 0.17 0.8 0.8];
-%         axes_copy.Title.Visible = 'off';
-%         %%% set Background Color to white
-%         axes_copy.Color = [1 1 1];
-%         %%% change X/YColor Color Color
-%         axes_copy.XColor = [0,0,0];
-%         axes_copy.YColor = [0,0,0];
-%         axes_copy.XLabel.Color = [0,0,0];
-%         axes_copy.YLabel.Color = [0,0,0];
-%         axes_copy.Layer = 'top';
-%         %%% Update ColorMap
-%         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-%             eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
-%         else
-%             colormap(UserValues.BurstBrowser.Display.ColorMap);
-%         end
-%         FigureName = 'E vs. TauBB';
     case h.Export2DLifetime_Menu
         AspectRatio = 1;
         pos = [100,100, round(1.3*size_pixels),round(1.2*size_pixels*AspectRatio)];
@@ -14660,7 +14650,9 @@ switch obj
                         else
                              maxY = 0;
                              for k = 1:numel(panel_copy.Children(i).Children)-1
-                                 maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                 if strcmp(panel_copy.Children(i).Children(k).Visible,'on')
+                                    maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                 end
                              end
                              panel_copy.Children(i).YLim = [0, maxY*1.05];
                              color_bar = false;
@@ -14689,7 +14681,9 @@ switch obj
                         else
                             maxY = 0;
                             for k = 1:numel(panel_copy.Children(i).Children)-1
-                                maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                if strcmp(panel_copy.Children(i).Children(k).Visible,'on')
+                                    maxY = max([maxY,max(panel_copy.Children(i).Children(k).YData)]);
+                                end
                             end
                             panel_copy.Children(i).YLim = [0, maxY*1.05];
                         end
@@ -15106,27 +15100,29 @@ overlay = true; %%% overlay the axis labels on 1D plot
 opacity = 0.8; %%% gray color for 1D axis if overlay = true
 % file and species that are currently selected
 [file, species, subspecies] = get_multiselection(h);
-file_old = BurstMeta.SelectedFile;
+multiplot = h.MultiselectOnCheckbox.UserData && numel(file)>1;
+
+%file_old = BurstMeta.SelectedFile;
 old_paramX = h.ParameterListX.Value;
 old_paramY = h.ParameterListY.Value;
             
 Progress(0,h.Progress_Axes,h.Progress_Text,'Generating figure...');
 
-for k = 1:numel(file) %loop through all selected species
-    BurstMeta.SelectedFile = file(k);
+for k = 1:1%numel(file) %loop through all selected species
+    %BurstMeta.SelectedFile = file(k);
     % select the same species for all files as for the currently selected file
-    SelectedSpecies_old = BurstData{file(k)}.SelectedSpecies;
-    BurstData{file(k)}.SelectedSpecies = [species(k), subspecies(k)];
+    %SelectedSpecies_old = BurstData{file(k)}.SelectedSpecies;
+    %BurstData{file(k)}.SelectedSpecies = [species(k), subspecies(k)];
     
-    %%% Make sure to apply corrections
-    ApplyCorrections(obj,[],h,0);
+    %%% Make sure to apply corrections to all files
+    ApplyCorrections(h.ApplyCorrectionsButton,[],h,0);
     UpdateCutTable(h);
     UpdateCuts();
     %update all plots, cause that's what we'll be copying
     UpdatePlot([],[],h);
     UpdateLifetimePlots([],[],h);
     PlotLifetimeInd([],[],h);
-    
+    Progress(0.2,h.Progress_Axes,h.Progress_Text,'Generating figure...');
     if any(BurstData{file(k)}.BAMethod == [3,4])
         disp('Not implemented for three color.');
         return;
@@ -15230,7 +15226,9 @@ for k = 1:numel(file) %loop through all selected species
             if f == 5
                 set(panel_copy{f}(a).Children(end-2),'Color','none');
             else
-                delete(panel_copy{f}(a).Children(1));
+                if ~multiplot
+                    delete(panel_copy{f}(a).Children(1));
+                end
             end
         end
         for a = 3
@@ -15242,10 +15240,39 @@ for k = 1:numel(file) %loop through all selected species
             
     end
     panel_copy([5,4]) = deal(panel_copy([4,5]));
-    hfigallinone = figure('Position',pos.*[1,1,1.5,1],'Color',[1 1 1],'Visible','on');
+    hfigallinone = figure('Position',pos.*[1,1,1.5,1],'Color',[1 1 1],'Visible','off');
     norm_to_pix = [pos(3),pos(4),pos(3),pos(4)];
     
-    corr = BurstData{file(k)}.Corrections;
+    Progress(0.4,h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    
+    % read out corrections of all files
+    corr = struct('CrossTalk_GR',[],'DirectExcitation_GR',[],'Gamma_GR',[],...
+        'Beta_GR',[],'GfactorGreen',[],'GfactorRed',[],'FoersterRadius',[],...
+        'LinkerLength',[],'DonorLifetime',[],'AcceptorLifetime',[],...
+        'r0_green',[],'r0_red',[]);
+    for i = 1:numel(file)
+        corr.CrossTalk_GR(end+1) = BurstData{file(i)}.Corrections.CrossTalk_GR;
+        corr.DirectExcitation_GR(end+1) = BurstData{file(i)}.Corrections.DirectExcitation_GR;
+        corr.Gamma_GR(end+1) = BurstData{file(i)}.Corrections.Gamma_GR;
+        corr.Beta_GR(end+1) = BurstData{file(i)}.Corrections.Beta_GR;
+        corr.GfactorGreen(end+1) = BurstData{file(i)}.Corrections.GfactorGreen;
+        corr.GfactorRed(end+1) = BurstData{file(i)}.Corrections.GfactorRed;
+        corr.FoersterRadius(end+1) = BurstData{file(i)}.Corrections.FoersterRadius;
+        corr.LinkerLength(end+1) = BurstData{file(i)}.Corrections.LinkerLength;
+        corr.DonorLifetime(end+1) = BurstData{file(i)}.Corrections.DonorLifetime;
+        corr.AcceptorLifetime(end+1) = BurstData{file(i)}.Corrections.AcceptorLifetime;
+        corr.r0_green(end+1) = BurstData{file(i)}.Corrections.r0_green;
+        corr.r0_red(end+1) = BurstData{file(i)}.Corrections.r0_red;
+    end
+    % check if all files have the same values, if yes, replace array with
+    % single value
+    fields = fieldnames(corr);
+    for i = 1:numel(fields)
+        if all(corr.(fields{i}) == corr.(fields{i})(1))
+            corr.(fields{i}) = corr.(fields{i})(1);
+        end
+    end
+    
     Pos = struct;
     %tauD - E plots
     Pos.Y.tauD_E =  [0.06 0.53 0.06 0.35].*norm_to_pix;
@@ -15286,7 +15313,7 @@ for k = 1:numel(file) %loop through all selected species
     end
     
     % 2D Lifetime-E
-    copyobj([panel_copy{1}],hfigallinone);
+    copyobj([panel_copy{1}],hfigallinone);delete(panel_copy{1});
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = Pos.Y.tauD_E;
@@ -15340,13 +15367,17 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).Layer = 'top';
 
     if overlay
-        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(1).Visible = 'off';
         hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
         hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
         hfigallinone.Children(3).YLabel.Units = 'norm';
         hfigallinone.Children(3).YLabel.Position(1) = -0.17;
-        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
         hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
@@ -15357,7 +15388,7 @@ for k = 1:numel(file) %loop through all selected species
     end
    
     % 2D lifetime GG-Anisotropy GG
-    copyobj([panel_copy{2}],hfigallinone);
+    copyobj([panel_copy{2}],hfigallinone);delete(panel_copy{2});
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = Pos.Y.tauD_rD;
@@ -15401,13 +15432,17 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).Layer = 'top';
     
     if overlay
-        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(1).Visible = 'off';
         hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
         hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
         hfigallinone.Children(3).YLabel.Units = 'norm';
         hfigallinone.Children(3).YLabel.Position(1) = -0.17;
-        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
         hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
@@ -15416,9 +15451,11 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-
+    
+    Progress(0.6,h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    
     % 2D lifetime RR-Anisotropy RR
-    copyobj([panel_copy{3}],hfigallinone);
+    copyobj([panel_copy{3}],hfigallinone);delete(panel_copy{3});
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = Pos.Y.tauA_rA;
@@ -15468,7 +15505,9 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).Layer = 'top';
     
     if overlay
-        hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(1).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(1).Visible = 'off';
         hfigallinone.Children(3).YLabel.String = hfigallinone.Children(1).XLabel.String;
         hfigallinone.Children(3).YTickLabel = hfigallinone.Children(1).XTickLabel;
@@ -15477,7 +15516,9 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).YTickLabelRotation = -90;
         hfigallinone.Children(3).YAxisLocation = 'right';
         hfigallinone.Children(3).YLabel.Position(1) = 1.24;
-        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
         hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
@@ -15488,7 +15529,7 @@ for k = 1:numel(file) %loop through all selected species
     end
 
     % 2D E-tauA
-    copyobj([panel_copy{5}],hfigallinone);
+    copyobj([panel_copy{5}],hfigallinone);delete(panel_copy{5});
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = Pos.Y.tauA_E;
@@ -15551,7 +15592,9 @@ for k = 1:numel(file) %loop through all selected species
             hfigallinone.Children(3).YAxisLocation = 'right';
             hfigallinone.Children(3).YLabel.Position(1) = 1.24;
         end
-        hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        if ~multiplot
+            hfigallinone.Children(2).Children(1).FaceColor = [opacity,opacity,opacity];
+        end
         hfigallinone.Children(2).Visible = 'off';
         hfigallinone.Children(3).XLabel.String = hfigallinone.Children(2).XLabel.String;
         hfigallinone.Children(3).XTickLabel = hfigallinone.Children(2).XTickLabel;
@@ -15560,9 +15603,11 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(3).TickDir = 'out';
         uistack(hfigallinone.Children(1:2),'bottom');
     end
-      
+    
+    Progress(0.8,h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    
     % 2D Stoichiometry-E
-    copyobj([panel_copy{4}],hfigallinone);
+    copyobj([panel_copy{4}],hfigallinone);delete(panel_copy{4});
     delete(hfigallinone.Children(strcmp(get(hfigallinone.Children,'Type'),'uicontextmenu')));
     hfigallinone.Children(1).Units = 'pixel';
     hfigallinone.Children(1).Position = Pos.Y.S_E;
@@ -15575,7 +15620,9 @@ for k = 1:numel(file) %loop through all selected species
         hfigallinone.Children(1).XLabel.String = 'FRET Efficiency';
         set(hfigallinone.Children(1).XLabel,'Color', 'k', 'Units', 'norm','rotation', -90);
         hfigallinone.Children(1).XLabel.Position = [2.1 0.5 0];
-        hfigallinone.Children(1).YLim(2) = max(hfigallinone.Children(1).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
+        if ~multiplot
+            hfigallinone.Children(1).YLim(2) = max(hfigallinone.Children(1).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
+        end
     end
     hfigallinone.Children(2).Units = 'pixel';
     hfigallinone.Children(2).Position = Pos.X.S_E;
@@ -15589,7 +15636,9 @@ for k = 1:numel(file) %loop through all selected species
     hfigallinone.Children(2).TickLength = [0.0100 0.0250];
     hfigallinone.Children(2).YTick = [];
     hfigallinone.Children(2).YLabel.String = '';
-    hfigallinone.Children(2).YLim(2) = max(hfigallinone.Children(2).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
+    if ~multiplot
+        hfigallinone.Children(2).YLim(2) = max(hfigallinone.Children(2).Children(end-1).YData)*1.05; %%% adapt to YLim of related axes
+    end
     
     hfigallinone.Children(3).Units = 'pixel';
     hfigallinone.Children(3).Position = Pos.XY.S_E;
@@ -15687,34 +15736,47 @@ for k = 1:numel(file) %loop through all selected species
             text_box = [text_box sprintf('Donor lifetime: & %.2f ns\\\\ ',corr.DonorLifetime)];
             text_box = [text_box sprintf('Acceptor lifetime: & %.2f ns\\\\ ',corr.AcceptorLifetime)];
             text_box = [text_box sprintf('$r_0(D)$: & %.2f\\\\ ',corr.r0_green)];
-            text_box = [text_box sprintf('$r_0(A)$: & %.2f\\\\ ',corr.r0_green)];
+            text_box = [text_box sprintf('$r_0(A)$: & %.2f\\\\ ',corr.r0_red)];
             text_box = [text_box '\end{tabular}$$'];
             
             t=text(-1,0,text_box,'interpreter','latex','FontSize',fontsize);
             t.Units = 'normalized';
             t.Position = [-3.34 -0.81];
         case 'html'
+            % preformat number->string conversion
+            CrossTalk_GR = sprintf('%.2f/', corr.CrossTalk_GR); CrossTalk_GR = CrossTalk_GR(1:end-1);
+            DirectExcitation_GR = sprintf('%.2f/', corr.DirectExcitation_GR); DirectExcitation_GR = DirectExcitation_GR(1:end-1);
+            Gamma_GR = sprintf('%.2f/', corr.Gamma_GR); Gamma_GR = Gamma_GR(1:end-1);
+            Beta_GR = sprintf('%.2f/', corr.Beta_GR); Beta_GR = Beta_GR(1:end-1);
+            GfactorGreen = sprintf('%.2f/', corr.GfactorGreen); GfactorGreen = GfactorGreen(1:end-1);
+            GfactorRed = sprintf('%.2f/', corr.GfactorRed); GfactorRed = GfactorRed(1:end-1);
+            FoersterRadius = sprintf('%d/', corr.FoersterRadius); FoersterRadius = FoersterRadius(1:end-1);
+            LinkerLength = sprintf('%d/', corr.LinkerLength); LinkerLength = LinkerLength(1:end-1);
+            DonorLifetime = sprintf('%.2f/', corr.DonorLifetime); DonorLifetime = DonorLifetime(1:end-1);
+            AcceptorLifetime = sprintf('%.2f/', corr.AcceptorLifetime); AcceptorLifetime = AcceptorLifetime(1:end-1);
+            r0_green = sprintf('%.2f/', corr.r0_green); r0_green = r0_green(1:end-1);
+            r0_red = sprintf('%.2f/', corr.r0_red); r0_red = r0_red(1:end-1);
             if arrangement == 1
                 fontsize = 12; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' DirectExcitation_GR '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' LinkerLength ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' Gamma_GR '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' DonorLifetime ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' Beta_GR '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' AcceptorLifetime ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' GfactorGreen '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' r0_green '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' GfactorRed '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' r0_red '</td></tr>'];
                 table = [table '</table></html>'];
             else
                 fontsize = 8.5; if ispc; fontsize = fontsize./1.2;end
                 table = '<html><table>';
                 table = [table '<tr><th align="left">Correction factors</th><th></th><th>&nbsp;&nbsp;</th><th align="left">Dye parameters</th><th></th></tr>'];
-                table = [table '<tr><td>crosstalk:</td><td>' sprintf('%.2f', corr.CrossTalk_GR) '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' sprintf('%d', corr.FoersterRadius) ' &#8491;</td></tr>'];
-                table = [table '<tr><td>direct excitation:</td><td>' sprintf('%.2f', corr.DirectExcitation_GR) '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' sprintf('%d', corr.LinkerLength) ' &#8491;</td></tr>'];
-                table = [table '<tr><td>&gamma;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' sprintf('%.2f', corr.DonorLifetime) ' ns</td></tr>'];
-                table = [table '<tr><td>&beta;-factor:</td><td>' sprintf('%.2f', corr.Gamma_GR) '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' sprintf('%.2f', corr.AcceptorLifetime) ' ns</td></tr>'];
-                table = [table '<tr><td>G<sub>D</sub>:</td><td>' sprintf('%.2f', corr.GfactorGreen) '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' sprintf('%.2f', corr.r0_green) '</td></tr>'];
-                table = [table '<tr><td>G<sub>A</sub>:</td><td>' sprintf('%.2f', corr.GfactorRed) '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' sprintf('%.2f', corr.r0_red) '</td></tr>'];
+                table = [table '<tr><td>crosstalk:</td><td>' CrossTalk_GR '</td><td>&nbsp;</td><td>Foerster distance:</td><td>' FoersterRadius ' &#8491;</td></tr>'];
+                table = [table '<tr><td>direct excitation:</td><td>' DirectExcitation_GR '</td><td>&nbsp;</td><td>app. Linker length:</td><td>' LinkerLength ' &#8491;</td></tr>'];
+                table = [table '<tr><td>&gamma;-factor:</td><td>' Gamma_GR '</td><td>&nbsp;</td><td>Donor lifetime:</td><td>' DonorLifetime ' ns</td></tr>'];
+                table = [table '<tr><td>&beta;-factor:</td><td>' Beta_GR '</td><td>&nbsp;</td><td>Acceptor lifetime:</td><td>' AcceptorLifetime ' ns</td></tr>'];
+                table = [table '<tr><td>G<sub>D</sub>:</td><td>' GfactorGreen '</td><td>&nbsp;</td><td>r<sub>0</sub>(D):</td><td>' r0_green '</td></tr>'];
+                table = [table '<tr><td>G<sub>A</sub>:</td><td>' GfactorRed '</td><td>&nbsp;</td><td>r<sub>0</sub>(A):</td><td>' r0_red '</td></tr>'];
                 table = [table '</table></html>'];
             end
             hTextbox = uicontrol('style','pushbutton', 'max',1000, 'Units', 'normalized', 'Position', Pos.table,...
@@ -15762,14 +15824,15 @@ for k = 1:numel(file) %loop through all selected species
     %%% remove spaces
     FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
     hfigallinone.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
-
-    BurstData{file(k)}.SelectedSpecies = SelectedSpecies_old;
+    hfigallinone.Visible= 'on';
+    %BurstData{file(k)}.SelectedSpecies = SelectedSpecies_old;
     
-    Progress(k/numel(file),h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    %Progress(k/numel(file),h.Progress_Axes,h.Progress_Text,'Generating figure...');
+    Progress(1,h.Progress_Axes,h.Progress_Text,'Generating figure...');
 end 
 h.ParameterListX.Value = old_paramX;
 h.ParameterListY.Value = old_paramY;
-BurstMeta.SelectedFile = file_old;
+%BurstMeta.SelectedFile = file_old;
 UpdatePlot([],[],h);
 Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 
@@ -15992,6 +16055,7 @@ N_datapoints = xdata{2};
 fixed = xdata{3};
 nG = xdata{4};
 plot = xdata{5};
+
 %%% x contains the parameters for fitting in order
 %%% fraction,mu1,mu2,var1,var2,cov12
 %%% i.e. 6*n_species in total
@@ -16013,6 +16077,10 @@ for i = 1:nG
 end
 model = model./max([1,sum(model)]);
 model = model.*N_datapoints;
+if numel(xdata) > 5 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{6};
+end
 
 function model = MultiGaussFit(x,xdata)
 global BurstMeta
@@ -16049,6 +16117,10 @@ for i = 1:nG
 end
 model = model./max([1,sum(sum(model))]);
 model = model.*N_datapoints;
+if numel(xdata) > 6 %%% sigma is last parameter
+    %%% divide by sigma
+    model = model./xdata{7};
+end
 
 function [covNew] = fix_covariance_matrix(cov)
 %find eigenvalue smaller 0

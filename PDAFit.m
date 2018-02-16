@@ -1623,6 +1623,7 @@ switch mode
             catch
                 continue;
             end
+            
             fitpar = FitTable(i,2:3:end-1); %everything but chi^2
             if h.SettingsTab.DynamicModel.Value
                 % calculate the amplitude from the k12 [fitpar(1)] and k21 [fitpar(4)]
@@ -1987,7 +1988,7 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 h.FitTab.Table.Enable='off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
-
+Update_Plots(obj,[],3); % reset plots
 %% Store parameters globally for easy access during fitting
 try
     PDAMeta = rmfield(PDAMeta, 'BGdonor');

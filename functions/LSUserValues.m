@@ -408,6 +408,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.MT_Binning was incomplete');
     end
     P.Settings.Pam.MT_Binning = S.Settings.Pam.MT_Binning;
+    %%% Checks, if Pam.PCH_Binning subfield exists
+    if ~isfield(S.Settings.Pam, 'PCH_Binning')
+        S.Settings.Pam.PCH_Binning=1;
+        disp('UserValues.Settings.Pam.PCH_Binning was incomplete');
+    end
+    P.Settings.Pam.PCH_Binning = S.Settings.Pam.PCH_Binning;
     %%% Checks, if Pam.MT_Trace_Sectioning subfield exists
     if ~isfield(S.Settings.Pam, 'MT_Trace_Sectioning')
         S.Settings.Pam.MT_Trace_Sectioning=1;
@@ -1906,6 +1912,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
     end
     P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
+    %%% Check, if BurstBrowser.Settings.FitGauss_UseWeights subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FitGauss_UseWeights')
+        S.BurstBrowser.Settings.FitGauss_UseWeights=0;
+        disp('UserValues.BurstBrowser.Settings.FitGauss_UseWeights was incomplete');
+    end
+    P.BurstBrowser.Settings.FitGauss_UseWeights = S.BurstBrowser.Settings.FitGauss_UseWeights;
     %%% Check, if BurstBrowser.Settings.GaussianFitMethod subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'GaussianFitMethod')
         S.BurstBrowser.Settings.GaussianFitMethod='MLE';
