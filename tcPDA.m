@@ -1125,7 +1125,7 @@ function load_data(hObject,~)
 global tcPDAstruct UserValues
 LSUserValues(0);
 handles = guidata(hObject);
-[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM';'*.txt','Text-based tcPDA file'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM (*.tcpda)';'*.txt','Text-based tcPDA file (*.txt)'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
 
 if ~isequal(FileName,0)
     UserValues.tcPDA.PathName = PathName;
