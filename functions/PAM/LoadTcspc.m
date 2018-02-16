@@ -387,9 +387,15 @@ switch (Type)
             elseif (numel(FileInfo.ImageTimes) > 1) && ((FileInfo.ImageTimes(end)> Collection_Time) || (Collection_Time > 1.05*(max(diff(FileInfo.ImageTimes)))))
                 %%% Collection_Time was set, but it is obviously wrong
                 MaxMT = MaxMT + (mean2(diff(FileInfo.ImageTimes))+FileInfo.ImageTimes(end))/FileInfo.ClockPeriod;
-            else %%% Collection_Time is correct                 
-                MaxMT = MaxMT +ceil(Collection_Time/FileInfo.ClockPeriod);
-
+            else %%% Collection_Time is correct
+                %%% check if the user canceled before end of measurement
+                %   determine collection time as calculated from last photon
+                Collection_Time_SPC = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT)))); 
+                if (Collection_Time_SPC*FileInfo.ClockPeriod./Collection_Time) < 0.95 % User canceled earlier than 95% of the measurement time
+                    MaxMT = MaxMT + Collection_Time_SPC;
+                else % take the saved collection time from B&H software
+                    MaxMT = MaxMT +ceil(Collection_Time/FileInfo.ClockPeriod);
+                end
             end
 
         end
