@@ -4542,9 +4542,15 @@ tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
 mcmc_method = handles.mcmc_method.Value;
 n_samples = str2double(handles.n_samples_edit.String);
 
-%read initial fit values
+%update fitdata
 fit_data = get(handles.fit_table,'data');
 n_gauss = get(handles.popupmenu_ngauss,'value');
+for i = 1:n_gauss%number of species
+   tcPDAstruct.fitdata.param{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,2));
+   tcPDAstruct.fitdata.fixed{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,3));
+   tcPDAstruct.fitdata.LB{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,4));
+   tcPDAstruct.fitdata.UB{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,5));
+end
 
 corrections = get(handles.corrections_table,'data');
 [tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
