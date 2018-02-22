@@ -3619,6 +3619,16 @@ switch (selected_tab)
         if isfield(tcPDAstruct,'twocolordata')
             plot_2cPDAData(2);
         end
+        if handles.MLE_checkbox.Value % determine likelihood and BIC
+            calculate_background(); 
+            if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
+                % Initialize Array of binomial and trinomial coefficients
+                [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
+                    tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+            end
+            determine_MLE_3color(fitpar);
+            handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+        end
     otherwise
         chi2 = 0;
 end
