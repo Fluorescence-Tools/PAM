@@ -4515,11 +4515,10 @@ SA = sqrt(rinfa/r0a);
 
 %%% estimate the mean angle between the dipoles
 % Equation 20 from (1)
-try
-    cos_thetaDA = sqrt((1+2*(rinfad/SA/SD/r0a))/3);
-   
-catch
-    % division by zero occured, default to 1/3
+if ~( (SD == 0)||(SA == 0) )
+    cos_thetaDA = sqrt(abs((1+2*(rinfad/SA/SD/r0a))/3));
+else
+    % division by zero, default to 1/3
     cos_thetaDA= sqrt(1/3);
 end
 thetaDA = acos(cos_thetaDA);
