@@ -62,14 +62,16 @@ end
 %%% check what kind of data is to be saved
 switch UserValues.BurstSearch.Method
     case {1,2} % 2color MFD
-        measurement_type = 'smFRET-nsALEX';
+        %measurement_type = 'smFRET-nsALEX';
+        measurement_type = 'generic'; 
+        % this should be changed in the future, however,
+        % at the moment no measurement type is available for 
+        % 2C-nsALEX with polarization
     case {3,4} % 3color MFD
         disp('3C-MFD (nsALEX) data is currently not supported.');
         return;
     case 5
         measurement_type = 'smFRET-nsALEX';
-        %disp('No-MFD data is currently not supported.');
-        %return;
 end
 
 disp('Saving data to PhotonHDF5 file...');
@@ -92,6 +94,7 @@ switch UserValues.BurstSearch.Method
         num_spectral_ch =      2;
         num_split_ch =         1;
         modulated_excitation = true;
+        laser_repetition_rate =   1./FileInfo.ClockPeriod;
         if modulated_excitation
             modulated_excitation = 'True';
         else
@@ -123,12 +126,13 @@ switch UserValues.BurstSearch.Method
         '    modulated_excitation: %s   # us-ALEX alternation requires True here \n'...
         '    lifetime: %s               # False = no TCSPC in detection \n'...
         '    excitation_alternated: [%s,%s] # True for both acceptor and donor excitation \n'...
+        '    laser_repetition_rates: [%hd,%hd]   # Array of laser repetition rates \n'...
         '\n'];
 
         fileID = fopen(filename,'w');
         fprintf(fileID,formatSpec,description,num_pixels,num_spots,num_spectral_ch,...
                 num_polarization_ch,num_split_ch,modulated_excitation,lifetime,...
-                excitation_alternated{1},excitation_alternated{2});
+                excitation_alternated{1},excitation_alternated{2},laser_repetition_rate,laser_repetition_rate);
 
 
         %% Optional fields
@@ -225,7 +229,9 @@ switch UserValues.BurstSearch.Method
 
         spectral_ch1 =            [0,1];
         spectral_ch2 =            [2,3];
-
+        
+        polarization_ch1  =       [0,2];
+        polarization_ch2  =       [1,3];
         %% Format/Write Photon Data Metadata to YAML file
 
         formatSpec = ['photon_data: \n'...
@@ -244,12 +250,19 @@ switch UserValues.BurstSearch.Method
         '\n'...
         '        detectors_specs: \n'...
         '            spectral_ch1: [%hd,%hd]  # list of donors detector IDs \n'...
-        '            spectral_ch2: [%hd,%hd]  # list of acceptors detector IDs'];
+        '            spectral_ch2: [%hd,%hd]  # list of acceptors detector IDs\n'...
+        '            polarization_ch1: [%hd,%hd]  # list of parallel polarization detector IDs \n'...
+        '            polarization_ch2: [%hd,%hd]  # list of perpendicular polarization detector IDs'];
 
         fprintf(fileID,formatSpec,timestamps_unit,tcsp_unit,tcspc_num_bins,tcspc_range,...
-                measurement_type,laser_repetition_rate,alex_excitation_period1(1),...
-                alex_excitation_period1(2),alex_excitation_period2(1),...
-                alex_excitation_period2(2),spectral_ch1(1),spectral_ch1(2),spectral_ch2(1),spectral_ch2(2));
+                measurement_type,laser_repetition_rate,...
+                alex_excitation_period1(1), alex_excitation_period1(2),...
+                alex_excitation_period2(1), alex_excitation_period2(2),...
+                spectral_ch1(1),spectral_ch1(2),...
+                spectral_ch2(1),spectral_ch2(2),...
+                polarization_ch1(1),polarization_ch1(2),...
+                polarization_ch2(1),polarization_ch2(2)...
+            );
 
         % Close file
         fclose(fileID);

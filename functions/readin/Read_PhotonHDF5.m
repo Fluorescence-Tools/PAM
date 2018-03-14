@@ -6,7 +6,7 @@ function [MT, MI, datastruct] = Read_PhotonHDF5(file)
 measurement_type = h5read(file,'/photon_data/measurement_specs/measurement_type');
 if ~strcmp(measurement_type,'smFRET-nsALEX')
     disp(['Measurement type of loaded file is : ' measurement_type]);
-    disp('This measurement type is currently not supported.');
+    %disp('This measurement type is currently not supported.');
 end
 %%% photon data is read and transformed into PAM MT/MI scheme, discarding
 %%% the channel variable
@@ -16,9 +16,9 @@ detectors =  h5read(file,'/photon_data/detectors');
 
 det = unique(detectors);
 MT = cell(10,1); MI = cell(10,1);
-for i = det
-    MT{i+1} = double(timestamps(detectors == i))';
-    MI{i+1} = nanotimes(detectors == i)';
+for i = 1:numel(det)
+    MT{det(i)+1} = double(timestamps(detectors == det(i)))';
+    MI{det(i)+1} = nanotimes(detectors == det(i))';
 end
 clear timestamps nanotimes detectors
 
