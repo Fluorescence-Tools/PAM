@@ -55,7 +55,7 @@ if status ~= 0
     end
     if ~success
         disp(cmdout);
-        disp('Please install phforge! For instructions vist http://photon-hdf5.github.io/phforge/');
+        disp('Please install phforge! For instructions visit http://photon-hdf5.github.io/phforge/');
         return;
     end
 end
