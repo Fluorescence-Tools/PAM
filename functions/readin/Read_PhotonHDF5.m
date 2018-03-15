@@ -1,13 +1,10 @@
 function [MT, MI, datastruct] = Read_PhotonHDF5(file)
 % reads PhotonHDF5 data into matlab structure for further processing
 
-%%% first check for measurement type, at the moment only smFRET-nsALEX is
-%%% supported!
+%%% first check for measurement type
 measurement_type = h5read(file,'/photon_data/measurement_specs/measurement_type');
-if ~strcmp(measurement_type,'smFRET-nsALEX')
-    disp(['Measurement type of loaded file is : ' measurement_type]);
-    %disp('This measurement type is currently not supported.');
-end
+disp(['Measurement type of loaded file is : ' measurement_type]);
+
 %%% photon data is read and transformed into PAM MT/MI scheme, discarding
 %%% the channel variable
 timestamps = h5read(file,'/photon_data/timestamps');
