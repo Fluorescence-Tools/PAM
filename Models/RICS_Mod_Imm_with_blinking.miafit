@@ -1,8 +1,8 @@
 %%%--------------------------MODEL DESCRIPTION--------------------------%%%
-Simple RICS model. 
+3D RICS model including a blinking term and immobilized fraction. 
 -> One 3D diffusion component.
 -> Triplet/blinking terms. 
--> No Shift between correlations.
+-> No lateral shift between color channels.
 -> Imm fraction
 
      |Offset|+|gamma|  / |N|*...
