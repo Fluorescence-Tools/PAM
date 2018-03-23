@@ -4172,6 +4172,8 @@ switch mode
                 %% Value was changed => Apply value to global variables
             elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
                 %% Value was fixed => Uncheck global
+                %%% Uncheck global for all files to prohibit fixed and global
+                h.FitTab.Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
             elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
                 %% Global was change
                 %%% Apply value to all files
