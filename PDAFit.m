@@ -3324,7 +3324,11 @@ mean_chi2 = mean(PDAMeta.chi2);
 %Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
 if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
-    mean_chi2 = horzcat(PDAMeta.w_res{:});
+    mean_chi2 = [];
+    for i = Active
+        mean_chi2 = [mean_chi2, PDAMeta.w_res{i}];
+    end 
+    %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
     mean_chi2 = sum(loglikelihood);
 end
