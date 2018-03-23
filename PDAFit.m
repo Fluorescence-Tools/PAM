@@ -2376,7 +2376,7 @@ PDAMeta.MCMC_mean = [];
 
 %%% check if global fitting should be performed
 do_global = false;
-if sum(PDAMeta.Global) > 0
+if (sum(PDAMeta.Global) > 0) && (sum(PDAMeta.Active) > 1)
     do_global = true;
 else %%% check if fix sigma at fraction of R option is enable
     if h.SettingsTab.FixSigmaAtFractionOfR.Value
