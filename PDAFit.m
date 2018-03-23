@@ -2914,13 +2914,17 @@ h.FitTab.Table.Enable='on';
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar,h)
 global PDAMeta PDAData
-%h = guidata(findobj('Tag','GlobalPDAFit'));
 i = PDAMeta.file;
 
 %%% Aborts Fit
 drawnow;
 if ~PDAMeta.FitInProgress
-    chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        chi2 = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+    else
+        chi2 = 0;
+    end
     return;
 end
 
@@ -3121,7 +3125,12 @@ global PDAMeta PDAData UserValues
 %%% Aborts Fit
 drawnow;
 if ~PDAMeta.FitInProgress
-    mean_chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        mean_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
+    else
+        mean_chi2 = 0;
+    end
     return;
 end
 
