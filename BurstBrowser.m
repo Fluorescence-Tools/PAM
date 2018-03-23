@@ -11822,6 +11822,7 @@ ax.YDir = 'normal';
 ax.FontSize = 20;
 xlabel('FRET efficiency');
 ylabel('time bin [ms]');
+ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),timebin,'UniformOutput',false)');
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
