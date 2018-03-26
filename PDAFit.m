@@ -1988,6 +1988,12 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 h.FitTab.Table.Enable='off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
+%%% Specify the update interval (used for interrupting of fit and updating
+%%% of chi2 display)
+%%% given in units of fit iterations (function evaluations)
+PDAMeta.UpdateInterval = 10;
+%%% Set the fit iteration (function evaluation) counter to 0
+PDAMeta.Fit_Iter_Counter = 0;
 Update_Plots(obj,[],3); % reset plots
 %% Store parameters globally for easy access during fitting
 try
@@ -2916,8 +2922,12 @@ function [chi2] = PDAHistogramFit_Single(fitpar,h)
 global PDAMeta PDAData
 i = PDAMeta.file;
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
         % chi2 must be an array!
@@ -2927,6 +2937,7 @@ if ~PDAMeta.FitInProgress
     end
     return;
 end
+
 
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
@@ -3122,8 +3133,12 @@ function [mean_chi2] = PDAHistogramFit_Global(fitpar,h)
 %fitpar is (in this order) the global, halfglobal, nonglobal parameters
 global PDAMeta PDAData UserValues
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
         % chi2 must be an array!
@@ -3133,6 +3148,7 @@ if ~PDAMeta.FitInProgress
     end
     return;
 end
+
 
 FitParams = PDAMeta.FitParams; %the whole fittable
 Global = PDAMeta.Global; %1 if parameter is global or sample-global
@@ -3399,8 +3415,12 @@ Pe = Pe./sum(Pe); %area-normalized Pe
 function logL = PDA_MLE_Fit_Single(fitpar,h)
 global PDAMeta PDAData
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     logL = 0;
     return;
@@ -3506,8 +3526,12 @@ logL = -logL;
 function [mean_logL] = PDAMLEFit_Global(fitpar,h)
 global PDAMeta
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     mean_logL = 0;
     return;
@@ -3556,8 +3580,12 @@ PDAMeta.Last_logL = mean_logL;
 % Model for Monte Carle based fitting (not global) 
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     if ~strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
         chi2 = 0;
@@ -3726,8 +3754,12 @@ function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     mean_chi2 = 0;
     return;
