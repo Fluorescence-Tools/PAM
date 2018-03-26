@@ -1068,6 +1068,10 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.OriginalFitParams = [];
     PDAData.FitTable = [];
     PDAData.BrightnessReference = [];
+    PDAData.MinN = [];
+    PDAData.MaxN = [];
+    PDAData.MinS = [];
+    PDAData.MaxS = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
@@ -1175,6 +1179,17 @@ for i = 1:numel(FileName)
             else
                 PDAData.Type{end+1} = 'Burst';
             end
+            if isfield(SavedData,'MinN') %%% photon and stoichiometry thresholds have been saved
+                PDAData.MinN{end+1} = SavedData.MinN;
+                PDAData.MaxN{end+1} = SavedData.MaxN;
+                PDAData.MinS{end+1} = SavedData.MinS;
+                PDAData.MaxS{end+1} = SavedData.MaxS;
+            else %%% read values from UserValues
+                PDAData.MinN{end+1} = str2double(UserValues.PDA.MinPhotons);
+                PDAData.MaxN{end+1} = str2double(UserValues.PDA.MaxPhotons);
+                PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
+                PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
+            end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -1204,6 +1219,13 @@ end
 
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
+
+%update threshold for photon number and Stoichiometry
+h.SettingsTab.NumberOfPhotMin_Edit.String = min(cell2mat(PDAData.MinN));
+h.SettingsTab.NumberOfPhotMax_Edit.String = max(cell2mat(PDAData.MaxN));
+h.SettingsTab.StoichiometryThresholdLow_Edit.String = min(cell2mat(PDAData.MinS));
+h.SettingsTab.StoichiometryThresholdHigh_Edit.String = max(cell2mat(PDAData.MaxS));
+
 Update_GUI(h.SettingsTab.DynamicModel,[]);
 Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
 Update_FitTable([],[],1);
@@ -1229,6 +1251,10 @@ for i = 1:numel(PDAData.FileName)
         str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String),...
         h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
+    SavedData.MinN = str2double(h.SettingsTab.NumberOfPhotMin_Edit.String);
+    SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+    SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
+    SavedData.MaxS = str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String);
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
