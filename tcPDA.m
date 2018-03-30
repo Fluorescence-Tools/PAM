@@ -209,7 +209,7 @@ if isempty(h)
     
     handles.sampling_text = uicontrol('Style','text',...
         'Units','normalized',...
-        'Position',[0.05,0.95,0.45,0.03],...
+        'Position',[0.05,0.96,0.45,0.03],...
         'String','Monte-Carlo Oversampling:',...
         'Tag','sampling_text',...
         'FontSize',10,...
@@ -219,7 +219,7 @@ if isempty(h)
     
     handles.sampling_edit = uicontrol('Style','edit',...
         'Units','normalized',...
-        'Position',[0.5,0.95,0.25,0.03],...
+        'Position',[0.5,0.96,0.25,0.03],...
         'String',num2str(UserValues.tcPDA.sampling),...
         'FontSize',10,...
         'Tag','sampling_edit',...
@@ -230,7 +230,7 @@ if isempty(h)
     
     handles.nbins_text = uicontrol('Style','text',...
         'Units','normalized',...
-        'Position',[0.05,0.9,0.45,0.03],...
+        'Position',[0.05,0.91,0.45,0.03],...
         'String','# Bins for histograms:',...
         'Tag','nbins_text',...
         'FontSize',10,...
@@ -240,7 +240,7 @@ if isempty(h)
     
     handles.nbins_edit = uicontrol('Style','edit',...
         'Units','normalized',...
-        'Position',[0.5,0.9,0.25,0.03],...
+        'Position',[0.5,0.91,0.25,0.03],...
         'String',num2str(UserValues.tcPDA.nbins),...
         'FontSize',10,...
         'Tag','nbins_edit',...
@@ -251,7 +251,7 @@ if isempty(h)
     
     handles.plottype_text = uicontrol('Style','text',...
         'Units','normalized',...
-        'Position',[0.05,0.85,0.45,0.03],...
+        'Position',[0.05,0.86,0.45,0.03],...
         'String','Plot type:',...
         'Tag','plottype_text',...
         'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
@@ -264,7 +264,7 @@ if isempty(h)
     
     handles.plottype_dropdownmenu = uicontrol('Style','popupmenu',...
         'Units','normalized',...
-        'Position',[0.5,0.85,0.25,0.03],...
+        'Position',[0.5,0.86,0.25,0.03],...
         'String',{'mesh','colormap'},...
         'FontSize',10,...
         'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
@@ -274,6 +274,19 @@ if isempty(h)
         'String',{'mesh','colormap'},...
         'Value',1,...
         'BackgroundColor',UserValues.Look.Control,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections,...
+        'Callback',@update_corrections);
+    
+    handles.CUDAKernel_checkbox = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Position',[0.05,0.83,0.45,0.03],...
+        'String','Use CUDAKernel',...
+        'Tag','CUDAKernel_checkbox',...
+        'TooltipString','Choose the implementation of CUDA between CUDAKernel or MEXfile.',...
+        'FontSize',10,...
+        'Value',UserValues.tcPDA.UseCUDAKernel,...
+        'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Parent',handles.tab_corrections,...
         'Callback',@update_corrections);
@@ -1093,6 +1106,8 @@ switch hObject
         tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
     case handles.plottype_dropdownmenu
         plot_after_fit(handles);
+    case handles.CUDAKernel_checkbox
+        UserValues.tcPDA.UseCUDAKernel = handles.CUDAKernel_checkbox.Value;
 end
 LSUserValues(1);
 
@@ -1497,7 +1512,7 @@ handles.plots.handle_3d_data_gr.YData = squeeze(sum(sum(input,1),2));
 % set(gca,'FontSize',fontsize_ticks);    
     
 function fit_tcPDA(handles)
-global tcPDAstruct
+global tcPDAstruct UserValues
 if ~isfield(tcPDAstruct,'NBB')
     return;
 end
@@ -1746,6 +1761,35 @@ switch (selected_tab)
                 % Initialize Array of binomial and trinomial coefficients
                 [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
                     tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+            else %%% using GPU
+                if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+                    %%% prepare gpuArrays
+                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+                    
+                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+                    
+                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                    
+                    %%% initialize kernel
+                    path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+                    tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+                    numElements = numel(tcPDAstruct.fbb);
+                    tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+                    tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+                end
             end
              
             if ~handles.use_2cPDAData_checkbox.Value
@@ -1773,6 +1817,16 @@ switch (selected_tab)
                     fitpar = run(gs,problem);
             end
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+            
+            %%% clean up
+            if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+                %%% using MLE -> reset GPU
+                reset(gpuDevice); %%% clear memory
+                if UserValues.tcPDA.UseCUDAKernel
+                    %%% CUDAKernel -> also clear references to gpuArrays
+                    tcPDAstruct.CUDAKernel = [];
+                end
+            end
         end
         %fix covariance matrix again
         fitpar = fix_covariance_matrix_fitpar(fitpar);
@@ -2938,40 +2992,55 @@ if strcmp(tcPDAstruct.timebin,'burstwise')
         P = horzcat(P{:});
 elseif isnumeric(tcPDAstruct.timebin)
     %% CUDA
-
     if (gpuDeviceCount > 0) && ~tcPDAstruct.GPU_locked
-        
-        fbb_single = single(fbb);
-        fbg_single = single(fbg);
-        fbr_single = single(fbr);
-        fgg_single = single(fgg);
-        fgr_single = single(fgr);
-    
-        NBGbb_single = int32(NBGbb);
-        NBGbg_single = int32(NBGbg);
-        NBGbr_single = int32(NBGbr);
-        NBGgg_single = int32(NBGgg);
-        NBGgr_single = int32(NBGgr);
-    
-        BG_bb_single = single(BG_bb);
-        BG_bg_single = single(BG_bg);
-        BG_br_single = single(BG_br);
-        BG_gg_single = single(BG_gg);
-        BG_gr_single = single(BG_gr);
-    
-        PBB_single = single(PBB);
-        PBG_single = single(PBG);
-        PGR_single = single(PGR);
-        
-%         P = eval_prob_3c_bg_cuda_lib(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
-%                 NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
-%                 BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
-%                 PBB_single,PBG_single,PGR_single,single(tcPDAstruct.lib_b),single(tcPDAstruct.lib_t));
-        P = eval_prob_3c_bg_cuda(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
-                NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
-                BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
-                PBB_single,PBG_single,PGR_single);
-        P = double(P);
+        if UserValues.tcPDA.UseCUDAKernel %%% use CUDAKernel implementation
+            %%% transfer data to GPU
+            PBB_gpu = gpuArray(single(PBB));
+            PBG_gpu = gpuArray(single(PBG));
+            PGR_gpu = gpuArray(single(PGR));
+            P = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood,...
+                tcPDAstruct.CUDAKernel.fbb,tcPDAstruct.CUDAKernel.fbg,tcPDAstruct.CUDAKernel.fbr,tcPDAstruct.CUDAKernel.fgg,tcPDAstruct.CUDAKernel.fgr,...
+                tcPDAstruct.CUDAKernel.NBGbb,tcPDAstruct.CUDAKernel.NBGbg,tcPDAstruct.CUDAKernel.NBGbr,tcPDAstruct.CUDAKernel.NBGgg,tcPDAstruct.CUDAKernel.NBGgr,...
+                tcPDAstruct.CUDAKernel.BG_bb,tcPDAstruct.CUDAKernel.BG_bg,tcPDAstruct.CUDAKernel.BG_br,tcPDAstruct.CUDAKernel.BG_gg,tcPDAstruct.CUDAKernel.BG_gr,...
+                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB),numel(fbb));
+            P = reshape(gather(P),numel(PBB),numel(fbb))';
+            %%% clear data from GPU to avoid memory leak
+            clear PBB_gpu PBG_gpu PGR_gpu
+        else %%% use mex file CUDA implementation
+            %%% the mex file has to be recompiled for different
+            %%% architectures
+            fbb_single = single(fbb);
+            fbg_single = single(fbg);
+            fbr_single = single(fbr);
+            fgg_single = single(fgg);
+            fgr_single = single(fgr);
+
+            NBGbb_single = int32(NBGbb);
+            NBGbg_single = int32(NBGbg);
+            NBGbr_single = int32(NBGbr);
+            NBGgg_single = int32(NBGgg);
+            NBGgr_single = int32(NBGgr);
+
+            BG_bb_single = single(BG_bb);
+            BG_bg_single = single(BG_bg);
+            BG_br_single = single(BG_br);
+            BG_gg_single = single(BG_gg);
+            BG_gr_single = single(BG_gr);
+
+            PBB_single = single(PBB);
+            PBG_single = single(PBG);
+            PGR_single = single(PGR);
+
+        %         P = eval_prob_3c_bg_cuda_lib(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
+        %                 NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
+        %                 BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
+        %                 PBB_single,PBG_single,PGR_single,single(tcPDAstruct.lib_b),single(tcPDAstruct.lib_t));
+            P = eval_prob_3c_bg_cuda(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
+                    NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
+                    BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
+                    PBB_single,PBG_single,PGR_single);
+            P = double(P);
+        end
     else
         %% CPU
         P = eval_prob_3c_bg_lib(fbb,fbg,fbr,fgg,fgr,...
@@ -3549,7 +3618,7 @@ end
 chi2 = view_curve(handles);
 
 function chi2 = view_curve(handles)
-global tcPDAstruct
+global tcPDAstruct UserValues
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
@@ -3565,6 +3634,11 @@ corrections = get(handles.corrections_table,'data');
     tcPDAstruct.corrections.R0_gr, tcPDAstruct.corrections.R0_bg, tcPDAstruct.corrections.R0_br] = deal(corrections{:});
 
 [tcPDAstruct.valid] = Cut_Data([],[]);
+tcPDAstruct.fbb = tcPDAstruct.NBB(tcPDAstruct.valid);
+tcPDAstruct.fbg = tcPDAstruct.NBG(tcPDAstruct.valid);
+tcPDAstruct.fbr = tcPDAstruct.NBR(tcPDAstruct.valid);
+tcPDAstruct.fgg = tcPDAstruct.NGG(tcPDAstruct.valid);
+tcPDAstruct.fgr = tcPDAstruct.NGR(tcPDAstruct.valid);
 
 %read initial fit values
 fit_data = get(handles.fit_table,'data');
@@ -3620,14 +3694,61 @@ switch (selected_tab)
             plot_2cPDAData(2);
         end
         if handles.MLE_checkbox.Value % determine likelihood and BIC
-            calculate_background(); 
+            calculate_background();
+            %%% check if gpu is available (sometimes it locks up...)
+            tcPDAstruct.GPU_locked = false;
+            try 
+                gpuDevice;
+            catch
+                disp('GPU locked up - Using CPU instead...');
+                disp('Restart Matlab to fix.');
+                tcPDAstruct.GPU_locked = true;
+            end
             if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
                 % Initialize Array of binomial and trinomial coefficients
                 [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
                     tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+            else %%% using GPU
+                if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+                    %%% prepare gpuArrays
+                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+                    
+                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+                    
+                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                    
+                    %%% initialize kernel
+                    path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+                    tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+                    numElements = numel(tcPDAstruct.fbb);
+                    tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+                    tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+                end
             end
             determine_MLE_3color(fitpar);
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+            %%% clean up
+            if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+                %%% using MLE -> reset GPU
+                reset(gpuDevice); %%% clear memory
+                if UserValues.tcPDA.UseCUDAKernel
+                    %%% CUDAKernel -> also clear references to gpuArrays
+                    tcPDAstruct.CUDAKernel = [];
+                end
+            end
         end
     otherwise
         chi2 = 0;

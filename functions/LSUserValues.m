@@ -2142,6 +2142,12 @@ if Mode==0 %%% Loads user values
     end
     P.tcPDA.use_MLE = S.tcPDA.use_MLE;
     
+    if ~isfield(S.tcPDA, 'UseCUDAKernel')
+        disp('WARNING: UserValues structure incomplete, field "tcPDA.UseCUDAKernel" missing');
+        S.tcPDA.UseCUDAKernel = 1;
+    end
+    P.tcPDA.UseCUDAKernel = S.tcPDA.UseCUDAKernel;
+    
     if ~isfield(S.tcPDA, 'mcmc_samples')
         disp('WARNING: UserValues structure incomplete, field "tcPDA.mcmc_samples" missing');
         S.tcPDA.mcmc_samples = 10000;
