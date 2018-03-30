@@ -4657,7 +4657,7 @@ function [Hout Xbins Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
     
 %%%% Draw Samples from posterior
 function mcmc_draw_samples(~,~)
-global tcPDAstruct
+global tcPDAstruct UserValues
 if ~isfield(tcPDAstruct,'NBB')
     return
 end
@@ -4761,6 +4761,35 @@ if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
     % Initialize Array of binomial and trinomial coefficients
     [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
         tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+else %%% using GPU
+    if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+        %%% prepare gpuArrays
+        tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+        tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+        tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+        tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+        tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+        tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+        tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+        tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+        tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+        tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+
+        tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+        tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+        tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+        tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+        tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+
+        tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+
+        %%% initialize kernel
+        path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+        tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+        numElements = numel(tcPDAstruct.fbb);
+        tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+        tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+    end
 end
 
 priorfun = @(x) (-1)*evaluate_prior(x);
@@ -4777,6 +4806,16 @@ switch mcmc_method
         [samples,prob,acceptance] =  MHsample(n_samples,probfun,priorfun,sigma_prop,LB',UB',fitpar,fixed,plot_params,param_names,handles.bayesian_plot_panel);
     case 2 %%% MHWG
         [samples,prob,acceptance] =  MWGsample(n_samples,probfun,priorfun,sigma_prop,LB',UB',fitpar,fixed,plot_params,param_names,handles.bayesian_plot_panel);
+end
+
+%%% clean up
+if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+    %%% using MLE -> reset GPU
+    reset(gpuDevice); %%% clear memory
+    if UserValues.tcPDA.UseCUDAKernel
+        %%% CUDAKernel -> also clear references to gpuArrays
+        tcPDAstruct.CUDAKernel = [];
+    end
 end
 
 if ~isfield(tcPDAstruct,'samples')
