@@ -6820,7 +6820,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
         UseParticles = h.MI.Phasor_Particles.Value;
         if UseParticles ==2
-            Frames = size(FileInfo.LineTimes,1);
+            Frames = size(FileInfo.LineTimes,1)-1;
         else
             Frames = 1;
         end
