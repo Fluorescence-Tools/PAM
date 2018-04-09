@@ -56,7 +56,7 @@ else %%% Image data with additional line/frame stop markers and other more compl
             [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
-            Bin=uint32(Bin);
+            Bin=int64(Bin);
             
             Image(mod(1:numel(Image),FileInfo.Pixels+1)==0)=[];
             %%% Reshapes pixel vector to image
@@ -70,7 +70,7 @@ else %%% Image data with additional line/frame stop markers and other more compl
             [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
-            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
+            Bin=int64(Bin); %%% Photon-to-Pixel assignement vector
             %%% Reshapes pixel vector to image
             Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,i);
             Image=Image(1:end-1,:,:);
