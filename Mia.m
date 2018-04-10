@@ -1416,22 +1416,52 @@ h.Text{end+1} = uicontrol(...
     'String','Custom Filtetype:');
 
 %%% Allows custom Filetype selection
-Customdir = [PathToApp filesep 'functions' filesep 'MIA' filesep 'ReadIN'];
-if ~(exist(Customdir,'dir') == 7)
-    mkdir(Customdir);
-end
-%%% Finds all matlab files in profiles directory
-Custom_Methods = what(Customdir);
-Custom_Methods = ['none'; Custom_Methods.m(:)];
-Custom_Value = 1;
-for i=2:numel(Custom_Methods)
-    Custom_Methods{i}=Custom_Methods{i}(1:end-2);
-    if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
-        Custom_Value = i;
+if ~isdeployed
+    Customdir = [PathToApp filesep 'functions' filesep 'MIA' filesep 'ReadIN'];
+    if ~(exist(Customdir,'dir') == 7)
+        mkdir(Customdir);
+    end
+    %%% Finds all matlab files in profiles directory
+    Custom_Methods = what(Customdir);
+    Custom_Methods = ['none'; Custom_Methods.m(:)];
+    Custom_Value = 1;
+    for i=2:numel(Custom_Methods)
+        Custom_Methods{i}=Custom_Methods{i}(1:end-2);
+        if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
+            Custom_Value = i;
+        end
+    end
+else
+    %%% compiled application
+    %%% custom file types are embedded
+    %%% names are in associated text file
+    fid = fopen([PathToApp filesep 'Custom_Read_Ins_MIA.txt'],'rt');
+    if fid == -1
+        disp('No Custom Read-In routines defined. Missing file Custom_Read_Ins.txt');
+        Custom_Methods = {'none'};
+        Custom_Value = 1;
+    else % read file
+        % skip the first three lines (header)
+        for i = 1:3
+            tline = fgetl(fid);
+        end
+        Custom_Methods = {'none'};
+        Custom_Value = 1;
+        while ischar(tline)
+            tline = fgetl(fid);
+            if ischar(tline)
+                Custom_Methods{end+1,1} = tline;
+            end
+        end
+        for i=2:numel(Custom_Methods)
+            if strcmp(Custom_Methods{i},UserValues.File.MIA_Custom_Filetype)
+                Custom_Value = i;
+            end
+        end
     end
 end
 
-%%% Popupmenu for rotation direction
+%%% Creates objects for custom filetype settings
 h.Mia_Image.Settings.FileType = uicontrol(...
     'Parent',h.Mia_Image.Settings.Orientation_Panel,...
     'Style','popupmenu',...
@@ -1450,10 +1480,6 @@ if ismac
 end
 MIA_CustomFileType(h.Mia_Image.Settings.FileType,[],1);
 h.Mia_Image.Settings.Custom = h.Mia_Image.Settings.FileType.UserData{3};
-%%% Creates objects for custom filetype settings
-
-
-
 
 %% Calculations tab container
 h.Mia_Image.Calculations_Panel = uibuttongroup(...
