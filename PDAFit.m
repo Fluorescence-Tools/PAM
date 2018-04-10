@@ -1068,6 +1068,10 @@ if mode==1 || mode ==3 % new files are loaded or database is loaded
     PDAData.OriginalFitParams = [];
     PDAData.FitTable = [];
     PDAData.BrightnessReference = [];
+    PDAData.MinN = [];
+    PDAData.MaxN = [];
+    PDAData.MinS = [];
+    PDAData.MaxS = [];
     h.FitTab.Table.RowName(1:end-3)=[];
     h.FitTab.Table.Data(1:end-3,:)=[];
     h.ParametersTab.Table.RowName(1:end-1)=[];
@@ -1175,6 +1179,17 @@ for i = 1:numel(FileName)
             else
                 PDAData.Type{end+1} = 'Burst';
             end
+            if isfield(SavedData,'MinN') %%% photon and stoichiometry thresholds have been saved
+                PDAData.MinN{end+1} = SavedData.MinN;
+                PDAData.MaxN{end+1} = SavedData.MaxN;
+                PDAData.MinS{end+1} = SavedData.MinS;
+                PDAData.MaxS{end+1} = SavedData.MaxS;
+            else %%% read values from UserValues
+                PDAData.MinN{end+1} = str2double(UserValues.PDA.MinPhotons);
+                PDAData.MaxN{end+1} = str2double(UserValues.PDA.MaxPhotons);
+                PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
+                PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
+            end
             % load fit table data from files
             PDAData.FitTable{end+1} = SavedData.FitTable;
         elseif exist('PDAstruct','var')
@@ -1204,6 +1219,13 @@ end
 
 % data cannot be directly plotted here, since other functions (bin size,...)
 % might change the appearance of the data
+
+%update threshold for photon number and Stoichiometry
+h.SettingsTab.NumberOfPhotMin_Edit.String = min(cell2mat(PDAData.MinN));
+h.SettingsTab.NumberOfPhotMax_Edit.String = max(cell2mat(PDAData.MaxN));
+h.SettingsTab.StoichiometryThresholdLow_Edit.String = min(cell2mat(PDAData.MinS));
+h.SettingsTab.StoichiometryThresholdHigh_Edit.String = max(cell2mat(PDAData.MaxS));
+
 Update_GUI(h.SettingsTab.DynamicModel,[]);
 Update_GUI(h.SettingsTab.FixSigmaAtFractionOfR,[]);
 Update_FitTable([],[],1);
@@ -1229,6 +1251,10 @@ for i = 1:numel(PDAData.FileName)
         str2double(h.SettingsTab.SigmaAtFractionOfR_edit.String),...
         h.SettingsTab.FixSigmaAtFractionOfR_Fix.Value];
     SavedData.Dynamic = h.SettingsTab.DynamicModel.Value;
+    SavedData.MinN = str2double(h.SettingsTab.NumberOfPhotMin_Edit.String);
+    SavedData.MaxN = str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
+    SavedData.MinS = str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String);
+    SavedData.MaxS = str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String);
     save(fullfile(PDAData.PathName{i},PDAData.FileName{i}),'SavedData');
 end
 
@@ -1988,6 +2014,12 @@ h = guidata(findobj('Tag','GlobalPDAFit'));
 h.FitTab.Table.Enable='off';
 %%% Indicates fit in progress
 PDAMeta.FitInProgress = 1;
+%%% Specify the update interval (used for interrupting of fit and updating
+%%% of chi2 display)
+%%% given in units of fit iterations (function evaluations)
+PDAMeta.UpdateInterval = 10;
+%%% Set the fit iteration (function evaluation) counter to 0
+PDAMeta.Fit_Iter_Counter = 0;
 Update_Plots(obj,[],3); % reset plots
 %% Store parameters globally for easy access during fitting
 try
@@ -2376,7 +2408,7 @@ PDAMeta.MCMC_mean = [];
 
 %%% check if global fitting should be performed
 do_global = false;
-if sum(PDAMeta.Global) > 0
+if (sum(PDAMeta.Global) > 0) && (sum(PDAMeta.Active) > 1)
     do_global = true;
 else %%% check if fix sigma at fraction of R option is enable
     if h.SettingsTab.FixSigmaAtFractionOfR.Value
@@ -2914,15 +2946,24 @@ h.FitTab.Table.Enable='on';
 % model for normal histogram library fitting (not global)
 function [chi2] = PDAHistogramFit_Single(fitpar,h)
 global PDAMeta PDAData
-%h = guidata(findobj('Tag','GlobalPDAFit'));
 i = PDAMeta.file;
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
-    chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        chi2 = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+    else
+        chi2 = 0;
+    end
     return;
 end
+
 
 if PDAMeta.FitInProgress == 2 %%% we are estimating errors based on hessian, so input parameters are only the non-fixed parameters
     % only the non-fixed parameters are passed, reconstruct total fitpar
@@ -3118,12 +3159,22 @@ function [mean_chi2] = PDAHistogramFit_Global(fitpar,h)
 %fitpar is (in this order) the global, halfglobal, nonglobal parameters
 global PDAMeta PDAData UserValues
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
-    mean_chi2 = 0;
+    if strcmp('Gradient-based (lsqnonlin)',h.SettingsTab.FitMethod_Popupmenu.String{h.SettingsTab.FitMethod_Popupmenu.Value})
+        % chi2 must be an array!
+        mean_chi2 = zeros(1,sum(PDAMeta.Active)*str2double(h.SettingsTab.NumberOfBins_Edit.String));
+    else
+        mean_chi2 = 0;
+    end
     return;
 end
+
 
 FitParams = PDAMeta.FitParams; %the whole fittable
 Global = PDAMeta.Global; %1 if parameter is global or sample-global
@@ -3315,7 +3366,11 @@ mean_chi2 = mean(PDAMeta.chi2);
 %Progress(1/mean_chi2, h.SingleTab.Progress.Axes,h.SingleTab.Progress.Text,'Fitting Histograms...');
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['avg. \chi^2_{red.} = ' sprintf('%1.2f',mean_chi2)]);
 if PDAMeta.FitInProgress == 2 %%% return concatenated array of w_res instead of chi2
-    mean_chi2 = horzcat(PDAMeta.w_res{:});
+    mean_chi2 = [];
+    for i = Active
+        mean_chi2 = [mean_chi2, PDAMeta.w_res{i}];
+    end 
+    %mean_chi2 = horzcat(PDAMeta.w_res{:});
 elseif PDAMeta.FitInProgress == 3 %%% return the correct loglikelihood instead
     mean_chi2 = sum(loglikelihood);
 end
@@ -3386,8 +3441,12 @@ Pe = Pe./sum(Pe); %area-normalized Pe
 function logL = PDA_MLE_Fit_Single(fitpar,h)
 global PDAMeta PDAData
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     logL = 0;
     return;
@@ -3493,8 +3552,12 @@ logL = -logL;
 function [mean_logL] = PDAMLEFit_Global(fitpar,h)
 global PDAMeta
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     mean_logL = 0;
     return;
@@ -3543,8 +3606,12 @@ PDAMeta.Last_logL = mean_logL;
 % Model for Monte Carle based fitting (not global) 
 function [chi2] = PDAMonteCarloFit_Single(fitpar,h)
 global PDAMeta PDAData
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     if ~strcmp(h.SettingsTab.PDAMethod_Popupmenu.String{h.SettingsTab.PDAMethod_Popupmenu.Value},'MLE')
         chi2 = 0;
@@ -3713,8 +3780,12 @@ function [mean_chi2] = PDAMonteCarloFit_Global(fitpar)
 global PDAMeta
 h = guidata(findobj('Tag','GlobalPDAFit'));
 
+%%% iterate the counter
+PDAMeta.Fit_Iter_Counter = PDAMeta.Fit_Iter_Counter + 1;
 %%% Aborts Fit
-drawnow;
+if mod(PDAMeta.Fit_Iter_Counter,PDAMeta.UpdateInterval) == 0
+    drawnow;
+end
 if ~PDAMeta.FitInProgress
     mean_chi2 = 0;
     return;
@@ -4163,6 +4234,8 @@ switch mode
                 %% Value was changed => Apply value to global variables
             elseif mod(e.Indices(2)-3,3)==0 && e.Indices(2)>=2 && NewData==1
                 %% Value was fixed => Uncheck global
+                %%% Uncheck global for all files to prohibit fixed and global
+                h.FitTab.Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
             elseif mod(e.Indices(2)-4,3)==0 && e.Indices(2)>=3 && NewData==1
                 %% Global was change
                 %%% Apply value to all files

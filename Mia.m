@@ -1110,6 +1110,32 @@ h.Mia_Image.Settings.ROI_AR_Same = uicontrol(...
     'Visible', 'off',...
     'Callback',{@Mia_Correct,1},...
     'String',{'Individual Channels', 'Channel1','Channel2','Both'});
+h.Mia_Image.Settings.ROI_AR_Spatial_Int = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'Callback', {@Mia_Correct,1},...
+    'Visible', 'off',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.11, 0.3 0.06],...
+    'TooltipString',['Do spatial absolute intensity' 10 'thresholding in the small sub-ROI' 10 'instead of over all frames.' 10 'the code considers photobleaching'],...
+    'String','Spatial abs.int.');
+h.Mia_Image.Settings.ROI_AR_median = uicontrol(...
+    'Parent', h.Mia_Image.Settings.ROI_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Value',0,...
+    'Callback', {@Mia_Correct,1},...
+    'Visible', 'off',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.52 0.11, 0.3 0.06],...
+    'TooltipString',['median filter the ROI' 10, 'in a square region' 10 'with small subROI size'],...
+    'String','median filter');
 if ismac
     h.Mia_Image.Settings.ROI_AR_Same.ForegroundColor = [0 0 0];
     h.Mia_Image.Settings.ROI_AR_Same.BackgroundColor = [1 1 1];
@@ -3044,7 +3070,9 @@ switch mode
                     MIAData.Data{1,1}(:,:,end+1) = single(TIFF_Handle.read());
                     MIAData.Data{1,1}(:,:,end)= MIAData.Data{1,1}(:,:,end)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
                 else
-                    MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
+                     tmp = TIFF_Handle.read();
+                     MIAData.Data{1,1}(:,:,end+1) = tmp(:,:,2);
+                    %MIAData.Data{1,1}(:,:,end+1) = TIFF_Handle.read();
                 end
             end
             TIFF_Handle.close(); % Close tif reference   
@@ -4570,14 +4598,18 @@ for i=Channel
     Data=mean(single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)),3);
     %%% Logical array to determin which pixels to use
     Use=true(size(Data));
-    
-    %%% Removes pixel below an intensity threshold set in kHz
-    if Int_Min(i)>0
-        Use(Data<Int_Min(i))=false;
-    end
-    %%% Removes pixel above an intensity threshold set in kHz
-    if Int_Max(i)>Int_Min(i)
-        Use(Data>Int_Max(i))=false;
+    if ~h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value
+        %%% Removes pixel below an intensity threshold set in kHz
+        if Int_Min(i)>0
+            Use(Data<Int_Min(i))=false;
+        end
+        %%% Removes pixel above an intensity threshold set in kHz
+        if Int_Max(i)>Int_Min(i)
+            Use(Data>Int_Max(i))=false;
+        end
+        if h.Mia_Image.Settings.ROI_AR_median.Value
+            Use = medfilt2(Use,[Var_SubSub,Var_SubSub]);
+        end
     end
     MIAData.AR{i,2}=Use;
     %% Sliding window thresholding for arbitrary region ICS
@@ -4602,6 +4634,7 @@ for i=Channel
             %%% Calculates mean of both subregions
             Mean1=filter2(Filter1,Data(:,:,j));
             Mean2=filter2(Filter2,Data(:,:,j));
+            BleachFact = mean2(Data(:,:,j))/mean2(Data(:,:,1));
             %%% Calculates population variance for both subregions (sample2population var)
             Var1=(filter2(Filter1,Data(:,:,j).^2)-Mean1.^2)*(Var_SubSub^2/(Var_SubSub^2-1));
             Var2=(filter2(Filter2,Data(:,:,j).^2)-Mean2.^2)*((Var_Sub^2)/(Var_Sub^2-1));
@@ -4612,12 +4645,24 @@ for i=Channel
             if Var_Fold_Min<1 && Var_Fold_Min>0
                 Use(:,:,j)=Use(:,:,j) & (Var1>(Var2*Var_Fold_Min));
             end
-            %%% Discards samples with too low\high intensities
+            %%% Discards samples with too low\high relative intensities
             if Int_Fold_Max>1
                 Use(:,:,j)=Use(:,:,j) & (Mean1<(Mean2*Int_Fold_Max));
             end
             if Int_Fold_Min<1 && Int_Fold_Min>0
                 Use(:,:,j)=Use(:,:,j) & (Mean1>(Mean2*Int_Fold_Min));
+            end
+            if h.Mia_Image.Settings.ROI_AR_Spatial_Int.Value
+                %%% Discards samples with too low\high absolute intensities
+                if Int_Max(i)>Int_Min(i)
+                    Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)<Int_Max(i));
+                end
+                if Int_Min(i)>0
+                    Use(:,:,j)=Use(:,:,j) & ((Mean1/BleachFact)>Int_Min(i));
+                end
+            end
+            if h.Mia_Image.Settings.ROI_AR_median.Value
+                Use(:,:,j) = medfilt2(Use(:,:,j),[Var_SubSub,Var_SubSub]);
             end
         end
         %%% Discards border pixels, where variance and intensity were not calculated
@@ -6864,6 +6909,8 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'off';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'off';
                     h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'off';
+                    h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'off';
+                    h.Mia_Image.Settings.ROI_AR_median.Visible = 'off';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
                         h.Mia_Image.Settings.ROI_AR_Text{j}.Visible = 'off';
                     end
@@ -6889,6 +6936,8 @@ for i=mode
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Max.Visible = 'on';
                     h.Mia_Image.Settings.ROI_AR_Var_Fold_Min.Visible = 'on';
                     h.Mia_Image.Calculations.Cor_Manual_ROI.Visible = 'on';
+                    h.Mia_Image.Settings.ROI_AR_Spatial_Int.Visible = 'on';
+                    h.Mia_Image.Settings.ROI_AR_median.Visible = 'on';
                     for j=1:numel(h.Mia_Image.Settings.ROI_AR_Text)
                         h.Mia_Image.Settings.ROI_AR_Text{j}.Visible = 'on';
                     end

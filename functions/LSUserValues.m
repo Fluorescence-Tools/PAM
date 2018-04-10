@@ -1729,6 +1729,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ImageOffset was incomplete');
     end
     P.BurstBrowser.Display.ImageOffset = S.BurstBrowser.Display.ImageOffset;
+    %%% Checks, if BurstBrowser.Display.PlotCutoff subfield exists
+    if ~isfield(S.BurstBrowser.Display,'PlotCutoff')
+        S.BurstBrowser.Display.PlotCutoff=100;
+        disp('UserValues.BurstBrowser.Display.PlotCutoff was incomplete');
+    end
+    P.BurstBrowser.Display.PlotCutoff = S.BurstBrowser.Display.PlotCutoff;
     %%% Checks, if BurstBrowser.Display.PlotContourLines subfield exists
     if ~isfield(S.BurstBrowser.Display,'PlotContourLines')
         S.BurstBrowser.Display.PlotContourLines=1;

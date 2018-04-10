@@ -4181,7 +4181,7 @@ if any(mode==3)
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min = 0;%0.1*max(max(PamMeta.Lifetime{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Lifetime{Sel}>Min)))+1];
+                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
             end
         %%% Lifetime from phase
         case 3
@@ -5664,7 +5664,7 @@ switch e.Key
             for i = 1:size(PamMeta.Database,1)
                 h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
             end
-            m = msgbox('Please consider restarting PAM to ensure that all settings are updated.','Profile changed!');
+            m = warndlg('Please consider restarting PAM to ensure that all settings are updated.','Profile changed!','modal');
         end
     case 'duplicate'
         %% Duplicates selected profile
@@ -6820,7 +6820,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
         UseParticles = h.MI.Phasor_Particles.Value;
         if UseParticles ==2
-            Frames = size(FileInfo.LineTimes,1);
+            Frames = size(FileInfo.LineTimes,1)-1;
         else
             Frames = 1;
         end

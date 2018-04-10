@@ -28,11 +28,9 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
                 Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines),[2 1]));
             case 2 %%% Summed up image vector with photon-to-pixel assignement
                 [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*FileInfo.Pixels));                
-                
             case 3 %%% Full image
                 [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
                 Image = flipud(permute(reshape(Image,FileInfo.Pixels,FileInfo.Lines,[]),[2 1 3]));
-                
             case 4 %%% Full image vector with photon-to-pixel assignement
                 [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
         end    
@@ -40,7 +38,6 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
 else %%% Image data with additional line/frame stop markers and other more complex setups
     Pixeltimes=[];
     for i=1:(numel(FileInfo.ImageTimes)-1)
-        %for i=1:(numel(FileInfo.ImageTimes))
         for j=1:FileInfo.Lines
             Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineStops(i,j),FileInfo.Pixels+1);
         end
@@ -56,7 +53,7 @@ else %%% Image data with additional line/frame stop markers and other more compl
             [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
-            Bin=uint32(Bin);
+            Bin=int64(Bin);
             
             Image(mod(1:numel(Image),FileInfo.Pixels+1)==0)=[];
             %%% Reshapes pixel vector to image
@@ -70,11 +67,12 @@ else %%% Image data with additional line/frame stop markers and other more compl
             [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
-            Bin=uint32(Bin); %%% Photon-to-Pixel assignement vector
+            Bin=int64(Bin); %%% Photon-to-Pixel assignement vector
             %%% Reshapes pixel vector to image
             Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,i);
             Image=Image(1:end-1,:,:);
-            Image=reshape(Image,[],i);
+            Image = Image(:);
+            %Image=reshape(Image,[],i);
     end
 end
             
