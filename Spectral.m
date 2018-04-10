@@ -1,4 +1,4 @@
-function Spectral
+function Spectral(~,~)
 global UserValues SpectralData
 h.SpectralImage = findobj('Tag','SpectralImage');
 
