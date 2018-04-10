@@ -1137,6 +1137,17 @@ for i = 1:numel(FileName)
             else
                 PDAData.Type{end+1} = 'Burst';
             end
+            if isfield(PDA,'MinN') %%% photon and stoichiometry thresholds have been saved
+                PDAData.MinN{end+1} = PDA.MinN;
+                PDAData.MaxN{end+1} = PDA.MaxN;
+                PDAData.MinS{end+1} = PDA.MinS;
+                PDAData.MaxS{end+1} = PDA.MaxS;
+            else %%% read values from UserValues
+                PDAData.MinN{end+1} = str2double(UserValues.PDA.MinPhotons);
+                PDAData.MaxN{end+1} = str2double(UserValues.PDA.MaxPhotons);
+                PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
+                PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
+            end
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
         elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains PDAData (named SavedData)
