@@ -1436,6 +1436,7 @@ truepart = sum(~isnan(s),2)>1;
 Intensity(~truepart,:) = [];
 s(~truepart,:) = [];
 g(~truepart,:) = [];
+
 %%% Cuts size to a multiple of the Frames_Sum
 Intensity= Intensity(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
 g= g(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
@@ -1461,7 +1462,7 @@ Imagetime = ParticleData.Data.Imagetime;
 Frames = Frames_Sum;
 FileNames = ParticleData.Data.FileNames;
 Type = ParticleData.Data.Type;
-Regions =ParticleData.Regions;
+Regions =ParticleData.Regions(truepart); % removes particle regions with invalid phasor information
 Path = ParticleData.Data.Path;
 
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
