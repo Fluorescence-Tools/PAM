@@ -1432,7 +1432,7 @@ for i=1:numel(ParticleData.Regions)
     %g(i,:)= squeeze(sum(sum(G(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
     %s(i,:)= squeeze(sum(sum(S(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
 end
-truepart = sum(~isnan(s),2)>1;
+truepart = sum(~isnan(s),2)>0;
 Intensity(~truepart,:) = [];
 s(~truepart,:) = [];
 g(~truepart,:) = [];
