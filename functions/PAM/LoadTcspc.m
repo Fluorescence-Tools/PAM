@@ -858,14 +858,12 @@ switch (Type)
             if isempty(FileInfo.Resolution)
                 FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit;
             end
+            
             %%% Finds, which routing bits to use
-            if strcmp(UserValues.Detector.Auto,'off')
-                Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
-            else
-                Rout = 1:10; %%% consider up to 10 routing channels
-            end
+            Rout = 1:10; %%% consider up to 10 routing channels
             Rout(Rout>size(MI,2))=[];
-            %%% Concaternates data to previous files and adds ImageTimes
+            
+            %%% Concatenates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
