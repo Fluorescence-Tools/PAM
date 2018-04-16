@@ -399,8 +399,9 @@ h.Particle_Save_Method = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.01, 0.5 0.03],...
     'Callback',{@Misc},...
-    'String',{'Save Average';...
-    'Save FLIM Trace'});
+    'String',{'Save Average',...
+    'Save FLIM Trace',...
+    'Save Text'});
 %%% Frames to use
 h.Particle_Frames_Sum_Text = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -1291,6 +1292,8 @@ switch h.Particle_Save_Method.Value
         Save_Averaged
     case 2 %%% Save FLIM trace
         Save_FLIM_Trace
+    case 3 %%% Save Text
+        Save_Text
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1467,7 +1470,91 @@ Path = ParticleData.Data.Path;
 
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
 
+function Save_Text
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
 
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName, FilterIndex] = uiputfile({'*.txt';'*.csv';'*.xlsx';},'Save Particle Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+
+Mask = logical(squeeze(sum(ParticleData.Mask,3)));
+g = sum(ParticleData.Data.g(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+s = sum(ParticleData.Data.s(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+
+%%% Applies particle averaging
+G=zeros(numel(ParticleData.Regions),1);
+S=zeros(numel(ParticleData.Regions),1);
+x=zeros(numel(ParticleData.Regions),1);
+y=zeros(numel(ParticleData.Regions),1);
+for i=1:numel(ParticleData.Regions)
+    %%% Calculates mean particle phasor
+    G(i) = sum(ParticleData.Data.g(ParticleData.Regions(i).PixelIdxList).*ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList));
+    S(i) = sum(ParticleData.Data.s(ParticleData.Regions(i).PixelIdxList).*ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList));
+    %%% Extracts first pixel position of each particle
+    x(i) = ParticleData.Regions(i).PixelList(1,1);
+    y(i) = ParticleData.Regions(i).PixelList(1,2);
+    %%% Calculate particle properties
+    TotalCounts(i) = sum(ParticleData.Regions(i).TotalCounts);
+    MeanIntensity(i) = mean(ParticleData.Regions(i).MeanIntensity);
+    MaxIntensity(i) = max(ParticleData.Regions(i).MaxIntensity);
+    Area(i) = mean(ParticleData.Regions(i).Area);
+end
+
+%%% Calculate lifetimes from phasor
+Freq = repmat(ParticleData.Data.Freq,size(G));
+Fi = atan(S./G);
+M = sqrt(S.^2+G.^2);
+TauP = real(tan(Fi)./(2*pi*Freq/10^9));
+TauM = real(sqrt((1./(S.^2+G.^2))-1)./(2*pi*Freq/10^9));
+
+
+VarNames = {'TauP','TauM','TotalPhotons','MeanPhotons','MaxPhotons','Area','x','y','s','g','Frequency'};
+%%% Creates table variable for saving
+tab = table(TauP,... Phase based lifetime
+            TauM,... Modulation based lifetime
+            TotalCounts.',... Total photons of particle
+            MeanIntensity.',... Average photons per pixel
+            MaxIntensity.',... Brightest pixel counts
+            Area.',... Particle area in photons
+            x,... x position of first pixel
+            y,... y position of first pixel
+            S,... S value of particle
+            G,... G value of particle
+            Freq,... %%% Measurement frequency, e.g. 1/TAC
+            'VariableNames',VarNames);
+
+%%% Saves data as text or table
+if FilterIndex == 1 %%% Use tab sepparation for .txt files
+    writetable(tab,fullfile(PathName,FileName),'Delimiter','tab');
+else
+    writetable(tab,fullfile(PathName,FileName));
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
