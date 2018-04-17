@@ -1231,6 +1231,7 @@ if mode == 1
     %% Concatenate Particles
     % out = cellfun(@(x) horzcat(x(1:2),1,NaN),mat2cell(cat(1,ParticleData.Regions{1}.Centroid),ones(size(cat(1,ParticleData.Regions{1}.Centroid),1),1),2),'UniformOutput',false);
     Part_Array = struct2cell(STATS{1})';
+    Part_Array(:,4) = cellfun(@(x)x+(From-1).*(numel(Int_f)),Part_Array(:,4),'UniformOutput',false); % Correct PixelIdxList to apply to the whole stack instead of single frames;
     Part_Array(:,end+1) = num2cell(ones(size(Part_Array,1),1),2);
     Part_Idx = num2cell([(1:size(Part_Array,1))',ones(size(Part_Array,1),1)],2);
     if numel(STATS)==1
@@ -1279,6 +1280,10 @@ if mode == 1
         cellsize = cellfun('size', Part_Array(:,10), 1);
         Part_Array(cellsize < MinLength, :) = [];
     end
+    %% Corrects for frame selection
+    Part_Array (:, 10) = cellfun(@(X) X+From-1, Part_Array(:, 10), 'UniformOutput',false);
+    ParticleData.Mask = cat(3, false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Mask);
+    ParticleData.Particle = cat(3, zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Particle);
     
     %% Applies particle selection
     ParticleData.Regions = cell2struct(Part_Array,[fieldnames(STATS{1});'Frame'],2);
