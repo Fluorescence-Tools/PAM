@@ -1288,7 +1288,8 @@ if mode == 1
     %% Applies particle selection
     ParticleData.Regions = cell2struct(Part_Array,[fieldnames(STATS{1});'Frame'],2);
     Plot_Particle([],[],2,h)
-    display('Tracking Done');
+    %display('Tracking Done');
+    msgbox('Tracking Done');
     return;
 end
 
@@ -1435,12 +1436,13 @@ for i=1:numel(ParticleData.Regions)
     % PixelId = PixelId + repmat(ParticleData.Regions(i).PixelIdxList,1,size(g,2));
     %%% 
     % Intensity(i,:)=sum(Int(PixelId),1);
+    PixelId = ParticleData.Regions(i).PixelIdxList - (From-1)*size(Int, 1)*size(Int, 2);
     Intensity(i,ParticleData.Regions(i).Frame)=ParticleData.Regions(i).TotalCounts';
-    [~,~,z] = ind2sub(size(Int),ParticleData.Regions(i).PixelIdxList);
-    G_temp = mat2cell(G(ParticleData.Regions(i).PixelIdxList),histcounts(z,[1:max(z),Inf]),1);
+    [~,~,z] = ind2sub(size(Int),PixelId);
+    G_temp = mat2cell(G(PixelId),histcounts(z,[1:max(z),Inf]),1);
     d = cellfun('isempty',G_temp);
     g(i,ParticleData.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),G_temp(~d));
-    S_temp = mat2cell(S(ParticleData.Regions(i).PixelIdxList),histcounts(z,[1:max(z),Inf]),1);
+    S_temp = mat2cell(S(PixelId),histcounts(z,[1:max(z),Inf]),1);
     ds = cellfun('isempty',S_temp);
     s(i,ParticleData.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),S_temp(~ds));
     % g(i,:)=sum(G(PixelId),1); %%%unnormalized g
