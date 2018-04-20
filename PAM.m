@@ -6787,7 +6787,8 @@ UserValues.Phasor.Reference(Det,:)=0;
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
-
+UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+UserValues.Phasor.Reference_TAC = FileInfo.ClockPeriod;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6822,7 +6823,9 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
 
         %% Calculates reference
         Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
         MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
+        Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
         TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
@@ -6835,19 +6838,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         
         %%% Extract Background and converts it to counts per pixel
         Background_ref = str2num(h.MI.Phasor_BG_Ref.String);
-        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/MI_Bins;        
+        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/Ref_MI_Bins;        
         Background = str2num(h.MI.Phasor_BG.String);
         Background = Background*(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels)*size(FileInfo.LineTimes,1);%%% Background is used differently and does not need to be divided by MI_Bins        
         Afterpulsing = str2num(h.MI.Phasor_AP.String)/100;
 
         
         %%% Calculates theoretical phase and modulation for reference
-        Fi_ref = atan(2*pi*Ref_LT/TAC);
-        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/TAC)^2);
+        Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
         
         %%% Normalizes reference data
         Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
-        Ref = Ref-sum(Ref)*Afterpulsing/MI_Bins - Background_ref;
+        Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
         if From>1
             Ref(1:(From-1))=0;
@@ -6855,14 +6858,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if To<MI_Bins
             Ref(To+1:end)=0;
         end
-        Ref_Mean=sum(Ref(1:MI_Bins).*(1:MI_Bins))/sum(Ref)*TAC/MI_Bins-Ref_LT;
+        Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
         
         %%% Calculates phase and modulation of the instrument
-        G_inst=cos((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        S_inst=sin((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:MI_Bins).*G_inst);
-        s_inst=sum(Ref(1:MI_Bins).*S_inst);
+        G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+        s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
         Fi_inst=atan(s_inst/g_inst);
         M_inst=sqrt(s_inst^2+g_inst^2);
         if (g_inst<0 || s_inst<0)
