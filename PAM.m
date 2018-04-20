@@ -4173,7 +4173,6 @@ if any(mode==3)
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
-                h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
         %%% Mean arrival time image
         case 2
@@ -4181,9 +4180,11 @@ if any(mode==3)
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min = 0;%0.1*max(max(PamMeta.Lifetime{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                if max(max(PamMeta.Image{Sel}))~=0
+                    h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                end
             end
-        %%% Lifetime from phase
+            %%% Lifetime from phase
         case 3
             h.Plots.Image.CData=PamMeta.TauP;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
@@ -6827,7 +6828,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
         if h.MI.Phasor_FramePopup.Value == 2
-            Frames = size(FileInfo.LineTimes,1)-1;
+            Frames = size(FileInfo.LineTimes,1);
         else
             Frames = 1;
         end
