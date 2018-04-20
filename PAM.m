@@ -1705,7 +1705,7 @@ h.MI.Phasor_TAC = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.91 0.93 0.08 0.025]);
 %%% Particle Detection Selection
-h.MI.Phasor_Particles = uicontrol(...
+h.MI.Phasor_FramePopup = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
     'Tag','MI_Phasor_Particles',...
     'Style','popupmenu',...
@@ -1716,8 +1716,8 @@ h.MI.Phasor_Particles = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.885 0.30 0.025]);
 if ismac
-    h.MI.Phasor_Particles.ForegroundColor = [0 0 0];
-    h.MI.Phasor_Particles.BackgroundColor = [1 1 1];
+    h.MI.Phasor_FramePopup.ForegroundColor = [0 0 0];
+    h.MI.Phasor_FramePopup.BackgroundColor = [1 1 1];
 end
 
 %%% Text
@@ -6796,6 +6796,14 @@ function Phasor_Calc(~,~)
 
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
+
+if isempty(FileInfo.LineTimes)
+    m = msgbox('Load imaging data to calculate phasor!');
+    pause(2)
+    close(m)
+    return
+end
+
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     
     %%% Determines correct detector and routing
@@ -6818,8 +6826,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
-        UseParticles = h.MI.Phasor_Particles.Value;
-        if UseParticles ==2
+        if h.MI.Phasor_FramePopup.Value == 2
             Frames = size(FileInfo.LineTimes,1)-1;
         else
             Frames = 1;
@@ -6866,7 +6873,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
         %%% Creates image and generates photon to pixel index
         Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        if UseParticles ==2
+        if h.MI.Phasor_FramePopup.Value == 2
             [Intensity, Bin] = CalculateImage(PIE_MT, 4);
         else
             [Intensity, Bin] = CalculateImage(PIE_MT, 2);
@@ -6936,7 +6943,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
         
-        if UseParticles==1
+        if h.MI.Phasor_FramePopup.Value == 1
             g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
         elseif UseParticles == 2
