@@ -6946,7 +6946,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if h.MI.Phasor_FramePopup.Value == 1
             g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
-        elseif UseParticles == 2
+        else
             save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
             g = PamMeta.g; s= PamMeta.s; Intensity =squeeze(sum(Intensity,3));
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
