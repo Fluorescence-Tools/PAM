@@ -37,14 +37,17 @@ if ~isfield(FileInfo, 'LineStops') %%% Standard data with just a line/frame star
     
 else %%% Image data with additional line/frame stop markers and other more complex setups
     Pixeltimes=[];
-    for i=1:(numel(FileInfo.ImageTimes)-1)
+    for i=1:FileInfo.Frames
         for j=1:FileInfo.Lines
-            Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineStops(i,j),FileInfo.Pixels+1);
+            Pixel(j,:)=linspace(FileInfo.LineTimes(i,j),FileInfo.LineStops(i,j),FileInfo.Pixels+1); %% for 100 pixels you have 101 borders
         end
         Pixeltimes = [Pixeltimes, reshape(Pixel',1,[])]; %#ok<AGROW>
     end
-    Pixeltimes(end+1)=max([FileInfo.MeasurementTime,Pixeltimes(end)]);
+    Pixeltimes(end+1)=max([FileInfo.MeasurementTime,Pixeltimes(end)]); %% to sort the leftovers
     switch mode
+        %% [Image, Bin] = ImageCalc(macrotimes, NoPhotons, Time borders between pixels + last border, NoBins, NoBins)
+        % Image = Intensity image or linear pixel array
+        % Bin = Linear array with the location of each photon in the image, expressed as the bin in which the photon is 
         case 1 %%% Summed up image
             [Image, ~] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(FileInfo.Lines*(FileInfo.Pixels+1)));
             Image = flipud(permute(reshape(Image,FileInfo.Pixels+1,FileInfo.Lines),[2 1]));
@@ -69,7 +72,7 @@ else %%% Image data with additional line/frame stop markers and other more compl
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
             Bin=int64(Bin); %%% Photon-to-Pixel assignement vector
             %%% Reshapes pixel vector to image
-            Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,i);
+            Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,FileInfo.Frames);
             Image=Image(1:end-1,:,:);
             Image = Image(:);
             %Image=reshape(Image,[],i);
