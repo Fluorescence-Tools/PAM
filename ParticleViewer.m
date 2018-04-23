@@ -1,9 +1,14 @@
 function ParticleViewer()
+global UserValues
 h.ParticleViewer=findobj('Tag','ParticleViewer');
+addpath(genpath(['.' filesep 'functions']));
 if ~isempty(h.ParticleViewer) % Creates new figure, if none exists
     figure(h.ParticleViewer);
     return
 end
+%%% Loads user profile
+LSUserValues(0);
+
 %% Main Window
 h.ParticleViewer = figure(...
     'Units','normalized',...
@@ -15,7 +20,7 @@ h.ParticleViewer = figure(...
     'UserData',[],...
     'BusyAction','cancel',...
     'OuterPosition',[0.01 0.1 0.7 0.9],...
-    'CloseRequestFcn', @Close_Window,...
+    'CloseRequestFcn', @CloseWindow,...
     'Visible','on');
 
 h.Load_Particle_Data = uimenu(...
@@ -538,17 +543,22 @@ end
 %%% Load Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(~,~, mode)
-global PhasorViewer ParticleViewer
+global PhasorViewer ParticleViewer UserValues
+LSUserValues(0);
+
 h = guidata(findobj('Tag','ParticleViewer'));
-DefaultFolder = '\\10.153.116.2\Fablab 2\Data\HIV-1 Maturation_Viola-Kräusslich-B.Müller 2013\Summary_FLIM CFP\Results_FLIM-CFP\iCFP_project Annica\';
 
 switch mode
     case 1 % Loads ParticleDetection Results
-        [FileName,PathName] = uigetfile([DefaultFolder, '*.phr'],'Load Results of ParticleDetection');
+        [FileName,PathName] = uigetfile({'*.phr'},'Load Results of ParticleDetection', UserValues.File.PhasorPath, 'MultiSelect', 'off');
         if ~iscell(FileName) && all(FileName==0)
             disp('No file selected');
             return
         end
+        %%% Saves Path
+        UserValues.File.PhasorPath=PathName;
+        LSUserValues(1);
+        
         File = fullfile(PathName,FileName);
         ParticleViewer = load(File,'-mat');
         ParticleViewer.Path = PathName;
@@ -585,11 +595,15 @@ switch mode
         Particle_Num([],[],1);
         
     case 2 % Load Framewise Phasor Data
-        [FileName,PathName] = uigetfile([DefaultFolder, '*.phf'],'Load Corresponding Framewise Phasor');
+        [FileName,PathName] = uigetfile({'*.phf'},'Load Corresponding Framewise Phasor', UserValues.File.PhasorPath, 'MultiSelect', 'off');
         if ~iscell(FileName) && all(FileName==0)
             disp('No file selected');
             return
         end
+        %%% Saves Path
+        UserValues.File.PhasorPath=PathName;
+        LSUserValues(1);
+        
         File = fullfile(PathName,FileName);
         PhasorViewer = load(File,'-mat');
 
@@ -739,11 +753,4 @@ if Var.WriteTraces
     delete(h.ProgressBar);
     delete(h.Export);
 end
-end
-
-%%% Closes window and clears variables %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Window(Obj,~)
-clear global PhasorViewer ParticleViewer
-delete(Obj);
 end
