@@ -32,7 +32,7 @@ h.Particle = figure(...
     'UserData',[],...
     'BusyAction','cancel',...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_Particle,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','on');
 %%% Sets background of axes and other things
 whitebg(Look.Fore);
@@ -495,26 +495,6 @@ h.Particle_Number = uicontrol(...
 guidata(h.Particle,h);
 %%% Updated method table
 Method_Update([],[],0);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes Particle window and clears variables %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Particle(Obj,~)
-clear global -regexp ParticleData
-Pam=findobj('Tag','Pam');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-Phasor = findobj('Tag','Phasor');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)  && isempty(Phasor)
-    clear global -regexp UserValues
-end
-delete(Obj);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads new phasor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
