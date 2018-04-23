@@ -405,7 +405,7 @@ Mask = ParticleViewer.Mask(:,:,Frame);
 if isfield(PhasorViewer, 'Intensity')
     Int = PhasorViewer.Intensity(:,:,Frame);
 else
-    Int = zeros(size(ParticleViewer.Mask));
+    Int = zeros(size(Mask));
 end
 
 %%% Adjusts to range
