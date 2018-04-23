@@ -21,17 +21,25 @@ Did you fix a bug?
         a user with 'master' status has to perform the changes.
 
 * For **larger bugfixes**, create a *bugfix* branch from *develop* to work on fixing a particular issue. Choose a **clear name** for the branch.
-    * Work on fixing the bug, while keeping you branch **up-to-date** with the *develop* branch.
+    * Work on fixing the bug, while keeping you branch **up-to-date** with the *develop* branch (see below).
     * Once the bug is fixed on your *bugfix* branch, submit a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new) detailing you changes and await approval/feedback.
 
-### How do I create a branch?
+##### How do I create a branch?
 
 * To create a branch for bugfixes, first make sure that you are on the *develop* branch by typing `git checkout develop`.
 * Create a new branch from develop for your bugfix by typing `git checkout -b bugfix`. This will create the branch *bugfix* and switch to it. 
     * `git checkout -b bugfix` is equivalent to typing `git branch bugfix` + `git checkout bugfix`.
 * Work on your bugfix and commit locally.
 * To push your branch and commits to the remote, type `git push origin bugfix`.
-* Open a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new).
+
+##### How do I keep my branch up-to-date?
+
+* To keep your branch up-to-date with changes to the *develop* branch of the remote repository:
+    * Switch to your local *develop* branch, `git checkout develop`.
+    * Update your local *develop* branch, `git pull`.
+    * Switch back to you branch, `git checkout bugfix`.
+    * Merge the changes to the *develop* branch into your *bugfix* branch, `git merge develop`.
+* To integrate your changes into the *develop* branch of the *PAM* repository, open a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new).
 
 Do you want to work on a larger feature or addition to PAM?
 -------------------------------------------------------------
