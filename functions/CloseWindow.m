@@ -63,7 +63,7 @@ h = cat(1,h, findobj('Tag','BurstBrowser'));
 h = cat(1,h, findobj('Tag','TauFit'));
 h = cat(1,h, findobj('Tag','PhasorTIFF'));
 h = cat(1,h, findobj('Tag','GlobalPDAFit'));
-h = cat(1,h, findobj('Tag','Partice'));
+h = cat(1,h, findobj('Tag','Particle'));
 
 %%% Clears general PAM related global variables when nothing is open
 if isempty(h)

@@ -3524,8 +3524,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                                 rescale = 1;
                             end
                             tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
-                            [Max, index] = max(tmp(From:To));
-                            tmp = PamMeta.Lifetime{i}+index-From-1; %offset of the IRF with respect to TCSPC channel zero
+                            [Max, index] = max(tmp(From:To)); %the TCSPC channel of the maximum within the PIE channel
+                            tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
@@ -6936,7 +6936,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
         PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
         PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
-        PamMeta.Phasor_Int = Intensity;
+        PamMeta.Phasor_Int = mean(Intensity,3); %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
         
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
