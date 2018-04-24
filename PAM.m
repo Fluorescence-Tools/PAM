@@ -9803,6 +9803,7 @@ if nargin<3 % calculate the shift
         % shift plot (red)
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
         h.MI.Calib_Axes_Shift.YLimMode = 'auto';
+        h.Plots.Calib_Shift_New.Visible = 'on';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
         
@@ -9814,6 +9815,7 @@ if nargin<3 % calculate the shift
         else
             h.Plots.Calib_Shift_Smoothed.Visible = 'off';
         end
+        legend([h.Plots.Calib_No,h.Plots.Calib,h.Plots.Calib_Sel],{'Uncorrected','Corrected','Current shift selection'});
     end
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
