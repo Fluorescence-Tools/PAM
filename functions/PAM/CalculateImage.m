@@ -70,12 +70,31 @@ else %%% Image data with additional line/frame stop markers and other more compl
             [Image, Bin] = ImageCalc(PIE_MT, int64(numel(PIE_MT)), Pixeltimes, uint32(numel(Pixeltimes)-1), uint32(0));
             Bin(mod(Bin,FileInfo.Pixels+1)==0)=0;
             Bin=double(Bin)-floor(double(Bin)/(FileInfo.Pixels+1));
-            Bin=int64(Bin); %%% Photon-to-Pixel assignement vector
+            %%% Photon-to-Pixel assignement vector
             %%% Reshapes pixel vector to image
             Image=reshape(Image,FileInfo.Pixels+1,FileInfo.Lines,FileInfo.Frames);
             Image=Image(1:end-1,:,:);
             Image = Image(:);
             %Image=reshape(Image,[],i);
+            
+    end
+    if exist('Bin','var')
+        % convert Bin variable to the correct type
+        % The C-routine uses (unsigned long) for the Bin variable,
+        % which is interpreted as a int32 on Windows, but as a 
+        % int64 on Unix/MacOS. Since processing on Bin here requires
+        % conversion to double, we need to revert back to the correct
+        % data type. This is important because Bin is again used as an
+        % input for DoPhasor.cpp, where it is also addressed as
+        % (unsigned long) and needs to be of the correct type depending
+        % on the OS.
+        % Make sure that the type of the Bin variable is not changed
+        % between calls to CalculateImage and DoPhasor!
+        if ispc
+            Bin=int32(Bin);
+        elseif (ismac || isunix)
+            Bin=int64(Bin); 
+        end
     end
 end
             
