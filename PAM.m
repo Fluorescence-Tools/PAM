@@ -3524,7 +3524,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                                 rescale = 1;
                             end
                             tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
-                            [Max, index] = max(tmp(From:To)); %the TCSPC channel of the maximum within the PIE channel
+                            [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
                             tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
