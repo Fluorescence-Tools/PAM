@@ -31,8 +31,12 @@ h.ParticleViewer = figure(...
     'Visible','on');
 %%% Sets background of axes and other things
 whitebg(Look.Axes);
-%%% Changes Pam background; must be called after whitebg
+%%% Changes background; must be called after whitebg
 h.ParticleViewer.Color=Look.Back;
+%%% Remove unneeded items from toolbar
+toolbar = findall(h.ParticleViewer,'Type','uitoolbar');
+toolbar_items = findall(toolbar);
+delete(toolbar_items([2:7 9 13:17]));
 
 h.Load_Particle_Data = uimenu(...
     'Parent',h.ParticleViewer,...
