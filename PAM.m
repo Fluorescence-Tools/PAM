@@ -3524,7 +3524,7 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                                 rescale = 1;
                             end
                             tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
-                            [Max, index] = max(tmp(From:To)); %the TCSPC channel of the maximum within the PIE channel
+                            [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
                             tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
@@ -9803,6 +9803,7 @@ if nargin<3 % calculate the shift
         % shift plot (red)
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
         h.MI.Calib_Axes_Shift.YLimMode = 'auto';
+        h.Plots.Calib_Shift_New.Visible = 'on';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
         h.Plots.Calib_Shift_New.Visible = 'on';
@@ -9815,6 +9816,7 @@ if nargin<3 % calculate the shift
         else
             h.Plots.Calib_Shift_Smoothed.Visible = 'off';
         end
+        legend([h.Plots.Calib_No,h.Plots.Calib,h.Plots.Calib_Sel],{'Uncorrected','Corrected','Current shift selection'});
     end
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
