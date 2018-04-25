@@ -9805,6 +9805,7 @@ if nargin<3 % calculate the shift
         h.MI.Calib_Axes_Shift.YLimMode = 'auto';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
+        h.Plots.Calib_Shift_New.Visible = 'on';
         
         smoothing = str2double(h.MI.Calib_Single_Range.String);
         if smoothing > 1
