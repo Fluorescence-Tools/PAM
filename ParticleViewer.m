@@ -509,24 +509,25 @@ end
 
 %Update plot
 h.Particle_Display_Image.CData = Image;
-h.Particle_Display.XLim = [0.5 size(Image,2)+0.5];
-h.Particle_Display.YLim = [0.5 size(Image,1)+0.5];
 
 %plot particle label
 
 %Clear previous labels
 delete(findobj(h.Particle_Display.Children, 'type', 'text'));
+delete(findobj(h.Particle_Display.Children, 'type', 'line'));
 
 if h.Particle_ShowLabel.Value
     XOffset = str2double(h.Particle_LabelXOffset.String);
     YOffset = str2double(h.Particle_LabelYOffset.String);
-    for i = 1:numel(ParticleViewer.Regions)
-        coord = ParticleViewer.Regions(i).Centroid(ParticleViewer.Regions(i).Frame == Frame, :);
-        if (~isempty(coord)) && (size(ParticleViewer.Regions(i).Centroid, 1) >= str2double(h.Particle_LabelMin.String))
-           if ParticleViewer.Highlight(i)
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(i), 'Color', 'yellow');
+    Particles = find(ParticleViewer.ParticlesOnFrame(Frame, :));
+    for i = 1:numel(Particles)
+        coord = ParticleViewer.Regions(Particles(i)).Centroid(ParticleViewer.Regions(Particles(i)).Frame == Frame, :);
+        if size(ParticleViewer.Regions(Particles(i)).Centroid, 1) >= str2double(h.Particle_LabelMin.String)
+           if ParticleViewer.Highlight(Particles(i))
+               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'yellow');
+               line(ParticleViewer.Regions(Particles(i)).Centroid(:, 1), ParticleViewer.Regions(Particles(i)).Centroid(:,2), 'Color','yellow');
            else
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(i), 'Color', 'red');
+               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'red');
            end
         end
 
@@ -700,15 +701,21 @@ switch mode
 %             h.Particle_FrameSlider.SliderStep=[1./size(PhasorViewer.Intensity,3),10/size(PhasorViewer.Intensity,3)];
 %             h.Particle_FrameSlider.Value=1;
 %         else
-            ParticleViewer.Mask = false(ParticleViewer.Pixels, ParticleViewer.Lines, size(ParticleViewer.Intensity,2));
+            ParticleViewer.Mask = false(ParticleViewer.Lines, ParticleViewer.Pixels, size(ParticleViewer.Intensity,2));
             %%% Adjusts slider and frame range
             h.Particle_FrameSlider.Min=1;
             h.Particle_FrameSlider.Max=size(ParticleViewer.Intensity,2);
             h.Particle_FrameSlider.SliderStep=[1./size(ParticleViewer.Intensity,2),10/size(ParticleViewer.Intensity,2)];
             h.Particle_FrameSlider.Value=1;
+            
+            %%% Resets image plot zoom
+            h.Particle_Display.XLim = [0.5 size(ParticleViewer.Mask,2)+0.5];
+            h.Particle_Display.YLim = [0.5 size(ParticleViewer.Mask,1)+0.5];
 %         end
+        ParticleViewer.ParticlesOnFrame = false(size(ParticleViewer.Intensity, 2), numel(ParticleViewer.Regions));
         for i = 1:numel(ParticleViewer.Regions)
             ParticleViewer.Mask(ParticleViewer.Regions(i).PixelIdxList)=true;
+            ParticleViewer.ParticlesOnFrame(ParticleViewer.Regions(i).Frame, i) = true;
         end
         
         % Resets highlighted particles
@@ -733,6 +740,10 @@ switch mode
         h.Particle_FrameSlider.Max=size(PhasorViewer.Intensity,3);
         h.Particle_FrameSlider.SliderStep=[1./size(PhasorViewer.Intensity,3),10/size(PhasorViewer.Intensity,3)];
         h.Particle_FrameSlider.Value=1;
+        
+        %%% Resets image plot zoom
+        h.Particle_Display.XLim = [0.5 size(PhasorViewer.Intensity,2)+0.5];
+        h.Particle_Display.YLim = [0.5 size(PhasorViewer.Intensity,1)+0.5];
 end
 
 PlotUpdate(1);
