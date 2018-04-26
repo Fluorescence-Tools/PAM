@@ -3073,6 +3073,7 @@ else %%% dynamic model
     hFit_Ind{2} = hFit_Ind_dyn{end};
     hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
     %%% Add static models
+    norm = 1;
     if numel(PDAMeta.Comp{i}) > 2
         %%% normalize Amplitudes
         % amplitudes of the static components are normalized to the total area 
@@ -3084,7 +3085,7 @@ else %%% dynamic model
         
         for c = PDAMeta.Comp{i}(3:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-            P_eps = fitpar(3*c-2).*Pe;
+            P_eps = (fitpar(3*c-2)./norm).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
             for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
                 hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
@@ -3099,7 +3100,7 @@ else %%% dynamic model
     % the whole dynamic part
     %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
     % only the dynamic bursts
-    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
+    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
 end
 
 
@@ -3291,6 +3292,7 @@ for j=1:sum(PDAMeta.Active)
         
         hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
         %%% Add static models
+        norm = 1;
         if numel(PDAMeta.Comp{i}) > 2
             %%% normalize Amplitudes
             % amplitudes of the static components are normalized to the total area
@@ -3308,6 +3310,8 @@ for j=1:sum(PDAMeta.Active)
                 end
             end
             hFit_Dyn = hFit_Dyn./norm;
+            hFit_Ind{1} = hFit_Ind{1}./norm;
+            hFit_Ind{2} = hFit_Ind{2}./norm;
         end
         % sum the static and dynamic components
         hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
@@ -3315,7 +3319,7 @@ for j=1:sum(PDAMeta.Active)
         % the whole dynamic part
         %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
         % only the dynamic bursts
-        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
+        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
     end
 
     if fraction_Donly > 0
