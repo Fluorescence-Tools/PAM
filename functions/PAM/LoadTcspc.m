@@ -814,9 +814,9 @@ switch (Type)
         FileInfo.ClockPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
-        FileInfo.Lines=10;
+        FileInfo.Lines=1;
         FileInfo.LineTimes=[];
-        FileInfo.Pixels=10;
+        FileInfo.Pixels=1;
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
