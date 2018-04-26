@@ -823,8 +823,10 @@ switch (Type)
         
         %%% Initializes microtime and macotime arrays
         if strcmp(UserValues.Detector.Auto,'off')
-            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
         else
             TcspcData.MT=cell(10,10); %%% default to 10 channels
             TcspcData.MI=cell(10,10); %%% default to 10 channels
