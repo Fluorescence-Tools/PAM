@@ -57,25 +57,25 @@ h.Particle_Display.DataAspectRatio = [1 1 1];
 h.Particle_Display.XTick = [];
 h.Particle_Display.YTick = [];
 
-%%% Intensity display plot
-h.Particle_Intensity = axes(...
+%%% Top display plot
+h.Particle_Plot1 = axes(...
     'Parent',h.ParticleViewer,...
     'Units','normalized',...
     'Position',[0.53 0.69 0.45 0.29]);
 %h.Particle_Lifetime.XLabel.String = 'Frame';
-h.Particle_Intensity.XColor = Look.Fore;
-h.Particle_Intensity.YLabel.String = 'Intensity (counts)';
-h.Particle_Intensity.YColor = Look.Fore;
+h.Particle_Plot1.XColor = Look.Fore;
+h.Particle_Plot1.YLabel.String = 'Intensity (counts)';
+h.Particle_Plot1.YColor = Look.Fore;
 
-%%% Lifetime display plot
-h.Particle_Lifetime = axes(...
+%%% Bottom display plot
+h.Particle_Plot2 = axes(...
     'Parent',h.ParticleViewer,...
     'Units','normalized',...
     'Position',[0.53 0.36 0.45 0.29]);
-h.Particle_Lifetime.XLabel.String = 'Frame';
-h.Particle_Lifetime.YLabel.String = 'Lifetime (ns)';
-h.Particle_Lifetime.XColor = Look.Fore;
-h.Particle_Lifetime.YColor = Look.Fore;
+h.Particle_Plot2.XLabel.String = 'Frame';
+h.Particle_Plot2.YLabel.String = 'Lifetime (ns)';
+h.Particle_Plot2.XColor = Look.Fore;
+h.Particle_Plot2.YColor = Look.Fore;
 
 h.Text = {};
 
@@ -330,8 +330,8 @@ h.Particle_PartSlider = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Callback',{@Particle_Num, 2},...
     'Position',[0.29 0.86, 0.35 0.12]);
-%%% Lifetime display selection
-h.Particle_Lifetime_Type = uicontrol(...
+%%% Plot display selection
+h.Particle_Plot1_Type = uicontrol(...
     'Parent',h.Particle_Control_Panel,...
     'Style','popupmenu',...
     'Units','normalized',...
@@ -340,7 +340,19 @@ h.Particle_Lifetime_Type = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Callback',{@Particle_Num, 1},...
     'Position',[0.66 0.87 , 0.33 0.12],...
-    'String',{'TauP', 'TauM', 'Mean Lifetime'},...
+    'String',{'TauP', 'TauM', 'Mean Lifetime', 'Intensity', 'Position'},...
+    'Value', 4);
+%%% Plot display selection
+h.Particle_Plot2_Type = uicontrol(...
+    'Parent',h.Particle_Control_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback',{@Particle_Num, 1},...
+    'Position',[0.66 0.73 , 0.33 0.12],...
+    'String',{'TauP', 'TauM', 'Mean Lifetime', 'Intensity', 'Position'},...
     'Value', 3);
 %%% Moving average
 h.Particle_MovingAverage = uicontrol(...
@@ -577,12 +589,11 @@ ParticleViewer.Highlight(PartNum) = h.Particle_Highlight.Value;
 PlotUpdate(Frame);
 end
 
-%%% Plot Particle Lifetime and Intensity %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Update Particle Number and Plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Particle_Num(~,~, mode)
 global ParticleViewer UserValues
 h = guidata(findobj('Tag','ParticleViewer'));
-Look = UserValues.Look;
 
 if ~isfield(ParticleViewer, 'Intensity')
     return;
@@ -608,57 +619,89 @@ h.Particle_PartNumber.String = num2str(PartNum);
 h.Particle_PartSlider.Value = PartNum;
 h.Particle_Highlight.Value = ParticleViewer.Highlight(PartNum);
 
-%%% Determine type of lifetime to plot
-LF_Type = h.Particle_Lifetime_Type.Value;
-switch LF_Type
+%%% Determine type of data to plot
+Plot_Type = h.Particle_Plot1_Type.Value;
+Particle_Plot(h.Particle_Plot1, PartNum, Plot_Type);
+Plot_Type = h.Particle_Plot2_Type.Value;
+Particle_Plot(h.Particle_Plot2, PartNum, Plot_Type);
+
+end
+
+%%% Update Particle Plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Particle_Plot(axes,PartNum,Plot_Type)
+global ParticleViewer UserValues
+h = guidata(findobj('Tag','ParticleViewer'));
+Look = UserValues.Look;
+
+switch Plot_Type
     case 1 %Plot TauP
-        Lifetime = ParticleViewer.TauP(PartNum,:);
-        Lifetime(Lifetime==0) = NaN;
+        XValue = 1:size(ParticleViewer.TauP, 2);
+        YValue = ParticleViewer.TauP(PartNum,:);
+        YValue(YValue==0) = NaN;
+        LineSpec = '.-b';
+        YLabel = 'TauP (ns)';
+        XLabel = 'Frames';
+        Property = {'XLim', [1, size(YValue, 2)+1]};
     case 2 %Plot TauM
-        Lifetime = ParticleViewer.TauM(PartNum,:);
-        Lifetime(isinf(Lifetime)) = NaN;
-    case 3 %Plot mean of TauP and TauM
+        XValue = 1:size(ParticleViewer.TauM, 2);
+        YValue = ParticleViewer.TauM(PartNum,:);
+        YValue(isinf(YValue)) = NaN;
+        LineSpec = '.-b';
+        YLabel = 'TauM (ns)';
+        XLabel = 'Frames';
+        Property = {'XLim', [1, size(YValue, 2)+1]};
+    case 3 %Mean of TauP and TauM
+        XValue = 1:size(ParticleViewer.TauP, 2);
         TauP = ParticleViewer.TauP(PartNum,:);
         TauP(TauP == 0) = NaN;
         TauM = ParticleViewer.TauM(PartNum,:);
         TauM(isinf(TauM)) = NaN;
-        Lifetime = (TauP + TauM)/2;
+        YValue = (TauP + TauM)/2;
+        LineSpec = '.-b';
+        YLabel = 'Lifetime (ns)';
+        XLabel = 'Frames';
+        Property = {'XLim', [1, size(YValue, 2)+1]};
+    case 4 %Intensity
+        XValue = 1:size(ParticleViewer.Intensity, 2);
+        YValue = ParticleViewer.Intensity(PartNum,:);
+        YValue(YValue==0) = NaN;
+        LineSpec = '.-r';
+        YLabel = 'Intensity (counts)';
+        XLabel = 'Frames';
+        Property = {'XLim', [1, size(YValue, 2)+1]};
+    case 5 %Position
+        XValue = ParticleViewer.Regions(PartNum).Centroid(:, 1);
+        YValue = ParticleViewer.Regions(PartNum).Centroid(:, 2);
+        LineSpec = '-r';
+        YLabel = 'y';
+        XLabel = 'x';
+        Property = {'YDir', 'reverse', 'DataAspectRatio', [1 1 1],...
+            'PlotBoxAspectRatio', [1.0000    0.4178    0.4178]};
 end
-
-Intensity = ParticleViewer.Intensity(PartNum,:);
-Intensity(Intensity==0) = NaN; % Sets 0 Intensity to NaN
-
 %%%Moving Average
-if h.Particle_MovingAverage.Value
+if h.Particle_MovingAverage.Value && Plot_Type <= 4
     Window = str2double(h.Particle_MovAvgWindow.String);
     if Window < 2 % min value for averaging window
         Window = 2;
         h.Particle_MovAvgWindow.String = '2';
     end    
-    Lifetime = movmean(Lifetime, Window, 'omitnan');
-    Intensity = movmean(Intensity, Window, 'omitnan');
+    YValue = movmean(YValue, Window, 'omitnan');
     
     %removes partial averaging windows at start and end of trace
-    idx_start = find(~isnan(Lifetime),1) + floor(Window/2) -1;
-    idx_end = find(~isnan(Lifetime), 1, 'last') - floor(Window/2);
-    Lifetime([1:idx_start idx_end:end]) = NaN;
-    Intensity([1:idx_start idx_end:end]) = NaN;
+    idx_start = find(~isnan(YValue),1) + floor(Window/2) -1;
+    idx_end = find(~isnan(YValue), 1, 'last') - floor(Window/2);
+    YValue([1:idx_start idx_end:end]) = NaN;
+    YValue([1:idx_start idx_end:end]) = NaN;
 end
-
-plot(h.Particle_Intensity, Intensity, '-r.');
-plot(h.Particle_Lifetime, Lifetime, '-b.');
+p = plot(axes, XValue, YValue, LineSpec);
 
 % Sets plot properties
-h.Particle_Intensity.YLabel.String = 'Intensity';
-h.Particle_Lifetime.XLabel.String = 'Frame';
-h.Particle_Lifetime.YLabel.String = 'Lifetime (ns)';
-h.Particle_Intensity.XLim = [1, size(Intensity, 2)+1];
-h.Particle_Lifetime.XLim = [1, size(Intensity, 2)+1];
-
-h.Particle_Intensity.XColor = Look.Fore;
-h.Particle_Intensity.YColor = Look.Fore;
-h.Particle_Lifetime.XColor = Look.Fore;
-h.Particle_Lifetime.YColor = Look.Fore;
+set(axes, Property{:});
+axes.XLabel.String = XLabel;
+axes.YLabel.String = YLabel;
+axes.XColor = Look.Fore;
+axes.YColor = Look.Fore;
 
 end
 
