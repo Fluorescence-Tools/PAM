@@ -814,17 +814,19 @@ switch (Type)
         FileInfo.ClockPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
-        FileInfo.Lines=10;
+        FileInfo.Lines=1;
         FileInfo.LineTimes=[];
-        FileInfo.Pixels=10;
+        FileInfo.Pixels=1;
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
         
         %%% Initializes microtime and macotime arrays
         if strcmp(UserValues.Detector.Auto,'off')
-            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
         else
             TcspcData.MT=cell(10,10); %%% default to 10 channels
             TcspcData.MI=cell(10,10); %%% default to 10 channels
@@ -881,7 +883,7 @@ switch (Type)
         end
         FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTimes =  FileInfo.MeasurementTime;
+        FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
     case 8 %%% *.t3r TTTR files from TimeHarp 200
@@ -993,7 +995,7 @@ switch (Type)
         
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTimes =  FileInfo.MeasurementTime;
+        FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
     case 9 %%% Confocor3 raw data files (*.raw)

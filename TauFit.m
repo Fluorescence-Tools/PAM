@@ -1530,7 +1530,7 @@ switch obj.Tag
             h.Microtime_Plot.YScale = 'log';
             h.Result_Plot.YScale = 'log';
             if h.Cleanup_IRF_Menu.Value
-                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData);
+                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData(h.Plots.DecayResult.YData > 0));
             end
             UserValues.TauFit.YScaleLog = 'on';
         elseif strcmp(obj.Checked,'on')
