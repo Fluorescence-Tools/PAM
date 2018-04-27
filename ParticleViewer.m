@@ -537,7 +537,7 @@ if h.Particle_ShowLabel.Value
         if size(ParticleViewer.Regions(Particles(i)).Centroid, 1) >= str2double(h.Particle_LabelMin.String)
            if ParticleViewer.Highlight(Particles(i))
                text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'yellow');
-               line(ParticleViewer.Regions(Particles(i)).Centroid(:, 1), ParticleViewer.Regions(Particles(i)).Centroid(:,2), 'Color','yellow');
+               line(h.Particle_Display, ParticleViewer.Regions(Particles(i)).Centroid(:, 1), ParticleViewer.Regions(Particles(i)).Centroid(:,2), 'Color','yellow');
            else
                text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'red');
            end
