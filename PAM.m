@@ -1705,7 +1705,7 @@ h.MI.Phasor_TAC = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.91 0.93 0.08 0.025]);
 %%% Particle Detection Selection
-h.MI.Phasor_Particles = uicontrol(...
+h.MI.Phasor_FramePopup = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
     'Tag','MI_Phasor_Particles',...
     'Style','popupmenu',...
@@ -1716,8 +1716,8 @@ h.MI.Phasor_Particles = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.885 0.30 0.025]);
 if ismac
-    h.MI.Phasor_Particles.ForegroundColor = [0 0 0];
-    h.MI.Phasor_Particles.BackgroundColor = [1 1 1];
+    h.MI.Phasor_FramePopup.ForegroundColor = [0 0 0];
+    h.MI.Phasor_FramePopup.BackgroundColor = [1 1 1];
 end
 
 %%% Text
@@ -3211,7 +3211,7 @@ h.Profiles.SaveProfile_Button = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String','Save profile',...
+    'String','Backup profile',...
     'UIContextMenu',h.Profiles.SaveProfile_Menu,...
     'Callback',@SaveLoadProfile,...
     'Position',[0.32 0.92 0.21 0.07],...
@@ -3225,7 +3225,7 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String','Load profile',...
+    'String','Restore profile',...
     'Callback',@SaveLoadProfile,...
     'Position',[0.32 0.84 0.21 0.07],...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
@@ -3524,8 +3524,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                                 rescale = 1;
                             end
                             tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
-                            [Max, index] = max(tmp(From:To));
-                            tmp = PamMeta.Lifetime{i}+index-From-1; %offset of the IRF with respect to TCSPC channel zero
+                            [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
+                            tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
                             PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
@@ -4173,7 +4173,6 @@ if any(mode==3)
             %%% Autoscales between min-max; +1 is for max=min
             if h.Image.Autoscale.Value
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
-                h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
         %%% Mean arrival time image
         case 2
@@ -4181,39 +4180,45 @@ if any(mode==3)
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min = 0;%0.1*max(max(PamMeta.Lifetime{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                if max(max(PamMeta.Image{Sel}))~=0
+                    h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                end
             end
-        %%% Lifetime from phase
+            %%% Lifetime from phase
         case 3
-            h.Plots.Image.CData=PamMeta.TauP;
+            phas = medfilt2(PamMeta.TauP);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.TauP(PamMeta.Phasor_Int>Min))), max(max(PamMeta.TauP(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
-        %%% Lifetime from modulation
+            %%% Lifetime from modulation
         case 4
-            h.Plots.Image.CData=PamMeta.TauM;
+            phas = medfilt2(PamMeta.TauM);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.TauM(PamMeta.Phasor_Int>Min))), max(max(PamMeta.TauM(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
             %%% g from phasor calculation
         case 5
-            h.Plots.Image.CData=PamMeta.g;
+            phas = medfilt2(PamMeta.g);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.g(PamMeta.Phasor_Int>Min))), max(max(PamMeta.g(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
             %%% s from phasor calculation
         case 6
-            h.Plots.Image.CData=PamMeta.s;
+            phas = medfilt2(PamMeta.s);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.s(PamMeta.Phasor_Int>Min))), max(max(PamMeta.s(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
     end
     switch h.Image.Type.Value %label the colorbar correctly
@@ -6786,7 +6791,8 @@ UserValues.Phasor.Reference(Det,:)=0;
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
-
+UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+UserValues.Phasor.Reference_TAC = FileInfo.ClockPeriod;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6796,6 +6802,14 @@ function Phasor_Calc(~,~)
 
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
+
+if isempty(FileInfo.LineTimes)
+    m = msgbox('Load imaging data to calculate phasor!');
+    pause(2)
+    close(m)
+    return
+end
+
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     
     %%% Determines correct detector and routing
@@ -6813,33 +6827,34 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
 
         %% Calculates reference
         Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
         MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
+        Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
         TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
-        UseParticles = h.MI.Phasor_Particles.Value;
-        if UseParticles ==2
-            Frames = size(FileInfo.LineTimes,1)-1;
+        if h.MI.Phasor_FramePopup.Value == 2
+            Frames = size(FileInfo.LineTimes,1);
         else
             Frames = 1;
         end
         
         %%% Extract Background and converts it to counts per pixel
         Background_ref = str2num(h.MI.Phasor_BG_Ref.String);
-        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/MI_Bins;        
+        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/Ref_MI_Bins;        
         Background = str2num(h.MI.Phasor_BG.String);
         Background = Background*(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels)*size(FileInfo.LineTimes,1);%%% Background is used differently and does not need to be divided by MI_Bins        
         Afterpulsing = str2num(h.MI.Phasor_AP.String)/100;
 
         
         %%% Calculates theoretical phase and modulation for reference
-        Fi_ref = atan(2*pi*Ref_LT/TAC);
-        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/TAC)^2);
+        Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
         
         %%% Normalizes reference data
         Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
-        Ref = Ref-sum(Ref)*Afterpulsing/MI_Bins - Background_ref;
+        Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
         if From>1
             Ref(1:(From-1))=0;
@@ -6847,14 +6862,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if To<MI_Bins
             Ref(To+1:end)=0;
         end
-        Ref_Mean=sum(Ref(1:MI_Bins).*(1:MI_Bins))/sum(Ref)*TAC/MI_Bins-Ref_LT;
+        Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
         
         %%% Calculates phase and modulation of the instrument
-        G_inst=cos((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        S_inst=sin((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:MI_Bins).*G_inst);
-        s_inst=sum(Ref(1:MI_Bins).*S_inst);
+        G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+        s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
         Fi_inst=atan(s_inst/g_inst);
         M_inst=sqrt(s_inst^2+g_inst^2);
         if (g_inst<0 || s_inst<0)
@@ -6866,7 +6881,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
         %%% Creates image and generates photon to pixel index
         Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        if UseParticles ==2
+        if h.MI.Phasor_FramePopup.Value == 2
             [Intensity, Bin] = CalculateImage(PIE_MT, 4);
         else
             [Intensity, Bin] = CalculateImage(PIE_MT, 2);
@@ -6921,6 +6936,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
         PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
         PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
+        PamMeta.Phasor_Int = mean(Intensity,3); %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
         
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
@@ -6936,10 +6952,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
         
-        if UseParticles==1
+        if h.MI.Phasor_FramePopup.Value == 1
             g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
-        elseif UseParticles == 2
+        else
             save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
             g = PamMeta.g; s= PamMeta.s; Intensity =squeeze(sum(Intensity,3));
             save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
@@ -9787,8 +9803,10 @@ if nargin<3 % calculate the shift
         % shift plot (red)
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
         h.MI.Calib_Axes_Shift.YLimMode = 'auto';
+        h.Plots.Calib_Shift_New.Visible = 'on';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
+        h.Plots.Calib_Shift_New.Visible = 'on';
         
         smoothing = str2double(h.MI.Calib_Single_Range.String);
         if smoothing > 1
@@ -9798,6 +9816,7 @@ if nargin<3 % calculate the shift
         else
             h.Plots.Calib_Shift_Smoothed.Visible = 'off';
         end
+        legend([h.Plots.Calib_No,h.Plots.Calib,h.Plots.Calib_Sel],{'Uncorrected','Corrected','Current shift selection'});
     end
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
@@ -11290,7 +11309,7 @@ switch obj
             return;
         end
         ProfileData = load(fullfile(Path,File),'-mat');
-        ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
+        ProfileData.MetaData.Comment = ['Source:' fullfile(Path,File)];
         save(fullfile([PathToApp filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
         
         Current_Exists = 0;

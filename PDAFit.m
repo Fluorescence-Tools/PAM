@@ -992,8 +992,9 @@ if isempty(h.GlobalPDAFit)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Style','checkbox',...
-        'enable','off',...
+        'enable','on',...
         'String','Deconvolute background',...
+        'TooltipString','Use at own risk, feature is not thoroughly tested.',...
         'Value',UserValues.PDA.DeconvoluteBackground,...
         'Callback', {@Update_Plots, 0},...
         'Position',[0.65 0.3 0.15 0.15]);
@@ -1136,6 +1137,17 @@ for i = 1:numel(FileName)
                 PDAData.Type{end+1} = PDA.Type;
             else
                 PDAData.Type{end+1} = 'Burst';
+            end
+            if isfield(PDA,'MinN') %%% photon and stoichiometry thresholds have been saved
+                PDAData.MinN{end+1} = PDA.MinN;
+                PDAData.MaxN{end+1} = PDA.MaxN;
+                PDAData.MinS{end+1} = PDA.MinS;
+                PDAData.MaxS{end+1} = PDA.MaxS;
+            else %%% read values from UserValues
+                PDAData.MinN{end+1} = str2double(UserValues.PDA.MinPhotons);
+                PDAData.MaxN{end+1} = str2double(UserValues.PDA.MaxPhotons);
+                PDAData.MinS{end+1} = str2double(UserValues.PDA.Smin);
+                PDAData.MaxS{end+1} = str2double(UserValues.PDA.Smax);
             end
             clear PDA timebin
             PDAData.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
@@ -1343,6 +1355,7 @@ switch mode
                     ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
             else
                 valid = true(size(PDAData.Data{i}.NF));
+                valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String); % max photons
             end
             %%% Calculate proximity ratio histogram
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
@@ -1527,7 +1540,8 @@ switch mode
                     ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
                     ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
             else
-                valid = true(size(PDAData.Data{i}.NF));
+                %valid = true(size(PDAData.Data{i}.NF));
+                valid = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String); %max photon number
             end
             Prox = PDAData.Data{i}.NF(valid)./(PDAData.Data{i}.NG(valid)+PDAData.Data{i}.NF(valid));
             hProx = histcounts(Prox, linspace(0,1,str2double(h.SettingsTab.NumberOfBins_Edit.String)+1));
@@ -2097,7 +2111,8 @@ if (any(PDAMeta.PreparationDone == 0)) || ~isfield(PDAMeta,'eps_grid')
                 ((StoAll > str2double(h.SettingsTab.StoichiometryThresholdLow_Edit.String))) & ... % Stoichiometry low
                 ((StoAll < str2double(h.SettingsTab.StoichiometryThresholdHigh_Edit.String))); % Stoichiometry high
         else
-            PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
+            %PDAMeta.valid{i} = true(size(PDAData.Data{i}.NF));
+            PDAMeta.valid{i} = (PDAData.Data{i}.NF+PDAData.Data{i}.NG) < str2double(h.SettingsTab.NumberOfPhotMax_Edit.String);
         end
         %%% find the maxN of all data
         maxN = max(maxN, max((PDAData.Data{i}.NF(PDAMeta.valid{i})+PDAData.Data{i}.NG(PDAMeta.valid{i}))));
@@ -3058,6 +3073,7 @@ else %%% dynamic model
     hFit_Ind{2} = hFit_Ind_dyn{end};
     hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
     %%% Add static models
+    norm = 1;
     if numel(PDAMeta.Comp{i}) > 2
         %%% normalize Amplitudes
         % amplitudes of the static components are normalized to the total area 
@@ -3069,7 +3085,7 @@ else %%% dynamic model
         
         for c = PDAMeta.Comp{i}(3:end)
             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
-            P_eps = fitpar(3*c-2).*Pe;
+            P_eps = (fitpar(3*c-2)./norm).*Pe;
             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
             for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
                 hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
@@ -3084,7 +3100,7 @@ else %%% dynamic model
     % the whole dynamic part
     %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
     % only the dynamic bursts
-    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
+    PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
 end
 
 
@@ -3276,6 +3292,7 @@ for j=1:sum(PDAMeta.Active)
         
         hFit_Dyn = sum(horzcat(hFit_Ind_dyn{:}),2);
         %%% Add static models
+        norm = 1;
         if numel(PDAMeta.Comp{i}) > 2
             %%% normalize Amplitudes
             % amplitudes of the static components are normalized to the total area
@@ -3293,6 +3310,8 @@ for j=1:sum(PDAMeta.Active)
                 end
             end
             hFit_Dyn = hFit_Dyn./norm;
+            hFit_Ind{1} = hFit_Ind{1}./norm;
+            hFit_Ind{2} = hFit_Ind{2}./norm;
         end
         % sum the static and dynamic components
         hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
@@ -3300,7 +3319,7 @@ for j=1:sum(PDAMeta.Active)
         % the whole dynamic part
         %PDAMeta.hFit_onlyDyn{i} = hFit_Dyn;
         % only the dynamic bursts
-        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2);
+        PDAMeta.hFit_onlyDyn{i} = sum(horzcat(hFit_Ind_dyn{2:end-1}),2)./norm;
     end
 
     if fraction_Donly > 0

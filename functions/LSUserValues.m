@@ -858,6 +858,20 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Reference_Time = S.Phasor.Reference_Time;
     
+    %%% Checks, if Phasor.Reference_MI_Bins subfields exist
+    if ~isfield(S.Phasor,'Reference_MI_Bins')
+        S.Phasor.Reference_MI_Bins = 0;
+        disp('UserValues.Phasor.Reference_MI_Bins was incomplete');
+    end
+    P.Phasor.Reference_MI_Bins = S.Phasor.Reference_MI_Bins;
+    
+    %%% Checks, if Phasor.Reference_TAC subfields exist
+    if ~isfield(S.Phasor,'Reference_TAC')
+        S.Phasor.Reference_TAC= 0;
+        disp('UserValues.Phasor.Reference_TAC was incomplete');
+    end
+    P.Phasor.Reference_TAC = S.Phasor.Reference_TAC;
+    
     %%% Checks, if Phasor.Settings subfields exist
     if ~isfield(S.Phasor,'Settings_THMin')
         S.Phasor.Settings_THMin='200';
