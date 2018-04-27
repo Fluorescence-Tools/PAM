@@ -40,6 +40,12 @@ Did you fix a bug?
     * Switch back to you branch, `git checkout bugfix`.
     * Merge the changes to the *develop* branch into your *bugfix* branch, `git merge develop`.
 * To integrate your changes into the *develop* branch of the *PAM* repository, open a [merge request](https://gitlab.com/PAM-PIE/PAM/merge_requests/new).
+* If you edit a local file while someone else updates the remote file, you will not be able to push. In this case:
+    * !git add PAM.m %adds your change
+    * !git commit -m “your change” %commits your change
+    * !git pull %pulls the latest version, which changes your file again
+    * !git commit %commits this change
+    * !git push
 
 Do you want to work on a larger feature or addition to PAM?
 -------------------------------------------------------------
