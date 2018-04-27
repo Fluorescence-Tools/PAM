@@ -91,7 +91,7 @@ Do this to get the latest changes from the public version of PAM
     * `!git push origin develop`
     * Notice: `!git push` will do the same if you want to push from develop to origin/develop (origin is the default remote name, and it will push by default to a branch with the same name as the local), but it is still advised to type the full command to avoid confusion! 
 * You can list the registered remotes to your local repository by: `!git remote -v`
-* 
+
 ### Pulling from the remote private PAM repository
 Do this when you start Matlab and before making any changes locally to synchronize your repository with the remote. This is important if you work privately on the new feature with other people on the same repository.
 * `!git pull origin develop`
