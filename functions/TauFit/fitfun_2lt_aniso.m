@@ -44,7 +44,7 @@ rt = 1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf);
 x_par1 = exp(-(1:n)./tau(1));
 x_par2 = exp(-(1:n)./tau(2));
 %%% combine the two components
-x_par = I0*G*rt.*(A*x_par1 + (1-A)*x_par2);
+x_par = (I0/G)*rt.*(A*x_par1 + (1-A)*x_par2);
 switch conv_type
     case 'linear'
         z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';

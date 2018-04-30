@@ -39,7 +39,7 @@ bg_par = param(7);
 bg_per = param(8);
 I0 = param(11);
 %%% Calculate the parallel Intensity Decay
-x_par = I0*G*exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
+x_par = (I0/G)*exp(-(1:n)./tau).*(1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf));
 switch conv_type
     case 'linear'
         z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';
