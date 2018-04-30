@@ -1590,35 +1590,47 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     if obj == h.Menu.OpenDecayData
         %%% called upon loading of text-based *.dec file
         %%% load file
-        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','off');
+        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','on');
         if FilterIndex == 0
             return;
         end
         UserValues.File.TauFitPath = PathName;
-        
-        decay_data = dlmread(fullfile(PathName,FileName),'\t',6,0);
-        %%% read other data
-        fid = fopen(fullfile(PathName,FileName),'r');
-        TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
-        MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
-        TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
-        fid = fopen(fullfile(PathName,FileName),'r');
-        for i = 1:5
-            line = fgetl(fid);
+        if ~iscell(FileName)
+            FileName = {FileName};
         end
-        PIEchans = strsplit(line,'\t');
-        PIEchans(cellfun(@isempty,PIEchans)) = [];
-        %%% sort data into TauFitData structure (MI,IRF,Scat)
-        for i = 1:(size(decay_data,2)/3)
-            TauFitData.External.MI_Hist{i} = decay_data(:,3*(i-1)+1);
-            TauFitData.External.IRF{i} = decay_data(:,3*(i-1)+2);
-            TauFitData.External.Scat{i} = decay_data(:,3*(i-1)+3);
+        TauFitData.External = struct;
+        TauFitData.External.MI_Hist = {};
+        TauFitData.External.IRF = {};
+        TauFitData.External.Scat = {};
+        for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range etc)
+            decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
+            %%% read other data
+            fid = fopen(fullfile(PathName,FileName{j}),'r');
+            TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
+            MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
+            TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+            fid = fopen(fullfile(PathName,FileName{j}),'r');
+            for i = 1:5
+                line = fgetl(fid);
+            end
+            PIEchans{j} = strsplit(line,'\t');
+            PIEchans{j}(cellfun(@isempty,PIEchans{j})) = [];
+            if numel(FileName) > 1 %%% multiple files loaded, append the file name to avoid confusion of identically named PIE channels
+                for i = 1:numel(PIEchans{j})
+                    PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
+                end
+            end
+            %%% sort data into TauFitData structure (MI,IRF,Scat)
+            for i = 1:(size(decay_data,2)/3)
+                TauFitData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
+                TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
+                TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
+            end
         end
+        PIEchans = horzcat(PIEchans{:});
         %%% update PIE channel selection with available PIE channels
         h.PIEChannelPar_Popupmenu.String = PIEchans;
         h.PIEChannelPer_Popupmenu.String = PIEchans;
-        %%% show file name in GUI
-
         %%% mark TauFit mode as external
         TauFitData.Who = 'External';
         TauFitData.FileName = fullfile(PathName,FileName);
