@@ -24,8 +24,9 @@ tp = (1:p)';
 A1 = param(4);
 A2 = param(5);
 if (A1+A2) > 1
-    A1 = A1./(A1+A2);
-    A2 = A2./(A1+A2);
+    norm = A1 + A2;
+    A1 = A1./norm;
+    A2 = A2./norm;
 end
 sc = param(6);
 bg = param(7);
