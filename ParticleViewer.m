@@ -908,11 +908,12 @@ if Var.WriteTraces
         end
         Suffix = '_LFtime';
         Par = num2str(k);
+        NewName = replace(Var.FileName, '_', '-');
         yyaxis(a, 'left'); %switch to left axis
         plot(a,Time,LFall(k,:),'-b.'); 
         xlabel(a, 'Time [min]'); ylabel(a, 'Lifetime [ns]');
         xlim(a, [0 max(Time)]); ylim(a, [LF_min LF_max]);
-        title(a, [Par Var.FileName]);
+        title(a, {Par, NewName});
         yyaxis(a, 'right'); %switch to right axis
         plot(a,Time,Int(k,:),'-r.');
         ylabel(a, 'Intensity');
