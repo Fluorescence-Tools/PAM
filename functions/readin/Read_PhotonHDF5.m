@@ -19,6 +19,12 @@ for i = 1:numel(det)
 end
 clear timestamps nanotimes detectors
 
+%%% fix orientation of arrays
+if size(MT{1},1) < size(MT{1},2) %%% horizontal array, make vertical
+    MT = cellfun(@transpose,MT,'UniformOutput',false);
+    MI = cellfun(@transpose,MI,'UniformOutput',false);
+end
+
 datastruct = struct;
 %%% general info - /
 datastruct.description = h5read(file,'/description');
