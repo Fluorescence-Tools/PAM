@@ -1633,7 +1633,7 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
         h.PIEChannelPer_Popupmenu.String = PIEchans;
         %%% mark TauFit mode as external
         TauFitData.Who = 'External';
-        TauFitData.FileName = fullfile(PathName,FileName);
+        TauFitData.FileName = fullfile(PathName,FileName{1});
         if numel(PIEchans) == 1
             PIEChannel_Par = 1; PIEChannel_Per = 1;
         else
