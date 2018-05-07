@@ -10320,9 +10320,9 @@ switch e.Key
             To=UserValues.PIE.To(i);
             if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
                 MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
                 MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI =[];
                 MT = [];
@@ -10340,8 +10340,8 @@ switch e.Key
                 end
                 [MT,Index] = sort(MT);
                 MI = MI(Index);
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
         end
     case 'Export_Raw_File' %%% Exports macrotime and microtime as a cell for each PIE channel
@@ -10369,8 +10369,8 @@ switch e.Key
                         MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.ClockPeriod);
                     end
                 end
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI=cell(FileInfo.NumberOfFiles,1);
                 MT=cell(FileInfo.NumberOfFiles,1);
@@ -10404,8 +10404,8 @@ switch e.Key
                     [MT{k},Index] = sort(MT{k});
                     MI{k} = MI{k}(Index);
                 end
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
             
         end
@@ -10426,13 +10426,13 @@ switch e.Key
             end
             %%% Exports intensity image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 2
-                assignin('base',[Name 'Image'],PamMeta.Image{i});
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],PamMeta.Image{i});
                 figure('Name',[UserValues.PIE.Name{i} '_Image']);
                 imagesc(PamMeta.Image{i});
             end
             %%% Exports mean arrival time image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 3
-                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
+                assignin('base',[matlab.lang.makeValidName(Name) '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
             end
@@ -10466,9 +10466,9 @@ switch e.Key
                 for j = UserValues.PIE.Combined{i}
                     Name = [Name UserValues.PIE.Name{j} '_'];
                 end
-                assignin('base',[Name 'Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],Stack);
             else
-                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_Image'],Stack);
             end
         end
     case 'Export_Image_Tiff' %%% Exports image stack as TIFF
