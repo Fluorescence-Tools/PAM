@@ -4822,9 +4822,13 @@ switch e.Key
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(Sel) = [];
     case 'c' %%% Changes color of selected channels
-        %%% Opens menu to choose color
-        color=uisetcolor;
-        %%% Checks, if color was selected
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(); % open dialog to input color
+        end
+         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
                 UserValues.PIE.Color(i,:)=color;
@@ -5201,9 +5205,13 @@ if obj == h.MI.Channels_List
             switch ed.Indices(2)
                 
                 case 4 %%% Color was clicked
-                    NewColor = uisetcolor;
-                    if size(NewColor) == 1
-                        return;
+                    if ~isdeployed
+                        NewColor = uisetcolor;
+                        if size(NewColor) == 1
+                            return;
+                        end
+                    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                        NewColor = color_setter(); % open dialog to input color
                     end
                     UserValues.Detector.Color(Sel,:) = NewColor;
                     %%% Update Color of Name also
@@ -5288,8 +5296,12 @@ switch e.Key
         %%% Saves new tabs in guidata
         guidata(h.Pam,h)
     case 'c' %% Selects new color for microtime channel
-        %%% Opens menu to choose color
-        color=uisetcolor;
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
