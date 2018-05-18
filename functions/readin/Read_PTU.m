@@ -127,7 +127,7 @@ while 1
                     eval([TagIdent '(:,end:numel(TagString)) = '' '''])
                 end
             end
-            eval([EvalName '=TagString;']);
+            try;eval([EvalName '=TagString;']);end;
         case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
