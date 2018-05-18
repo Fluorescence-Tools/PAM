@@ -95,7 +95,13 @@ if isempty(hfig)
         'Callback',@Merge_bur_files,...
         'Tag','Merge_Files_Menu',...
         'Separator','on');
-    
+    %%% Merge *.bur files
+    h.Export_Files_To_CSV_Menu = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','<html><b>Export</b> to <i>*.csv</i>-file</html>',...
+        'Callback',@write_to_csv,...
+        'Tag','Export_Files_To_CSV_Menu',...
+        'Separator','off');
     %%% "Export" Menu    
     h.Export_Menu = uimenu(...
         'Parent',h.BurstBrowser,...
@@ -16897,3 +16903,26 @@ FontSize = 14; if ispc; FontSize = FontSize/1.25;end
 set(ax,'FontSize',FontSize);
 set(ax,'Color',[1,1,1]);
 hl.Position(2) = ax(1).Position(2)+ax(1).Position(4)+10;
+
+%%% Export the currently selected data to csv file
+function write_to_csv(obj,~)
+global BurstData
+h = guidata(obj);
+%%% loop through all files and write DataArray to csv
+for b = 1:numel(BurstData)
+    Progress((b-1)/numel(BurstData),h.Progress_Axes,h.Progress_Text,['Converting File to CSV (' num2str(b) ' of ' num2str(numel(BurstData)) ')']);
+    filename = [BurstData{b}.PathName filesep BurstData{b}.FileName(1:end-3) 'csv'];
+    %%% write to csv
+    delimiter = ',';
+    fid = fopen(filename,'w');
+    if fid ~= -1
+        fprintf(fid,'%s',BurstData{b}.NameArray{1});
+        for i = 2:numel(BurstData{b}.NameArray)
+            fprintf(fid,[delimiter '%s'],BurstData{b}.NameArray{i});
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(filename,BurstData{b}.DataCut,'Delimiter',delimiter,'-append');
+    end
+end
+Progress(1,h.Progress_Axes,h.Progress_Text);
