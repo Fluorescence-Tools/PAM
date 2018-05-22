@@ -15879,31 +15879,59 @@ h = guidata(obj);
 fields = fieldnames(BurstMeta.Plots.Fits);
 switch obj
     case h.ColorLine1
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine1);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine1);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine1); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine1 = c;
         n=1;
     case h.ColorLine2
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine2);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine2);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine2); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine2 = c;
         n=2;
     case h.ColorLine3
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine3);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine3);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine3); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine3 = c;
         n=3;
     case h.ColorLine4
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine4);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine4);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine4); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine4 = c;
         n=4;
     case h.ColorLine5
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine5); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine5 = c;
         n=5;
     case h.ColorLine6
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine6);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine6);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine6); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine6 = c;
         n=6;
     case h.MarkerColor_button
-        c = uisetcolor(UserValues.BurstBrowser.Display.MarkerColor);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.MarkerColor);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.MarkerColor); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.MarkerColor = c;
 end
 

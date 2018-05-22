@@ -4390,7 +4390,11 @@ end
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Color(Obj,~,mode)
-Color=uisetcolor;
+if ~isdeployed
+    Color=uisetcolor;
+elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+    Color = color_setter(Obj.UserData); % open dialog to input color
+end
 if numel(Color)
     Obj.UserData=Color;
 end

@@ -1,4 +1,7 @@
-function color = color_setter()
+function color = color_setter(old_color)
+    if nargin == 0
+        old_color = [0,0,1];
+    end
     %%% opens a GUI to input a color as RGB triplet
     d = dialog('Position',[300 300 300 100],'Name','Please specify a color');
 
@@ -9,7 +12,7 @@ function color = color_setter()
            'FontSize',12,...
            'String','Specify a color as RGB triplet in the range [0,1]:');
 
-    table = uitable('Parent',d,'Data',[0,0,1],'Position',[15,30,270,21],...
+    table = uitable('Parent',d,'Data',old_color,'Position',[15,30,270,21],...
         'RowName',[],'ColumnName',[],'ColumnEditable',true,...
         'CellEditCallback',@check_value,'ColumnWidth',{85,85,85},...
         'ColumnFormat',{'numeric','numeric','numeric'});

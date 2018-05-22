@@ -4826,7 +4826,7 @@ switch e.Key
             %%% Opens menu to choose color
             color=uisetcolor;
         elseif isdeployed %%% uisetcolor dialog does not work in compiled application
-            color = color_setter(); % open dialog to input color
+            color = color_setter(UserValues.PIE.Color(i,:)); % open dialog to input color
         end
          %%% Checks, if color was selected
         if numel(color)==3
@@ -5211,7 +5211,7 @@ if obj == h.MI.Channels_List
                             return;
                         end
                     elseif isdeployed %%% uisetcolor dialog does not work in compiled application
-                        NewColor = color_setter(); % open dialog to input color
+                        NewColor = color_setter(UserValues.Detector.Color(Sel,:)); % open dialog to input color
                     end
                     UserValues.Detector.Color(Sel,:) = NewColor;
                     %%% Update Color of Name also

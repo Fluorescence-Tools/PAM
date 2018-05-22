@@ -277,7 +277,11 @@ if strcmp(h.Look.SelectionType,'alt')
 end
 
 if any(mode == 1:11)
-    Color = uisetcolor;
+    if ~isdeployed
+        Color = uisetcolor;
+    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+        Color = color_setter(); % open dialog to input color
+    end
     if numel(Color)~=3
         return;
     end
@@ -341,7 +345,11 @@ switch mode
         h.Look_Table.ForegroundColor = Color;
         UserValues.Look.TableFore = Color;
     case 11 %%% Table1 and Table2
-        Color2 = uisetcolor;
+        if ~isdeployed
+            Color2 = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color2 = color_setter(); % open dialog to input color
+        end
         if numel(Color2)~=3
             return;
         end
