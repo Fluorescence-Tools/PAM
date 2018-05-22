@@ -4826,7 +4826,7 @@ switch e.Key
             %%% Opens menu to choose color
             color=uisetcolor;
         elseif isdeployed %%% uisetcolor dialog does not work in compiled application
-            color = color_setter(UserValues.PIE.Color(i,:)); % open dialog to input color
+            color = color_setter(mean(UserValues.PIE.Color(Sel,:),1)); % open dialog to input color
         end
          %%% Checks, if color was selected
         if numel(color)==3
