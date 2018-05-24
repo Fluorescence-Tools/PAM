@@ -31,7 +31,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Toolbar','figure',...
         'UserData',[],...
         'OuterPosition',[0.01 0.1 0.98 0.9],...
-        'CloseRequestFcn',@Close_FCSFit,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');
     %h.FCSFit.Visible='off';
     %%% Remove unneeded items from toolbar
@@ -67,6 +67,16 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Tag','LoadFit',...
         'Label','Load Fit Function',...
         'Callback',{@Load_Fit,1});
+    %%% Menu to load fit function
+    h.LoadSession = uimenu(h.File,...
+        'Tag','LoadSession',...
+        'Label','Load FCSFit Session',...
+        'Separator','on',...
+        'Callback',@LoadSave_Session);
+     h.SaveSession = uimenu(h.File,...
+        'Tag','SaveSession',...
+        'Label','Save FCSFit Session',...
+        'Callback',@LoadSave_Session);
     %%% Menu to merge loaded Cor files
     h.MergeCor = uimenu(h.File,...
         'Tag','MergeCor',...
@@ -127,7 +137,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'Units','normalized',...
         'ForegroundColor',Look.TableFore,...
         'BackgroundColor',[Look.Table1;Look.Table2],...
-        'FontSize',8,...
+        'FontSize',10,...
         'Position',[0 0 1 1],...
         'CellEditCallback',{@Update_Table,3},...
         'CellSelectionCallback',{@Update_Table,3});
@@ -236,7 +246,7 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Style','popupmenu',...
-        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset';'Fit N 3D * brightness'},...
+        'String',{'None';'Fit N 3D';'Fit minus offset';'Fit G(0)';'Fit N 2D'; 'Time';'Fit N 3D minus offset';'Fit N 3D * brightness';'Time minus offset'},...
         'Value',UserValues.FCSFit.NormalizationMethod,...
         'Callback',@Update_Plots,...
         'Position',[0.082 0.52 0.06 0.1]); 
@@ -380,7 +390,31 @@ if isempty(h.FCSFit) % Creates new figure, if none exists
         'HorizontalAlignment','left',...
         'Style','text',...
         'String','',...
-        'Position',[0.35 0.01 0.13 0.98]);    
+        'Position',[0.2 0.01 0.14 0.75]);
+    
+    %%% Textbox containing the name of the current fit model
+    h.Loaded_Model_Name = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Loaded_Model',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'Style','text',...
+        'String','',...
+        'Position',[0.35 0.62 0.24 0.36]);    
+    h.Loaded_Model_Description = uicontrol(...
+        'Parent',h.Setting_Panel,...
+        'Tag','Loaded_Model',...
+        'Units','normalized',...
+        'FontSize',12,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left',...
+        'Style','text',...
+        'String','',...
+        'Position',[0.35 0.01 0.65 0.61]);  
     
     %%% Text for export size
     uicontrol(...
@@ -659,26 +693,7 @@ else
     figure(h.FCSFit); % Gives focus to Pam figure  
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Function to close figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_FCSFit(Obj,~)
-delete(Obj);
-LSUserValues(1);
-clear global -regexp FCSData FCSMeta
-Phasor=findobj('Tag','Phasor');
-Pam=findobj('Tag','Pam');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-PDAFit = findobj('Tag','GlobalPDAFit');
-if isempty(Phasor) && isempty(Pam) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF) && isempty(PDAFit)
-    clear global -regexp UserValues
-end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function to load .cor files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -870,7 +885,7 @@ switch Type
                 E = E.EGR;
             end
             Data.E = E;
-            his = histcounts(E,x);
+            his = histcounts(E,x)';
             Data.Cor_Average = his./sum(his)./min(diff(x));
             error = sqrt(his)./sum(his)./min(diff(x));
             Data.Cor_SEM = error; Data.Cor_SEM(Data.Cor_SEM == 0) = 1;
@@ -891,7 +906,7 @@ switch Type
             FCSMeta.Plots{end+1,1} = errorbar(...
                 FCSMeta.Data{end,1},...
                 FCSMeta.Data{end,2},...
-                error,...
+                FCSMeta.Data{end,3},...
                 'Parent',h.FCS_Axes);
             FCSMeta.Plots{end,2} = line(...
                 'Parent',h.FCS_Axes,...
@@ -1041,7 +1056,7 @@ save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_S
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Fit(~,~,mode)
 global FCSMeta UserValues PathToApp
-
+h = guidata(findobj('Tag','FCSFit'));
 FileName=[];
 FilterIndex = 1;
 if mode
@@ -1078,15 +1093,24 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     Text=textscan(fid,'%s', 'delimiter', '\n','whitespace', '');
     Text=Text{1};
     
+    %%% Finds line, at which model description starts
+    Desc_Start = find(~cellfun(@isempty,strfind(Text,'-MODEL DESCRIPTION-')),1);
     %%% Finds line, at which parameter definition starts
     Param_Start=find(~cellfun(@isempty,strfind(Text,'-PARAMETER DEFINITION-')),1);
     %%% Finds line, at which function definition starts
     Fun_Start=find(~cellfun(@isempty,strfind(Text,'-FIT FUNCTION-')),1);
     B_Start=find(~cellfun(@isempty,strfind(Text,'-BRIGHTNESS DEFINITION-')),1);
+    %%% Read model description
+    if Param_Start - Desc_Start > 1 %%% at least one line of description
+        description = Text(Desc_Start+1:Param_Start-1);
+    else
+        description = {};
+    end
     %%% Defines the number of parameters
     NParams=B_Start-Param_Start-1;
     FCSMeta.Model=[];
     FCSMeta.Model.Name=FileName;
+    FCSMeta.Model.Description = description;
     FCSMeta.Model.Brightness=Text{B_Start+1};
     %%% Concaternates the function string
     FCSMeta.Model.Function=[];
@@ -1108,8 +1132,10 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
         Param_Pos=strfind(Text{i+Param_Start},' ');
         FCSMeta.Model.Params{i}=Text{i+Param_Start}((Param_Pos(1)+1):(Param_Pos(2)-1));
         Start = strfind(Text{i+Param_Start},'=');
-        Stop = strfind(Text{i+Param_Start},';');
-
+        %Stop = strfind(Text{i+Param_Start},';');
+        % Filter more specifically (this enables the use of html greek
+        % letters like &mu; etc.)
+        [~, Stop] = regexp(Text{i+Param_Start},'(\d+;|Inf;)');
         FCSMeta.Model.Value(i) = str2double(Text{i+Param_Start}(Start(1)+1:Stop(1)-1));
         FCSMeta.Model.LowerBoundaries(i) = str2double(Text{i+Param_Start}(Start(2)+1:Stop(2)-1));   
         FCSMeta.Model.UpperBoundaries(i) = str2double(Text{i+Param_Start}(Start(3)+1:Stop(3)-1));
@@ -1123,6 +1149,12 @@ if ~isempty(FileName) && ~(FilterIndex == 0)
     
     %%% Updates table to new model
     Update_Table([],[],0);
+    %%% Updates model text
+    [~,name,~] = fileparts(FCSMeta.Model.Name);
+    name_text = {'Loaded Fit Model:';name;};
+    h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
+    h.Loaded_Model_Description.String = sprintf('%s\n',description{:});
+    h.Loaded_Model_Description.TooltipString = sprintf('%s\n',description{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1216,13 +1248,10 @@ switch mode
         Rows=cell(numel(FCSData.Data)+3,1);
         tmp = FCSData.FileName;
 
-        for i = 1:numel(tmp)
-            tmp{i} = ['<HTML><b>' tmp{i} '</b>'];
-        end
         Rows(1:numel(tmp))=deal(tmp);
-        Rows{end-2}='<HTML><b>ALL</b>';
-        Rows{end-1}='<HTML><b>Lower bound</b>';
-        Rows{end}='<HTML><b>Upper bound</b>';
+        Rows{end-2}='ALL';
+        Rows{end-1}='Lower bound';
+        Rows{end}='Upper bound';
         %h.Fit_Table.RowName=Rows;
         
         Data=cell(numel(Rows),size(h.Fit_Table.Data,2)-1);
@@ -1279,21 +1308,23 @@ switch mode
 
         if e.Indices(1)==size(h.Fit_Table.Data,1)-2
             %% ALL row wase used => Applies to all files
-            h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
-            if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
-                %% Value was changed => Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
-            elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
-                %% Value was fixed => Uncheck global
-                h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
-            elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && NewData==1
-                %% Global was change
-                %%% Apply value to all files
-                h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
-                %%% Apply value to global variables
-                FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
-                %%% Unfixes all files to prohibit fixed and global
-                h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
+            if e.Indices(2) > 1 %%% don't execute for name column
+                h.Fit_Table.Data(1:end-2,e.Indices(2))=deal({NewData});
+                if mod(e.Indices(2)-5,3)==0 && e.Indices(2)>=5
+                    %% Value was changed => Apply value to global variables
+                    FCSMeta.Params((e.Indices(2)-2)/3,:)=str2double(NewData);
+                elseif mod(e.Indices(2)-6,3)==0 && e.Indices(2)>=6 && NewData==1
+                    %% Value was fixed => Uncheck global
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)+1)=deal({false});
+                elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && NewData==1
+                    %% Global was change
+                    %%% Apply value to all files
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)-2)=h.Fit_Table.Data(e.Indices(1),e.Indices(2)-2);
+                    %%% Apply value to global variables
+                    FCSMeta.Params((e.Indices(2)-4)/3,:)=str2double(h.Fit_Table.Data{e.Indices(1),e.Indices(2)-2});
+                    %%% Unfixes all files to prohibit fixed and global
+                    h.Fit_Table.Data(1:end-2,e.Indices(2)-1)=deal({false});
+                end
             end
         elseif mod(e.Indices(2)-7,3)==0 && e.Indices(2)>=7 && e.Indices(1)<size(h.Fit_Table.Data,1)-1
             %% Global was changed => Applies to all files
@@ -1430,9 +1461,13 @@ switch mode
         end
         switch e.Indices(2)
             case 1 %%% Changes file color
-                NewColor = uisetcolor;
-                if numel(NewColor) == 1%NewColor == 0
-                    return;
+                if ~isdeployed
+                    NewColor = uisetcolor;
+                    if size(NewColor) == 1
+                        return;
+                    end
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    NewColor = color_setter(); % open dialog to input color
                 end
                 for i=File
                     h.Style_Table.Data{i,1} = num2str(NewColor);
@@ -1506,7 +1541,7 @@ switch mode
                 NewName = inputdlg('Enter new filename');
                 if ~isempty(NewName)
                     h.Style_Table.RowName{File} = NewName{1};
-                    h.Fit_Table.RowName{File} = NewName{1};
+                    h.Fit_Table.Data{File,1} = NewName{1};
                     FCSData.FileName{File} = NewName{1};
                     Update_Plots;
                 end                  
@@ -1646,16 +1681,20 @@ for i=1:size(FCSMeta.Plots,1)
                 if isnan(B) || B==0 || isinf(B)
                     B=1;
                 end
-            case 6
+            case {6,9}
                 %% Normalizes to timepoint closest to set value
                 h.Norm_Time.Visible='on';
                 T=find(FCSMeta.Data{i,1}>=str2double(h.Norm_Time.String),1,'first');
                 B=FCSMeta.Data{i,2}(T);
+                if  Normalization_Method == 9
+                    P = FCSMeta.Params(:,i);
+                    B = B - P(end);
+                end
             case 8
                 
         end      
         %% Updates data plot y values
-        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,1}.YData=FCSMeta.Data{i,2}/B; 
             FCSMeta.Plots{i,4}.YData=FCSMeta.Data{i,2}/B;
         else % substract offset
@@ -1672,7 +1711,7 @@ for i=1:size(FCSMeta.Plots,1)
         OUT = feval(FCSMeta.Model.Function,P,x);
         OUT=real(OUT);
         FCSMeta.Plots{i,2}.XData=x;
-        if Normalization_Method ~= 7 && Normalization_Method ~= 3 
+        if Normalization_Method ~= 7 && Normalization_Method ~= 3 && Normalization_Method ~= 9 
             FCSMeta.Plots{i,2}.YData=OUT/B;
         else % substract offset
             FCSMeta.Plots{i,2}.YData=(OUT-P(end))/B;
@@ -1694,13 +1733,25 @@ for i=1:size(FCSMeta.Plots,1)
         XMin=find(FCSMeta.Data{i,1}>=str2double(h.Fit_Min.String),1,'first');
         XMax=find(FCSMeta.Data{i,1}<=str2double(h.Fit_Max.String),1,'last');
         if Normalization_Method ~= 7 && Normalization_Method ~= 3
-            %max(data+error bar)
-            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-            %min(data-error bar)
-            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            if Plot_Errorbars
+                %max(data+error bar)
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                %min(data-error bar)
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            else
+                %max(data)
+                YMax=max([YMax, max(FCSMeta.Data{i,2}(XMin:XMax))/B]);
+                %min(data)
+                YMin=min([YMin, min(FCSMeta.Data{i,2}(XMin:XMax))/B]);
+            end
         else % substract offset
-            YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
-            YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            if Plot_Errorbars
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)+FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)-FCSMeta.Data{i,3}(XMin:XMax)))/B]);
+            else
+                YMax=max([YMax, max((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
+                YMin=min([YMin, min((FCSMeta.Data{i,2}(XMin:XMax)-P(end)))/B]);
+            end
         end
         RMax=max([RMax, max(Residuals(XMin:XMax))]);
         RMin=min([RMin, min(Residuals(XMin:XMax))]);        
@@ -1715,12 +1766,22 @@ for i=1:size(FCSMeta.Plots,1)
         %% Updates data errorbars/ turns them off
         if Plot_Errorbars
             if ~strcmp(FCSMeta.DataType,'FRET')
-                FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
-                FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+                if isfield(FCSMeta.Plots{i,1}, 'LNegativeDelta')
+                    FCSMeta.Plots{i,1}.YNegativeDelta=FCSMeta.Data{i,3}/B;
+                    FCSMeta.Plots{i,1}.YPositiveDelta=FCSMeta.Data{i,3}/B;
+                else
+                    FCSMeta.Plots{i,1}.LData=FCSMeta.Data{i,3}/B;
+                    FCSMeta.Plots{i,1}.UData=FCSMeta.Data{i,3}/B;
+                end
             else
                 error = FCSMeta.Data{i,3}; error(FCSMeta.Data{i,2}==0) = 0;
-                FCSMeta.Plots{i,1}.LData=error/B;
-                FCSMeta.Plots{i,1}.UData=error/B;
+                if isfield(FCSMeta.Plots{i,1}, 'LNegativeDelta')
+                    FCSMeta.Plots{i,1}.YNegativeDelta=error/B;
+                    FCSMeta.Plots{i,1}.YPositiveDelta=error/B;
+                else
+                    FCSMeta.Plots{i,1}.LData=error/B;
+                    FCSMeta.Plots{i,1}.UData=error/B;
+                end
             end
             FCSMeta.Plots{i,1}.Visible = 'on';
             FCSMeta.Plots{i,4}.Visible = 'off';
@@ -1878,25 +1939,6 @@ switch mode
             end
         end
             
-        
-        %% Sets axes parameters
-        if h.Export_Residuals.Value
-            linkaxes([H.FCS,H.Residuals],'x');
-        end
-        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
-        H.FCS.YLim=h.FCS_Axes.YLim;
-        switch FCSMeta.DataType
-            case {'FCS','FCS averaged'}
-                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
-                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
-            case 'FRET'
-                H.FCS.XLabel.String = 'FRET efficiency';
-                H.FCS.YLabel.String = 'PDF'; 
-        end
-        if h.Export_Residuals.Value
-            H.Residuals.YLim=h.Residuals_Axes.YLim;
-            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
-        end
         %% Copies objects to new figure
         Active = find(cell2mat(h.Fit_Table.Data(1:end-3,2)));
         if h.Fit_Errorbars.Value
@@ -1927,6 +1969,24 @@ switch mode
         end
         if h.Export_Residuals.Value
             H.Residuals_Plots=copyobj(h.Residuals_Axes.Children(numel(h.Residuals_Axes.Children)+1-Active),H.Residuals);      
+        end
+        %% Sets axes parameters
+        if h.Export_Residuals.Value
+            linkaxes([H.FCS,H.Residuals],'x');
+        end
+        H.FCS.XLim=[h.FCS_Axes.XLim(1),h.FCS_Axes.XLim(2)];
+        H.FCS.YLim=h.FCS_Axes.YLim;
+        switch FCSMeta.DataType
+            case {'FCS','FCS averaged'}
+                H.FCS.XLabel.String = 'time lag {\it\tau{}} [s]';
+                H.FCS.YLabel.String = 'G({\it\tau{}})'; 
+            case 'FRET'
+                H.FCS.XLabel.String = 'FRET efficiency';
+                H.FCS.YLabel.String = 'PDF'; 
+        end
+        if h.Export_Residuals.Value
+            H.Residuals.YLim=h.Residuals_Axes.YLim;
+            H.Residuals.YLabel.String = {'weighted'; 'residuals'};
         end
         %% Toggles box and grid
         if h.Export_Grid.Value
@@ -1969,19 +2029,20 @@ switch mode
         FCS.Model=FCSMeta.Model.Function;
         FCS.FileName=FCSData.FileName(Active)';
         FCS.Params=FCSMeta.Params(:,Active)';        
-        FCS.Time=FCSMeta.Data(Active,1);
-        FCS.Data=FCSMeta.Data(Active,2);
-        FCS.Error=FCSMeta.Data(Active,3);
-        FCS.Fit=cell(numel(FCS.Time),1); 
+        time=FCSMeta.Data(Active,1);
+        data=FCSMeta.Data(Active,2);
+        error=FCSMeta.Data(Active,3);
+        %Fit=cell(numel(FCS.Time),1); 
+        FCS.Graphs=cell(numel(time)+1,1);
+        FCS.Graphs{1}={'time', 'data', 'error', 'fit', 'res'};
         %%% Calculates y data for fit
-        for i=1:numel(FCS.Time)
+        for i=1:numel(time)
             P=FCS.Params(i,:);
-            x=FCS.Time{i};
             %eval(FCSMeta.Model.Function);
-            OUT = feval(FCSMeta.Model.Function,P,x);
+            OUT = feval(FCSMeta.Model.Function,P,time{i});
             OUT=real(OUT);
-            FCS.Fit{i}=OUT;
-            FCS.Residuals{i,1}=(FCS.Data{i}-FCS.Fit{i})./FCS.Error{i};
+            res=(data{i}-OUT)./error{i};
+            FCS.Graphs{i+1} = [time{i}, data{i}, error{i}, OUT, res];
         end
         %%% Copies data to workspace
         assignin('base','FCS',FCS);
@@ -2327,15 +2388,165 @@ for i=1:numel(FCSData.Data)
     %%% Update Plots
     FCSMeta.Plots{i,1}.XData = FCSMeta.Data{i,1};
     FCSMeta.Plots{i,1}.YData = FCSMeta.Data{i,2};
-    FCSMeta.Plots{i,1}.LData = error;
-    FCSMeta.Plots{i,1}.UData = error;
-
+    if isfield(FCSMeta.Plots{i,1},'YNegativeDelta')
+        FCSMeta.Plots{i,1}.YNegativeDelta = error;
+        FCSMeta.Plots{i,1}.YPOsitiveDelta = error;
+    else
+        FCSMeta.Plots{i,1}.LData = error;
+        FCSMeta.Plots{i,1}.UData = error;
+    end
+    
     FCSMeta.Plots{i,4}.XData = FCSMeta.Data{i,1}-bin/2;
     FCSMeta.Plots{i,4}.YData = FCSMeta.Data{i,2};       
 end
 Update_Plots;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions to load and save the session %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function LoadSave_Session(obj,e)
+global UserValues FCSData FCSMeta
+h = guidata(obj);
+switch obj
+    case h.LoadSession
+        %%% get file
+        [FileName,PathName] = uigetfile({'*.fcs','FCSFit Session (*.fcs)'},'Load FCSFit Session',UserValues.File.FCSPath,'MultiSelect','off');
+        if FileName == 0
+            return;
+        end
+        %%% Saves pathname to uservalues
+        UserValues.File.FCSPath=PathName;
+        LSUserValues(1);
+        %%% Deletes loaded data
+        FCSData=[];
+        FCSData.Data=[];
+        FCSData.FileName=[];
+        cellfun(@delete,FCSMeta.Plots);
+        FCSMeta.Data=[];
+        FCSMeta.Params=[];
+        FCSMeta.Plots=cell(0);
+        h.Fit_Table.Data(1:end-3,:)=[];
+        h.Style_Table.RowName(1:end-1,:)=[];
+        h.Style_Table.Data(1:end-1,:)=[];
 
+        %%% load data
+        data = load(fullfile(PathName,FileName),'-mat');
+        %%% update global variables
+        FCSData = data.FCSData;
+        FCSMeta = data.FCSMeta;
+        %%% update UserValues settings, with exception of export settings
+        UserValues.FCSFit.Fit_Min = data.Settings.Fit_Min;
+        UserValues.FCSFit.Fit_Max = data.Settings.Fit_Max;
+        UserValues.FCSFit.Plot_Errorbars = data.Settings.Plot_Errorbars;
+        UserValues.FCSFit.Fit_Tolerance = data.Settings.Fit_Tolerance;
+        UserValues.FCSFit.Use_Weights = data.Settings.Use_Weights;
+        UserValues.FCSFit.Max_Iterations = data.Settings.Max_Iterations;
+        UserValues.FCSFit.NormalizationMethod = data.Settings.NormalizationMethod;
+        UserValues.FCSFit.Hide_Legend = data.Settings.Hide_Legend;
+        UserValues.FCSFit.Conf_Interval = data.Settings.Conf_Interval;
+        UserValues.FCSFit.FRETbin = data.Settings.FRETbin;
+        UserValues.FCSFit.PlotStyles = data.Settings.PlotStyles;
+        UserValues.FCSFit.PlotStyleAll = data.Settings.PlotStyleAll;
+        UserValues.File.FCS_Standard = FCSMeta.Model.Name;
+        LSUserValues(1);
+        %%% update GUI according to loaded settings
+        h.Fit_Min.String = num2str(UserValues.FCSFit.Fit_Min);
+        h.Fit_Max.String = num2str(UserValues.FCSFit.Fit_Max);
+        h.Fit_Errorbars.Value = UserValues.FCSFit.Plot_Errorbars;
+        h.Tolerance.String = num2str(UserValues.FCSFit.Fit_Tolerance);
+        h.Fit_Weights.Value = UserValues.FCSFit.Use_Weights;
+        h.Iterations.String = num2str(UserValues.FCSFit.Max_Iterations);
+        h.Normalize.Value = UserValues.FCSFit.NormalizationMethod;
+        h.Conf_Interval.Value = UserValues.FCSFit.Conf_Interval;
+        h.Hide_Legend.Value = UserValues.FCSFit.Hide_Legend;
+        h.FRETbin.String = num2str(UserValues.FCSFit.FRETbin);
+        %%% update visuals
+        Create_Plots([],[]);
+        %%% Updates table and plot data and style to new size
+        Update_Style([],[],0);
+        Update_Style([],[],1);
+        Update_Table([],[],0);
+        %%% fill in active, fixed and global state
+        if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
+            h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
+            h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
+            Update_Plots;
+        end
+        %%% Updates model text
+        [~,name,~] = fileparts(FCSMeta.Model.Name);
+        name_text = {'Loaded Fit Model:';name;};
+        h.Loaded_Model_Name.String = sprintf('%s\n',name_text{:});
+        h.Loaded_Model_Description.String = sprintf('%s\n',FCSMeta.Model.Description{:});
+        h.Loaded_Model_Description.TooltipString = sprintf('%s\n',FCSMeta.Model.Description{:});
+    case h.SaveSession
+        %%% get filename
+        [FileName, PathName] = uiputfile({'*.fcs','FCSFit Session (*.fcs)'},'Save Session as ...',fullfile(UserValues.File.FCSPath,[FCSData.FileName{1},'.fcs']));
+        %%% save all data
+        data.FCSMeta = FCSMeta;
+        data.FCSMeta.Plots = cell(0);
+        data.FCSData = FCSData;
+        data.Settings = UserValues.FCSFit;
+        data.FixState = h.Fit_Table.Data(1:end-3,6:3:end);
+        data.GlobalState = h.Fit_Table.Data(1:end-3,7:3:end);
+        data.ActiveState = h.Fit_Table.Data(1:end-3,2);
+        save(fullfile(PathName,FileName),'-struct','data');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Functions to create basic plots on data load %%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Create_Plots(~,~)
+global UserValues FCSMeta FCSData
+h = guidata(findobj('Tag','FCSFit'));
+switch FCSMeta.DataType
+    case {'FCS averaged','FCS individual'} %%% Correlation files
+        for i=1:numel(FCSData.FileName)
+            %%% Creates new plots
+            FCSMeta.Plots{end+1,1} = errorbar(...
+                FCSMeta.Data{i,1},...
+                FCSMeta.Data{i,2},...
+                FCSMeta.Data{i,3},...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Plots{end,2} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
+            FCSMeta.Plots{end,3} = line(...
+                'Parent',h.Residuals_Axes,...
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
+            FCSMeta.Plots{end,4} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{i,1},...
+                'YData',FCSMeta.Data{i,2});
+        end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
+    case 'FRET'   %% 2color FRET data from BurstBrowser
+        for i=1:numel(FCSData.FileName)
+            %%% Creates new plots
+            FCSMeta.Plots{end+1,1} = errorbar(...
+                FCSMeta.Data{i,1},...
+                FCSMeta.Data{i,2},...
+                FCSMeta.Data{i,3},...
+                'Parent',h.FCS_Axes);
+            FCSMeta.Plots{end,2} = line(...
+                'Parent',h.FCS_Axes,...
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
+            FCSMeta.Plots{end,3} = line(...
+                'Parent',h.Residuals_Axes,...
+                'XData',FCSMeta.Data{i,1},...
+                'YData',zeros(numel(FCSMeta.Data{i,1}),1));
+            FCSMeta.Plots{end,4} = stairs(...
+                FCSMeta.Data{i,1}-UserValues.FCSFit.FRETbin/2,...
+                FCSMeta.Data{i,2},...
+                'Parent',h.FCS_Axes);            
+        end
+        %%% change the gui
+        SwitchGUI(h,'FRET');
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions for various small callbacks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

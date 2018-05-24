@@ -70,6 +70,9 @@ while 1
     else
         EvalName = TagIdent;
     end
+    if strcmp(EvalName(1),'$');
+        EvalName = EvalName(2:end);
+    end
     %fprintf(1,'\n   %-40s', EvalName);
     % check Typ of Header
     switch TagTyp
@@ -124,7 +127,7 @@ while 1
                     eval([TagIdent '(:,end:numel(TagString)) = '' '''])
                 end
             end
-            eval([EvalName '=TagString;']);
+            try;eval([EvalName '=TagString;']);end;
         case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
@@ -151,10 +154,14 @@ end
 %%% Assign values from header to output variables
 Header.SyncRate = 1/MeasDesc_GlobalResolution;
 Header.Resolution = MeasDesc_Resolution./1E-12; % give in picoseconds
-Header.MeasurementTime = MeasDesc_AcquisitionTime;
+Header.MeasurementTime = MeasDesc_AcquisitionTime; % in milliseconds
 nRecords = TTResult_NumberOfRecords;
-%%% check for file type
+%%% empty assignments for image-related fields
+Header.FrameStart = [];
+Header.LineStart = [];
+Header.LineStop = [];
 
+%%% check for file type
 switch TTResultFormat_TTTRRecType
     case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3}
         if TTResultFormat_TTTRRecType == rtHydraHarpT3
@@ -173,9 +180,7 @@ switch TTResultFormat_TTTRRecType
             disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');
             return;
         end
-        
-        %Header.Measurement_SubMode = Measurement_SubMode;
-        
+
         %{
         Measurement_Submode
         -------------------
@@ -189,13 +194,20 @@ switch TTResultFormat_TTTRRecType
         it is not, so we use the presence of linestart info etc. to check
         whether imaging was done
         %}
+        Header.Measurement_SubMode = Measurement_SubMode;
 
-        Header.PixX = 0;
-        Header.PixY = 0;
-        Header.bidir = 0;
-        Header.FrameStartMarker = 0;
-        Header.LineMarker = 0;
-        Header.NoF = 1;
+        Header.PixX = [];
+        Header.PixY = [];
+        Header.bidir = [];
+        Header.FrameStartMarker = [];
+        Header.LineStartMarker = [];
+        Header.LineStopMarker = [];
+        Header.FrameStart = [];
+        Header.LineStart = [];
+        Header.LineStop = [];
+        Header.Frames = [];
+        Header.PixResol = [];
+        Header.SinCorrection = [];
         
         if exist ('ImgHdr_PixX', 'var') % Number of pixels in the x direction
             Header.PixX = ImgHdr_PixX; end
@@ -203,12 +215,28 @@ switch TTResultFormat_TTTRRecType
             Header.PixY =  ImgHdr_PixY; end
         if exist ('ImgHdr_BiDirect', 'var') % Bidirectional image
             Header.bidir = ImgHdr_BiDirect; end
-        if exist ('ImgHdr_Frame', 'var') % frame bit. should be 4.
+            if Header.bidir
+                msgbox('Bidirectional data cannot be loaded at this point!'); return
+            end
+        if exist ('ImgHdr_Frame', 'var') % frame bit in 6-bit CH entry
             Header.FrameStartMarker = ImgHdr_Frame; end
-        if exist ('ImgHdr_LineStart', 'var')
-            Header.LineMarker = ImgHdr_LineStart;  end
+        if exist ('ImgHdr_LineStart', 'var') % linestart bit in 6-bit CH entry
+            Header.LineStartMarker = ImgHdr_LineStart;  end
+        if exist ('ImgHdr_LineStop', 'var') % linestop bit in 6-bit CH entry
+            Header.LineStopMarker = ImgHdr_LineStop;  end
         if exist ('NumberOfFrames', 'var')
-            Header.NoF = NumberOfFrames; end
+            Header.Frames = NumberOfFrames; end
+        if exist ('ImgHdr_PixResol', 'var')
+            Header.PixResol = ImgHdr_PixResol; end
+        if exist ('ImgHdr_SinCorrection', 'var')
+            Header.SinCorrection = ImgHdr_SinCorrection; end
+        
+        % marker bit locations, when acquired by Leuven homebuilt LSM
+        if strcmp(CreatorSW_Name,'HydraHarp AcqUI')
+            % Select the custom Leuven_PTU read-in routine and custom datatype!
+            Header.LineStartMarker = 2; %linestarts and -stops are both in here!
+            Header.FrameStartMarker = 1; %framestarts and -stops are both in here!
+        end
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %
@@ -274,15 +302,21 @@ switch TTResultFormat_TTTRRecType
         end
         OverflowCorrection = T3WRAPAROUND.*cumsum(OverflowCorrection);
         
-        %Calculates the frame and line marker indices from the total timetag
+        % all timetags
         TimeTag = double(nsync)'+OverflowCorrection;
-        FrameMarkerIndices = find(special & (channel == 1));
-        % number of frames
-        Header.NoF= floor(size(FrameMarkerIndices,1)/2);
-        Header.FrameIndices = TimeTag(FrameMarkerIndices);
-        Header.LineIndices = TimeTag(special & (channel == 2));
         
-        % calculate actual timetag of photons
+        % imaging marker timetags
+        if ~isempty(Header.FrameStartMarker)
+            Header.FrameStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.FrameStartMarker));
+        end
+        if ~isempty(Header.LineStartMarker)
+            Header.LineStart = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStartMarker));
+        end
+        if ~isempty(Header.LineStopMarker)
+            Header.LineStop = TimeTag(special == 1 & channel < 15 & bitget(channel,Header.LineStopMarker));
+        end
+        
+        % photon timetags
         ValidIndices = ( (special == 0) & (channel >=0) & (channel<=15) );
         TimeTag = double(nsync(ValidIndices))' + OverflowCorrection(ValidIndices);
         channel = channel(ValidIndices);

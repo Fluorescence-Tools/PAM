@@ -14,6 +14,9 @@ ImageFolderPath = [PathToApp filesep 'images' filesep 'Launcher' filesep];
 if isempty(hfig)
     %%% set fontsize
     fontSize = 45;
+    if ispc
+        fontSize = fontSize/1.25;
+    end
     %%% set opacity of images
     opacity = 0.4;
     %%% set color of text

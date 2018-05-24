@@ -33,7 +33,7 @@ s = SplashScreen( 'Splashscreen', [PathToApp filesep 'images' filesep 'PAM' file
     'ProgressPosition', 5, ...
     'ProgressRatio', 0 );
 s.addText( 30, 50, 'PAM - PIE Analysis with MATLAB', 'FontSize', 30, 'Color', [1 1 1] );
-s.addText( 30, 80, 'v1.0', 'FontSize', 20, 'Color', [1 1 1] );
+s.addText( 30, 80, 'v1.2', 'FontSize', 20, 'Color', [1 1 1] );
 s.addText( 375, 395, 'Loading...', 'FontSize', 25, 'Color', 'white' );
 
 %%% Disables negative values for log plot warning
@@ -61,7 +61,7 @@ h.Pam = figure(...
     'Toolbar','figure',...
     'UserData',[],...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_Pam,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','off');
 %h.Pam.Visible='off';
 
@@ -1705,7 +1705,7 @@ h.MI.Phasor_TAC = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.91 0.93 0.08 0.025]);
 %%% Particle Detection Selection
-h.MI.Phasor_Particles = uicontrol(...
+h.MI.Phasor_FramePopup = uicontrol(...
     'Parent',h.MI.Phasor_Panel,...
     'Tag','MI_Phasor_Particles',...
     'Style','popupmenu',...
@@ -1716,8 +1716,8 @@ h.MI.Phasor_Particles = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.885 0.30 0.025]);
 if ismac
-    h.MI.Phasor_Particles.ForegroundColor = [0 0 0];
-    h.MI.Phasor_Particles.BackgroundColor = [1 1 1];
+    h.MI.Phasor_FramePopup.ForegroundColor = [0 0 0];
+    h.MI.Phasor_FramePopup.BackgroundColor = [1 1 1];
 end
 
 %%% Text
@@ -1902,9 +1902,35 @@ h.MI.Calib_Single_Text = uicontrol(...
     'Units','normalized',...
     'FontSize',12,...
     'String','1',...
+    'HorizontalAlignment','left',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.77 0.97 0.05 0.025]);
+%%% TCSPC deadtime input field
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MI.Calib_Panel,...
+    'Tag','MI_Calib_Single_Text',...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','TCSPC Deadtime [ns]:',...
+    'TooltipString',sprintf('Specifiy the deadtime of the TCSPC electronics in ns.\nThe algorithm will ignore macrotime intervals that fall within or overlap with the deadtime.'),...
+    'HorizontalAlignment','center',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.73 0.93 0.2 0.025]);
+%%% Edit box for TCSPC deadtime
+h.MI.TCSPC_DeadTime_Edit = uicontrol(...
+    'Parent',h.MI.Calib_Panel,...
+    'Tag','MI_TCSPC_DeadTime_Edit',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'String','100',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.93 0.93 0.05 0.025]);
+
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MI.Calib_Panel,...
@@ -2048,6 +2074,10 @@ h.Trace.Trace_Export_Menu = uimenu(...
     'Parent',h.Trace.Menu,...
     'Label','Export',...
     'Callback',{@Update_Display,2});
+h.Trace.Trace_ExportFRETTrace_Menu = uimenu(...
+    'Parent',h.Trace.Menu,...
+    'Label','Extract FRET efficiency trace',...
+    'Callback',{@Update_Display,2});
 h.Trace.Axes.UIContextMenu = h.Trace.Menu;
 
 if ~UserValues.Settings.Pam.Use_TimeTrace
@@ -2099,12 +2129,17 @@ h.PCH.PCH_2D_Menu = uimenu(...
     'Callback',{@Update_Display,10});
 h.PCH.PCH_Export_Menu = uimenu(...
     'Parent',h.PCH.Menu,...
-    'Label','Export',...
+    'Label','Export to figure',...
+    'Callback',{@Update_Display,10});
+h.PCH.PCH_Export_CSV_Menu = uimenu(...
+    'Parent',h.PCH.Menu,...
+    'Label','Export to text file',...
     'Callback',{@Update_Display,10});
 h.PCH.Axes.UIContextMenu = h.PCH.Menu;
 h.PCH.Panel.UIContextMenu = h.PCH.Menu;
 if UserValues.Settings.Pam.PCH_2D
     h.PCH.PCH_2D_Menu.Checked = 'on';
+    h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
 end
 if ~UserValues.Settings.Pam.Use_PCH
     h.PCH.Tab.Parent = [];
@@ -2134,7 +2169,7 @@ h.Image.Axes = axes(...
 h.Plots.Image=imagesc(0);
 h.Image.Axes.XTick=[]; h.Image.Axes.YTick=[];
 h.Image.Colorbar=colorbar(h.Image.Axes);
-h.Image.Colorbar.YLabel.String = 'Counts';
+h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
 h.Image.Colorbar.YLabel.ButtonDownFcn = @Misc;
 colormap(jet);
 h.Image.Colorbar.Color=Look.Fore;
@@ -2197,7 +2232,7 @@ h.Text{end+1} = uicontrol(...
     'Units','normalized',...
     'FontSize',12,...
     'HorizontalAlignment','left',...
-    'String','Binning size for trace [ms]:',...
+    'String','Bin size for trace [ms]:',...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.92 0.34 0.06]);
@@ -2213,6 +2248,28 @@ h.MT.Binning = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.28 0.92 0.1 0.06]);
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'String', 'Bin size for PCH [ms]:',...
+    'Position',[0.6 0.92 0.25 0.08]);
+%%% Selects, how many microtime tabs to generate
+h.MT.Binning_PCH = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'String', '1',...
+    'Callback',@Calculate_Settings,...
+    'Position',[0.85 0.92 0.05 0.08]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2389,7 +2446,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String', 'Microtime tabs:',...
-    'Position',[0.6 0.72 0.15 0.08]);
+    'Position',[0.6 0.72 0.25 0.08]);
 %%% Selects, how many microtime tabs to generate
 h.MI.NTabs = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2400,7 +2457,7 @@ h.MI.NTabs = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String', '1',...
     'Callback',{@Update_Detector_Channels, [0,1]},...
-    'Position',[0.75 0.72 0.05 0.08]);
+    'Position',[0.85 0.72 0.05 0.08]);
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent',h.MT.Settings_Panel,...
@@ -2411,7 +2468,7 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'String', 'Plots per tab:',...
-    'Position',[0.6 0.62 0.15 0.08]);
+    'Position',[0.6 0.62 0.25 0.08]);
 %%% Selects, how many plots per microtime tabs to generate
 h.MI.NPlots = uicontrol(...
     'Parent', h.MT.Settings_Panel,...
@@ -2422,7 +2479,7 @@ h.MI.NPlots = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'String', '1',...
     'Callback',{@Update_Detector_Channels, [0,1]},...
-    'Position',[0.75 0.62 0.05 0.08]);
+    'Position',[0.85 0.62 0.05 0.08]);
 %% Various tabs (PIE Channels, general information, settings etc.) %%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Macrotime tabs container
@@ -2794,6 +2851,7 @@ h.Export.List = uicontrol(...
     'BackgroundColor', Look.List,...
     'ForegroundColor', Look.ListFore,...
     'KeyPressFcn',{@Export_Database,0},...
+    'Callback',{@Export_Database,0},...
     'Tooltipstring', ['<html>'...
     'List of file groups in export database <br>'],...
     'Position',[0.01 0.01 0.6 0.98]);
@@ -3153,7 +3211,7 @@ h.Profiles.SaveProfile_Button = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String','Save profile',...
+    'String','Backup profile',...
     'UIContextMenu',h.Profiles.SaveProfile_Menu,...
     'Callback',@SaveLoadProfile,...
     'Position',[0.32 0.92 0.21 0.07],...
@@ -3167,7 +3225,7 @@ h.Profiles.LoadProfile_Button = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'String','Load profile',...
+    'String','Restore profile',...
     'Callback',@SaveLoadProfile,...
     'Position',[0.32 0.84 0.21 0.07],...
     'Tooltipstring', 'Copies "TCSPC filename".pro Pam profile to the profiles folder and selects it as the current profile');
@@ -3290,7 +3348,9 @@ PamMeta.Trace=repmat({0:0.01:FileInfo.MeasurementTime},numel(UserValues.PIE.Name
 PamMeta.Image=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.Lifetime=repmat({0},numel(UserValues.PIE.Name),1);
 PamMeta.TimeBins=0:0.01:FileInfo.MeasurementTime;
-PamMeta.BinsPCH =repmat({0:1:10},numel(UserValues.PIE.Name),1);
+PamMeta.BinsPCH = repmat({0:1:10},numel(UserValues.PIE.Name),1);
+PamMeta.PCH = repmat({zeros(1,numel(0:1:10))},numel(UserValues.PIE.Name),1);
+PamMeta.TracePCH = repmat({zeros(1,numel(0:1:10))},numel(UserValues.PIE.Name),1);
 PamMeta.Info=repmat({zeros(4,1)},numel(UserValues.PIE.Name),1);
 PamMeta.MI_Tabs=[];
 PamMeta.Det_Calib=[];
@@ -3318,29 +3378,6 @@ Update_fFCS_GUI([],[]);
 delete(s);
 h.Pam.Visible='on';
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions that executes upon closing of pam window %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Pam(Obj,~)
-delete(Obj);
-LSUserValues(1);
-clear global -regexp PamMeta TcspcData FileInfo TauFitBurstData
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(BurstBrowser) && isempty(TauFit) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-if isempty(BurstBrowser)
-    clear global -regexp BurstData BurstTCSPCData PhotonStream
-end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Updates Pam Meta Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -3349,20 +3386,34 @@ function Update_Data(~,~,Detector,PIE,mode)
 global TcspcData FileInfo UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 if nargin < 5
-    mode = [0,1,2,3];
+    %mode = [0,1,2,3];
+    mode = 0;
+    %%% check what plots are selected and calculate associated meta data
+    if UserValues.Settings.Pam.Use_TimeTrace == 1
+        mode = [mode, 1];
+    end
+    if UserValues.Settings.Pam.Use_PCH == 1
+        mode = [mode, 2];
+    end
+    if UserValues.Settings.Pam.Use_Image == 1
+            mode = [mode, 3];
+    end
 end
+
 %%% mode determines what part of the metadata is to be calculated
 %%% 0 is microtime histograms
 %%% 1 is time trace
 %%% 2 is PCH
 %%% 3 is image
+if any(mode==3)
+    % if it's not imaging data, don't calculate the image
+    if FileInfo.Lines < 2 || FileInfo.Pixels < 2
+        mode(mode == 3) = [];
+    end
+end
 h.Progress.Text.String = 'Updating meta data';
 h.Progress.Axes.Color=[1 0 0];
 drawnow;
-
-
-
-
 
 if PIE==0
     PIE = find(UserValues.PIE.Detector>0);
@@ -3394,7 +3445,7 @@ if any(mode == 0)
 end
 
 %% Creates trace and image plots
-if any(mode == 1) || any(mode == 2) || any(mode==3)
+if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
     %%% Creates macrotime bins for traces
     PamMeta.TimeBins=0:str2double(h.MT.Binning.String)/1000:FileInfo.MeasurementTime;
     %%% Creates a intensity trace, PCH and image for each non-combined PIE channel
@@ -3409,46 +3460,49 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 %% Calculates trace
                 %%% Takes PIE channel macrotimes
                 PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
+                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
+                PamMeta.BinsPCH{i} = 0:1:10;
+                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 if any(mode == 1) || any(mode == 2)
                     if any(mode==1)
                         if h.MT.Use_TimeTrace.Value
                             %%% Calculate intensity trace for PIE channel
                             if ~isempty(PIE_MT)
                                 PamMeta.Trace{i}=histc(PIE_MT,PamMeta.TimeBins)./str2double(h.MT.Binning.String);
-                            else
-                                PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                             end
-                        else
-                            PamMeta.Trace{i} = zeros(numel(PamMeta.TimeBins),1);
                         end
                     end
                     if any(mode==2)
-                        %%% Calculate PCH for PIE channel (currently hard coded to 1 ms)
+                        %%% Calculate PCH for PIE channel
                         if h.MT.Use_PCH.Value
-                            TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
+                            TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
                             if ~isempty(PIE_MT)
                                 PamMeta.TracePCH{i} = histc(PIE_MT,TimeBinsPCH);
                                 PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
-                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
-                            else
-                                PamMeta.BinsPCH{i} = 0:1:10;
-                                PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
+                                PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i}); 
                             end
-                        else
-                            PamMeta.BinsPCH{i} = 0:1:10;
-                            PamMeta.PCH{i} = zeros(1,numel(PamMeta.BinsPCH{i}));
                         end
                     end
                 end
                 %% Calculates image
+                PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
+                PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
                 if any(mode == 3)
                     if h.MT.Use_Image.Value && ~isempty(PIE_MT)
-                        [PamMeta.Image{i}, Bin] = CalculateImage(PIE_MT,2);
-                        PamMeta.Image{i} = double(flipud(permute(reshape(PamMeta.Image{i},FileInfo.Pixels,FileInfo.Lines),[2 1])));
+                        [im, Bin] = CalculateImage(PIE_MT,2);
+                        im = flipud(permute(reshape(double(im),FileInfo.Pixels,FileInfo.Lines),[2 1]));
+                        if isfield(FileInfo,'PixTime') %%% convert to kHz countrate if PixTime is available
+                            PamMeta.Image{i} = im/FileInfo.PixTime/FileInfo.Frames/1000;
+                            h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
+                        else
+                            PamMeta.Image{i} = im;
+                            h.Image.Colorbar.YLabel.String = 'Counts';
+                        end
+                        
                     else
                         PamMeta.Image{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
-                    clear PIE_MT;
                     
                     %% Calculate mean arival time image
                     if h.MT.Use_Image.Value && h.MT.Use_Lifetime.Value && exist('Bin','var')
@@ -3460,11 +3514,20 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                             clear PIE_MI Bin;
                             
                             %%% Reshapes pixel vector to image and normalizes to nomber of photons
-                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./PamMeta.Image{i};
+                            PamMeta.Lifetime{i}=flipud(permute(reshape(PamMeta.Lifetime{i},FileInfo.Pixels,FileInfo.Lines),[2 1]))./im;
                             %%% Sets NaNs to 0 for empty pixels
                             PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
-                        else
-                            PamMeta.Lifetime{i} = zeros(FileInfo.Pixels,FileInfo.Lines);
+                            %%% Make the display of Lifetime a bit better
+                            if UserValues.Settings.Pam.ToggleTACTime
+                                rescale = (1E9*FileInfo.TACRange/FileInfo.MI_Bins);
+                            else
+                                rescale = 1;
+                            end
+                            tmp = histc(TcspcData.MI{UserValues.PIE.Detector(i),UserValues.PIE.Router(i)},1:FileInfo.MI_Bins);
+                            [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
+                            tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
+                            tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
+                            PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
                         end
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
@@ -3473,10 +3536,11 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                         PamMeta.Lifetime{i}=zeros(FileInfo.Pixels,FileInfo.Lines);
                     end
                 end
+                clear Image_Sum
                 %% Calculates photons and countrate for PIE channel
                 PamMeta.Info{i}(1,1)=numel(TcspcData.MT{Det,Rout});
-                PamMeta.Info{i}(2,1)=sum(PamMeta.Trace{i})*str2double(h.MT.Binning.String);
-                clear Image_Sum;
+                PamMeta.Info{i}(2,1)=numel(PIE_MT);%sum(PamMeta.Trace{i})*str2double(h.MT.Binning.String);
+                clear PIE_MT
                 PamMeta.Info{i}(3,1)=PamMeta.Info{i}(1)/FileInfo.MeasurementTime/1000;
                 PamMeta.Info{i}(4,1)=PamMeta.Info{i}(2)/FileInfo.MeasurementTime/1000;
             else
@@ -3484,6 +3548,7 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
                 PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
                 PamMeta.BinsPCH{i} = 0:1:10;
                 PamMeta.PCH{i} = zeros(numel(PamMeta.BinsPCH{i}),1);
+                PamMeta.TracePCH{i} = zeros(numel(0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime),1);
                 %%% Creates a 1x1 zero image for empty/nonexistent detector/routing pairs
                 PamMeta.Image{i}=zeros(FileInfo.Lines);
                 PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
@@ -3501,15 +3566,16 @@ if any(mode == 1) || any(mode == 2) || any(mode==3)
 end
 %%% Calculates trace, image, mean arrival time and info for combined
 %%% channels
-for  i=find(UserValues.PIE.Detector==0)
+for i=find(UserValues.PIE.Detector==0)
     PamMeta.Image{i}=zeros(FileInfo.Lines);
     PamMeta.Trace{i}=zeros(numel(PamMeta.TimeBins),1);
     PamMeta.Lifetime{i}=zeros(FileInfo.Lines);
     PamMeta.PCH{i}=zeros(max(cellfun(@numel,PamMeta.BinsPCH(UserValues.PIE.Combined{i}))),1);
     PamMeta.BinsPCH{i} = PamMeta.BinsPCH{UserValues.PIE.Combined{i}(1)};
+    PamMeta.TracePCH{i} = zeros(numel(PamMeta.TracePCH{UserValues.PIE.Combined{i}(1)}),1);
     PamMeta.Info{i}(1:4,1)=0;
     if UserValues.Settings.Pam.Use_PCH
-        TimeBinsPCH=0:1E-3:FileInfo.MeasurementTime;
+        TimeBinsPCH=0:(UserValues.Settings.Pam.PCH_Binning/1000):FileInfo.MeasurementTime;
         trace_ms = zeros(1,numel(TimeBinsPCH));
     end
     for j=UserValues.PIE.Combined{i}
@@ -3523,27 +3589,16 @@ for  i=find(UserValues.PIE.Detector==0)
             PamMeta.Trace{i}=PamMeta.Trace{i}+PamMeta.Trace{j};
         end
         if UserValues.Settings.Pam.Use_PCH
-            Det=UserValues.PIE.Detector(j);
-            Rout=UserValues.PIE.Router(j);
-            From=UserValues.PIE.From(j);
-            To=UserValues.PIE.To(j);
-            if all(~isempty([Det,Rout])) && all([Det Rout] <= size(TcspcData.MI)) && ~isempty(TcspcData.MT{Det,Rout})
-                %%% combine time traces with 1 ms binning
-                PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
-                if ~isempty(PIE_MT)
-                    if numel(PIE_MT) > 1
-                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH)';
-                    else
-                        trace_ms = trace_ms + histc(PIE_MT,TimeBinsPCH);
-                    end
-                end
-            end
+            PamMeta.TracePCH{i} = PamMeta.TracePCH{i} + PamMeta.TracePCH{j};
         end
         PamMeta.Info{i}=PamMeta.Info{i}+PamMeta.Info{j};
     end
+    if UserValues.Settings.Pam.Use_Lifetime
+        PamMeta.Lifetime{i} =  PamMeta.Lifetime{i}./numel(UserValues.PIE.Combined{i});
+    end
     if UserValues.Settings.Pam.Use_PCH
-        PamMeta.BinsPCH{i} = 0:1:max(trace_ms);
-        PamMeta.PCH{i}=histc(trace_ms,PamMeta.BinsPCH{i});
+        PamMeta.BinsPCH{i} = 0:1:max(PamMeta.TracePCH{i});
+        PamMeta.PCH{i}=histc(PamMeta.TracePCH{i},PamMeta.BinsPCH{i});
     end
 end
 
@@ -3555,13 +3610,14 @@ function Calculate_Settings(obj,~)
 global UserValues PamMeta
 h = guidata(findobj('Tag','Pam'));
 Display=0;
-%%% If use_image was clicked
+%%% If Calculate image was clicked
 if obj == h.MT.Use_Image
     UserValues.Settings.Pam.Use_Image=h.MT.Use_Image.Value;
     %%% If also deactivate lifetime calculation
     if h.MT.Use_Image.Value==0
         UserValues.Settings.Pam.Use_Lifetime=0;
         h.MT.Use_Lifetime.Value=0;
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent = [];
@@ -3572,7 +3628,9 @@ if obj == h.MT.Use_Image
         h.Image.Tab.Parent = [];
     end
     Update_Data([],[],0,0,3);
-    Update_Display([],[],3);
+    %if UserValues.Settings.Pam.Use_Image
+        Update_Display([],[],3);
+    %end
     %%% If use_lifetime was clicked
 elseif obj == h.MT.Use_Lifetime
     UserValues.Settings.Pam.Use_Lifetime=h.MT.Use_Lifetime.Value;
@@ -3580,6 +3638,8 @@ elseif obj == h.MT.Use_Lifetime
     if h.MT.Use_Lifetime.Value
         h.MT.Use_Image.Value=1;
         UserValues.Settings.Pam.Use_Image=1;
+    else
+        h.Image.Type.Value = 1;
     end
     if UserValues.Settings.Pam.Use_Image
         h.MT.Settings_Tab.Parent =  [];
@@ -3619,12 +3679,19 @@ elseif obj == h.MT.Use_TimeTrace
     %%% change x axis of microtime plots between TCSPC channel and time in ns
 elseif obj == h.MT.ToggleTACTime
     UserValues.Settings.Pam.ToggleTACTime=h.MT.ToggleTACTime.Value;
+    Update_Data([],[],0,0,3);
+    Update_Display([],[],3);
     Update_Display([],[],4);
     %%% When changing trace bin size
 elseif obj == h.MT.Binning
     UserValues.Settings.Pam.MT_Binning=str2double(h.MT.Binning.String);
     Update_Data([],[],0,0,1);
     Update_Display([],[],2);
+    %%% When changing PCH bin size
+elseif obj == h.MT.Binning_PCH
+    UserValues.Settings.Pam.PCH_Binning=str2double(h.MT.Binning_PCH.String);
+    Update_Data([],[],0,0,2);
+    Update_Display([],[],10);
     %%% When changing trace sectioning type
 elseif obj == h.MT.Trace_Sectioning
     UserValues.Settings.Pam.MT_Trace_Sectioning=h.MT.Trace_Sectioning.Value;
@@ -3813,13 +3880,18 @@ h = guidata(findobj('Tag','Pam'));
 if nargin<3 || any(mode==0)
     mode=[1:5, 6, 8, 9, 10];
 end
-
+if any(mode==3)
+    % if it's not imaging data, don't calculate the image
+    if isempty(FileInfo.Lines) || FileInfo.Lines < 2 || isempty(FileInfo.Pixels) || FileInfo.Pixels < 2 || ~h.MT.Use_Image.Value
+        mode(mode == 3) = [];
+    end
+end
 
 %% PIE List update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Uses HTML to set color of each channel to selected color
 List=cell(numel(UserValues.PIE.Name),1);
 for i=1:numel(List)
-    Hex_color=dec2hex(UserValues.PIE.Color(i,:)*255)';
+    Hex_color=dec2hex(round(UserValues.PIE.Color(i,:)*255))';
     List{i}=['<HTML><FONT color=#' Hex_color(:)' '>' UserValues.PIE.Name{i} '</Font></html>'];
 end
 %%% Updates PIE_List string
@@ -3945,31 +4017,74 @@ if any(mode==2)
     h.Plots.Trace = {};
     for t = h.PIE.List.Value
         %%% create plot
-        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins,PamMeta.Trace{t},'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
+        h.Plots.Trace{end+1} = plot(PamMeta.TimeBins(1:end-1)+min(diff(PamMeta.TimeBins))/2,PamMeta.Trace{t}(1:end-1),'Color',UserValues.PIE.Color(t,:),'Parent',h.Trace.Axes);
     end
     guidata(h.Pam,h);
     h.Trace.Axes.XLim = [0,PamMeta.TimeBins(end)];
-    if gcbo == h.Trace.Trace_Export_Menu
-        hfig = figure('Visible','on','Units','pixel',...
-            'Position',[100,100,500*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
-            'Name',FileInfo.FileName{1});
-        ax = copyobj(h.Trace.Axes,hfig);
-        %%% delete patches
-        del = false(numel(ax.Children),1);
-        for i = 1:numel(ax.Children)
-            if strcmp(ax.Children(i).Type,'patch')
-                del(i) = true;
+    if ~isempty(gcbo)
+        if any(gcbo == [h.Trace.Trace_Export_Menu,h.Trace.Trace_ExportFRETTrace_Menu])
+            hfig = figure('Visible','on','Units','pixel',...
+                'Position',[100,100,500*h.Trace.Axes.Position(3),500*h.Trace.Axes.Position(4)],...
+                'Name',FileInfo.FileName{1});
+            switch gcbo
+                case h.Trace.Trace_Export_Menu
+                    ax = copyobj(h.Trace.Axes,hfig);
+                    %%% delete patches
+                    del = false(numel(ax.Children),1);
+                    for i = 1:numel(ax.Children)
+                        if strcmp(ax.Children(i).Type,'patch')
+                            del(i) = true;
+                        end
+                    end
+                    delete(ax.Children(del));
+                case h.Trace.Trace_ExportFRETTrace_Menu
+                    %%% get Donor/FRET channels
+                    pie_chan_selection = UserValues.BurstSearch.PIEChannelSelection{UserValues.BurstSearch.Method};
+                    switch UserValues.BurstSearch.Method
+                        case {1,2} % 2color MFD
+                           donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,2}))];
+                           fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,2}))];
+                        case {3,4} % 3color MFD, take 2color sub-channels
+                            donor = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{4,2}))];
+                            fret = [find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,1})),...
+                                     find(strcmp(UserValues.PIE.Name,pie_chan_selection{5,2}))];
+                        case {5} % 2color no-MFD
+                            donor = find(strcmp(UserValues.PIE.Name,pie_chan_selection{1,1}));
+                            fret = find(strcmp(UserValues.PIE.Name,pie_chan_selection{2,1}));
+                    end
+                    %%% calculate FRET trace
+                    don_trace = PamMeta.Trace{donor(1)};
+                    if numel(donor) > 1
+                        don_trace = don_trace + PamMeta.Trace{donor(2)};
+                    end
+                    fret_trace = PamMeta.Trace{fret(1)};
+                    if numel(fret) > 1
+                        fret_trace = fret_trace + PamMeta.Trace{fret(2)};
+                    end
+                    E_trace = fret_trace./(fret_trace+don_trace);
+                    plot(PamMeta.TimeBins,E_trace,'LineWidth',1);
+                    ax = gca;
+                    ylabel('FRET Efficiency (uncorrected)');
+                    xlabel('Time [s]');
+            end
+            hfig.Color = [1,1,1];
+            set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
+                'FontSize',h.Progress.Text.FontSize,'Layer','top');
+            colormap(h.Pam.Colormap);
+            ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
+            hfig.Position(4) = hfig.Position(4)+25;
+            switch gcbo
+                case h.Trace.Trace_Export_Menu
+                    ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
+                    legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
+                case h.Trace.Trace_ExportFRETTrace_Menu
+                    ax.Title.String = ['FRET efficiency trace (' FileInfo.FileName{1} ')']; ax.Title.Interpreter = 'none';                
+                    ax.YLim = [0,1];
             end
         end
-        delete(ax.Children(del));
-        hfig.Color = [1,1,1];
-        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
-            'FontSize',h.Progress.Text.FontSize,'Layer','top');
-        colormap(h.Pam.Colormap);
-        ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
-        hfig.Position(4) = hfig.Position(4)+25;
-        ax.Title.String = FileInfo.FileName{1}; ax.Title.Interpreter = 'none';
-        legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color',[1,1,1]);
     end
 end
 %% PCH plot update
@@ -3991,9 +4106,11 @@ if any(mode == 10)
             case 'on'
                 obj.Checked = 'off';
                 UserValues.Settings.Pam.PCH_2D = 0;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'on';
             case 'off'
                 obj.Checked = 'on';
                 UserValues.Settings.Pam.PCH_2D = 1;
+                h.PCH.PCH_Export_CSV_Menu.Visible = 'off';
         end
     end
     if ~UserValues.Settings.Pam.PCH_2D || numel(h.PIE.List.Value) == 1
@@ -4003,24 +4120,26 @@ if any(mode == 10)
         end
         guidata(h.Pam,h);
         h.PCH.Axes.YLimMode = 'auto';
-        h.PCH.Axes.XLim = [0,max([max(cellfun(@(x) x(end),PamMeta.BinsPCH(h.PIE.List.Value))),1])];
-        h.PCH.Axes.XLabel.String = 'Counts per ms';
+        h.PCH.Axes.XLim = [0,max([max(cell2mat(cellfun(@(x) find(x > 1,1,'last'),PamMeta.PCH(h.PIE.List.Value),'UniformOutput',false))),1])];
+        h.PCH.Axes.XLabel.String = sprintf('Counts per %g ms',UserValues.Settings.Pam.PCH_Binning);
         h.PCH.Axes.YLabel.String = 'Frequency';
         h.PCH.Axes.YScale = 'log';
         h.PCH.Axes.DataAspectRatioMode = 'auto';
     else
         sel = h.PIE.List.Value;
         sel = sel(1:2);
-        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)});
-        h.Plots.PCH{end+1} = imagesc(x(1:end-1)+min(diff(x))/2,y(1:end-1)+min(diff(y))/2,log10(H),'Parent',h.PCH.Axes);
+        [H,x,y] = histcounts2(PamMeta.TracePCH{sel(1)},PamMeta.TracePCH{sel(2)},...
+            0:1:max(PamMeta.TracePCH{sel(1)}),0:1:max(PamMeta.TracePCH{sel(2)}));
+        h.Plots.PCH{end+1} = imagesc(y(1:end-1)+min(diff(y))/2,...
+            x(1:end-1)+min(diff(x))/2,log10(H),'Parent',h.PCH.Axes);
         h.Plots.PCH{end}.UIContextMenu = h.PCH.Menu;
         guidata(h.Pam,h);
         h.PCH.Axes.YScale = 'lin';
-        h.PCH.Axes.XLim = [x(1),find(PamMeta.PCH{sel(1)} > 1,1,'last')];
-        h.PCH.Axes.YLim = [y(1),find(PamMeta.PCH{sel(2)} > 1,1,'last')];
-        h.PCH.Axes.XLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(1)} ')'];
-        h.PCH.Axes.YLabel.String = ['Counts per ms (' UserValues.PIE.Name{sel(2)} ')'];
-        h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
+        h.PCH.Axes.YLim = [x(1),max([find(PamMeta.PCH{sel(1)} > 1,1,'last'),1])];
+        h.PCH.Axes.XLim = [y(1),max([find(PamMeta.PCH{sel(2)} > 1,1,'last'),1])];
+        h.PCH.Axes.XLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(2)} ')'],UserValues.Settings.Pam.PCH_Binning);
+        h.PCH.Axes.YLabel.String = sprintf(['Counts per %g ms (' UserValues.PIE.Name{sel(1)} ')'],UserValues.Settings.Pam.PCH_Binning);
+        %h.PCH.Axes.DataAspectRatio(1:2) = [1,1];
     end
     if obj == h.PCH.PCH_Export_Menu
         hfig = figure('Visible','on','Units','pixel',...
@@ -4028,7 +4147,7 @@ if any(mode == 10)
             'Name',FileInfo.FileName{1});
         ax = copyobj(h.PCH.Axes,hfig);
         hfig.Color = [1,1,1];
-        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',2,'Units','pixel',...
+        set(ax,'Color',[1,1,1],'XColor',[0,0,0],'YColor',[0,0,0],'LineWidth',1,'Units','pixel',...
             'FontSize',h.Progress.Text.FontSize,'Layer','top');
         colormap(h.Pam.Colormap);
         ax.Position(1) = ax.Position(1)+50; hfig.Position(3) = hfig.Position(3)+50;
@@ -4037,6 +4156,11 @@ if any(mode == 10)
         if ~UserValues.Settings.Pam.PCH_2D
             legend(ax,UserValues.PIE.Name(h.PIE.List.Value),'EdgeColor','none','Color','none');
         end
+    elseif obj == h.PCH.PCH_Export_CSV_Menu
+        % Export the selected data to a comma-separated value file (*.csv)
+        sel = h.PIE.List.Value;
+        e.Key = 'Export_PCH';
+        Pam_Export([],e,sel); % ToDo: move this to right-click menu of PIE channel and export tab in the future.
     end
 end
 %% Image plot update %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -4050,46 +4174,64 @@ if any(mode==3)
             if h.Image.Autoscale.Value
                 h.Image.Axes.CLim=[min(min(PamMeta.Image{Sel})), max(max(PamMeta.Image{Sel}))+1];
             end
-            %%% Mean arrival time image
+        %%% Mean arrival time image
         case 2
-            h.Plots.Image.CData=PamMeta.Lifetime{Sel};
+            h.Plots.Image.CData = PamMeta.Lifetime{Sel};
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
-                Min=0.1*max(max(PamMeta.Image{Sel}))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                Min = 0;%0.1*max(max(PamMeta.Lifetime{Sel}))-1; %%% -1 is for 0 intensity images
+                if max(max(PamMeta.Image{Sel}))~=0
+                    h.Image.Axes.CLim=[min(min(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min))), max(max(PamMeta.Lifetime{Sel}(PamMeta.Image{Sel}>Min)))+1];
+                end
             end
             %%% Lifetime from phase
         case 3
-            h.Plots.Image.CData=PamMeta.TauP;
+            phas = medfilt2(PamMeta.TauP);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.TauP(PamMeta.Phasor_Int>Min))), max(max(PamMeta.TauP(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
             %%% Lifetime from modulation
         case 4
-            h.Plots.Image.CData=PamMeta.TauM;
+            phas = medfilt2(PamMeta.TauM);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.TauM(PamMeta.Phasor_Int>Min))), max(max(PamMeta.TauM(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
             %%% g from phasor calculation
         case 5
-            h.Plots.Image.CData=PamMeta.g;
+            phas = medfilt2(PamMeta.g);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.g(PamMeta.Phasor_Int>Min))), max(max(PamMeta.g(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
             %%% s from phasor calculation
         case 6
-            h.Plots.Image.CData=PamMeta.s;
+            phas = medfilt2(PamMeta.s);
+            h.Plots.Image.CData=phas;
             %%% Autoscales between min-max of pixels with at least 10% intensity;
             if h.Image.Autoscale.Value
                 Min=0.1*max(max(PamMeta.Phasor_Int))-1; %%% -1 is for 0 intensity images
-                h.Image.Axes.CLim=[min(min(PamMeta.s(PamMeta.Phasor_Int>Min))), max(max(PamMeta.s(PamMeta.Phasor_Int>Min)))+1];
+                h.Image.Axes.CLim=[min(min(phas(PamMeta.Phasor_Int>Min))), max(max(phas(PamMeta.Phasor_Int>Min)))+1];
             end
+    end
+    switch h.Image.Type.Value %label the colorbar correctly
+        case 1
+            h.Image.Colorbar.YLabel.String = 'Count rate [kHz]';
+        case {2,3,4}
+            if UserValues.Settings.Pam.ToggleTACTime
+                h.Image.Colorbar.YLabel.String = 'Mean arrival time [ns]';
+            else
+                h.Image.Colorbar.YLabel.String = 'TCSPC channel';
+            end
+        otherwise
+            h.Image.Colorbar.YLabel.String = 'Counts';
     end
     %%% Sets xy limits and aspectration ot 1
     h.Image.Axes.DataAspectRatio=[1 1 1];
@@ -4642,20 +4784,29 @@ switch e.Key
         PamMeta.Image(Sel)=[];
         PamMeta.Lifetime(Sel)=[];
         PamMeta.Info(Sel)=[];
-        
+        PamMeta.PCH(Sel) = [];
+        PamMeta.BinsPCH(Sel) = [];
+        PamMeta.TracePCH(Sel) = [];
         %%% Removes deleted PIE channel from all combined channels
         Combined=find(UserValues.PIE.Detector==0);
         new=0;
         for i=Combined
             if ~isempty(intersect(UserValues.PIE.Combined{i},Sel))
                 UserValues.PIE.Combined{i}=setdiff(UserValues.PIE.Combined{i},Sel);
-                UserValues.PIE.Name{i}='Comb.: ';
-                for j=UserValues.PIE.Combined{i};
-                    UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
-                end
-                UserValues.PIE.Name{i}(end)=[];
                 new=1;
             end
+            %%% Update reference to PIE channels
+            for j = 1:numel(UserValues.PIE.Combined{i})
+                if UserValues.PIE.Combined{i}(j) > Sel
+                    UserValues.PIE.Combined{i}(j) = UserValues.PIE.Combined{i}(j) - 1;
+                end
+            end
+            %%% update name
+            UserValues.PIE.Name{i}='Comb.: ';
+            for j=UserValues.PIE.Combined{i};
+                UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
+            end
+            UserValues.PIE.Name{i}(end)=[];
         end
         Update_to_UserValues
         %%% Updates only combined channels, if any was changed
@@ -4671,9 +4822,13 @@ switch e.Key
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(Sel) = [];
     case 'c' %%% Changes color of selected channels
-        %%% Opens menu to choose color
-        color=uisetcolor;
-        %%% Checks, if color was selected
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(mean(UserValues.PIE.Color(Sel,:),1)); % open dialog to input color
+        end
+         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
                 UserValues.PIE.Color(i,:)=color;
@@ -4699,15 +4854,19 @@ switch e.Key
             PamMeta.Image([Sel(1)-1 Sel(1)])=PamMeta.Image([Sel(1) Sel(1)-1]);
             PamMeta.Lifetime([Sel(1)-1 Sel(1)])=PamMeta.Lifetime([Sel(1) Sel(1)-1]);
             PamMeta.Info([Sel(1)-1 Sel(1)])=PamMeta.Info([Sel(1) Sel(1)-1]);
+            PamMeta.PCH([Sel(1)-1 Sel(1)])=PamMeta.PCH([Sel(1) Sel(1)-1]);
+            PamMeta.BinsPCH([Sel(1)-1 Sel(1)])=PamMeta.BinsPCH([Sel(1) Sel(1)-1]);
+            PamMeta.TracePCH([Sel(1)-1 Sel(1)])=PamMeta.TracePCH([Sel(1) Sel(1)-1]);
             %%% Selects moved channel again
             h.PIE.List.Value(1)=h.PIE.List.Value(1)-1;
             
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)-1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)-1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)-1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4736,15 +4895,19 @@ switch e.Key
             PamMeta.Image([Sel(1) Sel(1)+1])=PamMeta.Image([Sel(1)+1 Sel(1)]);
             PamMeta.Lifetime([Sel(1) Sel(1)+1])=PamMeta.Lifetime([Sel(1)+1 Sel(1)]);
             PamMeta.Info([Sel(1) Sel(1)+1])=PamMeta.Info([Sel(1)+1 Sel(1)]);
+            PamMeta.PCH([Sel(1) Sel(1)+1])=PamMeta.PCH([Sel(1)+1 Sel(1)]);
+            PamMeta.BinsPCH([Sel(1) Sel(1)+1])=PamMeta.BinsPCH([Sel(1)+1 Sel(1)]);
+            PamMeta.TracePCH([Sel(1) Sel(1)+1])=PamMeta.TracePCH([Sel(1)+1 Sel(1)]);
             %%% Selects moved channel again
             h.PIE.List.Value(1)=h.PIE.List.Value(1)+1;
             
             %%% Updates combined channels to new position
             Combined=find(UserValues.PIE.Detector==0);
             for i=Combined
-                if any(UserValues.PIE.Combined{i} == Sel(1))
-                    UserValues.PIE.Combined{i}(UserValues.PIE.Combined{i} == Sel(1)) = Sel(1)+1;
-                end
+                A = UserValues.PIE.Combined{i} == Sel(1);
+                B = UserValues.PIE.Combined{i} == Sel(1)+1;
+                UserValues.PIE.Combined{i}(A) = Sel(1)+1;
+                UserValues.PIE.Combined{i}(B) = Sel(1);
             end
             
             %%% Updates plots
@@ -4766,7 +4929,11 @@ switch e.Key
         %%% Does not combine single
         if numel(Sel)>1 && isempty(cell2mat(UserValues.PIE.Combined(Sel)))
             
-            UserValues.PIE.Color(end+1,:)=[0 0 1];
+            color = [0,0,0];
+            for i = Sel;
+                color = color + UserValues.PIE.Color(i,:);
+            end
+            UserValues.PIE.Color(end+1,:)=color./numel(Sel);
             UserValues.PIE.Combined{end+1}=Sel;
             UserValues.PIE.Detector(end+1)=0;
             UserValues.PIE.Router(end+1)=0;
@@ -4856,6 +5023,16 @@ if numel(Sel)==1 && isempty(UserValues.PIE.Combined{Sel})
         Update_Cor_Table(obj);
         %%% Rename channels in Export table
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
+        %%% Update names in combined channels
+        Combined=find(UserValues.PIE.Detector==0);
+        for i=Combined
+            %%% update name
+            UserValues.PIE.Name{i}='Comb.: ';
+            for j=UserValues.PIE.Combined{i};
+                UserValues.PIE.Name{i}=[UserValues.PIE.Name{i} UserValues.PIE.Name{j} '+'];
+            end
+            UserValues.PIE.Name{i}(end)=[];
+        end
     elseif obj == h.PIE.DetectionChannel
         %%% Updates PIE detector and routing
         UserValues.PIE.Detector(Sel)=UserValues.Detector.Det(h.PIE.DetectionChannel.Value);
@@ -5028,9 +5205,13 @@ if obj == h.MI.Channels_List
             switch ed.Indices(2)
                 
                 case 4 %%% Color was clicked
-                    NewColor = uisetcolor;
-                    if size(NewColor) == 1
-                        return;
+                    if ~isdeployed
+                        NewColor = uisetcolor;
+                        if size(NewColor) == 1
+                            return;
+                        end
+                    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                        NewColor = color_setter(UserValues.Detector.Color(Sel,:)); % open dialog to input color
                     end
                     UserValues.Detector.Color(Sel,:) = NewColor;
                     %%% Update Color of Name also
@@ -5115,8 +5296,12 @@ switch e.Key
         %%% Saves new tabs in guidata
         guidata(h.Pam,h)
     case 'c' %% Selects new color for microtime channel
-        %%% Opens menu to choose color
-        color=uisetcolor;
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
@@ -5496,7 +5681,7 @@ switch e.Key
             for i = 1:size(PamMeta.Database,1)
                 h.Database.List.String = [{[PamMeta.Database{i,1} ' (path:' PamMeta.Database{i,2} ')']}; h.Database.List.String];
             end
-            m = msgbox('Please consider restarting PAM to ensure that all settings are updated.','Profile changed!');
+            m = warndlg('Please consider restarting PAM to ensure that all settings are updated.','Profile changed!','modal');
         end
     case 'duplicate'
         %% Duplicates selected profile
@@ -5517,6 +5702,7 @@ global UserValues
 h=guidata(findobj('Tag','Pam'));
 
 h.MT.Binning.String=UserValues.Settings.Pam.MT_Binning;
+h.MT.Binning_PCH.String=UserValues.Settings.Pam.PCH_Binning;
 h.MT.Time_Section.String=UserValues.Settings.Pam.MT_Time_Section;
 h.MT.Number_Section.String=UserValues.Settings.Pam.MT_Number_Section;
 
@@ -6617,7 +6803,8 @@ UserValues.Phasor.Reference(Det,:)=0;
 %%% Assigns current MI histogram as reference
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
-
+UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
+UserValues.Phasor.Reference_TAC = FileInfo.ClockPeriod;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6627,6 +6814,14 @@ function Phasor_Calc(~,~)
 
 global UserValues TcspcData FileInfo PamMeta
 h=guidata(findobj('Tag','Pam'));
+
+if isempty(FileInfo.LineTimes)
+    m = msgbox('Load imaging data to calculate phasor!');
+    pause(2)
+    close(m)
+    return
+end
+
 if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
     
     %%% Determines correct detector and routing
@@ -6644,13 +6839,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
 
         %% Calculates reference
         Shift=h.MI.Phasor_Slider.Value; % Shift between reference and file in MI bins
+        Ref_MI_Bins = UserValues.Phasor.Reference_MI_Bins;
         MI_Bins = FileInfo.MI_Bins; % Total number of MI bins of file
+        Ref_TAC = UserValues.Phasor.Reference_TAC*1e9;
         TAC=str2double(h.MI.Phasor_TAC.String); % Length of full MI range in ns
         Ref_LT=str2double(h.MI.Phasor_Ref.String); % Reference lifetime in ns
         From=str2double(h.MI.Phasor_From.String); % First MI bin to used
         To=str2double(h.MI.Phasor_To.String); % Last MI bin to be used
-        UseParticles = h.MI.Phasor_Particles.Value;
-        if UseParticles ==2
+        if h.MI.Phasor_FramePopup.Value == 2
             Frames = size(FileInfo.LineTimes,1);
         else
             Frames = 1;
@@ -6658,19 +6854,19 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         
         %%% Extract Background and converts it to counts per pixel
         Background_ref = str2num(h.MI.Phasor_BG_Ref.String);
-        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/MI_Bins;        
+        Background_ref = Background_ref*UserValues.Phasor.Reference_Time(h.MI.Phasor_Det.Value)/Ref_MI_Bins;        
         Background = str2num(h.MI.Phasor_BG.String);
         Background = Background*(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels)*size(FileInfo.LineTimes,1);%%% Background is used differently and does not need to be divided by MI_Bins        
         Afterpulsing = str2num(h.MI.Phasor_AP.String)/100;
 
         
         %%% Calculates theoretical phase and modulation for reference
-        Fi_ref = atan(2*pi*Ref_LT/TAC);
-        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/TAC)^2);
+        Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+        M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
         
         %%% Normalizes reference data
         Ref=circshift(UserValues.Phasor.Reference(h.MI.Phasor_Det.Value,:),[0 round(Shift)]);
-        Ref = Ref-sum(Ref)*Afterpulsing/MI_Bins - Background_ref;
+        Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
         
         if From>1
             Ref(1:(From-1))=0;
@@ -6678,14 +6874,14 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if To<MI_Bins
             Ref(To+1:end)=0;
         end
-        Ref_Mean=sum(Ref(1:MI_Bins).*(1:MI_Bins))/sum(Ref)*TAC/MI_Bins-Ref_LT;
+        Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
         Ref = Ref./sum(Ref);
         
         %%% Calculates phase and modulation of the instrument
-        G_inst=cos((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        S_inst=sin((2*pi./MI_Bins)*(1:MI_Bins)-Fi_ref)/M_ref;
-        g_inst=sum(Ref(1:MI_Bins).*G_inst);
-        s_inst=sum(Ref(1:MI_Bins).*S_inst);
+        G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+        g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+        s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
         Fi_inst=atan(s_inst/g_inst);
         M_inst=sqrt(s_inst^2+g_inst^2);
         if (g_inst<0 || s_inst<0)
@@ -6697,7 +6893,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PIE_MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To)*FileInfo.ClockPeriod;
         %%% Creates image and generates photon to pixel index
         Progress(0.15,h.Progress.Axes, h.Progress.Text,'Calculating Phasor Data (Calculating Image):');
-        if UseParticles ==2
+        if h.MI.Phasor_FramePopup.Value == 2
             [Intensity, Bin] = CalculateImage(PIE_MT, 4);
         else
             [Intensity, Bin] = CalculateImage(PIE_MT, 2);
@@ -6749,9 +6945,10 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         PamMeta.g=squeeze(sum(g.*Intensity,3)./sum(Intensity,3));
         PamMeta.s=squeeze(sum(s.*Intensity,3)./sum(Intensity,3));
         PamMeta.Fi=atan(PamMeta.s./PamMeta.g); PamMeta.Fi(isnan(PamMeta.Fi))=0;
-        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.Fi(isnan(PamMeta.M))=0;
+        PamMeta.M=sqrt(PamMeta.s.^2+PamMeta.g.^2);PamMeta.M(isnan(PamMeta.M))=0;
         PamMeta.TauP=real(tan(PamMeta.Fi)./(2*pi/TAC));PamMeta.TauP(isnan(PamMeta.TauP))=0;
         PamMeta.TauM=real(sqrt((1./(PamMeta.s.^2+PamMeta.g.^2))-1)/(2*pi/TAC));PamMeta.TauM(isnan(PamMeta.TauM))=0;
+        PamMeta.Phasor_Int = mean(Intensity,3); %for displaying purposes in PAM, even for framewise phasor this needs to be a single image
         
         %%% Creates data to save and saves referenced file
         Freq=1/TAC*10^9;
@@ -6767,13 +6964,13 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         TauM=PamMeta.TauM;
         Type = FileInfo.Type;
         
-        if UseParticles==1
+        if h.MI.Phasor_FramePopup.Value == 1
             g=squeeze(g); s=squeeze(s); Intensity =squeeze(Intensity);
-            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
-        elseif UseParticles == 2
-            save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
+        else
+            save(fullfile(PathName,[FileName(1:end-3) 'phf']), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
             g = PamMeta.g; s= PamMeta.s; Intensity =squeeze(sum(Intensity,3));
-            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type');
+            save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','-v7.3');
         end
         
         h.Image.Type.String={'Intensity';'Mean arrival time';'TauP';'TauM';'g';'s'};
@@ -9571,6 +9768,11 @@ if nargin<3 % calculate the shift
         Dif(Dif>maxtick)=maxtick;
         MI=TcspcData.MI{Det,Rout};
         
+        % find the minimum macortime interval to use (exlude those that
+        % fall within or overlap with the deadtime of the electronics)
+        deadtime = str2double(h.MI.TCSPC_DeadTime_Edit.String);
+        min_bin = ceil(deadtime/(FileInfo.TACRange*1E9));
+        
         % make a 2D histogram of the interphoton time (0:maxtick) versus TAC bin
         PamMeta.Det_Calib.Hist=histc(double(Dif-1)*FileInfo.MI_Bins+double(MI),0:(maxtick*FileInfo.MI_Bins-1));
         PamMeta.Det_Calib.Hist=reshape(PamMeta.Det_Calib.Hist,FileInfo.MI_Bins,maxtick);
@@ -9581,7 +9783,7 @@ if nargin<3 % calculate the shift
         PamMeta.Det_Calib.Shift=sum(Counts(end-100:end,:).*Index(end-100:end,:))./sum(Counts(end-100:end,:));
         PamMeta.Det_Calib.Shift=round(PamMeta.Det_Calib.Shift-PamMeta.Det_Calib.Shift(end));
         PamMeta.Det_Calib.Shift(isnan(PamMeta.Det_Calib.Shift))=0;
-        PamMeta.Det_Calib.Shift(1:2)=PamMeta.Det_Calib.Shift(3);
+        PamMeta.Det_Calib.Shift(1:min_bin)=PamMeta.Det_Calib.Shift(min_bin+1);
         PamMeta.Det_Calib.Shift=PamMeta.Det_Calib.Shift-max(PamMeta.Det_Calib.Shift);
         if size(PamMeta.Det_Calib.Shift,1) > size(PamMeta.Det_Calib.Shift,2)
             PamMeta.Det_Calib.Shift = PamMeta.Det_Calib.Shift';
@@ -9612,8 +9814,11 @@ if nargin<3 % calculate the shift
         
         % shift plot (red)
         h.MI.Calib_Axes_Shift.XLim = [1 maxtick];
+        h.MI.Calib_Axes_Shift.YLimMode = 'auto';
+        h.Plots.Calib_Shift_New.Visible = 'on';
         h.Plots.Calib_Shift_New.XData=1:maxtick;
         h.Plots.Calib_Shift_New.YData=PamMeta.Det_Calib.Shift;
+        h.Plots.Calib_Shift_New.Visible = 'on';
         
         smoothing = str2double(h.MI.Calib_Single_Range.String);
         if smoothing > 1
@@ -9623,6 +9828,7 @@ if nargin<3 % calculate the shift
         else
             h.Plots.Calib_Shift_Smoothed.Visible = 'off';
         end
+        legend([h.Plots.Calib_No,h.Plots.Calib,h.Plots.Calib_Sel],{'Uncorrected','Corrected','Current shift selection'});
     end
 else % apply the shift
     if strcmp(info,'load')  %called from LoadTCSPC
@@ -9701,6 +9907,8 @@ if mode == 0 %%% Checks, which key was pressed
                 case 'delete'
                     mode = 2;
                 case 'return'
+                    %%% If both Keypress and Callback are active, 'return'
+                    %%% will call it twice!
                     %mode =7;
             end
         case 'Action' %%% mouse-click
@@ -9808,6 +10016,9 @@ if mode == 0 %%% Checks, which key was pressed
                     mode = 2;
                 case 'return'
                     %mode =9;
+                    %%% If both Keypress and Callback are active, 'return'
+                    %%% will call it twice!
+                    %mode =7;
             end
         case 'Action' %%% mouse-click
             switch get(gcbf,'SelectionType')
@@ -10121,9 +10332,9 @@ switch e.Key
             To=UserValues.PIE.To(i);
             if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
                 MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
                 MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI =[];
                 MT = [];
@@ -10141,8 +10352,8 @@ switch e.Key
                 end
                 [MT,Index] = sort(MT);
                 MI = MI(Index);
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
         end
     case 'Export_Raw_File' %%% Exports macrotime and microtime as a cell for each PIE channel
@@ -10170,8 +10381,8 @@ switch e.Key
                         MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.ClockPeriod);
                     end
                 end
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI=cell(FileInfo.NumberOfFiles,1);
                 MT=cell(FileInfo.NumberOfFiles,1);
@@ -10205,8 +10416,8 @@ switch e.Key
                     [MT{k},Index] = sort(MT{k});
                     MI{k} = MI{k}(Index);
                 end
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
             
         end
@@ -10227,13 +10438,13 @@ switch e.Key
             end
             %%% Exports intensity image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 2
-                assignin('base',[Name 'Image'],PamMeta.Image{i});
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],PamMeta.Image{i});
                 figure('Name',[UserValues.PIE.Name{i} '_Image']);
                 imagesc(PamMeta.Image{i});
             end
             %%% Exports mean arrival time image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 3
-                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
+                assignin('base',[matlab.lang.makeValidName(Name) '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
             end
@@ -10267,9 +10478,9 @@ switch e.Key
                 for j = UserValues.PIE.Combined{i}
                     Name = [Name UserValues.PIE.Name{j} '_'];
                 end
-                assignin('base',[Name 'Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],Stack);
             else
-                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_Image'],Stack);
             end
         end
     case 'Export_Image_Tiff' %%% Exports image stack as TIFF
@@ -10314,11 +10525,16 @@ switch e.Key
             Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
             Tagstruct.SamplesPerPixel = 1;
             Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
+                pixsize = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
+            else
+                pixsize = num2str(50);
+            end
             Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
                 'FrameTime [s]: ' num2str(mean(diff(FileInfo.ImageTimes))) '\n',...
                 'LineTime [ms]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))*1000) '\n',...
                 'PixelTime [us]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels*1e6) '\n',...
-                'PixelSize [nm]: ' num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000) '\n'];
+                'PixelSize [nm]: ' pixsize '\n'];
             
             Z_Pos = str2double(h.Export.Z_Pos.String);
             Z_Frames = str2double(h.Export.Z_Frames.String);
@@ -10357,7 +10573,7 @@ switch e.Key
             Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting:')
         end
         Progress(1,h.Progress.Axes,h.Progress.Text,'Exporting Finished')
-    case 'Export_MicrotimePattern'
+    case 'Export_MicrotimePattern' %%% Export microtime pattern
         h.Progress.Text.String = 'Exporting';
         h.Progress.Axes.Color=[1 0 0];
         drawnow;
@@ -10406,6 +10622,41 @@ switch e.Key
         fclose(fid);
         dlmwrite(fullfile(FileInfo.Path,fileName),microtimeHistograms,'-append','delimiter','\t');
         UserValues.File.TauFitPath = FileInfo.Path;
+        Progress(1,h.Progress.Axes,h.Progress.Text);
+    case 'Export_PCH' %%% Export PCH
+        h.Progress.Text.String = 'Exporting';
+        h.Progress.Axes.Color=[1 0 0];
+        drawnow;
+        %%% Read out PCH
+        %%% store in format:
+        %%% channel1 channel2 ...
+        %%% PCH1     PCH2     ...
+
+        PCH = zeros(max(cellfun(@numel,PamMeta.PCH(Sel))),numel(Sel)+1);
+        PCH(:,1) = 0:1:size(PCH,1)-1;
+        for i = 1:numel(Sel)
+            PCH(1:numel(PamMeta.PCH{Sel(i)}),i+1) = PamMeta.PCH{Sel(i)};
+            Progress((i-1)/numel(Sel),h.Progress.Axes,h.Progress.Text,'Exporting:')
+        end
+        %%% create filename
+        [~,fileName,~] = fileparts(FileInfo.FileName{1});
+        for i = 1:numel(Sel)
+            fileName = [fileName '_' UserValues.PIE.Name{Sel(i)}];
+        end
+        fileName = [fileName '.pch'];
+        fid = fopen(fullfile(FileInfo.Path,fileName),'w');
+        %%% write header
+        %%% general info
+        fprintf(fid,'# PCH data exported from PAM\n');
+        fprintf(fid,'# Bin size [ms]:\t %g\n',UserValues.Settings.Pam.PCH_Binning);
+        %%% PIE channel names
+        fprintf(fid,'Counts,');
+        for i = 1:numel(Sel)
+            fprintf(fid,'%s,',UserValues.PIE.Name{Sel(i)});
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(fullfile(FileInfo.Path,fileName),PCH,'-append','delimiter',',','precision','%g');
         Progress(1,h.Progress.Axes,h.Progress.Text);
     case 'Eport_RLICS_TIFF' %%% Eports image stack as Lifetime Filtered TIFF
         
@@ -10464,10 +10715,16 @@ switch e.Key
             Tagstruct.BitsPerSample =  16;                        %32= float data, 16= Andor standard sampling
             Tagstruct.SamplesPerPixel = 1;
             Tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+            if isfield(FileInfo, 'Fabsurf') && ~isempty(FileInfo.Fabsurf)
+                pixsize = num2str(FileInfo.Fabsurf.Imagesize/FileInfo.Lines*1000);
+            else
+                pixsize = num2str(50);
+            end
             Tagstruct.ImageDescription = ['Type: ' FileInfo.FileType '\n',...
                 'FrameTime [s]: ' num2str(mean(diff(FileInfo.ImageTimes))) '\n',...
                 'LineTime [ms]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))*1000) '\n',...
                 'PixelTime [us]: ' num2str(mean2(diff(FileInfo.LineTimes,1,2))/FileInfo.Pixels*1e6) '\n',...
+                'PixelSize [nm]: ' pixsize '\n',...
                 'RLICS_Scale: ' num2str(Max-Min) '\n',...
                 'RLICS_Offset: ' num2str(Min) '\n'];
             TIFF_handle = Tiff(File, 'w');
@@ -11064,7 +11321,7 @@ switch obj
             return;
         end
         ProfileData = load(fullfile(Path,File),'-mat');
-        ProfileData.MetaData.Comment = ['Sourec:' fullfile(Path,File)];
+        ProfileData.MetaData.Comment = ['Source:' fullfile(Path,File)];
         save(fullfile([PathToApp filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
         
         Current_Exists = 0;

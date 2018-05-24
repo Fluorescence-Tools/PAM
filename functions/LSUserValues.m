@@ -1,5 +1,5 @@
 function  [Profiles,Current] = LSUserValues(Mode,Obj,Param)
-global UserValues FileInfo PathToApp
+global UserValues PathToApp
 
 if isempty(PathToApp)
     GetAppFolder();
@@ -259,6 +259,11 @@ if Mode==0 %%% Loads user values
     end
     P.File.MIAFit_Standard = S.File.MIAFit_Standard;
     
+    if ~isfield(S.File,'Spectral_Standard')
+        S.File.Spectral_Standard=[];
+    end
+    P.File.Spectral_Standard = S.File.Spectral_Standard;
+    
     %%% substructure to save file histories
     if ~isfield(S.File,'FileHistory')
         S.File.FileHistory=[];
@@ -320,6 +325,14 @@ if Mode==0 %%% Loads user values
         S.File.Custom_Filetype = 'none';
     end
     P.File.Custom_Filetype = S.File.Custom_Filetype;
+    
+    %%% Custom filetypes for MIA
+    if ~isfield(S.File, 'MIA_Custom_Filetype')
+        disp('WARNING: UserValues structure incomplete, field "MIA_Custom_Filetype" missing');
+        S.File.MIA_Custom_Filetype = 'none';
+    end
+    P.File.MIA_Custom_Filetype = S.File.MIA_Custom_Filetype;
+    
     %% Notepad - for GUI specific notes
     %%% Checks, if Notepad field exists
     if ~isfield(S, 'Notepad')
@@ -395,6 +408,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Settings.Pam.MT_Binning was incomplete');
     end
     P.Settings.Pam.MT_Binning = S.Settings.Pam.MT_Binning;
+    %%% Checks, if Pam.PCH_Binning subfield exists
+    if ~isfield(S.Settings.Pam, 'PCH_Binning')
+        S.Settings.Pam.PCH_Binning=1;
+        disp('UserValues.Settings.Pam.PCH_Binning was incomplete');
+    end
+    P.Settings.Pam.PCH_Binning = S.Settings.Pam.PCH_Binning;
     %%% Checks, if Pam.MT_Trace_Sectioning subfield exists
     if ~isfield(S.Settings.Pam, 'MT_Trace_Sectioning')
         S.Settings.Pam.MT_Trace_Sectioning=1;
@@ -839,6 +858,20 @@ if Mode==0 %%% Loads user values
     end
     P.Phasor.Reference_Time = S.Phasor.Reference_Time;
     
+    %%% Checks, if Phasor.Reference_MI_Bins subfields exist
+    if ~isfield(S.Phasor,'Reference_MI_Bins')
+        S.Phasor.Reference_MI_Bins = 0;
+        disp('UserValues.Phasor.Reference_MI_Bins was incomplete');
+    end
+    P.Phasor.Reference_MI_Bins = S.Phasor.Reference_MI_Bins;
+    
+    %%% Checks, if Phasor.Reference_TAC subfields exist
+    if ~isfield(S.Phasor,'Reference_TAC')
+        S.Phasor.Reference_TAC= 0;
+        disp('UserValues.Phasor.Reference_TAC was incomplete');
+    end
+    P.Phasor.Reference_TAC = S.Phasor.Reference_TAC;
+    
     %%% Checks, if Phasor.Settings subfields exist
     if ~isfield(S.Phasor,'Settings_THMin')
         S.Phasor.Settings_THMin='200';
@@ -919,6 +952,51 @@ if Mode==0 %%% Loads user values
         disp('UserValues.Phasor.Settings_LineColor was incomplete');
     end
     P.Phasor.Settings_LineColor = S.Phasor.Settings_LineColor;
+    
+    
+    %%% Checks, if Phasor.FRET subfields exist
+    if ~isfield(S.Phasor,'Settings_FRETColor') || numel(S.Phasor.Settings_FRETColor)<12
+        S.Phasor.Settings_FRETColor=[0 1 0; 1 0 0; 0 0 1; 1 0 0];
+        disp('UserValues.Phasor.Settings_FRETColor was incomplete');
+    end
+    P.Phasor.Settings_FRETColor = S.Phasor.Settings_FRETColor;
+    
+    if ~isfield(S.Phasor,'Settings_FRETWidth') || numel(S.Phasor.Settings_FRETWidth)<4
+        S.Phasor.Settings_FRETWidth=repmat({'2'},4,1);
+        disp('UserValues.Phasor.Settings_FRETWidth was incomplete');
+    end
+    P.Phasor.Settings_FRETWidth = S.Phasor.Settings_FRETWidth;
+    
+    if ~isfield(S.Phasor,'Settings_FRETStyle') || numel(S.Phasor.Settings_FRETStyle)<4
+        S.Phasor.Settings_FRETStyle=repmat({'-'},4,1);
+        disp('UserValues.Phasor.Settings_FRETStyle was incomplete');
+    end
+    P.Phasor.Settings_FRETStyle = S.Phasor.Settings_FRETStyle;
+    
+    if ~isfield(S.Phasor,'Settings_FRETMarker') || numel(S.Phasor.Settings_FRETMarker)<4
+        S.Phasor.Settings_FRETMarker=repmat({'x'},4,1);
+        disp('UserValues.Phasor.Settings_FRETSize was incomplete');
+    end
+    P.Phasor.Settings_FRETMarker = S.Phasor.Settings_FRETMarker;
+    
+    if ~isfield(S.Phasor,'Settings_FRETSize') || numel(S.Phasor.Settings_FRETSize)<4
+        S.Phasor.Settings_FRETSize=repmat({'6'},4,1);
+        disp('UserValues.Phasor.Settings_FRETSize was incomplete');
+    end
+    P.Phasor.Settings_FRETSize = S.Phasor.Settings_FRETSize;
+    
+    if ~isfield(S.Phasor,'Settings_FRETLineColor')
+        S.Phasor.Settings_FRETLineColor = 1;
+        disp('UserValues.Phasor.Settings_FRETLineColor was incomplete');
+    end
+    P.Phasor.Settings_FRETLineColor = S.Phasor.Settings_FRETLineColor;
+    
+    if ~isfield(S.Phasor,'Settings_FRETRadius')
+        S.Phasor.Settings_FRETRadius = '0.05';
+        disp('UserValues.Phasor.Settings_FRETLineColor was incomplete');
+    end
+    P.Phasor.Settings_FRETRadius = S.Phasor.Settings_FRETRadius;
+    
     
     
     %%% Checks, if Phasor.Export_Font is complete
@@ -1227,7 +1305,14 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.use_weighted_residuals was incomplete');
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
-
+    
+    %%% Checks, if TauFit.cleanup_IRF exists
+    if ~isfield(S.TauFit,'cleanup_IRF')
+        S.TauFit.cleanup_IRF=0;
+        disp('UserValues.TauFit.cleanup_IRF was incomplete');
+    end
+    P.TauFit.cleanup_IRF = S.TauFit.cleanup_IRF;
+    
     %%% Checks, if TauFit.IncludeChannel exists
     if ~isfield(S.TauFit,'IncludeChannel')
         S.TauFit.IncludeChannel=[1,1,1];
@@ -1247,6 +1332,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.YScaleLog was incomplete');
     end
     P.TauFit.YScaleLog = S.TauFit.YScaleLog;
+    %%% Checks, if TauFit.XScaleLog exists
+    if ~isfield(S.TauFit,'XScaleLog')
+        S.TauFit.XScaleLog='off';
+        disp('UserValues.TauFit.XScaleLog was incomplete');
+    end
+    P.TauFit.XScaleLog = S.TauFit.XScaleLog;
     %%% Checks, if TauFit.FitParams exists
     % 1  tau1
     % 2  tau2
@@ -1270,24 +1361,25 @@ if Mode==0 %%% Loads user values
     % 20 sigR
     % 21 FD0
     % 22 rinf2 (used for "Dip and Rise" model)
+    % 23 beta parameter for stretched exponential
     
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams = {params,params,params,params};
         S.TauFit.FitFix = {fix,fix,fix,fix};
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     if numel(S.TauFit.FitParams{4}) ~= 53
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams{4} = params;
         S.TauFit.FitFix{4} = fix;
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
     end
     if numel(S.TauFit.FitParams) < 5
-        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
+        params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
         fix = logical([0 0 0 0   0   1 1 1 1 1 1  1 1 1 0 0 0   0 0  0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]);
         S.TauFit.FitParams{end+1} = params;
         S.TauFit.FitFix{end+1} = fix;
@@ -1651,6 +1743,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ImageOffset was incomplete');
     end
     P.BurstBrowser.Display.ImageOffset = S.BurstBrowser.Display.ImageOffset;
+    %%% Checks, if BurstBrowser.Display.PlotCutoff subfield exists
+    if ~isfield(S.BurstBrowser.Display,'PlotCutoff')
+        S.BurstBrowser.Display.PlotCutoff=100;
+        disp('UserValues.BurstBrowser.Display.PlotCutoff was incomplete');
+    end
+    P.BurstBrowser.Display.PlotCutoff = S.BurstBrowser.Display.PlotCutoff;
     %%% Checks, if BurstBrowser.Display.PlotContourLines subfield exists
     if ~isfield(S.BurstBrowser.Display,'PlotContourLines')
         S.BurstBrowser.Display.PlotContourLines=1;
@@ -1834,6 +1932,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.FitGaussPick was incomplete');
     end
     P.BurstBrowser.Settings.FitGaussPick = S.BurstBrowser.Settings.FitGaussPick;
+    %%% Check, if BurstBrowser.Settings.FitGauss_UseWeights subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'FitGauss_UseWeights')
+        S.BurstBrowser.Settings.FitGauss_UseWeights=0;
+        disp('UserValues.BurstBrowser.Settings.FitGauss_UseWeights was incomplete');
+    end
+    P.BurstBrowser.Settings.FitGauss_UseWeights = S.BurstBrowser.Settings.FitGauss_UseWeights;
     %%% Check, if BurstBrowser.Settings.GaussianFitMethod subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'GaussianFitMethod')
         S.BurstBrowser.Settings.GaussianFitMethod='MLE';
@@ -1888,6 +1992,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.Normalize_Multiplot was incomplete');
     end
     P.BurstBrowser.Settings.Normalize_Multiplot = S.BurstBrowser.Settings.Normalize_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Display_Total_Multiplot subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Display_Total_Multiplot')
+        S.BurstBrowser.Settings.Display_Total_Multiplot=true;
+        disp('UserValues.BurstBrowser.Settings.Display_Total_Multiplot was incomplete');
+    end
+    P.BurstBrowser.Settings.Display_Total_Multiplot = S.BurstBrowser.Settings.Display_Total_Multiplot;
+    %%% Check, if BurstBrowser.Settings.Normalize_Method subfield exists
+    if ~isfield(S.BurstBrowser.Settings, 'Normalize_Method')
+        S.BurstBrowser.Settings.Normalize_Method='area';
+        disp('UserValues.BurstBrowser.Settings.Normalize_Method was incomplete');
+    end
+    P.BurstBrowser.Settings.Normalize_Method = S.BurstBrowser.Settings.Normalize_Method;
     %%% Check, if BurstBrowser.Settings.UseFilePathForExport subfield exists
     if ~isfield(S.BurstBrowser.Settings, 'UseFilePathForExport')
         S.BurstBrowser.Settings.UseFilePathForExport=true;
@@ -2215,9 +2331,9 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.Correct_Add_Values = S.MIA.Correct_Add_Values;
 
-    if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=2 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
+    if ~isfield(S.MIA, 'AR_Int') || numel(S.MIA.AR_Int)~=4 || ~isnumeric(S.MIA.AR_Int) || any(isnan(S.MIA.AR_Int))
         disp('WARNING: UserValues structure incomplete, field "MIA.AR_Int" missing');
-        S.MIA.AR_Int = [10 1000];
+        S.MIA.AR_Int = [0 0 0 0];
     end
     P.MIA.AR_Int = S.MIA.AR_Int;
 
@@ -2250,6 +2366,19 @@ if Mode==0 %%% Loads user values
         S.MIA.AutoNames = 1;
     end
     P.MIA.AutoNames = S.MIA.AutoNames;
+    
+    %%% Custom Filetype settings
+    if ~isfield(S.MIA, 'Custom')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom" missing');
+        S.MIA.Custom = [];
+    end    
+    P.MIA.Custom = S.MIA.Custom;
+    
+    if ~isfield(S.MIA.Custom, 'Zeiss_CZI') || numel(S.MIA.Custom.Zeiss_CZI)<3
+        disp('WARNING: UserValues structure incomplete, field "MIA.Custom.Zeiss_CZI" missing');
+        S.MIA.Custom.Zeiss_CZI = {'1','2',1};
+    end
+    P.MIA.Custom.Zeiss_CZI = S.MIA.Custom.Zeiss_CZI;
 
     %% Trace
     if ~isfield(S, 'Trace')
@@ -2269,6 +2398,10 @@ if Mode==0 %%% Loads user values
         S.Trace.AccPar = 1;
     end
     P.Trace.AccPar = S.Trace.AccPar;
+    
+    %% Spectral
+    
+    
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
     save(fullfile(Profiledir,'Profile.mat'),'Profile');
@@ -2288,7 +2421,8 @@ else
 
     Current=[];
     %%% Automatically copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
-    if findobj('Tag','Pam') == get(groot,'CurrentFigure');
+    if findobj('Tag','Pam') == get(groot,'CurrentFigure')
+        global FileInfo
         %%% if Pam is not the active figure, don't go in here
         if isfield(FileInfo,'FileName')
             if ~strcmp(FileInfo.FileName{1},'Nothing loaded')
@@ -2296,7 +2430,7 @@ else
                     for i = 1:FileInfo.NumberOfFiles
                         [~,FileName,~] = fileparts(FileInfo.FileName{i});
                         FullFileName = [FileInfo.Path filesep FileName '.pro'];
-                        if ~strcmp(FullFileName, GenerateName(FullFileName,1));
+                        if ~strcmp(FullFileName, GenerateName(FullFileName,1))
                             %%% filename already existed
                             tmp = dir(FullFileName);
                             if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))

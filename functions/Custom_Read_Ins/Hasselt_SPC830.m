@@ -125,10 +125,12 @@ for i=1:numel(FileName)
         Pixelduration = mean(diff(Header.PixelMarker));
         
         %%% Shifts line and frame start by a certain number of pixels
-        %%% 43 for 512 Lines => 43/512*Lines
-        FileInfo.LineTimes((end+1-NoF):end,:) = FileInfo.LineTimes((end+1-NoF):end,:) + round(FileInfo.Lines*43/512)*Pixelduration*FileInfo.ClockPeriod;
-        FileInfo.ImageTimes((end+1-NoF):end,1) = FileInfo.ImageTimes((end+1-NoF):end) + round(FileInfo.Lines*43/512)*Pixelduration*FileInfo.ClockPeriod;
-        %%% Sets line and frame stops
+        %%% LSM510: shift = 43
+        %%% LSM880: shift = 17
+        shift = 17;
+        %%% 17 for 512 Lines => 17/512*Lines
+        FileInfo.LineTimes((end+1-NoF):end,:) = FileInfo.LineTimes((end+1-NoF):end,:) + round(FileInfo.Lines*shift/512)*Pixelduration*FileInfo.ClockPeriod;
+        FileInfo.ImageTimes((end+1-NoF):end,1) = FileInfo.ImageTimes((end+1-NoF):end) + round(FileInfo.Lines*shift/512)*Pixelduration*FileInfo.ClockPeriod;        %%% Sets line and frame stops
         FileInfo.LineStops((end+1):(end+NoF),:) = FileInfo.LineTimes((end+1-NoF):end,:) + FileInfo.Pixels*Pixelduration*FileInfo.ClockPeriod;
         FileInfo.ImageStops((end+1):(end+NoF),1) = FileInfo.LineStops((end+1-NoF):end,end);
         

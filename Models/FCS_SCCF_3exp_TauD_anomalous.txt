@@ -1,0 +1,24 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+Filtered-FCS model function.
+3D anomalous diffusion FCS model with biexponential kinetic terms.
+Diffusion time is fitted, no focus size information.
+Set amplitude to positive values for species autocorrelation functions (SACF)
+and to negative values for cross-correlation functions (SCCF).
+
+|gamma|*|N|*|first exponential + second exponential + third exponential|*|xy diffusion*|z diffusion|+|Offset|    
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): N             = 0.01;	LB = 0;     UB = Inf;
+Param(2): tauD[&mu;s]      = 2500;   LB = 0;     UB = Inf;
+Param(3): p             = 5;	LB = 0;     UB = Inf;
+Param(4): alpha         = 1;	LB = 0;     UB = Inf;f
+Param(5): tau1[&mu;s]      = 1;	LB = 0;     UB = Inf;
+Param(6): A1            = 1;    LB = -1;     UB = 1;
+Param(7): tau2[&mu;s]      = 100;	LB = 0;     UB = Inf;
+Param(8): A2            = 1;    LB = -1;     UB = 1;
+Param(9): tau3[&mu;s]      = 500;	LB = 0;     UB = Inf;f
+Param(10): A3            = 0;    LB = -1;    UB = 1;f
+Param(11): y0            = 0;    LB = -10;    UB = 10;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/P(1); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=(1/sqrt(8))*1/P(1)*(1+P(6)*exp(-x/P(5)/1e-6)+P(8)*exp(-x/P(7)/1e-6)+P(10)*exp(-x/P(9)/1e-6)).*(1./(1+(x/(P(2)*1e-6)).^P(4))).*(1./sqrt(1+(1/P(3)^2)*(x/(P(2)*1e-6)).^P(4)))+P(11);

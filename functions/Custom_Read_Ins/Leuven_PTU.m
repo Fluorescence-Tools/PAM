@@ -28,6 +28,13 @@ FileInfo.Path=Path;
 % Initializes line and frame markers
 FileInfo.LineTimes = [];
 FileInfo.ImageTimes = [];
+FileInfo.LineStops = [];
+FileInfo.ImageStops = [];
+
+FileInfo.Frames = 0;
+FileInfo.Lines = [];
+FileInfo.Pixels = [];
+FileInfo.PixTime = [];
 
 %%% Initializes microtime and macotime arrays
 if strcmp(UserValues.Detector.Auto,'off')
@@ -110,49 +117,143 @@ for i=1:numel(FileName)
         end
     end
     %%% Determines last photon for each file
-    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
+    for k=find(~cellfun(@isempty,TcspcData.MT(j,:)))
         FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
     end
     
-    if ~isempty(Header.LineIndices) % Image PTU data
-        if ~isfield(FileInfo, 'LineStops')
-            FileInfo.LineStops = [];
-            FileInfo.ImageStops = [];
+    if ~isempty(Header.LineStart) % Image PTU data  
+        %%% remove the last incomplete frame 
+        if mod(numel(Header.FrameStart),2)==1
+            Header.FrameStart(end)=[];
+        end
+        Header.LineStart(Header.LineStart>Header.FrameStart(end))=[];
+        
+        % cumulative n.o. frames
+        % Header.Frames might contain NoF already
+        f = size(Header.FrameStart(1:2:end),2);
+        FileInfo.Frames = FileInfo.Frames + f;
+        
+        %%% create actual image and line times
+        % framestarts and -stops are both written on bit 1 in the 6-bit CH entry of the PTU files
+        FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameStart(1:2:end)+MaxMT)'*FileInfo.ClockPeriod];
+        % FileInfo.ImageStops=[FileInfo.ImageStops; (Header.FrameStart(2:2:end)+MaxMT)'*FileInfo.ClockPeriod]; % not used anyway
+        % linestarts and -stops are both written on bit 1 in the 6-bit CH entry of the PTU files
+        lstart = reshape((Header.LineStart(1:2:end)+MaxMT),[],f)'*FileInfo.ClockPeriod;
+        lstop = reshape((Header.LineStart(2:2:end)+MaxMT),[],f)'*FileInfo.ClockPeriod;
+        FileInfo.LineTimes=[FileInfo.LineTimes; lstart];
+        FileInfo.LineStops=[FileInfo.LineStops; lstop];
+        
+        %%% image info
+        if i == 1
+            FileInfo.Lines = size(lstart,2);
+            FileInfo.Pixels = FileInfo.Lines;
+            FileInfo.PixTime = mean(mean(lstop-lstart))./FileInfo.Lines;
+        else
+            if ~isequal(FileInfo.Lines, size(lstart,2))
+                msgbox('Image files are not equally sized!'), return;
+            end
         end
         
-        %%% Removes incomplete Frame Starts and Line Markers
-        if mod(numel(Header.FrameIndices),2)==1
-            Header.FrameIndices(end)=[];
-        end
-        Header.LineIndices(Header.LineIndices>Header.FrameIndices(end))=[];
-        FileInfo.ImageTimes=[FileInfo.ImageTimes; (Header.FrameIndices(1:2:end)+MaxMT)*FileInfo.ClockPeriod];
-        FileInfo.ImageStops=[FileInfo.ImageStops; (Header.FrameIndices(2:2:end)+MaxMT)*FileInfo.ClockPeriod];
-        FileInfo.LineTimes=[FileInfo.LineTimes; reshape((Header.LineIndices(1:2:end)+MaxMT),[],Header.NoF)'*FileInfo.ClockPeriod];
-        FileInfo.LineStops=[FileInfo.LineStops; reshape((Header.LineIndices(2:2:end)+MaxMT),[],Header.NoF)'*FileInfo.ClockPeriod];
+        %%% Enables image plotting
+        h.MT.Use_Image.Value = 1;
+        h.MT.Use_Lifetime.Value = 1;
+        UserValues.Settings.Pam.Use_Image = 1;
     else % point PTU data
-        FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
+        %FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
+        %%% Disables image plotting
+        h.MT.Use_Image.Value = 0;
+        h.MT.Use_Lifetime.Value = 0;
+        UserValues.Settings.Pam.Use_Lifetime = 0;
+        UserValues.Settings.Pam.Use_Image = 0;
+        FileInfo.Lines = 1; %Leave here
     end
-    
 end
+
 FileInfo.TACRange = FileInfo.SyncPeriod;
 FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
 FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
 
-if isempty(FileInfo.LineTimes) %%%Point Measurements
-    FileInfo.ImageTimes = linspace(0,FileInfo.MeasurementTime,i+1);
-    FileInfo.LineTimes  = repmat(reshape(linspace(0,FileInfo.ImageTimes(2),11),1,[]),[numel(FileInfo.ImageTimes)-1,1]);
-    for i=2:size(FileInfo.LineTimes,1)
-        FileInfo.LineTimes(i,:)=FileInfo.LineTimes(i,:)+FileInfo.ImageTimes(i);
-    end   
-    FileInfo.Lines=size(FileInfo.LineTimes,2)-1;
-FileInfo.Pixels=FileInfo.Lines;
-else
+if ~isempty(Header.LineStart) % Image PTU data
+    % correct for delay of bits with respect to photons
     FileInfo.ImageTimes = FileInfo.ImageTimes+0.00095;
-    FileInfo.ImageStops = FileInfo.ImageStops+0.00095;
+    %FileInfo.ImageStops = FileInfo.ImageStops+0.00095;
     FileInfo.LineStops = FileInfo.LineStops+0.00095;
     FileInfo.LineTimes = FileInfo.LineTimes+0.00095;
-    FileInfo.Lines=size(FileInfo.LineTimes,2);
-FileInfo.Pixels=FileInfo.Lines;
 end
-FileInfo.Lines=size(FileInfo.LineTimes,2);
-FileInfo.Pixels=FileInfo.Lines;
+
+%% Thresholding or histogramming function 
+thresh = 0;
+histog = 0;
+
+% FileInfo.ClockPeriod is the macrotime clock in seconds
+det = 3;% det is the detector ID in pam
+rout = 1;% rout is the routing ID in pam
+binsize = 100;% binsize is the number of adjacent photons between which the average count rate is calculated
+
+if thresh == 1 % do intensity thresholding of the data prior to loading it
+    low = 2;% low is the lower intensity threshold in kHz
+    high = 10000;% high is the higher intensity threshold in kHz
+    
+    %% change units
+    low = 1/(low*1000*FileInfo.ClockPeriod); %seconds between photons
+    high = 1/(high*1000*FileInfo.ClockPeriod); %s
+    
+    index = [];
+    
+    for i = 1:(round(numel(TcspcData.MT{det,rout})/binsize)-1)
+        if (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize > low
+            % time difference between photons is larger than the lower intensity threshold
+            index = [index ((i-1)*binsize+1:(i*binsize))];
+        elseif (TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))/binsize < high
+            % time difference between photons is smaller than the lower intensity threshold
+            index = [index ((i-1)*binsize+1:(i*binsize))];
+        end
+    end
+    
+    TcspcData.MI{det,rout}(index) = [];
+    TcspcData.MT{det,rout}(index) = [];
+end
+
+if histog == 1 % make a count rate vs lifetime plot
+    IRFoffset = 0; % offset of the IRF from zero in units of TAC channels
+    TACres = 1E12*FileInfo.TACRange/FileInfo.MI_Bins; %ps/TAC channel
+    histogramwidth = 50;
+    
+    bins = floor(size(TcspcData.MT{det,rout},1)/binsize);
+    CR = zeros(bins,0); %mean count rate per bin
+    LT = zeros(bins,0); %mean lifetime per bin
+    for i = 1:bins
+        CR(i) = binsize/((TcspcData.MT{det,rout}(i*binsize)-TcspcData.MT{det,rout}((i-1)*binsize+1))*FileInfo.ClockPeriod)/1000; %average count rate between 'binsize' photons in kHz
+        LT(i) = (mean(TcspcData.MI{det,rout}(i*binsize)-TcspcData.MI{det,rout}((i-1)*binsize+1))-IRFoffset)*TACres/1000; %average foton arrival in ns between 'binsize' photons
+    end
+    
+    
+    histoCR = (max(CR)/histogramwidth:max(CR)/histogramwidth:max(CR))-max(CR)/histogramwidth/2;
+    histo = cell(numel(histoCR),1);
+    for i = 1:numel(CR)
+        [mini, index] = min(abs(histoCR-CR(i))); %find in which count rate bin the current element belongs
+        histo{index} = [histo{index} LT(i)];
+    end
+    histoLT = zeros(numel(histoCR),1);
+    errLT = zeros(numel(histoCR),1);
+    j = [];
+    for i = 1:numel(histoCR)
+        histoLT(i) = mean(histo{i});
+        errLT(i) = std(histo{i})/sqrt(numel(histo{i}));
+        if numel(histo{i})<5
+            j = [j i];
+        end
+    end
+    histoCR(j)=[]; %remove all entries that are not good anyway
+    histoLT(j)=[];
+    errLT(j)=[];
+    hfig = figure;
+    hax = axes(hfig);
+    errorbar(hax, histoCR, histoLT,errLT,'bo')  %errLT is the standard error of the mean
+    xlabel('local count rate [kHz]')
+    ylabel('mean foton arrival time [ns]')
+end
+
+LSUserValues(1);
+% Calculate_Settings = PAM ('Calculate_Settings');
+% Calculate_Settings(h.MT.Use_Image,[]);

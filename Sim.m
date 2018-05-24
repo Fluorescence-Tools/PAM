@@ -33,7 +33,7 @@ h.Sim = figure(...
     'defaultTextFontName',Look.Font,...
     'UserData',[],...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_Sim,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','on');
 
 %%% Sets background of axes and other things
@@ -772,7 +772,17 @@ end
         'String','10',...
         'Callback',@Sim_Settings,...
         'Position',[0.73 0.04 0.08 0.08]);
-
+    h.Sim_Concentration = uicontrol(...
+        'Parent',h.Sim_Species_Panel,...
+        'Units','normalized',...
+        'FontSize',12,...
+        'Style','text',...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'String','= 0 nM',...
+        'Callback',@Sim_Settings,...
+        'HorizontalAlignment','left',...
+        'Position',[0.83 0.04 0.17 0.08]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 
 %% Advanced parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1442,24 +1452,7 @@ guidata(h.Sim,h);
 
 File_List_Callback([],[],3);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions that executes upon closing of Sim window %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Sim(Obj,~)
-clear global -regexp SimData
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Pam=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Pam) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Function that recalculates and adjusts simulation parameters %%%%%%%%%%
@@ -1609,7 +1602,7 @@ switch Obj
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
-        
+        Update_Concentration(Sel);
     case h.Sim_Freq %%% Simulation Frequency changed
         SimData.General(File).Freq =  str2double(h.Sim_Freq.String);        
         for i=1:numel(h.Sim_List.String)
@@ -1784,6 +1777,7 @@ switch Obj
         SimData.Species(Sel).D=str2double(h.Sim_D.String);
     case h.Sim_N %%% Changed number of particles
         SimData.Species(Sel).N=str2double(h.Sim_N.String);
+        Update_Concentration(Sel);
     case h.Sim_wr %%% Changed lateral focus size
         for i=1:4
             SimData.Species(Sel).wr(i)=str2double(h.Sim_wr{i}.String);
@@ -1912,6 +1906,15 @@ switch Obj
 end
 
 SimData.General(File).Species = SimData.Species;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
+%%% Calculate the Concentration of selected Species %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Update_Concentration(Sel)
+global SimData
+h = guidata(findobj('Tag','Sim'));
+c = SimData.Species(Sel).N./prod(SimData.General(Sel).BS)./1E-24./6.022E23./1E-9;
+h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Callbacks of File List %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2119,6 +2122,7 @@ switch mode
 
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
+        Update_Concentration(Sel);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -2154,9 +2158,9 @@ for i = 1:numel(h.Sim_File_List.String)
     if h.Sim_Scan.Value<5
         Do_PointSim;
     else
-        profile on
+        %profile on
         Do_CameraSim;
-        profile viewer
+        %profile viewer
     end
     h.Sim_File_List.Value = h.Sim_File_List.Value+1;
 end
@@ -2229,7 +2233,7 @@ advanced = any([...
     ]);
 %% basic simulation 
 if ~advanced
-    for i = 1:numel(SimData.Species);
+    for i = 1:numel(SimData.Species)
         if ~SimData.Start %%% Aborts Simulation
            return; 
         end
@@ -2275,7 +2279,7 @@ if ~advanced
         end
 
         %%% Determins barrier type and map (for quenching, barriers, ect.)
-        Map_Type = h.Sim_Barrier.Value;
+        Map_Type = SimData.Species(i).Barrier;
         switch Map_Type
             case 1 %%% Free Diffusion
                 if ~isfield(SimData,'Map') || ~iscell(SimData.Map)
@@ -2441,8 +2445,6 @@ if ~advanced
         MI_total{i,4} = cell2mat(MI4);
         clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4;
         
-        %%% we need to adjust the MIbins here
-        MI_Bins = 4*2^14+1;
         stop(Update);
     end
 
@@ -2454,6 +2456,8 @@ if ~advanced
     end
 
     if h.Sim_UseNoise.Value
+        %%% we need to adjust the MIbins here
+        MI_Bins = 4*2^14+1;
         for i=1:4
             if str2double(h.Sim_Noise{i}.String) > 0 && ~isempty(Sim_Photons{i})
                AIPT = Freq/(str2double(h.Sim_Noise{i}.String)*1000);
@@ -3087,7 +3091,7 @@ end
 %%% Peforms actual simulation procedure for camera observation %%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Do_CameraSim(~,~)
-global SimData
+global SimData PathToApp
 h = guidata(findobj('Tag','Sim'));
 Sel = h.Sim_File_List.Value(1);
 
@@ -3144,6 +3148,7 @@ for i = 1:numel(SimData.Species)
             FRET = diag(ones(4,1));
         case 2
             FRET = (SimData.Species(i).R0./SimData.Species(i).R).^6;
+            FRET(SimData.Species(i).R == 0) = 0; % fix nan values
             FRET(1:5:16) = 1;
         case 3
             FRET = diag(ones(4,1));
@@ -3344,6 +3349,7 @@ for i = 1:numel(SimData.Species)
         Pos(Pos==0) = 1;
         Bleach = zeros(SimData.Species(i).Color,NoP);
         for m = 1:Frames
+            disp(m)
             Pos = Pos + round(D*randn(NoP,2));
             
             %%% Puts particles back into box;
@@ -3358,7 +3364,7 @@ for i = 1:numel(SimData.Species)
                 Out2 = (Pos(:,2) > BS(2)) | (Pos(:,2) <= 0);
             end
             
-            for k=1:NoP                
+            for k=1:NoP
                 Int = cell(SimData.Species(i).Color,1);
                 Location = cell(SimData.Species(i).Color,1);                
                 
@@ -3506,9 +3512,10 @@ for i = 1:numel(SimData.Species)
                             Total{j,n}((Location{j}(1):(Location{j}(1)+size(Int{j},1)-1))-Start(1)+1,(Location{j}(2):(Location{j}(2)+size(Int{j},2)-1))-Start(2)+1,m) + uint16(Image);
                     end
                 end
-            end            
-        end 
-    end  
+            end
+        end
+    end
+    
 end
 
 if h.Sim_UseNoise.Value

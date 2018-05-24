@@ -31,7 +31,7 @@ addpath(genpath(['.' filesep 'functions']));
         'Toolbar','figure',...
         'UserData',[],...
         'OuterPosition',[0.01 0.1 0.98 0.9],...
-        'CloseRequestFcn',@Close_PCF,...
+        'CloseRequestFcn',@CloseWindow,...
         'Visible','on');  
     
     %%% Sets background of axes and other things
@@ -525,24 +525,7 @@ h.Plot.ROI = {};
 h.Plot.Cor = {};
 guidata(h.PCF,h);  
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Functions that executes upon closing of pam window %%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_PCF(Obj,~)
-clear global -regexp PCFData
-Phasor=findobj('Tag','Phasor');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-Pam=findobj('Tag','Pam');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-if isempty(Phasor) && isempty(FCSFit) && isempty(MIAFit) && isempty(Pam) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)
-    clear global -regexp UserValues
-end
-delete(Obj);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Functions to load PCF files %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1340,7 +1323,11 @@ switch mode
             end
         end
     case 7 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel
@@ -1663,7 +1650,11 @@ switch mode
         %%% Save new plots
         guidata(h.PCF,h);
     case 6 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel
