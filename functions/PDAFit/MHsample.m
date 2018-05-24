@@ -181,9 +181,13 @@ if count == 1 %isempty(h) %%% create new figure, depending on the model
     handles.bayesian.button_pause = uicontrol('Style','pushbutton','Parent',parent_figure,'Units','normalized','UserData',0,...
         'Position',[0.12 0.01 0.1 0.05],'Callback',@PauseCallback,'String','Pause','ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Control);
     handles.bayesian.text = uicontrol('Style','text','String','acceptance ratio = 0','Units','normalized','Position',[0.8 0 0.2 0.05],'Parent',parent_figure,'ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Back,'FontSize',12);
+    handles.bayesian.text_time = uicontrol('Style','text','String','est. time remaining: 0 min','Units','normalized','Position',[0.6 0 0.2 0.05],'Parent',parent_figure,'ForegroundColor',UserValues.Look.Fore,'BackgroundColor',UserValues.Look.Back,'FontSize',12);
     drawnow;
     %%% save handles structure to guidata
     guidata(parent_figure,handles);
+    %%% start timer to estimate remaining time
+    tic;
+    handles.bayesian.text_time.UserData = 0;
 else
     handles = guidata(parent_figure);
     %%% update plots
@@ -197,6 +201,12 @@ else
         
     end
     handles.bayesian.text.String = sprintf('acceptance ratio = %.4f',acceptance);
+    
+    %%% estimate remaining time
+    time = toc;
+    handles.bayesian.text_time.UserData = handles.bayesian.text_time.UserData + time; % sum up time
+    handles.bayesian.text_time.String = sprintf('est. time remaining: %.1f min',handles.bayesian.text_time.UserData.*(size(samples,1)-count)./count./60);
+    tic; %restart timer
     drawnow;
 end 
 

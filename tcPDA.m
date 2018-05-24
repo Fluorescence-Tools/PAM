@@ -25,8 +25,8 @@ end
 if isempty(h)
     %GUI definition
     handles.colormap = [1,0,0;0.986666679382324,0.0533333346247673,0.0533333346247673;0.973333358764648,0.106666669249535,0.106666669249535;0.959999978542328,0.159999996423721,0.159999996423721;0.946666657924652,0.213333338499069,0.213333338499069;0.933333337306976,0.266666680574417,0.266666680574417;0.920000016689301,0.319999992847443,0.319999992847443;0.906666696071625,0.373333334922791,0.373333334922791;0.893333315849304,0.426666676998138,0.426666676998138;0.879999995231628,0.480000019073486,0.480000019073486;0.866666674613953,0.533333361148834,0.533333361148834;0.853333353996277,0.586666703224182,0.586666703224182;0.840000033378601,0.639999985694885,0.639999985694885;0.826666653156281,0.693333327770233,0.693333327770233;0.813333332538605,0.746666669845581,0.746666669845581;0.800000011920929,0.800000011920929,0.800000011920929;0.812500000000000,0.812500000000000,0.812500000000000;0.824999988079071,0.824999988079071,0.824999988079071;0.837500035762787,0.837500035762787,0.837500035762787;0.850000023841858,0.850000023841858,0.850000023841858;0.862500011920929,0.862500011920929,0.862500011920929;0.875000000000000,0.875000000000000,0.875000000000000;0.887499988079071,0.887499988079071,0.887499988079071;0.899999976158142,0.899999976158142,0.899999976158142;0.912500023841858,0.912500023841858,0.912500023841858;0.925000011920929,0.925000011920929,0.925000011920929;0.937500000000000,0.937500000000000,0.937500000000000;0.949999988079071,0.949999988079071,0.949999988079071;0.962499976158142,0.962499976158142,0.962499976158142;0.975000023841858,0.975000023841858,0.975000023841858;0.987500011920929,0.987500011920929,0.987500011920929;1,1,1;0.987500011920929,0.987500011920929,0.987500011920929;0.975000023841858,0.975000023841858,0.975000023841858;0.962499976158142,0.962499976158142,0.962499976158142;0.949999988079071,0.949999988079071,0.949999988079071;0.937500000000000,0.937500000000000,0.937500000000000;0.925000011920929,0.925000011920929,0.925000011920929;0.912500023841858,0.912500023841858,0.912500023841858;0.899999976158142,0.899999976158142,0.899999976158142;0.887499988079071,0.887499988079071,0.887499988079071;0.875000000000000,0.875000000000000,0.875000000000000;0.862500011920929,0.862500011920929,0.862500011920929;0.850000023841858,0.850000023841858,0.850000023841858;0.837500035762787,0.837500035762787,0.837500035762787;0.824999988079071,0.824999988079071,0.824999988079071;0.812500000000000,0.812500000000000,0.812500000000000;0.800000011920929,0.800000011920929,0.800000011920929;0.750000000000000,0.750000000000000,0.812500000000000;0.699999988079071,0.699999988079071,0.824999988079071;0.650000035762787,0.650000035762787,0.837500035762787;0.600000023841858,0.600000023841858,0.850000023841858;0.550000011920929,0.550000011920929,0.862500011920929;0.500000000000000,0.500000000000000,0.875000000000000;0.450000017881393,0.450000017881393,0.887499988079071;0.400000005960465,0.400000005960465,0.899999976158142;0.349999994039536,0.349999994039536,0.912500023841858;0.300000011920929,0.300000011920929,0.925000011920929;0.250000000000000,0.250000000000000,0.937500000000000;0.200000002980232,0.200000002980232,0.949999988079071;0.150000005960464,0.150000005960464,0.962499976158142;0.100000001490116,0.100000001490116,0.975000023841858;0.0500000007450581,0.0500000007450581,0.987500011920929;0,0,1];
-    handles.color_str = lines(10);
-    handles.color_str = mat2cell(handles.color_str,ones(size(handles.color_str,1),1),size(handles.color_str,2));
+    color_str = [lines(5);lines(5)*0.75];
+    handles.color_str = mat2cell(color_str,ones(size(color_str,1),1),size(color_str,2));
     %define main window
     handles.Figure = figure(...
     'Units','normalized',...
@@ -91,6 +91,11 @@ if isempty(h)
         'BackgroundColor', UserValues.Look.Back,...
         'Tag','tab_bayesian');
     
+    handles.tab_twocolorPDAData = uitab(handles.tabgroup,...
+        'title','Two-Color Data Sets',...
+        'BackgroundColor', UserValues.Look.Back,...
+        'Tag','tab_twocolorPDAData');
+    
     handles.tabgroup_side = uitabgroup(...
     'Parent',handles.Figure,...
     'Tag','Side_Tab',...
@@ -107,10 +112,10 @@ if isempty(h)
     'BackgroundColor', UserValues.Look.Back,...
     'Tag','tab_corrections'); 
     
-    handles.tab_2cpdadata = uitab(handles.tabgroup_side,...
+    handles.tab_PDAData = uitab(handles.tabgroup_side,...
     'title','1D PDA data',...
     'BackgroundColor', UserValues.Look.Back,...
-    'Tag','tab_2cpdadata'); 
+    'Tag','tab_2cPDAData'); 
     
     %%% fit progress axes
     handles.fit_progress_panel = uibuttongroup(...
@@ -160,7 +165,7 @@ if isempty(h)
         'String','Pause',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Enable','off',...
         'Callback',[]);
     handles.fit_cancel_button =  uicontrol('Parent',handles.fit_progress_panel,...
@@ -171,7 +176,7 @@ if isempty(h)
         'String','Stop',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Enable','off',...
         'Callback',[]);
     %define tables
@@ -194,33 +199,29 @@ if isempty(h)
         'RowName',str_dummy,...
         'ColumnName',{''},...
         'Units','normalized',...
-        'FontSize',12,...
-        'Position',[0 0 1 0.8],...
+        'FontSize',10,...
+        'Position',[0 0.4 1 0.425],...
         'ColumnWidth',{100},...
         'ColumnEditable',[true],...
         'ForegroundColor',UserValues.Look.TableFore,...
         'BackgroundColor',[UserValues.Look.Table1;UserValues.Look.Table2],...
         'CellEditCallback',@update_corrections);
     
-    %make three tabs: 1D GR, 2D PB-PR and 3D all together
-    %enable only one tab during fitting (depending on what fit method is
-    %selected) but re-enable other tabs after fitting is complete
-    %define axes
     handles.sampling_text = uicontrol('Style','text',...
         'Units','normalized',...
-        'Position',[0.05,0.95,0.45,0.03],...
+        'Position',[0.05,0.96,0.45,0.03],...
         'String','Monte-Carlo Oversampling:',...
         'Tag','sampling_text',...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Parent',handles.tab_corrections);
     
     handles.sampling_edit = uicontrol('Style','edit',...
         'Units','normalized',...
-        'Position',[0.5,0.95,0.25,0.03],...
+        'Position',[0.5,0.96,0.25,0.03],...
         'String',num2str(UserValues.tcPDA.sampling),...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','sampling_edit',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
@@ -229,26 +230,86 @@ if isempty(h)
     
     handles.nbins_text = uicontrol('Style','text',...
         'Units','normalized',...
-        'Position',[0.05,0.9,0.45,0.03],...
+        'Position',[0.05,0.91,0.45,0.03],...
         'String','# Bins for histograms:',...
         'Tag','nbins_text',...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Parent',handles.tab_corrections);
     
     handles.nbins_edit = uicontrol('Style','edit',...
         'Units','normalized',...
-        'Position',[0.5,0.9,0.25,0.03],...
+        'Position',[0.5,0.91,0.25,0.03],...
         'String',num2str(UserValues.tcPDA.nbins),...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','nbins_edit',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Parent',handles.tab_corrections,...
         'Callback',@update_corrections);
     
-
+    handles.plottype_text = uicontrol('Style','text',...
+        'Units','normalized',...
+        'Position',[0.05,0.86,0.45,0.03],...
+        'String','Plot type:',...
+        'Tag','plottype_text',...
+        'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
+            'mesh: plots the fit as a mesh in addition to the data<br>'...
+            'colormap: plots the weighted residuals as colormap on the data'],...
+        'FontSize',10,...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections);
+    
+    handles.plottype_dropdownmenu = uicontrol('Style','popupmenu',...
+        'Units','normalized',...
+        'Position',[0.5,0.86,0.25,0.03],...
+        'String',{'mesh','colormap'},...
+        'FontSize',10,...
+        'TooltipString',['<html>Choose the way that the weighted residuals are plotted in 2d plots.<br>'...
+            'mesh: plots the fit as a mesh in addition to the data<br>'...
+            'colormap: plots the weighted residuals as colormap on the data'],...
+        'Tag','plottype_dropdownmenu',...
+        'String',{'mesh','colormap'},...
+        'Value',1,...
+        'BackgroundColor',UserValues.Look.Control,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections,...
+        'Callback',@update_corrections);
+    
+    handles.CUDAKernel_checkbox = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Position',[0.05,0.83,0.45,0.03],...
+        'String','Use CUDAKernel',...
+        'Tag','CUDAKernel_checkbox',...
+        'TooltipString','Choose the implementation of CUDA between CUDAKernel or MEXfile.',...
+        'FontSize',10,...
+        'Value',UserValues.tcPDA.UseCUDAKernel,...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_corrections,...
+        'Callback',@update_corrections);
+    
+    % define P(N) axis
+    handles.axes_PN = axes('Parent',handles.tab_corrections,...
+    'Units','normalized',...
+    'Position',[0.12 0.06 0.8 0.3],...
+    'FontSize',10,...
+    'XColor',UserValues.Look.Fore,...
+    'YColor',UserValues.Look.Fore,...
+    'LineWidth', UserValues.Look.AxWidth,...
+    'Color',UserValues.Look.Axes,...
+    'GridAlpha',0.5,...
+    'XGrid','on',...
+    'nextplot','add',...
+    'YGrid','on',...
+    'Box','on');
+    handles.plots.PN = plot(0:1:100,normpdf(0:1:100,50,2),'LineWidth',2);
+    xlabel('Number of Photons');handles.axes_PN.XColor = UserValues.Look.Fore;
+    ylabel('Occurence');handles.axes_PN.YColor = UserValues.Look.Fore;
+    handles.axes_PN.Title.String = 'Photon count distribution';
+    handles.axes_PN.Title.Color = UserValues.Look.Fore;
     
     %define fit table
     str_dummy = {'<html><b>Amplitude','<html><b>R<sub>GR</sub>','<html><b>&sigma;<sub>GR</sub>','<html><b>R<sub>BG</sub>', '<html><b>&sigma;<sub>BG</sub>','<html><b>R<sub>BR</sub>','<html><b>&sigma;<sub>BR</sub>',''};
@@ -260,7 +321,7 @@ if isempty(h)
         'ColumnName',{'<html><b>Parameter','<html><b>Value','<html><b>F','<html><b>LB','<html><b>UB','<html><b>P','<html><b>Prior &mu;','<html><b>Prior &sigma;'},...
         'Units','normalized',...
         'Position',[0 0 1 0.75],...
-        'FontSize',12,...
+        'FontSize',10,...
         'ColumnWidth',{75,75,25,50,50,25,75,75},...
         'ColumnEditable',[false,true,true,true,true,true,true,true],...
         'ColumnFormat',{'char','numeric','logical','numeric','numeric','logical','numeric','numeric'},...
@@ -268,7 +329,20 @@ if isempty(h)
         'BackgroundColor',[UserValues.Look.Table1;UserValues.Look.Table2],...
         'CellEditCallback',@update_fit_params);
     
+    %%% add right click menu
+    handles.fit_table_menu = uicontextmenu;
+    handles.fit_table_menu_fix_amplitudes = uimenu(handles.fit_table_menu,'Label','Fix amplitudes','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixGR = uimenu(handles.fit_table_menu,'Label','Fix GR parameters','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixAllButCovar = uimenu(handles.fit_table_menu,'Label','Fix everything except covariances','Checked','off','Callback',@fitpar_fix);
+    handles.fit_table_menu_fixAllCovar = uimenu(handles.fit_table_menu,'Label','Fix all covariances','Checked','on','Callback',@fitpar_fix);
+    handles.fit_table.UIContextMenu = handles.fit_table_menu;
+    
     nbins = UserValues.tcPDA.nbins+1;
+    
+        
+    %make three tabs: 1D GR, 2D PB-PR and 3D all together
+    %enable only one tab during fitting (depending on what fit method is
+    %selected) but re-enable other tabs after fitting is complete
     %define axes
     handles.axes_1d = axes('Parent',handles.tab_1d,...
         'Units','normalized',...
@@ -277,18 +351,19 @@ if isempty(h)
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
         'GridAlpha',0.5,...
-        'FontSize',12,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'XGrid','on',...
         'nextplot','add',...
         'YGrid','on',...
         'Box','off',...
         'XLim',[0,1],...
-        'Tag','axes_1d');
+        'Tag','axes_1d',...
+        'TickDir','out');
   
-    handles.axes_1d.XLabel.String = 'FRET efficiency GR';
+    handles.axes_1d.XLabel.String = 'PR_{GR}';
     handles.axes_1d.XLabel.Color = UserValues.Look.Fore;
-    handles.axes_1d.YLabel.String = '#';
+    handles.axes_1d.YLabel.String = 'Occurence';
     handles.axes_1d.YLabel.Color = UserValues.Look.Fore;
     handles.axes_1d.XColor = UserValues.Look.Fore;
     handles.axes_1d.YColor = UserValues.Look.Fore;
@@ -308,7 +383,7 @@ if isempty(h)
         'Position',[0.075 0.875 0.9, 0.1],...
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'Box','off',...
         'XGrid','on',...
@@ -317,7 +392,8 @@ if isempty(h)
         'XTickLabel',[],...
         'nextplot','add',...
         'XLim',[0,1],...
-        'Tag','axes_1d_res');
+        'Tag','axes_1d_res',...
+        'TickDir','out');
     handles.axes_1d_res.XLabel.String = '';
     handles.axes_1d_res.YLabel.String = 'w_{res}';
     handles.axes_1d_res.YLabel.Color = UserValues.Look.Fore;
@@ -333,7 +409,7 @@ if isempty(h)
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
         'ZColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'Box','off',...
         'nextplot','add',...
@@ -341,9 +417,9 @@ if isempty(h)
         'YLim',[0,1],...
         'View',[45,45],...
         'Tag','axes_2d');
-    handles.axes_2d.XLabel.String = 'P_{BG}';
+    handles.axes_2d.XLabel.String = 'PR_{BG}';
     handles.axes_2d.XLabel.Color = UserValues.Look.Fore;
-    handles.axes_2d.YLabel.String = 'P_{BR}';
+    handles.axes_2d.YLabel.String = 'PR_{BR}';
     handles.axes_2d.YLabel.Color = UserValues.Look.Fore;
     handles.axes_2d.ZLabel.String = '#';
     handles.axes_2d.ZLabel.Color = UserValues.Look.Fore;
@@ -351,7 +427,7 @@ if isempty(h)
     fit2d = peaks(nbins).^2;
     data2d = real(max(fit2d+sqrt(fit2d).*randn(nbins),0));
     handles.plots.handle_2d_data = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),data2d,'FaceAlpha',0.6,'EdgeColor','none');
-    handles.plots.handle_2d_fit = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',[0 0 0]);
+    handles.plots.handle_2d_fit = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',[1 1 1]);
     for i = 1:10
         handles.plots.handles_H_res_2d_individual(i) = surf(handles.axes_2d,linspace(0,1,nbins),linspace(0,1,nbins),fit2d,'FaceColor','none','EdgeColor',handles.color_str{i},'Visible','off');
     end
@@ -359,7 +435,7 @@ if isempty(h)
     handles.axes_2d_res = axes('Parent',handles.tab_2d,...
         'Units','normalized',...
         'Position',[0.075 0.775 0.9 0.2],...
-        'FontSize',12,...
+        'FontSize',16,...
         'LineWidth', UserValues.Look.AxWidth,...
         'XColor',UserValues.Look.Fore,...
         'YColor',UserValues.Look.Fore,...
@@ -408,8 +484,8 @@ if isempty(h)
         %%% create axis labels and plots
         switch i
             case 1
-                ax.XLabel.String = 'P_{BR}';
-                ax.YLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{BR}';
+                ax.YLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg_br =  surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,3)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_bg_br(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,3)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -417,8 +493,8 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg_br = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,3)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 2
-                ax.XLabel.String = 'P_{GR}';
-                ax.YLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{GR}';
+                ax.YLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,2)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_bg_gr(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,2)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -426,8 +502,8 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,2)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 3
-                ax.XLabel.String = 'P_{GR}';
-                ax.YLabel.String = 'P_{BR}';
+                ax.XLabel.String = 'PR_{GR}';
+                ax.YLabel.String = 'PR_{BR}';
                 handles.plots.handle_3d_data_br_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(data3d,1)),'EdgeColor','none','FaceAlpha',0.6);
                 for j = 1:10
                     handles.plots.handles_H_res_3d_individual_br_gr(j) = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,1)),'FaceColor','none','EdgeColor',handles.color_str{j},'Visible','off');
@@ -435,7 +511,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_br_gr = surf(ax,linspace(0,1,nbins),linspace(0,1,nbins),squeeze(sum(fit3d,1)),'FaceColor','none','EdgeColor',[1 1 1]);
                 ax.ZLim(1) = 0;
             case 4
-                ax.XLabel.String = 'P_{BG}';
+                ax.XLabel.String = 'PR_{BG}';
                 handles.plots.handle_3d_data_bg = bar(ax,x_axis,squeeze(sum(sum(data3d,2),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,2),3));
                 for j = 1:10
@@ -444,7 +520,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_bg = stairs(ax,x_axis_stairs,[fit; fit(end)],'Color','k','LineWidth',2);
                 ax.YLim(1) = 0;
             case 5
-                ax.XLabel.String = 'P_{BR}';
+                ax.XLabel.String = 'PR_{BR}';
                 handles.plots.handle_3d_data_br = bar(ax,x_axis,squeeze(sum(sum(data3d,1),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,1),3));
                 for j = 1:10
@@ -453,7 +529,7 @@ if isempty(h)
                 handles.plots.handle_3d_fit_br = stairs(ax,x_axis_stairs,[fit fit(end)],'Color','k','LineWidth',2);
                 ax.YLim(1) = 0;
             case 6
-                ax.XLabel.String = 'P_{GR}';
+                ax.XLabel.String = 'PR_{GR}';
                 handles.plots.handle_3d_data_gr = bar(ax,x_axis,squeeze(sum(sum(data3d,1),2)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
                 fit = squeeze(sum(sum(fit3d,1),2));
                 for j = 1:10
@@ -472,7 +548,7 @@ if isempty(h)
          'String','chi2 = ...',...
          'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
          'Tag','text_chi2');
      %BIC text
      handles.BIC_text = uicontrol('Parent',handles.tab_fit_table,...
@@ -483,7 +559,7 @@ if isempty(h)
          'String','',...
          'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
          'Tag','BIC_text');
      
     %define buttons
@@ -495,7 +571,7 @@ if isempty(h)
         'String','Fit',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Callback',@pushbutton_fit);
     
     handles.button_view_curve = uicontrol('Parent',handles.tab_fit_table,...
@@ -506,7 +582,7 @@ if isempty(h)
         'String','View Curve',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Callback',@pushbutton_view_curve);
     
     handles.button_save_fitstate = uicontrol('Parent',handles.tab_fit_table,...
@@ -514,7 +590,7 @@ if isempty(h)
         'Tag','button_save_fitstate',...
         'Units','normalized',...
         'Position',[0.55 0.88 0.4 0.03],...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
         'String','Save Fit State',...
@@ -534,7 +610,7 @@ if isempty(h)
         'Style','pushbutton',...
         'Tag','button_load_fitstate',...
         'Units','normalized',...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Position',[0.55 0.84 0.4 0.03],...
@@ -545,33 +621,56 @@ if isempty(h)
         'Style','checkbox',...
         'Tag','checkbox_stochasticlabeling',...
         'Units','normalized',...
-        'Position',[0.025 0.88 0.325 0.03],...
+        'Position',[0.025 0.88 0.275 0.03],...
         'String','Stochastic labeling?',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Value',UserValues.tcPDA.use_stochastic_labeling,...
         'Callback',@update_corrections);
     handles.edit_stochasticlabeling = uicontrol('Parent',handles.tab_fit_table,...
         'Style','edit',...
         'Tag','edit_stochasticlabeling',...
         'Units','normalized',...
-        'Position',[0.35 0.88 0.15 0.03],...
+        'Position',[0.30 0.88 0.14 0.03],...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'String',num2str(UserValues.tcPDA.stochastic_labeling_fraction),...
         'Callback',@update_corrections);
+    handles.checkbox_fix_stochasticlabeling = uicontrol('Parent',handles.tab_fit_table,...
+        'Style','checkbox',...
+        'Tag','checkbox_fix_stochasticlabeling',...
+        'Units','normalized',...
+        'Position',[0.44 0.88 0.1 0.03],...
+        'String','F?',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'FontSize',10,...
+        'Value',UserValues.tcPDA.fix_stochasticlabeling,...
+        'Callback',@update_corrections);
+    
     handles.MLE_checkbox = uicontrol('Style','checkbox',...
         'Units','normalized',...
-        'Position',[0.025,0.84,0.475,0.03],...
+        'Position',[0.025,0.84,0.23,0.03],...
         'String','Use MLE',...
         'Tag','MLE_checkbox',...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
         'Parent',handles.tab_fit_table,...
         'Value',UserValues.tcPDA.use_MLE,...
+        'Callback',@update_corrections);
+    handles.live_plot_update_checkbox = uicontrol('Style','checkbox',...
+        'Units','normalized',...
+        'Position',[0.2325,0.84,0.3,0.03],...
+        'String','Live Plot',...
+        'Tag','live_plot_update_checkbox',...
+        'FontSize',10,...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Parent',handles.tab_fit_table,...
+        'Value',1,...
         'Callback',@update_corrections);
     
     handles.FitMethod_popupmenu = uicontrol('Style','popupmenu',...
@@ -580,7 +679,7 @@ if isempty(h)
         'String',{'Simplex','Pattern Search','Gradient-based','Gradient-based (global)'},...
         'Tag','FitMethod_popupmenu',...
         'Parent',handles.tab_fit_table,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Callback',[]);
     handles.FitMethodText = uicontrol('Style','text',...
         'Units','normalized',...
@@ -589,7 +688,7 @@ if isempty(h)
         'Tag','FitMethod_text',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'HorizontalAlignment','left',...
         'Parent',handles.tab_fit_table);
     
@@ -600,7 +699,7 @@ if isempty(h)
         'String','0',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','min_n_edit',...
         'Callback',@Cut_Data);
     handles.min_n_text = uicontrol('Style','text',...
@@ -608,7 +707,7 @@ if isempty(h)
         'Units','normalized',...
         'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
         'Position',[0.65 0.96 0.15 0.03],...
         'HorizontalAlignment','left',...
         'String','Min N:',...
@@ -620,7 +719,7 @@ if isempty(h)
         'String','Inf',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','max_n_edit',...
         'Callback',@Cut_Data);
     handles.max_n_text = uicontrol('Style','text',...
@@ -629,7 +728,7 @@ if isempty(h)
         'Position',[0.65 0.92 0.15 0.03],...
         'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
          'HorizontalAlignment','left',...
         'String','Max N:',...
         'Tag','max_n_text');
@@ -637,7 +736,7 @@ if isempty(h)
         'Style','popupmenu',...
         'Tag','popupmenu_ngauss',...
         'Units','normalized',...
-        'FontSize',12,...
+        'FontSize',10,...
         'Position',[0.25 0.92 0.3 0.03],...
         'String',{'1','2','3','4','5'},...
         'Callback',@popupmenu_ngauss_callback);
@@ -648,7 +747,7 @@ if isempty(h)
         'Tag','ngauss_text',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'HorizontalAlignment','left',...
         'Parent',handles.tab_fit_table);
     %%% Bayesian Tab
@@ -702,7 +801,7 @@ if isempty(h)
         'Callback',@update_corrections,...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','n_samples_button');
     
      handles.n_samples_text = uicontrol('Style','text',...
@@ -712,7 +811,7 @@ if isempty(h)
         'String','Number of samples:',...
         'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
         'Tag','n_samples_text');
     
     handles.mcmc_spacing_edit = uicontrol('Style','edit',...
@@ -722,7 +821,7 @@ if isempty(h)
         'String',num2str(UserValues.tcPDA.mcmc_spacing),...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Callback',@update_corrections,...
         'Tag','mcmc_spacing_edit');
     
@@ -733,7 +832,7 @@ if isempty(h)
         'String','Spacing between samples:',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','mcmc_spacing_text');
     
     handles.mcmc_method_text = uicontrol('Style','text',...
@@ -743,7 +842,7 @@ if isempty(h)
         'String','Sampling method:',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','n_samples_text');
     
     handles.mcmc_method = uicontrol('Style','popupmenu',...
@@ -752,7 +851,7 @@ if isempty(h)
         'Position',[0.22 0.05 0.125 0.2],...
         'String',{'MH','MHWG'},...
         'Value',1,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','mcmc_method');
     
     handles.sigma_A_edit = uicontrol('Style','edit',...
@@ -763,7 +862,7 @@ if isempty(h)
         'Callback',@update_corrections,...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','sigma_A_edit');
     
      handles.sigma_A_text = uicontrol('Style','text',...
@@ -773,7 +872,7 @@ if isempty(h)
         'String','Sampling width for Amplitudes:',...
         'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
-         'FontSize',12,...
+         'FontSize',10,...
          'HorizontalAlignment','left',...
         'Tag','sigma_A_text');
     
@@ -782,7 +881,7 @@ if isempty(h)
         'Units','normalized',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Position',[0.85 0.45 0.125 0.2],...
         'String',num2str(UserValues.tcPDA.mcmc_wR),...
         'Callback',@update_corrections,...
@@ -793,7 +892,7 @@ if isempty(h)
         'Units','normalized',...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Position',[0.65 0.45 0.2 0.2],...
         'String','Sampling width for Distances:',...
         'HorizontalAlignment','left',...
@@ -807,7 +906,7 @@ if isempty(h)
         'Callback',@update_corrections,...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'FontSize',12,...
+        'FontSize',10,...
         'Tag','sigma_s_edit');
     
      handles.sigma_s_text = uicontrol('Style','text',...
@@ -816,7 +915,7 @@ if isempty(h)
         'BackgroundColor',UserValues.Look.Back,...
          'ForegroundColor',UserValues.Look.Fore,...
          'HorizontalAlignment','left',...
-         'FontSize',12,...
+         'FontSize',10,...
         'Position',[0.65 0.2 0.2 0.2],...
         'String','Sampling width for Widths:',...
         'Tag','sigma_s_text');
@@ -827,46 +926,70 @@ if isempty(h)
         'String','Use Brightness Correction',...
         'Tag','Brightness_Correction_Toggle',...
         'Parent',handles.tab_corrections,...
-        'FontSize',12,...
+        'FontSize',10,...
         'BackgroundColor',UserValues.Look.Back,...
         'ForegroundColor',UserValues.Look.Fore,...
+        'Enable','off',...
+        'Visible','off',...
         'Callback',[]);
     
    %%% 1d pda data tab
-   handles.panel_2cpdadata = uibuttongroup(...
+   handles.panel_2cPDAData = uibuttongroup(...
         'BackgroundColor',UserValues.Look.Back,...
-        'Parent',handles.tab_2cpdadata,...
+        'Parent',handles.tab_PDAData,...
         'Units','normalized',...
         'Position',[0 0 1 1],...
-        'Tag','panel_2cpdadata');
+        'Tag','panel_2cPDAData');
     
-   handles.add_2cpdadata = uicontrol('Style','pushbutton',...
-        'Parent',handles.panel_2cpdadata,...
+   handles.add_2cPDAData = uicontrol('Style','pushbutton',...
+        'Parent',handles.panel_2cPDAData,...
         'Units','normalized',...
         'Position',[0.05 0.9 0.25 0.05],...
         'String','Load 2C PDA data',...
-        'Tag','add_2cpdadata',...
+        'Tag','add_2cPDAData',...
         'BackgroundColor',UserValues.Look.Control,...
         'ForegroundColor',UserValues.Look.Fore,...
-        'Callback',@add_2cpdadata);
+        'Callback',@add_2cPDAData);
     
-    cnames = {'Use','File','Dist','<html>&gamma;</html>','ct','de','BG don','BG acc','timebin','Del'};
-    cformat = {'logical','char',{'GR','BG','BR'},'numeric','numeric','numeric','numeric','numeric','numeric','logical'};
-    cedit = [true,false,true,true,true,true,true,true,false,true];
+    cnames = {'Use','File','Dist','<html>&gamma;</html>','ct','de','R0','BG don','BG acc','timebin','Del'};
+    cformat = {'logical','char',{'GR','BG','BR'},'numeric','numeric','numeric','numeric','numeric','numeric','numeric','logical'};
+    cedit = [true,false,true,true,true,true,true,true,true,false,true];
     data = {true,'test','GR',1,0,0,0,0,1,false};
     cwidth = {40,'auto',60,40,40,40,50,50,50,40};
-    handles.table_2cpdadata = uitable(...
-        'Parent',handles.panel_2cpdadata,...
+    handles.table_2cPDAData = uitable(...
+        'Parent',handles.panel_2cPDAData,...
         'Units','normalized',...
         'Position',[0 0 1 0.8],...
         'RowName',[],...
         'ColumnName',cnames,...
         'ColumnEditable',cedit,...
         'ColumnFormat',cformat,...
-        'CellEditCallback',@table_2cpdadata_callback,...
+        'CellEditCallback',@table_2cPDAData_callback,...
         'ColumnWidth',cwidth,...
         'Data',data);
-        
+    
+    handles.use_2cPDAData_checkbox = uicontrol('Style','checkbox',...
+        'Parent',handles.panel_2cPDAData,...
+        'Units','normalized',...
+        'Position',[0.05 0.85 0.9 0.05],...
+        'String','Use 2C PDA data (global analysis)',...
+        'Tag','use_2cPDAData_checkbox',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Value',0,...
+        'Callback',[]);
+    
+     handles.norm_likelihood_checkbox = uicontrol('Style','checkbox',...
+        'Parent',handles.panel_2cPDAData,...
+        'Units','normalized',...
+        'Position',[0.05 0.8 0.9 0.05],...
+        'String','Normalize likelihood for global analysis',...
+        'ToolTipString','Uses geometric mean of the likelihood for each dataset.',...
+        'Tag','norm_likelihood_checkbox',...
+        'BackgroundColor',UserValues.Look.Back,...
+        'ForegroundColor',UserValues.Look.Fore,...
+        'Value',0,...
+        'Callback',[]);
     %%% store guidata
     guidata(handles.Figure,handles);
     
@@ -924,6 +1047,7 @@ switch hObject
         UserValues.tcPDA.sampling = str2double(get(handles.sampling_edit,'String'));
     case handles.nbins_edit
         UserValues.tcPDA.nbins = str2double(get(handles.nbins_edit,'String'));
+        tcPDAstruct.nbins = UserValues.tcPDA.nbins;
         calculate_histograms();
         PlotData(handles);
         view_curve(handles);
@@ -933,11 +1057,18 @@ switch hObject
         if isnan(str2double(handles.edit_stochasticlabeling.String))
             handles.edit_stochasticlabeling.String = num2str(UserValues.tcPDA.stochastic_labeling_fraction);
         else
+            if str2double(handles.edit_stochasticlabeling.String) > 1
+                handles.edit_stochasticlabeling.String = num2str(1);
+            elseif str2double(handles.edit_stochasticlabeling.String) < 0
+                handles.edit_stochasticlabeling.String = num2str(0);
+            end
             UserValues.tcPDA.stochastic_labeling_fraction = str2double(handles.edit_stochasticlabeling.String);
         end     
     case handles.checkbox_stochasticlabeling
         reset_plot([],[],handles);
         UserValues.tcPDA.use_stochastic_labeling = handles.checkbox_stochasticlabeling.Value;
+    case handles.checkbox_fix_stochasticlabeling
+        UserValues.tcPDA.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
     case handles.MLE_checkbox
         UserValues.tcPDA.use_MLE = handles.MLE_checkbox.Value;
     case handles.sigma_A_edit
@@ -971,6 +1102,12 @@ switch hObject
             UserValues.tcPDA.mcmc_spacing = str2double(handles.mcmc_spacing_edit.String);
         end
         MCMC_summary(handles.mcmc_spacing_edit,[]);
+    case handles.live_plot_update_checkbox
+        tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
+    case handles.plottype_dropdownmenu
+        plot_after_fit(handles);
+    case handles.CUDAKernel_checkbox
+        UserValues.tcPDA.UseCUDAKernel = handles.CUDAKernel_checkbox.Value;
 end
 LSUserValues(1);
 
@@ -979,8 +1116,8 @@ handles = guidata(hObject);
 fit_tcPDA(handles)
 
 function calculate_histograms()
-global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+global tcPDAstruct
+nbins = tcPDAstruct.nbins;
 
 tcPDAstruct.H_meas = histcn([tcPDAstruct.EBG,tcPDAstruct.EBR,tcPDAstruct.EGR],linspace(0,1,nbins+1),linspace(0,1,nbins+1),linspace(0,1,nbins+1));
 tcPDAstruct.H_meas(:,:,end-1) = tcPDAstruct.H_meas(:,:,end-1) + tcPDAstruct.H_meas(:,:,end);
@@ -995,11 +1132,16 @@ tcPDAstruct.x_axis(end) = []; %%% remove last elements since it is outside plot
 tcPDAstruct.x_axis_bar = tcPDAstruct.x_axis; %%% xaxis for bar plot
 tcPDAstruct.x_axis_stair = linspace(0,1,nbins+1); %%% xaxis for stair plot
 
+% calculate photon count distribution
+N_total = tcPDAstruct.NBB+tcPDAstruct.NBG+tcPDAstruct.NBR+tcPDAstruct.NGG+tcPDAstruct.NGR;
+tcPDAstruct.PN = histcounts(N_total,0:1:max(N_total));
+
 function load_data(hObject,~)
 global tcPDAstruct UserValues
 LSUserValues(0);
 handles = guidata(hObject);
-[FileName, PathName] = uigetfile('*.tcpda', 'select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+[FileName, PathName, FilterIndex] = uigetfile({'*.tcpda','MATLAB based tcPDA file from PAM (*.tcpda)';'*.txt','Text-based tcPDA file (*.txt)'}, 'Select *.tcpda file for analysis', UserValues.tcPDA.PathName, 'MultiSelect', 'off');
+
 if ~isequal(FileName,0)
     UserValues.tcPDA.PathName = PathName;
     UserValues.tcPDA.FileName = FileName;
@@ -1009,9 +1151,15 @@ end
 LSUserValues(1);
 tcPDAstruct = [];%clearvars -global tcPDAstruct
 
-load('-mat',fullfile(PathName,FileName)); %%% overwrites existing tcPDAstruct
+switch FilterIndex
+    case 1
+        load('-mat',fullfile(PathName,FileName)); %%% overwrites existing tcPDAstruct
+    case 2
+        load_from_txt(fullfile(PathName,FileName));
+end
+
 tcPDAstruct.FullFileName = fullfile(PathName,FileName);
-handles.Figure.Name = ['tcPDA - ' FileName];
+handles.Figure.Name = ['tcPDA - Loaded file: ' FileName];
 
 %initialize values
 if ~isfield(tcPDAstruct,'sampling')
@@ -1022,6 +1170,9 @@ if ~isfield(tcPDAstruct,'use_stochasticlabeling')
 end
 if ~isfield(tcPDAstruct,'fraction_stochasticlabeling')
     tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+end
+if ~isfield(tcPDAstruct,'fix_stochasticlabeling')
+    tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 end
 %if ~isfield(tcPDAstruct,'MLE')
 %    tcPDAstruct.MLE = 0;
@@ -1038,16 +1189,32 @@ end
 if ~isfield(tcPDAstruct,'nbins')
     tcPDAstruct.nbins = 50;
 end
+if ~isfield(tcPDAstruct,'norm_likelihood')
+    tcPDAstruct.norm_likelihood = 0;
+end
+if ~isfield(tcPDAstruct,'norm_likelihood')
+    tcPDAstruct.norm_likelihood = 0;
+end
+if ~isfield(tcPDAstruct,'use_2color_data')
+    tcPDAstruct.use_2color_data = 0;
+end
+if ~isfield(tcPDAstruct,'live_plot_update')
+    tcPDAstruct.live_plot_update = 1;
+end
 %%% set gui values
 handles.sampling_edit.String = num2str(tcPDAstruct.sampling);
 handles.checkbox_stochasticlabeling.Value = tcPDAstruct.use_stochasticlabeling;
 handles.edit_stochasticlabeling.String = num2str(tcPDAstruct.fraction_stochasticlabeling);
+handles.fix_stochasticlabeling.Value = tcPDAstruct.fix_stochasticlabeling;
 %handles.MLE_checkbox.Value = tcPDAstruct.MLE;
 handles.min_n_edit.String = num2str(tcPDAstruct.N_min);
 handles.max_n_edit.String = num2str(tcPDAstruct.N_max);
 handles.popupmenu_ngauss.Value = tcPDAstruct.n_gauss;
 handles.nbins_edit.String = num2str(tcPDAstruct.nbins);
-
+handles.table_2cPDAData.Data = [];
+handles.norm_likelihood_checkbox.Value = tcPDAstruct.norm_likelihood;
+handles.use_2cPDAData_checkbox.Value = tcPDAstruct.use_2color_data;
+handles.live_plot_update_checkbox.Value = tcPDAstruct.live_plot_update;
 if ~isfield(tcPDAstruct,'fitdata')
     value_dummy = [1,50,2,50,2,50,2,0,0,0]';
     fixed_dummy = [false,false,false,false,false,false,false,true,true,true]';
@@ -1124,14 +1291,57 @@ calculate_histograms();
 popupmenu_ngauss_callback(handles.popupmenu_ngauss,[])
 PlotData(handles);
 reset_plot([],[],handles);
+update_2cPDAData_table();
+plot_2cPDAData(1);
 view_curve(handles);
+
+function load_from_txt(filename)
+global tcPDAstruct
+fid = fopen(filename);
+tline = fgetl(fid);
+i=1;
+timebin = [];
+data_start = [];
+while ischar(tline)
+    tline = fgetl(fid);
+    i = i + 1;
+    if strcmp(tline(1:3),'NBB')
+        data_start = i;
+        break;
+    else
+        % try to find the timebin
+        if strfind(tline,'timebin')
+            timebin = sscanf(tline,'timebin = %d');
+        end
+    end
+end
+fclose(fid);
+if isempty(timebin)
+    disp('No timebin found in file. Specify in header in units of milliseconds as "timebin = 1".');
+end
+if isempty(data_start)
+    disp('No data found. Data must be preceded by a line with content "NBB, NBG, NBR, NGG, NGR".');
+end
+
+% read the data
+data_matrix = dlmread(filename,',',data_start,0);
+
+% construct tcPDAstruct variable
+tcPDAstruct = struct;
+tcPDAstruct.NBB = data_matrix(:,1);
+tcPDAstruct.NBG = data_matrix(:,2);
+tcPDAstruct.NBR = data_matrix(:,3);
+tcPDAstruct.NGG = data_matrix(:,4);
+tcPDAstruct.NGR = data_matrix(:,5);
+tcPDAstruct.timebin = timebin;
+tcPDAstruct.duration = ones(size(data_matrix,1),1).*timebin;
 
 function [valid] = Cut_Data(Obj,~)
 global tcPDAstruct
 if ~isfield(tcPDAstruct,'NBB')
     return;
 end
-handles = guidata(findobj('Tag','tcPDA'));
+handles = guidata(gcbo);
 N_total = tcPDAstruct.NBB+tcPDAstruct.NBG+tcPDAstruct.NBR+tcPDAstruct.NGG+tcPDAstruct.NGR;
 N_min = str2double(handles.min_n_edit.String);
 N_max = str2double(handles.max_n_edit.String);
@@ -1163,15 +1373,27 @@ if ~isempty(Obj) % Called from gui
 end
 
 function UpdateAxesLimits(handles)
+plottype = handles.plottype_dropdownmenu.String{handles.plottype_dropdownmenu.Value};
 
 handles.axes_1d.YLim(2) = 1.05*max([max(handles.plots.handle_1d_data.YData),max(handles.plots.handle_1d_fit.YData)]);
-handles.axes_2d.ZLim(2) = 1.05*max([max(handles.plots.handle_2d_data.ZData(:)),max(handles.plots.handle_2d_fit.ZData(:))]);
-ax = handle(handles.axes_3d(1));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_br.ZData(:)),max(handles.plots.handle_3d_fit_bg_br.ZData(:))]);
-ax = handle(handles.axes_3d(2));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_gr.ZData(:)),max(handles.plots.handle_3d_fit_bg_gr.ZData(:))]);
-ax = handle(handles.axes_3d(3));
-ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_br_gr.ZData(:)),max(handles.plots.handle_3d_fit_br_gr.ZData(:))]);
+switch plottype
+    case 'mesh'
+        handles.axes_2d.ZLim(2) = 1.05*max([max(handles.plots.handle_2d_data.ZData(:)),max(handles.plots.handle_2d_fit.ZData(:))]);
+        ax = handle(handles.axes_3d(1));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_br.ZData(:)),max(handles.plots.handle_3d_fit_bg_br.ZData(:))]);
+        ax = handle(handles.axes_3d(2));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg_gr.ZData(:)),max(handles.plots.handle_3d_fit_bg_gr.ZData(:))]);
+        ax = handle(handles.axes_3d(3));
+        ax.ZLim(2) = 1.05*max([max(handles.plots.handle_3d_data_br_gr.ZData(:)),max(handles.plots.handle_3d_fit_br_gr.ZData(:))]);
+    case 'colormap'
+        handles.axes_2d.ZLim(2) = 1.05*max(handles.plots.handle_2d_data.ZData(:));
+        ax = handle(handles.axes_3d(1));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_bg_br.ZData(:));
+        ax = handle(handles.axes_3d(2));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_bg_gr.ZData(:));
+        ax = handle(handles.axes_3d(3));
+        ax.ZLim(2) = 1.05*max(handles.plots.handle_3d_data_br_gr.ZData(:));
+end
 ax = handle(handles.axes_3d(4));
 ax.YLim(2) = 1.05*max([max(handles.plots.handle_3d_data_bg.YData),max(handles.plots.handle_3d_fit_bg.YData)]);
 ax = handle(handles.axes_3d(5));
@@ -1201,6 +1423,11 @@ handles.plots.handle_2d_dev.ZData = zeros(numel(tcPDAstruct.x_axis));
 %Update 3D plot
 plot4d(handles);
 UpdateAxesLimits(handles);
+
+% update PN axis
+handles.plots.PN.XData = 0:1:(numel(tcPDAstruct.PN)-1);
+handles.plots.PN.YData = tcPDAstruct.PN;
+handles.axes_PN.Title.String = sprintf('Photon count distribution (N = %d)',sum(tcPDAstruct.PN));
 
 function plot4d(handles)
 %plots three 2D and three 1D projections of 3 dimensional data array
@@ -1285,7 +1512,7 @@ handles.plots.handle_3d_data_gr.YData = squeeze(sum(sum(input,1),2));
 % set(gca,'FontSize',fontsize_ticks);    
     
 function fit_tcPDA(handles)
-global tcPDAstruct
+global tcPDAstruct UserValues
 if ~isfield(tcPDAstruct,'NBB')
     return;
 end
@@ -1296,7 +1523,11 @@ StartParPool();
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
+tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
+tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
 if tcPDAstruct.BrightnessCorrection
     %%% Prepare PofN for Brightness Reference
     if ~isfield(tcPDAstruct,'BrightnessReference')
@@ -1393,6 +1624,16 @@ switch (selected_tab)
             UB = [UB; tcPDAstruct.fitdata.UB{i}(1:7)];
             fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(1:7)];
         end
+        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+            fixed(end+1) = 0;
+            LB(end+1) = 0;
+            UB(end+1) = 1;
+        end
+        
         %fix by simply setting the same upper and lower border
         LB(fixed == 1) = fitpar(fixed == 1);
         UB(fixed == 1) = fitpar(fixed == 1);
@@ -1424,7 +1665,12 @@ switch (selected_tab)
         end
         %update table
         UpdateFitTable(handles); 
-    case handles.tab_3d %full 3d fit
+        %%% update stochastic labeling fraction
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
+            handles.edit_stochasticlabeling.String = num2str(fitpar(end));
+        end
+    case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
         fitpar = [];
         LB = [];
@@ -1438,9 +1684,19 @@ switch (selected_tab)
             UB = [UB; tcPDAstruct.fitdata.UB{i}(:)];
             fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(:)];
         end
-        
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
+        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+            fixed(end+1) = 0;
+            LB(end+1) = 0;
+            UB(end+1) = 1;
+        end
+            
+        
         %fix by simply setting the same upper and lower border
         LB(fixed == 1) = fitpar(fixed == 1);
         UB(fixed == 1) = fitpar(fixed == 1);
@@ -1487,6 +1743,11 @@ switch (selected_tab)
          else
             tcPDAstruct.grid = 0;
             calculate_background(); 
+            if handles.use_2cPDAData_checkbox.Value
+                % update two color background count distributions
+                tcPDAstruct.active_2C = cell2mat(cellfun(@(x) strcmp(x,'True'),handles.table_2cPDAData.Data(:,1),'UniformOutput',false));
+                evaluate_background_2C();
+            end
             %%% check if gpu is available (sometimes it locks up...)
             tcPDAstruct.GPU_locked = false;
             try 
@@ -1500,28 +1761,72 @@ switch (selected_tab)
                 % Initialize Array of binomial and trinomial coefficients
                 [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
                     tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+            else %%% using GPU
+                if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+                    %%% prepare gpuArrays
+                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+                    
+                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+                    
+                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                    
+                    %%% initialize kernel
+                    path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+                    tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+                    numElements = numel(tcPDAstruct.fbb);
+                    tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+                    tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+                end
             end
              
-            %opts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','PlotFcns',@optimplotfval,'FinDiffRelStep',0.1);
-            %fitpar = fmincon(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar, [],[],A,b,LB,UB,[],opts);
+            if ~handles.use_2cPDAData_checkbox.Value
+                %%% no global fit
+                fitfun = @(x) determine_MLE_3color(x) + evaluate_prior(x);
+            else
+                %%% global fit using two color data set
+                fitfun = @(x) determine_MLE_global(x) + evaluate_prior(x);                
+            end
             switch handles.FitMethod_popupmenu.String{handles.FitMethod_popupmenu.Value}
                 case 'Simplex'
                     fitopts = optimset('MaxFunEvals', 1E6,'Display','iter','TolFun',1E-6,'TolX',1E-3,'PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fminsearchbnd(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar,LB,UB,fitopts);
+                    fitpar = fminsearchbnd(fitfun, fitpar,LB,UB,fitopts);
                 case 'Pattern Search'
                     plotfun = @(optimvalues,flag) UpdateFitProgress(optimvalues,flag,[],[],@plot_after_fit,@UpdateFitTable);
                     opts = psoptimset('Cache','on','Display','iter','PlotFcns',plotfun);%,'UseParallel','always');
-                    fitpar = patternsearch(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar, [],[],A,b,LB,UB,[],opts);
+                    fitpar = patternsearch(fitfun, fitpar, [],[],A,b,LB,UB,[],opts);
                 case 'Gradient-based'
                     fitopts = optimoptions('fmincon','MaxFunEvals',1E4,'Display','iter','FinDiffRelStep',0.1,'PlotFcns',plotfun);%@optimplotfval_tcPDA);
-                    fitpar = fmincon(@(x) determine_MLE_mc_dist_3d_cor(x), fitpar,[],[],A,b,LB,UB,[],fitopts);
+                    fitpar = fmincon(fitfun, fitpar,[],[],A,b,LB,UB,[],fitopts);
                 case 'Gradient-based (global)'
                     opts = optimoptions(@fmincon,'Algorithm','interior-point','Display','iter','PlotFcns',plotfun);%@optimplotfvalPDA);
-                    problem = createOptimProblem('fmincon','objective',@(x) determine_MLE_mc_dist_3d_cor(x),'x0',fitpar,'lb',LB,'ub',UB,'Aeq',A,'beq',b,'options',opts);
+                    problem = createOptimProblem('fmincon','objective',fitfun,'x0',fitpar,'lb',LB,'ub',UB,'Aeq',A,'beq',b,'options',opts);
                     gs = GlobalSearch;
                     fitpar = run(gs,problem);
             end
             handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+            
+            %%% clean up
+            if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+                %%% using MLE -> reset GPU
+                reset(gpuDevice); %%% clear memory
+                if UserValues.tcPDA.UseCUDAKernel
+                    %%% CUDAKernel -> also clear references to gpuArrays
+                    tcPDAstruct.CUDAKernel = [];
+                end
+            end
         end
         %fix covariance matrix again
         fitpar = fix_covariance_matrix_fitpar(fitpar);
@@ -1532,8 +1837,11 @@ switch (selected_tab)
         end
         %update table
         UpdateFitTable(handles);
-        %%% update BIC display
-        
+        %%% update stochastic labeling fraction
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            tcPDAstruct.fraction_stochasticlabeling = fitpar(end);
+            handles.edit_stochasticlabeling.String = num2str(fitpar(end));
+        end        
 end
 
 fitFig = findobj('Name','Optimization PlotFcns');
@@ -1719,9 +2027,12 @@ data = get(handles.fit_table,'Data');
 for i = 1:tcPDAstruct.n_gauss
     data(((i-1)*11+1):(11*i-1),2) = mat2cell(tcPDAstruct.fitdata.param{i},ones(10,1),1);
 end
-
 set(handles.fit_table,'Data',data);
 
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    %%% also update the stochastic labeling fraction
+    handles.edit_stochasticlabeling.String = num2str(tcPDAstruct.fraction_stochasticlabeling);
+end
 
 function popupmenu_ngauss_callback(hObject,eventdata)
 global tcPDAstruct
@@ -1733,13 +2044,17 @@ tcPDAstruct.n_gauss = n_gauss;
 str_dummy = {'<html><b>Amplitude','<html><b>R<sub>GR</sub>','<html><b>&sigma;<sub>GR</sub>','<html><b>R<sub>BG</sub>',...
     '<html><b>&sigma;<sub>BG</sub>','<html><b>R<sub>BR</sub>','<html><b>&sigma;<sub>BR</sub>',...
      '<html><b>cov<sub>BG/BR</sub>','<html><b>cov<sub>BG/GR</sub>','<html><b>cov<sub>BR/GR</sub>'};
-
+colors = 255*lines(5);
 nparams = numel(str_dummy);
 NameCell = {};
 for i = 1:n_gauss
     %NameCell = {NameCell{:} str_dummy{:} ''};
     for j = 1:numel(str_dummy)
-        Data{(i-1)*(nparams+1)+j,1} = str_dummy{j};
+        if j == 1 %%% add color to Amplitude string
+            Data{(i-1)*(nparams+1)+j,1} = [str_dummy{j}(1:9) sprintf('<font color=rgb(%u,%u,%u)>',round(colors(i,:))) str_dummy{j}(10:end)];
+        else
+            Data{(i-1)*(nparams+1)+j,1} = str_dummy{j};
+        end
         Data{(i-1)*(nparams+1)+j,2} = tcPDAstruct.fitdata.param{i}(j);
         Data{(i-1)*(nparams+1)+j,3} = tcPDAstruct.fitdata.fixed{i}(j);
         Data{(i-1)*(nparams+1)+j,4} = tcPDAstruct.fitdata.LB{i}(j);
@@ -1763,9 +2078,7 @@ end
 
 %%% hides/unhides individual plots
 n_gauss = handles.popupmenu_ngauss.Value;
-if handles.checkbox_stochasticlabeling.Value
-    n_gauss = n_gauss*2;
-end
+
 %%% hide all plots
 for i = 1:10
     handles.plots.handles_H_res_1d_individual(i).Visible = 'off';
@@ -1776,32 +2089,46 @@ for i = 1:10
     handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'off';
     handles.plots.handles_H_res_3d_individual_br(i).Visible= 'off';
     handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'off';
-end
+end 
+    
 %%% unhide used plots
-if n_gauss > 1
-    if ~handles.checkbox_stochasticlabeling.Value
+if ~handles.checkbox_stochasticlabeling.Value
+    if n_gauss > 1
         for i = 1:n_gauss
             handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
         end
-    else
-        for i = 1:n_gauss/2
-            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
+        for i = 1:n_gauss
+            handles.plots.handles_H_res_2d_individual(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg_br(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg_gr(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_br_gr(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'on';
+            handles.plots.handles_H_res_3d_individual_br(i).Visible= 'on';
+            handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
         end
-    end 
+    end
+else
+    if n_gauss > 1
+        for i = 1:n_gauss
+            handles.plots.handles_H_res_1d_individual(i).Visible = 'on';
+            handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
+        end
+    end
+    n_gauss = n_gauss*2;
+    plots = [1,6,2,7,3,8,4,9,5,10];
     for i = 1:n_gauss
-        handles.plots.handles_H_res_2d_individual(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_br(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg_gr(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_br_gr(i).Visible = 'on';
-        handles.plots.handles_H_res_3d_individual_bg(i).Visible= 'on';
-        handles.plots.handles_H_res_3d_individual_br(i).Visible= 'on';
-        handles.plots.handles_H_res_3d_individual_gr(i).Visible= 'on';
+        handles.plots.handles_H_res_2d_individual(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_br(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_br_gr(plots(i)).Visible = 'on';
+        handles.plots.handles_H_res_3d_individual_bg(plots(i)).Visible= 'on';
+        handles.plots.handles_H_res_3d_individual_br(plots(i)).Visible= 'on';
     end
 end
 
 function [ chi2 ] = determine_chi2_1C_mc_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -1879,7 +2206,7 @@ end
 
 function [ chi2 ] = determine_chi2_2C_mc_dist_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -1902,11 +2229,20 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/7;
     
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*7+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*7+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*7+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*7+3);
         Rbg(2*i-1) = fitpar((i-1)*7+4);
@@ -1914,7 +2250,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         Rbr(2*i-1) = fitpar((i-1)*7+6);
         sigma_Rbr(2*i-1) = fitpar((i-1)*7+7);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*7+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*7+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*7+2);
         sigma_Rgr(2*i) = fitpar((i-1)*7+3);
         Rbg(2*i) = fitpar((i-1)*7+6); %%% switched with RBR
@@ -2065,10 +2401,13 @@ tcPDAstruct.plots.A_2d = A;
 for i = 1:numel(fitpar)/7
     tcPDAstruct.fitdata.param{i}(1:7) = fitpar(((i-1)*7+1):((i-1)*7+7));
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 
 function [ chi2 ] = determine_chi2_mc_dist_3d_cor(fitpar)
 global tcPDAstruct UserValues
-nbins = UserValues.tcPDA.nbins;
+nbins = tcPDAstruct.nbins;
 %this ensures that the same random numbers are generated in each fitting
 %step to reduce stochastic noise
 rng('shuffle');
@@ -2100,10 +2439,19 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/10;
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*10+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*10+3);
         Rbg(2*i-1) = fitpar((i-1)*10+4);
@@ -2114,7 +2462,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         simga_Rbg_Rgr(2*i-1) = fitpar((i-1)*10+9);
         simga_Rbr_Rgr(2*i-1) = fitpar((i-1)*10+10);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*10+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*10+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i) = fitpar((i-1)*10+3);
         Rbg(2*i) = fitpar((i-1)*10+6); %%% switched with RBR
@@ -2352,8 +2700,11 @@ tcPDAstruct.plots.H_res_3d_gr = squeeze(sum(sum(H_res,1),2));
 for i = 1:numel(fitpar)/10
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 
-function [ P_result ] = determine_MLE_mc_dist_3d_cor(fitpar)
+function [ P_result ] = determine_MLE_3color(fitpar)
 global tcPDAstruct
 
 %10 fit par:
@@ -2383,11 +2734,20 @@ elseif tcPDAstruct.use_stochasticlabeling
     %%% this means: every population gets a second population with equal
     %%% RGR but switched RBG and RBR. The fraction of this population is
     %%% given by as well
+    
+    %%% stochastic labeling can be a fit parameter
+    if ~tcPDAstruct.fix_stochasticlabeling
+        fraction_stochasticlabeling = fitpar(end);
+        fitpar(end) = [];
+    else
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+    end
+    
     N_gauss = numel(fitpar)/10;
     
     for i = 1:N_gauss
         %%% normal population at position 2*i-1 (1,3,5,7...)
-        A(2*i-1) =fitpar((i-1)*10+1)*tcPDAstruct.fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
+        A(2*i-1) =fitpar((i-1)*10+1)*fraction_stochasticlabeling; %%% multiplied with fraction of "normal" population
         Rgr(2*i-1) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i-1) = fitpar((i-1)*10+3);
         Rbg(2*i-1) = fitpar((i-1)*10+4);
@@ -2398,7 +2758,7 @@ elseif tcPDAstruct.use_stochasticlabeling
         simga_Rbg_Rgr(2*i-1) = fitpar((i-1)*10+9);
         simga_Rbr_Rgr(2*i-1) = fitpar((i-1)*10+10);
         %%% second population at position 2*i (2,4,6,8...)
-        A(2*i) =fitpar((i-1)*10+1)*(1-tcPDAstruct.fraction_stochasticlabeling);%%% multiplied with fraction of second population
+        A(2*i) =fitpar((i-1)*10+1)*(1-fraction_stochasticlabeling);%%% multiplied with fraction of second population
         Rgr(2*i) = fitpar((i-1)*10+2);
         sigma_Rgr(2*i) = fitpar((i-1)*10+3);
         Rbg(2*i) = fitpar((i-1)*10+6); %%% switched with RBR
@@ -2436,22 +2796,6 @@ for j=1:N_gauss
     param.MU = MU;
     param.COV = COV;
     P_res{j} = posterior_tc(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,dur,corrections,param);
-end
-
-%%% evaluate the prior
-logPrior = 0;
-if tcPDAstruct.use_stochasticlabeling
-    N_gauss = N_gauss/2;
-end
-for j=1:N_gauss
-    use_prior = tcPDAstruct.fitdata.use_prior{j};
-    prior_center = tcPDAstruct.fitdata.prior_center{j};
-    prior_sigma = tcPDAstruct.fitdata.prior_sigma{j};
-    for k = 1:numel(use_prior)
-        if use_prior(k)
-            logPrior = logPrior + log(normpdf(fitpar((j-1)*10+k),prior_center(k),prior_sigma(k)));
-        end
-    end
 end
 
 if tcPDAstruct.BrightnessCorrection
@@ -2509,16 +2853,21 @@ P_res = Lmax + log(sum(exp(P_res-repmat(Lmax,1,numel(PA))),2));
 %%% Reset these values to -Inf
 P_res(isnan(P_res)) = -Inf;
 P_result = sum(P_res);
-P_result = P_result + logPrior;
 %%% since the algorithm minimizes, it is important to minimize the negative
 %%% log likelihood, i.e. maximize the likelihood
 P_result = -P_result;
 
+if tcPDAstruct.use_stochasticlabeling
+    %%% reset N_gauss to number of populations
+    N_gauss = N_gauss/2;
+end
 %%% Update Fit Parameter in global struct
 for i = 1:N_gauss
     tcPDAstruct.fitdata.param{i}(1:10) = fitpar(((i-1)*10+1):((i-1)*10+10));
 end
-
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+end
 %%% update BIC
 fixed = tcPDAstruct.fitdata.fixed(1:N_gauss);
 n_param = sum(~vertcat(fixed{:}));
@@ -2527,6 +2876,22 @@ n_data = numel(tcPDAstruct.fbb);
 %%% P_result is already -lnL
 tcPDAstruct.BIC = 2*P_result + n_param*log(n_data);
 tcPDAstruct.logL = -P_result;
+
+function neg_logL = evaluate_prior(fitpar)
+global tcPDAstruct
+%%% evaluate the prior
+logPrior = 0;
+for j=1:tcPDAstruct.n_gauss
+    use_prior = tcPDAstruct.fitdata.use_prior{j};
+    prior_center = tcPDAstruct.fitdata.prior_center{j};
+    prior_sigma = tcPDAstruct.fitdata.prior_sigma{j};
+    for k = 1:numel(use_prior)
+        if use_prior(k)
+            logPrior = logPrior + log(normpdf(fitpar((j-1)*10+k),prior_center(k),prior_sigma(k)));
+        end
+    end
+end
+neg_logL = -logPrior;
 
 function P_res = posterior_tc(fbb,fbg,fbr,fgg,fgr,dur,corrections,param)
 global tcPDAstruct UserValues
@@ -2627,40 +2992,55 @@ if strcmp(tcPDAstruct.timebin,'burstwise')
         P = horzcat(P{:});
 elseif isnumeric(tcPDAstruct.timebin)
     %% CUDA
-
     if (gpuDeviceCount > 0) && ~tcPDAstruct.GPU_locked
-        
-        fbb_single = single(fbb);
-        fbg_single = single(fbg);
-        fbr_single = single(fbr);
-        fgg_single = single(fgg);
-        fgr_single = single(fgr);
-    
-        NBGbb_single = int32(NBGbb);
-        NBGbg_single = int32(NBGbg);
-        NBGbr_single = int32(NBGbr);
-        NBGgg_single = int32(NBGgg);
-        NBGgr_single = int32(NBGgr);
-    
-        BG_bb_single = single(BG_bb);
-        BG_bg_single = single(BG_bg);
-        BG_br_single = single(BG_br);
-        BG_gg_single = single(BG_gg);
-        BG_gr_single = single(BG_gr);
-    
-        PBB_single = single(PBB);
-        PBG_single = single(PBG);
-        PGR_single = single(PGR);
-        
-%         P = eval_prob_3c_bg_cuda_lib(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
-%                 NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
-%                 BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
-%                 PBB_single,PBG_single,PGR_single,single(tcPDAstruct.lib_b),single(tcPDAstruct.lib_t));
-        P = eval_prob_3c_bg_cuda(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
-                NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
-                BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
-                PBB_single,PBG_single,PGR_single);
-        P = double(P);
+        if UserValues.tcPDA.UseCUDAKernel %%% use CUDAKernel implementation
+            %%% transfer data to GPU
+            PBB_gpu = gpuArray(single(PBB));
+            PBG_gpu = gpuArray(single(PBG));
+            PGR_gpu = gpuArray(single(PGR));
+            P = feval(tcPDAstruct.CUDAKernel.k,tcPDAstruct.CUDAKernel.likelihood,...
+                tcPDAstruct.CUDAKernel.fbb,tcPDAstruct.CUDAKernel.fbg,tcPDAstruct.CUDAKernel.fbr,tcPDAstruct.CUDAKernel.fgg,tcPDAstruct.CUDAKernel.fgr,...
+                tcPDAstruct.CUDAKernel.NBGbb,tcPDAstruct.CUDAKernel.NBGbg,tcPDAstruct.CUDAKernel.NBGbr,tcPDAstruct.CUDAKernel.NBGgg,tcPDAstruct.CUDAKernel.NBGgr,...
+                tcPDAstruct.CUDAKernel.BG_bb,tcPDAstruct.CUDAKernel.BG_bg,tcPDAstruct.CUDAKernel.BG_br,tcPDAstruct.CUDAKernel.BG_gg,tcPDAstruct.CUDAKernel.BG_gr,...
+                PBB_gpu,PBG_gpu,PGR_gpu,numel(PBB),numel(fbb));
+            P = reshape(gather(P),numel(PBB),numel(fbb))';
+            %%% clear data from GPU to avoid memory leak
+            clear PBB_gpu PBG_gpu PGR_gpu
+        else %%% use mex file CUDA implementation
+            %%% the mex file has to be recompiled for different
+            %%% architectures
+            fbb_single = single(fbb);
+            fbg_single = single(fbg);
+            fbr_single = single(fbr);
+            fgg_single = single(fgg);
+            fgr_single = single(fgr);
+
+            NBGbb_single = int32(NBGbb);
+            NBGbg_single = int32(NBGbg);
+            NBGbr_single = int32(NBGbr);
+            NBGgg_single = int32(NBGgg);
+            NBGgr_single = int32(NBGgr);
+
+            BG_bb_single = single(BG_bb);
+            BG_bg_single = single(BG_bg);
+            BG_br_single = single(BG_br);
+            BG_gg_single = single(BG_gg);
+            BG_gr_single = single(BG_gr);
+
+            PBB_single = single(PBB);
+            PBG_single = single(PBG);
+            PGR_single = single(PGR);
+
+        %         P = eval_prob_3c_bg_cuda_lib(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
+        %                 NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
+        %                 BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
+        %                 PBB_single,PBG_single,PGR_single,single(tcPDAstruct.lib_b),single(tcPDAstruct.lib_t));
+            P = eval_prob_3c_bg_cuda(fbb_single,fbg_single,fbr_single,fgg_single,fgr_single,...
+                    NBGbb_single,NBGbg_single,NBGbr_single,NBGgg_single,NBGgr_single,...
+                    BG_bb_single',BG_bg_single',BG_br_single',BG_gg_single',BG_gr_single',...
+                    PBB_single,PBG_single,PGR_single);
+            P = double(P);
+        end
     else
         %% CPU
         P = eval_prob_3c_bg_lib(fbb,fbg,fbr,fgg,fgr,...
@@ -2910,6 +3290,20 @@ global tcPDAstruct
 if ~isfield(tcPDAstruct,'plots')
     return;
 end
+plottype = handles.plottype_dropdownmenu.String{handles.plottype_dropdownmenu.Value};
+if tcPDAstruct.use_stochasticlabeling
+    %%% we have to reorder the plots to match the coloring scheme
+    %%% for the fitting, the additional stochastic labeling populations are
+    %%% interlaced, i.e.:
+    %%% Normal: 1, ,3, ,5, ,7, ,9,
+    %%% Addit.:  ,2, ,4, ,6, ,8, ,10
+    %%% the first 5 plots are for the normal populations, the last 5 for
+    %%% the additonal populations, i.e. map to:
+    plots = [1,6,2,7,3,8,4,9,5,10];
+else
+    %%% normal order
+    plots = 1:10;
+end
 % 1d plot
 if isfield(tcPDAstruct.plots,'H_res_gr')
     set(handles.plots.handle_1d_fit,'YData',[tcPDAstruct.plots.H_res_gr;tcPDAstruct.plots.H_res_gr(end)],'XData',tcPDAstruct.x_axis_stair);
@@ -2922,44 +3316,144 @@ if isfield(tcPDAstruct.plots,'H_res_gr')
 end
 
 if isfield(tcPDAstruct.plots,'H_res_2d')
-    if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
-            set(handles.plots.handles_H_res_2d_individual(i),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
+    switch plottype
+        case 'mesh'
+            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'ZData',tcPDAstruct.plots.A_2d(i).*tcPDAstruct.plots.H_res_2d_individual(:,:,i),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_2d_fit,'ZData',tcPDAstruct.plots.H_res_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            
+            set(handles.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
+            colormap(handles.axes_2d,'parula');
+            colorbar(handles.axes_2d,'off')
 
-    set(handles.plots.handle_2d_dev,'ZData',tcPDAstruct.plots.dev_2d,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    set(handles.axes_2d_res,'zlim',[min(min(tcPDAstruct.plots.dev_2d)) max(max(tcPDAstruct.plots.dev_2d))]);
+            set(handles.plots.handle_2d_data,'Visible','on','EdgeColor','none','FaceAlpha',0.6,'CData',handles.plots.handle_2d_data.ZData);
+            handles.axes_2d.CLimMode = 'auto';
+            % unhide w_res axis
+            handles.axes_2d_res.Visible = 'on';
+            % reset y extent of axes_2d
+            handles.axes_2d.Position(4) = 0.65;
+            % reset x extent of axes_2d
+            handles.axes_2d.Position(3) = 0.85;
+        case 'colormap'
+            % set CData of data plot to w_res
+            set(handles.plots.handle_2d_data,'CData',tcPDAstruct.plots.dev_2d,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            % hide mesh plot and 2d dev
+            set(handles.plots.handle_2d_fit,'Visible','off');
+            set(handles.plots.handle_2d_dev,'Visible','off');
+            if (size(tcPDAstruct.plots.H_res_2d_individual,3) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_2d_individual,3)
+                    set(handles.plots.handles_H_res_2d_individual(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.axes_2d,'CLim',[-5 5]);
+            colormap(handles.axes_2d,handles.colormap);
+            colorbar(handles.axes_2d,'eastoutside','Color',[1,1,1]);
+            % hide w_res axis
+            handles.axes_2d_res.Visible = 'off';
+            % upscale y extent of axes_2d
+            handles.axes_2d.Position(4) = 0.85;
+            % downscale x extent of axes_2d
+            handles.axes_2d.Position(3) = 0.85;
+    end
 end
 
 if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_br(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
+    switch plottype
+        case 'mesh'
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},3)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_bg_br,'CData',handles.plots.handle_3d_data_bg_br.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(1),'CLimMode','auto');
+            colormap(handles.axes_3d(1),'parula');
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_bg_gr,'CData',handles.plots.handle_3d_data_bg_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(2),'CLimMode','auto');
+            colormap(handles.axes_3d(2),'parula');
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,...
+                        'Visible','on');
+                end
+            end
+            set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis,'Visible','on');
+            set(handles.plots.handle_3d_data_br_gr,'CData',handles.plots.handle_3d_data_br_gr.ZData,'EdgeColor','none','FaceAlpha',0.6);
+            set(handles.axes_3d(3),'CLimMode','auto');
+            colormap(handles.axes_3d(3),'parula');
+            
+            colorbar(handles.axes_3d(3),'off');
+        case 'colormap'
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_br(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_br,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_bg_br.ZData;
+            fit = handles.plots.handle_3d_fit_bg_br.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_bg_br,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(1),'CLim',[-5,5]);
+            colormap(handles.axes_3d(1),handles.colormap);
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_bg_gr(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_bg_gr,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_bg_gr.ZData;
+            fit = handles.plots.handle_3d_fit_bg_gr.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_bg_gr,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(2),'CLim',[-5,5]);
+            colormap(handles.axes_3d(2),handles.colormap);
+            
+            if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
+                for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                    set(handles.plots.handles_H_res_3d_individual_br_gr(plots(i)),'Visible','off');
+                end
+            end
+            set(handles.plots.handle_3d_fit_br_gr,'Visible','off');
+            %%% calculate w_res
+            data = handles.plots.handle_3d_data_br_gr.ZData;
+            fit = handles.plots.handle_3d_fit_br_gr.ZData;
+            error = sqrt(data); error(error==0) = 1;
+            w_res = (data-fit)./error;
+            set(handles.plots.handle_3d_data_br_gr,'CData',w_res,'EdgeColor',[0,0,0],'FaceAlpha',1);
+            set(handles.axes_3d(3),'CLim',[-5,5]);
+            colormap(handles.axes_3d(3),handles.colormap);
+            
+            c = colorbar(handles.axes_3d(3),'east','Color',[1,1,1]);
+            c.Position(1) = 0.98; c.Position(3) = 0.012;
     end
-    set(handles.plots.handle_3d_fit_bg_br,'ZData',tcPDAstruct.plots.H_res_3d_bg_br,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_bg_gr(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},2)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_3d_fit_bg_gr,'ZData',tcPDAstruct.plots.H_res_3d_bg_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-    
-    if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            set(handles.plots.handles_H_res_3d_individual_br_gr(i),'ZData',tcPDAstruct.plots.A_3d(i).*squeeze(sum(tcPDAstruct.plots.H_res_3d_individual{i},1)),'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
-        end
-    end
-    set(handles.plots.handle_3d_fit_br_gr,'ZData',tcPDAstruct.plots.H_res_3d_br_gr,'XData',tcPDAstruct.x_axis,'YData',tcPDAstruct.x_axis);
     
     set(handles.plots.handle_3d_fit_bg,'YData',[tcPDAstruct.plots.H_res_3d_bg;tcPDAstruct.plots.H_res_3d_bg(end)],'XData',tcPDAstruct.x_axis_stair);
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
             temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
-            set(handles.plots.handles_H_res_3d_individual_bg(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            set(handles.plots.handles_H_res_3d_individual_bg(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
@@ -2967,15 +3461,22 @@ if isfield(tcPDAstruct.plots,'H_res_3d_bg_br')
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
         for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
             temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
-            set(handles.plots.handles_H_res_3d_individual_br(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            set(handles.plots.handles_H_res_3d_individual_br(plots(i)),'YData',tcPDAstruct.plots.A_3d(i).*[temp,temp(end)],'XData',tcPDAstruct.x_axis_stair);
         end
     end
     
     set(handles.plots.handle_3d_fit_gr,'YData',[tcPDAstruct.plots.H_res_3d_gr;tcPDAstruct.plots.H_res_3d_gr(end)],'XData',tcPDAstruct.x_axis_stair);
     if (size(tcPDAstruct.plots.H_res_3d_individual,1) > 1)
-        for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
-            temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-            set(handles.plots.handles_H_res_3d_individual_gr(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+        if tcPDAstruct.use_stochasticlabeling
+            for i = 1:2:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+                set(handles.plots.handles_H_res_3d_individual_gr((i+1)/2),'YData',2*tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            end
+        else
+            for i = 1:size(tcPDAstruct.plots.H_res_3d_individual,1)
+                temp = squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+                set(handles.plots.handles_H_res_3d_individual_gr(i),'YData',tcPDAstruct.plots.A_3d(i).*[temp;temp(end)],'XData',tcPDAstruct.x_axis_stair);
+            end
         end
     end
 end
@@ -3044,16 +3545,22 @@ function save_fitstate(handles,obj)
 global tcPDAstruct UserValues
 switch obj
     case handles.button_save_fitstate
-        tcPDAstruct.nbins = UserValues.tcPDA.nbins;
+        %tcPDAstruct.nbins = UserValues.tcPDA.nbins;
         save(tcPDAstruct.FullFileName,'tcPDAstruct');
     case handles.button_save_fitstate_external
         fit_data = tcPDAstruct.fitdata;
         corrections = handles.corrections_table.Data;
+        n_gauss = tcPDAstruct.n_gauss;
+        N_min = tcPDAstruct.N_min;
+        N_max = tcPDAstruct.N_max;
+        use_stochasticlabeling = tcPDAstruct.use_stochasticlabeling;
+        fraction_stochasticlabeling = tcPDAstruct.fraction_stochasticlabeling;
+        fix_stochasticlabeling = tcPDAstruct.fix_stochasticlabeling;
         filename = tcPDAstruct.FullFileName;
         %remove extension
         filename = [filename(1:end-5) 'fitstate'];
         [FileName,PathName] = uiputfile({'*.fitstate','tcPDA fitstate file (*.fitstate)'},'Select filename for fitstate file',filename);
-        save(fullfile(PathName,FileName),'fit_data','corrections');
+        save(fullfile(PathName,FileName),'fit_data','corrections','n_gauss','N_min','N_max','use_stochasticlabeling','fraction_stochasticlabeling','fix_stochasticlabeling');
 end
 
 function load_fitstate(handles)
@@ -3082,12 +3589,40 @@ UpdateFitTable(handles);
 if exist('corrections','var') %%% corrections were saved
     handles.corrections_table.Data = corrections;
 end
+if exist('n_gauss','var') %%% n_gauss was saved
+    tcPDAstruct.n_gauss = n_gauss;
+    handles.popupmenu_ngauss.Value = n_gauss;
+    popupmenu_ngauss_callback(handles.popupmenu_ngauss,0);
+end
+if exist('N_min','var') %%% N_min was saved
+    tcPDAstruct.N_min = N_min;
+    handles.min_n_edit.String = num2str(N_min);
+end
+if exist('N_max','var') %%% N_min was saved
+    tcPDAstruct.N_max = N_max;
+    handles.max_n_edit.String = num2str(N_max);
+end
+if exist('fraction_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.fraction_stochasticlabeling = fraction_stochasticlabeling;
+    handles.edit_stochasticlabeling.String = num2str(fraction_stochasticlabeling);
+end
+if exist('fix_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.fix_stochasticlabeling = fix_stochasticlabeling;
+    handles.checkbox_fix_stochasticlabeling.Value = fix_stochasticlabeling;
+end
+if exist('use_stochasticlabeling','var') %%% n_gauss was saved
+    tcPDAstruct.use_stochasticlabeling = use_stochasticlabeling;
+    handles.checkbox_stochasticlabeling.Value = use_stochasticlabeling;
+    update_corrections(handles.checkbox_stochasticlabeling,0);
+end
+chi2 = view_curve(handles);
 
 function chi2 = view_curve(handles)
-global tcPDAstruct
+global tcPDAstruct UserValues
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.sampling = str2double(get(handles.sampling_edit,'String'));
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
 %read correction table
 corrections = get(handles.corrections_table,'data');
@@ -3099,6 +3634,11 @@ corrections = get(handles.corrections_table,'data');
     tcPDAstruct.corrections.R0_gr, tcPDAstruct.corrections.R0_bg, tcPDAstruct.corrections.R0_br] = deal(corrections{:});
 
 [tcPDAstruct.valid] = Cut_Data([],[]);
+tcPDAstruct.fbb = tcPDAstruct.NBB(tcPDAstruct.valid);
+tcPDAstruct.fbg = tcPDAstruct.NBG(tcPDAstruct.valid);
+tcPDAstruct.fbr = tcPDAstruct.NBR(tcPDAstruct.valid);
+tcPDAstruct.fgg = tcPDAstruct.NGG(tcPDAstruct.valid);
+tcPDAstruct.fgr = tcPDAstruct.NGR(tcPDAstruct.valid);
 
 %read initial fit values
 fit_data = get(handles.fit_table,'data');
@@ -3124,9 +3664,13 @@ switch (selected_tab)
         for i = 1:n_gauss
             fitpar = [fitpar; tcPDAstruct.fitdata.param{i}(1:7)];
         end
-        
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+        end
         chi2 = determine_chi2_2C_mc_dist_cor(fitpar);  
-    case handles.tab_3d %full 3d fit
+    case {handles.tab_3d, handles.tab_twocolorPDAData} %full 3d fit
         %create input data
         fitpar = [];
         
@@ -3138,7 +3682,76 @@ switch (selected_tab)
         %fix covariance matrix before fitting
         fitpar = fix_covariance_matrix_fitpar(fitpar);
         
+        if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+            %%% if stochastic labeling is used and not fixed
+            %%% add stochastic fraction as a fit parameter
+            fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+        end
+        
         chi2 = determine_chi2_mc_dist_3d_cor(fitpar);
+        
+        if isfield(tcPDAstruct,'twocolordata')
+            plot_2cPDAData(2);
+        end
+        if handles.MLE_checkbox.Value % determine likelihood and BIC
+            calculate_background();
+            %%% check if gpu is available (sometimes it locks up...)
+            tcPDAstruct.GPU_locked = false;
+            try 
+                gpuDevice;
+            catch
+                disp('GPU locked up - Using CPU instead...');
+                disp('Restart Matlab to fix.');
+                tcPDAstruct.GPU_locked = true;
+            end
+            if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
+                % Initialize Array of binomial and trinomial coefficients
+                [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
+                    tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+            else %%% using GPU
+                if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+                    %%% prepare gpuArrays
+                    tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+                    tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+                    tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+                    tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+                    tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+                    tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+                    tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+                    tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+                    tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+                    tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+                    
+                    tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+                    tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+                    tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+                    tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+                    tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+                    
+                    tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+                    
+                    %%% initialize kernel
+                    path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+                    tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+                    numElements = numel(tcPDAstruct.fbb);
+                    tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+                    tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+                end
+            end
+            determine_MLE_3color(fitpar);
+            handles.BIC_text.String = sprintf('logL = %.4E  BIC = %.4E',tcPDAstruct.logL,tcPDAstruct.BIC);
+            %%% clean up
+            if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+                %%% using MLE -> reset GPU
+                reset(gpuDevice); %%% clear memory
+                if UserValues.tcPDA.UseCUDAKernel
+                    %%% CUDAKernel -> also clear references to gpuArrays
+                    tcPDAstruct.CUDAKernel = [];
+                end
+            end
+        end
+    otherwise
+        chi2 = 0;
 end
 if isfield(tcPDAstruct,'plots')
     handles.text_chi2.String = sprintf('Chi2 = %.2f',tcPDAstruct.plots.chi2);
@@ -3199,14 +3812,14 @@ if ismac
     fontsize_ticks = 1.25*fontsize_ticks;
 end
 
-w_res_limits = [-3 3];
+w_res_limits = [-5 5];
 axes(ha(1));
 %%% calculate w_res
 data = squeeze(sum(input,3));
 fit = tcPDAstruct.plots.H_res_3d_bg_br;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',0.5);
+surf(x_axis,x_axis,squeeze(sum(input,3)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3225,13 +3838,15 @@ hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
 zlabel('counts','FontSize',fontsize_label/1.2);
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+set(gca,'YGrid','on','XGrid','on','ZGrid','on');
 
 axes(ha(2));
 data = squeeze(sum(input,2));
 fit = tcPDAstruct.plots.H_res_3d_bg_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',0.5);
+surf(x_axis,x_axis,squeeze(sum(input,2)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3249,13 +3864,15 @@ hold on;
 hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+set(gca,'YGrid','on','XGrid','on','ZGrid','on');
 
 axes(ha(3));
 data = squeeze(sum(input,1));
 fit = tcPDAstruct.plots.H_res_3d_br_gr;
 error = sqrt(data); error(error==0) = 1;
 w_res = (data-fit)./error;
-surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',0.6,'LineWidth',0.5);
+surf(x_axis,x_axis,squeeze(sum(input,1)),w_res,'EdgeColor',[0,0,0],'FaceAlpha',1,'LineWidth',1);
 caxis(w_res_limits); 
 colormap(handles.colormap);
 xlim([0 1]);
@@ -3273,13 +3890,21 @@ hold on;
 hold off;
 set(gca,'Color',axes_bg_color);
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+set(gca,'YGrid','on','XGrid','on','ZGrid','on');
 
 cbar = colorbar('Position',[0.97 , 0.6,0.01,0.3]);
 htext = text(1.06,0.955,'w_{res}','Units','normalized','FontSize',fontsize_label);
 
 %color = {[0 180 0]/255 [220 0 0 ]/255 'b' 'c' 'm'};
-color = lines(n_gauss);
-color = mat2cell(color,ones(size(color,1),1),size(color,2));
+%color = lines(n_gauss);
+%color = mat2cell(color,ones(size(color,1),1),size(color,2));
+color = handles.color_str;
+if ~tcPDAstruct.use_stochasticlabeling
+    plots = 1:10;
+else
+    plots = [1,6,2,7,3,8,4,9,5,10];
+end
 
 axes(ha(4));
 set(gca,'Color','w');
@@ -3294,20 +3919,25 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},2),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
     end
 end
+
+
 data = tcPDAstruct.plots.H_res_3d_bg;
 data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
 ax_wres(1) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(1)],'x');
+linkprop([ax,ax_wres(1)],'XTick');
 data = squeeze(sum(sum(input,2),3));
 fit = tcPDAstruct.plots.H_res_3d_bg;
 error = sqrt(data); error(error==0) = 1;
@@ -3325,6 +3955,7 @@ ax.Color = axes_bg_color;
 ylabel(ax,'counts','FontSize',fontsize_label/1.2);
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(5));
 bar(x_axis,squeeze(sum(sum(input,1),3)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
@@ -3338,7 +3969,7 @@ if n_gauss > 1
     for i = 1:n_gauss
         data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),3));
         data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        stairs(x_axis_stairs,data,'Color',color{plots(i)},'LineWidth',2);
     end
 end
 data = tcPDAstruct.plots.H_res_3d_br;
@@ -3346,12 +3977,15 @@ data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
 ax_wres(2) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(2)],'x');
+linkprop([ax,ax_wres(2)],'XTick');
 data = squeeze(sum(sum(input,1),3));
 fit = tcPDAstruct.plots.H_res_3d_br;
 error = sqrt(data); error(error==0) = 1;
@@ -3368,6 +4002,7 @@ ax_wres(2).Color = axes_bg_color;
 ax.Color = axes_bg_color;
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 axes(ha(6));
 bar(x_axis,squeeze(sum(sum(input,1),2)),'BarWidth',1,'FaceColor',[0.5 0.5 0.5],'EdgeColor','none');
@@ -3377,11 +4012,21 @@ xlabel('PR_{GR}','FontSize',fontsize_label);
 set(gca,'FontSize',fontsize_ticks);    
 hold on;
 %bar(tcPDAstruct.x_axis,tcPDAstruct.plots.H_res_3d_gr,'BarWidth',1,'EdgeColor','k','LineWidth',2,'FaceColor','none');
-if n_gauss > 1  
-    for i = 1:n_gauss
-        data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
-        data(end+1) = data(end);
-        stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+if ~tcPDAstruct.use_stochasticlabeling
+    if n_gauss > 1  
+        for i = 1:n_gauss
+            data = tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data(end+1) = data(end);
+            stairs(x_axis_stairs,data,'Color',color{i},'LineWidth',2);
+        end
+    end
+else
+    if n_gauss/2 > 1  
+        for i = 1:2:n_gauss % only plot every second 
+            data = 2*tcPDAstruct.plots.A_3d(i).*squeeze(sum(sum(tcPDAstruct.plots.H_res_3d_individual{i},1),2));
+            data(end+1) = data(end);
+            stairs(x_axis_stairs,data,'Color',color{(i+1)/2},'LineWidth',2);
+        end
     end
 end
 data = tcPDAstruct.plots.H_res_3d_gr;
@@ -3389,12 +4034,15 @@ data(end+1) = data(end);
 stairs(x_axis_stairs,data,'Color','k','LineWidth',2);
 hold off;
 set(gca,'Box','on');
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
+
 ax = gca;
 ax.Position(4) = ax.Position(4)-0.05;
 %%% add w_res axis
 ax_wres(3) = axes('Units','normalized','FontSize',fontsize_ticks,'Color','w',...
     'Position',[ax.Position(1)    ax.Position(2)+ax.Position(4)    ax.Position(3)    0.0500]);
 linkaxes([ax,ax_wres(3)],'x');
+linkprop([ax,ax_wres(3)],'XTick');
 data = squeeze(sum(sum(input,1),2));
 fit = tcPDAstruct.plots.H_res_3d_gr;
 error = sqrt(data); error(error==0) = 1;
@@ -3411,6 +4059,7 @@ ax_wres(3).Color = axes_bg_color;
 ax.Color = axes_bg_color;
 ax.Layer = 'top';
 ax.XTick = [0,0.25,0.5,0.75,1];
+set(gca,'XColor',[0,0,0],'YColor',[0,0,0],'ZColor',[0,0,0]);
 
 for i = 4:numel(ha)
     set(ha(i),'Color',[1 1 1]);
@@ -3422,7 +4071,7 @@ for i =1:numel(child)
         child(i).LineWidth = 2;
     end
 end
-cbar.LineWidth = 1;
+cbar.LineWidth = 2;
 for i = 1:numel(child)
     if ~any(strcmp(child(i).Type,{'uicontextmenu','uimenu','uitoolbar'}))
         child(i).Position(1) = child(i).Position(1)+0.02;
@@ -3520,9 +4169,8 @@ corYZ = covYZ./sqrt(VarY*VarZ);
 
 fontsize_label = 15;
 fontsize_ticks = 15;
-IsoLineHeight = 0.32;
-color = lines(n_gauss);
-color = mat2cell(color,ones(size(color,1),1),size(color,2));
+IsoLineHeight = 0.5;
+color = handles.color_str;
 disp('Correlation coefficients: ');
 
 axes(ha(1));
@@ -3583,9 +4231,15 @@ for i = 1:n_gauss
 end
 pp = squeeze(sum(PDF,2)); set(ha(3),'CLim',[0,max(pp(:))]);
 
-
-%colormap(1 - colormap(gray));
-colormap(jetvar);
+cmap = 1 -gray(100);
+beta = -0.5;
+if beta > 0
+    cmap = cmap.^(1-beta);
+elseif beta <= 0
+    cmap = cmap.^(1/(1+beta));
+end
+colormap(cmap);
+%colormap([1,1,1;jetvar]);
 for i = 1:numel(ha)
     set(ha(i),'Layer','top','Box','on');
 end
@@ -4003,7 +4657,7 @@ function [Hout Xbins Ybins] = hist2d(D, varargin) %Xn, Yn, Xrange, Yrange)
     
 %%%% Draw Samples from posterior
 function mcmc_draw_samples(~,~)
-global tcPDAstruct
+global tcPDAstruct UserValues
 if ~isfield(tcPDAstruct,'NBB')
     return
 end
@@ -4011,13 +4665,23 @@ handles = guidata(findobj('Tag','tcPDA'));
 handles.draw_samples_button.Enable = 'off';
 tcPDAstruct.BrightnessCorrection = handles.Brightness_Correction_Toggle.Value;
 tcPDAstruct.use_stochasticlabeling = handles.checkbox_stochasticlabeling.Value;
+tcPDAstruct.fix_stochasticlabeling = handles.checkbox_fix_stochasticlabeling.Value;
 tcPDAstruct.fraction_stochasticlabeling = str2double(handles.edit_stochasticlabeling.String);
+tcPDAstruct.use_2color_data = handles.use_2cPDAData_checkbox.Value;
+tcPDAstruct.norm_likelihood = handles.norm_likelihood_checkbox.Value;
+tcPDAstruct.live_plot_update = handles.live_plot_update_checkbox.Value;
 mcmc_method = handles.mcmc_method.Value;
 n_samples = str2double(handles.n_samples_edit.String);
 
-%read initial fit values
+%update fitdata
 fit_data = get(handles.fit_table,'data');
 n_gauss = get(handles.popupmenu_ngauss,'value');
+for i = 1:n_gauss%number of species
+   tcPDAstruct.fitdata.param{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,2));
+   tcPDAstruct.fitdata.fixed{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,3));
+   tcPDAstruct.fitdata.LB{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,4));
+   tcPDAstruct.fitdata.UB{i} = cell2mat(fit_data((i-1)*11+1:(i-1)*11+10,5));
+end
 
 corrections = get(handles.corrections_table,'data');
 [tcPDAstruct.corrections.ct_gr, tcPDAstruct.corrections.ct_bg, tcPDAstruct.corrections.ct_br,...
@@ -4056,7 +4720,13 @@ for i = 1:n_gauss
     fixed = [fixed; tcPDAstruct.fitdata.fixed{i}(:)];
     sigma_prop = [sigma_prop, s_dummy];
 end
-
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    fitpar(end+1) = tcPDAstruct.fraction_stochasticlabeling;
+    LB(end+1) = 0;
+    UB(end+1) = 1;
+    fixed(end+1) = 0;
+    sigma_prop(end+1) = sampleA; % use amplitude sampling width for fraction of stochastic labeling
+end
 %%% define parameter names
 param_names_dummy= {'A','R_G_R','\sigma_G_R','R_B_G','\sigma_B_G','R_B_R','\sigma_B_R','cov(BG/BR)','cov(BG/GR)','cov(BR/GR)'};
 if n_gauss == 1
@@ -4067,10 +4737,17 @@ elseif n_gauss > 1
         param_names = horzcat(param_names,cellfun(@(x) [x '_' num2str(i)],param_names_dummy,'UniformOutput',false));
     end
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    param_names{end+1} = 'F_{labeling}';
+end
 
 tcPDAstruct.grid = 0;
 calculate_background();
-
+if handles.use_2cPDAData_checkbox.Value
+    % update two color background count distributions
+    tcPDAstruct.active_2C = cell2mat(cellfun(@(x) strcmp(x,'True'),handles.table_2cPDAData.Data(:,1),'UniformOutput',false));
+    evaluate_background_2C();
+end
 %%% check if gpu is available (sometimes it locks up...)
 tcPDAstruct.GPU_locked = false;
 try 
@@ -4084,10 +4761,44 @@ if (gpuDeviceCount==0) || tcPDAstruct.GPU_locked % Use CPU
     % Initialize Array of binomial and trinomial coefficients
     [tcPDAstruct.lib_b,tcPDAstruct.lib_t] = binomial_coefficient_library_mex(tcPDAstruct.fbb,tcPDAstruct.fbg,tcPDAstruct.fbr,tcPDAstruct.fgg,tcPDAstruct.fgr,...
         tcPDAstruct.corrections.background.NBGbb,tcPDAstruct.corrections.background.NBGbg,tcPDAstruct.corrections.background.NBGbr,tcPDAstruct.corrections.background.NBGgg,tcPDAstruct.corrections.background.NBGgr);
+else %%% using GPU
+    if UserValues.tcPDA.UseCUDAKernel %%% using CUDAKernel implementation
+        %%% prepare gpuArrays
+        tcPDAstruct.CUDAKernel.BG_bb = gpuArray(single(tcPDAstruct.corrections.background.BGbb));
+        tcPDAstruct.CUDAKernel.BG_bg = gpuArray(single(tcPDAstruct.corrections.background.BGbg));
+        tcPDAstruct.CUDAKernel.BG_br = gpuArray(single(tcPDAstruct.corrections.background.BGbr));
+        tcPDAstruct.CUDAKernel.BG_gg = gpuArray(single(tcPDAstruct.corrections.background.BGgg));
+        tcPDAstruct.CUDAKernel.BG_gr = gpuArray(single(tcPDAstruct.corrections.background.BGgr));
+        tcPDAstruct.CUDAKernel.NBGbb = gpuArray(tcPDAstruct.corrections.background.NBGbb);
+        tcPDAstruct.CUDAKernel.NBGbg = gpuArray(tcPDAstruct.corrections.background.NBGbg);
+        tcPDAstruct.CUDAKernel.NBGbr = gpuArray(tcPDAstruct.corrections.background.NBGbr);
+        tcPDAstruct.CUDAKernel.NBGgg = gpuArray(tcPDAstruct.corrections.background.NBGgg);
+        tcPDAstruct.CUDAKernel.NBGgr = gpuArray(tcPDAstruct.corrections.background.NBGgr);
+
+        tcPDAstruct.CUDAKernel.fbb = gpuArray(int32(tcPDAstruct.fbb));
+        tcPDAstruct.CUDAKernel.fbg = gpuArray(int32(tcPDAstruct.fbg));
+        tcPDAstruct.CUDAKernel.fbr = gpuArray(int32(tcPDAstruct.fbr));
+        tcPDAstruct.CUDAKernel.fgg = gpuArray(int32(tcPDAstruct.fgg));
+        tcPDAstruct.CUDAKernel.fgr = gpuArray(int32(tcPDAstruct.fgr));
+
+        tcPDAstruct.CUDAKernel.likelihood = gpuArray(single(zeros(numel(tcPDAstruct.fbb)*125,1))); %%% 125 = 5^3 = grid size for distance distribution model
+
+        %%% initialize kernel
+        path = ['functions' filesep 'tcPDA' filesep 'CUDAKernel' filesep];
+        tcPDAstruct.CUDAKernel.k = parallel.gpu.CUDAKernel([path 'likelihood_3c_cuda.ptx'],[path 'likelihood_3c_cuda.cu'],'eval_prob_3c_bg');
+        numElements = numel(tcPDAstruct.fbb);
+        tcPDAstruct.CUDAKernel.k.ThreadBlockSize = [tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock,1,1];
+        tcPDAstruct.CUDAKernel.k.GridSize = [ceil(numElements/tcPDAstruct.CUDAKernel.k.MaxThreadsPerBlock),1];
+    end
 end
 
-priorfun = @(x) 1;
-probfun = @(x) (-1)*determine_MLE_mc_dist_3d_cor(x); 
+priorfun = @(x) (-1)*evaluate_prior(x);
+if ~handles.use_2cPDAData_checkbox.Value
+    %%% no globa fit
+    probfun = @(x) (-1)*determine_MLE_3color(x); 
+else
+    probfun = @(x) (-1)*determine_MLE_global(x); 
+end
 plot_params = ~fixed;
 
 switch mcmc_method
@@ -4095,6 +4806,16 @@ switch mcmc_method
         [samples,prob,acceptance] =  MHsample(n_samples,probfun,priorfun,sigma_prop,LB',UB',fitpar,fixed,plot_params,param_names,handles.bayesian_plot_panel);
     case 2 %%% MHWG
         [samples,prob,acceptance] =  MWGsample(n_samples,probfun,priorfun,sigma_prop,LB',UB',fitpar,fixed,plot_params,param_names,handles.bayesian_plot_panel);
+end
+
+%%% clean up
+if ( (gpuDeviceCount==0) || tcPDAstruct.GPU_locked) == false %%% not using CPU
+    %%% using MLE -> reset GPU
+    reset(gpuDevice); %%% clear memory
+    if UserValues.tcPDA.UseCUDAKernel
+        %%% CUDAKernel -> also clear references to gpuArrays
+        tcPDAstruct.CUDAKernel = [];
+    end
 end
 
 if ~isfield(tcPDAstruct,'samples')
@@ -4206,6 +4927,7 @@ perc = 1.96; % 95% confidence interval at 1.96 sigma
 mu = mean(samples(1:spacing:end,:),1);
 ci = prctile(samples(1:spacing:end,:),[2.5,97.5],1); %std(samples(1:spacing:end,:),1).*perc;
 number_of_samples = numel(1:spacing:size(samples,1));
+acceptance_probability = sum(abs(diff(samples(:,1)))>0)./size(samples,1);
 %%% define parameter names
 param_names_dummy= {'A','R(GR)','s(GR)','R(BG)','s(BG)','R(BR)','s(BR)','cov(BG/BR)','cov(BG/GR)','cov(BR/GR)'};
 if n_gauss == 1
@@ -4216,6 +4938,9 @@ elseif n_gauss > 1
         param_names = horzcat(param_names,cellfun(@(x) [x '_' num2str(i)],param_names_dummy,'UniformOutput',false));
     end
 end
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    param_names{end+1} = 'F_labeling';
+end
 param_names = param_names(~fixed);
 [path,file,~] = fileparts(tcPDAstruct.FullFileName);
 
@@ -4225,6 +4950,7 @@ fprintf(fid,'Number of samples:\t%d\n',size(samples,1));
 fprintf(fid,'Sampling width for amplitudes:\t%s\n',handles.sigma_A_edit.String);
 fprintf(fid,'Sampling width for distances:\t%s\n',handles.sigma_R_edit.String);
 fprintf(fid,'Sampling width for distribution widths:\t%s\n',handles.sigma_s_edit.String);
+fprintf(fid,'Acceptance probability:\t%.4f\n',acceptance_probability);
 fprintf(fid,'Spacing for sampling from chain:\t%d\n\n',spacing);
 fprintf(fid,'Parameter\tmean\tci (95%%)\n');
 for i = 1:numel(param_names)
@@ -4258,7 +4984,7 @@ switch gcbo
             res = {sprintf('%.2f',mu(i-1)), sprintf('(%.2f,',ci(1,i-1)), sprintf('%.2f)',ci(2,i-1))};
             %%% plot result in axis
             axes(ax(i));
-            text(1.08,0.5,res,'Units','normalized','FontSize',12,'Color',UserValues.Look.Fore,'HorizontalAlignment','center');
+            text(1.08,0.5,res,'Units','normalized','FontSize',10,'Color',UserValues.Look.Fore,'HorizontalAlignment','center');
         end
     case handles.save_mcmc_button
         %%% append the samples
@@ -4401,13 +5127,524 @@ if gaussian
 end
 
 %%% function to add 2color data
-function add_2cpdadata()
-global tcPDAstruct
-Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName)
+function add_2cPDAData(obj,eData)
+global tcPDAstruct UserValues
+h = guidata(gco);
+%%$ Load or Add data
+Files = GetMultipleFiles({'*.pda','*.pda file'},'Select *.pda file',UserValues.tcPDA.PathName);
+if isempty(Files)
+    return;
+end
+FileName = Files(:,1);
+PathName = Files(:,2);
+%%% Only executes, if at least one file was selected
+if all(FileName{1}==0)
+    return
+end
 
+if ~isfield(tcPDAstruct,'twocolordata')
+    tcPDAstruct.twocolordata = struct;
+    tcPDAstruct.twocolordata.FileName = [];
+    tcPDAstruct.twocolordata.PathName = [];
+    tcPDAstruct.twocolordata.Data = [];
+    tcPDAstruct.twocolordata.timebin = [];
+    tcPDAstruct.twocolordata.Corrections = [];
+    tcPDAstruct.twocolordata.Background = [];
+    tcPDAstruct.twocolordata.Type = [];
+    tcPDAstruct.twocolordata.FitTable = [];
+    tcPDAstruct.twocolordata.Distance = [];
+    tcPDAstruct.twocolordata.Ehist = [];
+end
+for i = 1:numel(FileName)
+    if exist(fullfile(PathName{i},FileName{i}), 'file') == 2
+        load('-mat',fullfile(PathName{i},FileName{i}));
+        tcPDAstruct.twocolordata.FileName{end+1} = FileName{i};
+        tcPDAstruct.twocolordata.PathName{end+1} = PathName{i};
+        tcPDAstruct.twocolordata.Distance{end+1} = 'GR';
+        tcPDAstruct.twocolordata.Ehist{end+1} = [];
+        if exist('PDA','var') % file has not been saved before in GlobalPDAFit
+            % PDA %structure
+            % .NGP
+            % ....
+            % .NR
+            % .Corrections %structure
+            %       .CrossTalk_GR
+            %       .DirectExcitation_GR
+            %       .Gamma_GR
+            %       .Beta_GR
+            %       .GfactorGreen
+            %       .GfactorRed
+            %       .DonorLifetime
+            %       .AcceptorLifetime
+            %       .FoersterRadius
+            %       .LinkerLength
+            %       .r0_green
+            %       .r0_red
+            %       ... maybe more in future
+            % .Background %structure
+            %       .Background_GGpar
+            %       .Background_GGperp
+            %       .Background_GRpar
+            %       .Background_GRperp
+            %       ... maybe more in future
+            % NOTE: direct excitation correction in Burst analysis is NOT the
+            % same as PDA, therefore we put it to zero. In PDA, this factor
+            % is either the extcoeffA/(extcoeffA+extcoeffD) at donor laser,
+            % or the ratio of Int(A)/(Int(A)+Int(D)) for a crosstalk, gamma
+            % corrected double labeled molecule having no FRET at all.
+            tcPDAstruct.twocolordata.Data{end+1} = PDA;
+            tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Corrections');
+            tcPDAstruct.twocolordata.Data{end} = rmfield(tcPDAstruct.twocolordata.Data{end}, 'Background');
+            tcPDAstruct.twocolordata.timebin(end+1) = timebin*1000;
+            tcPDAstruct.twocolordata.Corrections{end+1} = PDA.Corrections; %contains everything that was saved in BurstBrowser
+            tcPDAstruct.twocolordata.Background{end+1} = PDA.Background; %contains everything that was saved in BurstBrowser
+            if isfield(PDA,'Type') %%% Type distinguishes between whole measurement and burstwise
+                tcPDAstruct.twocolordata.Type{end+1} = PDA.Type;
+            else
+                tcPDAstruct.twocolordata.Type{end+1} = 'Burst';
+            end
+            clear PDA timebin
+            tcPDAstruct.twocolordata.FitTable{end+1} = h.FitTab.Table.Data(end-2,:);
+        elseif exist('SavedData','var') % file has been saved before in GlobalPDAFit and contains SavedData
+            % SavedData %structure
+            %   .Data %cell
+            %       .NGP
+            %       ....
+            %       .NR
+            %   .Corrections %structure
+            %           see above
+            %   .Background %structure
+            %           see above
+            %   .FitParams %1 x 47 cell
+            tcPDAstruct.twocolordata.Data{end+1} = SavedData.Data;
+            tcPDAstruct.twocolordata.timebin(end+1) = SavedData.timebin*1000;
+            tcPDAstruct.twocolordata.Corrections{end+1} = SavedData.Corrections;
+            tcPDAstruct.twocolordata.Background{end+1} = SavedData.Background;
+            if isfield(SavedData,'Type') %%% Type distinguishes between whole measurement and burstwise
+                tcPDAstruct.twocolordata.Type{end+1} = SavedData.Type;
+            else
+                tcPDAstruct.twocolordata.Type{end+1} = 'Burst';
+            end
+            % load fit table data from files
+            tcPDAstruct.twocolordata.FitTable{end+1} = SavedData.FitTable;        
+        end
+    else
+        errorstr{a} = ['File ' FileName{i} ' on path ' PathName{i} ' could not be found. File omitted from database.'];
+        a = a+1;
+    end       
+end
+h.use_2cPDAData_checkbox.Value = 1;
+update_2cPDAData_table()
+plot_2cPDAData(1)
+
+function update_2cPDAData_table()
+global tcPDAstruct
+h = guidata(gcbo);
+if isfield(tcPDAstruct,'twocolordata')
+    data = cell(numel(tcPDAstruct.twocolordata.Data),11);
+    for i = 1:numel(tcPDAstruct.twocolordata.Data)
+        data(i,:) = {'True',tcPDAstruct.twocolordata.FileName{i},tcPDAstruct.twocolordata.Distance{i},tcPDAstruct.twocolordata.Corrections{i}.Gamma_GR,...
+            tcPDAstruct.twocolordata.Corrections{i}.CrossTalk_GR,tcPDAstruct.twocolordata.Corrections{i}.DirectExcitationProb,....
+            tcPDAstruct.twocolordata.Corrections{i}.FoersterRadius,...
+            tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp,...
+            tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp,...
+            tcPDAstruct.twocolordata.timebin(i),'False'};
+    end
+    h.table_2cPDAData.Data = data;
+end
 
 %%% callback function of 2c pda table
-function table_2cpdadata_callback(obj,e)
+function table_2cPDAData_callback(obj,e)
+global tcPDAstruct
+switch e.Indices(2)
+    case 11 %%% delete data set
+        i = e.Indices(1);
+        tcPDAstruct.twocolordata.Data(i) = [];
+        tcPDAstruct.twocolordata.FileName(i) = [];
+        tcPDAstruct.twocolordata.PathName(i) = [];
+        tcPDAstruct.twocolordata.timebin(i) = [];
+        tcPDAstruct.twocolordata.Corrections(i) = [];
+        tcPDAstruct.twocolordata.Background(i) = [];
+        tcPDAstruct.twocolordata.Type(i) = [];
+        tcPDAstruct.twocolordata.FitTable(i) = [];
+        tcPDAstruct.twocolordata.Ehist(i) = [];
+        tcPDAstruct.twocolordata.Distance(i) = [];
+        %%% update table and plot
+        update_2cPDAData_table();
+        plot_2cPDAData(1);
+    case 3
+        %%% update distance variable
+        tcPDAstruct.twocolordata.Distance{e.Indices(1)} = e.NewData;
+        plot_2cPDAData(1);
+    case 4
+        %%% update Gamma_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Gamma_GR = e.NewData;
+    case 5
+        %%% update CrossTalk_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.CrossTalk_GR = e.NewData;
+    case 6
+        %%% update DirectExcitationProb variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.DirectExcitationProb = e.NewData;
+    case 7
+        %%% update FoersterRaidues variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.FoersterRadius = e.NewData;
+    case 8
+        %%% update Background_GG variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGpar = e.NewData/2;
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GGperp = e.NewData/2;
+    case 9
+        %%% update Background_GR variable
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRpar = e.NewData/2;
+        tcPDAstruct.twocolordata.Corrections{e.Indices(1)}.Background_GRperp = e.NewData/2;
+    case 10
+        %%% update timebin variable
+        tcPDAstruct.twocolordata.timebin(i) = e.NewData;
+    case 1
+        if strcmp(e.PreviousData,'True')
+            obj.Data{e.Indices(1),e.Indices(2)} = 'False';
+        else
+            obj.Data{e.Indices(1),e.Indices(2)} = 'True';
+        end
+        if all(strcmp(obj.Data(:,1),'False'))
+            h = guidata(obj);
+            h.use_2cPDAData_checkbox.Value = 0;
+        end
+        plot_2cPDAData(1);
+end
+
+function plot_2cPDAData(mode)
+global tcPDAstruct
+h = guidata(gcbo);
+if nargin < 1
+    mode = 1;
+end
+% mode = 1 -> on data load, plot histograms
+% mode = 2 -> view curve/after fit, generate histograms
+parent = h.tab_twocolorPDAData;
+delete(parent.Children);
+if isfield(tcPDAstruct,'twocolordata')
+    nbins = str2double(h.nbins_edit.String);
+    active = find(cell2mat(cellfun(@(x) strcmp(x,'True'),h.table_2cPDAData.Data(:,1),'UniformOutput',false)));
+    n = numel(active);
+    tcPDAstruct.twocolordata.Ehist = [];
+    for i = 1:numel(active)
+        subplot(n,1,i,'Parent',parent);
+        %%% histogram the data
+        tcPDAstruct.twocolordata.Ehist{active(i)} = histc(tcPDAstruct.twocolordata.Data{active(i)}.NF./(tcPDAstruct.twocolordata.Data{active(i)}.NF+tcPDAstruct.twocolordata.Data{active(i)}.NG),...
+            linspace(0,1,nbins+1));
+        tcPDAstruct.twocolordata.Ehist{active(i)}(end-1) = tcPDAstruct.twocolordata.Ehist{active(i)}(end-1) + tcPDAstruct.twocolordata.Ehist{active(i)}(end);
+        tcPDAstruct.twocolordata.Ehist{active(i)}(end) = [];
+        %%% plot the histogram
+        bar(tcPDAstruct.x_axis_bar,tcPDAstruct.twocolordata.Ehist{active(i)},'EdgeColor','none','FaceColor',[0.5,0.5,0.5],'BarWidth',1);
+        set(gca,'XColor',[1,1,1],'YColor',[1,1,1]);
+        xlabel('Proximity Ratio','Color',[1,1,1]); ylabel('Occurrence','Color',[1,1,1]);
+        title(tcPDAstruct.twocolordata.FileName{active(i)},'Color',[1,1,1],'Interpreter','none');
+        legend(tcPDAstruct.twocolordata.Distance{active(i)});
+    end
+    if mode == 2 % mode = 2 -> view curve/after fit, generate histograms
+        % calculate fit histograms
+        for i = active'
+            %%% what distance?
+            dist = tcPDAstruct.twocolordata.Distance{i};
+            %%% get fit parameters
+            fitpar = [];
+            for j = 1:tcPDAstruct.n_gauss
+                fitpar = [fitpar; tcPDAstruct.fitdata.param{j}(:)];
+            end
+            switch dist
+                case 'GR'
+                    sel = [1,2,3];
+                case 'BG'
+                    sel = [1,4,5];
+                case 'BR'
+                    sel = [1,6,7];
+            end
+            fitpar_filtered = [];
+            for j = 1:tcPDAstruct.n_gauss
+                fitpar_filtered = [fitpar_filtered; fitpar((j-1)*10+sel)];
+            end
+            fitpar_filtered = fitpar_filtered';
+            fitpar_filtered = fitpar_filtered(:);
+            % compute histogram
+            calculate_2c_histogram_mc(i,fitpar_filtered);
+        end
+        % update plots
+        ax = flipud(findobj('Parent',h.tab_twocolorPDAData,'Type','axes'));
+        for i = 1:numel(active)
+            axes(ax(i)); hold on;
+            %%% plot total histogram
+            stairs(tcPDAstruct.x_axis_stair,[tcPDAstruct.twocolordata.H_res{active(i)};tcPDAstruct.twocolordata.H_res{active(i)}(end)],...
+                'LineWidth',2,'Color',[0,0,0]);
+            %%% plot subpopulations
+            if tcPDAstruct.n_gauss > 1
+                for k = 1:tcPDAstruct.n_gauss
+                    stairs(tcPDAstruct.x_axis_stair,tcPDAstruct.twocolordata.A_res{active(i)}(k)*[tcPDAstruct.twocolordata.H_res_individual{active(i)}(:,k);tcPDAstruct.twocolordata.H_res_individual{active(i)}(end,k)],...
+                        'LineWidth',2,'Color',h.color_str{k});
+                end
+            end
+        end
+    end
+end
+
+%%% evaluate 2C PDA likelihood
+function neg_logL = evaluate_2C_pda_likelihood(fitpar)
+global tcPDAstruct
+
+active = find(tcPDAstruct.active_2C);
+n_gauss = tcPDAstruct.n_gauss;
+L_per_dataset = cell(numel(active),1);
+
+%%% loop over all 1d data sets that are set to active, add up the likelihood
+for i = active'
+    %%% what distance?
+    dist = tcPDAstruct.twocolordata.Distance{i};
+    %%% get fit parameters
+    switch dist
+        case 'GR'
+            sel = [1,2,3];
+        case 'BG'
+            sel = [1,4,5];
+        case 'BR'
+            sel = [1,6,7];
+    end
+    fitpar_filtered = zeros(n_gauss,3);
+    for j = 1:n_gauss
+        fitpar_filtered(j,:) = fitpar((j-1)*10+sel);
+    end
+    %%% compute likelihood
+    L_per_dataset{i} = determine_MLE_2color(i,fitpar_filtered);
+    if tcPDAstruct.norm_likelihood
+        L_per_dataset{i} = L_per_dataset{i}./numel(tcPDAstruct.twocolordata.Data{i}.NG);
+    end
+end
+neg_logL = sum(horzcat(L_per_dataset{:}));
+
+function logL = determine_MLE_2color(dataset,fitpar)
+global tcPDAstruct
+n_gauss = tcPDAstruct.n_gauss; % read out number of populations
+steps = 10;
+n_sigma = 3; %%% how many sigma to sample distribution width?
+%%% get the photon counts, background count distributions and correction factors
+R0 = tcPDAstruct.twocolordata.Corrections{dataset}.FoersterRadius;
+cr = tcPDAstruct.twocolordata.Corrections{dataset}.CrossTalk_GR;
+de = tcPDAstruct.twocolordata.Corrections{dataset}.DirectExcitationProb;
+gamma = tcPDAstruct.twocolordata.Corrections{dataset}.Gamma_GR;
+NG = tcPDAstruct.twocolordata.Data{dataset}.NG;
+NF = tcPDAstruct.twocolordata.Data{dataset}.NF;
+L = cell(n_gauss,1); %%% Likelihood per Gauss
+for j = 1:n_gauss
+    %%% define Gaussian distribution of distances
+    xR = (fitpar(j,2)-n_sigma*fitpar(j,3)):(2*n_sigma*fitpar(j,3)/steps):(fitpar(j,2)+n_sigma*fitpar(j,3));
+    PR = normpdf(xR,fitpar(j,2),fitpar(j,3));
+    PR = PR'./sum(PR);
+    %%% Calculate E values for R grid
+    E = 1./(1+(xR./R0).^6);
+    epsGR = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+
+    %%% Calculate the vector of likelihood values
+    P = eval_prob_2c_bg(NG,NF,...
+        tcPDAstruct.twocolordata.NBG{dataset},tcPDAstruct.twocolordata.NBR{dataset},...
+        tcPDAstruct.twocolordata.PBG{dataset}',tcPDAstruct.twocolordata.PBR{dataset}',...
+        epsGR');
+    P = log(P) + repmat(log(PR'),numel(NG),1);
+    Lmax = max(P,[],2);
+    P = Lmax + log(sum(exp(P-repmat(Lmax,1,numel(PR))),2));
+
+    %%% Treat case when all burst produced zero probability
+    P(isnan(P)) = -Inf;
+    L{j} = P;
+end
+
+%%% normalize amplitudes
+PA = fitpar(:,1)./sum(fitpar(:,1));
+
+L = horzcat(L{:});
+L = L + repmat(log(PA'),numel(NG),1);
+Lmax = max(L,[],2);
+L = Lmax + log(sum(exp(L-repmat(Lmax,1,numel(PA))),2));
+%%% P_res has NaN values if Lmax was -Inf (i.e. total of zero probability)!
+%%% Reset these values to -Inf
+L(isnan(L)) = -Inf;
+logL = sum(L);
+%%% since the algorithm minimizes, it is important to minimize the negative
+%%% log likelihood, i.e. maximize the likelihood
+logL = -logL;
+
+function [P_global] = determine_MLE_global(fitpar)
+global tcPDAstruct
+%%% combine the likelihoods of two-color and three-color measurements
+%%% option to normalize using the geometric mean (done in
+%%% evaluate_2C_pda_likelihood function for two color data sets)
+
+%%% 3 color likelihood
+P_3C = determine_MLE_3color(fitpar);
+if tcPDAstruct.norm_likelihood
+    P_3C = P_3C./numel(tcPDAstruct.NBB);
+end
+%%% 2 color likelihood
+if tcPDAstruct.use_stochasticlabeling && ~tcPDAstruct.fix_stochasticlabeling
+    %%% remove stochastic labeling fraction for 2C likelihood
+    fitpar(end) = [];
+end
+P_2C = evaluate_2C_pda_likelihood(fitpar);
+
+P_global = P_3C + P_2C;
+
+function evaluate_background_2C()
+global tcPDAstruct
+
+for i = 1:numel(tcPDAstruct.active_2C)
+    %%% evaluate the background probabilities
+    % timebin is given in units of milliseconds
+    background_counts_GG = (tcPDAstruct.twocolordata.Background{i}.Background_GGpar+tcPDAstruct.twocolordata.Background{i}.Background_GGperp)*...
+        tcPDAstruct.twocolordata.timebin(i);
+    background_counts_GR = (tcPDAstruct.twocolordata.Background{i}.Background_GRpar+tcPDAstruct.twocolordata.Background{i}.Background_GRperp)*...
+        tcPDAstruct.twocolordata.timebin(i);
+    maxN = max(tcPDAstruct.twocolordata.Data{i}.NG + tcPDAstruct.twocolordata.Data{i}.NF);
+    BGgg = poisspdf(0:1:maxN,background_counts_GG);
+    BGgr = poisspdf(0:1:maxN,background_counts_GR);
+    method = 'cdf';
+    switch method
+        case 'pdf'
+            %determine boundaries for background inclusion
+            BGgg(BGgg<1E-2) = [];
+            BGgr(BGgr<1E-2) = [];
+        case 'cdf'
+            %%% evaluate the background probabilities
+            CDF_BGgg = poisscdf(0:1:maxN,background_counts_GG);
+            CDF_BGgr = poisscdf(0:1:maxN,background_counts_GR);
+            %determine boundaries for background inclusion
+            threshold = 0.95;
+            BGgg((find(CDF_BGgg>threshold,1,'first')+1):end) = [];
+            BGgr((find(CDF_BGgr>threshold,1,'first')+1):end) = [];
+    end
+    PBG = BGgg./sum(BGgg);
+    PBR = BGgr./sum(BGgr);
+    NBG = numel(BGgg)-1;
+    NBR = numel(BGgr)-1;
+
+    % assign to global 
+    tcPDAstruct.twocolordata.PBG{i} = PBG;
+    tcPDAstruct.twocolordata.PBR{i} = PBR;
+    tcPDAstruct.twocolordata.NBG{i} = NBG;
+    tcPDAstruct.twocolordata.NBR{i} = NBR;
+end
+
+function calculate_2c_histogram_mc(dataset,fitpar)
+global tcPDAstruct UserValues
+nbins = tcPDAstruct.nbins;
+%this ensures that the same random numbers are generated in each fitting
+%step to reduce stochastic noise
+rng('shuffle');
+
+N_gauss = numel(fitpar)/3;
+%one color fit
+for i = 1:N_gauss
+    A(i) =fitpar((i-1)*3+1);
+    RDA(i) = fitpar((i-1)*3+2);
+    sigma_RDA(i) = fitpar((i-1)*3+3);
+end
+
+A = A./sum(A);
+
+%read corrections
+mBG_gg = tcPDAstruct.twocolordata.Background{dataset}.Background_GGpar + tcPDAstruct.twocolordata.Background{dataset}.Background_GGperp;
+mBG_gr = tcPDAstruct.twocolordata.Background{dataset}.Background_GRpar + tcPDAstruct.twocolordata.Background{dataset}.Background_GRperp;
+cr = tcPDAstruct.twocolordata.Corrections{dataset}.CrossTalk_GR;
+de = tcPDAstruct.twocolordata.Corrections{dataset}.DirectExcitationProb;
+gamma = tcPDAstruct.twocolordata.Corrections{dataset}.Gamma_GR;
+R0 = tcPDAstruct.twocolordata.Corrections{dataset}.FoersterRadius;
+sampling = tcPDAstruct.sampling;
+BSD_GX = tcPDAstruct.twocolordata.Data{dataset}.NG + tcPDAstruct.twocolordata.Data{dataset}.NF;
+dur = tcPDAstruct.twocolordata.timebin(dataset)*ones(numel(BSD_GX),1);
+H_meas = tcPDAstruct.twocolordata.Ehist{dataset};
+
+PRH = cell(sampling,N_gauss);
+for j = 1:N_gauss
+    parfor (i = 1:sampling,UserValues.Settings.Pam.ParallelProcessing)
+        r = normrnd(RDA(j),sigma_RDA(j),numel(BSD_GX),1);
+        E = 1./(1+(r./R0).^6);
+        eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+        BG_gg = poissrnd(mBG_gg.*dur);
+        BG_gr = poissrnd(mBG_gr.*dur);
+        BSD_GX_bg = BSD_GX-BG_gg-BG_gr;
+        PRH{i,j} = (binornd(BSD_GX_bg,eps)+BG_gr)./BSD_GX;
+    end
+end
+
+for i = 1:N_gauss
+    H_res_dummy(:,i) = histc(vertcat(PRH{:,i}),linspace(0,1,nbins+1))/sampling;
+    H_res_dummy(end-1,i) = H_res_dummy(end-1,i) + H_res_dummy(end,i);
+end
+
+H_res_dummy = H_res_dummy(1:nbins,:);
+H_res = zeros(nbins,1);
+for i = 1:N_gauss
+    H_res = H_res + A(i).*H_res_dummy(:,i);
+end
+H_res = sum(H_meas)*H_res./sum(H_res);
+
+%calculate chi2
+error = sqrt(H_meas); error(error == 0) = 1;
+dev = (H_res-H_meas)./error;
+chi2 = sum(dev.^2)./sum(H_meas~=0);
+tcPDAstruct.twocolordata.chi2(dataset) = chi2;
+tcPDAstruct.twocolordata.dev{dataset} = dev;
+
+tcPDAstruct.twocolordata.H_res{dataset} = H_res;
+tcPDAstruct.twocolordata.H_res_individual{dataset} = H_res_dummy;
+tcPDAstruct.twocolordata.A_res{dataset} = A;
+
+%%% function for easy toggling of fix states
+function fitpar_fix(obj,~)
+global tcPDAstruct
+h = guidata(obj);
+n_gauss = tcPDAstruct.n_gauss;
+
+%%% toggle checked state
+if strcmp(obj.Checked,'off')
+    obj.Checked = 'on';
+    fix = true; %fix
+else
+    obj.Checked = 'off';
+    fix = false; %unfix
+end
+data = h.fit_table.Data;
+switch obj
+    case h.fit_table_menu_fixGR
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(2:3),3) = {true;true};
+            else
+                data((i-1)*11+(2:3),3) = {false;false};
+            end
+        end
+    case h.fit_table_menu_fixAllButCovar
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(1:7),3) = {true;true;true;true;true;true;true};
+            else
+                data((i-1)*11+(1:7),3) = {false;false;false;false;false;false;false};
+            end
+        end
+    case h.fit_table_menu_fixAllCovar   
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+(8:10),3) = {true;true;true};
+            else
+                data((i-1)*11+(8:10),3) = {false;false;false};
+            end
+        end
+    case h.fit_table_menu_fix_amplitudes
+        for i = 1:n_gauss
+            if fix
+                data((i-1)*11+1,3) = {true};
+            else
+                data((i-1)*11+1,3) = {false};
+            end
+        end
+end
+h.fit_table.Data = data;
 
 %%% function to get multiple files until user cancels
 function Files = GetMultipleFiles(FilterSpec,Title,PathName)

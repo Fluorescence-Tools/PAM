@@ -5,9 +5,9 @@ Example:
 
 From the NewPam Directory, the current build for files is:
 Windows:
-mex -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg_lib.c" "C Files\src\randist\binomial.c" "C Files\src\randist\multinomial.c" "C Files\src\randist\specfunc\gamma.c" "C Files\src\sys\numcores.c" "C Files\src\sys\memalloc.c"
+mex -largeArrayDims -v -O -I"src" "src\eval_prob_3c_bg_lib.c" "src\randist\binomial.c" "src\randist\multinomial.c" "src\randist\specfunc\gamma.c" "src\sys\numcores.c" "src\sys\memalloc.c"
 Mac OS X/UNIX:
-mex -largeArrayDims -v -O -I"C Files/src" "C Files/src/eval_prob_3c_bg_lib.c" "C Files/src/randist/binomial.c" "C Files/src/randist/multinomial.c" "C Files/src/randist/specfunc/gamma.c" "C Files/src/sys/numcores.c" "C Files/src/sys/memalloc.c"
+mex -largeArrayDims -v -O -I"src" "src/eval_prob_3c_bg_lib.c" "src/randist/binomial.c" "src/randist/multinomial.c" "src/randist/specfunc/gamma.c" "src/sys/numcores.c" "src/sys/memalloc.c"
 
 Options: -v: verbose
 	-g 	Debug Symbols
@@ -22,7 +22,7 @@ Options: -v: verbose
 
 Old:
 Compile with GSL (Gnu Scientific Library):
-mex -largeArrayDims -O "C Files\src\eval_prob_3c_bg.c" -I"C:\gsl-1.16" -L"C:\gsl-1.16\lib\x64\Release" cblas.lib gsl.lib
+mex -largeArrayDims -O "src\eval_prob_3c_bg.c" -I"C:\gsl-1.16" -L"C:\gsl-1.16\lib\x64\Release" cblas.lib gsl.lib
 
 ___________________________________________________________________________________________________________________________________________________________________________________
 For CUDA Devices:
@@ -32,9 +32,12 @@ The file has to be updated for every new CUDA Version, also for new Windows/Visu
 Also for debugging, one has to specifiy the -g (host debugging) and/or -G (device debugging) options to the nvcc compiler.
 
 To compile the source in matlab, type:
-mex -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg_cuda.cu"
+mex -largeArrayDims -v -O -I"src" "src\eval_prob_3c_bg_cuda.cu"
 
 setenv('MW_NVCC_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\bin\nvcc.exe')
 setenv('CUDA_LIB_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\lib\x64')
 setenv('CUDA_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5')
-mex -g -largeArrayDims -v -O -I"C Files\src" "C Files\src\eval_prob_3c_bg_cuda.cu"
+mex -g -largeArrayDims -v -O -I"src" "src\eval_prob_3c_bg_cuda.cu"
+
+on linux :
+mexcuda -largeArrayDims -v -O -I"src" "src/eval_prob_3c_bg_cuda.cu"
