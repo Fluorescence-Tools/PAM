@@ -1461,9 +1461,13 @@ switch mode
         end
         switch e.Indices(2)
             case 1 %%% Changes file color
-                NewColor = uisetcolor;
-                if numel(NewColor) == 1%NewColor == 0
-                    return;
+                if ~isdeployed
+                    NewColor = uisetcolor;
+                    if size(NewColor) == 1
+                        return;
+                    end
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    NewColor = color_setter(); % open dialog to input color
                 end
                 for i=File
                     h.Style_Table.Data{i,1} = num2str(NewColor);
