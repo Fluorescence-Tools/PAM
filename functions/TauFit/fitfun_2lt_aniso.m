@@ -16,7 +16,7 @@ for i = 1:2
     %irf = circshift(IRFPattern{i},[c, 0]);
     irf = shift_by_fraction(IRFPattern{i},c);
     irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-    irf = irf-min(irf(irf~=0));
+    irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
     irf = irf./sum(irf);
     IRF{i} = [irf; zeros(size(y,2)+ignore-1-numel(irf),1)];
     %A shift in the scatter is not needed in the model
@@ -44,7 +44,7 @@ rt = 1+(2-3*l1).*((r0-r_inf).*exp(-(1:n)./rho) + r_inf);
 x_par1 = exp(-(1:n)./tau(1));
 x_par2 = exp(-(1:n)./tau(2));
 %%% combine the two components
-x_par = I0*G*rt.*(A*x_par1 + (1-A)*x_par2);
+x_par = (I0/G)*rt.*(A*x_par1 + (1-A)*x_par2);
 switch conv_type
     case 'linear'
         z_par = conv(IRF{1}, x_par);z_par = z_par(1:n)';

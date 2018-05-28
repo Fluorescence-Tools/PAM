@@ -4822,9 +4822,13 @@ switch e.Key
         h.Export.PIE.RowName = [UserValues.PIE.Name, {'All'}];
         h.Export.PIE.Data(Sel) = [];
     case 'c' %%% Changes color of selected channels
-        %%% Opens menu to choose color
-        color=uisetcolor;
-        %%% Checks, if color was selected
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(mean(UserValues.PIE.Color(Sel,:),1)); % open dialog to input color
+        end
+         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
                 UserValues.PIE.Color(i,:)=color;
@@ -5201,9 +5205,13 @@ if obj == h.MI.Channels_List
             switch ed.Indices(2)
                 
                 case 4 %%% Color was clicked
-                    NewColor = uisetcolor;
-                    if size(NewColor) == 1
-                        return;
+                    if ~isdeployed
+                        NewColor = uisetcolor;
+                        if size(NewColor) == 1
+                            return;
+                        end
+                    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                        NewColor = color_setter(UserValues.Detector.Color(Sel,:)); % open dialog to input color
                     end
                     UserValues.Detector.Color(Sel,:) = NewColor;
                     %%% Update Color of Name also
@@ -5288,8 +5296,12 @@ switch e.Key
         %%% Saves new tabs in guidata
         guidata(h.Pam,h)
     case 'c' %% Selects new color for microtime channel
-        %%% Opens menu to choose color
-        color=uisetcolor;
+        if ~isdeployed
+            %%% Opens menu to choose color
+            color=uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(color)==3
             for i=Sel
@@ -10320,9 +10332,9 @@ switch e.Key
             To=UserValues.PIE.To(i);
             if Det>0 && all(size(TcspcData.MI)>=[Det Rout]) %%% Normal PIE channel
                 MI=TcspcData.MI{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
                 MT=TcspcData.MT{Det,Rout}(TcspcData.MI{Det,Rout}>=From & TcspcData.MI{Det,Rout}<=To);
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI =[];
                 MT = [];
@@ -10340,8 +10352,8 @@ switch e.Key
                 end
                 [MT,Index] = sort(MT);
                 MI = MI(Index);
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
         end
     case 'Export_Raw_File' %%% Exports macrotime and microtime as a cell for each PIE channel
@@ -10369,8 +10381,8 @@ switch e.Key
                         MT{j}=MT{j}(MI{j}>=From & MI{j}<=To)-(j-1)*round(FileInfo.MeasurementTime/FileInfo.ClockPeriod);
                     end
                 end
-                assignin('base',[UserValues.PIE.Name{i} '_MI'],MI); clear MI;
-                assignin('base',[UserValues.PIE.Name{i} '_MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_MT'],MT); clear MT;
             elseif Det == 0 %%% Combined PIE channel
                 MI=cell(FileInfo.NumberOfFiles,1);
                 MT=cell(FileInfo.NumberOfFiles,1);
@@ -10404,8 +10416,8 @@ switch e.Key
                     [MT{k},Index] = sort(MT{k});
                     MI{k} = MI{k}(Index);
                 end
-                assignin('base',[Name 'MI'],MI); clear MI;
-                assignin('base',[Name 'MT'],MT); clear MT;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MI'],MI); clear MI;
+                assignin('base',[matlab.lang.makeValidName(Name) 'MT'],MT); clear MT;
             end
             
         end
@@ -10426,13 +10438,13 @@ switch e.Key
             end
             %%% Exports intensity image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 2
-                assignin('base',[Name 'Image'],PamMeta.Image{i});
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],PamMeta.Image{i});
                 figure('Name',[UserValues.PIE.Name{i} '_Image']);
                 imagesc(PamMeta.Image{i});
             end
             %%% Exports mean arrival time image
             if h.MT.Image_Export.Value == 1 || h.MT.Image_Export.Value == 3
-                assignin('base',[Name '_LT'],PamMeta.Lifetime{i});
+                assignin('base',[matlab.lang.makeValidName(Name) '_LT'],PamMeta.Lifetime{i});
                 figure('Name',[UserValues.PIE.Name{i} '_LT']);
                 imagesc(PamMeta.Lifetime{i});
             end
@@ -10466,9 +10478,9 @@ switch e.Key
                 for j = UserValues.PIE.Combined{i}
                     Name = [Name UserValues.PIE.Name{j} '_'];
                 end
-                assignin('base',[Name 'Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(Name) 'Image'],Stack);
             else
-                assignin('base',[UserValues.PIE.Name{i} '_Image'],Stack);
+                assignin('base',[matlab.lang.makeValidName(UserValues.PIE.Name{i}) '_Image'],Stack);
             end
         end
     case 'Export_Image_Tiff' %%% Exports image stack as TIFF

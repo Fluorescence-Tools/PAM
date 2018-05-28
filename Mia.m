@@ -3239,12 +3239,13 @@ switch mode
         MIAData.Type = mode;
         MIAData.FileName{1} = FileInfo.FileName;
         h.Mia_Image.Settings.Image_Frame.String = num2str(mean(diff(FileInfo.ImageTimes)));
-        h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
         
         if isfield(FileInfo, 'LineStops')
             h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(mean(FileInfo.LineStops-FileInfo.LineTimes))./FileInfo.Lines*1000000);
+            h.Mia_Image.Settings.Image_Line.String = num2str(mean(mean(diff(FileInfo.LineTimes,1,2)))*1000);
         else
             h.Mia_Image.Settings.Image_Pixel.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines^2*1000000);
+            h.Mia_Image.Settings.Image_Line.String = num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000);
         end
         
         h.Mia_ICS.Fit_Table.Data(15,:) = {num2str(mean(diff(FileInfo.ImageTimes))./FileInfo.Lines*1000)};
@@ -4390,7 +4391,11 @@ end
 %%% Changes custom plots color %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Mia_Color(Obj,~,mode)
-Color=uisetcolor;
+if ~isdeployed
+    Color=uisetcolor;
+elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+    Color = color_setter(Obj.UserData); % open dialog to input color
+end
 if numel(Color)
     Obj.UserData=Color;
 end

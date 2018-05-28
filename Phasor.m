@@ -3749,8 +3749,12 @@ switch mode
                 [h.Phasor_FRET(1:4,:).Visible,h.Phasor_FRET(5,1).Visible,h.Phasor_Triangle.Visible] = deal('off');
                 Plot_Phasor([],[],0,1:10);               
             case 'extend'
-                %% Middle click:    Changes ROI\Fraction line color 
-                Color=uisetcolor;
+                %% Middle click:    Changes ROI\Fraction line color
+                if ~isdeployed
+                    Color = uisetcolor;
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    Color = color_setter(); % open dialog to input color
+                end
                 if numel(Color)==3
                     if ROI==7
                         h.Phasor_Fraction.Color=Color;
@@ -3846,7 +3850,11 @@ switch mode
         switch Type                
             case 'extend'
                 %% Middle click:    Changes FRET line color
-                Color=uisetcolor;
+                if ~isdeployed
+                    Color = uisetcolor;
+                elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+                    Color = color_setter(); % open dialog to input color
+                end
                 if numel(Color)==3
                     h.FRET_Line(Line).BackgroundColor=Color;
                     if sum(Color)>1.5
@@ -4034,7 +4042,11 @@ end
 
 %%% Updates line color
 if any(mode == 6)
-    Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.CData);
+    if ~isdeployed
+        Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.CData);
+    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+        Color = color_setter(PhasorData.CoM{h.List.Value(1)}.CData); % open dialog to input color
+    end
     if numel(Color)==3
         for i = h.List.Value
             PhasorData.CoM{i}.CData = Color;
@@ -4051,7 +4063,11 @@ end
 
 %%% Updates line color
 if any(mode == 7)
-    Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.MarkerFaceColor);
+    if ~isdeployed
+        Color = uisetcolor(PhasorData.CoM{h.List.Value(1)}.MarkerFaceColor);
+    elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+        Color = color_setter(PhasorData.CoM{h.List.Value(1)}.MarkerFaceColor); % open dialog to input color
+    end
     if numel(Color)==3
         for i = h.List.Value
             PhasorData.CoM{i}.MarkerFaceColor = Color;
