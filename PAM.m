@@ -6792,7 +6792,7 @@ UserValues.Phasor.Reference(Det,:)=0;
 UserValues.Phasor.Reference(Det,1:numel(PamMeta.MI_Hist{Det}))=PamMeta.MI_Hist{Det};
 UserValues.Phasor.Reference_Time(Det) = FileInfo.MeasurementTime;
 UserValues.Phasor.Reference_MI_Bins = FileInfo.MI_Bins;
-UserValues.Phasor.Reference_TAC = FileInfo.ClockPeriod;
+UserValues.Phasor.Reference_TAC = FileInfo.TACRange;
 LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -6859,7 +6859,7 @@ if isfield(UserValues,'Phasor') && isfield(UserValues.Phasor,'Reference')
         if From>1
             Ref(1:(From-1))=0;
         end
-        if To<MI_Bins
+        if To<Ref_MI_Bins
             Ref(To+1:end)=0;
         end
         Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
