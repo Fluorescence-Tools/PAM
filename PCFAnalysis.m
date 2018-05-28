@@ -1323,7 +1323,11 @@ switch mode
             end
         end
     case 7 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel
@@ -1646,7 +1650,11 @@ switch mode
         %%% Save new plots
         guidata(h.PCF,h);
     case 6 %%% Change color
-        Color=uisetcolor;
+        if ~isdeployed
+            Color = uisetcolor;
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            Color = color_setter(); % open dialog to input color
+        end
         %%% Checks, if color was selected
         if numel(Color)==3
             for i=Sel

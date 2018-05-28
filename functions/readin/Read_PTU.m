@@ -127,7 +127,7 @@ while 1
                     eval([TagIdent '(:,end:numel(TagString)) = '' '''])
                 end
             end
-            eval([EvalName '=TagString;']);
+            try;eval([EvalName '=TagString;']);end;
         case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
@@ -156,8 +156,12 @@ Header.SyncRate = 1/MeasDesc_GlobalResolution;
 Header.Resolution = MeasDesc_Resolution./1E-12; % give in picoseconds
 Header.MeasurementTime = MeasDesc_AcquisitionTime; % in milliseconds
 nRecords = TTResult_NumberOfRecords;
-%%% check for file type
+%%% empty assignments for image-related fields
+Header.FrameStart = [];
+Header.LineStart = [];
+Header.LineStop = [];
 
+%%% check for file type
 switch TTResultFormat_TTTRRecType
     case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3}
         if TTResultFormat_TTTRRecType == rtHydraHarpT3

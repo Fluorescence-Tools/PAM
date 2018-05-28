@@ -11,7 +11,7 @@ conv_type = xdata{end}; %%% linear or circular convolution
 %irf = circshift(IRFPattern,[c, 0]);
 irf = shift_by_fraction(IRFPattern,c);
 irf = irf( (ShiftParams(1)+1):ShiftParams(4) );
-irf = irf-min(irf(irf~=0));
+irf(irf~=0) = irf(irf~=0)-min(irf(irf~=0));
 irf = irf./sum(irf);
 irf = [irf; zeros(numel(y)+ignore-1-numel(irf),1)];
 %A shift in the scatter is not needed in the model

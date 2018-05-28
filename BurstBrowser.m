@@ -95,7 +95,13 @@ if isempty(hfig)
         'Callback',@Merge_bur_files,...
         'Tag','Merge_Files_Menu',...
         'Separator','on');
-    
+    %%% Merge *.bur files
+    h.Export_Files_To_CSV_Menu = uimenu(...
+        'Parent',h.File_Menu,...
+        'Label','<html><b>Export</b> to <i>*.csv</i>-file</html>',...
+        'Callback',@write_to_csv,...
+        'Tag','Export_Files_To_CSV_Menu',...
+        'Separator','off');
     %%% "Export" Menu    
     h.Export_Menu = uimenu(...
         'Parent',h.BurstBrowser,...
@@ -15873,31 +15879,59 @@ h = guidata(obj);
 fields = fieldnames(BurstMeta.Plots.Fits);
 switch obj
     case h.ColorLine1
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine1);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine1);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine1); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine1 = c;
         n=1;
     case h.ColorLine2
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine2);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine2);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine2); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine2 = c;
         n=2;
     case h.ColorLine3
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine3);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine3);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine3); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine3 = c;
         n=3;
     case h.ColorLine4
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine4);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine4);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine4); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine4 = c;
         n=4;
     case h.ColorLine5
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine5);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine5); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine5 = c;
         n=5;
     case h.ColorLine6
-        c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine6);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.ColorLine6);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.ColorLine6); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.ColorLine6 = c;
         n=6;
     case h.MarkerColor_button
-        c = uisetcolor(UserValues.BurstBrowser.Display.MarkerColor);
+        if ~isdeployed
+            c = uisetcolor(UserValues.BurstBrowser.Display.MarkerColor);
+        elseif isdeployed %%% uisetcolor dialog does not work in compiled application
+            c = color_setter(UserValues.BurstBrowser.Display.MarkerColor); % open dialog to input color
+        end
         UserValues.BurstBrowser.Display.MarkerColor = c;
 end
 
@@ -16897,3 +16931,26 @@ FontSize = 14; if ispc; FontSize = FontSize/1.25;end
 set(ax,'FontSize',FontSize);
 set(ax,'Color',[1,1,1]);
 hl.Position(2) = ax(1).Position(2)+ax(1).Position(4)+10;
+
+%%% Export the currently selected data to csv file
+function write_to_csv(obj,~)
+global BurstData
+h = guidata(obj);
+%%% loop through all files and write DataArray to csv
+for b = 1:numel(BurstData)
+    Progress((b-1)/numel(BurstData),h.Progress_Axes,h.Progress_Text,['Converting File to CSV (' num2str(b) ' of ' num2str(numel(BurstData)) ')']);
+    filename = [BurstData{b}.PathName filesep BurstData{b}.FileName(1:end-3) 'csv'];
+    %%% write to csv
+    delimiter = ',';
+    fid = fopen(filename,'w');
+    if fid ~= -1
+        fprintf(fid,'%s',BurstData{b}.NameArray{1});
+        for i = 2:numel(BurstData{b}.NameArray)
+            fprintf(fid,[delimiter '%s'],BurstData{b}.NameArray{i});
+        end
+        fprintf(fid,'\n');
+        fclose(fid);
+        dlmwrite(filename,BurstData{b}.DataCut,'Delimiter',delimiter,'-append');
+    end
+end
+Progress(1,h.Progress_Axes,h.Progress_Text);
