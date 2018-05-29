@@ -967,6 +967,10 @@ if Mode==0 %%% Loads user values
         S.Phasor.Settings_ROIStyle=repmat({'-'},7,1);
         disp('UserValues.Phasor.Settings_ROIStyle was incomplete');
     end
+    if iscell(S.Phasor.Settings_ROIStyle{1}) %%% loaded from json, needs to be fixed
+        S.Phasor.Settings_ROIStyle = S.Phasor.Settings_ROIStyle';
+        S.Phasor.Settings_ROIStyle = vertcat(S.Phasor.Settings_ROIStyle{:});
+    end
     P.Phasor.Settings_ROIStyle = S.Phasor.Settings_ROIStyle;
     
     if ~isfield(S.Phasor,'Settings_ROISize') || numel(S.Phasor.Settings_ROISize)<7
@@ -1000,11 +1004,19 @@ if Mode==0 %%% Loads user values
         S.Phasor.Settings_FRETStyle=repmat({'-'},4,1);
         disp('UserValues.Phasor.Settings_FRETStyle was incomplete');
     end
+    if iscell(S.Phasor.Settings_FRETStyle{1}) %%% loaded from json, needs to be fixed
+        S.Phasor.Settings_FRETStyle = S.Phasor.Settings_FRETStyle';
+        S.Phasor.Settings_FRETStyle = vertcat(S.Phasor.Settings_FRETStyle{:});
+    end
     P.Phasor.Settings_FRETStyle = S.Phasor.Settings_FRETStyle;
     
     if ~isfield(S.Phasor,'Settings_FRETMarker') || numel(S.Phasor.Settings_FRETMarker)<4
         S.Phasor.Settings_FRETMarker=repmat({'x'},4,1);
         disp('UserValues.Phasor.Settings_FRETSize was incomplete');
+    end
+    if iscell(S.Phasor.Settings_FRETMarker{1}) %%% loaded from json, needs to be fixed
+        S.Phasor.Settings_FRETMarker = S.Phasor.Settings_FRETMarker';
+        S.Phasor.Settings_FRETMarker = vertcat(S.Phasor.Settings_FRETMarker{:});
     end
     P.Phasor.Settings_FRETMarker = S.Phasor.Settings_FRETMarker;
     
