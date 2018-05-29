@@ -11316,10 +11316,15 @@ switch obj
         end
         save_json(FullFileName,UserValues,'S');
     case h.Profiles.LoadProfile_Button
-        [File,Path,~] = uigetfile({'*.json','PAM profile file (*.json)'},...
+        [File,Path,FilterIndex] = uigetfile({'*.json','PAM profile file (*.json)';'*.pro','Legacy PAM profile file in mat file format (*.pro)'},...
             'Choose profile to load...',UserValues.File.Path,'Multiselect','off');
         if all (File==0)
             return;
+        end
+        if FilterIndex == 2 %%% legacy *.pro file loaded, convert to json
+            convert_mat_to_json(fullfile(Path,File));
+            [~,File,~] = fileparts(File);
+            File = [File '.json'];
         end
         ProfileData = loadjson(fullfile(Path,File));
         ProfileData = ProfileData.S;
