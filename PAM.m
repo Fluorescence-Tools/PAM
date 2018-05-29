@@ -5575,10 +5575,11 @@ global UserValues PamMeta PathToApp
 %% obj is empty, if function was called during initialization
 if isempty(obj)
     %%% findes current profile
-    load([PathToApp filesep 'profiles' filesep 'Profile.mat']);
+    Profile = loadjson([PathToApp filesep 'profiles' filesep 'Profile.json']);
+    Profile = Profile.Profile;
     for i=1:numel(h.Profiles.List.String)
         %%% Looks for current profile in profiles list
-        if strcmp([h.Profiles.List.String{i} '.mat'], Profile) %#ok<NODEF>
+        if strcmp([h.Profiles.List.String{i} '.json'], Profile) %#ok<NODEF>
             %%% Changes color to indicate current profile
             h.Profiles.List.String{i}=['<HTML><FONT color=FF0000>' h.Profiles.List.String{i} '</Font></html>'];
             return
@@ -5610,8 +5611,8 @@ switch e.Key
         Name=inputdlg('Enter profile name:');
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
-            PIE=[];
-            save([PathToApp filesep 'profiles' filesep Name{1} '.mat'],'PIE');
+            S.PIE=[];
+            save_json([PathToApp filesep 'profiles' filesep Name{1} '.json'],S,'S');
             h.Profiles.List.String{end+1} = Name{1};
         end
     case {'delete';'subtract'}
@@ -5620,15 +5621,15 @@ switch e.Key
             %%% If selected profile is not the current profile
             if isempty(strfind(h.Profiles.List.String{Sel},'<HTML><FONT color=FF0000>'))
                 %%% Deletes profile file and list entry
-                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel} '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel} '.json'])
                 h.Profiles.List.String(Sel)=[];
             else
                 %%% Deletes profile file and list entry
-                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.mat'])
+                delete([PathToApp filesep 'profiles' filesep h.Profiles.List.String{Sel}(26:(end-14)) '.json'])
                 h.Profiles.List.String(Sel)=[];
                 %%% Selects first profile as current profile
-                Profile= [h.Profiles.List.String{1} '.mat'];
-                save([PathToApp filesep 'profiles' filesep 'Profile.mat'],'Profile');
+                Profile= [h.Profiles.List.String{1} '.json'];
+                save_json([PathToApp filesep 'profiles' filesep 'Profile.json'],Profile,'Profile');
                 %%% Updates UserValues
                 LSUserValues(1);
                 %%% Changes color to indicate current profile
@@ -5653,8 +5654,8 @@ switch e.Key
                 end
             end
             %%% Makes selected profile the current profile
-            Profile= [h.Profiles.List.String{Sel} '.mat'];
-            save([PathToApp filesep 'profiles' filesep 'Profile.mat'],'Profile');
+            Profile= [h.Profiles.List.String{Sel} '.json'];
+            save_json([PathToApp filesep 'profiles' filesep 'Profile.json'],Profile,'Profile');
             %%% Updates UserValues
             LSUserValues(0);          
             %%% Changes color to indicate current profile
@@ -5689,7 +5690,7 @@ switch e.Key
         Name=inputdlg('Enter profile name:');
         %%% Creates new file and list entry if input was not empty
         if ~isempty(Name)
-            save([PathToApp filesep 'profiles' filesep Name{1} '.mat'],'-struct','UserValues');
+            save_json([PathToApp filesep 'profiles' filesep Name{1} '.json'],UserValues,'S');
             h.Profiles.List.String{end+1} = Name{1};
         end
 end
@@ -11216,7 +11217,7 @@ if nargin < 3 %%% no file id given, create one
     end
     
     [~,FileName,~] = fileparts(FileInfo.FileName{1});
-    FilePath = [FileInfo.Path filesep FileName '.txt'];
+    FilePath = fullfile(FileInfo.Path, [FileName '.txt']);
     %%% open file
     [fid,err] = fopen(FilePath,'w');
     if fid == -1
@@ -11256,8 +11257,9 @@ end
 
 fprintf(fid,'\n');
 %%% profile name
-s = load(fullfile(PathToApp,'profiles','Profile.mat'));
-fprintf(fid,'Profile name:\t%s\n\n',s.Profile(1:end-4));
+Profile = loadjson(fullfile(PathToApp,'profiles','Profile.json'));
+Profile = Profile.Profile;
+fprintf(fid,'Profile name:\t%s\n\n',Profile(1:end-5));
 %%% PIE channel information
 fprintf(fid,'PIE Channel Information\n');
 %find longest name

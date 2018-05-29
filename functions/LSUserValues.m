@@ -25,29 +25,29 @@ if Mode==0 %%% Loads user values
     
     %%% find json files in profiles directory
     Profiles = dir(fullfile(Profiledir,'*.json'));
-    
+    Profiles = struct2cell(Profiles); Profiles = Profiles(1,:)'; %%% convert to cell
     %%% Removes Profile.json from list (Profile.json saves the currently used profile
     for i=1:numel(Profiles)
-        if strcmp(Profiles(i).name,'Profile.json')
+        if strcmp(Profiles{i},'Profile.json')
             Profiles(i)=[];
             break;
         end
     end
 
     %%% Checks, if a Profile exists and if Profile.json has a valid profile saved
-    %%% Both do not exist; it creates new ones
     if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.json'],'file')
-        PIE=[];
+        %%% Both do not exist; it creates new ones
+        S.PIE=[];
         Profile='StartingProfile.json';
         save_json([Profiledir filesep 'Profile.json'],Profile,'Profile');
-        save([Profiledir filesep 'StartingProfile.json'],PIE);
-        Profiles = {'StartingProfile.json'};
-        %%% Saves first Profile to Profiles.mat, if none was saved
+        save_json([Profiledir filesep 'StartingProfile.json'],S,'S');
+        Profiles = {'StartingProfile.json'};    
     elseif ~isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
-        Profile=Profiles(1).name;
-        save_json([Profiledir filesep 'Profile.json'],Profile,'Profile');
-        %%% Generates a Standard profile, if none existed
+        %%% Saves first Profile to Profiles.mat, if none was saved
+        Profile=Profiles{1};
+        save_json([Profiledir filesep 'Profile.json'],Profile,'Profile');    
     elseif isempty(Profiles) && exist([Profiledir filesep 'Profile.mat'],'file')
+        %%% Generates a Standard profile, if none existed
         PIE=[];
         save([Profiledir filesep 'StartingProfile.json'],'PIE');
     end
@@ -57,7 +57,7 @@ if Mode==0 %%% Loads user values
     %%% Compares current profile to existing profiles
     Current=[];
     for i=1:numel(Profiles)
-        if strcmp(Profiles(i).name,Profile)
+        if strcmp(Profiles{i},Profile)
             Current=Profile;
         end
     end
@@ -101,10 +101,16 @@ if Mode==0 %%% Loads user values
         S.PIE.IRF = cell(1,numel(S.PIE.Name));
         disp('UserValues.PIE.IRF was incomplete');
     end
+    if ~iscell(S.PIE.IRF) %%% loaded from json as array
+        S.PIE.IRF = mat2cell(S.PIE.IRF,ones(1,size(S.PIE.IRF,1)),size(S.PIE.IRF,2));
+    end
     P.PIE.IRF = S.PIE.IRF;
     if ~isfield(S.PIE,'ScatterPattern')
         S.PIE.ScatterPattern = cell(1,numel(S.PIE.Name));
         disp('UserValues.PIE.ScatterPattern was incomplete');
+    end
+    if ~iscell(S.PIE.ScatterPattern) %%% loaded from json as array
+        S.PIE.ScatterPattern = mat2cell(S.PIE.ScatterPattern,ones(1,size(S.PIE.ScatterPattern,1)),size(S.PIE.ScatterPattern,2));
     end
     P.PIE.ScatterPattern = S.PIE.ScatterPattern;
     if ~isfield(S.PIE,'Background')
@@ -291,6 +297,14 @@ if Mode==0 %%% Loads user values
     if ~isfield(S.File.FileHistory,'PAM')
         S.File.FileHistory.PAM=[];
     end
+    if ~isempty(S.File.FileHistory.PAM)
+        %%% should be a Nx3 cell array
+        %%% fix this, since loading from json does not preserve it
+        if size(S.File.FileHistory.PAM,2) ~= 3
+            S.File.FileHistory.PAM = S.File.FileHistory.PAM';
+            S.File.FileHistory.PAM = vertcat(S.File.FileHistory.PAM{:});
+        end
+    end
     P.File.FileHistory.PAM = S.File.FileHistory.PAM;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -314,6 +328,13 @@ if Mode==0 %%% Loads user values
     if ~isfield(S.File, 'SPC_FileTypes')
         disp('WARNING: UserValues structure incomplete, field "SPC_FileTypes" missing');
         S.File.SPC_FileTypes = CurrentFileTypes;
+    end
+    
+    %%% loading from JSON loads SPC_FileTypes as a 1x9 cell array of 1x2 cells
+    %%% fix this, should be 9x2
+    if (size(S.File.SPC_FileTypes,1) == 1) && (size(S.File.SPC_FileTypes,2) == 9) && (size(S.File.SPC_FileTypes{1},1) == 1)  && (size(S.File.SPC_FileTypes{1},2) == 2)
+        S.File.SPC_FileTypes = S.File.SPC_FileTypes';
+        S.File.SPC_FileTypes = vertcat(S.File.SPC_FileTypes{:});
     end
     %%% Check for changes
     if ~(isempty(setdiff(S.File.SPC_FileTypes,CurrentFileTypes)) && isempty(setdiff(CurrentFileTypes,S.File.SPC_FileTypes)) )
@@ -1098,6 +1119,15 @@ if Mode==0 %%% Loads user values
         S.BurstSearch.PIEChannelSelection={{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy;dummy,dummy},{dummy;dummy;dummy}};
         disp('UserValues.BurstSearch.PIEChannelSelection was incomplete');
     end
+    %%% check if loaded data is in correct format, since structure of cell
+    %%% arrays is lost upon json conversion
+    %%% first element should be 3x2 cell array
+    if (size(S.BurstSearch.PIEChannelSelection{1},1) ~= 3) && (size(S.BurstSearch.PIEChannelSelection{1},2) ~= 2)
+        for k = 1:numel(S.BurstSearch.PIEChannelSelection)
+            S.BurstSearch.PIEChannelSelection{k} = S.BurstSearch.PIEChannelSelection{k}';
+            S.BurstSearch.PIEChannelSelection{k} = vertcat(S.BurstSearch.PIEChannelSelection{k}{:});
+        end
+    end
     P.BurstSearch.PIEChannelSelection = S.BurstSearch.PIEChannelSelection;
     %%% Checks, if BurstSearch.SearchParameters exists
     %%% (This field contains the Search Parameters for every Burst Search
@@ -1370,10 +1400,7 @@ if Mode==0 %%% Loads user values
     % 21 FD0
     % 22 rinf2 (used for "Dip and Rise" model)
     % 23 beta parameter for stretched exponential
-    
-    if ~iscell(S.TauFit.FitParams) %%% convert array back to cell, this is lost on save to json
-        S.TauFit.FitParams = mat2cell(S.TauFit.FitParams,[ones(1,size(S.TauFit.FitParams,1))],size(S.TauFit.FitParams,2));
-    end
+
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
         params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
@@ -1381,6 +1408,12 @@ if Mode==0 %%% Loads user values
         S.TauFit.FitParams = {params,params,params,params};
         S.TauFit.FitFix = {fix,fix,fix,fix};
         disp('UserValues.TauFit.FitParams/FitFix was incomplete');
+    end
+    if ~iscell(S.TauFit.FitParams) %%% convert array back to cell, this is lost on save to json
+        S.TauFit.FitParams = mat2cell(S.TauFit.FitParams,[ones(1,size(S.TauFit.FitParams,1))],size(S.TauFit.FitParams,2));
+    end
+    if ~iscell(S.TauFit.FitFix) %%% convert array back to cell, this is lost on save to json
+        S.TauFit.FitFix = mat2cell(S.TauFit.FitFix,[ones(1,size(S.TauFit.FitFix,1))],size(S.TauFit.FitFix,2));
     end
     if numel(S.TauFit.FitParams{4}) ~= 53
         params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
@@ -2032,11 +2065,19 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.DatabaseString={};
         disp('UserValues.BurstBrowser.DatabaseString was incomplete');
     end
+    if iscell(S.BurstBrowser.DatabaseString{1}) %%% loaded from json, fix here
+        S.BurstBrowser.DatabaseString = S.BurstBrowser.DatabaseString';
+        S.BurstBrowser.DatabaseString = vertcat(S.BurstBrowser.DatabaseString{:});
+    end
     P.BurstBrowser.DatabaseString = S.BurstBrowser.DatabaseString;
     %%% Check, if BurstBrowser.Database subfield exists
     if ~isfield(S.BurstBrowser, 'Database')
         S.BurstBrowser.Database={};
         disp('UserValues.BurstBrowser.Database was incomplete');
+    end
+    if iscell(S.BurstBrowser.Database{1}) %%% loaded from json, fix here
+        S.BurstBrowser.Database = S.BurstBrowser.Database';
+        S.BurstBrowser.Database = vertcat(S.BurstBrowser.Database{:});
     end
     P.BurstBrowser.Database = S.BurstBrowser.Database;
     %% PDA
@@ -2469,20 +2510,6 @@ else
     Profile = loadjson([Profiledir filesep 'Profile.json']); %% Saves current profile
     Profile = Profile.Profile;
     save_json(fullfile(Profiledir,Profile),UserValues,'S');
-end
-%%% return the names of all profiles as cell array
-Profiles = struct2cell(Profiles);
-Profiles = Profiles(1,:)';
-
-%%% Wrapper function to save matlab structure as json file
-function success = save_json(filename,obj,name)
-json = savejson(name,obj);
-fid = fopen(filename,'w');
-if fid ~= -1
-    fprintf(fid,'%s',json);
-    success = true;
-else
-    success = false;
 end
 
 %%% Function to convert mat files to json files for transition to
