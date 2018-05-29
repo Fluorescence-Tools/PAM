@@ -11300,31 +11300,31 @@ switch obj
         if strcmp(FileInfo.FileName{1},'Nothing loaded')
             return;
         end
-        % Copies the current profile as "TCSPC filename".pro in the folder of the current TCSPC file');
+        % Copies the current profile as "TCSPC filename".json in the folder of the current TCSPC file');
         [~,FileName,~] = fileparts(FileInfo.FileName{1});
-        FullFileName = [FileInfo.Path filesep FileName '.pro'];
+        FullFileName = [FileInfo.Path filesep FileName '.json'];
         if ~strcmp(FullFileName, GenerateName(FullFileName,1))
             %%% filename already existed
             tmp = dir(FullFileName);
             if datetime('today') == datetime(tmp.date(1:find(isspace(tmp.date))-1))
                 %%% if date is the same, overwrite old file
-                FullFileName = [FileInfo.Path filesep FileName '.pro'];
+                FullFileName = [FileInfo.Path filesep FileName '.json'];
             end
         else
             %%% generate index to the filename
             FullFileName = GenerateName(FullFileName,1);
         end
-        save(FullFileName,'-struct','UserValues');
+        save_json(FullFileName,UserValues,'S');
     case h.Profiles.LoadProfile_Button
-        [File,Path,~] = uigetfile({'*pro','PAM profile file'},...
+        [File,Path,~] = uigetfile({'*.json','PAM profile file (*.json)'},...
             'Choose profile to load...',UserValues.File.Path,'Multiselect','off');
-        
         if all (File==0)
             return;
         end
-        ProfileData = load(fullfile(Path,File),'-mat');
+        ProfileData = loadjson(fullfile(Path,File));
+        ProfileData = ProfileData.S;
         ProfileData.MetaData.Comment = ['Source:' fullfile(Path,File)];
-        save(fullfile([PathToApp filesep 'profiles'],'Current.mat'),'-struct','ProfileData');
+        save_json(fullfile([PathToApp filesep 'profiles'],'Current.json'),ProfileData,'S');
         
         Current_Exists = 0;
         %%% Checks position of the "Current" profile in the list
@@ -11334,7 +11334,7 @@ switch obj
                 else
                     Line = h.Profiles.List.String{i};
                 end
-                if strcmp(Line,'Current.mat')
+                if strcmp(Line,'Current')
                     Current_Exists = 1;
                     break;
                 end
@@ -11344,7 +11344,7 @@ switch obj
         if Current_Exists
             h.Profiles.List.Value = i;
         else
-            h.Profiles.List.String{end+1} = 'Current.mat';
+            h.Profiles.List.String{end+1} = 'Current';
             h.Profiles.List.Value = i+1;
         end
         ed.EventName ='KeyPress';
