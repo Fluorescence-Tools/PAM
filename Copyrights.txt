@@ -115,3 +115,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+jsonlab (savejson.m, loadjson.m)
+================================
+Copyright 2011-2017 Qianqian Fang <q.fang <at> neu.edu>.
+Copyright (c) 2017, Qianqian Fang
+Copyright (c) 2016, The MathWorks, Inc.
+Copyright (c) 2011, Fran?ois Glineur
+Copyright (c) 2009, Nedialko
+All rights reserved.
