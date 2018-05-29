@@ -13147,6 +13147,11 @@ else
     for i = 1:numel(files)
         data{i} = BurstData{files(i)}.DataArray;
     end
+    %%% check if an files have additional parameters added to the DataArray
+    len = cellfun(@(x) size(x,2),data);
+    if ~(all(len == min(len))) %%% not all same length
+        data = cellfun(@(x) x(:,1:min(len)), data, 'UniformOutput',false);
+    end
     data = vertcat(data{:});
     %%% for future reference: we are assuming that all files have the same
     %%% NameArray!
