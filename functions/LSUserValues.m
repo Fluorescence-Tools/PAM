@@ -12,44 +12,52 @@ if ~(exist(Profiledir,'dir') == 7)
 end
 if Mode==0 %%% Loads user values
     %% Identifying current profile
-    %%% Finds all matlab files in profiles directory
+   
+    %%% check if there are mat files, convert to json
     Profiles = what(Profiledir);
-    try
-        %%% Only uses .mat files
-        Profiles=Profiles.mat;
+    if isfield(Profiles,'mat') && ~isempty(Profiles.mat)
+        %%% convert mat files to json files
+        filenames = cellfun(@(x) fullfile(Profiles.path,x),Profiles.mat,'UniformOutput',false);
+        convert_mat_to_json(filenames);
+        %%% find files again
+        Profiles = what(Profiledir);
     end
-    %%% Removes Profile.mat from list (Profile.mat saves the currently used profile
+    
+    %%% find json files in profiles directory
+    Profiles = dir(fullfile(Profiledir,'*.json'));
+    
+    %%% Removes Profile.json from list (Profile.json saves the currently used profile
     for i=1:numel(Profiles)
-        if strcmp(Profiles{i},'Profile.mat')
+        if strcmp(Profiles(i).name,'Profile.json')
             Profiles(i)=[];
             break;
         end
     end
 
-    %%% Checks, if a Profile exists and if Profile.mat has a valid profile saved
+    %%% Checks, if a Profile exists and if Profile.json has a valid profile saved
     %%% Both do not exist; it creates new ones
-    if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
+    if isempty(Profiles) && ~exist([Profiledir filesep 'Profile.json'],'file')
         PIE=[];
-        Profile='StartingProfile.mat';
-        save([Profiledir filesep 'Profile.mat'],'Profile');
-        save([Profiledir filesep 'StartingProfile.mat'],'PIE');
-        Profiles = {'StartingProfile.mat'};
+        Profile='StartingProfile.json';
+        save_json([Profiledir filesep 'Profile.json'],Profile,'Profile');
+        save([Profiledir filesep 'StartingProfile.json'],PIE);
+        Profiles = {'StartingProfile.json'};
         %%% Saves first Profile to Profiles.mat, if none was saved
     elseif ~isempty(Profiles) && ~exist([Profiledir filesep 'Profile.mat'],'file')
-        Profile=Profiles{1};
-        save([Profiledir filesep 'Profile.mat'],'Profile');
+        Profile=Profiles(1).name;
+        save_json([Profiledir filesep 'Profile.json'],Profile,'Profile');
         %%% Generates a Standard profile, if none existed
     elseif isempty(Profiles) && exist([Profiledir filesep 'Profile.mat'],'file')
         PIE=[];
-        save([Profiledir filesep 'StartingProfile.mat'],'PIE');
+        save([Profiledir filesep 'StartingProfile.json'],'PIE');
     end
     %%% Determines current Profile
-    load([Profiledir filesep 'Profile.mat']);
-
+    Profile = loadjson([Profiledir filesep 'Profile.json']);
+    Profile = Profile.Profile;
     %%% Compares current profile to existing profiles
     Current=[];
     for i=1:numel(Profiles)
-        if strcmp(Profiles{i},Profile)
+        if strcmp(Profiles(i).name,Profile)
             Current=Profile;
         end
     end
@@ -59,7 +67,7 @@ if Mode==0 %%% Loads user values
         Current=Profiles{1};
     end
     %%% Loads UserValues of current profile
-    S = load(fullfile(Profiledir,Profile));
+    S = loadjson(fullfile(Profiledir,Profile)); S = S.S;
 
 
     %% PIE: Definition of PIE channels %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1363,6 +1371,9 @@ if Mode==0 %%% Loads user values
     % 22 rinf2 (used for "Dip and Rise" model)
     % 23 beta parameter for stretched exponential
     
+    if ~iscell(S.TauFit.FitParams) %%% convert array back to cell, this is lost on save to json
+        S.TauFit.FitParams = mat2cell(S.TauFit.FitParams,[ones(1,size(S.TauFit.FitParams,1))],size(S.TauFit.FitParams,2));
+    end
     % FitParams{chan}(n) with chan the GG/RR or BB/GG/RR channel and n the parameter index
     if ~isfield(S.TauFit,'FitParams') %|| (numel(S.TauFit.FitParams) ~= 4)
         params =      [2 2 2 0.5 0.5 0 0 0 0 0 50 2 0 0 1 1 0.4 0 50 5 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0];
@@ -2404,7 +2415,7 @@ if Mode==0 %%% Loads user values
     
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     UserValues=P;
-    save(fullfile(Profiledir,'Profile.mat'),'Profile');
+    save_json(fullfile(Profiledir,'Profile.json'),Profile,'Profile');
 else
     if nargin==3
         switch numel(Param)
@@ -2452,9 +2463,48 @@ end
 %%% Saves user values
 if ~isempty(Current) %% Saves loaded profile
     Profile=Current;
-    save(fullfile(Profiledir,'Profile.mat'),'Profile');
-    save(fullfile(Profiledir,Profile),'-struct','UserValues');
+    save_json(fullfile(Profiledir,'Profile.json'),Profile,'Profile');
+    save_json(fullfile(Profiledir,Profile),UserValues,'S');
 else
-    load([Profiledir filesep 'Profile.mat']); %% Saves current profile
-    save(fullfile(Profiledir,Profile),'-struct','UserValues');
+    Profile = loadjson([Profiledir filesep 'Profile.json']); %% Saves current profile
+    Profile = Profile.Profile;
+    save_json(fullfile(Profiledir,Profile),UserValues,'S');
 end
+%%% return the names of all profiles as cell array
+Profiles = struct2cell(Profiles);
+Profiles = Profiles(1,:)';
+
+%%% Wrapper function to save matlab structure as json file
+function success = save_json(filename,obj,name)
+json = savejson(name,obj);
+fid = fopen(filename,'w');
+if fid ~= -1
+    fprintf(fid,'%s',json);
+    success = true;
+else
+    success = false;
+end
+
+%%% Function to convert mat files to json files for transition to
+%%% json-based UserValues structure
+function convert_mat_to_json(filenames)
+disp('Converting profiles to json files...')
+for i = 1:numel(filenames)
+    [path,file,ext] = fileparts(filenames{i});
+    S = load(filenames{i});
+    json = savejson(S);
+    fid = fopen([path filesep file '.json'],'w');
+    if fid ~= -1
+        fprintf(fid,'%s',json);
+        success = true;
+    else
+        success = false;
+    end
+
+    if success
+        %%% delete mat file
+        delete(filenames{i});
+    end
+    disp(sprintf('%i of %i files',i,numel(filenames)));
+end
+disp('Done!');
