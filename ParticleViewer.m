@@ -302,6 +302,19 @@ h.Particle_Export = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
+    'Callback', @Extract_Particle_Phasor,...
+    'String', 'Re-extract Phasors',...
+    'TooltipString', ['Re-extract particlewise phasor data from '...
+          'currently loaded framewise phasor data'],...
+    'Position',[0.57 0.71, 0.38 0.14]);
+
+%%% Controls for exporting image plot
+h.Particle_Export = uicontrol(...
+    'Parent',h.Plot_Control_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
     'Callback', @Export_TIFF,...
     'String', 'Export as TIFF',...
     'Position',[0.01 0.02, 0.32 0.14]);
@@ -758,6 +771,60 @@ axes.XLabel.String = XLabel;
 axes.YLabel.String = YLabel;
 axes.XColor = Look.Fore;
 axes.YColor = Look.Fore;
+
+end
+
+function Extract_Particle_Phasor(~,~)
+global ParticleViewer PhasorViewer
+
+%%% Stops execution if data is not complete
+if isempty(ParticleViewer) || isempty(ParticleViewer) || ~isfield(ParticleViewer,'Regions')
+    return;
+end
+
+%%% Undo G and S normalization
+Int = PhasorViewer.Intensity;
+G = PhasorViewer.g.*Int; %%%unnormalized g
+S = PhasorViewer.s.*Int; %%%unnormalized s
+
+%%% Creates arrays with size(Particle,Frames)
+g=NaN(size(ParticleViewer.Intensity));
+s=NaN(size(ParticleViewer.Intensity));
+Intensity=NaN(size(ParticleViewer.Intensity));
+
+%%%Calculates frame-wise average for each particle
+for i=1:numel(ParticleViewer.Regions)
+    %%% Extends PixelId for every frame
+    PixelId = ParticleViewer.Regions(i).PixelIdxList;
+    [~,~,z] = ind2sub(size(Int),PixelId);
+    Int_temp = mat2cell(Int(PixelId),histcounts(z, [1:max(z), Inf]), 1);
+    dint = cellfun('isempty',Int_temp);
+    Intensity(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),Int_temp(~dint));
+    G_temp = mat2cell(G(PixelId),histcounts(z,[1:max(z),Inf]),1);
+    dg = cellfun('isempty',G_temp);
+    g(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),G_temp(~dg));
+    S_temp = mat2cell(S(PixelId),histcounts(z,[1:max(z),Inf]),1);
+    ds = cellfun('isempty',S_temp);
+    s(i,ParticleViewer.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),S_temp(~ds));
+end
+g = g./Intensity;
+s = s./Intensity;
+Intensity(isnan(Intensity))=0;
+g(isnan(g))=0;
+s(isnan(s))=0;
+
+%%% Updates parameters in global variable
+ParticleViewer.Intensity = Intensity;
+ParticleViewer.g = g;
+ParticleViewer.s = s;
+ParticleViewer.Fi = atan(s./g);
+ParticleViewer.Fi(isnan(ParticleViewer.Fi)) = 0;
+ParticleViewer.M = sqrt(s.^2+g.^2);Fi(isnan(M)) = 0;
+ParticleViewer.TauP = real(tan(Fi)./(2*pi*ParticleViewer.Freq/10^9));
+ParticleViewer.TauP(isnan(ParticleViewer.TauP)) = 0; %#ok<*NASGU>
+ParticleViewer.TauM = real(sqrt((1./(s.^2+g.^2))-1)/(2*pi*ParticleViewer.Freq/10^9));
+ParticleViewer.TauM(isnan(ParticleViewer.TauM)) = 0;
+%ParticleViewer.Mean_LT = sum(ParticleData.Data.Mean_LT(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
 
 end
 
