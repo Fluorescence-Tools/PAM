@@ -819,8 +819,8 @@ ParticleViewer.g = g;
 ParticleViewer.s = s;
 ParticleViewer.Fi = atan(s./g);
 ParticleViewer.Fi(isnan(ParticleViewer.Fi)) = 0;
-ParticleViewer.M = sqrt(s.^2+g.^2);Fi(isnan(M)) = 0;
-ParticleViewer.TauP = real(tan(Fi)./(2*pi*ParticleViewer.Freq/10^9));
+ParticleViewer.M = sqrt(s.^2+g.^2);ParticleViewer.Fi(isnan(ParticleViewer.M)) = 0;
+ParticleViewer.TauP = real(tan(ParticleViewer.Fi)./(2*pi*ParticleViewer.Freq/10^9));
 ParticleViewer.TauP(isnan(ParticleViewer.TauP)) = 0; %#ok<*NASGU>
 ParticleViewer.TauM = real(sqrt((1./(s.^2+g.^2))-1)/(2*pi*ParticleViewer.Freq/10^9));
 ParticleViewer.TauM(isnan(ParticleViewer.TauM)) = 0;
