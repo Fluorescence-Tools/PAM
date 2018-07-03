@@ -121,7 +121,7 @@ h.Particle_Plot3_Type = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Callback',{@Particle_Num, 1},...
     'Position',[0.8 0.22 , 0.12 0.12],...
-    'String',{'Position', 'Phasor', 'Lifetime vs Intensity'},...
+    'String',{'Position', 'Phasor', 'Lifetime vs Intensity', 'LF vs Int (All Particles'},...
     'Value', 1);
 
 h.Text = {};
@@ -735,6 +735,19 @@ switch Plot_Type
         TauM(isinf(TauM)) = NaN;
         XValue = (TauP + TauM)/2;
         YValue = ParticleViewer.Intensity(PartNum,:);
+        LineSpec = '.b';
+        YLabel = 'Intensity (counts)';
+        XLabel = 'Lifetime (ns)';
+        Property = {'PlotBoxAspectRatio', [1 1 1]};
+    case 8 %Lifetime vs Intensity All Particles
+        TauP = ParticleViewer.TauP;
+        TauM = ParticleViewer.TauM;
+        TauM(isinf(TauM)) = NaN;
+        XValue = (TauP + TauM)/2;
+        XValue = mean(XValue, 2, 'omitnan');
+        YValue = ParticleViewer.Intensity;
+        YValue(YValue==0) = NaN;
+        YValue = mean(YValue, 2, 'omitnan');
         LineSpec = '.b';
         YLabel = 'Intensity (counts)';
         XLabel = 'Lifetime (ns)';
