@@ -228,7 +228,7 @@ h.Plots.Int(2,2) = line(...
     'Color',[1 0 0]);
 
 h.Mia_Image.Intensity_Axes.XLabel.String = 'Frame';
-h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Countsrate [kHz]';
+h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Countrate [kHz]';
 h.Mia_Image.Intensity_Axes.XLabel.Color = Look.Fore;
 h.Mia_Image.Intensity_Axes.YLabel.Color = Look.Fore;
 h.Mia_Image.Intensity_Axes.YLabel.UserData = 1;
@@ -1697,7 +1697,8 @@ h.Mia_Image.Calculations.NB_Average = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.02 0.76, 0.4 0.06],...
-    'String',{'None','Average','Disk','Gaussian'});
+    'String',{'None','Average','Disk','Gaussian'},...
+    'Tooltipstring','apply an averaging filter to the intensity and variance images');
 if ismac
     h.Mia_Image.Calculations.NB_Average.ForegroundColor = [0 0 0];
     h.Mia_Image.Calculations.NB_Average.BackgroundColor = [1 1 1];
@@ -1711,9 +1712,9 @@ h.Text{end+1} = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.44 0.745, 0.26 0.06],...
-    'String','Diameter:');
+    'String','Radius:');
 %%% Editbox for Averaging radius
-h.Mia_Image.Calculations.NB_Average_Diameter = uicontrol(...
+h.Mia_Image.Calculations.NB_Average_Radius = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
     'Style','edit',...
     'Units','normalized',...
@@ -1721,7 +1722,19 @@ h.Mia_Image.Calculations.NB_Average_Diameter = uicontrol(...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.72 0.75, 0.15 0.06],...
-    'String','3');
+    'String','3',...
+    'Tooltipstring','sets the radius for the averaging and median filtering');
+%%% Checkboxbox for Median filter
+h.Mia_Image.Calculations.NB_Median = uicontrol(...
+    'Parent', h.Mia_Image.Calculations.NB_Panel,...
+    'Style','checkbox',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.02 0.68, 0.35 0.06],...
+    'String','Median filter',...
+    'Tooltipstring','apply a median filter to the N and epsilon images');
 %%% Text
 h.Text{end+1} = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
@@ -1730,8 +1743,8 @@ h.Text{end+1} = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.01 0.62, 0.8 0.06],...
-    'String','Detector Deadtime(ns):');
+    'Position',[0.01 0.60, 0.8 0.06],...
+    'String','Detector Dead time [ns]:');
 %%% Editbox for Deadtime correction
 h.Mia_Image.Calculations.NB_Detector_Deadtime = uicontrol(...
     'Parent', h.Mia_Image.Calculations.NB_Panel,...
@@ -1740,7 +1753,7 @@ h.Mia_Image.Calculations.NB_Detector_Deadtime = uicontrol(...
     'FontSize',12,...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.7 0.62, 0.22 0.06],...
+    'Position',[0.7 0.60, 0.22 0.06],...
     'String','100');
 
 %% Additional Properties Tab
@@ -3813,17 +3826,17 @@ if any(mode==3) && isfield(MIAData.NB,'PCH')
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,1).String),str2double(h.Mia_NB.Image.Hist(2,1).String),str2double(h.Mia_NB.Image.Hist(3,1).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Intensity [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '+/-' num2str(std(MIAData.NB.Int{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
         case 3 %%% Number histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,2).String),str2double(h.Mia_NB.Image.Hist(2,2).String),str2double(h.Mia_NB.Image.Hist(3,2).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Num{i}(MIAData.NB.Use),h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Number';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f') '?' num2str(std(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f')];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f') '+/-' num2str(std(MIAData.NB.Num{i}(MIAData.NB.Use)),'%6.3f')];
         case 4 %%% Brightness histogram
             h.Plots.NB(4).XData=linspace(str2double(h.Mia_NB.Image.Hist(1,3).String),str2double(h.Mia_NB.Image.Hist(2,3).String),str2double(h.Mia_NB.Image.Hist(3,3).String));
             h.Plots.NB(4).YData=histc(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3,h.Plots.NB(4).XData);
             h.Mia_NB.Axes(4).XLabel.String='Brightness [kHz]';
-            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '?' num2str(std(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
+            h.Mia_NB.Hist1D_Text.String=[num2str(mean(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') '+/-' num2str(std(MIAData.NB.Eps{i}(MIAData.NB.Use)/str2double(h.Mia_NB.Image.Pixel.String)*10^3),'%6.3f') ' kHz'];
     end
     h.Mia_NB.Hist1D_Text.Position(1)=0.99-h.Mia_NB.Hist1D_Text.Extent(3);
     %%% Set X-Limit; uses 1/2 of binsize to not cut first and last bar
@@ -6773,7 +6786,7 @@ end
 %% Calculates N&B
 for i=Auto
     %%% Apply Dead time correction
-    MIAData.NB.DTCorr_Img{floor(i*1.5)} = (double(MIAData.Data{i,2}))./(1-double(MIAData.Data{i,2}).*(str2double(h.Mia_Image.Calculations.NB_Detector_Deadtime.String)/(str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000)))
+    MIAData.NB.DTCorr_Img{floor(i*1.5)} = (double(MIAData.Data{i,2}))./(1-double(MIAData.Data{i,2}).*(str2double(h.Mia_Image.Calculations.NB_Detector_Deadtime.String)/(str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000)));
     %%% Limit for PCH
     MaxPhotons=ceil(max(max(max(MIAData.NB.DTCorr_Img{floor(i*1.5)}))));
     %%% Calculaces PCH, mean intensity, standard deviation for each pixel
@@ -6781,7 +6794,7 @@ for i=Auto
     MIAData.NB.Int{floor(i*1.5)}=mean(MIAData.NB.DTCorr_Img{floor(i*1.5)},3, 'omitnan');
     MIAData.NB.Std{floor(i*1.5)}=std(MIAData.NB.DTCorr_Img{floor(i*1.5)},0,3, 'omitnan');
     %%% Applies spacial filter to intensity and standard deviation
-    if str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)<=1
+    if str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)<=1
         h.Mia_Image.Calculations.NB_Average.Value=1;
     end
     %%% Determinesspatial filter
@@ -6789,11 +6802,11 @@ for i=Auto
         case 1 %%% Do nothing
             Filter = fspecial('average',1);
         case 2 %%% Moving average
-            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)));
+            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)));
         case 3 %%% Disc average
-            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)-1);
+            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)-1);
         case 4 %%% Gaussian average
-            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String),str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)/2);
+            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Radius.String),str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)/2);
     end
     %%% Applies filter
     MIAData.NB.Int{floor(i*1.5)}=imfilter(MIAData.NB.Int{floor(i*1.5)},Filter,'symmetric');
@@ -6803,6 +6816,10 @@ for i=Auto
     %MIAData.NB.Eps{floor(i*1.5)}=MIAData.NB.Std{floor(i*1.5)}.^2./MIAData.NB.Int{floor(i*1.5)};
     MIAData.NB.Num{floor(i*1.5)}=MIAData.NB.Int{floor(i*1.5)}.^2./(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})/sqrt(8);
     MIAData.NB.Eps{floor(i*1.5)}=(MIAData.NB.Std{floor(i*1.5)}.^2-MIAData.NB.Int{floor(i*1.5)})./MIAData.NB.Int{floor(i*1.5)}*sqrt(8);
+    if h.Mia_Image.Calculations.NB_Median.Value
+        MIAData.NB.Num{floor(i*1.5)}=medfilt2(MIAData.NB.Num{floor(i*1.5)},[3 3]);
+        MIAData.NB.Eps{floor(i*1.5)}=medfilt2(MIAData.NB.Eps{floor(i*1.5)},[3 3]);
+    end
 end
 
 %% Calculates crossN&B
@@ -6814,7 +6831,7 @@ if Cross
     MIAData.NB.Std{2}=sqrt(mean((MIAData.Data{1,2}-repmat(mean(MIAData.Data{1,2},3),[1 1,size(MIAData.Data{1,2},3)]))...
                                  .*(MIAData.Data{2,2}-repmat(mean(MIAData.Data{2,2},3),[1 1,size(MIAData.Data{2,2},3)])),3)); %%% sqrt of co-variance
     %%% Applies spacial filter to intensity and standard deviation
-    if str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)<=1
+    if str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)<=1
         h.Mia_Image.Calculations.NB_Average.Value=1;
     end
     %%% Determinesspatial filter
@@ -6822,11 +6839,11 @@ if Cross
         case 1 %%% Do nothing
             Filter = fspecial('average',1);
         case 2 %%% Moving average
-            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)));
+            Filter = fspecial('average',round(str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)));
         case 3 %%% Disc average
-            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)-1);
+            Filter = fspecial('disk',str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)-1);
         case 4 %%% Gaussian average
-            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String),str2double(h.Mia_Image.Calculations.NB_Average_Diameter.String)/2);
+            Filter = fspecial('gaussian',2*str2double(h.Mia_Image.Calculations.NB_Average_Radius.String),str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)/2);
     end
     %%% Applies filter
     MIAData.NB.Int{floor(2)}=imfilter(MIAData.NB.Int{floor(2)},Filter,'symmetric');
