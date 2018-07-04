@@ -13147,6 +13147,11 @@ else
     for i = 1:numel(files)
         data{i} = BurstData{files(i)}.DataArray;
     end
+    %%% check if an files have additional parameters added to the DataArray
+    len = cellfun(@(x) size(x,2),data);
+    if ~(all(len == min(len))) %%% not all same length
+        data = cellfun(@(x) x(:,1:min(len)), data, 'UniformOutput',false);
+    end
     data = vertcat(data{:});
     %%% for future reference: we are assuming that all files have the same
     %%% NameArray!
@@ -14004,8 +14009,10 @@ if BAMethod == 3
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'off';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
-    if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{2}))
-        h.CutDatabase.String = fieldnames(UserValues.BurstBrowser.CutDatabase{2});
+    if (numel(UserValues.BurstBrowser.CutDatabase) > 1) && ~isempty(UserValues.BurstBrowser.CutDatabase{2})
+        if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{2}))
+            h.CutDatabase.String = fieldnames(UserValues.BurstBrowser.CutDatabase{2});
+        end
     else
         h.CutDatabase.String = {'-'};
     end
