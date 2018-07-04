@@ -1,0 +1,22 @@
+%%%--------------------------MODEL DESCRIPTION--------------------------%%%
+FCS model for flow (from Haustein and Schwille FCS review).
+Diffusion coefficient and focus size are both parameters
+One exponential triplet component
+Flow speed is assumed v = w_r/tau_flow
+For only flow, put D = 0
+For only diffusion, put v = 0
+
+|gamma|*|N|*|Trip amplitude|*|Trip time|*|flow|*|z diffusion|+|Offset|
+%%%-------------------------PARAMETER DEFINITION------------------------%%%
+Param(1): N             = 1;     LB = 0;   UB = Inf;
+Param(2): D[&mu;m<sup>2</sup>/s]     = 373;   LB = 0;	UB = Inf;   
+Param(3): w<sub>r</sub>[&mu;m]       = 0.2;   LB = 0;	UB = Inf;
+Param(4): w<sub>z</sub>[&mu;m]       = 1;	LB = 0;   UB = Inf;
+Param(5): tauT[&mu;s]      = 1;	LB = 0;   UB = Inf;f
+Param(6): Trip           = 0;  LB = 0;	UB = 1;f
+Param(7): y0            = 0;     LB = -1;  UB = 1;
+Param(8): v<sub>flow</sub>[&mu;m/s]    = 1;	LB = 0;   UB = Inf;
+%%%------------------------BRIGHTNESS DEFINITION------------------------%%%
+B=1/P(1); 
+%%%-----------------------------FIT FUNCTION----------------------------%%%  
+OUT=(1/sqrt(8))*(1/P(1))*(1+((P(6)/(1-P(6))*exp(-x/P(5)/1e-6)))).*(1./(1+4*(P(2)*1e-12)*x/(P(3)*1e-6)^2)).*(1./sqrt(1+4*(P(2)*1e-12)*x/(P(4)*1e-6)^2)).*exp(-((x.*P(8)./P(3)).^2)./(1+4*(P(2)*1e-12)*x/(P(3)*1e-6)^2))+P(7);
