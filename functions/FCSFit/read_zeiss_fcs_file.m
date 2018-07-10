@@ -1,4 +1,4 @@
-function [AC, mCountRate] = read_zeiss_fcs_file(fname)
+function [AC, mCountRate, duration] = read_zeiss_fcs_file(fname)
 % function mainly taken from:
 % https://git.embl.de/grp-ellenberg/FCSAnalyze/blob/9bd8697b38846a6db99f510a3ac57a7cb5ee4a99/matlab/FCSFitM/classes/absFcsmodel.m
 % check re-use rights!
@@ -115,3 +115,6 @@ for i=1:length(CountRate_idx)
         mCountRate{idx}(:,RPC(i,3)) = mCountRatel/1000;
     end
 end
+% get measurement duration
+dur_idx = find(strncmp(C{1}, 'MeasurementTime =',17 )); 
+duration = sscanf(C{1}{dur_idx(1)}(18:end),'%f s'); % all entries contain the same time

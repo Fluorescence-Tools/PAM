@@ -713,11 +713,12 @@ if nargin > 3 %%% called from file history
     end
 else
     %%% Choose files to load
-    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype';...
-                                          '*.cor','Averaged correlation based on .txt. filetype';...
-                                          '*.mcor','Individual correlation curves based on matlab filetype';...
-                                          '*.cor','Individual correlation curves based on .txt. filetype';...
-                                          '*.his','FRET efficiency data from BurstBrowser (*.his)';},...
+    [FileName,path,Type] = uigetfile({'*.mcor','Averaged correlation based on matlab filetype (*.mcor)';...
+                                          '*.cor','Averaged correlation based on text filetype (*.cor)';...
+                                          '*.mcor','Individual correlation curves based on matlab filetype (*.mcor)';...
+                                          '*.cor','Individual correlation curves based on text filetype (*.cor)';...
+                                          '*.his','FRET efficiency data from BurstBrowser (*.his)';
+                                          '*.fcs','FCS Files from Zeiss ZEN software (*.fcs)'},...
                                           'Choose a referenced data file',...
                                           UserValues.File.FCSPath,... 
                                           'MultiSelect', 'on');
@@ -924,6 +925,77 @@ switch Type
         end
         %%% change the gui
         SwitchGUI(h,'FRET');
+    case {6}   %% FCS data from Zeiss microscopes (*.fcs file)
+        FCSMeta.DataType = 'FCS averaged';
+        for i=1:numel(FileName)
+            %%% Reads file (file contains all sub-measurements)
+            [AC, mCountRate, Duration] = read_zeiss_fcs_file(fullfile(PathName{i},FileName{i}));
+            %%% convert the data into FCSFit data structure
+            % AC contains for each measurement: time, AC1, AC1_std, AC2, AC2_std, CC, CC_std
+            % std (i.e. error) is 1 for all since it is not computed by the
+            % software, instead we will recalculate it here based on the
+            % individual measurements
+            % Not all channels are used/correlated, find out how many
+            % channels we have and make a "file" for each
+            chan_used = find(AC{1}(1,2:2:end) ~= 0);
+            for c = chan_used
+                Cor_Times = AC{1}(:,1);
+                Cor_Array = [];
+                Counts = [];
+                for j = 1:numel(AC)
+                    Cor_Array = [Cor_Array, AC{j}(:,2*c)];
+                    Counts = [Counts, mCountRate{j}(c)];
+                end
+                Data = struct;
+                Data.Cor_Array = Cor_Array;
+                Data.Cor_Times = Cor_Times*1e-6;
+                Data.Cor_Average = mean(Cor_Array,2);
+                Data.Cor_SEM = std(Cor_Array,[],2);
+                % todo: implement tinv correction for low sampling!
+                Data.Counts = repmat(mean(Counts),[1,2]);
+                Data.Valid = ones(1,size(Cor_Array,2));
+                Data.Header = '';
+                FCSData.Data{end+1} = Data;
+                %%% add file to file history
+                h.FileHistory.add_file(fullfile(PathName{i},FileName{i}));
+                %%% Updates global parameters
+                switch c
+                    case 1 % ACF1
+                        ch = 'ACF1';
+                    case 2 % ACF2
+                        ch = 'ACF2';
+                    case 3 % CCF
+                        ch = 'CCF';
+                end
+                FCSData.FileName{end+1} = [ch ' - ' FileName{i}(1:end-5)];
+                FCSMeta.Data{end+1,1} = FCSData.Data{end}.Cor_Times;
+                FCSMeta.Data{end,2} = FCSData.Data{end}.Cor_Average;
+                FCSMeta.Data{end,2}(isnan(FCSMeta.Data{end,2})) = 0;
+                FCSMeta.Data{end,3} = FCSData.Data{end}.Cor_SEM;
+                FCSMeta.Data{end,3}(isnan(FCSMeta.Data{end,3})) = 1;
+                %%% Creates new plots
+                FCSMeta.Plots{end+1,1} = errorbar(...
+                    FCSMeta.Data{end,1},...
+                    FCSMeta.Data{end,2},...
+                    FCSMeta.Data{end,3},...
+                    'Parent',h.FCS_Axes);
+                FCSMeta.Plots{end,2} = line(...
+                    'Parent',h.FCS_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                FCSMeta.Plots{end,3} = line(...
+                    'Parent',h.Residuals_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',zeros(numel(FCSMeta.Data{end,1}),1));
+                FCSMeta.Plots{end,4} = line(...
+                    'Parent',h.FCS_Axes,...
+                    'XData',FCSMeta.Data{end,1},...
+                    'YData',FCSMeta.Data{end,2});
+                FCSMeta.Params(:,end+1) = cellfun(@str2double,h.Fit_Table.Data(end-2,5:3:end-1));
+            end
+        end
+        %%% change the gui
+        SwitchGUI(h,'FCS');
 end
 
 %%% Updates table and plot data and style to new size
