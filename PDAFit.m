@@ -3894,6 +3894,8 @@ else
     print(fig,GenerateName(fullfile(Path, 'All.tif'),1),'-dtiff','-r150','-painters')
     %%% also save eps file
     print_eps(fig,GenerateName(fullfile(Path, 'All.eps'),1));
+    %%% also save fig file
+    savefig(fig,GenerateName(fullfile(Path, 'All.fig'),1));
     close(fig)
     
     % Active files
@@ -3973,6 +3975,8 @@ else
         print(fig,'-dtiff','-r150',GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.tif']),1),'-painters')
         %%% also save eps file
         print_eps(fig,GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.eps']),1));
+        %%% also save fig file
+        savefig(fig,GenerateName(fullfile(Path, [PDAData.FileName{Active(i)}(1:end-4) '.fig']),1));
         close(fig)
     end
     
