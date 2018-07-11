@@ -6132,8 +6132,12 @@ for i = 1:numel(files)
         timebin = Timebin(i);
         duration = timebin./BurstData{file}.ClockPeriod;
         
-        PDAdata = Bursts_to_Timebins(MT,CH,duration);
-        
+        if timebin ~= 0
+            PDAdata = Bursts_to_Timebins(MT,CH,duration);
+        elseif timebin == 0 %burstwise, get duration array
+            [PDAdata, dur] = Bursts_to_Timebins(MT,CH,duration);
+            dur = double(dur).*BurstData{file}.ClockPeriod;
+        end
         Progress(k/numel(files),h.Progress_Axes,h.Progress_Text,'Exporting...');
         
         %%% Save Brightness Reference?
@@ -6169,10 +6173,20 @@ for i = 1:numel(files)
                 
                 PDA.Corrections = BurstData{file}.Corrections;
                 PDA.Background = BurstData{file}.Background;
+                
+                if timebin == 0% burstwise, save duration array
+                    PDA.Duration = dur;
+                end
                 if save_brightness_reference
                     posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
                     donly = (BurstData{file}.DataArray(:,posS) > 0.95);
-                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                    if timebin ~= 0
+                        DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                    elseif timebin == 0 %burstwise, get duration array
+                        [DOnly_PDA, DOnly_dur] = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                        DOnly_dur = DOnly_dur.*BurstData{file}.ClockPeriod;
+                        PDA.BrightnessReference.Duration = DOnly_dur;
+                    end
                     NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
                     NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
                     PDA.BrightnessReference.N = NGP + NGS;
@@ -6350,7 +6364,12 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Slice Bursts in time bins for  PDA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function PDAdata = Bursts_to_Timebins(MT,CH,duration)
+function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration)
+if duration == 0 % burstwise, simply return channel information
+    PDAdata = CH;
+    duration = cellfun(@(x) x(end)-x(1),MT);
+    return;
+end
 %%% Get the maximum number of bins possible in data set
 max_duration = double(ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration));
 

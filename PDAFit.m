@@ -3669,6 +3669,9 @@ end
 mBG_gg = PDAMeta.BGdonor(file);
 mBG_gr = PDAMeta.BGacc(file);
 dur = PDAData.timebin(file)*1E3;
+if PDAData.timebin(file) == 0 %burstwise data was loaded
+    dur = PDAData.Data{file}.Duration*1E3;
+end
 cr = PDAMeta.crosstalk(file);
 R0 = PDAMeta.R0(file);
 de = PDAMeta.directexc(file);
