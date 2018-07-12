@@ -5255,7 +5255,11 @@ switch mode
                     else
                         xlabel('FRET efficiency');
                     end
-                    ax(i).FontSize = 20;
+                    if ispc
+                        ax(i).FontSize = 20/1.4;
+                    else
+                        ax(i).FontSize = 20;
+                    end
                     if i == 1 && numel(H) > 1
                         ylabel('Occurrence');
                         yl = ax(i).YLabel;
@@ -5458,7 +5462,11 @@ switch mode
                     else
                         xlabel(param);
                     end
-                    ax(i).FontSize = 20;
+                    if ispc
+                        ax(i).FontSize = 20/1.4;
+                    else
+                        ax(i).FontSize = 20;
+                    end
                     if i == 1 && numel(H) > 1
                         ylabel('Occurrence');
                         yl = ax(i).YLabel;
