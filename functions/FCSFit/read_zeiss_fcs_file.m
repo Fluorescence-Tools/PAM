@@ -1,8 +1,21 @@
 function [AC, mCountRate, duration] = read_zeiss_fcs_file(fname)
-% function mainly taken from:
-% https://git.embl.de/grp-ellenberg/FCSAnalyze/blob/9bd8697b38846a6db99f510a3ac57a7cb5ee4a99/matlab/FCSFitM/classes/absFcsmodel.m
-% check re-use rights!
-
+% read_zeiss_fcs_file reads AC data that has been stored in a Zeiss ZEN software *.fcs file and returns a
+% cell arrays for autocorrelations and mean count rates
+%   read_zeiss_fcs_file(fname) - read data in fname where fname is path to the .fcs file
+%   OUTPUT:
+%       AC        -  Cell array containing the AC for each measurement: {time, AC1_1, AC1_1_std, AC2_2, AC2_1_std, CC_1, CC_1_std}, {time, AC1_2, ... }.
+%                    Time is converted to us. AC has been converted to have base 0.
+%                    AC1_1_std = 1 as ZEISSFCS has no std information.
+%       mCountRate - mean Count rate in kHz stored as [Countrate_Ch1, Countrate_Ch2, Countrate_CC]. Countrate_CC is always 0. Ch1 and Ch2 are set 
+%                    with FA convention. 
+% For APD's Channels are swapped. 
+%
+% This function has been adapted from:
+% https://git.embl.de/grp-ellenberg/FCSAnalyze
+% (C) Antonio Politi, EMBL, 2017-2018, mail@apoliti.de
+% Quantitative mapping of fluorescently tagged cellular proteins using FCS-calibrated four dimensional imaging
+% Antonio Z Politi, Yin Cai, Nike Walther, M. Julius Hossain, Birgit Koch, Malte Wachsmuth, Jan Ellenberg, 
+% Nature Protocols 13, 1445?1464 (2018)
  if nargin < 1
     return;
 end
