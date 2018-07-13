@@ -950,8 +950,14 @@ switch Type
                 Data.Cor_Array = Cor_Array;
                 Data.Cor_Times = Cor_Times*1e-6;
                 Data.Cor_Average = mean(Cor_Array,2);
-                Data.Cor_SEM = std(Cor_Array,[],2);
-                % todo: implement tinv correction for low sampling!
+                if size(Cor_Array,2) > 1
+                    Data.Cor_SEM = std(Cor_Array,[],2)./sqrt(size(Cor_Array,2)); % this is the standard error of the mean
+                    % adjust the SEM based on the student's t distribution
+                    p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
+                    Data.Cor_SEM = Data.Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2));
+                else % set std to one
+                    Data.Cor_SEM = ones(size(Cor_Array));
+                end
                 Data.Counts = repmat(mean(Counts),[1,2]);
                 Data.Valid = ones(1,size(Cor_Array,2));
                 Data.Header = '';
