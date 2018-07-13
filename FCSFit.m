@@ -954,7 +954,7 @@ switch Type
                     Data.Cor_SEM = std(Cor_Array,[],2)./sqrt(size(Cor_Array,2)); % this is the standard error of the mean
                     % adjust the SEM based on the student's t distribution
                     p_value = normcdf(1)-normcdf(-1); % this is the probability to be within 1 sigma for a normal distribution (p = 0.68..)
-                    Data.Cor_SEM = Data.Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2));
+                    Data.Cor_SEM = Data.Cor_SEM * tinv(p_value+(1-p_value)/2,size(Cor_Array,2)-1);
                 else % set std to one
                     Data.Cor_SEM = ones(size(Cor_Array));
                 end
