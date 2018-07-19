@@ -2392,6 +2392,34 @@ if Mode==0 %%% Loads user values
     end
     P.MIA.Custom.Zeiss_CZI = S.MIA.Custom.Zeiss_CZI;
 
+    %%% Options
+    if ~isfield(S.MIA, 'Options')
+        disp('WARNING: UserValues structure incomplete, field "MIA.Options" missing');
+        S.MIA.Options = [];
+    end
+    P.MIA.Options = S.MIA.Options;
+    
+    %%% kHz checkbox
+    if ~isfield(S.MIA.Options, 'kHz')
+        disp('WARNING: UserValues structure incomplete, field "Options.kHz" missing');
+        S.MIA.Options.kHz = 1;
+    end
+    P.MIA.Options.kHz = S.MIA.Options.kHz;
+    
+    %%% S factor
+    if ~isfield(S.MIA.Options, 'S')
+        disp('WARNING: UserValues structure incomplete, field "Options.S" missing');
+        S.MIA.Options.S = 1;
+    end
+    P.MIA.Options.S = S.MIA.Options.S;
+    
+    %%% Offset
+    if ~isfield(S.MIA.Options, 'Offset')
+        disp('WARNING: UserValues structure incomplete, field "Options.Offset" missing');
+        S.MIA.Options.Offset = 0;
+    end
+    P.MIA.Options.Offset = S.MIA.Options.Offset;
+    
     %% Trace
     if ~isfield(S, 'Trace')
         disp('WARNING: UserValues structure incomplete, field "Trace" missing');

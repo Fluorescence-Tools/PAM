@@ -222,32 +222,83 @@ if isempty(hfig)
     h.FRET_comp_selected_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>FRET efficiency histograms</b> of selected species</html>',...
-        'Callback',@Compare_FRET_Hist,...
+        'Callback',[],...
         'Tag','FRET_comp_selected_Menu',...
+        'Enable','off',...
+        'Separator','off');
+    h.FRET_comp_selected_together_Menu = uimenu(...
+        'Parent',h.FRET_comp_selected_Menu,...
+        'Label','... in one plot',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_selected_together_Menu',...
+        'Enable','off',...
+        'Separator','off');
+    h.FRET_comp_selected_separate_Menu = uimenu(...
+        'Parent',h.FRET_comp_selected_Menu,...
+        'Label','... stacked',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_selected_separate_Menu',...
         'Enable','off',...
         'Separator','off');
     h.Param_comp_selected_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>current parameter</b> of selected species</html>',...
-        'Callback',@Compare_FRET_Hist,...
+        'Callback',[],...
         'Tag','Param_comp_selected_Menu',...
+        'Enable','off',...
+        'Separator','off');
+    h.Param_comp_selected_together_Menu = uimenu(...
+        'Parent',h.Param_comp_selected_Menu,...
+        'Label','... in one plot',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','Param_comp_selected_together_Menu',...
+        'Enable','off',...
+        'Separator','off');
+    h.Param_comp_selected_separate_Menu = uimenu(...
+        'Parent',h.Param_comp_selected_Menu,...
+        'Label','... stacked',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','Param_comp_selected_separate_Menu',...
         'Enable','off',...
         'Separator','off');
     %%% FRET Comparions plot of loaded files
     h.FRET_comp_Loaded_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>FRET efficiency histograms</b> of loaded files</html>',...
-        'Callback',@Compare_FRET_Hist,...
+        'Callback',[],...
         'Tag','FRET_comp_Loaded_Menu',...
         'Separator','on');
+    h.FRET_comp_Loaded_together_Menu = uimenu(...
+        'Parent',h.FRET_comp_Loaded_Menu,...
+        'Label','... in one plot',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_Loaded_together_Menu',...
+        'Separator','off');
+    h.FRET_comp_Loaded_separate_Menu = uimenu(...
+        'Parent',h.FRET_comp_Loaded_Menu,...
+        'Label','... stacked',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','FRET_comp_Loaded_together_Menu',...
+        'Separator','off');
     %%% Parameter Comparions plot from loaded files
     h.Param_comp_Loaded_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
         'Label','<html>Compare <b>current parameter</b> of loaded files</html>',...
+        'Callback',[],...
+        'Tag','Param_comp_Loaded_Menu',...
+        'Separator','off');
+    h.Param_comp_Loaded_together_Menu = uimenu(...
+        'Parent',h.Param_comp_Loaded_Menu,...
+        'Label','... in one plot',...
         'Callback',@Compare_FRET_Hist,...
         'Tag','Param_comp_Loaded_Menu',...
         'Separator','off');
-    
+    h.Param_comp_Loaded_separate_Menu = uimenu(...
+        'Parent',h.Param_comp_Loaded_Menu,...
+        'Label','... stacked',...
+        'Callback',@Compare_FRET_Hist,...
+        'Tag','Param_comp_Loaded_Menu',...
+        'Separator','off');
     %%% FRET Comparions plot from *.his files
     h.FRET_comp_File_Menu = uimenu(...
         'Parent',h.Parameter_Comparison_Menu,...
@@ -5009,7 +5060,7 @@ if obj == h.FRET_comp_File_Menu
             EBR{i} = data.EBR;
         end
     end
-elseif any(obj == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
+elseif any(obj.Parent == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
     file = BurstMeta.SelectedFile;
     switch BurstData{file}.BAMethod
         case {1,2,5}
@@ -5018,7 +5069,7 @@ elseif any(obj == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
             mode = 3;
     end
     
-    switch obj
+    switch obj.Parent
         case h.FRET_comp_Loaded_Menu
             sel_file = BurstMeta.SelectedFile;
             for i = 1:numel(BurstData);
@@ -5072,7 +5123,7 @@ elseif any(obj == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
             end
             BurstMeta.SelectedFile = sel_file;
     end
-elseif  obj == h.Param_comp_Loaded_Menu
+elseif  obj.Parent == h.Param_comp_Loaded_Menu
     mode = 0;
     param = h.ParameterListX.String{h.ParameterListX.Value};
     sel_file = BurstMeta.SelectedFile;
@@ -5098,7 +5149,7 @@ elseif  obj == h.Param_comp_Loaded_Menu
         end
     end
     BurstMeta.SelectedFile = sel_file;
-elseif obj == h.Param_comp_selected_Menu
+elseif obj.Parent == h.Param_comp_selected_Menu
     [files,species,subspecies] = get_multiselection(h);
     mode = 0;
     param = h.ParameterListX.String{h.ParameterListX.Value};
@@ -5133,66 +5184,122 @@ N_bins = UserValues.BurstBrowser.Display.NumberOfBinsX;
 if numel(FileNames) == 1
     return;
 end
-
+%%% determine display mode
+switch obj
+    case {h.FRET_comp_selected_together_Menu,h.Param_comp_selected_together_Menu,h.FRET_comp_Loaded_together_Menu,h.Param_comp_Loaded_together_Menu}
+        display_mode = 1;
+    case {h.FRET_comp_selected_separate_Menu,h.Param_comp_selected_separate_Menu,h.FRET_comp_Loaded_separate_Menu,h.Param_comp_Loaded_separate_Menu}
+        display_mode = 2;
+end
 switch mode
     case 2 % 2ColorMFD
         xE = linspace(-0.1,1.1,N_bins+1);
-        for i = 1:numel(E)
-            H{i} = histcounts(E{i},xE);
-            switch UserValues.BurstBrowser.Settings.Normalize_Method
-                case 'area'
-                   H{i} = H{i}./sum(H{i});
-                case 'max'
-                   H{i} = H{i}./max(H{i});
-            end
+        switch display_mode
+            case 1 %%% all in one plot
+                for i = 1:numel(E)
+                    H{i} = histcounts(E{i},xE);
+                    switch UserValues.BurstBrowser.Settings.Normalize_Method
+                        case 'area'
+                           H{i} = H{i}./sum(H{i});
+                        case 'max'
+                           H{i} = H{i}./max(H{i});
+                    end
+                end
+
+                color = lines(numel(H));
+                f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
+                stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
+                hold on
+                for i = 2:numel(H)
+                    stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+                end
+                ax = gca;
+                ax.Color = [1 1 1];
+                ax.FontSize = 20;
+                ax.LineWidth = 2;
+                ax.Layer = 'top';
+                ax.XLim = [-0.1,1.1];
+                ax.Units = 'pixels';
+                xlabel('FRET efficiency');
+                ylabel('occurrence (norm.)');
+                legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
+                hl = legend(legend_entries,'fontsize',12,'Box','off');
+                set([f,ax,hl],'Units','pixel');
+                f.Position(4) = f.Position(4)+hl.Position(4);
+                hl.Position(1) = 40;
+                hl.Position(2) = 390;
+            case 2 % all plots beneath another
+                for i = 1:numel(E)
+                    H{i} = histcounts(E{i},xE);
+                end
+                color = lines(numel(H));
+                f_width = 600; f_height = min(numel(H)*200,800);
+                f = figure('Color',[1 1 1],'Position',[100 100 f_width f_height]);
+                f.Units = 'pixel';
+                offset_x1 = 85;
+                offset_x2 = 10;
+                offset_y1 = 75;
+                offset_y2 = 10;
+                ax_width = f_width - offset_x1 - offset_x2;
+                ax_height = (f_height-offset_y1 - offset_y2)/numel(H);
+                legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
+                for i = 1:numel(H)
+                    ax(i) = axes(f,'Units','pixel','Position',[offset_x1, offset_y1+(i-1)*ax_height, ax_width, ax_height],'TickDir','in',...
+                        'Box','on');
+                    hold on;
+                    bar(xE(1:end)+min(diff(xE))/2,[H{i} H{i}(end)],'FaceColor',color(i,:),'EdgeColor','none','BarWidth',1);
+                    stairs(xE(1:end),[H{i} H{i}(end)],'Color',[0,0,0],'LineWidth',2);
+                    if i > 1
+                        ax(i).XTickLabel = [];
+                        ax(i).YTickLabel{1} = '';
+                    else
+                        xlabel('FRET efficiency');
+                    end
+                    if ispc
+                        ax(i).FontSize = 20/1.4;
+                    else
+                        ax(i).FontSize = 20;
+                    end
+                    if i == 1 && numel(H) > 1
+                        ylabel('Occurrence');
+                        yl = ax(i).YLabel;
+                        yl.Units = 'pixel';
+                        yl.Position(2) = yl.Position(2)+ax_height*(numel(H)-1)/2;
+                        yl.Units = 'norm';
+                    end
+                    ax(i).LineWidth = 2;
+                    ax(i).YLim(2) = max(H{i})*1.1;
+                    ax(i).XLim = [-0.1,1.1];
+                    ax(i).Layer = 'top';
+                    hl(i) = legend(legend_entries(i),'fontsize',12,'Box','off','Location','northwest');
+                end
+                linkaxes(ax,'x');
+                set(ax,'Units','norm');
         end
-        
-        color = lines(numel(H));
-        f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
-        stairs(xE(1:end),[H{1} H{1}(end)],'Color',color(1,:),'LineWidth',2);
-        hold on
-        for i = 2:numel(H)
-            stairs(xE(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
-        end
-        ax = gca;
-        ax.Color = [1 1 1];
-        ax.FontSize = 20;
-        ax.LineWidth = 2;
-        ax.Layer = 'top';
-        ax.XLim = [-0.1,1.1];
-        ax.Units = 'pixels';
-        xlabel('FRET efficiency');
-        ylabel('occurrence (norm.)');
-        legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
-        hl = legend(legend_entries,'fontsize',12,'Box','off');
-        set([f,ax,hl],'Units','pixel');
-        f.Position(4) = f.Position(4)+hl.Position(4);
-        hl.Position(1) = 40;
-        hl.Position(2) = 390;
         if UserValues.BurstBrowser.Settings.CompareFRETHist_Waterfall
-            %%% waterfall or image/contour plot
-            %%% constuct time series histogram
-            for i = 1:numel(H);
-                H{i} = [H{i} H{i}(end)];
-                H{i} = smooth(H{i},3); H{i} = H{i}';
+                %%% waterfall or image/contour plot
+                %%% constuct time series histogram
+                for i = 1:numel(H);
+                    H{i} = [H{i} H{i}(end)];
+                    H{i} = smooth(H{i},3); H{i} = H{i}';
+                end
+                H = vertcat(H{:}); H = H';
+                f = figure('Color',[1 1 1],'Position',[700 100 600 400]);
+                contourf(1:1:size(H,2),xE(1:end),H);
+                colormap(jet);
+                ax = gca;
+                ax.Color = [1 1 1];
+                ax.FontSize = 20;
+                ax.LineWidth = 2;
+                ax.Layer = 'top';
+                ax.YLim = [0,1];
+                ax.Units = 'normalized';
+                ax.Position(3) = 0.6;
+                ax.Units = 'pixels';
+                ylabel('FRET efficiency');
+                xlabel('File Number');
+                text(1.02,ax.YLim(2),legend_entries);
             end
-            H = vertcat(H{:}); H = H';
-            f = figure('Color',[1 1 1],'Position',[700 100 600 400]);
-            contourf(1:1:size(H,2),xE(1:end),H);
-            colormap(jet);
-            ax = gca;
-            ax.Color = [1 1 1];
-            ax.FontSize = 20;
-            ax.LineWidth = 2;
-            ax.Layer = 'top';
-            ax.YLim = [0,1];
-            ax.Units = 'normalized';
-            ax.Position(3) = 0.6;
-            ax.Units = 'pixels';
-            ylabel('FRET efficiency');
-            xlabel('File Number');
-            text(1.02,ax.YLim(2),legend_entries);
-        end
         FigureName = 'Comp_FRETefficiency';
     case 3 
         xE = linspace(-0.1,1,ceil(N_bins*1.1)+1);
@@ -5287,42 +5394,95 @@ switch mode
         %%% take X hist limits
         xlim = h.axes_1d_x.XLim;
         xP = linspace(xlim(1),xlim(2),N_bins+1);
-        for i = 1:numel(P)
-            if valid(i)
-                H{i} = histcounts(P{i},xP);
-                switch UserValues.BurstBrowser.Settings.Normalize_Method
-                    case 'area'
-                        H{i} = H{i}./sum(H{i});
-                    case 'max'
-                        H{i} = H{i}./max(H{i});
+        switch display_mode
+            case 1 % all in one plot
+                for i = 1:numel(P)
+                    if valid(i)
+                        H{i} = histcounts(P{i},xP);
+                        switch UserValues.BurstBrowser.Settings.Normalize_Method
+                            case 'area'
+                                H{i} = H{i}./sum(H{i});
+                            case 'max'
+                                H{i} = H{i}./max(H{i});
+                        end
+                    end
                 end
-            end
+
+                color = lines(numel(H));
+                f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
+                hold on
+                for i = 1:numel(H)
+                    if valid(i)
+                        stairs(xP(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
+                    end
+                end
+                ax = gca;
+                ax.Color = [1 1 1];
+                ax.FontSize = 20;
+                ax.LineWidth = 2;
+                ax.Layer = 'top';
+                ax.XLim = xlim;
+                ax.Units = 'pixels';
+                xlabel(param);
+                ylabel('occurrence (norm.)');
+                legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
+                legend_entries = legend_entries(valid);
+                hl = legend(legend_entries,'fontsize',12,'Box','off');
+                set([f,ax,hl],'Units','pixel');
+                f.Position(4) = f.Position(4)+hl.Position(4);
+                hl.Position(1) = 40;
+                hl.Position(2) = 390;
+            case 2 % all beneath another                
+                for i = 1:numel(P)
+                    if valid(i)
+                        H{i} = histcounts(P{i},xP);                        
+                    end
+                end
+                color = lines(numel(H));
+                f_width = 600; f_height = min(numel(H)*200,800);
+                f = figure('Color',[1 1 1],'Position',[100 100 f_width f_height]);
+                f.Units = 'pixel';
+                offset_x1 = 85;
+                offset_x2 = 10;
+                offset_y1 = 75;
+                offset_y2 = 10;
+                ax_width = f_width - offset_x1 - offset_x2;
+                ax_height = (f_height-offset_y1 - offset_y2)/numel(H);
+                legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
+                legend_entries = legend_entries(valid);
+                for i = 1:numel(H)
+                    ax(i) = axes(f,'Units','pixel','Position',[offset_x1, offset_y1+(i-1)*ax_height, ax_width, ax_height],'TickDir','in',...
+                        'Box','on');
+                    hold on;
+                    bar(xP(1:end)+min(diff(xP))/2,[H{i} H{i}(end)],'FaceColor',color(i,:),'EdgeColor','none','BarWidth',1);
+                    stairs(xP(1:end),[H{i} H{i}(end)],'Color',[0,0,0],'LineWidth',2);
+                    if i > 1
+                        ax(i).XTickLabel = [];
+                        ax(i).YTickLabel{1} = '';
+                    else
+                        xlabel(param);
+                    end
+                    if ispc
+                        ax(i).FontSize = 20/1.4;
+                    else
+                        ax(i).FontSize = 20;
+                    end
+                    if i == 1 && numel(H) > 1
+                        ylabel('Occurrence');
+                        yl = ax(i).YLabel;
+                        yl.Units = 'pixel';
+                        yl.Position(2) = yl.Position(2)+ax_height*(numel(H)-1)/2;
+                        yl.Units = 'norm';
+                    end
+                    ax(i).LineWidth = 2;
+                    ax(i).YLim(2) = max(H{i})*1.1;
+                    ax(i).XLim = xlim;
+                    ax(i).Layer = 'top';
+                    hl(i) = legend(legend_entries(i),'fontsize',12,'Box','off','Location','northwest');
+                end
+                linkaxes(ax,'x');
+                set(ax,'Units','norm');
         end
-        
-        color = lines(numel(H));
-        f = figure('Color',[1 1 1],'Position',[100 100 600 400]);
-        hold on
-        for i = 1:numel(H)
-            if valid(i)
-                stairs(xP(1:end),[H{i} H{i}(end)],'Color',color(i,:),'LineWidth',2);
-            end
-        end
-        ax = gca;
-        ax.Color = [1 1 1];
-        ax.FontSize = 20;
-        ax.LineWidth = 2;
-        ax.Layer = 'top';
-        ax.XLim = xlim;
-        ax.Units = 'pixels';
-        xlabel(param);
-        ylabel('occurrence (norm.)');
-        legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
-        legend_entries = legend_entries(valid);
-        hl = legend(legend_entries,'fontsize',12,'Box','off');
-        set([f,ax,hl],'Units','pixel');
-        f.Position(4) = f.Position(4)+hl.Position(4);
-        hl.Position(1) = 40;
-        hl.Position(2) = 390;
         FigureName = ['Comp_' h.ParameterListX.String{h.ParameterListX.Value}];
         FigureName = strrep(FigureName,' ','_');
 end
@@ -5430,7 +5590,9 @@ switch obj
                 h.Export_To_PDA_Button.Visible = 'off';
                 h.Send_to_TauFit_Button.Visible = 'off';
                 h.Param_comp_selected_Menu.Enable = 'on';
+                set(h.Param_comp_selected_Menu.Children,'Enable','on');
                 h.FRET_comp_selected_Menu.Enable = 'on';
+                set(h.FRET_comp_selected_Menu.Children,'Enable','on');
                 obj.UserData = 1;
                 obj.CData = circshift(obj.CData,[0,0,1]);
             case 1
@@ -5978,8 +6140,12 @@ for i = 1:numel(files)
         timebin = Timebin(i);
         duration = timebin./BurstData{file}.ClockPeriod;
         
-        PDAdata = Bursts_to_Timebins(MT,CH,duration);
-        
+        if timebin ~= 0
+            PDAdata = Bursts_to_Timebins(MT,CH,duration);
+        elseif timebin == 0 %burstwise, get duration array
+            [PDAdata, dur] = Bursts_to_Timebins(MT,CH,duration);
+            dur = double(dur).*BurstData{file}.ClockPeriod;
+        end
         Progress(k/numel(files),h.Progress_Axes,h.Progress_Text,'Exporting...');
         
         %%% Save Brightness Reference?
@@ -6015,10 +6181,20 @@ for i = 1:numel(files)
                 
                 PDA.Corrections = BurstData{file}.Corrections;
                 PDA.Background = BurstData{file}.Background;
+                
+                if timebin == 0% burstwise, save duration array
+                    PDA.Duration = dur;
+                end
                 if save_brightness_reference
                     posS = (strcmp(BurstData{file}.NameArray,'Stoichiometry'));
                     donly = (BurstData{file}.DataArray(:,posS) > 0.95);
-                    DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                    if timebin ~= 0
+                        DOnly_PDA = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                    elseif timebin == 0 %burstwise, get duration array
+                        [DOnly_PDA, DOnly_dur] = Bursts_to_Timebins(BurstTCSPCData{file}.Macrotime(donly),BurstTCSPCData{file}.Channel(donly),duration);
+                        DOnly_dur = DOnly_dur.*BurstData{file}.ClockPeriod;
+                        PDA.BrightnessReference.Duration = DOnly_dur;
+                    end
                     NGP = cellfun(@(x) sum((x==1)),DOnly_PDA);
                     NGS = cellfun(@(x) sum((x==2)),DOnly_PDA);
                     PDA.BrightnessReference.N = NGP + NGS;
@@ -6196,7 +6372,12 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Slice Bursts in time bins for  PDA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function PDAdata = Bursts_to_Timebins(MT,CH,duration)
+function [PDAdata, duration] = Bursts_to_Timebins(MT,CH,duration)
+if duration == 0 % burstwise, simply return channel information
+    PDAdata = CH;
+    duration = cellfun(@(x) x(end)-x(1),MT);
+    return;
+end
 %%% Get the maximum number of bins possible in data set
 max_duration = double(ceil(max(cellfun(@(x) x(end)-x(1),MT))./duration));
 
@@ -13147,6 +13328,11 @@ else
     for i = 1:numel(files)
         data{i} = BurstData{files(i)}.DataArray;
     end
+    %%% check if an files have additional parameters added to the DataArray
+    len = cellfun(@(x) size(x,2),data);
+    if ~(all(len == min(len))) %%% not all same length
+        data = cellfun(@(x) x(:,1:min(len)), data, 'UniformOutput',false);
+    end
     data = vertcat(data{:});
     %%% for future reference: we are assuming that all files have the same
     %%% NameArray!
@@ -14004,8 +14190,10 @@ if BAMethod == 3
     h.Secondary_Tab_Correlation_Standard2CMFD_Menu.Visible = 'off';
     %% Change CutDatabase
     %%% Update string if cuts have been stores
-    if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{2}))
-        h.CutDatabase.String = fieldnames(UserValues.BurstBrowser.CutDatabase{2});
+    if (numel(UserValues.BurstBrowser.CutDatabase) > 1) && ~isempty(UserValues.BurstBrowser.CutDatabase{2})
+        if ~isempty(fieldnames(UserValues.BurstBrowser.CutDatabase{2}))
+            h.CutDatabase.String = fieldnames(UserValues.BurstBrowser.CutDatabase{2});
+        end
     else
         h.CutDatabase.String = {'-'};
     end

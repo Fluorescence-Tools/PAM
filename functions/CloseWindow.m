@@ -41,6 +41,8 @@ switch obj.Tag
          clear global -regexp PDAData PDAMeta
     case 'Particle'
         clear global -regexp ParticleData
+    case 'ParticleViewer'
+        clear global -regexp ParticleViewer PhasorViewer
         
 end
 
@@ -64,6 +66,7 @@ h = cat(1,h, findobj('Tag','TauFit'));
 h = cat(1,h, findobj('Tag','PhasorTIFF'));
 h = cat(1,h, findobj('Tag','GlobalPDAFit'));
 h = cat(1,h, findobj('Tag','Particle'));
+h = cat(1,h, findobj('Tag','ParticleViewer'));
 
 %%% Clears general PAM related global variables when nothing is open
 if isempty(h)
