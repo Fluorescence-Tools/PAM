@@ -438,6 +438,39 @@ h.Particle_Highlight = uicontrol(...
     'Position',[0.02 0.58, 0.28 0.12],...
     'String','Highlight Particle');
 
+%%% Button for basic step-finding
+h.Particle_FindSteps = uicontrol(...
+    'Parent',h.Particle_Control_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback', @FindSteps,...
+    'String', 'Find Steps',...
+    'Position',[0.66 0.86, 0.33 0.12]);
+
+%%% Threshold for step-finding
+h.Particle_StepMethod = uicontrol(...
+    'Parent',h.Particle_Control_Panel,...
+    'Style','popupmenu',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'HorizontalAlignment','left',...
+    'Position',[0.66 0.72, 0.22 0.12],...
+    'String',{'Max Steps', 'Threshold'},...
+    'Value', 1);
+h.Particle_StepThreshold = uicontrol(...
+    'Parent',h.Particle_Control_Panel,...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.89 0.72, 0.1 0.12],...
+    'String','1');
+
 %% Controls for exporting traces
 %%% Export settings table
 TableData = {1, 0, 5, 30, 1.8, 3.0};
@@ -770,13 +803,22 @@ if h.Particle_MovingAverage.Value && Plot_Type <= 4
 end
 p = plot(axes, XValue, YValue, LineSpec);
 
+% Addes steps to mean lifetime plot
+if Plot_Type == 3 && isfield(ParticleViewer, 'Steps') && ~isempty(ParticleViewer.Steps)
+    hold(axes, 'on');
+    h.LFSteps = plot(axes, ParticleViewer.Steps.validIdx{PartNum},...
+        ParticleViewer.Steps.Means{PartNum}, '-c');
+    hold(axes,'off');
+end
+
 % Adds universal circle to phasor plot
 if Plot_Type == 6
-    hold on;
+    hold(axes, 'on');
     x=0:0.001:1; y=0:0.001:1;
     h.Universal_Circle=plot(axes,y,sqrt(y-y.^2),'k','LineStyle','--','Linewidth',2);
-    hold off;
+    hold(axes,'off');
 end
+
 
 % Sets plot properties
 set(axes, Property{:});
@@ -1115,4 +1157,77 @@ for i = Start:Stop
     end
 end
 delete(h.ProgressBar);
+end
+
+function FindSteps(~,~)
+    global ParticleViewer
+    h = guidata(findobj('Tag','ParticleViewer'));
+    ParticleViewer.Steps = struct;
+    
+    %%% Calculate mean lifetime
+    LFmean = (ParticleViewer.TauP + ParticleViewer.TauM)/2;
+    
+    %%% Preallocate variables
+    numPar = size(LFmean,1);
+    TF = cell(numPar, 1);
+    Means = cell(numPar, 1);
+    %Slope = cell(numPar, 1);
+    %Intercept = cell(numPar, 1);
+    outliers = cell(numPar, 1);
+    validIdx = cell(numPar, 1);
+    change = zeros(numPar, 1);
+    
+    %%% Sets the function inputs for ischange
+    switch h.Particle_StepMethod.Value
+        case 1
+            thresType = 'MaxNumChanges';
+        case 2
+            thresType = 'Threshold';
+    end
+    thres = str2double(h.Particle_StepThreshold.String);
+    
+    for i = 1:numPar
+        valid = ~isinf(LFmean(i,:));
+        parData = LFmean(i,valid);
+        validIdx{i} = find(valid);
+        if numel(parData) >= 30
+            % Removes outliers
+            outliers{i} = isoutlier(parData, 'movmedian', 11);
+            validIdx{i} = validIdx{i}(~outliers{i});
+            parData = parData(~outliers{i});
+            % Find change points
+            [TF{i}, Means{i}] = ischange(parData, 2, thresType, thres,...
+                'SamplePoints', validIdx{i});
+            %[TF{i}, Slope{i}, Intercept{i}] = ischange(parData,'linear', 2, thresType, thres,...
+            %    'SamplePoints', validIdx{i});
+            
+            % Find diff between start and end state
+            startState = mode(Means{i}(1:11));
+            endState = mode(Means{i}(end-10:end));
+            change(i) = endState - startState;
+%            changePoints = find(TF{i});
+%             if ~isempty(changePoints)
+%                 startState = mean(Slope{i}(1:changePoints(1)).*validIdx{i}(1:changePoints(1))...
+%                     + Intercept{i}(1:changePoints(1)));
+%                 endState = mean(Slope{i}(changePoints(end):end).*validIdx{i}(changePoints(end):end)...
+%                     + Intercept{i}(changePoints(end):end));
+%                 change(i) = endState - startState;
+%             else
+%                 change(i) = 0;
+%             end
+        else
+            change(i) = NaN;
+        end
+    end
+    
+    ParticleViewer.Steps.TF = TF;
+    ParticleViewer.Steps.Means = Means;
+    %ParticleViewer.Steps.Slope = Slope;
+    %ParticleViewer.Steps.Intercept = Intercept;
+    ParticleViewer.Steps.LFChange = change;
+    ParticleViewer.Steps.validIdx = validIdx;
+    
+    figure('Name', 'Lifetime Change Distribution');
+    histogram(change, -0.7:0.2:0.7, 'normalization', 'probability');
+    ylim([0 0.6]);
 end
