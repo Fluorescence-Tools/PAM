@@ -628,7 +628,7 @@ end
 %%% Update Particle Number and Plot %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Particle_Num(~,~, mode)
-global ParticleViewer UserValues
+global ParticleViewer
 h = guidata(findobj('Tag','ParticleViewer'));
 
 if ~isfield(ParticleViewer, 'Intensity')
