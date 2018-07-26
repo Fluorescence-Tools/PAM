@@ -271,7 +271,6 @@ TableData = {   'Pixel Threshold [Counts]',150;...
 ColumnNames = {'Parameter Name', 'Value'};
 ColumnWidth = {210,70};
 ColumnEditable = [false,true];
-ColumnFormat = {'char','numeric'};
 RowNames = [];
 
 h.Particle_Method_Settings = uitable(...
@@ -283,8 +282,7 @@ h.Particle_Method_Settings = uitable(...
     'ColumnName',ColumnNames,...
     'RowName',RowNames,...
     'ColumnWidth',ColumnWidth,...
-    'ColumnEditable',ColumnEditable,...
-    'ColumnFormat',ColumnFormat);
+    'ColumnEditable',ColumnEditable);
 
 
 h.Particle_Use_External_Mask = uicontrol(...
@@ -1058,244 +1056,234 @@ global ParticleData
 LSUserValues(0);
 
 %%% Is only called for updating the table/info
-if mode == 0
-    
-    
-    %%% Updates Table
-    TableData = {'Threshold Significance [0-1]',0.8;...
-                'Min Photons',50;...
-                'Max Photons',3000;...
-                'Min Size [px]', 10;...
-                'Max Size [px]', 100;...
-                'Wavelet depth' ,3;...
-                'Eccentricity', 0.7;...
-                'Min Track Length [fr]', 2;...
-                'Fill Gaps [Yes/No]', 'Yes'};
-    
-    ColumnNames = {'Parameter Name', 'Value'};
-    
-    h.Particle_Method_Settings.ColumnName = ColumnNames;
-    h.Particle_Method_Settings.Data = TableData;
-    
-    %%% Updates Method information
-    h.Particle_Method_Description.String =['This method uses wavelets to calculate a binary map. '...
-        'Based on this map it uses the matlab "regionprops" function to detect particles. '...
-        'It uses eccentricity filtering for shape detection. ',...
-        'Spot linking is done through Simple Tracker from Jean-Yves Tinevez, ',...
-        'which links particles using the Hungarian algorithm. ',...
-        'Gaps due to missed detections can be filled using linear interpolation. ',...
-        'The data defined within the frame range is used. '];
-    
-    %%% Removed detected particle data
-    if isfield(ParticleData,'Regions')
-        ParticleData = rmfield(ParticleData,'Regions');
-    end
-    if isfield(ParticleData,'Mask')
-        ParticleData = rmfield(ParticleData,'Mask');
-    end
-    if isfield(ParticleData,'Particle')
-        ParticleData = rmfield(ParticleData,'Particle');
-    end
-    Plot_Particle([],[],2,h)
-    return;
-end
+switch mode
+    case 0
+        %%% Updates Table
+        TableData = {'Threshold Significance [0-1]',0.8;...
+                    'Min Photons',10;...
+                    'Max Photons',3000;...
+                    'Min Size [px]', 8;...
+                    'Max Size [px]', 30;...
+                    'Wavelet depth' ,3;...
+                    'Eccentricity', 0.8;...
+                    'Min Track Length [fr]', 2;...
+                    'Fill Gaps', true};
+
+        ColumnNames = {'Parameter Name', 'Value'};
+
+        h.Particle_Method_Settings.ColumnName = ColumnNames;
+        h.Particle_Method_Settings.Data = TableData;
+
+        %%% Updates Method information
+        h.Particle_Method_Description.String =['This method uses wavelets to calculate a binary map. '...
+            'Based on this map it uses the matlab "regionprops" function to detect particles. '...
+            'It uses eccentricity filtering for shape detection. ',...
+            'Spot linking is done through Simple Tracker from Jean-Yves Tinevez, ',...
+            'which links particles using the Hungarian algorithm. ',...
+            'Gaps due to missed detections can be filled using linear interpolation. ',...
+            'The data defined within the frame range is used. '];
+
+        %%% Removed detected particle data
+        if isfield(ParticleData,'Regions')
+            ParticleData = rmfield(ParticleData,'Regions');
+        end
+        if isfield(ParticleData,'Mask')
+            ParticleData = rmfield(ParticleData,'Mask');
+        end
+        if isfield(ParticleData,'Particle')
+            ParticleData = rmfield(ParticleData,'Particle');
+        end
 
 %%% Actual particle detection and averaging
-if mode == 1
-    %% Extracts parameters
-    TH_init = h.Particle_Method_Settings.Data{1,2};
-    MinP = h.Particle_Method_Settings.Data{2,2};
-    MaxP = h.Particle_Method_Settings.Data{3,2};
-    MinSize = h.Particle_Method_Settings.Data{4,2};
-    MaxSize = h.Particle_Method_Settings.Data{5,2};
-    Wavelet = h.Particle_Method_Settings.Data{6,2};
-    Eccent = h.Particle_Method_Settings.Data{7,2};
-    MinLength = h.Particle_Method_Settings.Data{8,2};
-    if strcmpi(h.Particle_Method_Settings.Data{9,2}, 'Yes')...
-            && MinLength >= 2 && h.Particle_Track_Per_Frame.Value
-        FillGaps = true;
-    else
-        FillGaps = false;
-    end
-    
-    From = str2double(h.Particle_Frames_Start.String);
-    To = str2double(h.Particle_Frames_Stop.String);
-    
-    %%% Adjusts frame range to data
-    if To>size(ParticleData.Data.Intensity,3)
-        To = size(ParticleData.Data.Intensity,3);
-        h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
-    end
-    if From > To
-        From = 1;
-        h.Particle_Frames_Start.String = 1;
-    end
-    
-    %% Extracts regions
-    %%% Averages image
-    if h.Particle_Use_External_Mask.Value
-        %%% Used external map if possible
-        if ~isfield(ParticleData,'MaskData') ||...
-                size(ParticleData.MaskData,1)<size(ParticleData.Data.Intensity,1) ||...
-                size(ParticleData.MaskData,2)<size(ParticleData.Data.Intensity,2)
-            
-            Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
-            h.Particle_Use_External_Mask.Value=0;
-        elseif  size(ParticleData.MaskData,3)<To
-            Int = sum(ParticleData.MaskData,3);
-        else
-            Int = sum(ParticleData.MaskData(:,:,From:To),3);
+    case 1
+        %% Extracts parameters
+        TH_init = h.Particle_Method_Settings.Data{1,2};
+        MinP = h.Particle_Method_Settings.Data{2,2};
+        MaxP = h.Particle_Method_Settings.Data{3,2};
+        MinSize = h.Particle_Method_Settings.Data{4,2};
+        MaxSize = h.Particle_Method_Settings.Data{5,2};
+        if MaxSize < MinSize || MaxSize == 0
+            MaxSize = Inf;
         end
-    elseif h.Particle_Track_Per_Frame.Value
-        Int = ParticleData.Data.Intensity(:,:,From:To);
-        thre = 0.5;
-    else
-        %%% Used image directly
-        Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
-        thre = 1;
-    end
-        
-    for f = 1:size(Int,3)
-        %%% Wavelet filter ® P. Messer, 2016
-        w(:,:,1)=Int(:,:,f);
-        Int_f = w;
-        for i = 1:Wavelet-1
-            kern = [1/16,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),3/8,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),1/16]; % Convolution Kernel (a trous)
-            kernsize = numel(kern);
-            new_frame = conv2(kern,kern,padarray(Int_f(:,:,i),[kernsize kernsize],'symmetric'),'same'); % Image gets symmetrical padded to prevent edge effects
-            Int_f(:,:,i+1) = new_frame(kernsize+1:end-kernsize,kernsize+1:end-kernsize); % Crop image to original size
-            tw = Int_f(:,:,i)- Int_f(:,:,i+1); % Get Wavelet
-            %tw2 = abs(tw - median(tw(:))); % Calculate Median Absolute Deviation (MAD)
-            %sig = 2*median(tw2(:)); % Estimate std from MAD with k==3
-            tw(tw<0) = 0; % Remove unsignificant wavelet coefficients
-            w(:,:,i+1) = tw; % Create Wavelet Array
-        end
-        Int_f=w(:,:,Wavelet);
-        
-        %%% Calculates relative threshold
-        TH(f)=round(TH_init.*numel(Int_f));
-        Sorted=sort(Int_f(:));
-        TH(f)=Sorted(TH(f))+thre;
-        
-        %%% Applies threshold
-        BitImage = Int_f > TH(f);
-        
-        %%% Calculates regionprops
-        Regions = regionprops(BitImage,Int(:,:,f),'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues','Centroid');
-        
-        %%% Aborts calculation when no particles were detected
-        if isempty(Regions)
-            msgbox('No particles detected! Please change threshold.');
-            return;
-        end
-        
-        %% Applies region criteria
-        %%% Removes small regions
-        Regions(cat(1, Regions.Area)<MinSize)=[];
-        %%% Removes large regions
-        if MaxSize<MinSize || MaxSize>numel(BitImage)
-            MaxSize = numel(BitImage);
-        end
-        Regions(cat(1, Regions.Area)>MaxSize)=[];
-        
-        %%% Removes dark particles
-        Regions(cat(1, Regions.Area).*cat(1,Regions.MeanIntensity)<MinP)=[];
-        %%% Removes bright particles
+        Wavelet = h.Particle_Method_Settings.Data{6,2};
+        Eccent = h.Particle_Method_Settings.Data{7,2};
+        MinLength = h.Particle_Method_Settings.Data{8,2};
+        FillGaps = h.Particle_Method_Settings.Data{9,2} && MinLength >= 2 &&...
+            h.Particle_Track_Per_Frame.Value;
+
+        %%% Sets max size and intensity to Inf if values don't make sense
         if MaxP<MinP || MaxP==0
-            MaxP = sum(Int_f(:));
+            MaxP = Inf;
         end
-        Regions(cat(1, Regions.Area).*cat(1,Regions.MeanIntensity)>MaxP)=[];
-        
-        %%% Removes eccentric regions
-        Regions(cat(1, Regions.Eccentricity)>Eccent)=[];
-        % XY{f} = cat(1,Regions.Centroid);
-        STATS{f} = Regions;
-        
-        %%% Reformats particle information for Phasor calculation
-        for ii=1:numel(Regions)
-            %ParticleData.Mask(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = true;
-            %ParticleData.Particle(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = ii;
-            STATS{f}(ii).TotalCounts = Regions(ii).MeanIntensity.*Regions(ii).Area;
+        if MaxSize < MinSize || MaxSize == 0
+            MaxSize = Inf;
         end
-    end
-    
-    %% Correct PixelIdxList to apply to the whole stack instead of single frames
-    for i = 1:numel(STATS)
-        for j = 1:numel(STATS{i})
-            STATS{i}(j).PixelIdxList = STATS{i}(j).PixelIdxList + (From+i-2).*(numel(Int_f));
-        end
-    end
-    
-    %% Link spots with SimpleTracker
-    inputPoints = cellfun(@(x) vertcat(x.Centroid), STATS, 'UniformOutput', false);
-    [tracks, adjTracks] = simpletracker(inputPoints,...
-        'MaxGapClosing', str2double(h.Particle_Track_FrameSkip.String),...
-        'MaxLinkingDistance', str2double(h.Particle_Track_MaxDist.String));
-    fn = fieldnames(STATS{1});
-    STATS = cellfun(@struct2cell, STATS, 'UniformOutput', false);
-    STATS = cat(2, STATS{:});
-    STATS = cellfun(@(x) STATS(:, x), adjTracks, 'UniformOutput', false);
-    Part_Array = cell(numel(STATS), size(STATS{1}, 1)+1);
-    for p = 1:numel(STATS)
-        for row = 1:size(STATS{p}, 1)
-            Part_Array{p, row} = cat(1, STATS{p}{row,:});
-        end
-        Part_Array{p, row+1} = find(~isnan(tracks{p}));
-    end
-    
-    %% Remove tracks below minimmum length
-    if h.Particle_Track_Per_Frame.Value
-        cellsize = cellfun('size', Part_Array(:,10), 1);
-        Part_Array(cellsize < MinLength, :) = [];
-    end
-    
-    %% Corrects for frame selection
-    Part_Array (:, 10) = cellfun(@(X) X+From-1, Part_Array(:, 10), 'UniformOutput',false);
 
-    %% Interpolate missing frames
-    if FillGaps
-        Part_Array(:, 2) = cellfun(@(X, Y) interp1(X, Y, [min(X):max(X)]'),...
-            Part_Array(:, 10), Part_Array(:, 2), 'UniformOutput',false); % Centroid
-        Part_Array(:, 3) = cellfun(@(X, Y) interp1(X, Y, [min(X):max(X)]', 'previous'),...
-            Part_Array(:, 10), Part_Array(:, 3), 'UniformOutput',false); % Eccentricity
-        
-        % interpolate roi positions and extract interpolated roi properties
-        % [PixelIdxList, PixelList, PixelValue, MeanInt, MaxInt, TotalCounts]
-        [Part_Array(:, 1), Part_Array(:, 4), Part_Array(:, 5), Part_Array(:, 6), Part_Array(:, 7),...
-            Part_Array(:, 8), Part_Array(:, 9)] = cellfun(@(X, Y) InterpPixel(X, Y, ParticleData.Data.Intensity),...
-            Part_Array(:,4), Part_Array(:, 2), 'UniformOutput',false);
-        
-        Part_Array(:, 10) = cellfun(@(X) (min(X):max(X))', Part_Array(:, 10), 'UniformOutput',false);
-        
-        % removes 
-    end
+        %% Get frame range
+        From = str2double(h.Particle_Frames_Start.String);
+        To = str2double(h.Particle_Frames_Stop.String);
+        %%% Adjusts frame range to data
+        if To>size(ParticleData.Data.Intensity,3)
+            To = size(ParticleData.Data.Intensity,3);
+            h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+        end
+        if From > To
+            From = 1;
+            h.Particle_Frames_Start.String = 1;
+        end
 
-    %% Applies particle selection
-    ParticleData.Regions = cell2struct(Part_Array,[fn;'Frame'],2);
-    ParticleData.Mask = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
-    ParticleData.Particle = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
-    for p = 1:numel(ParticleData.Regions)
-        ParticleData.Mask(ParticleData.Regions(p).PixelIdxList) = true;
-        ParticleData.Particle(ParticleData.Regions(p).PixelIdxList) = p;
-    end
-    
-    Plot_Particle([],[],2,h)
-    %display('Tracking Done');
-    msgbox('Tracking Done');
-    return;
+        %% Extracts regions
+        %%% Averages image
+        if h.Particle_Use_External_Mask.Value
+            %%% Used external map if possible
+            if ~isfield(ParticleData,'MaskData') ||...
+                    size(ParticleData.MaskData,1)<size(ParticleData.Data.Intensity,1) ||...
+                    size(ParticleData.MaskData,2)<size(ParticleData.Data.Intensity,2)
+
+                Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+                h.Particle_Use_External_Mask.Value=0;
+            elseif  size(ParticleData.MaskData,3)<To
+                Int = sum(ParticleData.MaskData,3);
+            else
+                Int = sum(ParticleData.MaskData(:,:,From:To),3);
+            end
+        elseif h.Particle_Track_Per_Frame.Value
+            Int = ParticleData.Data.Intensity(:,:,From:To);
+            thre = 0.5;
+        else
+            %%% Use summed image
+            Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+            thre = 1;
+        end
+
+        STATS = cell(size(Int,3), 1);
+        for f = 1:size(Int,3)
+            %%% Wavelet filter ® P. Messer, 2016
+            w(:,:,1)=Int(:,:,f);
+            Int_f = w;
+            for i = 1:Wavelet-1
+                kern = [1/16,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),3/8,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),1/16]; % Convolution Kernel (a trous)
+                kernsize = numel(kern);
+                new_frame = conv2(kern,kern,padarray(Int_f(:,:,i),[kernsize kernsize],'symmetric'),'same'); % Image gets symmetrical padded to prevent edge effects
+                Int_f(:,:,i+1) = new_frame(kernsize+1:end-kernsize,kernsize+1:end-kernsize); % Crop image to original size
+                tw = Int_f(:,:,i)- Int_f(:,:,i+1); % Get Wavelet
+                %tw2 = abs(tw - median(tw(:))); % Calculate Median Absolute Deviation (MAD)
+                %sig = 2*median(tw2(:)); % Estimate std from MAD with k==3
+                tw(tw<0) = 0; % Remove unsignificant wavelet coefficients
+                w(:,:,i+1) = tw; % Create Wavelet Array
+            end
+            Int_f=w(:,:,Wavelet);
+
+            %%% Calculates relative threshold
+            TH=round(TH_init.*numel(Int_f));
+            Sorted=sort(Int_f(:));
+            TH=Sorted(TH)+thre;
+
+            %%% Applies threshold
+            BitImage = Int_f > TH;
+
+            %%% Calculates regionprops
+            Regions = regionprops(BitImage,Int(:,:,f),'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues','Centroid');
+
+            %%% Aborts calculation when no particles were detected
+            if isempty(Regions)
+                msgbox('No particles detected! Please change threshold.');
+                return;
+            end
+
+            for ii=1:numel(Regions)
+                %%% Calculate total counts
+                Regions(ii).TotalCounts = Regions(ii).MeanIntensity.*Regions(ii).Area;
+
+                %%% Correct PixelIdxList to apply to the whole stack instead of single frames
+                Regions(ii).PixelIdxList = Regions(ii).PixelIdxList + (From+f-2).*(numel(Int_f));
+            end
+
+            %% Applies region criteria
+            %%% Removes small and large regions
+            area = cat(1, Regions.Area);
+            Regions(area < MinSize | area > MaxSize)=[];
+
+            %%% Removes dark and bright particles
+            totalCounts = cat(1, Regions.TotalCounts);
+            Regions(totalCounts < MinP | totalCounts > MaxP)=[];
+
+            %%% Removes eccentric regions
+            Regions(cat(1, Regions.Eccentricity) > Eccent)=[];
+
+            %%% Save in cell array
+            STATS{f} = Regions;
+        end
+
+        %% Link spots with SimpleTracker
+        inputPoints = cellfun(@(x) vertcat(x.Centroid), STATS, 'UniformOutput', false);
+        [tracks, adjTracks] = simpletracker(inputPoints,...
+            'MaxGapClosing', str2double(h.Particle_Track_FrameSkip.String),...
+            'MaxLinkingDistance', str2double(h.Particle_Track_MaxDist.String));
+        regionPropertyNames = fieldnames(STATS{1}); % saves field names
+        STATS = cellfun(@struct2cell, STATS, 'UniformOutput', false);
+        STATS = cat(2, STATS{:});
+        STATS = cellfun(@(x) STATS(:, x), adjTracks, 'UniformOutput', false);
+
+        Part_Array = cell(numel(STATS), size(STATS{1}, 1)+1);
+        for p = 1:numel(STATS)
+            for q = 1:size(STATS{p}, 1)
+                Part_Array{p, q} = cat(1, STATS{p}{q,:});
+            end
+            %%% frames (corrected for frame selection)
+            Part_Array{p, q+1} = find(~isnan(tracks{p})) + From - 1;
+        end
+
+        %% Remove tracks below minimmum length
+        if h.Particle_Track_Per_Frame.Value
+            cellsize = cellfun('size', Part_Array(:,10), 1);
+            Part_Array(cellsize < MinLength, :) = [];
+        end
+
+        %% Fill gaps in tracks
+        if FillGaps
+            Part_Array(:, 2) = cellfun(@(X, Y) interp1(X, Y, (X(1):X(end))'),...
+                Part_Array(:, 10), Part_Array(:, 2), 'UniformOutput',false); % Centroid
+            Part_Array(:, 3) = cellfun(@(X, Y) interp1(X, Y, (X(1):X(end))', 'previous'),...
+                Part_Array(:, 10), Part_Array(:, 3), 'UniformOutput',false); % Eccentricity
+
+            %%% interpolate roi positions and extract interpolated roi properties
+            %%% [Area, PixelIdxList, PixelList, PixelValue, MeanInt, MaxInt, TotalCounts]
+            [Part_Array(:, 1), Part_Array(:, 4), Part_Array(:, 5), Part_Array(:, 6),...
+                Part_Array(:, 7), Part_Array(:, 8), Part_Array(:, 9), Part_Array(:, 10)]...
+                = cellfun(@(X, Y) InterpPixel(X, Y, ParticleData.Data.Intensity),...
+                Part_Array(:,4), Part_Array(:, 2), 'UniformOutput',false);     
+        end
+
+        %% Apply particle selection
+        ParticleData.Regions = cell2struct(Part_Array,[regionPropertyNames;'Frame'],2);
+
+        %%% Generate masks for plotting and phasor calculations
+        ParticleData.Mask = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
+        ParticleData.Particle = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
+        for p = 1:numel(ParticleData.Regions)
+            ParticleData.Mask(ParticleData.Regions(p).PixelIdxList) = true;
+            ParticleData.Particle(ParticleData.Regions(p).PixelIdxList) = p;
+        end
+
+        %display('Tracking Done');
+        msgbox('Tracking Done');
 end
+
+Plot_Particle([],[],2,h)
 
 
 %%% Interpolate particle pixel indices using interpolated centroid positions
-function [interpArea, interpPixelIdx, interpPixelPos, interpPixelValue, interpMeanInt,...
-    interpMaxInt, interpTotalCounts] = InterpPixel(PixelIdxList, Centroid, ImageStack)
+function [interpArea, interpPixelIdx, interpPixelPos, interpPixelValue,...
+    interpMeanInt, interpMaxInt, interpTotalCounts, interpFrames]...
+    = InterpPixel(PixelIdxList, Centroid, ImageStack)
 
 % convert indices to subscript values
 stackSize = size(ImageStack);
 [c(:,1), c(:,2), c(:,3)] = ind2sub(stackSize, PixelIdxList);
 
 % create cell array of pixel positions
-interpFrames = min(c(:,3)) : max(c(:,3));
+interpFrames = (c(1,3):c(end,3))';
 interpPixelPos = cell(numel(interpFrames), 1);
 for i = 1 : numel(interpFrames)
     interpPixelPos{i} = c(c(:,3) == interpFrames(i), :);
@@ -1310,12 +1298,14 @@ for i = 2:numel(interpPixelPos)
 end
 
 % remove out of range indices
-invalidPix = cellfun(@(X) any(X(:, 1:2) >= stackSize(1:2)+0.5, 2) | any(X(:, 1:2) < 0.5, 2), interpPixelPos, 'UniformOutput',false);
+invalidPix = cellfun(@(X) any(X(:, 1:2) >= stackSize(1:2)+0.5, 2) | any(X(:, 1:2) < 0.5, 2), ...
+    interpPixelPos, 'UniformOutput',false);
 interpPixelPos = cellfun(@(X, Y) X(~Y, :), interpPixelPos, invalidPix, 'UniformOutput',false);
 
 % calculate interpolated pixel indices
 interpPixelPos = cellfun(@round, interpPixelPos, 'UniformOutput',false);
-interpPixelIdx = cellfun(@(X) sub2ind(stackSize, X(:,1), X(:,2), X(:,3)), interpPixelPos, 'UniformOutput',false);
+interpPixelIdx = cellfun(@(X) sub2ind(stackSize, X(:,1), X(:,2), X(:,3)),...
+    interpPixelPos, 'UniformOutput',false);
 
 % extract pixel values and roi properties
 interpPixelValue = cellfun(@(X) ImageStack(X), interpPixelIdx, 'UniformOutput',false);
