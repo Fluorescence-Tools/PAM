@@ -1062,14 +1062,16 @@ if mode == 0
     
     
     %%% Updates Table
-    TableData = {   'Threshold Significance [0-1]',0.8;...
-        'Min Photons',50;...
-        'Max Photons',3000;...
-        'Min Size [px]', 10;...
-        'Max Size [px]', 100;...
-        'Wavelet depth' ,3;...
-        'Eccentricity', 0.7;...
-        'Min Track Length [fr]', 1};
+    TableData = {'Threshold Significance [0-1]',0.8;...
+                'Min Photons',50;...
+                'Max Photons',3000;...
+                'Min Size [px]', 10;...
+                'Max Size [px]', 100;...
+                'Wavelet depth' ,3;...
+                'Eccentricity', 0.7;...
+                'Min Track Length [fr]', 2;...
+                'Fill Gaps [Yes/No]', 'Yes'};
+    
     ColumnNames = {'Parameter Name', 'Value'};
     
     h.Particle_Method_Settings.ColumnName = ColumnNames;
@@ -1077,10 +1079,13 @@ if mode == 0
     
     %%% Updates Method information
     h.Particle_Method_Description.String =['This method uses wavelets to calculate a binary map. '...
-        'Gaussian filtering is applied before thresholding. '....
         'Based on this map it uses the matlab "regionprops" function to detect particles. '...
         'It uses eccentricity filtering for shape detection. ',...
+        'Spot linking is done through Simple Tracker from Jean-Yves Tinevez, ',...
+        'which links particles using the Hungarian algorithm. ',...
+        'Gaps due to missed detections can be filled using linear interpolation. ',...
         'The data defined within the frame range is used. '];
+    
     %%% Removed detected particle data
     if isfield(ParticleData,'Regions')
         ParticleData = rmfield(ParticleData,'Regions');
@@ -1106,6 +1111,12 @@ if mode == 1
     Wavelet = h.Particle_Method_Settings.Data{6,2};
     Eccent = h.Particle_Method_Settings.Data{7,2};
     MinLength = h.Particle_Method_Settings.Data{8,2};
+    if strcmpi(h.Particle_Method_Settings.Data{9,2}, 'Yes')...
+            && MinLength >= 2 && h.Particle_Track_Per_Frame.Value
+        FillGaps = true;
+    else
+        FillGaps = false;
+    end
     
     From = str2double(h.Particle_Frames_Start.String);
     To = str2double(h.Particle_Frames_Stop.String);
@@ -1143,7 +1154,7 @@ if mode == 1
         Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
         thre = 1;
     end
-    
+        
     for f = 1:size(Int,3)
         %%% Wavelet filter ® P. Messer, 2016
         w(:,:,1)=Int(:,:,f);
@@ -1199,60 +1210,37 @@ if mode == 1
         Regions(cat(1, Regions.Eccentricity)>Eccent)=[];
         % XY{f} = cat(1,Regions.Centroid);
         STATS{f} = Regions;
-        ParticleData.Mask(:,:,f) = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
-        ParticleData.Particle(:,:,f) = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2));
+        
         %%% Reformats particle information for Phasor calculation
         for ii=1:numel(Regions)
-            ParticleData.Mask(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = true;
-            ParticleData.Particle(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = ii;
+            %ParticleData.Mask(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = true;
+            %ParticleData.Particle(Regions(ii).PixelIdxList+((f-1).*numel(Int_f))) = ii;
             STATS{f}(ii).TotalCounts = Regions(ii).MeanIntensity.*Regions(ii).Area;
         end
     end
-    %% Concatenate Particles
-    % out = cellfun(@(x) horzcat(x(1:2),1,NaN),mat2cell(cat(1,ParticleData.Regions{1}.Centroid),ones(size(cat(1,ParticleData.Regions{1}.Centroid),1),1),2),'UniformOutput',false);
-    Part_Array = struct2cell(STATS{1})';
-    Part_Array(:,4) = cellfun(@(x)x+(From-1).*(numel(Int_f)),Part_Array(:,4),'UniformOutput',false); % Correct PixelIdxList to apply to the whole stack instead of single frames;
-    Part_Array(:,end+1) = num2cell(ones(size(Part_Array,1),1),2);
-    Part_Idx = num2cell([(1:size(Part_Array,1))',ones(size(Part_Array,1),1)],2);
-    if numel(STATS)==1
-        for f = 1:size(Part_Array,1)
-            Part_Array(f,1) = {repmat(Part_Array{f,1},To-From+1,1)}; %Area
-            Part_Array(f,2) = {repmat(Part_Array{f,2},To-From+1,1)}; %Centroid
-            Part_Array(f,3) = {repmat(Part_Array{f,3},To-From+1,1)}; %Eccentricity
-            Part_Array(f,4) = {repmat(Part_Array{f,4},To-From+1,1)+repelem(((From:To)-1)'.*numel(Int_f),numel(Part_Array{f,4}))}; %PixelIdxList
-            Part_Array(f,5) = {repmat(Part_Array{f,5},To-From+1,1)}; %PixelList
-            Part_Array(f,6) = {ParticleData.Data.Intensity(Part_Array{f,4})}; %PixelValues
-            Part_Array(f,7) = {mean(reshape(ParticleData.Data.Intensity(Part_Array{f,4}),[],To-From+1),1)'}; %MeanIntensity
-            Part_Array(f,8) = {max(reshape(ParticleData.Data.Intensity(Part_Array{f,4}),[],To-From+1),[],1)'}; %MaxIntensity
-            Part_Array(f,9) = {Part_Array{f,1}.*Part_Array{f,7}}; %TotalCounts
-            Part_Array(f,10) = {From:To}; %Frame
+    
+    %% Correct PixelIdxList to apply to the whole stack instead of single frames
+    for i = 1:numel(STATS)
+        for j = 1:numel(STATS{i})
+            STATS{i}(j).PixelIdxList = STATS{i}(j).PixelIdxList + (From+i-2).*(numel(Int_f));
         end
-
-    else
-        for i = 2:numel(STATS)
-            %XY = cat(1,ParticleData.Regions{i}.Centroid);
-            new_frame = struct2cell(STATS{i})'; % read new data
-            new_frame(:,4) = cellfun(@(x)x+(From+i-2).*(numel(Int_f)),new_frame(:,4),'UniformOutput',false); % Correct PixelIdxList to apply to the whole stack instead of single frames;
-            new_frame(:,end+1) = deal({i});
-            t_idx = cell2mat(cellfun(@(x)(i-x(end,2))<=str2double(h.Particle_Track_FrameSkip.String),Part_Idx,'UniformOutput',false)); % Temporal Connectivity
-            Frame_Array = Part_Array(t_idx,:); %Subset of valid particles
-            Frame_Idx = Part_Idx(t_idx); %Subset of particle/frame indices
-            % [D,I] = pdist2(cell2mat(cellfun(@(x)x(end,1:2),tout,'UniformOutput',false)),XY,'euclidean','Smallest',1);
-            [D,I] = pdist2(cell2mat(cellfun(@(x)x(end,1:2),Frame_Array(:,2),'UniformOutput',false)),cat(1,new_frame{:,2}),'euclidean','Smallest',1);
-            d = (D(:)<=str2double(h.Particle_Track_MaxDist.String)); % Distances below tolerance (true successive particles)
-            D = D';
-            I = I';
-            if any(d)
-                %tout(I(d)) = arrayfun(@(x,y,z,a) vertcat(tout{x},[y z i a]),I(d),XY(d,1),XY(d,2),D(d),'UniformOutput',false);
-                Frame_Array(I(d),:) = cellfun(@(x,y)[x;y],Frame_Array(I(d),:),new_frame(d,:),'UniformOutput',false);
-                Frame_Idx(I(d)) = arrayfun(@(x,y) vertcat(Frame_Idx{x},[y,i]),I(d),find(d),'UniformOutput',false);
-                Part_Idx(t_idx) = Frame_Idx;
-            end
-            Part_Idx = [Part_Idx;num2cell([find(~d),repmat(i,sum(~d),1)],2)];
-            Part_Array(t_idx,:) = Frame_Array;
-            Part_Array = cat(1,Part_Array,new_frame(~d,:));
+    end
+    
+    %% Link spots with SimpleTracker
+    inputPoints = cellfun(@(x) vertcat(x.Centroid), STATS, 'UniformOutput', false);
+    [tracks, adjTracks] = simpletracker(inputPoints,...
+        'MaxGapClosing', str2double(h.Particle_Track_FrameSkip.String),...
+        'MaxLinkingDistance', str2double(h.Particle_Track_MaxDist.String));
+    fn = fieldnames(STATS{1});
+    STATS = cellfun(@struct2cell, STATS, 'UniformOutput', false);
+    STATS = cat(2, STATS{:});
+    STATS = cellfun(@(x) STATS(:, x), adjTracks, 'UniformOutput', false);
+    Part_Array = cell(numel(STATS), size(STATS{1}, 1)+1);
+    for p = 1:numel(STATS)
+        for row = 1:size(STATS{p}, 1)
+            Part_Array{p, row} = cat(1, STATS{p}{row,:});
         end
-          
+        Part_Array{p, row+1} = find(~isnan(tracks{p}));
     end
     
     %% Remove tracks below minimmum length
@@ -1260,13 +1248,37 @@ if mode == 1
         cellsize = cellfun('size', Part_Array(:,10), 1);
         Part_Array(cellsize < MinLength, :) = [];
     end
+    
     %% Corrects for frame selection
     Part_Array (:, 10) = cellfun(@(X) X+From-1, Part_Array(:, 10), 'UniformOutput',false);
-    ParticleData.Mask = cat(3, false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Mask);
-    ParticleData.Particle = cat(3, zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Particle);
-    
+
+    %% Interpolate missing frames
+    if FillGaps
+        Part_Array(:, 2) = cellfun(@(X, Y) interp1(X, Y, [min(X):max(X)]'),...
+            Part_Array(:, 10), Part_Array(:, 2), 'UniformOutput',false); % Centroid
+        Part_Array(:, 3) = cellfun(@(X, Y) interp1(X, Y, [min(X):max(X)]', 'previous'),...
+            Part_Array(:, 10), Part_Array(:, 3), 'UniformOutput',false); % Eccentricity
+        
+        % interpolate roi positions and extract interpolated roi properties
+        % [PixelIdxList, PixelList, PixelValue, MeanInt, MaxInt, TotalCounts]
+        [Part_Array(:, 1), Part_Array(:, 4), Part_Array(:, 5), Part_Array(:, 6), Part_Array(:, 7),...
+            Part_Array(:, 8), Part_Array(:, 9)] = cellfun(@(X, Y) InterpPixel(X, Y, ParticleData.Data.Intensity),...
+            Part_Array(:,4), Part_Array(:, 2), 'UniformOutput',false);
+        
+        Part_Array(:, 10) = cellfun(@(X) (min(X):max(X))', Part_Array(:, 10), 'UniformOutput',false);
+        
+        % removes 
+    end
+
     %% Applies particle selection
-    ParticleData.Regions = cell2struct(Part_Array,[fieldnames(STATS{1});'Frame'],2);
+    ParticleData.Regions = cell2struct(Part_Array,[fn;'Frame'],2);
+    ParticleData.Mask = false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
+    ParticleData.Particle = zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), To);
+    for p = 1:numel(ParticleData.Regions)
+        ParticleData.Mask(ParticleData.Regions(p).PixelIdxList) = true;
+        ParticleData.Particle(ParticleData.Regions(p).PixelIdxList) = p;
+    end
+    
     Plot_Particle([],[],2,h)
     %display('Tracking Done');
     msgbox('Tracking Done');
@@ -1274,6 +1286,49 @@ if mode == 1
 end
 
 
+%%% Interpolate particle pixel indices using interpolated centroid positions
+function [interpArea, interpPixelIdx, interpPixelPos, interpPixelValue, interpMeanInt,...
+    interpMaxInt, interpTotalCounts] = InterpPixel(PixelIdxList, Centroid, ImageStack)
+
+% convert indices to subscript values
+stackSize = size(ImageStack);
+[c(:,1), c(:,2), c(:,3)] = ind2sub(stackSize, PixelIdxList);
+
+% create cell array of pixel positions
+interpFrames = min(c(:,3)) : max(c(:,3));
+interpPixelPos = cell(numel(interpFrames), 1);
+for i = 1 : numel(interpFrames)
+    interpPixelPos{i} = c(c(:,3) == interpFrames(i), :);
+end
+
+% fill in missing pixel positions using interpolated centroids
+for i = 2:numel(interpPixelPos)
+    if isempty(interpPixelPos{i})
+        interpPixelPos{i} = interpPixelPos{i-1}(:,1:2) + fliplr(Centroid(i,:)-Centroid(i-1,:));
+        interpPixelPos{i}(:,3) = interpPixelPos{i-1}(:,3) + 1;
+    end
+end
+
+% remove out of range indices
+invalidPix = cellfun(@(X) any(X(:, 1:2) >= stackSize(1:2)+0.5, 2) | any(X(:, 1:2) < 0.5, 2), interpPixelPos, 'UniformOutput',false);
+interpPixelPos = cellfun(@(X, Y) X(~Y, :), interpPixelPos, invalidPix, 'UniformOutput',false);
+
+% calculate interpolated pixel indices
+interpPixelPos = cellfun(@round, interpPixelPos, 'UniformOutput',false);
+interpPixelIdx = cellfun(@(X) sub2ind(stackSize, X(:,1), X(:,2), X(:,3)), interpPixelPos, 'UniformOutput',false);
+
+% extract pixel values and roi properties
+interpPixelValue = cellfun(@(X) ImageStack(X), interpPixelIdx, 'UniformOutput',false);
+interpArea = cellfun(@numel, interpPixelIdx);
+interpMeanInt = cellfun(@mean, interpPixelValue);
+interpMaxInt = cellfun(@max, interpPixelValue);
+interpTotalCounts = interpArea .* interpMeanInt;
+
+% formats output
+interpPixelPos = cat(1, interpPixelPos{:});
+interpPixelPos = fliplr(interpPixelPos(:, 1:2));
+interpPixelIdx = cat(1, interpPixelIdx{:});
+interpPixelValue = cat(1, interpPixelValue{:});
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
