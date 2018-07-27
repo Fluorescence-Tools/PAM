@@ -1083,7 +1083,9 @@ switch mode
             'Gaps due to missed detections can be filled using linear interpolation. ',...
             'The data defined within the frame range is used. '];
 
-        %%% Removed detected particle data
+%%% Actual particle detection and averaging
+    case 1
+        %% Removed detected particle data
         if isfield(ParticleData,'Regions')
             ParticleData = rmfield(ParticleData,'Regions');
         end
@@ -1093,9 +1095,7 @@ switch mode
         if isfield(ParticleData,'Particle')
             ParticleData = rmfield(ParticleData,'Particle');
         end
-
-%%% Actual particle detection and averaging
-    case 1
+        
         %% Extracts parameters
         TH_init = h.Particle_Method_Settings.Data{1,2};
         MinP = h.Particle_Method_Settings.Data{2,2};
@@ -1155,35 +1155,38 @@ switch mode
             Int = sum(ParticleData.Data.Intensity(:,:,From:To),3);
             thre = 1;
         end
-
-        STATS = cell(size(Int,3), 1);
-        for f = 1:size(Int,3)
+        
+        %% Get image size data
+        [H, W, nFrames] = size(Int);
+        thrIdx = round(TH_init*H*W); % index of threshold
+        
+        %% Extract properties of detected regions
+        STATS = cell(nFrames, 1);
+        for f = 1:nFrames
+        
             %%% Wavelet filter ® P. Messer, 2016
-            w(:,:,1)=Int(:,:,f);
-            Int_f = w;
+            tempInt = Int(:,:,f);
             for i = 1:Wavelet-1
-                kern = [1/16,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),3/8,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),1/16]; % Convolution Kernel (a trous)
-                kernsize = numel(kern);
-                new_frame = conv2(kern,kern,padarray(Int_f(:,:,i),[kernsize kernsize],'symmetric'),'same'); % Image gets symmetrical padded to prevent edge effects
-                Int_f(:,:,i+1) = new_frame(kernsize+1:end-kernsize,kernsize+1:end-kernsize); % Crop image to original size
-                tw = Int_f(:,:,i)- Int_f(:,:,i+1); % Get Wavelet
-                %tw2 = abs(tw - median(tw(:))); % Calculate Median Absolute Deviation (MAD)
-                %sig = 2*median(tw2(:)); % Estimate std from MAD with k==3
-                tw(tw<0) = 0; % Remove unsignificant wavelet coefficients
-                w(:,:,i+1) = tw; % Create Wavelet Array
+                % Convolution Kernel (a trous)
+                kern = [1/16,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),...
+                    3/8,zeros(1,2^(i-1)-1),1/4,zeros(1,2^(i-1)-1),1/16];
+                
+                % Perform convolution
+                newInt = imfilter(tempInt, kern.*kern', 'symmetric', 'same', 'conv');
+                
+                wavIm = tempInt - newInt;
+                
+                % use convolution result for next loop
+                tempInt = newInt;
             end
-            Int_f=w(:,:,Wavelet);
-
-            %%% Calculates relative threshold
-            TH=round(TH_init.*numel(Int_f));
-            Sorted=sort(Int_f(:));
-            TH=Sorted(TH)+thre;
-
-            %%% Applies threshold
-            BitImage = Int_f > TH;
-
+            
+            wavIm(wavIm < 0) = 0; % Remove non-significant wavelet coefficients
+            sortedIm = sort(wavIm(:));
+            thres = sortedIm(thrIdx,:) + thre;
+            BitImage = wavIm > thres;
+            
             %%% Calculates regionprops
-            Regions = regionprops(BitImage,Int(:,:,f),'eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues','Centroid');
+            Regions = regionprops(BitImage,Int(:,:,f),'Eccentricity', 'PixelList','Area','PixelIdxList','MaxIntensity','MeanIntensity','PixelValues','Centroid');
 
             %%% Aborts calculation when no particles were detected
             if isempty(Regions)
@@ -1196,7 +1199,7 @@ switch mode
                 Regions(ii).TotalCounts = Regions(ii).MeanIntensity.*Regions(ii).Area;
 
                 %%% Correct PixelIdxList to apply to the whole stack instead of single frames
-                Regions(ii).PixelIdxList = Regions(ii).PixelIdxList + (From+f-2).*(numel(Int_f));
+                Regions(ii).PixelIdxList = Regions(ii).PixelIdxList + (From+f-2)*(H*W);
             end
 
             %% Applies region criteria
@@ -1282,36 +1285,45 @@ function [interpArea, interpPixelIdx, interpPixelPos, interpPixelValue,...
 stackSize = size(ImageStack);
 [c(:,1), c(:,2), c(:,3)] = ind2sub(stackSize, PixelIdxList);
 
-% create cell array of pixel positions
+% preallocate variables
 interpFrames = (c(1,3):c(end,3))';
-interpPixelPos = cell(numel(interpFrames), 1);
-for i = 1 : numel(interpFrames)
-    interpPixelPos{i} = c(c(:,3) == interpFrames(i), :);
-end
+nFrames = interpFrames(end) - interpFrames(1) + 1;
+interpPixelPos = cell(nFrames, 1);
+interpPixelIdx = cell(nFrames, 1);
+interpPixelValue = cell(nFrames, 1);
+interpArea = zeros(nFrames, 1);
+interpMeanInt = zeros(nFrames, 1);
+interpMaxInt = zeros(nFrames, 1);
 
 % fill in missing pixel positions using interpolated centroids
-for i = 2:numel(interpPixelPos)
-    if isempty(interpPixelPos{i})
+for i = 1 : nFrames
+    interpPixelPos{i} = c(c(:,3) == interpFrames(i), :);
+    if i >= 2 && isempty(interpPixelPos{i})
         interpPixelPos{i} = interpPixelPos{i-1}(:,1:2) + fliplr(Centroid(i,:)-Centroid(i-1,:));
         interpPixelPos{i}(:,3) = interpPixelPos{i-1}(:,3) + 1;
     end
 end
 
-% remove out of range indices
-invalidPix = cellfun(@(X) any(X(:, 1:2) >= stackSize(1:2)+0.5, 2) | any(X(:, 1:2) < 0.5, 2), ...
-    interpPixelPos, 'UniformOutput',false);
-interpPixelPos = cellfun(@(X, Y) X(~Y, :), interpPixelPos, invalidPix, 'UniformOutput',false);
+% extract information from valid indices
+for i = 1:nFrames
+    % remove out of range indices
+    validPix = all(interpPixelPos{i}(:, 1:2) >= 0.5 & interpPixelPos{i}(:, 1:2) < stackSize(1:2)+0.5, 2);
+    interpPixelPos{i} = interpPixelPos{i}(validPix,:);
+    
+    % calculate interpolated pixel indices
+    interpPixelPos{i} = round(interpPixelPos{i});
+    interpPixelIdx{i} = sub2ind(stackSize, interpPixelPos{i}(:,1),...
+        interpPixelPos{i}(:,2), interpPixelPos{i}(:,3));
+    
+    % extract pixel values and roi properties
+    interpPixelValue{i} = ImageStack(interpPixelIdx{i});
+    interpArea(i) = length(interpPixelValue{i});
+    interpMeanInt(i) = mean(interpPixelValue{i});
+    interpMaxInt(i) = max(interpPixelValue{i});
 
-% calculate interpolated pixel indices
-interpPixelPos = cellfun(@round, interpPixelPos, 'UniformOutput',false);
-interpPixelIdx = cellfun(@(X) sub2ind(stackSize, X(:,1), X(:,2), X(:,3)),...
-    interpPixelPos, 'UniformOutput',false);
+end
 
-% extract pixel values and roi properties
-interpPixelValue = cellfun(@(X) ImageStack(X), interpPixelIdx, 'UniformOutput',false);
-interpArea = cellfun(@numel, interpPixelIdx);
-interpMeanInt = cellfun(@mean, interpPixelValue);
-interpMaxInt = cellfun(@max, interpPixelValue);
+% calculate total counts
 interpTotalCounts = interpArea .* interpMeanInt;
 
 % formats output
