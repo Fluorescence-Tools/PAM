@@ -293,10 +293,13 @@ h.Particle_Display_Type = uicontrol(...
     'String',{  'Mask only',...
     'Mask overlay',...
     'Mask gray/red',...
-    'Mask magenta/green'});
+    'Mask magenta/green',...
+    'Particles only',...
+    'Particles overlay',...
+    'Particles gray/jet'});
 
-%%% Controls for exporting image plot
-h.Particle_Export = uicontrol(...
+%%% Button to re-extract phasor data
+h.Particle_ReExtractPhasor = uicontrol(...
     'Parent',h.Plot_Control_Panel,...
     'Units','normalized',...
     'FontSize',12,...
@@ -307,6 +310,31 @@ h.Particle_Export = uicontrol(...
     'TooltipString', ['Re-extract particlewise phasor data from '...
           'currently loaded framewise phasor data'],...
     'Position',[0.57 0.71, 0.38 0.14]);
+
+%%% Button to interpolate particle positions
+h.Particle_FillGaps = uicontrol(...
+    'Parent',h.Plot_Control_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback', @Fill_Gaps,...
+    'String', 'Fill Gaps',...
+    'TooltipString', ['Fill gaps in particle tracks by '...
+          'linear interpolation of particle positions. '...
+          'Phasor data is automatically re-extracted. '],...
+    'Position',[0.57 0.56, 0.38 0.14]);
+
+%%% Button to save particle data
+h.Particle_SaveData = uicontrol(...
+    'Parent',h.Plot_Control_Panel,...
+    'Units','normalized',...
+    'FontSize',12,...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Callback', @Save_Data,...
+    'String', 'Save Particle Data',...
+    'Position',[0.57 0.41, 0.38 0.14]);
 
 %%% Controls for exporting image plot
 h.Particle_Export = uicontrol(...
@@ -528,6 +556,8 @@ end
 
 %Update plot
 Mask = ParticleViewer.Mask(:,:,Frame);
+Particle = ParticleViewer.Particle(:,:,Frame);
+
 if isfield(PhasorViewer, 'Intensity')
     Int = PhasorViewer.Intensity(:,:,Frame);
 else
@@ -567,25 +597,25 @@ switch h.Particle_Display_Type.Value
         Image = repmat(Int.*Mask,[1 1 3]);
         Image(:,:,2) = Int.*~Mask;
 
-%     case 5 %%% Particles only
-%         %%% Particles colored with jet
-%         Color = [0,0,0; jet(max(Particle(:)))];
-%         Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3);
-%     case 6 %%% Particles overlay
-%         %%% Scales Intensity image
-%         Int=(Int-Min)/(Max-Min);
-%         %%% Sets particles to homogeneous jet color
-%         Color = [0,0,0; jet(max(Particle(:)))];
-%         Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3);
-%         %%% Sets non-particles to grayscale
-%         Image = repmat(Int.*~Particle,[1 1 3])+Image;
-% 
-%     case 7 %%% Particles gray/jet
-%         %%% Scales Intensity image
-%         Int=(Int-Min)/(Max-Min);
-%         %%% Sets particles to scaled jet and rest to gray scale
-%         Color = [1 1 1 ; jet(max(Particle(:)))];
-%         Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3).*repmat(Int,[1 1 3]);
+    case 5 %%% Particles only
+        %%% Particles colored with jet
+        Color = [0,0,0; jet(max(Particle(:)))];
+        Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3);
+    case 6 %%% Particles overlay
+        %%% Scales Intensity image
+        Int=(Int-Min)/(Max-Min);
+        %%% Sets particles to homogeneous jet color
+        Color = [0,0,0; jet(max(Particle(:)))];
+        Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3);
+        %%% Sets non-particles to grayscale
+        Image = repmat(Int.*~Particle,[1 1 3])+Image;
+
+    case 7 %%% Particles gray/jet
+        %%% Scales Intensity image
+        Int=(Int-Min)/(Max-Min);
+        %%% Sets particles to scaled jet and rest to gray scale
+        Color = [1 1 1 ; jet(max(Particle(:)))];
+        Image=reshape(Color(Particle+1,:),size(Int,1),size(Int,2),3).*repmat(Int,[1 1 3]);
 end
 
 %Update plot
@@ -600,15 +630,16 @@ delete(findobj(h.Particle_Display.Children, 'type', 'line'));
 if h.Particle_ShowLabel.Value
     XOffset = str2double(h.Particle_LabelXOffset.String);
     YOffset = str2double(h.Particle_LabelYOffset.String);
-    Particles = find(ParticleViewer.ParticlesOnFrame(Frame, :));
-    for i = 1:numel(Particles)
-        coord = ParticleViewer.Regions(Particles(i)).Centroid(ParticleViewer.Regions(Particles(i)).Frame == Frame, :);
-        if size(ParticleViewer.Regions(Particles(i)).Centroid, 1) >= str2double(h.Particle_LabelMin.String)
-           if ParticleViewer.Highlight(Particles(i))
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'yellow');
-               line(h.Particle_Display, ParticleViewer.Regions(Particles(i)).Centroid(:, 1), ParticleViewer.Regions(Particles(i)).Centroid(:,2), 'Color','yellow');
+    ParticleList = unique(Particle(Particle > 0));
+    for i = 1: numel(ParticleList)
+        p = ParticleList(i);
+        coord = ParticleViewer.Regions(p).Centroid(ParticleViewer.Regions(p).Frame == Frame, :);
+        if size(ParticleViewer.Regions(p).Centroid, 1) >= str2double(h.Particle_LabelMin.String)
+           if ParticleViewer.Highlight(p)
+               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'yellow');
+               line(h.Particle_Display, ParticleViewer.Regions(p).Centroid(:, 1), ParticleViewer.Regions(p).Centroid(:,2), 'Color','yellow');
            else
-               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(Particles(i)), 'Color', 'red');
+               text(h.Particle_Display, coord(1) + XOffset, coord(2) - YOffset, num2str(p), 'Color', 'red');
            end
         end
 
@@ -833,7 +864,9 @@ function Extract_Particle_Phasor(~,~)
 global ParticleViewer PhasorViewer
 
 %%% Stops execution if data is not complete
-if isempty(ParticleViewer) || isempty(ParticleViewer) || ~isfield(ParticleViewer,'Regions')
+if ~isfield(ParticleViewer, 'Regions') || ~isfield(PhasorViewer, 'Intensity') ||...
+        ~isfield(PhasorViewer, 'g') || ~isfield(PhasorViewer, 's')
+    f = msgbox('Required particle or phasor image data not loaded.', 'Error','error');
     return;
 end
 
@@ -883,6 +916,73 @@ ParticleViewer.TauM(isnan(ParticleViewer.TauM)) = 0;
 
 end
 
+function Fill_Gaps(~,~)
+global ParticleViewer PhasorViewer
+if ~isfield(ParticleViewer, 'Regions') || ~isfield(PhasorViewer, 'Intensity')
+    f = msgbox('Required particle or phasor image data not loaded.', 'Error','error');
+    return;
+end
+
+Regions = ParticleViewer.Regions;
+for i = 1:numel(Regions)
+    if size(Regions(i).Frame, 1) > 1
+        Regions(i).Centroid = interp1(Regions(i).Frame, Regions(i).Centroid,...
+            (Regions(i).Frame(1):Regions(i).Frame(end))');
+        Regions(i).Eccentricity = interp1(Regions(i).Frame, Regions(i).Eccentricity,...
+            (Regions(i).Frame(1):Regions(i).Frame(end))', 'previous');
+        %%% interpolate roi positions and extract interpolated roi properties
+        %%% [Area, PixelIdxList, PixelList, PixelValue, MeanInt, MaxInt, TotalCounts, Frame]
+        [Regions(i).Area, Regions(i).PixelIdxList, Regions(i).PixelList,...
+            Regions(i).PixelValues, Regions(i).MeanIntensity,...
+            Regions(i).MaxIntensity, Regions(i).TotalCounts, Regions(i).Frame]...
+            = InterpPixel(Regions(i).PixelIdxList, Regions(i).Centroid, PhasorViewer.Intensity);
+    end
+    ParticleViewer.Mask(Regions(i).PixelIdxList) = true;
+    ParticleViewer.Particle(Regions(i).PixelIdxList) = i;
+end
+
+ParticleViewer.Regions = Regions;
+
+Extract_Particle_Phasor();
+end
+
+function Save_Data(~,~)
+global ParticleViewer
+%%% Stops execution if data is not complete
+if isempty(ParticleViewer)
+    return;
+end
+
+%%% Select file names for saving
+[FileName,PathName] = uiputfile('*.phr','Save Particle Data', fullfile(ParticleViewer.Path, ParticleViewer.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if isequal(FileName, 0) || isequal(PathName, 0)
+    return
+end
+
+g = ParticleViewer.g;
+s = ParticleViewer.s;
+Mean_LT = ParticleViewer.Mean_LT;
+Fi = ParticleViewer.Fi;
+M = ParticleViewer.M;
+TauP = ParticleViewer.TauP;
+TauM = ParticleViewer.TauM;
+Intensity = ParticleViewer.Intensity;
+Lines = ParticleViewer.Lines;
+Pixels = ParticleViewer.Pixels;
+Freq = ParticleViewer.Freq;
+Imagetime = ParticleViewer.Imagetime;
+Frames = ParticleViewer.Frames;
+FileNames = ParticleViewer.FileNames;
+Path = ParticleViewer.Path;
+Type = ParticleViewer.Type;
+Regions = ParticleViewer.Regions;
+
+save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM',...
+    'Intensity','Lines','Pixels','Freq','Imagetime','Frames',...
+    'FileNames','Path','Type','Regions');
+end
+
 %%% Load Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Load_Data(~,~, mode)
@@ -923,6 +1023,7 @@ switch mode
 %             h.Particle_FrameSlider.Value=1;
 %         else
             ParticleViewer.Mask = false(ParticleViewer.Lines, ParticleViewer.Pixels, size(ParticleViewer.Intensity,2));
+            ParticleViewer.Particle = zeros(size(ParticleViewer.Mask));
             %%% Adjusts slider and frame range
             h.Particle_FrameSlider.Min=1;
             h.Particle_FrameSlider.Max=size(ParticleViewer.Intensity,2);
@@ -933,10 +1034,10 @@ switch mode
             h.Particle_Display.XLim = [0.5 size(ParticleViewer.Mask,2)+0.5];
             h.Particle_Display.YLim = [0.5 size(ParticleViewer.Mask,1)+0.5];
 %         end
-        ParticleViewer.ParticlesOnFrame = false(size(ParticleViewer.Intensity, 2), numel(ParticleViewer.Regions));
+        
         for i = 1:numel(ParticleViewer.Regions)
-            ParticleViewer.Mask(ParticleViewer.Regions(i).PixelIdxList)=true;
-            ParticleViewer.ParticlesOnFrame(ParticleViewer.Regions(i).Frame, i) = true;
+            ParticleViewer.Mask(ParticleViewer.Regions(i).PixelIdxList) = true;
+            ParticleViewer.Particle(ParticleViewer.Regions(i).PixelIdxList) = i;
         end
         
         % Resets highlighted particles
