@@ -1180,7 +1180,12 @@ switch mode
                 tempInt = newInt;
             end
             
-            wavIm(wavIm < 0) = 0; % Remove non-significant wavelet coefficients
+            %%% threshold with median absolute deviation
+            medianAD = median(abs(wavIm(:)-median(wavIm(:)))); % Median Absolute Deviation
+            sigma = medianAD/0.67; % std estimate from MAD
+            wavIm(wavIm < 3*sigma) = 0; % Remove non-significant wavelet coefficients (k = 3)
+            
+            %%% Apply user-specified threshold
             sortedIm = sort(wavIm(:));
             thres = sortedIm(thrIdx,:) + thre;
             BitImage = wavIm > thres;
