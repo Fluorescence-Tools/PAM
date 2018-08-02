@@ -229,32 +229,30 @@ function [ tracks adjacency_tracks A ] = simpletracker(points, varargin)
     if debug
         fprintf('Gap-closing:\n')
     end
-    
-    current_slice_index = 0;
-    for i = 1 : n_slices-2
-        
-        
-        % Try to find a target in the frames following, starting at i+2, and
-        % parsing over the target that are not part in a link already.
-        
-        current_target_slice_index = current_slice_index + n_cells(i) + n_cells(i+1);
-        
-        for j = i + 2 : min(i +  max_gap_closing, n_slices)
+
+    for w = 2 : max_gap_closing
+        for i = 1 : n_slices-w % source frame
+            
+            j = i + w; % target frame
             
             source = points{i}(unmatched_sources{i}, :);
             
-            if isempty(points{j}) 
-                target=[]; 
-            else 
-                target = points{j}(unmatched_targets{j}, :); 
+            if isempty(points{j})
+                target=[];
+            else
+                target = points{j}(unmatched_targets{j}, :);
             end
             
             if isempty(source) || isempty(target)
-                current_target_slice_index = current_target_slice_index + n_cells(j);
                 continue
             end
             
-            target_indices = nearestneighborlinker(source, target, max_linking_distance);
+            max_gap_distance = sqrt(j-i)*max_linking_distance;
+            target_indices = hungarianlinker(source, target, max_gap_distance);
+            
+            % calculate source and target slice indices
+            current_slice_index = sum(n_cells(1:i-1));
+            current_target_slice_index = sum(n_cells(1:j-1));
             
             % Put it in the adjacency matrix
             for k = 1 : numel(target_indices)
@@ -286,11 +284,7 @@ function [ tracks adjacency_tracks A ] = simpletracker(points, varargin)
             % Make linked targets unavailable for further linking
             unmatched_targets{j}(target_indices(new_links_target)) = [];
             
-            current_target_slice_index = current_target_slice_index + n_cells(j);
         end
-        
-        current_slice_index = current_slice_index + n_cells(i);
-        
     end
     
     if debug
