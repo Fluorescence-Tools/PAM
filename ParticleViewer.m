@@ -773,7 +773,6 @@ switch Plot_Type
     case 4 %Intensity
         XValue = 1:size(ParticleViewer.Intensity, 2);
         YValue = ParticleViewer.Intensity(PartNum,:);
-        YValue(YValue>0) = ParticleViewer.Regions(PartNum).MeanIntensity';
         YValue(YValue==0) = NaN;
         LineSpec = '.-r';
         YLabel = 'Intensity (counts)';
@@ -1043,33 +1042,25 @@ switch mode
         ParticleViewer.Path = PathName;
         ParticleViewer.FileName = FileName;
         
-        % Sets particle control parameters
+        %%% Sets particle control parameters
         h.Particle_PartSlider.Min = 1;
         h.Particle_PartSlider.Max=size(ParticleViewer.Intensity, 1);
         h.Particle_PartSlider.SliderStep=[1./size(ParticleViewer.Intensity, 1),10/size(ParticleViewer.Intensity, 1)];
         h.Particle_PartSlider.Value=1;
         
-        % Creates particle mask and sets frame control parameters
-%         if isfield(PhasorViewer, 'Intensity')
-%             ParticleViewer.Mask = false(size(PhasorViewer.Intensity));
-%             %%% Adjusts slider and frame range
-%             h.Particle_FrameSlider.Min=1;
-%             h.Particle_FrameSlider.Max=size(PhasorViewer.Intensity,3);
-%             h.Particle_FrameSlider.SliderStep=[1./size(PhasorViewer.Intensity,3),10/size(PhasorViewer.Intensity,3)];
-%             h.Particle_FrameSlider.Value=1;
-%         else
-            ParticleViewer.Mask = false(ParticleViewer.Lines, ParticleViewer.Pixels, size(ParticleViewer.Intensity,2));
-            ParticleViewer.Particle = zeros(size(ParticleViewer.Mask));
-            %%% Adjusts slider and frame range
-            h.Particle_FrameSlider.Min=1;
-            h.Particle_FrameSlider.Max=size(ParticleViewer.Intensity,2);
-            h.Particle_FrameSlider.SliderStep=[1./size(ParticleViewer.Intensity,2),10/size(ParticleViewer.Intensity,2)];
-            h.Particle_FrameSlider.Value=1;
-            
-            %%% Resets image plot zoom
-            h.Particle_Display.XLim = [0.5 size(ParticleViewer.Mask,2)+0.5];
-            h.Particle_Display.YLim = [0.5 size(ParticleViewer.Mask,1)+0.5];
-%         end
+        %%% Creates particle mask
+        ParticleViewer.Mask = false(ParticleViewer.Lines, ParticleViewer.Pixels, size(ParticleViewer.Intensity,2));
+        ParticleViewer.Particle = zeros(size(ParticleViewer.Mask));
+        
+        %%% Adjusts slider and frame range
+        h.Particle_FrameSlider.Min=1;
+        h.Particle_FrameSlider.Max=size(ParticleViewer.Intensity,2);
+        h.Particle_FrameSlider.SliderStep=[1./size(ParticleViewer.Intensity,2),10/size(ParticleViewer.Intensity,2)];
+        h.Particle_FrameSlider.Value=1;
+
+        %%% Resets image plot zoom
+        h.Particle_Display.XLim = [0.5 size(ParticleViewer.Mask,2)+0.5];
+        h.Particle_Display.YLim = [0.5 size(ParticleViewer.Mask,1)+0.5];
         
         for i = 1:numel(ParticleViewer.Regions)
             ParticleViewer.Mask(ParticleViewer.Regions(i).PixelIdxList) = true;
