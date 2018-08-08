@@ -4461,6 +4461,9 @@ else
 end
 for i = 1:numel(ax)
     ax(i).Units = 'pixels';
+    if ispc
+         ax(i).FontSize =  ax(i).FontSize/1.4;
+    end
 end
 if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'External')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
@@ -4497,6 +4500,9 @@ if any(strfind(TauFitData.FitType,'Anisotropy')) && ~(h.Result_Plot_Aniso.Parent
     f2 = figure('Position',[200,100,450,275],'color',[1 1 1], 'Name', 'Anisotropy');
     axes_copy = copyobj(ax(aniso_plot),f2);
     axes_copy.Position = [75,55,350,200];
+    if ispc
+        axes_copy.FontSize = axes_copy.FontSize/1.4;
+    end
     f2.PaperPositionMode = 'auto';
     print(f2, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c '_aniso' b],1))
 end
