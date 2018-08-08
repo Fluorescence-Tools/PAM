@@ -5756,6 +5756,9 @@ switch obj
         for i = 1:numel(data)
             plot(t,fit{i},'LineWidth',2,'Color',colors(i,:));
         end
+        for i = 1:numel(data)
+            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
+        end
         for i = 1:numel(filename)
             % remove extension
             filename{i} = filename{i}(1:end-4);
@@ -5763,9 +5766,7 @@ switch obj
             filename{i} = strrep(filename{i},'_',' ');
         end
         l = legend(filename);
-        for i = 1:numel(data)
-            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
-        end 
+        
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
         xlabel('Time [ns]');
