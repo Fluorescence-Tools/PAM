@@ -5674,18 +5674,18 @@ switch obj
         end
         %%% ensure that same type of data is loaded, remove the rest
         %%% type defined by first selected file
-        % anisotropy reconvolution fit is not supported, check for it
-        if ~isempty(strfind(filename{1},'tau_aniso'))
-            disp('Anisotropy reconvolution data not supported.');
-            return;
-        end
         if iscell(filename)
             valid = ones(numel(filename),1);
             type = strfind(filename{1},'tau');
             if isempty(type)
                 type = 'aniso';
             else
-                type = 'tau';
+                type = strfind(filename{1},'aniso');
+                if isempty(type)
+                    type = 'tau';
+                else
+                    type = 'tau_aniso';
+                end
             end
             for i = 1:numel(filename)
                 if isempty(strfind(filename{i},type))
@@ -5700,8 +5700,14 @@ switch obj
         data = {};
         for i = 1:numel(filename)
             dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
-            data{i} = dummy(:,2);
-            fit{i} = dummy(:,3);
+            switch type
+                case {'tau','aniso'}
+                    data{i} = dummy(:,2);
+                    fit{i} = dummy(:,3);
+                case 'tau_aniso'
+                    data{i} = dummy(:,8);
+                    fit{i} = dummy(:,9);
+            end
         end
         dT = mean(diff(dummy(:,1)));  
         %%% if different lengths have been loaded, truncate to shortest
@@ -5712,41 +5718,42 @@ switch obj
         end
         t = (1:minLength)*dT;
         
-        if strcmp(type,'tau') %%% normalize and shift if tau data
-            for i = 1:numel(data)
-                norm = max(smooth(data{i},10));
-                data{i} = data{i}./norm;
-                fit{i} = fit{i}./norm;
-            end
-            
-            %%% for shift, take first measurement as reference
-            [~,peakPosition] = max(smooth(data{1},10));
-            shift_left = 0;
-            shift_right = 0;
-            for i = 2:numel(data)
-                [~,peakPos] = max(smooth(data{i},10));
-                shift_left = min([shift_left, peakPosition-peakPos]);
-                shift_right = max([shift_right, peakPosition-peakPos]);
-                data{i} = circshift(data{i},[peakPosition-peakPos,0]);
-                fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
-            end
-            %%% adjust range
-            range = (shift_right+1):(minLength+shift_left);
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
-        elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
-            for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
-            end
-            range = max([1,min(peakPos)-10]):minLength;
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
+        switch type
+            case 'tau' %%% normalize and shift if tau data
+                for i = 1:numel(data)
+                    norm = max(smooth(data{i},10));
+                    data{i} = data{i}./norm;
+                    fit{i} = fit{i}./norm;
+                end
+
+                %%% for shift, take first measurement as reference
+                [~,peakPosition] = max(smooth(data{1},10));
+                shift_left = 0;
+                shift_right = 0;
+                for i = 2:numel(data)
+                    [~,peakPos] = max(smooth(data{i},10));
+                    shift_left = min([shift_left, peakPosition-peakPos]);
+                    shift_right = max([shift_right, peakPosition-peakPos]);
+                    data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+                    fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
+                end
+                %%% adjust range
+                range = (shift_right+1):(minLength+shift_left);
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
+            case {'aniso','tau_aniso'} %%% modify start point if anisotropy data
+                for i = 1:numel(data)
+                    [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
+                end
+                range = max([1,min(peakPos)-10]):minLength;
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
         end
         
         
@@ -5776,11 +5783,12 @@ switch obj
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
         xlabel('Time [ns]');
-        if strcmp(type,'tau')
-            ylabel('Intensity [a.u.]');
-            ax.YScale = 'log';
-        else
-            ylabel('Anisotropy');
+        switch type
+            case 'tau'
+                ylabel('Intensity [a.u.]');
+                ax.YScale = 'log';
+            case {'aniso','tau_aniso'}
+                ylabel('Anisotropy');
         end
         
         ax.Layer = 'top';
