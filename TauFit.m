@@ -1812,8 +1812,9 @@ if all(isnan(TauFitData.hIRF_Par{chan})) || all(isnan(TauFitData.hIRF_Per{chan})
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
 elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{chan}))
-    disp('IRF undefined, disabling reconvolution fitting.');
-    h.Fit_Button.Enable = 'off';
+    disp('Scatter pattern undefined, using IRF instead.');
+    TauFitData.hScat_Par{chan} = TauFitData.hIRF_Par{chan};
+    TauFitData.hScat_Per{chan} = TauFitData.hIRF_Per{chan};
 else
     h.Fit_Button.Enable = 'on';
 end
