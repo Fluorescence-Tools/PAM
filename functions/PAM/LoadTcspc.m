@@ -730,6 +730,11 @@ switch (Type)
             if isempty(FileInfo.Resolution)
                 FileInfo.Resolution = Header.Resolution;
             end
+            if isfield(Header,'MI_Bins') % only returned for TimeHarp260 T3 data
+                if isempty(FileInfo.MI_Bins)
+                    FileInfo.MI_Bins = Header.MI_Bins;
+                end
+            end
             %%% Concaternates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
@@ -799,7 +804,9 @@ switch (Type)
             end
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
-        FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        if isempty(FileInfo.MI_Bins)
+            FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
     case 7 %%% .h5 files in PhotonHDF5 file format

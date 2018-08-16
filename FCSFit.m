@@ -770,8 +770,8 @@ switch Type
                 Text = Text{1};
                 Data.Header = Text{1};
                 Data.Valid = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Valid bins:')),1)}(12:end)); %#ok<ST2NM>
-                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 1 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
-                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Countrate channel 2 [kHz]:')),1)}(27:end)); %#ok<ST2NM>
+                Data.Counts(1) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 1 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
+                Data.Counts(2) = str2num(Text{find(~cellfun(@isempty,strfind(Text,'Count rate channel 2 [kHz]:')),1)}(28:end)); %#ok<ST2NM>
                 Start = find(~cellfun(@isempty,strfind(Text,'Data starts here:')),1);
                 
                 Values = zeros(numel(Text)-Start,numel(Data.Valid)+3);

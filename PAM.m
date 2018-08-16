@@ -6201,6 +6201,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if ~isempty(strfind(PIE_Name2,'Comb'))
                     PIE_Name2=PIE_Name2(8:end);
                 end
+                Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
+                Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                 if any(h.Cor.Format.Value == [1 3])
                     %%% Generates filename
                     Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
@@ -6218,9 +6220,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
                         end
                     end
-                    
-                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
                 end
                 if any(h.Cor.Format.Value == [2 3])
@@ -6243,7 +6242,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
                     
-                    %%% Writes Heater
+                    %%% Writes Header
                     fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
                     fprintf(FileID, ['Count rate channel 1 [kHz]: ' num2str(Counts(1), '%12.2f') '\n']);
                     fprintf(FileID, ['Count rate channel 2 [kHz]: ' num2str(Counts(2), '%12.2f') '\n']);
@@ -6253,7 +6252,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     
                     %%% Writes data as columns: Time    Averaged    SEM     Individual bins
                     fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
-                    fclose(FileID);
+                    fclose(FileID);                    
                 end
                 %% Plots Data
                 %%% Creates new Tab with axes
