@@ -30,8 +30,12 @@ end
 
 
 Totaltime=0;
+numFiles = numel(FileName);
+[TcspcData.MT{:}] = deal(cell(numFiles, 1));
+[TcspcData.MI{:}] = deal(cell(numFiles, 1));
+
 %%% Reads all selected files
-for i=1:numel(FileName)
+for i=1:numFiles
     %%% Calculates ImageTimes in clock ticks for concaternating
     %%% files
     Info=FabsurfInfo(fullfile(Path,FileName{i}),1);
@@ -50,16 +54,13 @@ for i=1:numel(FileName)
     else
         card = 1:10; %%% consider up to 10 cards
     end
-    %%% check for disabled detectors
+    
     for j = card
-        if sum(UserValues.Detector.Det==j) > 0
-            if all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
-                card(card==j) = [];
-            end
+        %%% check for disabled detectors
+        if any(UserValues.Detector.Det==j) && all(strcmp(UserValues.Detector.enabled(UserValues.Detector.Det==j),'off'))
+            card(card==j) = [];
         end
-    end
-    %%% Checks, which and how many card exist for each file
-    for j=card;
+        %%% Checks, which and how many card exist for each file
         if ~exist(fullfile(Path,[FileName{i}(1:end-5) num2str(j-1) '.spc']),'file')
             card(card==j)=[];
         end
@@ -89,27 +90,17 @@ for i=1:numel(FileName)
             end
         end
         
-        %%% Concatenates data to previous files and adds ImageTimes
-        %%% to consecutive files
+        %%% Stores data in cell array
         if any(~cellfun(@isempty,MI(:)))
-            skip = false;
             for k = Rout
-                %%% Removes photons detected after "official"
-                %%% end of file are discarded
-                MI{k}(MT{k}>ImageTimes)=[];
-                MT{k}(MT{k}>ImageTimes)=[];
-                TcspcData.MT{j,k}=[TcspcData.MT{j,k}; Totaltime + MT{k}];   MT{k}=[];
-                TcspcData.MI{j,k}=[TcspcData.MI{j,k}; MI{k}];   MI{k}=[];
+                %%% Discard photons detected after "official" end of file
+                MI{k}(MT{k}>ImageTimes) = [];
+                MT{k}(MT{k}>ImageTimes) = [];
+                TcspcData.MT{j,k}{i} = Totaltime + MT{k};
+                TcspcData.MI{j,k}{i} = MI{k};
             end
         else %%% file was empty!
-            skip = true;
-        end
-        if skip
             continue;
-        end
-        %%% Determines last photon for each file
-        for k=find(~cellfun(@isempty,TcspcData.MT(j,:)));
-            FileInfo.LastPhoton{j,k}(i)=numel(TcspcData.MT{j,k});
         end
         
         %                 %%% Determines, if linesync was used
@@ -121,6 +112,7 @@ for i=1:numel(FileName)
         %                     Linetimes=[0 Header.FrameMarker];
         %                 end
     end
+    
     %%% Creates linebreak entries
     %             if isempty(Linetimes)
     %                 FileInfo.LineTimes(:,i)=linspace(0,FileInfo.ImageTimes/FileInfo.SyncPeriod,FileInfo.Lines+1)+Totaltime;
@@ -129,12 +121,28 @@ for i=1:numel(FileName)
     %             elseif numel(Linetimes)<FileInfo.Lines+1
     %                 %%% I was to lazy to program this case out yet
     %             end
-    %%% Calculates total time to get one trace from several
-    %%% files
+    
+    %%% Calculates total time to get one trace from several files
     Totaltime=Totaltime + ImageTimes;
     FileInfo.ImageTimes(end+1) = Totaltime*FileInfo.ClockPeriod;
     
 end
+
+%%% Concatenates MT and MI data
+for i = 1:numel(TcspcData.MT)
+    if all(cellfun('isempty', TcspcData.MT{i}))
+        %%% Remove empty channels
+        TcspcData.MT{i} = [];
+        TcspcData.MI{i} = [];
+    else
+        %%% Determines last photon for each file
+        FileInfo.LastPhoton{i} = cumsum(cellfun('prodofsize', TcspcData.MT{i}));
+        %%% Concatenate cell array into one numerical array
+        TcspcData.MT{i} = vertcat(TcspcData.MT{i}{:});
+        TcspcData.MI{i} = vertcat(TcspcData.MI{i}{:});
+    end
+end
+
 FileInfo.MeasurementTime = Totaltime*FileInfo.ClockPeriod;
 for i=1:(numel(FileInfo.ImageTimes)-1)
     FileInfo.LineTimes(i,:) = linspace(FileInfo.ImageTimes(i),FileInfo.ImageTimes(i+1),FileInfo.Lines+1);
@@ -307,11 +315,10 @@ end
 
 FID=-1;
 for i= 1:numel(fid)
-    if fid(i)~=-1; 
+    if fid(i)~=-1
         FID=fid(i); 
         break;
-    end;
-    i=i+1;
+    end
 end
 
 %%% Looks for Parameters defined in Params and saves string in Output
@@ -319,7 +326,7 @@ Output=cell(26,1);
 if FID ~= -1
     T=textscan(FID,'%s', 'delimiter', '\n','whitespace', '');
     T=T{1};
-    for i=ToRead;
+    for i=ToRead
         if any(ToRead==i)
             j=1;
             while j<numel(T)
