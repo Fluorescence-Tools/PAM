@@ -5574,9 +5574,11 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                     InfoAll(3).AR = [];
                 case 3 %%% Arbitrary region
                     %%% Mean intensity of selected pixels [counts]
+                    Use1 = Use{1}(frames);
+                    Use2 = Use{2}(frames);
                     Image1 = double(MIAData.Data{1,2}(:,:,frames));
                     Image2 = double(MIAData.Data{2,2}(:,:,frames));
-                    InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
+                    InfoAll(3).Mean = (mean(Image1(Use1 & Use2)) + mean(Image2(Use1 & Use2)))/2;
                     %%% Arbitrary region information
                     InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
                     InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
