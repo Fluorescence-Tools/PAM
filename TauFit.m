@@ -1812,8 +1812,9 @@ if all(isnan(TauFitData.hIRF_Par{chan})) || all(isnan(TauFitData.hIRF_Per{chan})
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
 elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{chan}))
-    disp('IRF undefined, disabling reconvolution fitting.');
-    h.Fit_Button.Enable = 'off';
+    disp('Scatter pattern undefined, using IRF instead.');
+    TauFitData.hScat_Par{chan} = TauFitData.hIRF_Par{chan};
+    TauFitData.hScat_Per{chan} = TauFitData.hIRF_Per{chan};
 else
     h.Fit_Button.Enable = 'on';
 end
@@ -4109,7 +4110,8 @@ switch obj
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
-            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            %model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            model = @tailfit_3exp;
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
                 0.3,0.3,0];
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
@@ -4120,6 +4122,12 @@ switch obj
                 [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
             end
             parameter_names = {'I0','tau1','tau2','tau3','Fraction1','Fraction2','offset'};
+            % fix amplitudes same way as done in fit function
+            if (param(5)+param(6)) > 1
+                norm = param(5)+param(6);
+                param(5) = param(5)./norm;
+                param(6) = param(6)./norm;
+            end
         end
         
         x_fitres = ignore:numel(Decay);
@@ -4173,8 +4181,9 @@ switch obj
             switch number_of_exponentials
                 case 2
                     amp1 = param(2)*TACtoTime*param(4); amp2 = (1-param(4))*param(3)*TACtoTime;
-                    f1 = amp1./(amp1+amp2);
-                    f2 = amp2./(amp1+amp2);
+                    amp_sum = amp1+amp2;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2);
                     meanTau_Fraction = param(2)*TACtoTime*param(4) + (1-param(4))*param(3)*TACtoTime;
                     % update status text
@@ -4184,9 +4193,10 @@ switch obj
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 case 3
                     amp1 = param(2)*TACtoTime*param(5); amp2 = param(3)*TACtoTime*param(6); amp3 = param(4)*TACtoTime*(1-param(5)-param(6));
-                    f1 = amp1./(amp1+amp2+amp3);
-                    f2 = amp2./(amp1+amp2+amp3);
-                    f3 = amp3./(amp1+amp2+amp3);
+                    amp_sum = amp1+amp2+amp3;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
+                    f3 = amp3./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2+param(4)*f3);
                     meanTau_Fraction = param(2)*TACtoTime*param(5)+ param(3)*TACtoTime*param(6)+ param(4)*TACtoTime*(1-param(5)-param(6));
                     % update status text
@@ -4461,6 +4471,9 @@ else
 end
 for i = 1:numel(ax)
     ax(i).Units = 'pixels';
+    if ispc
+         ax(i).FontSize =  ax(i).FontSize/1.4;
+    end
 end
 if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'External')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
@@ -4497,6 +4510,9 @@ if any(strfind(TauFitData.FitType,'Anisotropy')) && ~(h.Result_Plot_Aniso.Parent
     f2 = figure('Position',[200,100,450,275],'color',[1 1 1], 'Name', 'Anisotropy');
     axes_copy = copyobj(ax(aniso_plot),f2);
     axes_copy.Position = [75,55,350,200];
+    if ispc
+        axes_copy.FontSize = axes_copy.FontSize/1.4;
+    end
     f2.PaperPositionMode = 'auto';
     print(f2, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c '_aniso' b],1))
 end
@@ -5668,18 +5684,18 @@ switch obj
         end
         %%% ensure that same type of data is loaded, remove the rest
         %%% type defined by first selected file
-        % anisotropy reconvolution fit is not supported, check for it
-        if ~isempty(strfind(filename{1},'tau_aniso'))
-            disp('Anisotropy reconvolution data not supported.');
-            return;
-        end
         if iscell(filename)
             valid = ones(numel(filename),1);
             type = strfind(filename{1},'tau');
             if isempty(type)
                 type = 'aniso';
             else
-                type = 'tau';
+                type = strfind(filename{1},'aniso');
+                if isempty(type)
+                    type = 'tau';
+                else
+                    type = 'tau_aniso';
+                end
             end
             for i = 1:numel(filename)
                 if isempty(strfind(filename{i},type))
@@ -5694,8 +5710,14 @@ switch obj
         data = {};
         for i = 1:numel(filename)
             dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
-            data{i} = dummy(:,2);
-            fit{i} = dummy(:,3);
+            switch type
+                case {'tau','aniso'}
+                    data{i} = dummy(:,2);
+                    fit{i} = dummy(:,3);
+                case 'tau_aniso'
+                    data{i} = dummy(:,8);
+                    fit{i} = dummy(:,9);
+            end
         end
         dT = mean(diff(dummy(:,1)));  
         %%% if different lengths have been loaded, truncate to shortest
@@ -5706,41 +5728,42 @@ switch obj
         end
         t = (1:minLength)*dT;
         
-        if strcmp(type,'tau') %%% normalize and shift if tau data
-            for i = 1:numel(data)
-                norm = max(smooth(data{i},10));
-                data{i} = data{i}./norm;
-                fit{i} = fit{i}./norm;
-            end
-            
-            %%% for shift, take first measurement as reference
-            [~,peakPosition] = max(smooth(data{1},10));
-            shift_left = 0;
-            shift_right = 0;
-            for i = 2:numel(data)
-                [~,peakPos] = max(smooth(data{i},10));
-                shift_left = min([shift_left, peakPosition-peakPos]);
-                shift_right = max([shift_right, peakPosition-peakPos]);
-                data{i} = circshift(data{i},[peakPosition-peakPos,0]);
-                fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
-            end
-            %%% adjust range
-            range = (shift_right+1):(minLength+shift_left);
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
-        elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
-            for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
-            end
-            range = max([1,min(peakPos)-10]):minLength;
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
+        switch type
+            case 'tau' %%% normalize and shift if tau data
+                for i = 1:numel(data)
+                    norm = max(smooth(data{i},10));
+                    data{i} = data{i}./norm;
+                    fit{i} = fit{i}./norm;
+                end
+
+                %%% for shift, take first measurement as reference
+                [~,peakPosition] = max(smooth(data{1},10));
+                shift_left = 0;
+                shift_right = 0;
+                for i = 2:numel(data)
+                    [~,peakPos] = max(smooth(data{i},10));
+                    shift_left = min([shift_left, peakPosition-peakPos]);
+                    shift_right = max([shift_right, peakPosition-peakPos]);
+                    data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+                    fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
+                end
+                %%% adjust range
+                range = (shift_right+1):(minLength+shift_left);
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
+            case {'aniso','tau_aniso'} %%% modify start point if anisotropy data
+                for i = 1:numel(data)
+                    [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
+                end
+                range = max([1,min(peakPos)-10]):minLength;
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
         end
         
         
@@ -5756,6 +5779,9 @@ switch obj
         for i = 1:numel(data)
             plot(t,fit{i},'LineWidth',2,'Color',colors(i,:));
         end
+        for i = 1:numel(data)
+            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
+        end
         for i = 1:numel(filename)
             % remove extension
             filename{i} = filename{i}(1:end-4);
@@ -5763,17 +5789,16 @@ switch obj
             filename{i} = strrep(filename{i},'_',' ');
         end
         l = legend(filename);
-        for i = 1:numel(data)
-            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
-        end 
+        
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
         xlabel('Time [ns]');
-        if strcmp(type,'tau')
-            ylabel('Intensity [a.u.]');
-            ax.YScale = 'log';
-        else
-            ylabel('Anisotropy');
+        switch type
+            case 'tau'
+                ylabel('Intensity [a.u.]');
+                ax.YScale = 'log';
+            case {'aniso','tau_aniso'}
+                ylabel('Anisotropy');
         end
         
         ax.Layer = 'top';

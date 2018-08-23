@@ -3362,7 +3362,7 @@ switch mode
             warning('on', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
         end
         % convert data using S and offset parameter
-        MIA_Orientation([],[],5)
+        Mia_Orientation([],[],5)
 
         %%% Updates frame settings for channel 2
         h.Mia_Image.Settings.Channel_Frame_Slider(2).SliderStep=[1./size(MIAData.Data{2,1},3),10/size(MIAData.Data{2,1},3)];
@@ -3679,8 +3679,8 @@ if any(mode==1)
                     h.Mia_Image.Settings.Scale(i,2).Visible = 'off';
                     h.Mia_Image.Settings.Scale_Text.Visible = 'off';
                 case 2
-                    Min = min(MIAData.Data{i,1}(:),'omitnan');
-                    Max = max(MIAData.Data{i,1}(:),'omitnan');
+                    Min = nanmin(MIAData.Data{i,1}(:));
+                    Max = nanmax(MIAData.Data{i,1}(:));
                     h.Mia_Image.Axes(i,1).CLim = [Min Max];
                     h.Mia_Image.Settings.Scale(i,1).Visible = 'off';
                     h.Mia_Image.Settings.Scale(i,2).Visible = 'off';
@@ -4103,7 +4103,7 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
-            h.Plots.Int(1,2).YData = mean(mean(Data,2,'omitnan'),1,'omitnan');
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1);
             
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Counts';
         else
@@ -4112,7 +4112,7 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{1,1} & repmat(MIAData.MS{1},1,1,size(MIAData.AR{1,1},3)))) = NaN;
             end
-            h.Plots.Int(1,2).YData = mean(mean(Data,2,'omitnan'),1,'omitnan')/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            h.Plots.Int(1,2).YData = nanmean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             h.Mia_Image.Intensity_Axes.YLabel.String = 'Average Frame Countrate [kHz]';
         end
         
@@ -4146,7 +4146,7 @@ if any(mode==4)
         h.Mia_Additional.Axes(1).YScale = 'Lin';
         switch h.Mia_Additional.Plot_Popup(1,1).Value
             case 1 %%% Counts/Countrate
-                h.Plots.Additional_Axes(1,1).YData = mean(mean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2,'omitnan'),1);
+                h.Plots.Additional_Axes(1,1).YData = mean(nanmean(single(MIAData.Data{1,h.Mia_Additional.Plot_Popup(1,2).Value}),2),1);
                 if h.Mia_Additional.Axes(1).YLabel.UserData == 1
                     h.Plots.Additional_Axes(1,1).YData = h.Plots.Additional_Axes(1,1).YData/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                     h.Mia_Additional.Axes(1).YLabel.String = 'Average Frame Countrate [kHz]';
@@ -4249,14 +4249,14 @@ if any(mode==4)
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(mean(Data,2,'omitnan'),1);
+            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1);
         else
             h.Plots.Int(2,1).YData = mean(mean(MIAData.Data{2,1},2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Data = MIAData.Data{2,2};
             if ~isempty(MIAData.AR)
                 Data(~(MIAData.AR{2,1} & repmat(MIAData.MS{2},1,1,size(MIAData.AR{2,1}(1,:,:),3)))) = NaN;
             end
-            h.Plots.Int(2,2).YData = mean(mean(Data,2,'omitnan'),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            h.Plots.Int(2,2).YData = mean(nanmean(Data,2),1)/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             
         end
         
@@ -4355,9 +4355,9 @@ if any(mode==5)
            
            %%% Averages pixel TICS data for selected (~NaN) pixels and
            %%% plots the curve
-           h.Plots.TICS(i,1).YData = squeeze(mean(mean(TICS,2,'omitnan'),1,'omitnan'));
+           h.Plots.TICS(i,1).YData = squeeze(nanmean(nanmean(TICS,2),1));
            h.Plots.TICS(i,1).XData = (1:size(TICS,3)).*str2double(h.Mia_Image.Settings.Image_Frame.String);
-           EData = double(squeeze(std(std(TICS,0,2,'omitnan'),0,1,'omitnan'))');
+           EData = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
            EData = EData./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
            h.Plots.TICS(i,1).UData = EData;
            h.Plots.TICS(i,1).LData = EData;
@@ -4660,7 +4660,7 @@ for i=1:2
                 if h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
-                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + mean(Add(:),'omitnan');
+                MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:)) + nanmean(Add(:));
                 clear Add
             case 3 %%% Frame ROI mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
@@ -4668,14 +4668,14 @@ for i=1:2
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                  +repmat(mean(mean(Add,'omitnan'),'omitnan'),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
+                                  +repmat(nanmean(nanmean(Add)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]);
             case 4 %%% Pixel mean
                 Add=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Add(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:))...
-                                 +(repmat(mean(Add,3,'omitnan'),[1,1,size(MIAData.Data{i,1},3)]));
+                                 +(repmat(nanmean(Add,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 5 %%% Moving average
                 h.Mia_Image.Settings.Correction_Add_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Add_Pixel_Text.Visible='on';
@@ -4712,14 +4712,14 @@ for i=1:2
                     Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(mean(Sub,'omitnan'),'omitnan'),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
+                                 -(repmat(nanmean(nanmean(Sub)),[(To(2)-From(2)+1),(To(1)-From(1)+1),1]));
             case 3 %%% Pixel mean
                 Sub=single(MIAData.Data{i,1}(From(2):To(2),From(1):To(1),:));
                 if AR~=0 && h.Mia_Image.Settings.ROI_FramesUse.Value == 3
                     Sub(~(repmat(MIAData.MS{1},[1 1 size(MIAData.AR{i,1},3)]) & MIAData.AR{i,1}))=NaN;
                 end
                 MIAData.Data{i,2}=MIAData.Data{i,2}...
-                                 -(repmat(mean(Sub,3,'omitnan'),[1,1,size(MIAData.Data{i,1},3)]));
+                                 -(repmat(nanmean(Sub,3),[1,1,size(MIAData.Data{i,1},3)]));
             case 4 %%% Moving average
                 h.Mia_Image.Settings.Correction_Subtract_Pixel.Visible='on';
                 h.Mia_Image.Settings.Correction_Subtract_Pixel_Text.Visible='on';
@@ -5624,9 +5624,11 @@ if h.Mia_Image.Calculations.Cor_Save_ICS.Value > 1
                     InfoAll(3).AR = [];
                 case 3 %%% Arbitrary region
                     %%% Mean intensity of selected pixels [counts]
+                    Use1 = Use{1}(frames);
+                    Use2 = Use{2}(frames);
                     Image1 = double(MIAData.Data{1,2}(:,:,frames));
                     Image2 = double(MIAData.Data{2,2}(:,:,frames));
-                    InfoAll(3).Mean = (mean(Image1(Use{1} & Use{2})) + mean(Image2(Use{1} & Use{2})))/2;
+                    InfoAll(3).Mean = (mean(Image1(Use1 & Use2)) + mean(Image2(Use1 & Use2)))/2;
                     %%% Arbitrary region information
                     InfoAll(3).AR.Int_Max(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Max(1).String);
                     InfoAll(3).AR.Int_Min(1) = str2double(h.Mia_Image.Settings.ROI_AR_Int_Min(1).String);
@@ -6056,7 +6058,7 @@ for i=1:3 %%%
             Norm (:,:,Empty) = false;
             TICS{1} = MIAData.Data{i,2}(:,:,(Frames(1):Frames(end)));
             TICS{1}(~Norm) = NaN;
-            Int{1} = mean(TICS{1},3,'omitnan');
+            Int{1} = nanmean(TICS{1},3);
             TICS{1} = TICS{1}-mean2(TICS{1}(Norm));
             TICS{1}(~Norm) = 0;
             Int{2} = Int{1};
@@ -6065,12 +6067,12 @@ for i=1:3 %%%
             Norm (:,:,Empty) = false;
             TICS{1} = MIAData.Data{1,2}(:,:,(Frames(1):Frames(end)));
             TICS{1}(~Norm) = NaN;
-            Int{1} = mean(TICS{1},3,'omitnan');
+            Int{1} = nanmean(TICS{1},3);
             TICS{1} = TICS{1}-mean2(TICS{1}(Norm));
             TICS{1}(~Norm) = 0;
             TICS{2} = MIAData.Data{2,2}(:,:,(Frames(1):Frames(end)));
             TICS{2}(~Norm) = NaN;
-            Int{2} = mean(TICS{2},3,'omitnan');
+            Int{2} = nanmean(TICS{2},3);
             TICS{2} = TICS{2}-mean2(TICS{2}(Norm));
             TICS{2}(~Norm) = 0;
         end
@@ -6119,7 +6121,7 @@ for i=1:3 %%%
         MIAData.TICS_Int{i,2} = Int{2};
         clear TICSresult;
         %%% Remove too dark pixels
-        Valid = sqrt(Int{1}.*Int{2})> mean(mean(sqrt(Int{1}.*Int{2}),2,'omitnan'),1,'omitnan')/10;
+        Valid = sqrt(Int{1}.*Int{2})> nanmean(nanmean(sqrt(Int{1}.*Int{2}),2),1)/10;
         MIAData.TICS{i}(~repmat(Valid,1,1,size(MIAData.TICS{i},3))) = NaN;
         %% Saves data
         if h.Mia_Image.Calculations.Cor_Save_TICS.Value == 2
@@ -6149,12 +6151,12 @@ for i=1:3 %%%
             end
             
             Header = 'TICS correlation file'; %#ok<NASGU>
-            Counts = [mean(mean(Int{1},2,'omitnan'),1,'omitnan') mean(mean(Int{2},2,'omitnan'),1,'omitnan')]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+            Counts = [nanmean(nanmean(Int{1},2),1) nanmean(nanmean(Int{2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             Valid = 1;
             Cor_Times = (1:size(MIAData.TICS{i},3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            Cor_Average = double(squeeze(mean(mean(MIAData.TICS{i},2,'omitnan'),1,'omitnan'))');
+            Cor_Average = double(squeeze(nanmean(nanmean(MIAData.TICS{i},2),1))');
             Cor_Array = Cor_Average';
-            Cor_SEM = double(squeeze(std(std(MIAData.TICS{i},0,2,'omitnan'),0,1,'omitnan'))');
+            Cor_SEM = double(squeeze(nanstd(nanstd(MIAData.TICS{i},0,2),0,1))');
             Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(MIAData.TICS{i}),[],size(MIAData.TICS{i},3)),1));
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
         end     
@@ -6971,8 +6973,8 @@ for i=Auto
     MaxPhotons=ceil(max(max(max(MIAData.NB.DTCorr_Img{floor(i*1.5)}))));
     %%% Calculaces PCH, mean intensity, standard deviation for each pixel
     MIAData.NB.PCH{floor(i*1.5)}=histc(MIAData.NB.DTCorr_Img{floor(i*1.5)}(:),0:MaxPhotons); 
-    MIAData.NB.Int{floor(i*1.5)}=mean(MIAData.NB.DTCorr_Img{floor(i*1.5)},3, 'omitnan');
-    MIAData.NB.Std{floor(i*1.5)}=std(MIAData.NB.DTCorr_Img{floor(i*1.5)},0,3, 'omitnan');
+    MIAData.NB.Int{floor(i*1.5)}=nanmean(MIAData.NB.DTCorr_Img{floor(i*1.5)},3);
+    MIAData.NB.Std{floor(i*1.5)}=nanstd(MIAData.NB.DTCorr_Img{floor(i*1.5)},0,3);
     %%% Applies spacial filter to intensity and standard deviation
     if str2double(h.Mia_Image.Calculations.NB_Average_Radius.String)<=1
         h.Mia_Image.Calculations.NB_Average.Value=1;
@@ -7198,20 +7200,20 @@ for i=mode
                     FileName = MIAData.FileName{1}{1}(1:end-4);
                     Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF1.mcor']);
                     TICS = MIAData.TICS{1};
-                    Counts = [mean(mean(MIAData.TICS_Int{1,1},2,'omitnan'),1,'omitnan')...
-                        mean(mean(MIAData.TICS_Int{1,2},2,'omitnan'),1,'omitnan')]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{1,1},2),1)...
+                        nanmean(nanmean(MIAData.TICS_Int{1,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 case h.Mia_TICS.Image(2,1)
                     FileName = MIAData.FileName{1}{1}(1:end-4);
                     Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_CCF.mcor']);
                     TICS = MIAData.TICS{2};
-                    Counts = [mean(mean(MIAData.TICS_Int{2,1},2,'omitnan'),1,'omitnan')...
-                        mean(mean(MIAData.TICS_Int{2,2},2,'omitnan'),1,'omitnan')]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{2,1},2),1)...
+                        nanmean(nanmean(MIAData.TICS_Int{2,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
                 case h.Mia_TICS.Image(3,1)
                     FileName = MIAData.FileName{2}{1}(1:end-4);
                     Current_FileName=fullfile(UserValues.File.MIAPath,'Mia',[FileName '_ACF2.mcor']);
                     TICS = MIAData.TICS{3};
-                    Counts = [mean(mean(MIAData.TICS_Int{3,1},2,'omitnan'),1,'omitnan')...
-                        mean(mean(MIAData.TICS_Int{3,2},2,'omitnan'),1,'omitnan')]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
+                    Counts = [nanmean(nanmean(MIAData.TICS_Int{3,1},2),1)...
+                        nanmean(nanmean(MIAData.TICS_Int{3,2},2),1)]/str2double(h.Mia_Image.Settings.Image_Pixel.String)*1000;
             end
             
             if ~isempty(MIAData.TICS_MS)
@@ -7234,9 +7236,9 @@ for i=mode
             Header = 'TICS correlation file'; %#ok<NASGU>
             Valid = 1;
             Cor_Times = (1:size(TICS,3))*str2double(h.Mia_Image.Settings.Image_Frame.String);
-            Cor_Average = double(squeeze(mean(mean(TICS,2,'omitnan'),1,'omitnan'))');
+            Cor_Average = double(squeeze(nanmean(nanmean(TICS,2),1))');
             Cor_Array = Cor_Average';
-            Cor_SEM = double(squeeze(std(std(TICS,0,2,'omitnan'),0,1,'omitnan'))');
+            Cor_SEM = double(squeeze(nanstd(nanstd(TICS,0,2),0,1))');
             Cor_SEM = Cor_SEM./sqrt(sum(reshape(~isnan(TICS),[],size(TICS,3)),1));
             save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
         %case 5 %%% Read ROI info file

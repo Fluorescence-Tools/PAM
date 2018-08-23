@@ -2422,6 +2422,31 @@ h.MT.Use_Lifetime = uicontrol(...
     'BackgroundColor', Look.Back,...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.14 0.38 0.06]);
+%%% Median Filter lifetime image
+h.MT.Lifetime_Median = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Tag','MT.Lifetime_Median',...
+    'Style','edit',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'Callback',@Calculate_Settings,...
+    'String','3',...
+    'BackgroundColor', Look.Control,...
+    'ForegroundColor', Look.Fore,...
+    'Position',[0.17 0.07 0.05 0.06]);
+%%% Text
+h.Text{end+1} = uicontrol(...
+    'Parent',h.MT.Settings_Panel,...
+    'Style','text',...
+    'Units','normalized',...
+    'FontSize',12,...
+    'HorizontalAlignment','left',...
+    'String','smoothing radius:',...
+    'BackgroundColor', Look.Back,...
+    'ForegroundColor', Look.Fore,...
+    'Tooltipstring', 'choose the radius of the median filter for smoothing the lifetime images',...
+    'Position',[0.05 0.07 0.11 0.06]);
+
 %%% Checkbox to determine if TCSPC channel or microtime is used for
 %%% microtime plots
 h.MT.ToggleTACTime = uicontrol(...
@@ -3527,7 +3552,8 @@ if any(mode == 0) || any(mode == 1) || any(mode == 2) || any(mode == 3)
                             [Max, index] = max(tmp(max([From, 1]):min([To, end]))); %the TCSPC channel of the maximum within the PIE channel
                             tmp = PamMeta.Lifetime{i}-index-From-1; %offset of the IRF with respect to TCSPC channel zero
                             tmp(tmp<0)=0; tmp = round(tmp.*rescale); %rescale to time in ns
-                            PamMeta.Lifetime{i} = medfilt2(tmp,[3 3]); %median filter to remove nonsense
+                            radius = str2double(h.MT.Lifetime_Median.String);
+                            PamMeta.Lifetime{i} = medfilt2(tmp,[radius radius]); %median filter to remove nonsense
                         end
                         %%% Sets NaNs to 0 for empty pixels
                         PamMeta.Lifetime{i}(PamMeta.Image{i}==0)=0;
@@ -3679,6 +3705,10 @@ elseif obj == h.MT.Use_TimeTrace
     %%% change x axis of microtime plots between TCSPC channel and time in ns
 elseif obj == h.MT.ToggleTACTime
     UserValues.Settings.Pam.ToggleTACTime=h.MT.ToggleTACTime.Value;
+    Update_Data([],[],0,0,3);
+    Update_Display([],[],3);
+    Update_Display([],[],4);
+elseif obj == h.MT.Lifetime_Median
     Update_Data([],[],0,0,3);
     Update_Display([],[],3);
     Update_Display([],[],4);
@@ -6201,6 +6231,8 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                 if ~isempty(strfind(PIE_Name2,'Comb'))
                     PIE_Name2=PIE_Name2(8:end);
                 end
+                Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
+                Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                 if any(h.Cor.Format.Value == [1 3])
                     %%% Generates filename
                     Current_FileName=fullfile(FileInfo.Path,[FileName '_' PIE_Name1 '_x_' PIE_Name2 '.mcor']);
@@ -6218,9 +6250,6 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                             Current_FileName=[Current_FileName(1:end-(5+numel(num2str(k-1)))) num2str(k) '.mcor'];
                         end
                     end
-                    
-                    Header = ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)}]; %#ok<NASGU>
-                    Counts = [Counts1 Counts2]/FileInfo.MeasurementTime/1000*numel(PamMeta.Selected_MT_Patches)/numel(Valid);
                     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
                 end
                 if any(h.Cor.Format.Value == [2 3])
@@ -6243,7 +6272,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     %%% Creates new correlation file
                     FileID=fopen(Current_FileName,'w');
                     
-                    %%% Writes Heater
+                    %%% Writes Header
                     fprintf(FileID, ['Correlation file for: ' strrep(fullfile(FileInfo.Path, FileName),'\','\\') ' of Channels ' UserValues.PIE.Name{Cor_A(i)} ' cross ' UserValues.PIE.Name{Cor_A(i)} '\n']);
                     fprintf(FileID, ['Count rate channel 1 [kHz]: ' num2str(Counts(1), '%12.2f') '\n']);
                     fprintf(FileID, ['Count rate channel 2 [kHz]: ' num2str(Counts(2), '%12.2f') '\n']);
@@ -6253,7 +6282,7 @@ for m=NCors %%% Goes through every File selected (multiple correlation) or just 
                     
                     %%% Writes data as columns: Time    Averaged    SEM     Individual bins
                     fprintf(FileID, ['%8.12f\t%8.8f\t%8.8f' repmat('\t%8.8f',1,numel(Valid)) '\n'], [Cor_Times Cor_Average Cor_SEM Cor_Array]');
-                    fclose(FileID);
+                    fclose(FileID);                    
                 end
                 %% Plots Data
                 %%% Creates new Tab with axes

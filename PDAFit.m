@@ -2839,7 +2839,7 @@ else
                 [samples,prob,acceptance] =  MHsample(nsamples,fitfun,@(x) 1,proposal,LB,UB,fitpar',zeros(numel(fitpar),1),ones(numel(fitpar),1),names);
                 v = numel(residual)-numel(fitpar); % number of degrees of freedom
                 perc = tinv(1-alpha/2,v);
-                ci= perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
+                ci_mc = perc*std(samples(1:spacing:end,:)); m_mc = mean(samples(1:spacing:end,:));
             end
             %%% Sort confidence intervals back to fitparameters
             err(:,PDAMeta.Global)=repmat(ci(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
@@ -2867,13 +2867,29 @@ else
                         m_mc(1:sum(PDAMeta.SampleGlobal))=[];
                     end
                 end
-
+                count = 1;
                 for i=find(PDAMeta.Active)'
                     MCMC_mean(i, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = m_mc(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
                     m_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+                    PDAMeta.MCMC_mean{count} = MCMC_mean(count,~PDAMeta.Fixed(i,:));
+                    count = count + 1;
                 end
-                MCMC_mean(MCMC_mean == 0) = PDAMeta.FitParams(MCMC_mean == 0);
-                PDAMeta.MCMC_mean{i} = MCMC_mean;
+                %%% Sort ci_mc back to fit parameters
+                err_mc(:,PDAMeta.Global)=repmat(ci_mc(1:sum(PDAMeta.Global)),[size(PDAMeta.FitParams,1) 1]) ;
+                ci_mc(1:sum(PDAMeta.Global))=[];
+                if UserValues.PDA.HalfGlobal
+                    for i = 1:(PDAMeta.Blocks-1)
+                        err_mc(i*PDAMeta.BlockSize+1:(i+1)*PDAMeta.BlockSize,PDAMeta.SampleGlobal)=repmat(ci_mc(1:sum(PDAMeta.SampleGlobal)),[PDAMeta.BlockSize 1]) ;
+                        ci_mc(1:sum(PDAMeta.SampleGlobal))=[];
+                    end
+                end
+                count = 1;
+                for i=find(PDAMeta.Active)'
+                    err_mc(count, ~PDAMeta.Fixed(i,:) & ~PDAMeta.Global) = ci_mc(1:sum(~PDAMeta.Fixed(i,:) & ~PDAMeta.Global));
+                    ci_mc(1:sum(~PDAMeta.Fixed(i,:)& ~PDAMeta.Global))=[];
+                    PDAMeta.ConfInt_MCMC{count} = err_mc(count,~PDAMeta.Fixed(i,:));
+                    count = count + 1;
+                end
             end
             PDAMeta.FitInProgress = 0; % disable fit
     end
@@ -2939,7 +2955,7 @@ if any(obj == [h.Menu.EstimateErrorHessian,h.Menu.EstimateErrorMCMC])
     assignin('base','tab_jac',tab_jac);
     if obj == h.Menu.EstimateErrorMCMC
         assignin('base','ConfInt_MCMC',ConfInt_MCMC);
-        tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names,'VariableNames',filenames);
+        tab_mcmc = cell2table(num2cell(horzcat(ConfInt_MCMC{:})),'RowNames',names(1:lim),'VariableNames',filenames);
         assignin('base','tab_mcmc',tab_mcmc);
     end
 end
@@ -3669,6 +3685,9 @@ end
 mBG_gg = PDAMeta.BGdonor(file);
 mBG_gr = PDAMeta.BGacc(file);
 dur = PDAData.timebin(file)*1E3;
+if PDAData.timebin(file) == 0 %burstwise data was loaded
+    dur = PDAData.Data{file}.Duration(PDAMeta.valid{file})*1E3;
+end
 cr = PDAMeta.crosstalk(file);
 R0 = PDAMeta.R0(file);
 de = PDAMeta.directexc(file);
