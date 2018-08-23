@@ -4174,8 +4174,9 @@ switch obj
             switch number_of_exponentials
                 case 2
                     amp1 = param(2)*TACtoTime*param(4); amp2 = (1-param(4))*param(3)*TACtoTime;
-                    f1 = amp1./(amp1+amp2);
-                    f2 = amp2./(amp1+amp2);
+                    amp_sum = amp1+amp2;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2);
                     meanTau_Fraction = param(2)*TACtoTime*param(4) + (1-param(4))*param(3)*TACtoTime;
                     % update status text
@@ -4185,9 +4186,10 @@ switch obj
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 case 3
                     amp1 = param(2)*TACtoTime*param(5); amp2 = param(3)*TACtoTime*param(6); amp3 = param(4)*TACtoTime*(1-param(5)-param(6));
-                    f1 = amp1./(amp1+amp2+amp3);
-                    f2 = amp2./(amp1+amp2+amp3);
-                    f3 = amp3./(amp1+amp2+amp3);
+                    amp_sum = amp1+amp2+amp3;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
+                    f3 = amp3./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2+param(4)*f3);
                     meanTau_Fraction = param(2)*TACtoTime*param(5)+ param(3)*TACtoTime*param(6)+ param(4)*TACtoTime*(1-param(5)-param(6));
                     % update status text
