@@ -137,7 +137,7 @@ for i=1:numel(FileName)
 end
 FileInfo.ClockPeriod = FileInfo.SyncPeriod;
 FileInfo.MeasurementTime = Totaltime*FileInfo.ClockPeriod; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
-FileInfo.MI_Bins = ceil(FileInfo.SyncPeriod./FileInfo.Resolution);
+FileInfo.MI_Bins = ceil(1E12*FileInfo.SyncPeriod./FileInfo.Resolution);
 %FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
 FileInfo.TACRange = FileInfo.SyncPeriod;
 for i=1:(numel(FileInfo.ImageTimes)-1)
