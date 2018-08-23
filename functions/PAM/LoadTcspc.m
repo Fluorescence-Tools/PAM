@@ -238,7 +238,6 @@ switch (Type)
                         end
                     elseif strcmp(Card,'830')
                         Card = 'SPC-830';
-                        MI_Bins = []; %For Hasselt I have to hardcode this, since the MI_Bins is not written in the .set file
                     end
                     %%% Determines real TAC range
                     FileInfo.TACRange = TACRange/TACGain;
