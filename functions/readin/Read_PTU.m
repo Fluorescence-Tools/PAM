@@ -161,7 +161,7 @@ Header.FrameStart = [];
 Header.LineStart = [];
 Header.LineStop = [];
 
-if TTResultFormat_TTTRRecType == rtTimeHarp260PT3 % read out the number of microtime bins
+if any(TTResultFormat_TTTRRecType == [rtTimeHarp260PT3,rtHydraHarpT3,rtHydraHarp2T3])  % read out the number of microtime bins
     Header.MI_Bins = ceil(MeasDesc_GlobalResolution./MeasDesc_Resolution);
 end
 

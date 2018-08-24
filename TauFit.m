@@ -4110,7 +4110,8 @@ switch obj
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
-            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            %model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            model = @tailfit_3exp;
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
                 0.3,0.3,0];
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
@@ -4121,6 +4122,12 @@ switch obj
                 [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
             end
             parameter_names = {'I0','tau1','tau2','tau3','Fraction1','Fraction2','offset'};
+            % fix amplitudes same way as done in fit function
+            if (param(5)+param(6)) > 1
+                norm = param(5)+param(6);
+                param(5) = param(5)./norm;
+                param(6) = param(6)./norm;
+            end
         end
         
         x_fitres = ignore:numel(Decay);
@@ -4174,8 +4181,9 @@ switch obj
             switch number_of_exponentials
                 case 2
                     amp1 = param(2)*TACtoTime*param(4); amp2 = (1-param(4))*param(3)*TACtoTime;
-                    f1 = amp1./(amp1+amp2);
-                    f2 = amp2./(amp1+amp2);
+                    amp_sum = amp1+amp2;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2);
                     meanTau_Fraction = param(2)*TACtoTime*param(4) + (1-param(4))*param(3)*TACtoTime;
                     % update status text
@@ -4185,9 +4193,10 @@ switch obj
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 case 3
                     amp1 = param(2)*TACtoTime*param(5); amp2 = param(3)*TACtoTime*param(6); amp3 = param(4)*TACtoTime*(1-param(5)-param(6));
-                    f1 = amp1./(amp1+amp2+amp3);
-                    f2 = amp2./(amp1+amp2+amp3);
-                    f3 = amp3./(amp1+amp2+amp3);
+                    amp_sum = amp1+amp2+amp3;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
+                    f3 = amp3./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2+param(4)*f3);
                     meanTau_Fraction = param(2)*TACtoTime*param(5)+ param(3)*TACtoTime*param(6)+ param(4)*TACtoTime*(1-param(5)-param(6));
                     % update status text
