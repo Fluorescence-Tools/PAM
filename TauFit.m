@@ -2549,6 +2549,8 @@ MI_Bins = TauFitData.MI_Bins;
 %opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
     case {h.Fit_Button}
+        %%% get fit type
+        TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
         %%% Read out parameters
         x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
         lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
@@ -3951,6 +3953,7 @@ switch obj
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
         h.Fit_Button_MEM.Visible = 'on';
     case {h.Fit_Button_MEM}
+        TauFitData.FitType = 'MEM';
         % initialize fit parameters
         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
         
@@ -4550,7 +4553,7 @@ for i = 1:numel(ax)
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','MEM'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -4573,15 +4576,23 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.125 0.13 0.845 0.15];
-                if strcmp(h.Microtime_Plot.YScale,'log')
-                    %ax(i).YScale = 'log';
+                if ~strcmp(TauFitData.FitType,'MEM')
+                    ax(i).Position = [0.125 0.13 0.845 0.15];
+                    if strcmp(h.Microtime_Plot.YScale,'log')
+                        %ax(i).YScale = 'log';
+                    end
+                else % MEM fit
+                    ax(i).Position = [0.125 0.10 0.845 0.14];
                 end
                 aniso_plot = i;
             case 'Microtime_Plot'
-                ax(i).Position = [0.125 0.28 0.845 0.58];
-                ax(i).XTickLabels = [];
-                ax(i).XLabel.String = '';
+                if ~strcmp(TauFitData.FitType,'MEM')
+                    ax(i).Position = [0.125 0.28 0.845 0.58];
+                     ax(i).XTickLabels = [];
+                    ax(i).XLabel.String = '';
+                else % MEM fit 
+                    ax(i).Position = [0.125 0.35 0.845 0.51];
+                end
                 if ~isequal(obj, h.Microtime_Plot_Export)
                     ax(i).Children(end).FontSize = 16; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
