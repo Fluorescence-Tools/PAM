@@ -249,7 +249,7 @@ h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 
 h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2,'DisplayName','Fit (ignore)');
 
-linkaxes([h.Result_Plot, h.Residuals_Plot, h.Result_Plot_Aniso],'x');
+linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
 
 %%% dummy panel to hide plots
 h.HidePanel = uibuttongroup(...
@@ -862,6 +862,14 @@ if strcmp(method,'ensemble')
         'Position',[0.35 0.25 0.5 0.12],...
         'String','Perform reconvolution fit',...
         'Callback',@Start_Fit);
+    h.Fit_Button_Menu = uicontextmenu;
+    %%% Button for Maximum Entropy Method (MEM) analysis
+    h.Fit_Button_MEM = uimenu('Parent',h.Fit_Button_Menu,...
+        'Label','MEM analysis',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
+    h.Fit_Button_MEM.Visible = 'off'; % only turn visible after a fit has been performed
     %%% Button to start tail fitting
     h.Fit_Tail_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -2387,6 +2395,9 @@ end
 if h.AutoFit_Menu.Value
     Start_Fit(h.Fit_Button)
 end
+% hide MEM button
+h.Fit_Button_MEM.Visible = 'off';
+
 drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2532,7 +2543,7 @@ end
 ignore = TauFitData.Ignore{chan};
 %% Start Fit
 %%% Update Progressbar
-h.Progress_Text.String = 'Fitting...';
+h.Progress_Text.String = 'Fitting...';drawnow;
 MI_Bins = TauFitData.MI_Bins;
 
 %opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
@@ -3832,6 +3843,9 @@ switch obj
             h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
+            % change axis labels
+            h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
+            h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
             
             h.Plots.DecayResult.XData = (ignore:numel(Decay_par))*TACtoTime;
             h.Plots.DecayResult.YData = Decay_par(ignore:end);
@@ -3856,6 +3870,7 @@ switch obj
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(1:end)) min(Decay_per(1:end))]);
             h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
+            h.Result_Plot_Aniso.XLim = [0, h.Result_Plot.XLim(2)];
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -3871,7 +3886,7 @@ switch obj
             h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
             
             h.Residuals_Plot.YLim = [min([min(wres_par(ignore:end)) min(wres_per(ignore:end))]) max([max(wres_par(ignore:end)) max(wres_per(ignore:end))])];
-        else
+       else
             % hide plots
             h.Plots.IRFResult_Perp.Visible = 'off';
             h.Plots.FitResult_Perp.Visible = 'off';
@@ -3927,6 +3942,121 @@ switch obj
         end
 
         h.Result_Plot.XLim(1) = 0;
+        if strcmp(h.Result_Plot.YScale,'log')
+            ydat = h.Plots.DecayResult.YData;
+            ydat = ydat(ydat > 0);
+            h.Result_Plot.YLim(1) = min(ydat);
+        end
+        
+        h.Result_Plot.YLabel.String = 'Intensity [counts]';
+        h.Fit_Button_MEM.Visible = 'on';
+    case {h.Fit_Button_MEM}
+        % initialize fit parameters
+        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
+        
+        % get fit parameters (scatter,background, irfshift)
+        x0 = [ UserValues.TauFit.FitParams{chan}([6,8]) UserValues.TauFit.IRFShift{chan}];
+        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata);
+        
+        % plot the result
+        wres = (Decay(ignore:end)-FitFun)./sqrt(Decay(ignore:end));
+        %%% define ignore region
+        FitFun_ignore = NaN(1,ignore);
+        wres_ignore = NaN(1,ignore);
+        Decay_ignore = Decay(1:ignore);
+        
+        %%% Update Plot
+        h.Microtime_Plot.Parent = h.HidePanel;
+        h.Result_Plot.Parent = h.TauFit_Panel;
+        h.Plots.IRFResult.Visible = 'on';
+
+        % plot chi^2 on graph
+        h.Result_Plot_Text.Visible = 'on';
+        h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2)];
+        h.Result_Plot_Text.Position = [0.8 0.95];
+        
+        % nanoseconds per microtime bin
+        TACtoTime = TauFitData.TACChannelWidth;
+        
+        h.Plots.DecayResult_ignore.Visible = 'on';
+        h.Plots.Residuals_ignore.Visible = 'off';
+        h.Plots.FitResult_ignore.Visible = 'off';
+       
+        % hide plots
+        h.Plots.IRFResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp_ignore.Visible = 'off';
+        h.Plots.DecayResult_Perp.Visible = 'off';
+        h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+        h.Plots.Residuals_Perp.Visible = 'off';
+        h.Plots.Residuals_Perp_ignore.Visible = 'off';
+
+        % change colors
+        h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+        h.Plots.DecayResult.Color = [0 0 0];
+        h.Plots.Residuals.Color = [0 0 0];
+        h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+
+        %%% hide aniso plots
+        h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
+        h.Result_Plot_Aniso.Parent = h.HidePanel;
+
+        IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
+        IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+        IRFPat = IRFPat./max(IRFPat).*max(Decay);
+        h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+        h.Plots.IRFResult.YData = IRFPat;
+        % store FitResult TauFitData also for use in export
+        if ignore > 1
+            TauFitData.FitResult = [FitFun_ignore, FitFun];
+        else
+            TauFitData.FitResult = FitFun;
+        end
+
+        h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
+        h.Plots.DecayResult.YData = Decay(ignore:end);
+        h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
+        h.Plots.FitResult.YData = FitFun;
+
+        h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.DecayResult_ignore.YData = Decay_ignore;
+        h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.FitResult_ignore.YData = FitFun_ignore;
+        axis(h.Result_Plot,'tight');
+        h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+        h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
+
+        h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
+        h.Plots.Residuals.YData = wres;
+        h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
+        h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
+        h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.Residuals_ignore.YData = wres_ignore;
+        h.Residuals_Plot.YLim = [min(wres) max(wres)];
+        
+        % use anisotropy plot below axis to visualize the lifetime distribution
+        % unhide Result "Aniso" Plot
+        h.Result_Plot_Aniso.Parent = h.TauFit_Panel;
+        % change axes positions
+        h.Result_Plot.Position = [0.075 0.3 0.9 0.55];
+        h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
+        % set all unneeded plots to empty data
+        h.Plots.AnisoResult.XData = [];
+        h.Plots.AnisoResult.YData = [];
+        h.Plots.AnisoResult_ignore.XData = [];
+        h.Plots.AnisoResult_ignore.YData = [];
+        h.Plots.FitAnisoResult_ignore.XData = [];
+        h.Plots.FitAnisoResult_ignore.YData = [];
+            
+        % update plots
+        h.Plots.FitAnisoResult.XData = tau;
+        h.Plots.FitAnisoResult.YData = tau_dist;
+        h.Result_Plot_Aniso.XLim = [0,tau(end)];
+        h.Result_Plot_Aniso.YLim = [0,max(tau_dist)*1.05];
+        h.Result_Plot_Aniso.XLabel.String = 'Lifetime [ns]';
+        h.Result_Plot_Aniso.YLabel.String = 'Probability';
+        
+        h.Result_Plot.XLim = [0, Length*TACtoTime];
         if strcmp(h.Result_Plot.YScale,'log')
             ydat = h.Plots.DecayResult.YData;
             ydat = ydat(ydat > 0);
@@ -5839,7 +5969,7 @@ h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
 
 
-function [tau_dist, chi2] = taufit_mem(decay,params,static_fit_params,resolution)
+function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,resolution)
 global TauFitData
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 4
@@ -5861,7 +5991,7 @@ tau = linspace(0,ceil(10/TauFitData.TACChannelWidth),resolution);
 %%% Establish library of single exponential decays, convoluted with IRF
 decay_ind = zeros(numel(tau),numel(x));
 for i = 1:numel(tau)
-    decay_ind(i,:) = fitfun_1exp([tau(i),params(2:end)],static_fit_params);
+    decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
 end
 
 %%% Calculate error estimate based on poissonian counting statistics
@@ -5878,10 +6008,12 @@ Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
 lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
 
 %%% specify fit options
-opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-4);
+opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
 tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
 
-chi2 = sum( (decay-sum(decay_ind.*repmat(tau_dist',1,numel(decay),1))).^2./error.^2)./(numel(decay)));
+chi2 = sum( (decay-sum(decay_ind.*repmat(tau_dist,1,numel(decay),1))).^2./error.^2)./(numel(decay));
+model = sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
+tau = tau*TauFitData.TACChannelWidth;
 
 function [c,ceq] = nonlcon(x)
 %%% nonlinear constraint for deconvolution
