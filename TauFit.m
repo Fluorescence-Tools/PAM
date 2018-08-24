@@ -5837,3 +5837,53 @@ h.Plots.IRF_cleanup.IRF_data.YData = IRF_selected;
 h.Plots.IRF_cleanup.IRF_fit.XData = (1:numel(IRF)).*TauFitData.TACChannelWidth;
 h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
+
+
+function [tau_dist, chi2] = taufit_mem(decay,params,static_fit_params,resolution)
+global TauFitData
+%%% Maximum Entropy analysis to obtain model-free lifetime distribtion
+if nargin < 4
+    resolution = 200;
+end
+if nargin < 5
+    %%% scaling parameter for the entropy term
+    v = 1E-5; 
+    % this value is taken from:
+    % Vinogradov and Wilson, ?Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery.? 
+    % where it is suggested as an "optimal" value
+end
+% remove ignore region from decay
+decay = decay(static_fit_params{7}:end);
+x = 1:1:numel(decay);
+%%% vector of lifetimes to consider (up to 10 ns)
+tau = linspace(0,ceil(10/TauFitData.TACChannelWidth),resolution);
+
+%%% Establish library of single exponential decays, convoluted with IRF
+decay_ind = zeros(numel(tau),numel(x));
+for i = 1:numel(tau)
+    decay_ind(i,:) = fitfun_1exp([tau(i),params(2:end)],static_fit_params);
+end
+
+%%% Calculate error estimate based on poissonian counting statistics
+error = sqrt(decay); error(error == 0) = 1;
+
+mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-sum(decay_ind.*repmat(p,1,numel(decay),1))).^2./error.^2)./(numel(decay)));
+
+%%% initialize p
+p0 = ones(numel(tau),1)./numel(tau);
+p=p0;
+
+%%% initialize boundaries
+Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
+lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
+
+%%% specify fit options
+opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-4);
+tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
+
+chi2 = sum( (decay-sum(decay_ind.*repmat(tau_dist',1,numel(decay),1))).^2./error.^2)./(numel(decay)));
+
+function [c,ceq] = nonlcon(x)
+%%% nonlinear constraint for deconvolution
+c = [];
+ceq = sum(x) - 1;
