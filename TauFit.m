@@ -5997,7 +5997,7 @@ end
 decay = decay(static_fit_params{7}:end);
 x = 1:1:numel(decay);
 %%% vector of lifetimes to consider (up to 10 ns)
-tau = linspace(0,ceil(10/TauFitData.TACChannelWidth),resolution);
+tau = linspace(0,ceil(5/TauFitData.TACChannelWidth),resolution);
 
 %%% Establish library of single exponential decays, convoluted with IRF
 decay_ind = zeros(numel(tau),numel(x));
