@@ -53,6 +53,11 @@ h.Load_MaskData = uimenu(...
     'Label','Load External Mask Data',...
     'Callback',@Load_Mask_Data);
 
+h.Import_Tracks = uimenu(...
+    'Parent', h.Particle,...
+    'Label', 'Import Tracks',...
+    'Callback',@Import_Tracks);
+
 h.Text = {};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -582,6 +587,56 @@ end
 %%% Plots loaded image
 Plot_Particle([],[],0:2,h)
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Import Tracks%%%%%%%%%%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Import_Tracks(~,~)
+h = guidata(findobj('Tag','Particle'));
+global ParticleData UserValues
+LSUserValues(0);
+
+% Supported file types
+FilterTypes = {'*.csv', 'Imaris tracks (*.csv)'};
+
+%%% Choose files to load
+[FileName,PathName,FilterIdx] = uigetfile(FilterTypes, 'Choose tracking results to import', UserValues.File.PhasorPath, 'MultiSelect', 'off');
+%%% Only executes if at least one file was selected
+if all(FileName==0)
+    return
+end
+FullFilePath = fullfile(PathName, FileName);
+switch FilterIdx
+    case 1 % Imaris tracks
+        ImageSize = size(ParticleData.Data.Intensity);
+        SpotRadius = inputdlg('Enter spot radius [px]');
+        SpotRadius = str2double(SpotRadius);
+        [tracks, mask, particle] = importImarisTracks(FullFilePath, ImageSize, SpotRadius);
+end
+
+ParticleData.Mask = mask;
+ParticleData.Particle = particle;
+ParticleData.Regions = regionprops(particle, ParticleData.Data.Intensity, 'PixelList','PixelIdxList','PixelValues');
+
+for i = 1:numel(ParticleData.Regions)
+    ParticleData.Regions(i).Frame = unique(ParticleData.Regions(i).PixelList(:,3));
+    Int = cell(length(ParticleData.Regions(i).Frame), 1);
+    for f = 1 : length(ParticleData.Regions(i).Frame)
+        px = ParticleData.Regions(i).PixelList(:,3) == ParticleData.Regions(i).Frame(f);
+        pxIdx = ParticleData.Regions(i).PixelIdxList(px);
+        Int{f} = ParticleData.Data.Intensity(pxIdx);
+    end
+    ParticleData.Regions(i).Area = cellfun('length', Int);
+    ParticleData.Regions(i).TotalCounts = cellfun(@sum, Int);
+    ParticleData.Regions(i).MeanIntensity = ParticleData.Regions(i).TotalCounts./ParticleData.Regions(i).Area;
+    ParticleData.Regions(i).MaxIntensity = cellfun(@max, Int);
+    ParticleData.Regions(i).Centroid = tracks(i).Position;
+    if isfield(tracks, 'id')
+        ParticleData.Regions(i).id = tracks(i).id;
+    end
+end
+
+%%% Plots loaded image
+Plot_Particle([],[],0:2,h)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Updates plots in Particle figure %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
