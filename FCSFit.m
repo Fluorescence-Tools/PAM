@@ -1172,8 +1172,8 @@ switch mode
         Columns=cell(3*numel(FCSMeta.Model.Params)+5,1);
         Columns{1} = '<HTML><b>File</b>';
         Columns{2}='<HTML><b>Active</b>';
-        Columns{3}='<HTML><b>Counts [khz]</b>';
-        Columns{4}='<HTML><b>Brightness [khz]</b>';
+        Columns{3}='<HTML><b>Counts [kHz]</b>';
+        Columns{4}='<HTML><b>Brightness [kHz]</b>';
         for i=1:numel(FCSMeta.Model.Params)
             Columns{3*i+2}=['<HTML><b>' FCSMeta.Model.Params{i} '</b>'];
             Columns{3*i+3}='<HTML><b>F</b>';

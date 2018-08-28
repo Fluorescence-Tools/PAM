@@ -2182,14 +2182,14 @@ switch mode
         %%% Generates column names and resized them
         Columns=cell(3*numel(MIAFitMeta.Model.Params)+4,1);
         Columns{1}='Active';
-        Columns{2}='<HTML><b> Counts [khz] </b>';
-        Columns{3}='<HTML><b> Brightness [khz]</b>';
+        Columns{2}='<HTML><b> Counts [kHz] </b>';
+        Columns{3}='<HTML><b> Brightness [kHz]</b>';
         for i=1:numel(MIAFitMeta.Model.Params)
             Columns{3*i+1}=['<HTML><b>' MIAFitMeta.Model.Params{i} '</b>'];
             Columns{3*i+2}='F';
             Columns{3*i+3}='G';
         end
-        Columns{end}='Chi?';
+        Columns{end}='<HTML><b>Chi2</b>';
         ColumnWidth=zeros(numel(Columns),1);
         ColumnWidth(4:3:end-1) = 80;
         ColumnWidth(5:3:end-1)=20;
@@ -2203,9 +2203,9 @@ switch mode
         %%% Sets row names to file names
         Rows=cell(size(MIAFitData.Data,1)+3,1);
         Rows(1:size(MIAFitData.Data,1))=deal(MIAFitData.FileName);
-        Rows{end-2}='ALL';
-        Rows{end-1}='Lower bound';
-        Rows{end}='Upper bound';
+        Rows{end-2}='<HTML><b>ALL</b>';
+        Rows{end-1}='<HTML><b>Lower bound</b>';
+        Rows{end}='<HTML><b>Upper bound</b>';
         h.Fit_Table.RowName=Rows;
         %%% Creates table data:
         %%% 1: Checkbox to activate/deactivate files
@@ -2227,9 +2227,13 @@ switch mode
 %         Data(:,5:3:end-1)=deal({false});
 %         Data(:,6:3:end-1)=deal({false});
         Data(:,5:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==1)',size(Data,1),1);
+        Data(end-1:end,5:3:end-1)=deal({[]});
         Data(:,6:3:end-1) = repmat(num2cell(MIAFitMeta.Model.State==2)',size(Data,1),1);
+        Data(end-1:end,6:3:end-1)=deal({[]});
         Data(:,1)=deal({true});
+        Data(end-1:end,1)=deal({[]});
         Data(:,end)=deal({'0'});
+        Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=Data;
         h.Fit_Table.ColumnEditable=[true,false,false,true(1,numel(Columns)-4),false];
         %%% Enables cell callback again
@@ -2273,7 +2277,9 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
+            %if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
+            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
                 return;
             end
             NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
@@ -2557,7 +2563,7 @@ h.Fit_Table.Enable = 'off';
 MIAFitMeta.FitInProgress = 1;
 drawnow;
 %%% Reads parameters from table
-Fixed = cell2mat(h.Fit_Table.Data(1:end-1,5:3:end-1));
+Fixed = cell2mat(h.Fit_Table.Data(1:end-3,5:3:end-1));
 Global = cell2mat(h.Fit_Table.Data(end-2,6:3:end-1));
 Active = cell2mat(h.Fit_Table.Data(1:end-3,1));
 lb = h.Fit_Table.Data(end-1,4:3:end-1);

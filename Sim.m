@@ -1809,7 +1809,7 @@ switch Obj
         SimData.Species(Sel).UseIRF = h.Sim_UseIRF.Value;
     case h.Sim_IRF_Width_Edit
         % why is this data stored in SimData?
-        SimData.General.IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
+        SimData.General(File).IRFwidth = str2double(h.Sim_IRF_Width_Edit.String);
     case h.Sim_Param_Plot %%% Changed plotted advanced parameters
         for i=1:4
             for j=1:4
@@ -1893,13 +1893,13 @@ switch Obj
         end
         
     case h.Linker_Width
-        SimData.General.LinkerWidth = str2double(h.Linker_Width.String);
+        SimData.General(File).LinkerWidth = str2double(h.Linker_Width.String);
     case h.Sim_sigma_update %%% Changed the update time
-        SimData.General.HeterogeneityUpdate = str2double(h.Sim_sigma_update.String);
+        SimData.General(File).HeterogeneityUpdate = str2double(h.Sim_sigma_update.String);
     case h.Sim_Dyn_Table
         DynRates = cell2mat(h.Sim_Dyn_Table.Data);
         DynRates(logical(eye(size(DynRates,1)))) = 0; %%% Set diagonal elements to zero
-        SimData.General.DynamicRate = DynRates;
+        SimData.General(File).DynamicRate = DynRates;
         h.Sim_Dyn_Table.Data = num2cell(DynRates);
     case    h.Sim_MultiCore
         
