@@ -55,7 +55,9 @@ h.TauFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.TauFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 14:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 14:17]));
+end
     
 %%% menu
 h.Menu.File = uimenu(h.TauFit,'Label','File');

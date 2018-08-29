@@ -41,7 +41,9 @@ h.Particle.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.Particle,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 13:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 13:17]));
+end
 
 h.Load_Particle = uimenu(...
     'Parent',h.Particle,...
@@ -1145,7 +1147,7 @@ if mode == 1
     end
     
     for f = 1:size(Int,3)
-        %%% Wavelet filter ® P. Messer, 2016
+        %%% Wavelet filter ï¿½ P. Messer, 2016
         w(:,:,1)=Int(:,:,f);
         Int_f = w;
         for i = 1:Wavelet-1
