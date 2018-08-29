@@ -46,7 +46,9 @@ h.MIAFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.MIAFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 13:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 13:17]));
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Menubar %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2277,12 +2279,16 @@ switch mode
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
+            %%% re-assign callback and exit
+            h.Fit_Table.CellEditCallback={@Update_Table,3};
+            return;
+            % previously, the following code was called that caused the GUI to get stuck in version 2018a and upwards
             %if isempty(e.Indices) || (e.Indices(2) == size(h.Fit_Table.Data,2))
-            if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
-                h.Fit_Table.CellEditCallback={@Update_Table,3};
-                return;
-            end
-            NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+            %if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
+            %    h.Fit_Table.CellEditCallback={@Update_Table,3};
+            %    return;
+            %end
+            %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
         end
         if isprop(e,'NewData')
             NewData = e.NewData;

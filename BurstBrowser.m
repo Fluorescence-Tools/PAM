@@ -46,7 +46,9 @@ if isempty(hfig)
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.BurstBrowser,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:7 9 13:17]));
+    if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+        delete(toolbar_items([2:7 9 13:17]));
+    end
     %%% get BurstBrowser size in pixels
     h.BurstBrowser.Units = 'pixels';
     h.figure_size = h.BurstBrowser.Position;

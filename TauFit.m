@@ -55,7 +55,9 @@ h.TauFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.TauFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 14:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 14:17]));
+end
     
 %%% menu
 h.Menu.File = uimenu(h.TauFit,'Label','File');
@@ -1027,6 +1029,14 @@ if exist('bh','var')
             'Position',[0.38 0.25 0.5 0.12],...
             'String','Perform reconvolution fit',...
             'Callback',@Start_Fit);
+        h.Fit_Button_Menu = uicontextmenu;
+        %%% Button for Maximum Entropy Method (MEM) analysis
+        h.Fit_Button_MEM = uimenu('Parent',h.Fit_Button_Menu,...
+            'Label','MEM analysis',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
+        h.Fit_Button_MEM.Visible = 'off'; % only turn visible after a fit has been performed
         %%% Button to start tail fitting
         h.Fit_Tail_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...

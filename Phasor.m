@@ -47,7 +47,9 @@ end
     %%% Remove unneeded items from toolbar
     toolbar = findall(h.Phasor,'Type','uitoolbar');
     toolbar_items = findall(toolbar);
-    delete(toolbar_items([2:7 9 13:17]));
+    if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+        delete(toolbar_items([2:7 9 13:17]));
+    end
     
     h.Load_Phasor = uimenu(...
     'Parent',h.Phasor,...
