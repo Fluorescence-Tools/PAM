@@ -1240,7 +1240,7 @@ switch mode
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-4),false];  
+        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
         h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
