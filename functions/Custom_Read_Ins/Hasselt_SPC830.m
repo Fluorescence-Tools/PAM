@@ -183,188 +183,199 @@ for i=1:numel(FileName)
             FileInfo.ClockPeriod = Header.ClockRate^-1;
         end
         
-        %% Remove markers outside of complete frames
-        NoF = numel(Header.FrameMarker);
-        % remove markers before the first frame marker
-        Header.LineMarker(Header.LineMarker < Header.FrameMarker(1)) = [];
-        Header.PixelMarker(Header.PixelMarker < Header.FrameMarker(1)) = [];
-        % remove line markers after the last full frame
-        NoLineMarkers = Lines*NoF;
-        if NoLineMarkers > numel(Header.LineMarker)
-            while NoLineMarkers > numel(Header.LineMarker)
-                NoF = NoF-1;
-                NoLineMarkers = Lines*NoF;
+        if ~isempty(Header.LineMarker) % Point data
+            %% Remove markers outside of complete frames
+            NoF = numel(Header.FrameMarker);
+            % remove markers before the first frame marker
+            Header.LineMarker(Header.LineMarker < Header.FrameMarker(1)) = [];
+            Header.PixelMarker(Header.PixelMarker < Header.FrameMarker(1)) = [];
+            % remove line markers after the last full frame
+            NoLineMarkers = Lines*NoF;
+            if NoLineMarkers > numel(Header.LineMarker)
+                while NoLineMarkers > numel(Header.LineMarker)
+                    NoF = NoF-1;
+                    NoLineMarkers = Lines*NoF;
+                end
+                % linemarker after the last good one
+                AfterLastLine = Header.LineMarker(Lines*NoF+1);
+                % delete nonsense pixelmarkers
+                Header.PixelMarker(Header.PixelMarker > AfterLastLine) = [];
+                Header.PixelMarker(Header.PixelMarker < Header.LineMarker(1)) = [];
+                % now there are approximately (xsize+44/256*xsize)*ysize*frames pixel markers
             end
-            % linemarker after the last good one
-            AfterLastLine = Header.LineMarker(Lines*NoF+1);
-            % delete nonsense pixelmarkers
-            Header.PixelMarker(Header.PixelMarker > AfterLastLine) = [];
-            Header.PixelMarker(Header.PixelMarker < Header.LineMarker(1)) = [];
-            % now there are approximately (xsize+44/256*xsize)*ysize*frames pixel markers
-        end
-        % delete nonsense markers
-        Header.LineMarker = Header.LineMarker(1:Lines*NoF);
-        Header.FrameMarker = Header.FrameMarker(1:NoF);
-        
-        %% Let all Markers start at 1
-        FirstLineMarker = Header.LineMarker(1);
-        Header.LineMarker = Header.LineMarker-FirstLineMarker+1;
-        Header.FrameMarker = Header.FrameMarker-FirstLineMarker+1;
-        Header.PixelMarker = Header.PixelMarker-FirstLineMarker+1;
-                
-        %% Remove photons outside of complete frames
-        for i = 1:numel(MT)
-            MT{i} = MT{i}-FirstLineMarker+1;
-            LastTime = Header.LineMarker(end)+Pixel*mean(diff(Header.PixelMarker));
-            mt = MT{i};
-            mi = MI{i};
-            % remove photons after the last pixel
-            mt(mt>LastTime) = [];
-            mi(mt>LastTime) = [];
-            % remove photons before the first pixel
-            mt = mt(mt>0);
-            mi = mi(mt>0);
-            MT{i} = mt;
-            MI{i} = mi;
-        end
-        clear mt mi
-        
-        %% Extract Pixel, Frame and Line times
-        %%% Extracts frame starts and number of frames from frame-syncs
-        FileInfo.ImageTimes = [FileInfo.ImageTimes Header.FrameMarker*FileInfo.ClockPeriod];
-        
-        %%% Extracts line starts and number of lines from line syncs
-        FileInfo.LineTimes = [FileInfo.LineTimes; MaxMT+permute(reshape(Header.LineMarker*FileInfo.ClockPeriod,[],NoF),[2 1])];
-        FileInfo.Lines = size(FileInfo.LineTimes,2);
-        
-        %%% Extracts number of pixels and pixel duration from pixel syncs
-        FileInfo.Pixels = Pixel;
-        Pixelduration = round(mean(diff(Header.PixelMarker)));
-        FileInfo.PixTime = Pixelduration*FileInfo.ClockPeriod;
-        
-        %% check if image is bidirectional
-        % On a Zeiss system:
-        % - the 'forward + backward scanning time' is the same on a Zeiss system whether you scan uni or bidir.
-        % - that's why bidirectional scanning is exactly twice faster (although it totally shouldn't have to be)
-        
-        % - if bidirectional, line starts are written left and right (cause the next line starts from the right):
-        % start>O0001234567891234567890000000000O
-        %       000000000009876543219876543210000<start
-        % start>O0001234567891234567890000000000O
-        %       000000000009876543219876543210000<start
-        % (1234... = pixel bit written and photons recorded,
-        %      0/O = pixel bit written and no photons recorded,
-        %        O = first and last pixel marker written between two line markers
-        %        > = forward (< = backward) scan direction
-        %    start = line marker)
-        
-        % - if unidirectional, line starts are written only left
-        % start>O00012345678912345678900000000000
-        %       O00000000000000000000000000000000<
-        % start>O00012345678912345678900000000000
-        %       O00000000000000000000000000000000<
-        % start>O00012345678912345678900000000000
-        %       O00000000000000000000000000000000<
-        
-        % check if the n.o. pixel markers between two line starts:
-        % index of closest pixel marker to line marker 1
-        [~, ind] = min(abs(Header.PixelMarker - Header.LineMarker(1)));
-        % index of closest pixel marker to line marker 2
-        [~, ind2] = min(abs(Header.PixelMarker - Header.LineMarker(2)));
-        BiDir = [];
-        if ind2-ind == (1+44/256)*Pixel % for a 256 pixel image, 300 pixel markers between two liner markers
-            BiDir = 1; % bidirectional image
-        elseif ind2-ind == (1+44/256)*Pixel*2 % for a 256 pixel image, 600 pixel markers between two liner markers
-            BiDir = 0; % unidirectional image
-        else
-            msgbox('check code')
-            return
-        end
-        clear ind ind2
-        FileInfo.BiDir = BiDir;
-        
-        %% Image shift
-        % On a Zeiss system: 
-        % - the first round(16.5*Pixel/512) pixels do not contain photons
-        % - the last round((88-17)*xsize/512) pixels do not contain phtons
-        % F.e. for a 256 pixel image, the recorded image is 300 pixels, with 8 dark, 256 bright and 36 dark per line.
-        % So, we shift the LineTimes such that relevant photons start at
-        % pixel 1 per line. Using the pixtime*imsizex, we can calculate
-        % like everyone else does (without needing the PixelMarker).
-        shift = round(16.5*Pixel/512)*Pixelduration;
-        
-        %% flip every second line if image is bidrectional
-        % we do this at MT/MI level, so the image calculation stays the same
-        if BiDir
-            pixticks = round(Pixelduration); %1314 ticks
-            % loop through all routers and detectors
+            % delete nonsense markers
+            Header.LineMarker = Header.LineMarker(1:Lines*NoF);
+            Header.FrameMarker = Header.FrameMarker(1:NoF);
+            
+            %% Let all Markers start at 1
+            FirstLineMarker = Header.LineMarker(1);
+            Header.LineMarker = Header.LineMarker-FirstLineMarker+1;
+            Header.FrameMarker = Header.FrameMarker-FirstLineMarker+1;
+            Header.PixelMarker = Header.PixelMarker-FirstLineMarker+1;
+            
+            %% Remove photons outside of complete frames
             for i = 1:numel(MT)
+                MT{i} = MT{i}-FirstLineMarker+1;
+                LastTime = Header.LineMarker(end)+Pixel*mean(diff(Header.PixelMarker));
                 mt = MT{i};
-                if numel(mt) > 100000           
-                    % to which even LineMarker is each photon closest
-                    l_even = [1; Header.LineMarker(2:2:end)];
-                    if max(mt) > l_even(end)
-                        l_even = [l_even; max(mt)];
+                mi = MI{i};
+                % remove photons after the last pixel
+                mt(mt>LastTime) = [];
+                mi(mt>LastTime) = [];
+                % remove photons before the first pixel
+                mt = mt(mt>0);
+                mi = mi(mt>0);
+                MT{i} = mt;
+                MI{i} = mi;
+            end
+            clear mt mi
+            
+            %% Extract Pixel, Frame and Line times
+            %%% Extracts frame starts and number of frames from frame-syncs
+            FileInfo.ImageTimes = [FileInfo.ImageTimes Header.FrameMarker*FileInfo.ClockPeriod];
+            
+            %%% Extracts line starts and number of lines from line syncs
+            FileInfo.LineTimes = [FileInfo.LineTimes; MaxMT+permute(reshape(Header.LineMarker*FileInfo.ClockPeriod,[],NoF),[2 1])];
+            FileInfo.Lines = size(FileInfo.LineTimes,2);
+            
+            %%% Extracts number of pixels and pixel duration from pixel syncs
+            FileInfo.Pixels = Pixel;
+            Pixelduration = round(mean(diff(Header.PixelMarker)));
+            FileInfo.PixTime = Pixelduration*FileInfo.ClockPeriod;
+            
+            %% check if image is bidirectional
+            % On a Zeiss system:
+            % - the 'forward + backward scanning time' is the same on a Zeiss system whether you scan uni or bidir.
+            % - that's why bidirectional scanning is exactly twice faster (although it totally shouldn't have to be)
+            
+            % - if bidirectional, line starts are written left and right (cause the next line starts from the right):
+            % start>O0001234567891234567890000000000O
+            %       000000000009876543219876543210000<start
+            % start>O0001234567891234567890000000000O
+            %       000000000009876543219876543210000<start
+            % (1234... = pixel bit written and photons recorded,
+            %      0/O = pixel bit written and no photons recorded,
+            %        O = first and last pixel marker written between two line markers
+            %        > = forward (< = backward) scan direction
+            %    start = line marker)
+            
+            % - if unidirectional, line starts are written only left
+            % start>O00012345678912345678900000000000
+            %       O00000000000000000000000000000000<
+            % start>O00012345678912345678900000000000
+            %       O00000000000000000000000000000000<
+            % start>O00012345678912345678900000000000
+            %       O00000000000000000000000000000000<
+            
+            % check if the n.o. pixel markers between two line starts:
+            % index of closest pixel marker to line marker 1
+            [~, ind] = min(abs(Header.PixelMarker - Header.LineMarker(1)));
+            % index of closest pixel marker to line marker 2
+            [~, ind2] = min(abs(Header.PixelMarker - Header.LineMarker(2)));
+            BiDir = [];
+            if ind2-ind == (1+44/256)*Pixel % for a 256 pixel image, 300 pixel markers between two liner markers
+                BiDir = 1; % bidirectional image
+            elseif ind2-ind == (1+44/256)*Pixel*2 % for a 256 pixel image, 600 pixel markers between two liner markers
+                BiDir = 0; % unidirectional image
+            else
+                msgbox('check code')
+                return
+            end
+            clear ind ind2
+            FileInfo.BiDir = BiDir;
+            
+            %% Image shift
+            % On a Zeiss system:
+            % - the first round(16.5*Pixel/512) pixels do not contain photons
+            % - the last round((88-17)*xsize/512) pixels do not contain phtons
+            % F.e. for a 256 pixel image, the recorded image is 300 pixels, with 8 dark, 256 bright and 36 dark per line.
+            % So, we shift the LineTimes such that relevant photons start at
+            % pixel 1 per line. Using the pixtime*imsizex, we can calculate
+            % like everyone else does (without needing the PixelMarker).
+            shift = round(16.5*Pixel/512)*Pixelduration;
+            
+            %% flip every second line if image is bidrectional
+            % we do this at MT/MI level, so the image calculation stays the same
+            if BiDir
+                pixticks = round(Pixelduration); %1314 ticks
+                % loop through all routers and detectors
+                for i = 1:numel(MT)
+                    mt = MT{i};
+                    if numel(mt) > 100000
+                        % to which even LineMarker is each photon closest
+                        l_even = [1; Header.LineMarker(2:2:end)];
+                        if max(mt) > l_even(end)
+                            l_even = [l_even; max(mt)];
+                        end
+                        [~,~,inde] = histcounts(mt,l_even);
+                        % indl is the index of the Line Marker closest to the photon
+                        % l_even(indl) is the even LineMarker macrotime closest to that of the photon
+                        MTe = l_even(inde);
+                        
+                        % to which uneven LineMarker is each photon closest
+                        l_uneven = Header.LineMarker(1:2:end);
+                        if max(mt) > l_uneven(end)
+                            l_uneven = [l_uneven; max(mt)];
+                        end
+                        [~,~,indu] = histcounts(mt,l_uneven);
+                        % indl is the index of the Line Marker closest to the photon
+                        % l_uneven(indlu) is the uneven LineMarker macrotime closest to that of the photon
+                        MTu = l_uneven(indu);
+                        
+                        % photons (indicated xxxx) whose time difference to the next
+                        % forward START (indicated StArT) is smaller than the time difference
+                        % to the next backward line marker (indicated START) are
+                        % on a backward scanning line:
+                        % start>O0001234567891234567890000000000O
+                        %       00000000000xxxxxxxxxxxxxxxxxx0000<start
+                        % StArT>O0001234567891234567890000000000O
+                        %       000000000001234567891234567890000<START
+                        mtt = mt(MTu < MTe);
+                        mi = MI{i};
+                        mii = mi(MTu < MTe);
+                        
+                        % delete all other photons, we sort them later again anyway
+                        indu = indu(MTu < MTe);
+                        inde = inde(MTu < MTe);
+                        
+                        % mt is the rest of the photons
+                        mt = mt(MTu >= MTe);
+                        mi = mi(MTu >= MTe);
+                        
+                        % flip all backward photons between the linemarkers
+                        % f.e. 1200-1190+900-zeiss_shift = 910; the photon goes from the
+                        % beginning of the line to the end.
+                        mtt = l_uneven(indu) - mtt + l_even(inde)-shift;
+                        
+                        mt = [mt ; mtt];
+                        mi = [mi ; mii];
+                        mt(mt<0) = 0;
+                        % sort mt again from low to high
+                        [mt,I] = sort(mt);
+                        %sort MI according to MT
+                        mi = mi(I);
+                        MT{i} = mt;
+                        MI{i} = mi;
                     end
-                    [~,~,inde] = histcounts(mt,l_even);
-                    % indl is the index of the Line Marker closest to the photon
-                    % l_even(indl) is the even LineMarker macrotime closest to that of the photon
-                    MTe = l_even(inde);
-                    
-                    % to which uneven LineMarker is each photon closest
-                    l_uneven = Header.LineMarker(1:2:end);
-                    if max(mt) > l_uneven(end)
-                        l_uneven = [l_uneven; max(mt)];
-                    end
-                    [~,~,indu] = histcounts(mt,l_uneven);
-                    % indl is the index of the Line Marker closest to the photon
-                    % l_uneven(indlu) is the uneven LineMarker macrotime closest to that of the photon
-                    MTu = l_uneven(indu);
-                    
-                    % photons (indicated xxxx) whose time difference to the next
-                    % forward START (indicated StArT) is smaller than the time difference
-                    % to the next backward line marker (indicated START) are
-                    % on a backward scanning line:
-                    % start>O0001234567891234567890000000000O
-                    %       00000000000xxxxxxxxxxxxxxxxxx0000<start
-                    % StArT>O0001234567891234567890000000000O
-                    %       000000000001234567891234567890000<START
-                    mtt = mt(MTu < MTe);
-                    mi = MI{i};
-                    mii = mi(MTu < MTe);
-                    
-                    % delete all other photons, we sort them later again anyway
-                    indu = indu(MTu < MTe);
-                    inde = inde(MTu < MTe);
-                    
-                    % mt is the rest of the photons
-                    mt = mt(MTu >= MTe);
-                    mi = mi(MTu >= MTe);
-                    
-                    % flip all backward photons between the linemarkers
-                    % f.e. 1200-1190+900-zeiss_shift = 910; the photon goes from the
-                    % beginning of the line to the end.
-                    mtt = l_uneven(indu) - mtt + l_even(inde)-shift;
-                    
-                    mt = [mt ; mtt];
-                    mi = [mi ; mii];
-                    mt(mt<0) = 0;
-                    % sort mt again from low to high
-                    [mt,I] = sort(mt);
-                    %sort MI according to MT
-                    mi = mi(I);
-                    MT{i} = mt;
-                    MI{i} = mi;
                 end
             end
+            
+            %% Shift the Line and Frame Times (don't know why)
+            FileInfo.LineTimes((end+1-NoF):end,:) = FileInfo.LineTimes((end+1-NoF):end,:) + shift*FileInfo.ClockPeriod;
+            FileInfo.ImageTimes((end+1-NoF):end,1) = FileInfo.ImageTimes((end+1-NoF):end) + shift*FileInfo.ClockPeriod;        %%% Sets line and frame stops
+            FileInfo.LineStops = FileInfo.LineTimes + (Pixel+1)*Pixelduration*FileInfo.ClockPeriod;
+            FileInfo.Frames = NoF;
+        else % point data
+            %FileInfo.ImageTimes = [FileInfo.ImageTimes MaxMT*FileInfo.ClockPeriod];
+            %%% Disables image plotting
+            h.MT.Use_Image.Value = 0;
+            h.MT.Use_Lifetime.Value = 0;
+            UserValues.Settings.Pam.Use_Lifetime = 0;
+            UserValues.Settings.Pam.Use_Image = 0;
+            h.Image.Tab.Parent = [];
+            FileInfo.Lines = 1; %Leave here
         end
-        
-        %% Shift the Line and Frame Times (don't know why)
-        FileInfo.LineTimes((end+1-NoF):end,:) = FileInfo.LineTimes((end+1-NoF):end,:) + shift*FileInfo.ClockPeriod;
-        FileInfo.ImageTimes((end+1-NoF):end,1) = FileInfo.ImageTimes((end+1-NoF):end) + shift*FileInfo.ClockPeriod;        %%% Sets line and frame stops
-        FileInfo.LineStops = FileInfo.LineTimes + (Pixel+1)*Pixelduration*FileInfo.ClockPeriod;
-        FileInfo.Frames = NoF;
-        
+    
         %% Finds, which routing bits to use
         if strcmp(UserValues.Detector.Auto,'off')
             Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
