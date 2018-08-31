@@ -1,4 +1,4 @@
-function ParticleViewer()
+function ParticleViewer(~,~)
 global UserValues
 h.ParticleViewer=findobj('Tag','ParticleViewer');
 addpath(genpath(['.' filesep 'functions']));
