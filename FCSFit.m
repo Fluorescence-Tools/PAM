@@ -1294,14 +1294,21 @@ switch mode
         %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
-    case 3 %%% Individual cells callbacks 
+    case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
             %%% detect click of "All" row, in which case the callback
             %%% should finish to update the values
+            %%% problem in 2018a: Updating the other values causes the cell
+            %%% selection to drop, making it impossible to set another
+            %%% value.
+            %%% The "All" row thus only updates if the user types a
+            %%% different value, causing the EditCallback to fire.
             if ~isempty(e.Indices) && e.Indices(1) == size(h.Fit_Table.Data,1)-2
-                NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
             else
                 if isempty(e.Indices) % sometime, indices is empty
                     h.Fit_Table.CellEditCallback={@Update_Table,3};
