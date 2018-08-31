@@ -1240,7 +1240,7 @@ switch mode
         Data(1:end-2,end)=deal({'0'});
         Data(end-1:end,end)=deal({[]});
         h.Fit_Table.Data=[Rows,Data];
-        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-4),false];  
+        h.Fit_Table.ColumnEditable=[false,true,false,false,true(1,numel(Columns)-5),false];  
         h.Fit_Table.ColumnWidth(1) = {5*max(cellfun('prodofsize',Rows))};
         %%% Enables cell callback again
         h.Fit_Table.CellEditCallback={@Update_Table,3};
@@ -1294,13 +1294,52 @@ switch mode
         %Update_Plots        
         %%% Enables cell callback again        
         h.Fit_Table.CellEditCallback={@Update_Table,3};
-    case 3 %%% Individual cells callbacks 
+    case 3 %%% Individual cells callbacks
         %%% Disables cell callbacks, to prohibit double callback
         h.Fit_Table.CellEditCallback=[];
         if strcmp(e.EventName,'CellSelection') %%% No change in Value, only selected
-            %%% re-assign callback and exit
-            h.Fit_Table.CellEditCallback={@Update_Table,3};
-            return;
+            %%% detect click of "All" row, in which case the callback
+            %%% should finish to update the values
+            %%% problem in 2018a: Updating the other values causes the cell
+            %%% selection to drop, making it impossible to set another
+            %%% value.
+            %%% The "All" row thus only updates if the user types a
+            %%% different value, causing the EditCallback to fire.
+            if ~isempty(e.Indices) && e.Indices(1) == size(h.Fit_Table.Data,1)-2
+                %NewData = h.Fit_Table.Data{e.Indices(1),e.Indices(2)};
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
+            else
+                if isempty(e.Indices) % sometime, indices is empty
+                    h.Fit_Table.CellEditCallback={@Update_Table,3};
+                    return;
+                end
+                %%% if a lower boundary/upperboundary field of a logical
+                %%% quantity was clicked (i.e. active/fixed/global)
+                %%% make sure to deselect the field to prevent the user
+                %%% from typing a value
+                deselect = 0;
+                if e.Indices(1) > size(h.Fit_Table.Data,1)-2 %%% clicked lb/ub field
+                    if e.Indices(2) == 2 %%% clicked the "active" column
+                        deselect = 1;
+                    elseif e.Indices(2) == size(h.Fit_Table.Data,2) % clicked chi2 field
+                        deselect = 1;
+                    elseif mod(e.Indices(2)-5,3) ~= 0 % clicked fixed or global field
+                        deselect = 1;
+                    end
+                end
+                if deselect
+                    %%% deselection of field is only possible by assigning
+                    %%% a dummy to the data and re-assigning the original
+                    %%% data afterwards
+                    temp = h.Fit_Table.Data;
+                    h.Fit_Table.Data = repmat({'dummy'},size(h.Fit_Table.Data));
+                    h.Fit_Table.Data = temp;
+                end
+                %%% re-assign callback and exit
+                h.Fit_Table.CellEditCallback={@Update_Table,3};
+                return;
+            end
             % previously, the following code was called that caused the GUI to get stuck in version 2018a and upwards
             %if isempty(e.Indices) || (e.Indices(1)~=(size(h.Fit_Table.Data,1)-2) && e.Indices(2)~=1)
             %    h.Fit_Table.CellEditCallback={@Update_Table,3};
