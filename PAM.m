@@ -932,6 +932,10 @@ h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
     'Label','Export total measurement to PDA',...
     'Callback',@Export_total_to_PDA,...
     'Separator','on');
+h.Burst.Button_Menu_LoadData = uimenu(h.Burst.Button_Menu,...
+    'Label','Estimate background count rates from burst experiment',...
+    'Callback',@Estimate_Background_From_Burst,...
+    'Separator','on');
 h.Burst.Button.UIContextMenu = h.Burst.Button_Menu;
 %%% Right-click menu for BurstLifetime_Button to allow loading of
 %%% IRF/Scatter AFTER performed burst search using stored PIE settings
@@ -11696,3 +11700,42 @@ if isempty(notepad)
 else
     figure(notepad);
 end
+
+%%% Estimates background count rates from burst experiment using
+%%% exponential tail fit to interphoton time distribution
+%%% see Ingargiola, A. et al. PLoS ONE (2016) for more details
+function Estimate_Background_From_Burst(~,~)
+global UserValues TCSPCData FileInfo
+
+BAMethod = UserValues.BurstSearch.Method;
+%%% get channels to estimate background for
+chans = UserValues.BurstSearch.PIEChannelSelection{BAMethod}'; chans = chans(:);
+%%% MLE for Poissonian errors
+logL = @(x,xdata,ydata) sum(ydata.*log(ydata./(x(1).*exp(-xdata.*x(2)))) - ydata + x(1).*exp(-xdata.*x(2)) );
+for i = 1:numel(chans)
+    %%% read out photons
+    MT = Get_Photons_from_PIEChannel(chans{i},'Macrotime');
+    MT = diff(MT).*FileInfo.ClockPeriod*1000; % convert to interphoton time and milliseconds
+    %calculate histogram
+    [hMT, dt] = hist(MT,0:.1:max(MT));
+    valid = (dt>max(dt/5)) & (hMT > 1);
+    x0 = [hMT(1),3/max(dt)];
+    x = fmincon(@(x) logL(x,dt(valid),hMT(valid)),x0,[],[],[],[],[0,0],[Inf,Inf]);
+    figure; plot(dt,hMT);hold on; plot(dt,x(1).*exp(-dt.*x(2)));set(gca,'YScale','log');
+    bg(i) = x(2);
+    disp(sprintf('Fitted channel %d of %d',i,numel(chans)));
+end
+disp('The estimated background count rates are:')
+result = [chans,num2cell(bg')]';
+disp(sprintf('%s: %f kHz\n',result{:}));
+%%% sort background into channels and update display
+%%% Store Background Counts in PIE subfield of UserValues structure (PIE.Background) in kHz
+for i=1:numel(chans)%numel(UserValues.PIE.Name)
+    c = find(strcmp(UserValues.PIE.Name,chans{i}));
+    if isempty(UserValues.PIE.Combined{c})
+        UserValues.PIE.Background(c) = bg(c);
+    end
+end
+LSUserValues(1);
+Update_Display([],[],[1,8])
+disp('Done estimating background count rates from burst experiment.');
