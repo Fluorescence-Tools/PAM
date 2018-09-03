@@ -165,6 +165,7 @@ for i=1:numel(FileName)
         h.MT.Use_Lifetime.Value = 0;
         UserValues.Settings.Pam.Use_Lifetime = 0;
         UserValues.Settings.Pam.Use_Image = 0;
+        h.Image.Tab.Parent = [];
         FileInfo.Lines = 1; %Leave here
     end
 end
