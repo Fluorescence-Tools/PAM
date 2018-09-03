@@ -17056,6 +17056,10 @@ for i = 1:numel(n)
     id = [id, i*ones(1,n(i))];
 end
 data_val = data(:,param);
+%%% transform to z scores
+%%% z = (x-mean)/sigma
+data_val = (data_val-repmat(mean(data_val,1),size(data_val,1),1))./repmat(std(data_val,0,1),size(data_val,1),1);
+data_val(isnan(data_val)) = 0;
 [coeff,score,latent] = pca(data_val);
 
 %%% do thresholding on PC1 and PC2
