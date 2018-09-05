@@ -27,7 +27,7 @@ for i = 1:numTracks
     currentTrack = [data(:,1) data(:, startCol:startCol+1)];
     currentTrack = currentTrack(all(~isnan(currentTrack), 2), :); % remove frames with NaN values
     tracks(i).Frames = currentTrack(:, 1) + 1; % add 1 as Imaris frames start from 0
-    tracks(i).Position = currentTrack(:, 2:end) + 1; % add 1 as Imaris positions start from 0;
+    tracks(i).Position = currentTrack(:, 2:end) + 0.5; % add 0.5 as Imaris position start from 0.5;
 end
 
 %% Generate masks
