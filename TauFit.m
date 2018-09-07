@@ -5530,12 +5530,12 @@ switch obj
         %%% update the plot by evaluating the model with current parameter
         %%% values
         % fix all parameters and store fixed state
-        fixed_old = h.FitPar_Table.Data(1:end-1,4);
-        h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
+        %fixed_old = h.FitPar_Table.Data(1:end-1,4);
+        %h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
         % evaluate
-        Start_Fit(h.Fit_Button,[]);
+        %Start_Fit(h.Fit_Button,[]);
         % reset table
-        h.FitPar_Table.Data(1:end-1,4) = fixed_old;
+        %h.FitPar_Table.Data(1:end-1,4) = fixed_old;
         
         %%% read out selected PIE channels
         if strcmp(TauFitData.Who,'TauFit')
