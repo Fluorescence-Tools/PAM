@@ -4755,7 +4755,7 @@ function a = interlace( a, x, fix )
 a(~fix) = x;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%  Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstWise_Fit(obj,~)
 global UserValues TauFitData PamMeta
@@ -4775,6 +4775,10 @@ drawnow;
 %%% downsampling of microtime histograms to improve speed
 downsample = true;
 
+%%% also calculate the phasor?
+%%% this comes cheap since it is just a calculation on the microtime
+%%% histograms which are computed anyway
+do_phasor = false;
 switch TauFitData.BAMethod
     case {1,2,5}
         %% 2 color MFD
@@ -4803,6 +4807,10 @@ switch TauFitData.BAMethod
         %%% Preallocate lifetime array
         lifetime{1} = cell(numel(parts)-1,1);
         lifetime{2} = cell(numel(parts)-1,1);
+        if do_phasor
+            phasor{1} = cell(numel(parts)-1,1);
+            phasor{2} = cell(numel(parts)-1,1);
+        end
         %%% Prepare Fit Model
         mean_tau = 5;
         range_tau = 9.98;
@@ -4932,7 +4940,9 @@ switch TauFitData.BAMethod
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});                
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
                 clear Par1 Per1
-                
+                if do_phasor
+                    Mic_Phasor{1} = Mic{1};
+                end
                 %%% Rebin to improve speed
                 if downsample
                     Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
@@ -4970,7 +4980,9 @@ switch TauFitData.BAMethod
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
                 clear Par2 Per2
-                
+                if do_phasor
+                    Mic_Phasor{2} = Mic{2};
+                end
                 if downsample
                     %%% Rebin to improve speed
                     Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
@@ -4985,7 +4997,7 @@ switch TauFitData.BAMethod
             
             %% Fitting...
             %%% Prepare the fit inputs
-            lt = zeros(numel(MI),2);
+            lt = zeros(numel(MI),2);            
             for chan = 1:2
                 if UserValues.TauFit.IncludeChannel(chan)
                     %%% Calculate Background fraction
@@ -5028,9 +5040,16 @@ switch TauFitData.BAMethod
                 end
             end
             lifetime{j} = lt;
+            if do_phasor; 
+                ph = zeros(numel(MI),10);
+                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},IRF{1},0);
+                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},IRF{2},0);
+                phasor{j} = ph;
+            end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
+        if do_phasor; phasor = vertcat(phasor{:}); end
         %% Save the result
         Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
         idx_tauGG = strcmp('Lifetime D [ns]',BurstData.NameArray);
@@ -5045,6 +5064,12 @@ switch TauFitData.BAMethod
         end
         if UserValues.TauFit.IncludeChannel(2)
             BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
+        end
+        if do_phasor
+            BurstData.NameArray = [BurstData.NameArray,...
+                {'Phasor: gD','Phasor: sD','Phasor: TauP(D) [ns]','Phasor: TauM(D) [ns]','Phasor: TauMean(D) [ns]',...
+                'Phasor: gA','Phasor: sA','Phasor: TauP(A) [ns]','Phasor: TauM(A) [ns]','Phasor: TauMean(A) [ns]'}];
+            BurstData.DataArray = [BurstData.DataArray, phasor];
         end
     case {3,4}
         %% Three-Color MFD
@@ -5321,6 +5346,76 @@ Progress(1,h.Progress_Axes,h.Progress_Text,'Done');
 hPam = findobj('Tag','Pam');
 handlesPam = guidata(hPam);
 handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Burstwise Phasor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
+%%% Calculates the burstwise phasor components g and s,
+%%% as well as the lifetimes from phase (TauP) and modulation (TauM)
+%%% The average lifetime TauMean = (TauP+TauM)/2 is also returned.
+%%%
+%%% Input: Mic - N_bursts X MI_Bins array of the burstwise microtime histograms
+%%%        Ref - 1 x Mi_Bins microtime hisogram of the reference
+%%%              Can be the IRF (Ref_LT = 0) or a reference sample such as
+%%%              donor only.
+%%%        Ref_LT - Lifetime of the reference sample in nanoseconds
+global TauFitData
+
+MI_Bins = size(Mic,2); % Total number of MI bins of file
+From=1; % First MI bin to used
+To=MI_Bins; % Last MI bin to be used
+Ref_MI_Bins = size(Ref,2);
+Ref_TAC = TauFitData.TACRange * 1E9 .* Ref_MI_Bins/TauFitData.MI_Bins; % in ns
+TAC= TauFitData.TACRange * 1E9  .* MI_Bins/TauFitData.MI_Bins; % Length of full MI range in ns
+
+%%% for now, we assume the background etc to be zero (can be added at a
+%%% later time)
+Background_ref = 0;
+Background = 0;       
+Afterpulsing = 0;
+Shift = 0; % Shift between reference and file in MI bins
+
+%%% Calculates theoretical phase and modulation for reference
+Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
+
+%%% Normalizes reference data
+Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
+Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
+Ref = Ref./sum(Ref);
+
+%%% Calculates phase and modulation of the instrument
+G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
+Fi_inst=atan(s_inst/g_inst);
+M_inst=sqrt(s_inst^2+g_inst^2);
+if (g_inst<0 || s_inst<0)
+    Fi_inst=Fi_inst+pi;
+end
+
+%%% these are the instrument corrected phasor components
+G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+
+%%%% calculate phasor for every burst
+g = sum(Mic.*repmat(G,size(Mic,1),1),2)./sum(Mic,2);
+s = sum(Mic.*repmat(S,size(Mic,1),1),2)./sum(Mic,2);
+%%% project values
+neg=find(g<0 & s<0);
+g(neg)=-g(neg);
+s(neg)=-s(neg);
+
+%%% calculate lifetime values
+Fi=atan(s./g); Fi(isnan(Fi))=0;
+M=sqrt(s.^2+g.^2);M(isnan(M))=0;
+TauP=real(tan(Fi)./(2*pi/TAC));TauP(isnan(TauP))=0;
+TauM=real(sqrt((1./(s.^2+g.^2))-1)/(2*pi/TAC));TauM(isnan(TauM))=0;
+TauMean = (TauP+TauM)/2;
+
+phasor = [g,s,TauP,TauM,TauMean];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Here are functions used for the fits  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
