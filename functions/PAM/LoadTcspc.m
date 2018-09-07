@@ -167,6 +167,7 @@ switch (Type)
             
             %%% Read .set file
             fid = fopen(fullfile(Path, [FileName{1}(1:end-3) 'set']), 'r');
+            ask_syncrate = false;
             if fid~=-1 %%% .set file exists
                 Collection_Time=[];
                 %%% Reads file line by line till all parameters are found
@@ -255,15 +256,31 @@ switch (Type)
                 end
                 
             else %if there is no set file, the B&H software was likely not used
-                h_msg = msgbox('Setup (.set) file not found!');
+                disp(sprintf('Setup (.set) file not found for file %d of %d!',i,numel(FileName)));
                 Card = 'SPC-140/150/130';
                 MI_Bins = [];
                 TACRange = [];
                 Collection_Time = NaN;
-                pause(1)
-                close(h_msg)
                 Pixel = NaN;
                 Lines = NaN;
+                ask_syncrate = true;
+                if i == numel(FileName) && isempty(TACRange)
+                    %%% ask for TAC range in nanoseconds
+                    TACRange = inputdlg('Please specify the TAC range in nanoseconds:',...
+                        'Setup (.set) file not found!',...
+                        1,{num2str(UserValues.Settings.Pam.DefaultTACRange*1E9)},'on');
+                    if isempty(TACRange)
+                        disp('No answer given. Setting default TAC range of 40 ns.');
+                        TACRange = 40E-9;
+                    end
+                    TACRange = 1E-9*str2num(TACRange{1});
+                    if ~isfinite(TACRange) | isempty(TACRange)
+                        disp('Invalid answer given. Setting default TAC range of 40 ns.');
+                        TACRange = 40E-9;
+                    end
+                    UserValues.Settings.Pam.DefaultTACRange = TACRange;
+                    FileInfo.TACRange = TACRange;
+                end
             end
             
             
@@ -398,6 +415,29 @@ switch (Type)
             end
 
         end
+        %%% check for case where the first record was NOT the sync period
+        %%% (i.e. for Seidel simulated spc data)
+        %%% if there was no set file, this is likely the case
+        if ask_syncrate
+            %%% if the sync period was less than 1 MHz, this is probably
+            %%% the case
+            %%% ask for TAC range in nanoseconds
+            syncrate = inputdlg('Please specify the laser frequency in MHz:',...
+                'No set file found.',...
+                1,{num2str(UserValues.Settings.Pam.DefaultSyncRate*1E-6)},'on');
+            if isempty(syncrate)
+                disp(sprintf('No answer given. Keeping the read-out rate of %.2f MHz.',1./FileInfo.SyncPeriod));
+            end
+            syncrate = 1E6*str2num(syncrate{1});
+            if ~isfinite(syncrate) || isempty(syncrate)
+                disp(sprintf('Invalid answer given. Keeping the read-out rate of %.2f MHz.',1./FileInfo.SyncPeriod));
+            else
+                FileInfo.SyncPeriod = 1./syncrate;
+                FileInfo.ClockPeriod = FileInfo.SyncPeriod;
+                UserValues.Settings.Pam.DefaultSyncRate = syncrate;
+            end        
+        end
+        
         
         FileInfo.MeasurementTime = MaxMT*FileInfo.ClockPeriod;
         FileInfo.ImageTimes(end+1) = FileInfo.MeasurementTime;
