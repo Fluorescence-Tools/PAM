@@ -78,6 +78,8 @@ if Mode==0 %%% Loads user values
         S.PIE.Duty_Cycle=0;
         S.PIE.IRF = {zeros(1,4096)};
         S.PIE.ScatterPattern = {zeros(1,4096)};
+        S.PIE.PhasorReference = {zeros(1,4096)};
+        S.PIE.PhasorReferenceLifetime = 4;
         disp('UserValues.PIE was incomplete');
     end
     P.PIE = [];
@@ -104,6 +106,16 @@ if Mode==0 %%% Loads user values
         disp('UserValues.PIE.Background was incomplete');
     end
     P.PIE.Background = S.PIE.Background;
+    if ~isfield(S.PIE,'PhasorReference')
+        S.PIE.PhasorReference = cell(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.PhasorReference was incomplete');
+    end
+    P.PIE.PhasorReference = S.PIE.PhasorReference;
+    if ~isfield(S.PIE,'PhasorReferenceLifetime')
+        S.PIE.PhasorReferenceLifetime = 4*ones(1,numel(S.PIE.Name));
+        disp('UserValues.PIE.PhasorReferenceLifetime was incomplete');
+    end
+    P.PIE.PhasorReferenceLifetime = S.PIE.PhasorReferenceLifetime;
     %% Detector: Definition of Tcspc cards/routing channels to use %%%%%%%%%%%%
     %%% Do not add new fields!!! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

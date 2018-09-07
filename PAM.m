@@ -2580,12 +2580,6 @@ h.PIE.Color = uimenu(...
     'Label','Change channel colors',...
     'Tag','PIE_Color',...
     'Callback',@PIE_List_Functions);
-%%% Saves the current Measurement as IRF for the Channel
-h.PIE.IRF = uimenu(...
-    'Parent',h.PIE.List_Menu,...
-    'Label','Save IRF for selected PIE Channel',...
-    'Tag','PIE_IRF',...
-    'Callback',@SaveLoadIrfScat);
 %%% Export main
 h.PIE.Export = uimenu(...
     'Parent',h.PIE.List_Menu,...
@@ -2625,6 +2619,18 @@ h.PIE.Export_MicrotimePattern = uimenu(...
     'Label','...microtime pattern (as .dec)',...
     'Tag','PIE_Export_MicrotimePattern',...
     'Callback',@PIE_List_Functions);
+%%% Saves the current Measurement as IRF for the Channel
+h.PIE.IRF = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save IRF for selected PIE Channel',...
+    'Tag','PIE_IRF',...
+    'Callback',@SaveLoadIrfScat);
+%%% Saves the current Measurement as Phasor reference for the Channel
+h.PIE.PhasorReference = uimenu(...
+    'Parent',h.PIE.List_Menu,...
+    'Label','Save Phasor Reference for selected PIE Channel',...
+    'Tag','PIE_Phasor_Ref',...
+    'Callback',@SaveLoadIrfScat);
 %%% PIE Channel list
 h.PIE.List = uicontrol(...
     'Parent',h.PIE.Panel,...
@@ -9005,6 +9011,42 @@ switch obj
         UserValues.Settings.Pam.PlotIRF = 'on';
         LSUserValues(1);
         Update_Display([],[],8)
+        h.Progress.Text.String = FileInfo.FileName{1};
+        h.Progress.Axes.Color = UserValues.Look.Control;
+    case h.PIE.PhasorReference
+        % Saves the current PIE channel as IRF pattern
+        if strcmp(FileInfo.FileName{1},'Nothing loaded')
+            errordlg('Load a measurement first!','No measurement loaded...');
+            return;
+        end
+        h.Progress.Text.String = 'Saving Phasore Reference';
+        h.Progress.Axes.Color=[1 0 0];
+        %%% Find selected channels
+        Sel=h.PIE.List.Value;
+        %%% ask for the lifetime of the reference
+        lt = inputdlg('Lifetime of Reference [ns]:','Phasor Referencing',1,{num2str(UserValues.PIE.PhasorReferenceLifetime(Sel(1)))});
+        if isempty(lt)
+            errordlg('No reference lifetime given.');
+            return;
+        end
+        lt = str2num(lt{1});
+        if ~isfinite(lt)
+            errordlg('Invalid reference lifetime given.');
+            return;
+        end
+        
+        for i = 1:numel(Sel)
+            if isempty(UserValues.PIE.Combined{Sel(i)})
+                %%% Update IRF of selected channel
+                det = find( (UserValues.Detector.Det == UserValues.PIE.Detector(Sel(i))) & (UserValues.Detector.Rout == UserValues.PIE.Router(Sel(i))) );
+                UserValues.PIE.PhasorReference{Sel(i)} = PamMeta.MI_Hist{det(1)}';
+                UserValues.PIE.PhasorReferenceLifetime(Sel(i)) = lt;
+            else
+                uiwait(msgbox('Phasor Reference cannot be saved for combined channels!', 'Important', 'modal'))
+                return
+            end
+        end
+        LSUserValues(1);
         h.Progress.Text.String = FileInfo.FileName{1};
         h.Progress.Axes.Color = UserValues.Look.Control;
     case h.Menu.SaveScatter
