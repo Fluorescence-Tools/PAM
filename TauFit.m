@@ -4772,6 +4772,9 @@ StartParPool();
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
 
+%%% downsampling of microtime histograms to improve speed
+downsample = true;
+
 switch TauFitData.BAMethod
     case {1,2,5}
         %% 2 color MFD
@@ -4881,12 +4884,14 @@ switch TauFitData.BAMethod
                 model = c;
                 z = sum(model,1);
                 model = model./z(ones(size(model,1),1),:);
-                %%% Rebin to improve speed
-                model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
-                for i = 1:size(model,2)
-                    model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                if downsample
+                    %%% Rebin to improve speed
+                    model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
+                    for i = 1:size(model,2)
+                        model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                    end
+                    model = model_dummy;
                 end
-                model = model_dummy;
                 z = sum(model,1);model = model./z(ones(size(model,1),1),:);
                 MODEL{chan} = model;
                 %%% Rebin SCATTER pattern
@@ -4929,11 +4934,15 @@ switch TauFitData.BAMethod
                 clear Par1 Per1
                 
                 %%% Rebin to improve speed
-                Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
-                    Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                if downsample
+                    Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
+                    parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
+                        Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                    end
+                    Mic{1} = Mic1'; clear Mic1;
+                else
+                    Mic{1} = Mic{1}';
                 end
-                Mic{1} = Mic1'; clear Mic1;
             end
             if UserValues.TauFit.IncludeChannel(2)
                 %%% Create array of histogrammed microtimes
@@ -4962,13 +4971,16 @@ switch TauFitData.BAMethod
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
                 clear Par2 Per2
                 
-                %%% Rebin to improve speed
-                Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
-                
-                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
-                    Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                if downsample
+                    %%% Rebin to improve speed
+                    Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
+                    parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
+                        Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                    end
+                    Mic{2} = Mic2'; clear Mic2;
+                else
+                    Mic{2} = Mic{2}';
                 end
-                Mic{2} = Mic2'; clear Mic2;
             end
             
             %% Fitting...
