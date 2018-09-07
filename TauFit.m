@@ -4778,7 +4778,7 @@ downsample = true;
 %%% also calculate the phasor?
 %%% this comes cheap since it is just a calculation on the microtime
 %%% histograms which are computed anyway
-do_phasor = false;
+do_phasor = true;
 switch TauFitData.BAMethod
     case {1,2,5}
         %% 2 color MFD
@@ -4874,6 +4874,15 @@ switch TauFitData.BAMethod
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
                 Length{chan} = numel(Scatter)-1;
+                
+                %%% for phasor, read reference for the respective channels
+                if do_phasor
+                    PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                    %%% Apply the shift to the perpendicular IRF channel
+                    PhasorRef_per = circshift(TauFitData.PhasorReference_Per{chan},[0,TauFitData.ShiftPer{chan}]);
+                    PhasorRef_per = PhasorRef_per((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                    PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
+                end
                 
                 [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
                 T = TauFitData.TACChannelWidth*Length{chan};
@@ -5042,8 +5051,8 @@ switch TauFitData.BAMethod
             lifetime{j} = lt;
             if do_phasor; 
                 ph = zeros(numel(MI),10);
-                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},IRF{1},0);
-                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},IRF{2},0);
+                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},TauFitData.PhasorReferenceLifetime(1));
+                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},TauFitData.PhasorReferenceLifetime(2));
                 phasor{j} = ph;
             end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
