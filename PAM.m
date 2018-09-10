@@ -9311,14 +9311,18 @@ switch BurstData.BAMethod
         
         %%% Read Out the Phasor Reference
         TauFitData.PhasorReference_Par = cell(2); TauFitData.PhasorReference_Per = cell(2);
-        TauFitData.PhasorReference_Par{1} = BurstData.Phasor.PhasorReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
-        TauFitData.PhasorReference_Par{2} = BurstData.Phasor.PhasorReference{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
-        TauFitData.PhasorReference_Per{1} = BurstData.Phasor.PhasorReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
-        TauFitData.PhasorReference_Per{2} = BurstData.Phasor.PhasorReference{idx_RRperp}((BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
+        if isfield(BurstData,'Phasor') && isfield(BurstData.Phasor,'PhasorReference')
+            TauFitData.PhasorReference_Par{1} = BurstData.Phasor.PhasorReference{idx_GGpar}((BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])));
+            TauFitData.PhasorReference_Par{2} = BurstData.Phasor.PhasorReference{idx_RRpar}((BurstData.PIE.From(5):min([BurstData.PIE.To(5) max_MIBins_RRpar])));
+            TauFitData.PhasorReference_Per{1} = BurstData.Phasor.PhasorReference{idx_GGperp}((BurstData.PIE.From(2):min([BurstData.PIE.To(2) max_MIBins_GGperp])));
+            TauFitData.PhasorReference_Per{2} = BurstData.Phasor.PhasorReference{idx_RRperp}((BurstData.PIE.From(6):min([BurstData.PIE.To(6) max_MIBins_RRperp])));
+        end
         
         TauFitData.PhasorReferenceLifetime = zeros(2,1);
-        TauFitData.PhasorReferenceLifetime(1) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_GGpar,idx_GGperp]));
-        TauFitData.PhasorReferenceLifetime(2) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_RRpar,idx_RRperp]));
+        if isfield(BurstData,'Phasor') && isfield(BurstData.Phasor,'PhasorReferenceLifetime')
+            TauFitData.PhasorReferenceLifetime(1) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_GGpar,idx_GGperp]));
+            TauFitData.PhasorReferenceLifetime(2) = mean(BurstData.Phasor.PhasorReferenceLifetime([idx_RRpar,idx_RRperp]));
+        end
         
         %%% Generate XData
         TauFitData.XData_Par{1} = (BurstData.PIE.From(1):min([BurstData.PIE.To(1) max_MIBins_GGpar])) - BurstData.PIE.From(1);
