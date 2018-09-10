@@ -4881,14 +4881,21 @@ switch TauFitData.BAMethod
                     if use_irf_as_phasor_reference
                         PhasorRef{chan} = IRF{chan};
                         PhasorReferenceLifetime(chan) = 0;
+                        %%% update the values in BurstData
+                        BurstData.Phasor.PhasorReference{chan} = PhasorRef{chan};
+                        BurstData.Phasor.PhasorReferenceLifetime(chan) = PhasorReferenceLifetime(chan);
                     else
-                        PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                        PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
                         %%% Apply the shift to the perpendicular IRF channel
                         PhasorRef_per = circshift(TauFitData.PhasorReference_Per{chan},[0,TauFitData.ShiftPer{chan}]);
-                        PhasorRef_per = PhasorRef_per((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                        PhasorRef_per = PhasorRef_per((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
                         PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
                         PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
                     end
+                    %%% store the length of the microtime range used for
+                    %%% fitting (needed to obtain the frequency omegae at a
+                    %%% later stage)
+                    BurstData.Phasor.PhasorRange(chan) = TauFitData.Length{chan}-TauFitData.StartPar{chan};
                 end
                 
                 [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
@@ -4957,7 +4964,7 @@ switch TauFitData.BAMethod
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
                 clear Par1 Per1
                 if do_phasor
-                    Mic_Phasor{1} = Mic{1};
+                    Mic_Phasor{1} = Mic{1};                    
                 end
                 %%% Rebin to improve speed
                 if downsample
