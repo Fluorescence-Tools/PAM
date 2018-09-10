@@ -5058,8 +5058,14 @@ switch TauFitData.BAMethod
             lifetime{j} = lt;
             if do_phasor; 
                 ph = zeros(numel(MI),10);
-                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
-                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
+                for chan = 1:2
+                    if UserValues.TauFit.IncludeChannel(chan)
+                        ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
+                    end
+                    if UserValues.TauFit.IncludeChannel(chan)
+                        ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
+                    end
+                end
                 phasor{j} = ph;
             end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
