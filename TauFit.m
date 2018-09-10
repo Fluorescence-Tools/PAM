@@ -4779,6 +4779,7 @@ downsample = true;
 %%% this comes cheap since it is just a calculation on the microtime
 %%% histograms which are computed anyway
 do_phasor = true;
+use_irf_as_phasor_reference = true;
 switch TauFitData.BAMethod
     case {1,2,5}
         %% 2 color MFD
@@ -4877,11 +4878,17 @@ switch TauFitData.BAMethod
                 
                 %%% for phasor, read reference for the respective channels
                 if do_phasor
-                    PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                    %%% Apply the shift to the perpendicular IRF channel
-                    PhasorRef_per = circshift(TauFitData.PhasorReference_Per{chan},[0,TauFitData.ShiftPer{chan}]);
-                    PhasorRef_per = PhasorRef_per((TauFitData.StartPar{1}+1):TauFitData.Length{1});
-                    PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
+                    if use_irf_as_phasor_reference
+                        PhasorRef{chan} = IRF{chan};
+                        PhasorReferenceLifetime(chan) = 0;
+                    else
+                        PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                        %%% Apply the shift to the perpendicular IRF channel
+                        PhasorRef_per = circshift(TauFitData.PhasorReference_Per{chan},[0,TauFitData.ShiftPer{chan}]);
+                        PhasorRef_per = PhasorRef_per((TauFitData.StartPar{1}+1):TauFitData.Length{1});
+                        PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
+                        PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
+                    end
                 end
                 
                 [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
@@ -5051,8 +5058,8 @@ switch TauFitData.BAMethod
             lifetime{j} = lt;
             if do_phasor; 
                 ph = zeros(numel(MI),10);
-                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},TauFitData.PhasorReferenceLifetime(1));
-                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},TauFitData.PhasorReferenceLifetime(2));
+                ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
+                ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
                 phasor{j} = ph;
             end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
@@ -5075,10 +5082,17 @@ switch TauFitData.BAMethod
             BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
         end
         if do_phasor
-            BurstData.NameArray = [BurstData.NameArray,...
-                {'Phasor: gD','Phasor: sD','Phasor: TauP(D) [ns]','Phasor: TauM(D) [ns]','Phasor: TauMean(D) [ns]',...
-                'Phasor: gA','Phasor: sA','Phasor: TauP(A) [ns]','Phasor: TauM(A) [ns]','Phasor: TauMean(A) [ns]'}];
-            BurstData.DataArray = [BurstData.DataArray, phasor];
+            %%% was phasor saved before?
+            if ~all(strcmp('Phasor: gD',BurstData.NameArray) == 0)
+                %%% phasor was stored, overwrite
+                idx_gD = find(strcmp('Phasor: gD',BurstData.NameArray));
+                BurstData.DataArray(:,idx_gD:(idx_gD+size(phasor,2)-1)) = phasor;
+            else %%% no phasor stored, append to array
+                BurstData.NameArray = [BurstData.NameArray,...
+                    {'Phasor: gD','Phasor: sD','Phasor: TauP(D) [ns]','Phasor: TauM(D) [ns]','Phasor: TauMean(D) [ns]',...
+                    'Phasor: gA','Phasor: sA','Phasor: TauP(A) [ns]','Phasor: TauM(A) [ns]','Phasor: TauMean(A) [ns]'}];
+                BurstData.DataArray = [BurstData.DataArray, phasor];
+            end
         end
     case {3,4}
         %% Three-Color MFD
