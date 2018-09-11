@@ -12349,7 +12349,9 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
 end
 try h.axes_EvsTauGG.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauGG,[-0.1 1.1]);
-h.axes_EvsTauGG.CLimMode = 'auto';h.axes_EvsTauGG.CLim(1) = 0;
+h.axes_EvsTauGG.CLimMode = 'auto';
+h.axes_EvsTauGG.CLim(1) = 0;
+h.axes_EvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 if strcmp(BurstMeta.Plots.Fits.staticFRET_EvsTauGG.Visible,'on')
     %%% replot the static FRET line
     UpdateLifetimeFits(h.PlotStaticFRETButton,[]);
@@ -12407,7 +12409,9 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
 end
 try h.axes_EvsTauRR.XLim=[0,maxX]; end
 ylim(h.axes_EvsTauRR,[-0.1 1.1]);
-h.axes_EvsTauRR.CLimMode = 'auto';h.axes_EvsTauRR.CLim(1) = 0;
+h.axes_EvsTauRR.CLimMode = 'auto';
+h.axes_EvsTauRR.CLim(1) = 0;
+h.axes_EvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     %% Plot rGG vs. tauGG in third plot
     if ~h.MultiselectOnCheckbox.UserData
@@ -12463,6 +12467,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     try h.axes_rGGvsTauGG.XLim=[0,maxX]; end
     ylim(h.axes_rGGvsTauGG,[-0.1 0.5]);
     h.axes_rGGvsTauGG.CLimMode = 'auto';h.axes_rGGvsTauGG.CLim(1) = 0;
+    h.axes_rGGvsTauGG.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
     %% Plot rRR vs. tauRR in fourth plot
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauRR)) BurstData{file}.Corrections.AcceptorLifetime+2]);
@@ -12517,6 +12522,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     try h.axes_rRRvsTauRR.XLim=[0,maxX]; end
     ylim(h.axes_rRRvsTauRR,[-0.1 0.5]);
     h.axes_rRRvsTauRR.CLimMode = 'auto';h.axes_rRRvsTauRR.CLim(1) = 0;
+    h.axes_rRRvsTauRR.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 end
 %% 3cMFD
 if any(BurstData{file}.BAMethod == [3,4])
@@ -12578,6 +12584,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     try h.axes_E_BtoGRvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_E_BtoGRvsTauBB,[-0.1 1.1]);
     h.axes_E_BtoGRvsTauBB.CLimMode = 'auto';h.axes_E_BtoGRvsTauBB.CLim(1) = 0;
+    h.axes_E_BtoGRvsTauBB.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
     %% Plot rBB vs tauBB
     if ~h.MultiselectOnCheckbox.UserData
         maxX = min([max(datatoplot(:,idx_tauBB)) BurstData{file}.Corrections.DonorLifetimeBlue+1.5]);
@@ -12632,6 +12639,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     try h.axes_rBBvsTauBB.XLim=[0,maxX]; end
     ylim(h.axes_rBBvsTauBB,[-0.1 0.5]);
     h.axes_rBBvsTauBB.CLimMode = 'auto';h.axes_rBBvsTauBB.CLim(1) = 0;
+    h.axes_rBBvsTauBB.CLim(2) = max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -12799,7 +12807,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     end
     xlim(h.axes_lifetime_ind_2d,x_lim);
     ylim(h.axes_lifetime_ind_2d,y_lim);
-    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;
+    h.axes_lifetime_ind_2d.CLimMode = 'auto';h.axes_lifetime_ind_2d.CLim(1) = 0;    
     %%% plot the universal circle
     if ~isempty(strfind(paramX,'gD'))
         h.axes_lifetime_ind_2d.XLabel.String = 'g_D';
@@ -12814,9 +12822,9 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     ydata = ybins;
     zdata = H;
     origin = []; origin.XLim = x_lim; origin.YLim = y_lim;       
-    
+    origin.CLim = [0,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
 end
-
+h.axes_lifetime_ind_2d.CLim = origin.CLim;
 if sum(zdata(:)) == 0
     return;
 end
@@ -13045,7 +13053,7 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 [x,~,button] = ginput(2);
                 if gca == h.axes_lifetime_ind_2d
                     switch BurstData{file}.BAMethod
-                        case {1,2}
+                        case {1,2,5}
                             switch h.lifetime_ind_popupmenu.Value
                                 case 1 % E vs tauGG is selected
                                     axes(h.axes_EvsTauGG)
@@ -16868,6 +16876,8 @@ if obj == h.PlotCutoff_edit
     else
         h.PlotCutoff_edit.String = num2str(UserValues.BurstBrowser.Display.PlotCutoff);
     end
+    UpdateLifetimePlots([],[],h);
+    PlotLifetimeInd([],[],h);
 end
 if obj == h.ColorMapPopupmenu
     if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
