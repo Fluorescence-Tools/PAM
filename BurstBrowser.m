@@ -2240,7 +2240,7 @@ if isempty(hfig)
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
-        'Callback',@UpdatePlot...
+        'Callback',@UpdateOptions...
         );
     %%% Option to display average values in 1d histograms
     h.DisplayAverage = uicontrol('Style','checkbox',...
@@ -5707,6 +5707,10 @@ switch obj
                 h.MultiPlotButtonMenu_NormalizeArea.Checked = 'on';
                 UserValues.BurstBrowser.Settings.Normalize_Method = 'area';
         end
+        UpdatePlot([],[],h);
+        UpdateLifetimePlots([],[],h);
+        PlotLifetimeInd([],[],h);
+    case h.Hist_log10
         UpdatePlot([],[],h);
         UpdateLifetimePlots([],[],h);
         PlotLifetimeInd([],[],h);
