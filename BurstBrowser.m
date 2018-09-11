@@ -12758,20 +12758,24 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     nbinsX = UserValues.BurstBrowser.Display.NumberOfBinsX;
     nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
     %%% set limits
-    x_lim = [-0.1,1.1];
-    y_lim = [0, 0.75];
     if ~h.MultiselectOnCheckbox.UserData
         datatoplot = BurstData{file}.DataCut;
+        x_lim = [max([-0.1,min(datatoplot(:,idx_x))-0.1]),min([1.1,max(datatoplot(:,idx_x))+0.1])];
+        y_lim = [max([0,min(datatoplot(:,idx_y))-0.1]),min([0.75,max(datatoplot(:,idx_y))+0.1])];
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_x), datatoplot(:,idx_y),[nbinsX nbinsY], x_lim, y_lim);
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
+        x_lim = [-0.1,1.1];
+        y_lim = [0, 0.75];
         NameArray = BurstData{file}.NameArray;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{x_lim, y_lim});
-        HH = zeros(numel(ybins),numel(xbins));
-        for i = 1:numel(H)
-            HH = HH+H{i};
+        if iscell(H)
+            HH = zeros(numel(ybins),numel(xbins));
+            for i = 1:numel(H)
+                HH = HH+H{i};
+            end
+            H = HH;
         end
-        H = HH;
     end
     H = H/max(max(H));
     %%% copy the E vs tauA plot as template
