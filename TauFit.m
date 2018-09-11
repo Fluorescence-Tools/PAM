@@ -5065,13 +5065,11 @@ switch TauFitData.BAMethod
             lifetime{j} = lt;
             if do_phasor; 
                 ph = zeros(numel(MI),10);
-                for chan = 1:2
-                    if UserValues.TauFit.IncludeChannel(chan)
-                        ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
-                    end
-                    if UserValues.TauFit.IncludeChannel(chan)
-                        ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
-                    end
+                if UserValues.TauFit.IncludeChannel(1)
+                    ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
+                end
+                if UserValues.TauFit.IncludeChannel(2)
+                    ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
                 end
                 phasor{j} = ph;
             end
@@ -5655,9 +5653,9 @@ end
 function IncludeChannel(obj,~)
 global UserValues
 h = guidata(findobj('Tag','TauFit'));
-LSUserValues(0)
+LSUserValues(0);
 UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = h.IncludeChannel_checkbox.Value;
-LSUserValues(1)
+LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
