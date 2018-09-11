@@ -12304,6 +12304,7 @@ else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
     [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
+H = H/max(max(H));
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
@@ -12314,7 +12315,7 @@ elseif UserValues.BurstBrowser.Display.KDE
 end
 BurstMeta.Plots.EvsTauGG(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
 BurstMeta.Plots.EvsTauGG(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
 % replicate to fix edges
 Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12365,6 +12366,7 @@ else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
     [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
+H = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
@@ -12375,7 +12377,7 @@ elseif UserValues.BurstBrowser.Display.KDE
 end
 BurstMeta.Plots.EvsTauRR(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
 BurstMeta.Plots.EvsTauRR(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
 % replicate to fix edges
 Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
 Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12422,6 +12424,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
     end
+    H = H/max(max(H));
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
     BurstMeta.Plots.rGGvsTauGG(1).CData = H;
@@ -12432,7 +12435,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     BurstMeta.Plots.rGGvsTauGG(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.rGGvsTauGG(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
     % replicate to fix edges
     Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12477,6 +12480,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
     end
+    H = H/max(max(H));
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
     BurstMeta.Plots.rRRvsTauRR(1).CData = H;
@@ -12487,7 +12491,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     end
     BurstMeta.Plots.rRRvsTauRR(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.rRRvsTauRR(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
     % replicate to fix edges
     Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12539,6 +12543,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.1 1.1]});
     end
+    H = H/max(max(H));
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
@@ -12549,7 +12554,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     BurstMeta.Plots.E_BtoGRvsTauBB(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.E_BtoGRvsTauBB(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
     % replicate to fix edges
     Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12594,6 +12599,7 @@ if any(BurstData{file}.BAMethod == [3,4])
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 maxX], [-0.1 0.5]});
     end
+    H = H/max(max(H));
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
@@ -12604,7 +12610,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     end
     BurstMeta.Plots.rBBvsTauBB(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     BurstMeta.Plots.rBBvsTauBB(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
     % replicate to fix edges
     Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
@@ -12759,8 +12765,15 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_x), datatoplot(:,idx_y),[nbinsX nbinsY], x_lim, y_lim);
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
+        NameArray = BurstData{file}.NameArray;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{x_lim, y_lim});
+        HH = zeros(numel(ybins),numel(xbins));
+        for i = 1:numel(H)
+            HH = HH+H{i};
+        end
+        H = HH;
     end
+    H = H/max(max(H));
     %%% copy the E vs tauA plot as template
     origin =  h.axes_EvsTauRR;
     plots = origin.Children;
@@ -12780,7 +12793,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     end
     c(2).XData = [xbins(1)-min(diff(xbins)),xbins,xbins(end)+min(diff(xbins))];
     c(2).YData = [ybins(1)-min(diff(ybins)),ybins,ybins(end)+min(diff(ybins))];
-    H = H/max(max(H));Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
+    Hcontour =zeros(size(H)+2); Hcontour(2:end-1,2:end-1) = H;
     % replicate to fix edges
     Hcontour(2:end-1,1) = H(:,1);Hcontour(2:end-1,end) = H(:,end);Hcontour(1,2:end-1) = H(1,:);Hcontour(end,2:end-1) = H(end,:);
     Hcontour(1,1) = H(1,1);Hcontour(end,1) = H(end,1);Hcontour(1,end) = H(1,end);Hcontour(end,end) = H(end,end);
