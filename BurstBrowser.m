@@ -12309,7 +12309,7 @@ BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
 BurstMeta.Plots.EvsTauGG(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.EvsTauGG(1).AlphaData = (H>0);
+    BurstMeta.Plots.EvsTauGG(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
 elseif UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
@@ -12371,7 +12371,7 @@ BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
 BurstMeta.Plots.EvsTauRR(1).CData = H;
 if ~UserValues.BurstBrowser.Display.KDE
-    BurstMeta.Plots.EvsTauRR(1).AlphaData = (H>0);
+    BurstMeta.Plots.EvsTauRR(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
 elseif UserValues.BurstBrowser.Display.KDE
     BurstMeta.Plots.EvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
 end
@@ -12429,7 +12429,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
     BurstMeta.Plots.rGGvsTauGG(1).CData = H;
     if ~UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H>0);
+        BurstMeta.Plots.rGGvsTauGG(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rGGvsTauGG(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
@@ -12485,7 +12485,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     BurstMeta.Plots.rRRvsTauRR(1).YData = ybins;
     BurstMeta.Plots.rRRvsTauRR(1).CData = H;
     if ~UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H>0);
+        BurstMeta.Plots.rRRvsTauRR(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rRRvsTauRR(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
@@ -12548,7 +12548,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).CData = H;
     if ~UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = (H>0);
+        BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.E_BtoGRvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
@@ -12604,7 +12604,7 @@ if any(BurstData{file}.BAMethod == [3,4])
     BurstMeta.Plots.rBBvsTauBB(1).YData = ybins;
     BurstMeta.Plots.rBBvsTauBB(1).CData = H;
     if ~UserValues.BurstBrowser.Display.KDE
-        BurstMeta.Plots.rBBvsTauBB(1).AlphaData = (H>0);
+        BurstMeta.Plots.rBBvsTauBB(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
         BurstMeta.Plots.rBBvsTauBB(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
@@ -12791,7 +12791,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     c(1).YData = ybins;
     c(1).CData = H;
     if ~UserValues.BurstBrowser.Display.KDE
-        c(1).AlphaData = (H>0);
+        c(1).AlphaData = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
     elseif UserValues.BurstBrowser.Display.KDE
         c(1).AlphaData = (H./max(max(H)) > 0.01);%ones(size(H,1),size(H,2));
     end
