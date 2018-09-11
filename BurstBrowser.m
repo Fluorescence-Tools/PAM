@@ -2178,7 +2178,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore);
     
-    Colormaps_String = {'jet','jetvar','parula','hot','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
+    Colormaps_String = {'jet','jetvar','parula','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         try
             colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
@@ -16897,10 +16897,22 @@ if obj == h.PlotCutoff_edit
     PlotLifetimeInd([],[],h);
 end
 if obj == h.ColorMapPopupmenu
-    if ~strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},'jetvar')
+    custom_colormaps = {'jetvar','inferno','magma','plasma','viridis'};
+    if ~any(strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},custom_colormaps))
         UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
     else %%% custom colormap
-        UserValues.BurstBrowser.Display.ColorMap = jetvar;
+        switch h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value}
+            case 'jetvar'
+                UserValues.BurstBrowser.Display.ColorMap = jetvar;
+            case 'inferno'
+                UserValues.BurstBrowser.Display.ColorMap = inferno;
+            case 'magma'
+                UserValues.BurstBrowser.Display.ColorMap = magma;
+            case 'plasma'
+                UserValues.BurstBrowser.Display.ColorMap = plasma;
+            case 'viridis'
+                UserValues.BurstBrowser.Display.ColorMap = viridis;
+        end
     end
 end
 if obj == h.SmoothKDE
