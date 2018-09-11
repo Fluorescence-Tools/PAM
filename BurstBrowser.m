@@ -4326,10 +4326,10 @@ if numel(h.lifetime_ind_popupmenu.String) > 4
 end
 %%% check if phasor data is present
 if any(strcmp(BurstData{1}.NameArray,'Phasor: gD'))
-    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>D</sub> vs s<sub>D</sub></html>'
+    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>D</sub> vs s<sub>D</sub></html>';
 end
 if any(strcmp(BurstData{1}.NameArray,'Phasor: gA'))
-    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>A</sub> vs s<sub>A</sub></html>'
+    h.lifetime_ind_popupmenu.String{end+1} = '<html>g<sub>A</sub> vs s<sub>A</sub></html>';
 end
     
 %%% Set Parameter list after all parameters are defined
