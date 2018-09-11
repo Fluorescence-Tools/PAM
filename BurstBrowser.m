@@ -17300,7 +17300,7 @@ Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%% add universal circle to phasor plot
 function add_universal_circle(ax,linkerwidth)
-global BurstData BurstMeta
+global BurstData BurstMeta UserValues
 if nargin < 2
     linkerwidth = false;
 end
@@ -17308,7 +17308,7 @@ file = BurstMeta.SelectedFile;
 x = 0:0.001:1;
 y = sqrt(0.5^2-(x-0.5).^2);
 axes(ax);hold on;
-plot(x,y,'--r','LineWidth',2);
+plot(x,y,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine1);
 
 if linkerwidth %%% also add adjusted universal circle in presence of linker fluctuations
     R0 = BurstData{file}.Corrections.FoersterRadius;
@@ -17317,7 +17317,7 @@ if linkerwidth %%% also add adjusted universal circle in presence of linker fluc
     sigma = BurstData{file}.Corrections.LinkerLength;
     if sigma > 0.1
         [g,s] = universal_circle_linker(R0,sigma,tauD,TAC);
-        plot(g,s,'--k','LineWidth',2);
+        plot(g,s,'--','LineWidth',2,'Color',UserValues.BurstBrowser.Display.ColorLine2);
     end
 end
 
