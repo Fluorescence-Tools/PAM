@@ -12304,6 +12304,12 @@ else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
     [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
+if(get(h.Hist_log10, 'Value'))
+    H = log10(H);
+    if UserValues.BurstBrowser.Display.KDE
+        H = real(H);
+    end
+end
 H = H/max(max(H));
 BurstMeta.Plots.EvsTauGG(1).XData = xbins;
 BurstMeta.Plots.EvsTauGG(1).YData = ybins;
@@ -12366,6 +12372,12 @@ else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
     [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
+if(get(h.Hist_log10, 'Value'))
+    H = log10(H);
+    if UserValues.BurstBrowser.Display.KDE
+        H = real(H);
+    end
+end
 H = H/max(max(H));
 BurstMeta.Plots.EvsTauRR(1).XData = xbins;
 BurstMeta.Plots.EvsTauRR(1).YData = ybins;
@@ -12424,6 +12436,12 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
     end
+    if(get(h.Hist_log10, 'Value'))
+        H = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            H = real(H);
+        end
+    end
     H = H/max(max(H));
     BurstMeta.Plots.rGGvsTauGG(1).XData = xbins;
     BurstMeta.Plots.rGGvsTauGG(1).YData = ybins;
@@ -12479,6 +12497,12 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
     else
         maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
+    end
+    if(get(h.Hist_log10, 'Value'))
+        H = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            H = real(H);
+        end
     end
     H = H/max(max(H));
     BurstMeta.Plots.rRRvsTauRR(1).XData = xbins;
@@ -12543,6 +12567,12 @@ if any(BurstData{file}.BAMethod == [3,4])
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idxE1A},{[0 maxX], [-0.1 1.1]});
     end
+    if(get(h.Hist_log10, 'Value'))
+        H = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            H = real(H);
+        end
+    end
     H = H/max(max(H));
     BurstMeta.Plots.E_BtoGRvsTauBB(1).XData = xbins;
     BurstMeta.Plots.E_BtoGRvsTauBB(1).YData = ybins;
@@ -12598,6 +12628,12 @@ if any(BurstData{file}.BAMethod == [3,4])
     else
         maxX = BurstData{file}.Corrections.DonorLifetimeBlue+1.5;
         [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauBB},NameArray{idx_rBB},{[0 maxX], [-0.1 0.5]});
+    end
+    if(get(h.Hist_log10, 'Value'))
+        H = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            H = real(H);
+        end
     end
     H = H/max(max(H));
     BurstMeta.Plots.rBBvsTauBB(1).XData = xbins;
@@ -12777,6 +12813,12 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
             H = HH;
         end
     end
+    if(get(h.Hist_log10, 'Value'))
+        H = log10(H);
+        if UserValues.BurstBrowser.Display.KDE
+            H = real(H);
+        end
+    end
     H = H/max(max(H));
     %%% copy the E vs tauA plot as template
     origin =  h.axes_EvsTauRR;
@@ -12838,10 +12880,14 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     xdata = xbins;
     ydata = ybins;
     zdata = H;
+    
     origin = []; origin.XLim = x_lim; origin.YLim = y_lim;       
     origin.CLim = [0,max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100];
 end
 h.axes_lifetime_ind_2d.CLim = origin.CLim;
+if(get(h.Hist_log10, 'Value')) % transform back for 1d hists
+    zdata = 10.^zdata;
+end
 if sum(zdata(:)) == 0
     return;
 end
