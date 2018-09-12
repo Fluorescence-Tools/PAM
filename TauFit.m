@@ -2589,9 +2589,9 @@ switch obj
                 %%% taus    - Lifetimes
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
-                lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
-                ub(1) = round(ub(1)/TauFitData.TACChannelWidth);
+                x0(1) = x0(1)/TauFitData.TACChannelWidth;
+                lb(1) = lb(1)/TauFitData.TACChannelWidth;
+                ub(1) = ub(1)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2656,9 +2656,9 @@ switch obj
                 %%% A       - Amplitude of first lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
+                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
+                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
                 
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
@@ -2745,9 +2745,9 @@ switch obj
                 %%% A2      - Amplitude of first lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);
+                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2851,9 +2851,9 @@ switch obj
                 %%% beta    - distribution parameter
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1)/TauFitData.TACChannelWidth);
+                x0(1) = x0(1)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2933,9 +2933,9 @@ switch obj
                 %%% R0
                 %%% Donor only lifetime
                 %%% Convert Lifetimes
-                x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
-                lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
-                ub(6) = round(ub(6)/TauFitData.TACChannelWidth);
+                x0(6) = x0(6)/TauFitData.TACChannelWidth;
+                lb(6) = lb(6)/TauFitData.TACChannelWidth;
+                ub(6) = ub(6)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3014,9 +3014,9 @@ switch obj
                 %%% Donor only lifetime
                 
                 %%% Convert Lifetimes
-                x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
-                lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
-                ub(7) = round(ub(7)/TauFitData.TACChannelWidth);
+                x0(7) = x0(7)/TauFitData.TACChannelWidth;
+                lb(7) = lb(7)/TauFitData.TACChannelWidth;
+                ub(7) = ub(7)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -3111,9 +3111,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end
                 %%% Convert Lifetimes
-                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
+                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
+                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3233,9 +3233,9 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0([1,2,4]) = round(x0([1,2,4])/TauFitData.TACChannelWidth);
-                lb([1,2,4]) = round(lb([1,2,4])/TauFitData.TACChannelWidth);
-                ub([1,2,4]) = round(ub([1,2,4])/TauFitData.TACChannelWidth);
+                x0([1,2,4]) = x0([1,2,4])/TauFitData.TACChannelWidth;
+                lb([1,2,4]) = lb([1,2,4])/TauFitData.TACChannelWidth;
+                ub([1,2,4]) = ub([1,2,4])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3374,9 +3374,9 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);
+                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3500,9 +3500,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
-                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
-                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
+                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
+                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3646,9 +3646,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
-                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
-                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
+                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
+                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
