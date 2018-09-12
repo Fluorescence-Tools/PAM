@@ -866,12 +866,16 @@ if strcmp(method,'ensemble')
         'Callback',@Start_Fit);
     h.Fit_Button_Menu = uicontextmenu;
     %%% Button for Maximum Entropy Method (MEM) analysis
-    h.Fit_Button_MEM = uimenu('Parent',h.Fit_Button_Menu,...
-        'Label','MEM analysis',...
+    h.Fit_Button_MEM_tau = uimenu('Parent',h.Fit_Button_Menu,...
+        'Label','MEM analysis (Lifetime Distribution)',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+        h.Fit_Button_MEM_dist = uimenu('Parent',h.Fit_Button_Menu,...
+        'Label','MEM analysis (Distance Distribution)',...
         'Checked','off',...
         'Callback',@Start_Fit);
     h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
-    h.Fit_Button_MEM.Visible = 'off'; % only turn visible after a fit has been performed
+    h.Fit_Button_MEM_tau.Visible = 'off'; h.Fit_Button_MEM_dist.Visible = 'off';% only turn visible after a fit has been performed
     %%% Button to start tail fitting
     h.Fit_Tail_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -1031,12 +1035,16 @@ if exist('bh','var')
             'Callback',@Start_Fit);
         h.Fit_Button_Menu = uicontextmenu;
         %%% Button for Maximum Entropy Method (MEM) analysis
-        h.Fit_Button_MEM = uimenu('Parent',h.Fit_Button_Menu,...
-            'Label','MEM analysis',...
+        h.Fit_Button_MEM_tau = uimenu('Parent',h.Fit_Button_Menu,...
+            'Label','MEM analysis (Lifetime Distribution)',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_Button_MEM_dist = uimenu('Parent',h.Fit_Button_Menu,...
+            'Label','MEM analysis (Distance Distribution)',...
             'Checked','off',...
             'Callback',@Start_Fit);
         h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
-        h.Fit_Button_MEM.Visible = 'off'; % only turn visible after a fit has been performed
+        h.Fit_Button_MEM_tau.Visible = 'off'; h.Fit_Button_MEM_dist.Visible = 'off'; % only turn visible after a fit has been performed
         %%% Button to start tail fitting
         h.Fit_Tail_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -2406,7 +2414,8 @@ if h.AutoFit_Menu.Value
     Start_Fit(h.Fit_Button)
 end
 % hide MEM button
-h.Fit_Button_MEM.Visible = 'off';
+h.Fit_Button_MEM_tau.Visible = 'off';
+h.Fit_Button_MEM_dist.Visible = 'off';
 
 drawnow;
 
@@ -3961,15 +3970,25 @@ switch obj
         end
         
         h.Result_Plot.YLabel.String = 'Intensity [counts]';
-        h.Fit_Button_MEM.Visible = 'on';
-    case {h.Fit_Button_MEM}
+        h.Fit_Button_MEM_tau.Visible = 'on';
+        h.Fit_Button_MEM_dist.Visible = 'on';
+    case {h.Fit_Button_MEM_tau,h.Fit_Button_MEM_dist}
         TauFitData.FitType = 'MEM';
         % initialize fit parameters
         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
         
         % get fit parameters (scatter,background, irfshift)
         x0 = [ UserValues.TauFit.FitParams{chan}([6,8]) UserValues.TauFit.IRFShift{chan}];
-        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata);
+        switch obj
+            case h.Fit_Button_MEM_tau
+                mode = 'tau';
+            case h.Fit_Button_MEM_dist
+                mode = 'dist';
+                %%% append F?rster distance and donor-only lifetime
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(11);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(12);
+        end
+        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata,mode);
         
         % plot the result
         wres = (Decay(ignore:end)-FitFun)./sqrt(Decay(ignore:end));
@@ -4064,9 +4083,14 @@ switch obj
         % update plots
         h.Plots.FitAnisoResult.XData = tau;
         h.Plots.FitAnisoResult.YData = tau_dist;
-        h.Result_Plot_Aniso.XLim = [0,tau(end)];
+        h.Result_Plot_Aniso.XLim = [tau(1),tau(end)];
         h.Result_Plot_Aniso.YLim = [0,max(tau_dist)*1.05];
-        h.Result_Plot_Aniso.XLabel.String = 'Lifetime [ns]';
+        switch obj
+            case h.Fit_Button_MEM_tau
+                h.Result_Plot_Aniso.XLabel.String = 'Lifetime [ns]';
+            case h.Fit_Button_MEM_dist
+                h.Result_Plot_Aniso.XLabel.String = 'Distance [?]';
+        end
         h.Result_Plot_Aniso.YLabel.String = 'Probability';
         
         h.Result_Plot.XLim = [0, Length*TACtoTime];
@@ -6131,34 +6155,49 @@ h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
 
 
-function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,resolution)
+function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,mode,resolution, v)
 global TauFitData
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
-if nargin < 4
+if nargin < 5
     resolution = 200;
 end
-if nargin < 5
+if nargin < 6
     %%% scaling parameter for the entropy term
     v = 1E-5; 
     % this value is taken from:
-    % Vinogradov and Wilson, ?Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery.? 
+    % Vinogradov and Wilson, "Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery." 
     % where it is suggested as an "optimal" value
 end
+
 % remove ignore region from decay
 decay = decay(static_fit_params{7}:end);
 x = 1:1:numel(decay);
-%%% vector of lifetimes to consider (up to 10 ns)
-tau = linspace(0,ceil(5/TauFitData.TACChannelWidth),resolution);
+
+%%% Calculate error estimate based on poissonian counting statistics
+error = sqrt(decay); error(error == 0) = 1;
+
+switch mode
+    case 'tau' % fit lifetime distribution
+        %%% vector of lifetimes to consider (up to 10 ns)
+        tau = linspace(0,ceil(5/TauFitData.TACChannelWidth),resolution);
+    case 'dist' % fit distance distribution
+        %%% get F?rster distance and donor-only lifetime
+        global UserValues
+        R0 = params(end-1);
+        tauD = params(end)/TauFitData.TACChannelWidth;
+        params(end-1:end) = [];
+        %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
+        R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
+        R = R(2:end-1);
+        %%% calculate respective lifetime vector
+        tau = tauD.*(1+(R0./R).^6).^(-1);      
+end
 
 %%% Establish library of single exponential decays, convoluted with IRF
 decay_ind = zeros(numel(tau),numel(x));
 for i = 1:numel(tau)
     decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
 end
-
-%%% Calculate error estimate based on poissonian counting statistics
-error = sqrt(decay); error(error == 0) = 1;
-
 mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-sum(decay_ind.*repmat(p,1,numel(decay),1))).^2./error.^2)./(numel(decay)));
 
 %%% initialize p
@@ -6175,7 +6214,12 @@ tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
 
 chi2 = sum( (decay-sum(decay_ind.*repmat(tau_dist,1,numel(decay),1))).^2./error.^2)./(numel(decay));
 model = sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
-tau = tau*TauFitData.TACChannelWidth;
+switch mode
+    case 'tau'
+        tau = tau*TauFitData.TACChannelWidth;
+    case 'dist'
+        tau = R;
+end
 
 function [c,ceq] = nonlcon(x)
 %%% nonlinear constraint for deconvolution
