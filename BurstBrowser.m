@@ -6841,8 +6841,7 @@ else
     % go in between the limits defined in the cut table 
     zlim = [h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),2} h.CutTable.Data{cell2mat(h.CutTable.Data(:,6)),3}];
     Mask(Mask < zlim(1)) = zlim(1);
-    Mask(Mask > zlim(2)) = zlim(2);
-    Mask = floor(63*(Mask-zlim(1))./(zlim(2)-zlim(1)))+1;
+    Mask(Mask > zlim(2)) = zlim(2);   
     % get the colormap user wants
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         eval(['cmap =' UserValues.BurstBrowser.Display.ColorMap '(64);']);
@@ -6853,9 +6852,9 @@ else
     if UserValues.BurstBrowser.Display.ColorMapInvert
         cmap=flipud(cmap);
     end
-    % a = cmap(Mask,:)
-    %    if Mask(1) = n, then a(1) is the nth element of cmap
-    % reshape(a, size(Mask,1),size(Mask,2),3))
+    %%% bin according to the size of the colormap
+    Mask = floor((size(cmap,1)-1)*(Mask-zlim(1))./(zlim(2)-zlim(1)))+1;
+    
     %   converts a back to the size of Mask, but now the color in the 3rd dimension
     Color = reshape(cmap(Mask,:),size(Mask,1),size(Mask,2),3);
 
@@ -6905,7 +6904,7 @@ else
     h.axes_ZScale.YTickLabel = [];
     %%% Update Colorbar
     h.colorbar.Label.String = param;%h.CutTable.RowName(cell2mat(h.CutTable.Data(:,5)));
-    h.colorbar.Ticks = [0,1/2,1];
+    h.colorbar.Ticks = [h.colorbar.Limits(1),h.colorbar.Limits(1)+(h.colorbar.Limits(2)-h.colorbar.Limits(1))/2,h.colorbar.Limits(2)];%[0,1/2,1];
     h.colorbar.TickLabels = {sprintf('%.2f',(zlim(1)));sprintf('%.2f',zlim(1)+(zlim(2)-zlim(1))/2);sprintf('%.2f',zlim(2))};
     h.colorbar.AxisLocation='out';
     
