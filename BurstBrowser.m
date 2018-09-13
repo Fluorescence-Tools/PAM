@@ -12810,8 +12810,10 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     %%% set limits
     if ~h.MultiselectOnCheckbox.UserData
         datatoplot = BurstData{file}.DataCut;
-        x_lim = [max([-0.1,min(datatoplot(:,idx_x))-0.1]),min([1.1,max(datatoplot(:,idx_x))+0.1])];
-        y_lim = [max([0,min(datatoplot(:,idx_y))-0.1]),min([0.75,max(datatoplot(:,idx_y))+0.1])];
+        min_max = max(datatoplot(:,idx_x))-min(datatoplot(:,idx_x));
+        x_lim = [max([-0.1,min(datatoplot(:,idx_x))-0.1*min_max]),min([1.1,max(datatoplot(:,idx_x))+0.1*min_max])];
+        min_max = max(datatoplot(:,idx_y))-min(datatoplot(:,idx_y));
+        y_lim = [max([0,min(datatoplot(:,idx_y))-0.1*min_max]),min([0.75,max(datatoplot(:,idx_y))+0.1*min_max])];
         [H, xbins, ybins] = calc2dhist(datatoplot(:,idx_x), datatoplot(:,idx_y),[nbinsX nbinsY], x_lim, y_lim);
         datapoints = [datatoplot(:,idx_x), datatoplot(:,idx_y)];
     else
@@ -13156,13 +13158,15 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 h.axes_EvsTauGG.UIContextMenu = []; set(h.axes_EvsTauGG.Children,'UIContextMenu',[]);
                 h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
                 %%% Query Lifetimes using ginput
-                [x,~,button] = ginput(2);
+                [x,y,button] = ginput(2);
                 if gca == h.axes_lifetime_ind_2d
                     switch BurstData{file}.BAMethod
                         case {1,2,5}
                             switch h.lifetime_ind_popupmenu.Value
                                 case 1 % E vs tauGG is selected
                                     axes(h.axes_EvsTauGG)
+                                case {5,6} % Phasor of donor or acceptor is selected
+                                    %%% do nothing, axes_lifetime_ind_2d
                             end
                         case {3,4}
                             switch h.lifetime_ind_popupmenu.Value
@@ -13171,34 +13175,47 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                             end
                     end
                 end
-                if gca ~= h.axes_EvsTauGG
+                if (gca ~= h.axes_EvsTauGG) && h.lifetime_ind_popupmenu.Value == 1
                     m=msgbox('Click on a E vs. tauGG axis!');
                     pause(1);
                     delete(m);
                     return;
                 end
-                %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
-                %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
-                %    x);
-                if button(1) == 1 %%% left mouseclick, update first line, reset all others off
-                    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
-                    BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3).Visible = 'off';
-                    line = 1;
-                elseif button(1) == 3
-                    %%% Check for visibility of plots
-                    for i = 1:3
-                        vis(i) = strcmp(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Visible,'on');
-                    end
-                    if sum(vis) == 3 %% all visible
-                        line = 3; %%% update last plot
-                    elseif sum(vis) == 0 %% all hidden
-                        line = 1;
-                    else %%% find the first hidden plot
-                        line = find(vis == 0, 1,'first');
-                    end
+                switch h.lifetime_ind_popupmenu.Value
+                    case 1 % E vs tau relation
+                        %y = conversion_tau(BurstData{file}.Corrections.DonorLifetime,...
+                        %    BurstData{file}.Corrections.FoersterRadius,BurstData{file}.Corrections.LinkerLength,...
+                        %    x);
+                        if button(1) == 1 %%% left mouseclick, update first line, reset all others off
+                            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(2).Visible = 'off';
+                            BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(3).Visible = 'off';
+                            line = 1;
+                        elseif button(1) == 3
+                            %%% Check for visibility of plots
+                            for i = 1:3
+                                vis(i) = strcmp(BurstMeta.Plots.Fits.dynamicFRET_EvsTauGG(i).Visible,'on');
+                            end
+                            if sum(vis) == 3 %% all visible
+                                line = 3; %%% update last plot
+                            elseif sum(vis) == 0 %% all hidden
+                                line = 1;
+                            else %%% find the first hidden plot
+                                line = find(vis == 0, 1,'first');
+                            end
+                        end
+                        h.axes_EvsTauGG.UIContextMenu = menu_stored; set(h.axes_EvsTauGG.Children,'UIContextMenu',menu_stored);
+                        h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
+                    case {5,6} % Phasor plots
+                        % draw a line through the universal circles
+                        m = (y(2)-y(1))/(x(2)-x(1)); b = (y(1)*x(2)-y(2)*x(1))/(x(2)-x(1));
+                        % use p-q formula
+                        p = (2*m*b-1)/(m^2+1); q = b^2/(m^2+1);
+                        xp1 = -p/2 - sqrt(p^2/4-q); xp2 =  -p/2 + sqrt(p^2/4-q);
+                        xp = xp1:0.01:xp2; yp = m*xp+b;
+                        plot(xp,yp,'--','LineWidth',3,'Color',UserValues.BurstBrowser.Display.ColorLine2,'Parent',h.axes_lifetime_ind_2d);
+                        h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
+                        return;
                 end
-                h.axes_EvsTauGG.UIContextMenu = menu_stored; set(h.axes_EvsTauGG.Children,'UIContextMenu',menu_stored);
-                h.axes_lifetime_ind_2d.UIContextMenu = h.axes_lifetime_ind_1d_x.UIContextMenu; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',h.axes_lifetime_ind_1d_x.UIContextMenu);
             elseif obj == h.DynamicFRETManual_Menu
                 %%% Query using edit box
                 %y = inputdlg({'FRET Efficiency 1','FRET Efficiency 2'},'Enter State Efficiencies',1,{'0.25','0.75'});
