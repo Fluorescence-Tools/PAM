@@ -39,8 +39,6 @@ if isempty(hfig)
         'Toolbar','figure',...
         'CloseRequestFcn',@Close_BurstBrowser,...
         'KeyPressFcn',@BurstBrowser_KeyPress);
-    %'WindowScrollWheelFcn',@Bowser_Wheel,...
-    %'KeyPressFcn',@Bowser_KeyPressFcn,...
     whitebg(h.BurstBrowser,Look.Axes);
     set(h.BurstBrowser,'Color',Look.Back);
     %%% Remove unneeded items from toolbar
@@ -3343,14 +3341,23 @@ if isempty(hfig)
         'XColor',Look.Fore,...
         'YColor',Look.Fore,...
         'LineWidth', Look.AxWidth,...
-                           'XGrid','on',...
+        'XGrid','on',...
         'YGrid','on',...
         'GridAlpha',0.5,...
         'nextplot','add',...
         'Color',Look.Axes,...
         'UIContextMenu',h.ExportGraphLifetime_Menu);
-    
-    
+    %%% add a text box on top of axis for plotting of e.g. lifetime values
+    %%% in phasor
+    h.axes_lifetime_ind_2d_textbox= uicontrol(...
+        'style','text',...
+        'Parent',h.LifetimePanelInd,...
+        'Units','normalized',...
+        'Position',[0.8 0.94 0.2 0.06],...
+        'BackgroundColor',Look.Back,...
+        'String','',...
+        'HorizontalAlignment','left',...
+        'ForegroundColor',Look.Fore);
     %display popupmenu for selection
     h.lifetime_ind_popupmenu = uicontrol(...
         'Style','listbox',...
@@ -12704,7 +12711,9 @@ if isempty(BurstData)
 end
 
 file = BurstMeta.SelectedFile;
-
+%%% reset axis motion function (used for phasor plot to read out lifetimes)
+h.BurstBrowser.WindowButtonMotionFcn = [];
+h.axes_lifetime_ind_2d_textbox.String = '';
 switch BurstData{file}.BAMethod
     case {1,2,5}
         switch h.lifetime_ind_popupmenu.Value
@@ -12725,9 +12734,11 @@ switch BurstData{file}.BAMethod
                 paramX = 'Lifetime A [ns]';
                 paramY = 'Anisotropy A';
             case 5 % Phasor plot of g_d vs s_d
+                h.BurstBrowser.WindowButtonMotionFcn = @PhasorLiveUpdate;
                 paramX = 'Phasor: gD';
                 paramY = 'Phasor: sD';
             case 6 % Phasor plot of g_a vs s_a
+                h.BurstBrowser.WindowButtonMotionFcn = @PhasorLiveUpdate;
                 paramX = 'Phasor: gA';
                 paramY = 'Phasor: sA';
         end
@@ -13065,6 +13076,35 @@ set(h.axes_lifetime_ind_1d_x,'YTick',yticks(2:end));
 h.axes_lifetime_ind_1d_y.YTickMode = 'auto';
 yticks= get(h.axes_lifetime_ind_1d_y,'YTick');
 set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Calculate lifetimes from phasor corrdinates on mouseover %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function PhasorLiveUpdate(obj,eData)
+global BurstData BurstMeta
+h = guidata(obj);
+%%% get position
+Pos=h.axes_lifetime_ind_2d.CurrentPoint(1,1:2);
+%%% Disables callback, to avoid multiple executions
+h.BurstBrowser.WindowButtonMotionFcn=[];
+%%% Calculates current cursor position relative to limits
+XLim=h.axes_lifetime_ind_2d.XLim;
+YLim=h.axes_lifetime_ind_2d.YLim;
+%%% get channel (donor or acceptor)
+chan = h.lifetime_ind_popupmenu.Value-4;
+%%% Only ecexutes inside plot bounds
+if Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<XLim(2)
+    %%%Calculates info and updates text fields
+    Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+    TauP=(Pos(1,2)/Pos(1,1))/(2*pi*Freq);
+    TauM=sqrt((1/(Pos(1,2)^2+Pos(1,1)^2))-1)/(2*pi*Freq);
+    MeanTau = (TauP+TauM)/2;    
+    h.axes_lifetime_ind_2d_textbox.String = ...
+        sprintf('TauP = %.2f ns   TauM = %.2f ns\nTauAvg = %.2f ns',...
+                    TauP,TauM,MeanTau);
+end
+%%% Enables callback
+h.BurstBrowser.WindowButtonMotionFcn=@PhasorLiveUpdate;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Lifetime Plot (+fit) in the left Corrections Tab %%%%%%%%%%
