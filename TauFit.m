@@ -4858,7 +4858,7 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
@@ -4869,7 +4869,14 @@ switch TauFitData.BAMethod
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
@@ -5124,7 +5131,7 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from the plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
@@ -5135,7 +5142,14 @@ switch TauFitData.BAMethod
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
