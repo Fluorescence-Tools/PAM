@@ -6173,7 +6173,7 @@ function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_param
 global TauFitData
 %%% Maximum Entropy analysis to obtain model-free lifetime distribtion
 if nargin < 5
-    resolution = 200;
+    resolution = 300;
 end
 if nargin < 6
     %%% scaling parameter for the entropy term
@@ -6193,7 +6193,7 @@ error = sqrt(decay); error(error == 0) = 1;
 switch mode
     case 'tau' % fit lifetime distribution
         %%% vector of lifetimes to consider (up to 10 ns)
-        tau = linspace(0,ceil(5/TauFitData.TACChannelWidth),resolution);
+        tau = linspace(0,ceil(7.5/TauFitData.TACChannelWidth),resolution);
     case 'dist' % fit distance distribution
         %%% get F?rster distance and donor-only lifetime
         global UserValues
