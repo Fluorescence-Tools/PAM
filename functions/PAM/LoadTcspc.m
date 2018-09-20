@@ -893,6 +893,7 @@ switch (Type)
             
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .h5 file
             [MT,MI, PhotonHDF5_Data] = Read_PhotonHDF5(fullfile(Path,FileName{i}));
             
@@ -904,7 +905,13 @@ switch (Type)
                 FileInfo.ClockPeriod = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
             end
             if isempty(FileInfo.Resolution)
-                FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit;
+                if isfield(PhotonHDF5_Data.photon_data, 'nanotimes_specs')
+                    %%% TCSPC data
+                    FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit*1E12;
+                else
+                    %%% usALEX data
+                    FileInfo.Resolution = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit*1E12;
+                end
             end
             
             %%% Finds, which routing bits to use
@@ -930,8 +937,16 @@ switch (Type)
         FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
         FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
-        FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-        FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
+        if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')
+            %%% TCSPC data
+            FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
+        else 
+            %%% usALEX data
+            FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.measurement_specs.alex_period);
+            FileInfo.TACRange = double(PhotonHDF5_Data.photon_data.measurement_specs.alex_period) * PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
+        end
+        
     case 8 %%% *.t3r TTTR files from TimeHarp 200
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'TimeHarp200';
