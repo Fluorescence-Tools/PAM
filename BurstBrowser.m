@@ -4312,8 +4312,11 @@ h.DatabaseBB.AppendLoadedFiles.Enable = 'on';
 Initialize_Plots(2);
 
 %%% Switches GUI to 3cMFD or 2cMFD format
-SwitchGUI(BurstData{1}.BAMethod);
-
+if BurstData{1}.BAMethod ~= 5
+    SwitchGUI(BurstData{1}.BAMethod);
+else
+    SwitchGUI(BurstData{1}.BAMethod,1); %%% force update
+end
 %%% Initialize Parameters and Corrections for every loaded file
 for i = 1:numel(BurstData)
     BurstMeta.SelectedFile = i;
@@ -13922,6 +13925,8 @@ switch BurstData{file}.BAMethod
         Chan = {    1,    2,    3,    4,    5,    6,[1 2],[3 4],[1 2 3 4],[1 3],[2 4],[5 6]};
     case {3,4}
         Chan = {1,2,3,4,5,6,7,8,9,10,11,12,[1 3 5],[2 4 6],[7 9],[8 10], [1 2],[3 4],[5 6],[7 8],[9 10],[11 12],[1 2 3 4 5 6],[7 8 9 10]};
+    case {5} %%% 2 color no polarization
+        Chan = {   1,  2,  3,  [1,2]};
 end
 %Name = {'GG1','GG2','GR1','GR2','RR1','RR2', 'GG', 'GR','GX','GX1','GX2', 'RR'};
 Name = h.Correlation_Table.RowName;
@@ -14320,6 +14325,11 @@ if nargin == 1
 end
 %%% convert BAMethod to 2 (2colorMFD) or 3 (3cMFD)
 if any(BAMethod == [1,2,5])
+    if BAMethod ~= 5
+        MFD = true;
+    else
+        MFD = false;
+    end
     BAMethod = 2;
 elseif any(BAMethod == [3,4])
     BAMethod = 3;
@@ -14501,7 +14511,11 @@ elseif BAMethod == 2
     %%% Hide TauBB Export Option
     h.ExportEvsTauBB_Menu.Visible = 'off';
     %% Change Correlation Table
-    Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
+    if MFD %%% 2cMFD
+            Names = {'DD1','DD2','DA1','DA2','AA1','AA2','DD','DA','DX','DX1','DX2','AA'};
+    else %%% no polarization
+            Names = {'DD','DA','AA','DX'};
+    end
     h.Correlation_Table.RowName = Names;
     h.Correlation_Table.ColumnName = Names;
     h.Correlation_Table.Data = logical(zeros(numel(Names)));
@@ -16502,7 +16516,7 @@ elseif UserValues.BurstBrowser.Display.KDE %%% smoothing
 end
 
 function Calculate_Settings(obj,~)
-global UserValues
+global UserValues BurstData BurstMeta
 h = guidata(obj);
 %%% Sets new divider
 if obj == h.Secondary_Tab_Correlation_Divider_Menu
@@ -16518,12 +16532,22 @@ if obj == h.Secondary_Tab_Correlation_Divider_Menu
     end
 elseif obj == h.Secondary_Tab_Correlation_Standard2CMFD_Menu
     h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
-    h.Correlation_Table.Data(1,2) = true;
-    h.Correlation_Table.Data(3,4) = true;
-    h.Correlation_Table.Data(5,6) = true;
-    h.Correlation_Table.Data(7,8) = true;
-    h.Correlation_Table.Data(9,12) = true;
-    h.Correlation_Table.Data(10,11) = true;
+    switch BurstData{BurstMeta.SelectedFile}.BAMethod
+        case {1,2} %%% 2colorMFD
+            h.Correlation_Table.Data(1,2) = true;
+            h.Correlation_Table.Data(3,4) = true;
+            h.Correlation_Table.Data(5,6) = true;
+            h.Correlation_Table.Data(7,8) = true;
+            h.Correlation_Table.Data(9,12) = true;
+            h.Correlation_Table.Data(10,11) = true;
+        case {5} %%% 2color no polarization
+            h.Correlation_Table.Data(1,1) = true;
+            h.Correlation_Table.Data(1,2) = true;
+            h.Correlation_Table.Data(2,2) = true;
+            h.Correlation_Table.Data(3,3) = true;
+            h.Correlation_Table.Data(3,4) = true;
+            h.Correlation_Table.Data(4,4) = true;
+    end
 elseif obj == h.Secondary_Tab_Correlation_Reset_Menu
     h.Correlation_Table.Data = false(size(h.Correlation_Table.Data));
 end
