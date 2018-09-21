@@ -929,9 +929,16 @@ switch mode
                         TIFF_Handle.setDirectory(j);
                         SpectralData.Data(:,:,end+1) = TIFF_Handle.read();
                     end
+                    NChannels = str2double(regexpi(TIFF_Handle.getTag('ImageDescription'), 'channels=(\d*)', 'once', 'tokens'));
                     TIFF_Handle.close(); % Close tif reference
                 end
-                SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),36,[]);
+                
+                
+                
+                if isempty(NChannels) || isnan(NChannels)
+                    NChannels = 36;
+                end
+                SpectralData.Data = reshape(SpectralData.Data,size(SpectralData.Data,1),size(SpectralData.Data,2),NChannels,[]);
         end
         
         h.Spectral_Progress_Text.String = 'Updating MetaData';
@@ -1006,10 +1013,21 @@ switch mode
         %%%% This is a test version and will be adjusted for the final
         %%%% version
         
-        [FileName,Path,Type] = uigetfile({'*.czi';'*.tif'}, 'Load species data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
-        
+        [FileName,Path,Type] = uigetfile({'*.czi;*.tif';'*.czi';'*.tif'}, 'Load species data', 'MultiSelect', 'on',UserValues.File.Spectral_Standard);
+        Type = Type - 1; % correct for options with all extensions
         if all(Path==0)
             return
+        end
+        
+        if Type ~= 1 && Type ~= 2 
+            % check extension
+            if strcmpi(FileName(end-3:end), '.czi')
+                Type = 1;
+            elseif strcmpi(FileName(end-3:end), '.tif')
+                Type = 2;
+            else
+                error(['File type ''' FileName(end-3:end) ''' is not supported'])
+            end
         end
         %%% Updates Progressbar
         h.Spectral_Progress_Text.String = 'Loading Species';
@@ -1078,8 +1096,17 @@ switch mode
                         TIFF_Handle.setDirectory(j);
                         Data(:,:,end+1) = TIFF_Handle.read();
                     end
+                    NChannels = str2double(regexpi(TIFF_Handle.getTag('ImageDescription'), 'channels=(\d*)', 'once', 'tokens'));
                     TIFF_Handle.close(); % Close tif reference
-                    Data = reshape(Data,size(Data,1),size(Data,2),36,[]);
+                    
+                    
+                    if isempty(NChannels) || isnan(NChannels)
+                        NChannels = 36;
+                    end
+                    Data = reshape(Data,size(Data,1),size(Data,2),NChannels,[]);
+%                     
+%                 otherwise
+%                     Type
                     
             end
             SpectralData.Species(end+1).Data = reshape((sum(sum(sum(Data,4),2),1)),1,1,[],1);
