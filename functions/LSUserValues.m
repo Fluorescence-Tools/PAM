@@ -1157,6 +1157,18 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstSearch.BurstwiseLifetime_SaveImages was incomplete');
     end
     P.BurstSearch.BurstwiseLifetime_SaveImages = S.BurstSearch.BurstwiseLifetime_SaveImages;
+    %%% Checks if BurstSearch.CalculateBurstwisePhasor subfield exists
+    if ~isfield(S.BurstSearch, 'CalculateBurstwisePhasor')
+        S.BurstSearch.CalculateBurstwisePhasor=0;
+        disp('UserValues.BurstSearch.CalculateBurstwisePhasor was incomplete');
+    end
+    P.BurstSearch.CalculateBurstwisePhasor = S.BurstSearch.CalculateBurstwisePhasor;
+    %%% Checks if BurstSearch.CalculateBurstwisePhasor subfield exists
+    if ~isfield(S.BurstSearch, 'PhasorReference')
+        S.BurstSearch.PhasorReference=1;
+        disp('UserValues.BurstSearch.PhasorReference was incomplete');
+    end
+    P.BurstSearch.PhasorReference = S.BurstSearch.PhasorReference;
     %% TauFit
     %%% Checks, if TauFit subfield exists
     if ~isfield(S,'TauFit')
