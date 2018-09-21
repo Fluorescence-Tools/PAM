@@ -38,7 +38,8 @@ if isempty(hfig)
         'Tag','BurstBrowser',...
         'ToolBar','figure',...
         'CloseRequestFcn',@Close_BurstBrowser,...
-        'KeyPressFcn',@BurstBrowser_KeyPress);
+        'KeyPressFcn',@BurstBrowser_KeyPress,...
+        'WindowButtonDownFcn',@PhasorLiveUpdate);
     whitebg(h.BurstBrowser,Look.Axes);
     set(h.BurstBrowser,'Color',Look.Back);
     %%% Remove unneeded items from toolbar
@@ -12740,12 +12741,10 @@ switch BurstData{file}.BAMethod
                 origin = h.axes_rRRvsTauRR;
                 paramX = 'Lifetime A [ns]';
                 paramY = 'Anisotropy A';
-            case 5 % Phasor plot of g_d vs s_d
-                h.BurstBrowser.WindowButtonMotionFcn = @PhasorLiveUpdate;
+            case 5 % Phasor plot of g_d vs s_d                
                 paramX = 'Phasor: gD';
                 paramY = 'Phasor: sD';
-            case 6 % Phasor plot of g_a vs s_a
-                h.BurstBrowser.WindowButtonMotionFcn = @PhasorLiveUpdate;
+            case 6 % Phasor plot of g_a vs s_a                
                 paramX = 'Phasor: gA';
                 paramY = 'Phasor: sA';
         end
@@ -13092,26 +13091,30 @@ set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
 function PhasorLiveUpdate(obj,eData)
 global BurstData BurstMeta
 h = guidata(obj);
+%%% are we in a phasor window?
+if h.lifetime_ind_popupmenu.Value < 5
+    return;
+end
 %%% get position
 Pos=h.axes_lifetime_ind_2d.CurrentPoint(1,1:2);
-%%% Disables callback, to avoid multiple executions
-h.BurstBrowser.WindowButtonMotionFcn=[];
 %%% Calculates current cursor position relative to limits
 XLim=h.axes_lifetime_ind_2d.XLim;
 YLim=h.axes_lifetime_ind_2d.YLim;
+%%% Only ecexutes inside plot bounds
+if ~(Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<XLim(2))
+    return;
+end
+
 %%% get channel (donor or acceptor)
 chan = h.lifetime_ind_popupmenu.Value-4;
-%%% Only ecexutes inside plot bounds
-if Pos(1)>XLim(1) && Pos(1)<XLim(2) && Pos(2)>YLim(1) && Pos(2)<XLim(2)
-    %%%Calculates info and updates text fields
-    Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
-    TauP=(Pos(1,2)/Pos(1,1))/(2*pi*Freq);
-    TauM=sqrt((1/(Pos(1,2)^2+Pos(1,1)^2))-1)/(2*pi*Freq);
-    MeanTau = (TauP+TauM)/2;    
-    h.axes_lifetime_ind_2d_textbox.String = ...
-        sprintf('TauP = %.2f ns   TauM = %.2f ns\nTauAvg = %.2f ns',...
-                    TauP,TauM,MeanTau);
-end
+%%%Calculates info and updates text fields
+Freq = 1./(BurstData{BurstMeta.SelectedFile}.Phasor.PhasorRange(chan)/BurstData{BurstMeta.SelectedFile}.FileInfo.MI_Bins*BurstData{BurstMeta.SelectedFile}.TACRange*1E9);
+TauP=(Pos(1,2)/Pos(1,1))/(2*pi*Freq);
+TauM=sqrt((1/(Pos(1,2)^2+Pos(1,1)^2))-1)/(2*pi*Freq);
+MeanTau = (TauP+TauM)/2;    
+h.axes_lifetime_ind_2d_textbox.String = ...
+    sprintf('TauP = %.2f ns   TauM = %.2f ns\nTauAvg = %.2f ns',...
+                TauP,TauM,MeanTau);
 %%% Enables callback
 h.BurstBrowser.WindowButtonMotionFcn=@PhasorLiveUpdate;
 
