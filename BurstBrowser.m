@@ -7097,7 +7097,7 @@ if obj == h.Fit_Gaussian_Button
                 valid = isfinite(data_x) & isfinite(data_y);
                 if h.Fit_Gaussian_Pick.Value
                     cov = [std(data_x),0; 0,std(data_y)];
-                    [x_start,y_start] = ginput(nG);
+                    [x_start,y_start] = my_ginput(nG);
                     start = struct('mu',[x_start,y_start],'Sigma',repmat(cov,[1,1,nG]),'ComponentProportion',ones(1,nG)./nG);
                     GModel = fitgmdist([data_x(valid),data_y(valid)],nG,'Start',start,'Options',statset('MaxIter',1000));
                 else
@@ -7264,7 +7264,7 @@ if obj == h.Fit_Gaussian_Button
                 
                 cov = [std(data_x).^2,std(data_y).^2,0];
                 if h.Fit_Gaussian_Pick.Value
-                    [x_start,y_start] = ginput(nG);
+                    [x_start,y_start] = my_ginput(nG);
                     x0_input = zeros(1,18);
                     for i = 1:nG
                         x0_input((1+(i-1)*6):(6+(i-1)*6)) = [1/nG,x_start(i),y_start(i),cov];
@@ -9223,7 +9223,7 @@ if any(obj == [h.FitGammaButton, h.DetermineGammaManuallyButton])
             title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
             %%% Hide Fit
             BurstMeta.Plots.Fits.gamma.Visible = 'off';
-            [e, s] = ginput(2);
+            [e, s] = my_ginput(2);
             BurstMeta.Plots.Fits.gamma_manual.XData = e;
             BurstMeta.Plots.Fits.gamma_manual.YData = s;
             BurstMeta.Plots.Fits.gamma_manual.Visible = 'on';
@@ -9758,7 +9758,7 @@ ylabel(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry','Color',UserValues.Look.
 title(h.Corrections.TwoCMFD.axes_gamma,'Stoichiometry vs. FRET Efficiency for gamma = 1','Color',UserValues.Look.Fore);
 %%% Hide Fit
 BurstMeta.Plots.Fits.gamma.Visible = 'off';
-[e, s] = ginput(2);
+[e, s] = my_ginput(2);
 BurstMeta.Plots.Fits.gamma_manual.XData = e;
 BurstMeta.Plots.Fits.gamma_manual.YData = s;
 BurstMeta.Plots.Fits.gamma_manual.Visible = 'on';
@@ -13168,7 +13168,7 @@ if any(obj == [h.PlotDynamicFRETButton, h.DynamicFRETManual_Menu, h.DynamicFRETR
                 h.axes_EvsTauGG.UIContextMenu = []; set(h.axes_EvsTauGG.Children,'UIContextMenu',[]);
                 h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
                 %%% Query Lifetimes using ginput
-                [x,y,button] = ginput(2);
+                [x,y,button] = my_ginput(2);
                 if gca == h.axes_lifetime_ind_2d
                     switch BurstData{file}.BAMethod
                         case {1,2,5}
@@ -13351,7 +13351,7 @@ if obj == h.ManualAnisotropyButton
     BurstMeta.Plots.rRRvsTauRR(1).UIContextMenu =[];BurstMeta.Plots.rRRvsTauRR(2).UIContextMenu = [];
     BurstMeta.Plots.rBBvsTauBB(1).UIContextMenu =[];BurstMeta.Plots.rBBvsTauBB(2).UIContextMenu = [];
     h.axes_lifetime_ind_2d.UIContextMenu = []; set(h.axes_lifetime_ind_2d.Children,'UIContextMenu',[]);
-    [x,y,button] = ginput(1);
+    [x,y,button] = my_ginput(1);
     %%% Lifetime Ind plot: If it was selected, check what plot is active
     %%% and set gca accordingly
     if gca == h.axes_lifetime_ind_2d
