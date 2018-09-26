@@ -13023,6 +13023,9 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
         end
     elseif gcbo == h.MultiPlotButton
+        if numel(H) > 3
+            H = H(1:3);
+        end
         [zz,color] = overlay_colored(H);
         del = false(numel(h.axes_lifetime_ind_2d.Children),1);
         for k = 1:numel(h.axes_lifetime_ind_2d.Children)
