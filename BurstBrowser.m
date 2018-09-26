@@ -13145,7 +13145,7 @@ function PhasorLiveUpdate(obj,eData)
 global BurstData BurstMeta
 h = guidata(obj);
 %%% are we in a phasor window?
-if h.lifetime_ind_popupmenu.Value < 5
+if (h.lifetime_ind_popupmenu.Value < 5) || any(BurstData{BurstMeta.SelectedFile}.BAMethod == [3,4])
     return;
 end
 %%% get position
@@ -15342,10 +15342,25 @@ switch obj
         if UserValues.BurstBrowser.Display.ColorMapInvert
             colormap(flipud(colormap));
         end
+        
+        if (h.lifetime_ind_popupmenu.Value > 4) && any(BurstData{BurstMeta.SelectedFile}.BAMethod == [1,2,5])
+            %%% we have a Phasor plot, adjust the data aspect ratio
+            ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
+            ax2d.DataAspectRatio(1:2) = [1,1];
+            pos_ax2d = plotboxpos(ax2d); %%%get position of actual used axis
+            ax1dx = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_1d_x');
+            ax1dx.Position(2) = pos_ax2d(2) + pos_ax2d(4);
+            ax1dy = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_1d_y');
+            ax1dy.Position(4) = pos_ax2d(4);
+            ax1dy.Position(2) = pos_ax2d(2);
+        end
         if ~UserValues.BurstBrowser.Display.PlotGridAboveData
             %%% create dummy axis to prevent data overlapping the axis
             ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
-            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',ax2d.Position);
+            if ~exist('pos_ax2d','var')
+                pos_ax2d = ax2d.Position;
+            end
+            ax_dummy = axes('Parent',panel_copy,'Units',ax2d.Units,'Position',pos_ax2d);
             %linkaxes([ax2d ax_dummy]);
             set(ax_dummy,'Color','none','XTick',ax2d.XTick,'YTick',ax2d.YTick,'XTickLAbel',[],'YTickLabel',[],...
                 'LineWidth',1,'Box','on','XLim',ax2d.XLim, 'YLim', ax2d.YLim)
