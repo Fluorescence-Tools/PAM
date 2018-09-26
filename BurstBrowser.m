@@ -4347,7 +4347,7 @@ Initialize_Plots(2);
 
 %%% Switches GUI to 3cMFD or 2cMFD format
 if BurstData{1}.BAMethod ~= 5
-    SwitchGUI(BurstData{1}.BAMethod);
+    SwitchGUI(BurstData{1}.BAMethod,1); %%% force update
 else
     SwitchGUI(BurstData{1}.BAMethod,1); %%% force update
 end
