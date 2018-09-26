@@ -2027,10 +2027,11 @@ if isempty(hfig)
         'String','Plot Type',...
         'Tag','Text_Plot_Type',...
         'Units','normalized',...
-        'Position',[0 0.75 0.4 0.07],...
+        'Position',[0 0.75 0.2 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left');
     
     PlotType_String = {'Image','Contour','Scatter','Hex'};
     h.PlotTypePopumenu = uicontrol(...
@@ -2039,7 +2040,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'Position',[0.4 0.75 0.2 0.07],...
+        'Position',[0.2 0.75 0.3 0.07],...
         'FontSize',12,...
         'Tag','PlotTypePopupmenu',...
         'String',PlotType_String,...
@@ -2176,12 +2177,13 @@ if isempty(hfig)
         'String','Colormap',...
         'Tag','Text_ColorMap',...
         'Units','normalized',...
-        'Position',[0 0.65 0.4 0.07],...
+        'Position',[0 0.65 0.2 0.07],...
         'FontSize',12,...
         'BackgroundColor', Look.Back,...
-        'ForegroundColor', Look.Fore);
+        'ForegroundColor', Look.Fore,...
+        'HorizontalAlignment','left');
     
-    Colormaps_String = {'jet','jetvar','parula','parulavar','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
+    Colormaps_String = {'jet','parula','hot','inferno','magma','plasma','viridis','cool','spring','summer','autumn','winter','bone','gray','copper','pink','hsv'};
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
         try
             colormap_val = find(strcmp(Colormaps_String,UserValues.BurstBrowser.Display.ColorMap));
@@ -2198,7 +2200,7 @@ if isempty(hfig)
         'BackgroundColor', Look.Control,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'Position',[0.4 0.65 0.2 0.07],...
+        'Position',[0.2 0.65 0.3 0.07],...
         'FontSize',12,...
         'Tag','ColorMapPopupmenu',...
         'String',Colormaps_String,...
@@ -2212,11 +2214,26 @@ if isempty(hfig)
         'BackgroundColor', Look.Back,...
         'ForegroundColor', Look.Fore,...
         'Units','normalized',...
-        'Position',[0.3 0.65 0.1 0.07],...
+        'Position',[0.5 0.68 0.15 0.07],...
         'FontSize',12,...
         'Tag','ColorMapInvert',...
         'String','Invert',...
+        'TooltipString','Invert colormap.',...
         'Value',UserValues.BurstBrowser.Display.ColorMapInvert,...
+        'Callback',@UpdatePlot...
+        );
+    h.ColorMapFromWhite = uicontrol(...
+        'Style','checkbox',...
+        'Parent',h.DisplayOptionsPanel,...
+        'BackgroundColor', Look.Back,...
+        'ForegroundColor', Look.Fore,...
+        'Units','normalized',...
+        'Position',[0.5 0.62 0.15 0.07],...
+        'FontSize',12,...
+        'Tag','ColorMapInvert',...
+        'String','from white',...
+        'TooltipString','Start colormap from white.',...
+        'Value',UserValues.BurstBrowser.Display.ColorMapFromWhite,...
         'Callback',@UpdatePlot...
         );
     
@@ -3860,7 +3877,15 @@ if isempty(hfig)
     UpdateCorrections([],[],h);
     %%% Update ColorMap
     if ischar(UserValues.BurstBrowser.Display.ColorMap)
-        eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+        if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+            colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+        else
+            if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+            else %%% jet is a special case, use jetvar colormap
+                colormap(h.BurstBrowser,jetvar);
+            end
+        end
     else
         colormap(UserValues.BurstBrowser.Display.ColorMap);
     end
@@ -6530,7 +6555,15 @@ nbinsY = UserValues.BurstBrowser.Display.NumberOfBinsY;
 
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
-    eval(['colormap(h.BurstBrowser,' UserValues.BurstBrowser.Display.ColorMap ')']);
+    if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+        colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+    else
+        if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+            colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+        else %%% jet is a special case, use jetvar colormap
+            colormap(h.BurstBrowser,jetvar);
+        end
+    end
 else
     colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
 end
@@ -14733,7 +14766,15 @@ switch obj
         panel_copy.HighlightColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                colormap(UserValues.BurstBrowser.Display.ColorMap);
+            else
+                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                    colormap(colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                else %%% jet is a special case, use jetvar colormap
+                    colormap(jetvar);
+                end
+            end
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
@@ -14946,7 +14987,15 @@ switch obj
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+            else
+                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                else %%% jet is a special case, use jetvar colormap
+                    colormap(h.BurstBrowser,jetvar);
+                end
+            end
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
@@ -15117,7 +15166,15 @@ switch obj
         
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+            else
+                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                else %%% jet is a special case, use jetvar colormap
+                    colormap(h.BurstBrowser,jetvar);
+                end
+            end
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
@@ -15311,7 +15368,15 @@ switch obj
         panel_copy.BackgroundColor = [1 1 1];
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
-            eval(['colormap(' UserValues.BurstBrowser.Display.ColorMap ')']);
+            if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+            else
+                if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                else %%% jet is a special case, use jetvar colormap
+                    colormap(h.BurstBrowser,jetvar);
+                end
+            end
         else
             colormap(UserValues.BurstBrowser.Display.ColorMap);
         end
@@ -17058,25 +17123,10 @@ if obj == h.PlotCutoff_edit
     PlotLifetimeInd([],[],h);
 end
 if obj == h.ColorMapPopupmenu
-    custom_colormaps = {'jetvar','parulavar','inferno','magma','plasma','viridis'};
-    if ~any(strcmp(h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value},custom_colormaps))
-        UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
-    else %%% custom colormap
-        switch h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value}
-            case 'jetvar'
-                UserValues.BurstBrowser.Display.ColorMap = jetvar;
-            case 'parulavar'
-                UserValues.BurstBrowser.Display.ColorMap = parulavar;
-            case 'inferno'
-                UserValues.BurstBrowser.Display.ColorMap = inferno;
-            case 'magma'
-                UserValues.BurstBrowser.Display.ColorMap = magma;
-            case 'plasma'
-                UserValues.BurstBrowser.Display.ColorMap = plasma;
-            case 'viridis'
-                UserValues.BurstBrowser.Display.ColorMap = viridis;
-        end
-    end
+    UserValues.BurstBrowser.Display.ColorMap = h.ColorMapPopupmenu.String{h.ColorMapPopupmenu.Value};
+end
+if obj == h.ColorMapFromWhite
+    UserValues.BurstBrowser.Display.ColorMapFromWhite = obj.Value;
 end
 if obj == h.SmoothKDE
     UserValues.BurstBrowser.Display.KDE = h.SmoothKDE.Value;

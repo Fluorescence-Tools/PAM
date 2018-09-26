@@ -1821,6 +1821,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Display.ColorMapInvert was incomplete');
     end
     P.BurstBrowser.Display.ColorMapInvert = S.BurstBrowser.Display.ColorMapInvert;
+    %%% Checks, if BurstBrowser.Display.ColorMapFromWhite subfield exists
+    if ~isfield(S.BurstBrowser.Display,'ColorMapFromWhite')
+        S.BurstBrowser.Display.ColorMapFromWhite=1;
+        disp('UserValues.BurstBrowser.Display.ColorMapFromWhite was incomplete');
+    end
+    P.BurstBrowser.Display.ColorMapFromWhite = S.BurstBrowser.Display.ColorMapFromWhite;
     %%% Checks, if BurstBrowser.Display.ColorLine1 subfield exists
     if ~isfield(S.BurstBrowser.Display,'ColorLine1')
         S.BurstBrowser.Display.ColorLine1=[0 0 1];
