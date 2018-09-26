@@ -11589,7 +11589,7 @@ if isempty(obj) %%% Just change the data to what is stored in UserValues
         end
         %%% Update GUI with values stored in BurstData Structure
         switch BurstData{file}.BAMethod
-            case {1,2}
+            case {1,2,5}
                 h.DonorLifetimeEdit.String = num2str(BurstData{file}.Corrections.DonorLifetime);
                 h.AcceptorLifetimeEdit.String = num2str(BurstData{file}.Corrections.AcceptorLifetime);
                 h.FoersterRadiusEdit.String = num2str(BurstData{file}.Corrections.FoersterRadius);
@@ -13145,8 +13145,12 @@ function PhasorLiveUpdate(obj,eData)
 global BurstData BurstMeta
 h = guidata(obj);
 %%% are we in a phasor window?
-if (h.lifetime_ind_popupmenu.Value < 5) || any(BurstData{BurstMeta.SelectedFile}.BAMethod == [3,4])
-    return;
+if ~isempty(BurstData)
+    if ~any(BurstData{BurstMeta.SelectedFile}.BAMethod == [3,4]) % for 3color MFD, there are 6 plots even without phasor
+        if (h.lifetime_ind_popupmenu.Value < 5)
+            return;
+        end
+    end
 end
 %%% get position
 Pos=h.axes_lifetime_ind_2d.CurrentPoint(1,1:2);
