@@ -5304,7 +5304,7 @@ switch mode
                 legend_entries = cellfun(@(x) strrep(x(1:end-4),'_',' '),FileNames,'UniformOutput',false);
                 for i = 1:numel(H)
                     ax(i) = axes(f,'Units','pixel','Position',[offset_x1, offset_y1+(i-1)*ax_height, ax_width, ax_height],'TickDir','in',...
-                        'Box','on');
+                        'Box','on','Color',[1,1,1]);
                     hold on;
                     bar(xE(1:end)+min(diff(xE))/2,[H{i} H{i}(end)],'FaceColor',color(i,:),'EdgeColor','none','BarWidth',1);
                     stairs(xE(1:end),[H{i} H{i}(end)],'Color',[0,0,0],'LineWidth',2);
