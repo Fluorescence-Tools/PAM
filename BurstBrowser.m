@@ -14988,12 +14988,12 @@ switch obj
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+                colormap(UserValues.BurstBrowser.Display.ColorMap);
             else
                 if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                    colormap(colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
                 else %%% jet is a special case, use jetvar colormap
-                    colormap(h.BurstBrowser,jetvar);
+                    colormap(jetvar);
                 end
             end
         else
@@ -15167,12 +15167,12 @@ switch obj
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+                colormap(UserValues.BurstBrowser.Display.ColorMap);
             else
                 if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                    colormap(colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
                 else %%% jet is a special case, use jetvar colormap
-                    colormap(h.BurstBrowser,jetvar);
+                    colormap(jetvar);
                 end
             end
         else
@@ -15369,12 +15369,12 @@ switch obj
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
-                colormap(h.BurstBrowser,UserValues.BurstBrowser.Display.ColorMap);
+                colormap(UserValues.BurstBrowser.Display.ColorMap);
             else
                 if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
-                    colormap(h.BurstBrowser,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+                    colormap(colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
                 else %%% jet is a special case, use jetvar colormap
-                    colormap(h.BurstBrowser,jetvar);
+                    colormap(jetvar);
                 end
             end
         else
