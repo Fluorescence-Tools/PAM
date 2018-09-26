@@ -320,8 +320,12 @@ if isempty(hfig)
         'Tag','PCA_comp',...
         'Separator','on');
     %%% Notepad Menu Item
-    h.Notepad_Menu = uimenu(...
+    h.Extras_Menu = uimenu(....
         'Parent',h.BurstBrowser,...
+        'Label','Extras',...
+        'Tag','Extras_Menu');
+    h.Notepad_Menu = uimenu(    ...
+        'Parent',h.Extras_Menu,...
         'Label','Notepad',...
         'Callback',@Open_Notepad,...
         'Tag','Notepad_Menu',...
@@ -5413,9 +5417,9 @@ switch mode
             %%% waterfall or image/contour plot
             %%% constuct time series histogram
             for i = 1:numel(EGR);
-                HGR{i} = [HGR{i} HGR{i}(end)]; HGR{i} = smooth(HGR{i},3); HGR{i} = HGR{i}';
-                HBG{i} = [HBG{i} HBG{i}(end)]; HBG{i} = smooth(HBG{i},3); HBG{i} = HBG{i}';
-                HBR{i} = [HBR{i} HBR{i}(end)]; HBR{i} = smooth(HBR{i},3); HBR{i} = HBR{i}';
+                HGR{i} = smooth(HGR{i},3); HGR{i} = HGR{i}';
+                HBG{i} = smooth(HBG{i},3); HBG{i} = HBG{i}';
+                HBR{i} = smooth(HBR{i},3); HBR{i} = HBR{i}';
             end
             HGR = vertcat(HGR{:});
             HBG = vertcat(HBG{:});
@@ -5424,7 +5428,7 @@ switch mode
             xE = linspace(-0.1,1,56);
             for j = 1:3
                 if j == 3
-                    xE = xEBR;
+                    xE = xEBR(1:end-1);
                 end
                 H = H_all{j}; H = H';
                 figure('Color',[1 1 1],'Position',[100+600*(j-1) 500 600 400]);
