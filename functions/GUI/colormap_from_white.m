@@ -28,7 +28,7 @@ c = out(1,:);
 c(c == 0) = min(c(c>0)); %%% fill zeros with smallest value
 start = zeros(n,3);
 
-start_from_white = true;
+start_from_white = false;
 if start_from_white
     beta = linspace(1,0,n);
 else
