@@ -25,18 +25,26 @@ catch
 end
 % fill offset from white to the starting color
 c = out(1,:);
-c(c == 0) = min(c(c>0)); %%% fill zeros with smallest value
 start = zeros(n,3);
-
-start_from_white = false;
-if start_from_white
-    beta = linspace(1,0,n);
+if all( c == 0 | c == 1) %%% we start with a pure color
+    start(:,c ~= 1) = repmat((n:-1:1)'/(n+1), [1 sum(c ~=1)]);
+    start(:,c == 1) = repmat(c(c==1), [n 1]);
+    disp('case 1')
 else
-    beta = linspace(1,0,n+1);
-    beta = beta(2:end); % don't start from white, but one step after
-end
+    if any(c == 0)
+        c(c == 0) = min(c(c>0)); %%% fill zeros with smallest value
+    end
+    
+    start_from_white = false;
+    if start_from_white
+        beta = linspace(1,0,n);
+    else
+        beta = linspace(1,0,n+1);
+        beta = beta(2:end); % don't start from white, but one step after
+    end
 
-for i = 1:n
-    start(i,:) = c.^(1-beta(i));
+    for i = 1:n
+        start(i,:) = c.^(1-beta(i));
+    end
 end
 out = [start; out];
