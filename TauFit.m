@@ -5689,6 +5689,15 @@ end
 UserValues.TauFit.ConvolutionType = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 UserValues.TauFit.LineStyle = h.LineStyle_Menu.String{h.LineStyle_Menu.Value};
 
+if strcmp(TauFitData.Who,'Burstwise') && obj ==  h.Calc_Burstwise_Phasor
+    UserValues.BurstSearch.CalculateBurstwisePhasor = obj.Value;
+    if UserValues.BurstSearch.CalculateBurstwisePhasor == 1
+        h.Select_Burstwise_Phasor_Reference.Visible = 'on';
+    else
+        h.Select_Burstwise_Phasor_Reference.Visible = 'off';
+    end
+end
+
 if obj == h.LineStyle_Menu
     ChangeLineStyle(h);
 end
@@ -5702,13 +5711,6 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
-    case h.Calc_Burstwise_Phasor
-        UserValues.BurstSearch.CalculateBurstwisePhasor = obj.Value;
-        if UserValues.BurstSearch.CalculateBurstwisePhasor == 1
-            h.Select_Burstwise_Phasor_Reference.Visible = 'on';
-        else
-            h.Select_Burstwise_Phasor_Reference.Visible = 'off';
-        end
     case h.Select_Burstwise_Phasor_Reference
         UserValues.BurstSearch.PhasorReference = obj.Value;
 end
