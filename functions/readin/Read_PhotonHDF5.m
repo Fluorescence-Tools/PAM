@@ -24,16 +24,40 @@ datastruct.identity.software = h5read(file,'/identity/software');
 datastruct.identity.software_version = h5read(file,'/identity/software_version');
 
 %%% /provenance group
-datastruct.provenance.creation_time = h5read(file,'/provenance/creation_time');
+try
+    datastruct.provenance.creation_time = h5read(file,'/provenance/creation_time');
+catch
+    datastruct.provenance.creation_time = string(datetime);
+end
 datastruct.provenance.filename = h5read(file,'/provenance/filename');
-datastruct.provenance.filename_full = h5read(file,'/provenance/filename_full');
-datastruct.provenance.modification_time = h5read(file,'/provenance/modification_time');
+try
+    datastruct.provenance.filename_full = h5read(file,'/provenance/filename_full');
+catch
+    datastruct.provenance.filename_full = datastruct.provenance.filename;
+end
+try
+    datastruct.provenance.modification_time = h5read(file,'/provenance/modification_time');
+catch
+    datastruct.provenance.modification_time = string(datetime);
+end
 datastruct.provenance.software = h5read(file,'/provenance/software');
 
 %%% /sample group
-datastruct.sample.buffer_name = h5read(file,'/sample/buffer_name');
-datastruct.sample.dye_names = h5read(file,'/sample/dye_names');
-datastruct.sample.sample_name = h5read(file,'/sample/sample_name');
+try
+    datastruct.sample.buffer_name = h5read(file,'/sample/buffer_name');
+catch
+    datastruct.sample.buffer_name = 'Buffer';
+end
+try
+    datastruct.sample.dye_names = h5read(file,'/sample/dye_names');
+catch
+    datastruct.sample.dye_names = 'Dye names';
+end
+try
+    datastruct.sample.sample_name = h5read(file,'/sample/sample_name');
+catch
+    datastruct.sample.sample_name = 'Sample name';
+end
 
 %%% /setup group
 datastruct.setup.detection_wavelengths = h5read(file,'/setup/detection_wavelengths');
