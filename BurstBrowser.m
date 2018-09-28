@@ -13147,6 +13147,9 @@ set(h.axes_lifetime_ind_1d_y,'YTick',yticks(2:end));
 function PhasorLiveUpdate(obj,eData)
 global BurstData BurstMeta
 h = guidata(obj);
+if isempty(BurstData)
+    return;
+end
 %%% are we in a phasor window?
 if ~isempty(BurstData)
     if ~any(BurstData{BurstMeta.SelectedFile}.BAMethod == [3,4]) % for 3color MFD, there are 6 plots even without phasor
