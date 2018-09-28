@@ -13155,6 +13155,9 @@ if ~isempty(BurstData)
         end
     end
 end
+if ~isfield(BurstData{BurstMeta.SelectedFile},'Phasor')
+    return;
+end
 %%% get position
 Pos=h.axes_lifetime_ind_2d.CurrentPoint(1,1:2);
 %%% Calculates current cursor position relative to limits
