@@ -9998,6 +9998,9 @@ if nargin > 0
     if obj == h.UseBetaCheckbox
         UserValues.BurstBrowser.Corrections.UseBeta = obj.Value;
         LSUserValues(1);
+        %%% assign obj to h.ApplyCorrectionsAll_Menu to trigger update of
+        %%% all data sets
+        obj = h.ApplyCorrectionsAll_Menu;
     end
 end
 if obj == h.ApplyCorrectionsAll_Menu
