@@ -14895,7 +14895,9 @@ switch obj
                     panel_copy.Children(i).YGrid = 'off';
             end
         end
-        
+        if ~verLessThan('MATLAB','9.4') %%% for some reason, the change before is disregarded by MATLAB in 2018a onwards.
+            panel_copy.Children(ax2d).Position = [0.12 0.135 0.65 0.65];
+        end
         %%% Update Colorbar by plotting it anew
         %%% multiplot is NOT used
         if any(cell2mat(h.CutTable.Data(:,6))) && ~(h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1)  %%% colored by parameter
@@ -15291,6 +15293,7 @@ switch obj
                     panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
+                    ax2d = i;
                     switch BurstData{file}.BAMethod
                         case {1,2}
                             switch h.lifetime_ind_popupmenu.Value
@@ -15306,6 +15309,9 @@ switch obj
                             end
                     end
             end
+        end
+        if ~verLessThan('MATLAB','9.4') %%% for some reason, the change before is disregarded by MATLAB in 2018a onwards.
+            panel_copy.Children(ax2d).Position = [0.12 0.135 0.65 0.65];
         end
         if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter') && color_bar
             cbar = colorbar(panel_copy.Children(find(strcmp(get(panel_copy.Children,'Tag'),'axes_lifetime_ind_2d'))),...
