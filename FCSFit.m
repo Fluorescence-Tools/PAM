@@ -2519,6 +2519,7 @@ switch obj
         if isfield(data,'FixState') && isfield(data,'GlobalState') && isfield(data,'ActiveState')
             h.Fit_Table.Data(1:end-3,6:3:end) = data.FixState;
             h.Fit_Table.Data(1:end-3,7:3:end) = data.GlobalState;
+            h.Fit_Table.Data(end-2,7:3:end) = num2cell(sum(cell2mat(data.GlobalState),1) > 0);
             h.Fit_Table.Data(1:end-3,2) = data.ActiveState;
             Update_Plots;
         end
