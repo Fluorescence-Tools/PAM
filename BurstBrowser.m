@@ -11410,14 +11410,16 @@ end
 Progress(1,h.Progress_Axes,h.Progress_Text);
 
 %%% show fit result in result axis
-BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1};
-BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1};
-BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2};
-BurstMeta.Plots.fFCS.result_1x2.YData = BurstMeta.fFCS.Result.Cor_Average{2};
-BurstMeta.Plots.fFCS.result_2x1.XData = BurstMeta.fFCS.Result.Cor_Times{3};
-BurstMeta.Plots.fFCS.result_2x1.YData = BurstMeta.fFCS.Result.Cor_Average{3};
-BurstMeta.Plots.fFCS.result_2x2.XData = BurstMeta.fFCS.Result.Cor_Times{4};
-BurstMeta.Plots.fFCS.result_2x2.YData = BurstMeta.fFCS.Result.Cor_Average{4};
+% but only up to timewindowsize/2 to avoid the edge artifacts
+max_time = find(BurstMeta.fFCS.Result.Cor_Times{1} < 1E-3*UserValues.BurstBrowser.Settings.Corr_TimeWindowSize/2, 1, 'last');
+BurstMeta.Plots.fFCS.result_1x1.XData = BurstMeta.fFCS.Result.Cor_Times{1}(1:max_time);
+BurstMeta.Plots.fFCS.result_1x1.YData = BurstMeta.fFCS.Result.Cor_Average{1}(1:max_time);
+BurstMeta.Plots.fFCS.result_1x2.XData = BurstMeta.fFCS.Result.Cor_Times{2}(1:max_time);
+BurstMeta.Plots.fFCS.result_1x2.YData = BurstMeta.fFCS.Result.Cor_Average{2}(1:max_time);
+BurstMeta.Plots.fFCS.result_2x1.XData = BurstMeta.fFCS.Result.Cor_Times{3}(1:max_time);
+BurstMeta.Plots.fFCS.result_2x1.YData = BurstMeta.fFCS.Result.Cor_Average{3}(1:max_time);
+BurstMeta.Plots.fFCS.result_2x2.XData = BurstMeta.fFCS.Result.Cor_Times{4}(1:max_time);
+BurstMeta.Plots.fFCS.result_2x2.YData = BurstMeta.fFCS.Result.Cor_Average{4}(1:max_time);
 axis(h.axes_fFCS_Result,'tight');
 h.fFCS_axes_tab.SelectedTab = h.fFCS_axes_result_tab;
 
