@@ -4806,6 +4806,7 @@ switch e.Key
         UserValues.PIE.IRF{end+1} = zeros(1,4096);
         UserValues.PIE.ScatterPattern{end+1} = zeros(1,4096);
         UserValues.PIE.Background(end+1)=0;
+        UserValues.PIE.PhasorReference{end+1} = zeros(1,4096);
         %%% Reset Correlation Table Data Matrix
         cor_sel = UserValues.Settings.Pam.Cor_Selection;
         cor_sel(end+1,:) = false; cor_sel(:,end+1) = false;
