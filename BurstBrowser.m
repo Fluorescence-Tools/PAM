@@ -11387,7 +11387,7 @@ for i=1:NumChans
             %%% Save the correlation file
             %%% Generates filename
             filename = fullfile(BurstData{file}.PathName,BurstData{file}.FileName);
-            Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j} '.mcor'];
+            Current_FileName=[filename(1:end-4) '_' Name{i} '_x_' Name{j} '_tw_' sprintf('%d',UserValues.BurstBrowser.Settings.Corr_TimeWindowSize) 'ms' '.mcor'];
             
             BurstMeta.fFCS.Result.FileName{end+1} = Current_FileName;
             BurstMeta.fFCS.Result.Header{end+1} = ['Correlation file for: ' strrep(filename,'\','\\') ' of Channels ' Name{i} ' cross ' Name{j}];
@@ -11423,9 +11423,9 @@ h.fFCS_axes_tab.SelectedTab = h.fFCS_axes_result_tab;
 
 %%%%% saves the fFCS result
 function Save_fFCS(~,~)
-global BurstMeta
+global BurstMeta UserValues
 for i = 1:numel(BurstMeta.fFCS.Result.FileName)
-    Current_FileName = BurstMeta.fFCS.Result.FileName{i};
+    Current_FileName = BurstMeta.fFCS.Result.FileName{i};   
     %%% Checks, if file already exists
     if  exist(Current_FileName,'file')
         k=1;
@@ -11447,6 +11447,10 @@ for i = 1:numel(BurstMeta.fFCS.Result.FileName)
     
     save(Current_FileName,'Header','Counts','Valid','Cor_Times','Cor_Average','Cor_SEM','Cor_Array');
 end
+%%% Update FCSFit Path
+UserValues.File.FCSPath = UserValues.File.BurstBrowserPath;
+LSUserValues(1);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Updates Corrections in GUI and UserValues  %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
