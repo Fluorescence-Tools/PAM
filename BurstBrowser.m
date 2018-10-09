@@ -12182,15 +12182,22 @@ if ~isempty(obj)
             end
             BurstMeta.SelectedFile = sel_file;
         otherwise %% java menu item
-             %%% loop over all files
-            sel_file = BurstMeta.SelectedFile;
-            for i = 1:numel(BurstData);
-                BurstMeta.SelectedFile = i;
+            o = gcbo;
+            if strcmp(o.getText,'Export FRET Efficiency Histogram (Time Series)')
                 %%% Make sure to apply corrections
                 ApplyCorrections(h.BurstBrowser,[]);
                 Export_FRET_Hist([],[]);
+            else
+                %%% loop over all files
+                sel_file = BurstMeta.SelectedFile;
+                for i = 1:numel(BurstData);
+                    BurstMeta.SelectedFile = i;
+                    %%% Make sure to apply corrections
+                    ApplyCorrections(h.BurstBrowser,[]);
+                    Export_FRET_Hist([],[]);
+                end
+                BurstMeta.SelectedFile = sel_file;
             end
-            BurstMeta.SelectedFile = sel_file;
     end
     %%% set FCSFit path to the current print path
     UserValues.File.FCSPath = getPrintPath();
