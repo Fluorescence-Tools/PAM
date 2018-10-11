@@ -14704,15 +14704,29 @@ switch obj
             end
             delete(axes_copy.Children(del));
             if numel(axes_copy.Children)>1
-                if ~isempty(h.axes_1d_x.Legend)
-                    hl = legend(h.axes_1d_x.Legend.String);
+                handle_legend = [];
+                if verLessThan('MATLAB','9.1')
+                    % 2016a and earlier
+                    % find the legend
+                    if sum(strcmp(get(h.axes_1d_x.Parent.Children,'Type'),'legend')) > 0
+                        handle_legend = h.axes_1d_x.Parent.Children(strcmp(get(h.axes_1d_x.Parent.Children,'Type'),'legend'));
+                    end
+                else % 2016b and upwards
+                    if ~isempty(h.axes_1d_x.Legend)
+                        handle_legend = h.axes_1d_x.Legend;                        
+                    end
+                end
+                if ~isempty(handle_legend)
+                    hl = legend(handle_legend.String);
                     hl.Box = 'off';
                     hfig.Units = 'pixel';
                     axes_copy.Units = 'pixel';
                     hl.Units = 'pixel';
                     hl.FontSize = 12;
                     hfig.Position(4) = hfig.Position(4) + 75;
-                    hl.Position(2) =  hl.Position(2)+75;                
+                    if ~verLessThan('MATLAB','9.1') % 2016b and upwards
+                        hl.Position(2) =  hl.Position(2)+75;
+                    end
                     hl.Position(1) = 40;
                 end
             end
