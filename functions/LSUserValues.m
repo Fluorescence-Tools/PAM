@@ -2058,8 +2058,32 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.Settings.FocusSize was incomplete');
     end
     P.BurstBrowser.Settings.FocusSize = S.BurstBrowser.Settings.FocusSize;
+    %%% Check, if BurstBrowser.Settings.PhotonsPerWindow_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'PhotonsPerWindow_BVA')
+        S.BurstBrowser.Settings.PhotonsPerWindow_BVA=5;
+        disp('UserValues.BurstBrowser.PhotonsPerWindow_BVA was incomplete');
+    end
+    P.BurstBrowser.Settings.PhotonsPerWindow_BVA = S.BurstBrowser.Settings.PhotonsPerWindow_BVA;
+    %%% Check, if BurstBrowser.Settings.BurstsPerBinThreshold_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BurstsPerBinThreshold_BVA')
+        S.BurstBrowser.Settings.BurstsPerBinThreshold_BVA=100;
+        disp('UserValues.BurstBrowser.BurstsPerBinThreshold_BVA was incomplete');
+    end
+    P.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = S.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;
+    %%% Check, if BurstBrowser.Settings.ConfidenceSampling_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'ConfidenceSampling_BVA')
+        S.BurstBrowser.Settings.ConfidenceSampling_BVA=50;
+        disp('UserValues.BurstBrowser.ConfidenceSampling_BVA was incomplete');
+    end
+    P.BurstBrowser.Settings.ConfidenceSampling_BVA = S.BurstBrowser.Settings.ConfidenceSampling_BVA;
+    %%% Check, if BurstBrowser.Settings.ConfidenceLevelAlpha_BVA subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'ConfidenceLevelAlpha_BVA')
+        S.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA=0.001;
+        disp('UserValues.BurstBrowser.ConfidenceLevelAlpha_BVA was incomplete');
+    end
+    P.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = S.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
-    if ~isfield(S.BurstBrowser, 'DatabaseString')
+    if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};
         disp('UserValues.BurstBrowser.DatabaseString was incomplete');
     end
@@ -2069,7 +2093,7 @@ if Mode==0 %%% Loads user values
         S.BurstBrowser.Database={};
         disp('UserValues.BurstBrowser.Database was incomplete');
     end
-    P.BurstBrowser.Database = S.BurstBrowser.Database;
+    P.BurstBrowser.Database = S.BurstBrowser.Database;    
     %% PDA
     if ~isfield(S, 'PDA')
         disp('WARNING: UserValues structure incomplete, field "PDA" missing');
