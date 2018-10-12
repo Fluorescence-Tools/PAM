@@ -628,6 +628,7 @@ if isempty(hfig)
     h.ExportSpeciesToPDAMenuItem = javax.swing.JMenuItem('Export Species to PDA');
     h.ExportMicrotimePattern = javax.swing.JMenuItem('Export Microtime Pattern');
     h.DoTimeWindowAnalysis = javax.swing.JMenuItem('Time Window Analysis');
+    h.DoBurstVarianceAnalysis = javax.swing.JMenuItem('Burst Variance Analysis');
     h.Export_FRET_Hist_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram');
     h.Export_FRET_Hist_Timeseries_Menu = javax.swing.JMenuItem('Export FRET Efficiency Histogram (Time Series)');
     h.SendToTauFit = javax.swing.JMenuItem('Send Selected Species to TauFit');
@@ -640,6 +641,7 @@ if isempty(hfig)
     set(h.ExportSpeciesToPDAMenuItem,'ActionPerformedCallback',@Export_To_PDA)
     set(h.ExportMicrotimePattern,'ActionPerformedCallback',@Export_Microtime_Pattern); 
     set(h.DoTimeWindowAnalysis,'ActionPerformedCallback',@Time_Window_Analysis);
+    set(h.DoBurstVarianceAnalysis,'ActionPerformedCallback',@Burst_Variance_Analysis);
     set(h.Export_FRET_Hist_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
     set(h.Export_FRET_Hist_Timeseries_Menu,'ActionPerformedCallback',@Export_FRET_Hist); 
     set(h.SendToTauFit,'ActionPerformedCallback',@Send_To_TauFit);
@@ -659,6 +661,7 @@ if isempty(hfig)
     h.ExportMenuItem.add(h.Export_FRET_Hist_Timeseries_Menu);
     h.SpeciesListMenu.add(h.ExportMenuItem);
     h.SpeciesListMenu.add(h.DoTimeWindowAnalysis);
+    h.SpeciesListMenu.add(h.DoBurstVarianceAnalysis);
     h.SpeciesListMenu.addSeparator;
     h.SpeciesListMenu.add(h.DisplayFileInfo);
     %%% Define Species List
@@ -12023,7 +12026,7 @@ h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 
 %%% query photon threshold
-threshold = inputdlg({'Minimum number of photons'},'Set threshold',1,{'50'});
+threshold = inputdlg({'Minimum number of photons'},'Set threshold',[1 45],{'50'},'on');
 if isempty(threshold)
     return;
 else
@@ -12142,6 +12145,173 @@ xlabel('FRET efficiency');
 ylabel('time bin [ms]');
 ax.YTickLabel = flipud(cellfun(@(x) num2str(x*1000),timebin,'UniformOutput',false)');
 Progress(1,h.Progress_Axes,h.Progress_Text);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%% Does Burst Variance Analysis of Selected species %%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function Burst_Variance_Analysis(~,~)
+global BurstData BurstTCSPCData UserValues BurstMeta
+h = guidata(findobj('Tag','BurstBrowser'));
+file = BurstMeta.SelectedFile;
+%%% query BVA parameters
+opts.Resize = 'off';opts.WindowStyle = 'normal';opts.Interpreter = 'tex';
+bva_parameters = inputdlg({'Number of photons per window:','Burst per bin threshold:',...
+    'Confidence sampling number:','Confidence level \alpha:'},'BVA parameters',[1 45],...
+    {num2str(UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA),...
+    num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA),...
+    num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA),...
+    num2str(UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA)},opts);
+if isempty(bva_parameters)
+    return;
+else
+    bva_parameters = str2double(bva_parameters);
+end
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histo  grams...');
+%%% Load associated .bps file, containing Macrotime, Microtime and Channel
+Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
+if isempty(BurstTCSPCData{file})
+    Load_Photons();
+end
+E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+photons = BurstTCSPCData{file};
+
+UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = bva_parameters(1,1);
+UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = bva_parameters(2,1);
+UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA = bva_parameters(3,1);
+UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = bva_parameters(4,1);
+
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
+% Remove ALEX photons &  calculate STD per Burst
+n = bva_parameters(1,1);
+switch BurstData{file}.BAMethod
+    case {1,2}
+        % channel : 1,2 Donor Par Perp
+        %           3,4 FRET Par Perp
+        %           5,6 ALEX Par Parp
+        channel = cellfun(@(x) x(x < 5),photons.Channel,'UniformOutput',false);
+        sPerBurst=zeros(size(channel));
+        for i = 1:numel(channel)
+            M = reshape(channel{i,1}(1:fix(numel(channel{i,1})/n)*n),n,[]); % create photon windows
+            sPerBurst(i,1) = std(sum(M==3|M==4)/n); % observed standard deviation of E for each burst
+        end
+    case 5
+        % channel : 1 Donor
+        %           2 FRET
+        %           3 ALEX
+        channel = cellfun(@(x) x(x < 3),photons.Channel,'UniformOutput',false);
+        sPerBurst=zeros(size(channel));
+        for i = 1:numel(channel)
+            M = reshape(channel{i,1}(1:fix(numel(channel{i,1})/n)*n),n,[]); % Create photon windows
+            sPerBurst(i,1) = std(sum(M==2)/n); % observed standard deviation of E for each burst
+        end
+end
+sSelected = sPerBurst.*BurstData{file}.Selected;
+sSelected(sSelected == 0) = NaN;
+% STD per Bin
+Estar = linspace(0,1,21);
+[N,~,bin] = histcounts(E,Estar);
+BinCenters = Estar(1:end-1)+0.025;
+sPerBin = zeros(numel(Estar)-1,1);
+PsdPerBin = zeros(numel(Estar)-1,UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+for j = 1:numel(N) % 1 : number of bins
+    burst_id = find(bin==j); % find indices of bursts in bin j
+    if ~isempty(burst_id)
+        BurstsPerBin = cell(size(burst_id'));
+        for k = 1:numel(burst_id)
+            BurstsPerBin(k) = channel(burst_id(k)); % find all bursts in bin j
+        end
+        M = cellfun(@(x) reshape(x(1:fix(numel(x)/n)*n),n,[]),BurstsPerBin,'UniformOutput',false);
+        MPerBin = cat(2,M{:});
+        switch BurstData{file}.BAMethod
+            case {1,2}
+                EPerBin = sum(MPerBin==3|MPerBin==4)/n;
+            case {5}
+                EPerBin = sum(MPerBin==2)/n;
+        end
+        if numel(BurstsPerBin)>UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA
+            sPerBin(j,1) = std(EPerBin);
+        end
+        % simulate P(sigma)
+        idx = [0 cumsum(cellfun('size',M,2))];
+        window_id = zeros(size(EPerBin));
+        for l = 1:numel(M)
+             window_id(idx(l)+1:idx(l+1)) = ones(1,size(M{l},2))*burst_id(l);
+        end
+        for m = 1:UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA
+            EperBin_simu = binornd(n,E(window_id))/n;
+            PsdPerBin(j,m) = std(EperBin_simu);
+        end
+    end
+    Progress(j/numel(N),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
+end
+clear n i j k l m
+% Plots
+hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
+hold on;
+
+% contourplot of per-burst STD
+[H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); H(H==0) = NaN; 
+contourf(x(1:end-1),y(1:end-1),H',100,'LineStyle','none');
+a.YDir = 'normal';
+
+% Plot confidence intervals
+UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA; % significance level
+confidence = area(BinCenters',prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
+confidence.FaceColor = [0.5 0.5 0.5];
+confidence.FaceAlpha = 0.5;
+confidence.LineStyle = 'none';
+
+% plot of expected STD
+Est = linspace(0,1,1000); 
+sigm = sqrt(Est.*(1-Est)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
+plot(Est,sigm,'k','LineWidth',1);
+
+% Plot STD per Bin
+sPerBin(sPerBin == 0) = NaN;
+scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
+
+xlabel('E*'); 
+ylabel('STD of FRET, s');
+legend('Per-burst STD','Conf. Interval','Expected STD','Binned STD','Location','best')
+
+%%% Update ColorMap
+if ischar(UserValues.BurstBrowser.Display.ColorMap)
+    if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
+        colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+    else
+        if ~strcmp(UserValues.BurstBrowser.Display.ColorMap,'jet')
+            colormap(hfig,colormap_from_white(UserValues.BurstBrowser.Display.ColorMap));
+        else %%% jet is a special case, use jetvar colormap
+            colormap(hfig,jetvar);
+        end
+    end
+else
+    colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
+end
+
+%%% Combine the Original FileName and the parameter names
+if isfield(BurstData{file},'FileNameSPC')
+    if strcmp(BurstData{file}.FileNameSPC,'_m1')
+        FileName = BurstData{file}.FileNameSPC(1:end-3);
+    else
+        FileName = BurstData{file}.FileNameSPC;
+    end
+else
+    FileName = BurstData{file}.FileName(1:end-4);
+end
+
+if BurstData{file}.SelectedSpecies(1) ~= 0
+    SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
+    if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
+        SpeciesName = [SpeciesName '_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),BurstData{file}.SelectedSpecies(2)}];
+    end
+else
+    SpeciesName = '';
+end
+FigureName = [FileName SpeciesName '_BVA'];
+%%% remove spaces
+FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
+hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -14911,9 +15081,9 @@ switch obj
                     end
                     ax1dx = i;
                 case 'Axes_General'
-                    panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     panel_copy.Children(i).XLabel.Color = [0 0 0];
                     panel_copy.Children(i).YLabel.Color = [0 0 0];
+                    panel_copy.Children(i).Position = [0.12 0.135 0.65 0.65];
                     ax2d = i;
                 case 'axes_ZScale'
                     if strcmp(panel_copy.Children(i).Visible,'on')
@@ -14921,9 +15091,6 @@ switch obj
                     end
                     panel_copy.Children(i).YGrid = 'off';
             end
-        end
-        if ~verLessThan('MATLAB','9.4') %%% for some reason, the change before is disregarded by MATLAB in 2018a onwards.
-            panel_copy.Children(ax2d).Position = [0.12 0.135 0.65 0.65];
         end
         %%% Update Colorbar by plotting it anew
         %%% multiplot is NOT used
