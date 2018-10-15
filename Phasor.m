@@ -49,6 +49,10 @@ end
     toolbar_items = findall(toolbar);
     if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
         delete(toolbar_items([2:7 9 13:17]));
+    else %%% 2018b and upward
+        %%% just remove the tool bar since the options are now in the axis
+        %%% (e.g. axis zoom etc)
+        delete(toolbar_items);
     end
     
     h.Load_Phasor = uimenu(...

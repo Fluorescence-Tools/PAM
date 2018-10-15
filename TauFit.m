@@ -57,6 +57,10 @@ toolbar = findall(h.TauFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
 if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
     delete(toolbar_items([2:7 9 14:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
 end
     
 %%% menu
@@ -4858,7 +4862,7 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
@@ -4869,7 +4873,14 @@ switch TauFitData.BAMethod
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
@@ -5124,7 +5135,7 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from the plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
@@ -5135,7 +5146,14 @@ switch TauFitData.BAMethod
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
@@ -5530,12 +5548,12 @@ switch obj
         %%% update the plot by evaluating the model with current parameter
         %%% values
         % fix all parameters and store fixed state
-        fixed_old = h.FitPar_Table.Data(1:end-1,4);
-        h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
+        %fixed_old = h.FitPar_Table.Data(1:end-1,4);
+        %h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
         % evaluate
-        Start_Fit(h.Fit_Button,[]);
+        %Start_Fit(h.Fit_Button,[]);
         % reset table
-        h.FitPar_Table.Data(1:end-1,4) = fixed_old;
+        %h.FitPar_Table.Data(1:end-1,4) = fixed_old;
         
         %%% read out selected PIE channels
         if strcmp(TauFitData.Who,'TauFit')
