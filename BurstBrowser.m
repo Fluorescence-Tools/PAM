@@ -6594,8 +6594,8 @@ set(BurstMeta.Plots.Multi.Multi_histX,'Visible','off');
 set(BurstMeta.Plots.Multi.Multi_histY,'Visible','off');
 
 for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
-    try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end;
-    try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end;
+    try;delete(BurstMeta.Plots.MultiScatter.h1dx(i));end
+    try;delete(BurstMeta.Plots.MultiScatter.h1dy(i));end
 end
 BurstMeta.Plots.MultiScatter.h1dx = [];
 BurstMeta.Plots.MultiScatter.h1dy = [];
@@ -9060,6 +9060,13 @@ if isfield(BurstData{file},'AdditionalParameters')
             BurstData{file}.DataArray(:,end+1) = 0;
         end
         BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Diffusion coefficient [mum2/s]')) = BurstData{file}.AdditionalParameters.DiffusionCoefficient;
+    end
+    if isfield(BurstData{file}.AdditionalParameters,'BVAStandardDeviation')
+        if ~sum(strcmp(BurstData{file}.NameArray,'BVA standard deviation'))
+            BurstData{file}.NameArray{end+1} ='BVA standard deviation';
+            BurstData{file}.DataArray(:,end+1) = 0;
+        end
+        BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'BVA standard deviation')) = BurstData{file}.AdditionalParameters.BVAStandardDeviation;
     end
 end
 
@@ -12154,32 +12161,50 @@ global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
 %%% query BVA parameters
-opts.Resize = 'off';opts.WindowStyle = 'normal';opts.Interpreter = 'tex';
-bva_parameters = inputdlg({'Number of photons per window:','Burst per bin threshold:',...
-    'Confidence sampling number:','Confidence level \alpha:'},'BVA parameters',[1 45],...
-    {num2str(UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA),...
-    num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA),...
-    num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA),...
-    num2str(UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA)},opts);
-if isempty(bva_parameters)
+% opts.Resize = 'off';opts.WindowStyle = 'normal';opts.Interpreter = 'tex';
+% bva_parameters = inputdlg({'Number of photons per window:','Burst per bin threshold:',...
+%     'Confidence sampling number:','Confidence level \alpha:'},'BVA parameters',[1 45],...
+%     {num2str(UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA),...
+%     num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA),...
+%     num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA),...
+%     num2str(UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA)},opts);
+
+prompt = {'Number of photons per window:';'Burst per bin threshold:';...
+    'Confidence sampling number:';'Confidence level \alpha:';'Choose X-axis:'};
+name = 'BVA parameters';
+formats = struct('type',{},'style',{},'items',{}, ...
+    'format', {}, 'limits', {}, 'size', {});
+formats(1,1).type   = 'edit';formats(1,1).format = 'integer';formats(1,1).limits = [1 inf];
+formats(2,1).type   = 'edit';formats(2,1).format = 'integer';formats(2,1).limits = [1 inf];
+formats(1,2).type   = 'edit';formats(1,2).format = 'integer';formats(1,2).limits = [1 inf];
+formats(2,2).type   = 'edit';formats(2,2).format = 'float';formats(2,2).limits = [0 100];
+formats(3,1).type = 'list';formats(3,1).style = 'radiobutton';formats(3,1).items = {'Proximity Ratio','FRET Efficiency'};
+
+defaultanswer = {UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA;...
+    UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA;...
+    UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;...
+    UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;...
+    UserValues.BurstBrowser.Settings.BVA_X_axis};
+%opts.Resize = 'off'; opts.WindowStyle = 'normal'; opts.Interpreter = 'tex';
+[bva_parameters,canceled] = inputsdlg(prompt,name,formats,defaultanswer);
+if canceled == 1
     return;
 else
-    bva_parameters = str2double(bva_parameters);
+    bva_parameters = cell2mat(bva_parameters);
 end
-Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histo  grams...');
+UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = bva_parameters(1,1);
+UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = bva_parameters(2,1);
+UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA = bva_parameters(3,1);
+UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = bva_parameters(4,1);
+UserValues.BurstBrowser.Settings.BVA_X_axis = bva_parameters(5,1);
+
+Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 %%% Load associated .bps file, containing Macrotime, Microtime and Channel
-Progress(0,h.Progress_Axes,h.Progress_Text,'Loading Photon Data');
 if isempty(BurstTCSPCData{file})
     Load_Photons();
 end
 E = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
 photons = BurstTCSPCData{file};
-
-UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA = bva_parameters(1,1);
-UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA = bva_parameters(2,1);
-UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA = bva_parameters(3,1);
-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = bva_parameters(4,1);
-
 Progress(0,h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 % Remove ALEX photons &  calculate STD per Burst
 n = bva_parameters(1,1);
@@ -12208,11 +12233,12 @@ end
 sSelected = sPerBurst.*BurstData{file}.Selected;
 sSelected(sSelected == 0) = NaN;
 % STD per Bin
-Estar = linspace(0,1,21);
-[N,~,bin] = histcounts(E,Estar);
-BinCenters = Estar(1:end-1)+0.025;
-sPerBin = zeros(numel(Estar)-1,1);
-PsdPerBin = zeros(numel(Estar)-1,UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA);
+BinEdges = linspace(0,1,21);
+[N,~,bin] = histcounts(E,BinEdges);
+BinCenters = BinEdges(1:end-1)+0.025;
+sPerBin = zeros(numel(BinEdges)-1,1);
+sampling = UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;
+PsdPerBin = zeros(numel(BinEdges)-1,sampling);
 for j = 1:numel(N) % 1 : number of bins
     burst_id = find(bin==j); % find indices of bursts in bin j
     if ~isempty(burst_id)
@@ -12237,42 +12263,70 @@ for j = 1:numel(N) % 1 : number of bins
         for l = 1:numel(M)
              window_id(idx(l)+1:idx(l+1)) = ones(1,size(M{l},2))*burst_id(l);
         end
-        for m = 1:UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA
+        for m = 1:sampling
             EperBin_simu = binornd(n,E(window_id))/n;
             PsdPerBin(j,m) = std(EperBin_simu);
+            Progress(((j-1)*sampling+m)/...
+            (numel(N)*sampling),h.Progress_Axes,h.Progress_Text,'Calculating Confidence Interval...');
         end
     end
-    Progress(j/numel(N),h.Progress_Axes,h.Progress_Text,'Calculating Histograms...');
 end
-clear n i j k l m
+Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
 % Plots
+X_expectedSD = linspace(0,1,1000);
+switch UserValues.BurstBrowser.Settings.BVA_X_axis
+    case 1
+        BinCenters = BinCenters';
+        sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
+        X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
+    case 2
+        PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
+           (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
+        BinCenters = PRtoFRET(BinCenters);
+        sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
+        X_expectedSD = PRtoFRET(X_expectedSD);
+        X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
+end
 hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
 hold on;
-
-% contourplot of per-burst STD
-[H,x,y] = histcounts2(E,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); H(H==0) = NaN; 
-contourf(x(1:end-1),y(1:end-1),H',100,'LineStyle','none');
-a.YDir = 'normal';
+[H,x,y] = histcounts2(X_burst,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); H(H==0) = NaN; 
+switch UserValues.BurstBrowser.Display.PlotType
+    case 'Contour'
+    % contourplot of per-burst STD
+        contourf(x(1:end-1),y(1:end-1),H',100,'LineStyle','none');axis('xy')
+    case 'Image'
+        imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H'));axis('xy');        
+    case 'Scatter'
+        scatter(X_burst,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
+    case 'Hex'
+        hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
+end
+patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
+%%% conversion betweeen PR and E
 
 % Plot confidence intervals
-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA; % significance level
-confidence = area(BinCenters',prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
-confidence.FaceColor = [0.5 0.5 0.5];
-confidence.FaceAlpha = 0.5;
-confidence.LineStyle = 'none';
+
+p2 = area(BinCenters,prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
+p2.FaceColor = [0.5 0.5 0.5];
+p2.FaceAlpha = 0.5;
+p2.LineStyle = 'none';
 
 % plot of expected STD
-Est = linspace(0,1,1000); 
-sigm = sqrt(Est.*(1-Est)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
-plot(Est,sigm,'k','LineWidth',1);
+plot(X_expectedSD,sigm,'k','LineWidth',1);
 
 % Plot STD per Bin
 sPerBin(sPerBin == 0) = NaN;
 scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
 
-xlabel('E*'); 
-ylabel('STD of FRET, s');
-legend('Per-burst STD','Conf. Interval','Expected STD','Binned STD','Location','best')
+xlabel('FRET Efficiency'); 
+ylabel('SD of FRET, s');
+switch UserValues.BurstBrowser.Display.PlotType
+    case {'Contour','Scatter'}
+    legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
+    case {'Image','Hex'}
+    legend('Conf. Interval','Expected STD','Binned SD','Location','northeast')
+    BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+end
 
 %%% Update ColorMap
 if ischar(UserValues.BurstBrowser.Display.ColorMap)
@@ -12312,6 +12366,23 @@ FigureName = [FileName SpeciesName '_BVA'];
 %%% remove spaces
 FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
 hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
+
+%%% add burst-wise standard deviation as additional parameter
+if ~isfield(BurstData{file},'AdditionalParameters')
+    BurstData{file}.AdditionalParameters = [];
+end
+if ~isfield(BurstData{file}.AdditionalParameters,'BVAStandardDeviation')
+    BurstData{file}.AdditionalParameters.BVAStandardDeviation = NaN(size(BurstData{file}.DataArray,1),1);
+    
+end
+BurstData{file}.AdditionalParameters.BVAStandardDeviation = sSelected;
+%%% Add parameters to list
+AddDerivedParameters([],[],h);
+set(h.ParameterListX, 'String', BurstData{file}.NameArray);
+set(h.ParameterListY, 'String', BurstData{file}.NameArray);
+UpdateCuts();
+UpdatePlot([],[],h);
+Progress(100,h.Progress_Axes,h.Progress_Text,'Done');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Saves FRET Hist to a file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
