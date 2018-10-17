@@ -12266,29 +12266,34 @@ for j = 1:numel(N) % 1 : number of bins
         for m = 1:sampling
             EperBin_simu = binornd(n,E(window_id))/n;
             PsdPerBin(j,m) = std(EperBin_simu);
-            Progress(((j-1)*sampling+m)/...
-            (numel(N)*sampling),h.Progress_Axes,h.Progress_Text,'Calculating Confidence Interval...');
+            Progress(((j-1)*sampling+m)/(numel(N)*sampling),h.Progress_Axes,h.Progress_Text,'Calculating Confidence Interval...');
         end
     end
 end
 Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
 % Plots
+hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
+hold on;
 X_expectedSD = linspace(0,1,1000);
 switch UserValues.BurstBrowser.Settings.BVA_X_axis
     case 1
+        xlabel('Proximity Ratio, E*'); 
+        ylabel('SD of E*, s');
         BinCenters = BinCenters';
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
     case 2
+        xlabel('FRET Efficiency'); 
+        ylabel('SD of FRET, s');
+        %%% conversion betweeen PR and E
         PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
            (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
+       
         BinCenters = PRtoFRET(BinCenters);
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
         X_expectedSD = PRtoFRET(X_expectedSD);
         X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
 end
-hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
-hold on;
 [H,x,y] = histcounts2(X_burst,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); H(H==0) = NaN; 
 switch UserValues.BurstBrowser.Display.PlotType
     case 'Contour'
@@ -12302,7 +12307,6 @@ switch UserValues.BurstBrowser.Display.PlotType
         hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
 end
 patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
-%%% conversion betweeen PR and E
 
 % Plot confidence intervals
 
@@ -12318,8 +12322,6 @@ plot(X_expectedSD,sigm,'k','LineWidth',1);
 sPerBin(sPerBin == 0) = NaN;
 scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
 
-xlabel('FRET Efficiency'); 
-ylabel('SD of FRET, s');
 switch UserValues.BurstBrowser.Display.PlotType
     case {'Contour','Scatter'}
     legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
