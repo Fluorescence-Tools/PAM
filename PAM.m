@@ -8213,10 +8213,12 @@ for t=1:numel(tau_2CDE)
             Progress((j-1)/10,h.Progress.Axes, h.Progress.Text,tex);
             parfor (i = parts(j):parts(j+1),UserValues.Settings.Pam.ParallelProcessing)
                 if ~(numel(Macrotime{i}) > 1E5)
-                    [FRET_2CDE(i), ALEX_2CDE(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
+                    [FRET_2CDE(i), ALEX_2CDE(i), E_D(i), E_A(i)] = KDE(Macrotime{i}',Channel{i}',tau, BAMethod); %#ok<USENS,PFIIN>
                 else
                     ALEX_2CDE(i) = NaN;
                     FRET_2CDE(i) = NaN;
+                    E_D(i) = NaN;
+                    E_A(i) = NaN;
                 end
             end
         end
@@ -8224,6 +8226,9 @@ for t=1:numel(tau_2CDE)
         idx_FRET2CDE = strcmp('FRET 2CDE Filter',BurstData.NameArray);
         BurstData.DataArray(:,idx_ALEX2CDE) = ALEX_2CDE;
         BurstData.DataArray(:,idx_FRET2CDE) = FRET_2CDE;
+        %%% Add the intermediate quantities used to calculate FRET-2CDE as well
+        BurstData.NirFilter.E_D = E_D;
+        BurstData.NirFilter.E_A = E_A;
     elseif any(BurstData.BAMethod == [3,4]) %3 Color Data
         FRET_2CDE = zeros(numel(Macrotime),3);
         ALEX_2CDE = zeros(numel(Macrotime),3);
@@ -8311,7 +8316,7 @@ h.Burst.Button.ForegroundColor = [0 0.8 0];
 %%% Enable Lifetime and 2CDE Button
 h.Burst.BurstLifetime_Button.Enable = 'on';
 %%% Check if lifetime has been fit already
-if any(BurstData.BAMethod == [1,2])
+if any(BurstData.BAMethod == [1,2,5])
     if (sum(BurstData.DataArray(:,strcmp('Lifetime D [ns]',BurstData.NameArray))) == 0 )
         %%% no lifetime fit
         h.Burst.BurstLifetime_Button.ForegroundColor = [1 0 0];
@@ -8331,7 +8336,7 @@ end
 
 h.Burst.NirFilter_Button.Enable = 'on';
 %%% Check if NirFilter was calculated before
-if any(BurstData.BAMethod == [1,2])
+if any(BurstData.BAMethod == [1,2,5])
     if (sum(BurstData.DataArray(:,strcmp('ALEX 2CDE Filter',BurstData.NameArray))) == 0 )
         %%% no NirFilter
         h.Burst.NirFilter_Button.ForegroundColor = [1 0 0];
@@ -9729,8 +9734,17 @@ else
 end
 KDE = (1+2/numel(B)).*KDE;
 
-function [FRET_2CDE, ALEX_2CDE] = KDE(Trace,Chan_Trace,tau,BAMethod)
-
+function [FRET_2CDE, ALEX_2CDE,E_D,E_A] = KDE(Trace,Chan_Trace,tau,BAMethod)
+%%% Additional output:
+%%% (E)_D = E_D - FRET efficiency estimated around donor photons
+%%% (1-E)_A = E_A - 1-FRET efficiency estimated around
+%%% acceptor photons
+%%%
+%%% These quantities are used to calculate FRET_2CDE by:
+%%% FRET_2CDE = 110 - 100 x ( (E)_D + (1-E)_A )
+%%%
+%%% They are needed in BurstBrowser to perform correct averaging of the 
+%%% FRET-2CDE filter over a set of bursts.
 switch BAMethod
     case {1,2} %MFD
         T_GG = Trace(Chan_Trace == 1 | Chan_Trace == 2);
