@@ -504,7 +504,19 @@ if Mode==0 %%% Loads user values
         S.Settings.Pam.AutoSaveProfile='off';
         disp('UserValues.Settings.Pam.AutoSaveProfile was incomplete');
     end
-    P.Settings.Pam.AutoSaveProfile = S.Settings.Pam.AutoSaveProfile;    
+    P.Settings.Pam.AutoSaveProfile = S.Settings.Pam.AutoSaveProfile;
+    %%% Checks if Pam.DefaultTACRange subfield exists
+    if ~isfield(S.Settings.Pam, 'DefaultTACRange')
+        S.Settings.Pam.DefaultTACRange=40E-9';
+        disp('UserValues.Settings.Pam.DefaultTACRange was incomplete');
+    end
+    P.Settings.Pam.DefaultTACRange = S.Settings.Pam.DefaultTACRange;   
+    %%% Checks if Pam.DefaultSyncRate subfield exists
+    if ~isfield(S.Settings.Pam, 'DefaultSyncRate')
+        S.Settings.Pam.DefaultSyncRate=40E6';
+        disp('UserValues.Settings.Pam.DefaultSyncRate was incomplete');
+    end
+    P.Settings.Pam.DefaultSyncRate = S.Settings.Pam.DefaultSyncRate;    
     %% MetaData: User-dependend meta data
      %%% Checks, if MetaData field exists
     if ~isfield(S, 'MetaData')

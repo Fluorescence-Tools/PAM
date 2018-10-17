@@ -54,6 +54,10 @@ toolbar = findall(h.Mia,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
 if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
     delete(toolbar_items([2:7 13:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
 end
 %%% Menu to load mia data
 h.Mia_Load = uimenu(...
@@ -69,7 +73,7 @@ h.Mia_Load_TIFF_Single = uimenu(...
 %%% Load TIFF
 h.Mia_Load_TIFF_RLICS = uimenu(...
     'Parent',h.Mia_Load,...
-    'Label','...RLICS TIFFs',...
+    'Label','...weighted TIFFs',...
     'Callback',{@Mia_Load,1.5},...
     'Tag','Load_Mia_TIFF_RLICS');
 %%% Load Data from Pam
@@ -3053,6 +3057,9 @@ h = guidata(findobj('Tag','Mia'));
 
 switch mode
     case {1, 1.5} %%% Loads single color TIFFs
+        % case 1 is normal data
+        % case 1.5 is RSICS/RLICS data - the first half of the frames is
+        % the raw data, the second half of the data is the filtered data
         [FileName1,Path1] = uigetfile({'*.tif'}, 'Load TIFFs for channel 1', UserValues.File.MIAPath, 'MultiSelect', 'on');
         
         if all(Path1==0)
@@ -3163,12 +3170,18 @@ switch mode
             %%% unfiltered data first. MIA can load the unfiltere or the
             %%% filtered data
             if isempty(MIAData.RLICS) 
+                % normal TIFFs
                 Frames = 1:numel(Info);
                 Data = zeros([H, W, numel(Frames)], 'uint16');
             elseif ~isempty(MIAData.RLICS) && mode==1
+                % TIFFs generated via RLICS or spectral and user wants to
+                % load the raw data that is stored in the first half of the
+                % frames
                 Frames = 1:numel(Info)/2;
                 Data = zeros([H, W, numel(Frames)], 'uint16');
             else
+                % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                % that is stored in the last half of the frames
                 Frames = (numel(Info)/2+1):numel(Info);
                 Data = zeros([H, W, numel(Frames)], 'single');
             end
@@ -3186,8 +3199,11 @@ switch mode
                 
                 %%% Adjusts range for RLICS and RSICS data
                 if ~isempty(MIAData.RLICS) && mode==1.5
-                    Data(:,:,j) = single(TIFF_Handle.read());
-                    Data(:,:,j)= Data(:,:,j)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
+                    % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                    % that is stored in the last half of the frames
+                    NoF = numel(Frames);
+                    Data(:,:,j-NoF) = single(TIFF_Handle.read());
+                    Data(:,:,j-NoF)= Data(:,:,j-NoF)/2^16*MIAData.RLICS(1,1)+MIAData.RLICS(1,2);
                 else
                     data = TIFF_Handle.read();
                     if size(data,3) > 1
@@ -3269,12 +3285,18 @@ switch mode
             TIFF_Handle = Tiff(fullfile(Path2,FileName2{i}),'r'); % Open tif reference
             
             if isempty(MIAData.RLICS) || size(MIAData.RLICS,1)~=2
+                % normal TIFFs
                 Frames = 1:numel(Info);
                 Data = zeros([H, W, numel(Frames)], 'uint16');
             elseif size(MIAData.RLICS,1)==2 && mode==1 
+                % TIFFs generated via RLICS or spectral and user wants to
+                % load the raw data that is stored in the first half of the
+                % frames
                 Frames = 1:numel(Info)/2;
                 Data = zeros([H, W, numel(Frames)], 'uint16');
             else
+                % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                % that is stored in the last half of the frames
                 Frames = (numel(Info)/2+1):numel(Info);
                 Data = zeros([H, W, numel(Frames)], 'single');
             end
@@ -3291,8 +3313,11 @@ switch mode
                 
                 %%% Adjusts for RLICS and RSICS range
                 if ~isempty(MIAData.RLICS) && mode==1.5
-                    Data(:,:,j) = single(TIFF_Handle.read());
-                    Data(:,:,j) = single(MIAData.Data{2,1}(:,:,end))/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
+                    % TIFFs generated via RLICS or spectral and user wants to load the weighted data
+                    % that is stored in the last half of the frames
+                    NoF = numel(Frames);
+                    Data(:,:,j-NoF) = single(TIFF_Handle.read());
+                    Data(:,:,j-NoF) = Data(:,:,j-NoF)/2^16*MIAData.RLICS(2,1)+MIAData.RLICS(2,2);
                 else
                     data = TIFF_Handle.read();
                     if size(data,3) > 1

@@ -36,7 +36,7 @@ if isempty(hfig)
         'UserData',[],...
         'Visible','off',...
         'Tag','BurstBrowser',...
-        'Toolbar','figure',...
+        'ToolBar','figure',...
         'CloseRequestFcn',@Close_BurstBrowser,...
         'KeyPressFcn',@BurstBrowser_KeyPress);
     %'WindowScrollWheelFcn',@Bowser_Wheel,...
@@ -48,6 +48,10 @@ if isempty(hfig)
     toolbar_items = findall(toolbar);
     if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
         delete(toolbar_items([2:7 9 13:17]));
+    else %%% 2018b and upward
+        %%% just remove the tool bar since the options are now in the axis
+        %%% (e.g. axis zoom etc)
+        delete(toolbar_items);
     end
     %%% get BurstBrowser size in pixels
     h.BurstBrowser.Units = 'pixels';
@@ -10857,37 +10861,43 @@ BurstMeta.fFCS.hist_MItotal_par = histc(MI_total_par,BurstMeta.fFCS.TAC_par);
 BurstMeta.fFCS.hist_MItotal_perp = histc(MI_total_perp,BurstMeta.fFCS.TAC_perp);
 
 %%% restrict species microtime histograms to valid region if synthetic species is selected
-if synthetic_species1 || synthetic_species2
-    %%% range for par channel
-    valid_range = [1,numel(BurstMeta.fFCS.TAC_par)];
-    if synthetic_species1
-        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'first'));
-        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'last')+1);
-    end
-    if synthetic_species2
-        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'first'));
-        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'last')+1);
-    end
-    valid_par = false(numel(BurstMeta.fFCS.TAC_par),1);
-    valid_par(valid_range(1):valid_range(2)) = true;
-    %%% range for perp channel
-    valid_range = [1,numel(BurstMeta.fFCS.TAC_perp)];
-    if synthetic_species1
-        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'first'));
-        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'last')+1);
-    end
-    if synthetic_species2
-        valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'first'));
-        valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'last')+1);
-    end
-    valid_perp = false(numel(BurstMeta.fFCS.TAC_perp),1);
-    valid_perp(valid_range(1):valid_range(2)) = true;
-    %%% set invalid region to zero
-    for i = 1:2
-        BurstMeta.fFCS.hist_MIpar_Species{i}(~valid_par) = 0;
-        BurstMeta.fFCS.hist_MIperp_Species{i}(~valid_perp) = 0;
-    end
-end
+valid_par = true(numel(BurstMeta.fFCS.TAC_par),1);
+valid_perp = true(numel(BurstMeta.fFCS.TAC_perp),1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% This was the previous code, I don't recall why it was there. %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% if synthetic_species1 || synthetic_species2
+%     %%% range for par channel
+%     valid_range = [1,numel(BurstMeta.fFCS.TAC_par)];
+%     if synthetic_species1
+%         valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'first'));
+%         valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{1} > 0,1,'last')+1);
+%     end
+%     if synthetic_species2
+%         valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'first'));
+%         valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIpar_Species{2} > 0,1,'last')+1);
+%     end
+%     valid_par = false(numel(BurstMeta.fFCS.TAC_par),1);
+%     valid_par(valid_range(1):valid_range(2)) = true;
+%     %%% range for perp channel
+%     valid_range = [1,numel(BurstMeta.fFCS.TAC_perp)];
+%     if synthetic_species1
+%         valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'first'));
+%         valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{1} > 0,1,'last')+1);
+%     end
+%     if synthetic_species2
+%         valid_range(1) = max(valid_range(1),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'first'));
+%         valid_range(2) = min(valid_range(2),find(BurstMeta.fFCS.hist_MIperp_Species{2} > 0,1,'last')+1);
+%     end
+%     valid_perp = false(numel(BurstMeta.fFCS.TAC_perp),1);
+%     valid_perp(valid_range(1):valid_range(2)) = true;
+%     %%% set invalid region to zero
+%     for i = 1:2
+%         BurstMeta.fFCS.hist_MIpar_Species{i}(~valid_par) = 0;
+%         BurstMeta.fFCS.hist_MIperp_Species{i}(~valid_perp) = 0;
+%     end
+% end
+
 %%% Plot the Microtime histograms
 BurstMeta.Plots.fFCS.Microtime_Total_par.XData = BurstMeta.fFCS.TAC_par;
 BurstMeta.Plots.fFCS.Microtime_Total_par.YData = BurstMeta.fFCS.hist_MItotal_par./sum(BurstMeta.fFCS.hist_MItotal_par);
@@ -11183,13 +11193,16 @@ BurstMeta.Plots.fFCS.Reconstruction_Perp.YData = BurstMeta.fFCS.reconstruction_p
 BurstMeta.Plots.fFCS.Weighted_Residuals_Perp.XData = BurstMeta.fFCS.TAC_perp;
 BurstMeta.Plots.fFCS.Weighted_Residuals_Perp.YData = BurstMeta.fFCS.weighted_residuals_perp;
 
+uistack(BurstMeta.Plots.fFCS.Reconstruction_Par,'top')
+uistack(BurstMeta.Plots.fFCS.Reconstruction_Perp,'top')
 axis(h.axes_fFCS_FilterPar,'tight');
 axis(h.axes_fFCS_FilterPerp,'tight');
 axis(h.axes_fFCS_ReconstructionPar,'tight');h.axes_fFCS_ReconstructionPar.YScale = 'log';
 axis(h.axes_fFCS_ReconstructionPerp,'tight');h.axes_fFCS_ReconstructionPerp.YScale = 'log';
 axis(h.axes_fFCS_ReconstructionParResiduals,'tight');
 axis(h.axes_fFCS_ReconstructionPerpResiduals,'tight');
-
+uistack(BurstMeta.Plots.fFCS.Reconstruction_Par,'top');
+uistack(BurstMeta.Plots.fFCS.Reconstruction_Perp,'top');
 h.Do_fFCS_button.Enable = 'on';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
