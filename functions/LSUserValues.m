@@ -2082,6 +2082,12 @@ if Mode==0 %%% Loads user values
         disp('UserValues.BurstBrowser.ConfidenceLevelAlpha_BVA was incomplete');
     end
     P.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA = S.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;
+    %%% Check, if BurstBrowser.Settings.BVA_X_axis subfield exists
+    if ~isfield(S.BurstBrowser.Settings,'BVA_X_axis')
+        S.BurstBrowser.Settings.BVA_X_axis=1;
+        disp('UserValues.BurstBrowser.BVA_X_axis was incomplete');
+    end
+    P.BurstBrowser.Settings.BVA_X_axis = S.BurstBrowser.Settings.BVA_X_axis;
     %%% Check, if BurstBrowser.DatabaseString subfield exists
     if ~isfield(S.BurstBrowser,'DatabaseString')
         S.BurstBrowser.DatabaseString={};
