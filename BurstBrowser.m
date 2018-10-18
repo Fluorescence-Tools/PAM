@@ -12277,7 +12277,7 @@ hold on;
 X_expectedSD = linspace(0,1,1000);
 switch UserValues.BurstBrowser.Settings.BVA_X_axis
     case 1
-        xlabel('Proximity Ratio, E*'); 
+        xlabel('Proximity ratio, E*'); 
         ylabel('SD of E*, s');
         BinCenters = BinCenters';
         sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
@@ -12309,8 +12309,10 @@ end
 patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
 
 % Plot confidence intervals
-
-p2 = area(BinCenters,prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
+alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
+confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
+% confint2 = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+p2 = area(BinCenters,confint);
 p2.FaceColor = [0.5 0.5 0.5];
 p2.FaceAlpha = 0.5;
 p2.LineStyle = 'none';
@@ -12326,7 +12328,7 @@ switch UserValues.BurstBrowser.Display.PlotType
     case {'Contour','Scatter'}
     legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
     case {'Image','Hex'}
-    legend('Conf. Interval','Expected STD','Binned SD','Location','northeast')
+    legend('Conf. Interval','Expected SD','Binned SD','Location','northeast')
     BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
 end
 
