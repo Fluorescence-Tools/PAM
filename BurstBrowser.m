@@ -12319,66 +12319,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 scatter(X_burst,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
                 hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
-        end
-        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
-
-        % Plot confidence intervals
-
-        p2 = area(BinCenters,prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
-        p2.FaceColor = [0.5 0.5 0.5];
-        p2.FaceAlpha = 0.5;
-        p2.LineStyle = 'none';
-
-        % plot of expected STD
-        plot(X_expectedSD,sigm,'k','LineWidth',1);
-
-        % Plot STD per Bin
-        sPerBin(sPerBin == 0) = NaN;
-        scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
-        
-        switch UserValues.BurstBrowser.Display.PlotType
-            case {'Contour','Scatter'}
-                legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
-            case {'Image','Hex'}
-                legend('Conf. Interval','Expected STD','Binned SD','Location','northeast')
-                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
-        end
-        Progress(100,h.Progress_Axes,h.Progress_Text,'Plotting...');
-        % Plots
-        hfig = figure('color',[1 1 1]);a=gca;a.FontSize=14;a.LineWidth=1.0;a.Color =[1 1 1];
-        hold on;
-        X_expectedSD = linspace(0,1,1000);
-        switch UserValues.BurstBrowser.Settings.BVA_X_axis
-            case 1
-                xlabel('Proximity ratio, E*');
-                ylabel('SD of E*, s');
-                BinCenters = BinCenters';
-                sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
-                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'Proximity Ratio'));
-            case 2
-                xlabel('FRET Efficiency');
-                ylabel('SD of FRET, s');
-                %%% conversion betweeen PR and E
-                PRtoFRET = @(PR) (1-(1+BurstData{file}.Corrections.CrossTalk_GR+BurstData{file}.Corrections.DirectExcitation_GR).*(1-PR))./ ...
-                    (1-(1+BurstData{file}.Corrections.CrossTalk_GR-BurstData{file}.Corrections.Gamma_GR).*(1-PR));
-                
-                BinCenters = PRtoFRET(BinCenters);
-                sigm = sqrt(X_expectedSD.*(1-X_expectedSD)./UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA);
-                X_expectedSD = PRtoFRET(X_expectedSD);
-                X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
-        end
-        [H,x,y] = histcounts2(X_burst,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); H(H==0) = NaN;
-        switch UserValues.BurstBrowser.Display.PlotType
-            case 'Contour'
-                % contourplot of per-burst STD
-                contourf(x(1:end-1),y(1:end-1),H',100,'LineStyle','none');axis('xy')
-            case 'Image'
-                imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H'));axis('xy');
-            case 'Scatter'
-                scatter(X_burst,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
-            case 'Hex'
-                hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
-        end
+        end        
         patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
         
         % Plot confidence intervals
