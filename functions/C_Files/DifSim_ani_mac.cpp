@@ -378,7 +378,7 @@ void Simulate_Diffusion(
                             binomial_distribution<unsigned char> binomial_aniso(1,p_aniso[MI_Bins*4*state+MI_Bins*m+(int)Microtimes[NPhotons[0]] ]); //define distribution
                             Polarization[NPhotons[0]] = 1-binomial_aniso(mt); // 0 -> par, 1 -> per
                             // convolute Microtime with IRF
-                            Microtimes[NPhotons[0]] += (unsigned short)IRF(mt); /// PIE Laser pulse for microtime, IRF
+                            Microtimes[NPhotons[0]] += (unsigned short) (IRF(mt) + 0.5); /// PIE Laser pulse for microtime, IRF
                             Microtimes[NPhotons[0]] += (unsigned short)(j*(int)(MI_Bins/4)); /// PIE Laser pulse for microtime
                             if (Microtimes[NPhotons[0]] < 1) {Microtimes[NPhotons[0]] = 1;};
                             // Microtime checkup
