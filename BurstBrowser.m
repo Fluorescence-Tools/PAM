@@ -12319,31 +12319,34 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 scatter(X_burst,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
                 hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
-        end
+        end        
         patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
-
+        
         % Plot confidence intervals
-
-        p2 = area(BinCenters,prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2));
+        alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
+        confint = mean(PsdPerBin,2) + std(PsdPerBin,0,2)*norminv(1-alpha);
+        % confint2 = prctile(PsdPerBin,100-UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters),2);
+        p2 = area(BinCenters,confint);
         p2.FaceColor = [0.5 0.5 0.5];
         p2.FaceAlpha = 0.5;
         p2.LineStyle = 'none';
-
+        
         % plot of expected STD
         plot(X_expectedSD,sigm,'k','LineWidth',1);
-
+        
         % Plot STD per Bin
         sPerBin(sPerBin == 0) = NaN;
         scatter(BinCenters,sPerBin,70,UserValues.BurstBrowser.Display.ColorLine1,'d','filled');
-
+        
         switch UserValues.BurstBrowser.Display.PlotType
             case {'Contour','Scatter'}
-            legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
+                legend('Burst SD','Conf. Interval','Expected SD','Binned SD','Location','northeast')
             case {'Image','Hex'}
-            legend('Conf. Interval','Expected STD','Binned SD','Location','northeast')
-            BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
+                legend('Conf. Interval','Expected SD','Binned SD','Location','northeast')
+                BVA_cbar = colorbar; ylabel(BVA_cbar,'Number of Bursts')
         end
-
+        
+        
         %%% Update ColorMap
         if ischar(UserValues.BurstBrowser.Display.ColorMap)
             if ~UserValues.BurstBrowser.Display.ColorMapFromWhite
@@ -12358,7 +12361,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         else
             colormap(hfig,UserValues.BurstBrowser.Display.ColorMap);
         end
-
+        
         %%% Combine the Original FileName and the parameter names
         if isfield(BurstData{file},'FileNameSPC')
             if strcmp(BurstData{file}.FileNameSPC,'_m1')
@@ -12369,7 +12372,7 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         else
             FileName = BurstData{file}.FileName(1:end-4);
         end
-
+        
         if BurstData{file}.SelectedSpecies(1) ~= 0
             SpeciesName = ['_' BurstData{file}.SpeciesNames{BurstData{file}.SelectedSpecies(1),1}];
             if BurstData{file}.SelectedSpecies(2) > 1 %%% subspecies selected, append
@@ -12382,14 +12385,14 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
         %%% remove spaces
         FigureName = strrep(strrep(FigureName,' ','_'),'/','-');
         hfig.CloseRequestFcn = {@ExportGraph_CloseFunction,1,FigureName};
-
+        
         %%% add burst-wise standard deviation as additional parameter
         if ~isfield(BurstData{file},'AdditionalParameters')
             BurstData{file}.AdditionalParameters = [];
         end
         if ~isfield(BurstData{file}.AdditionalParameters,'BVAStandardDeviation')
             BurstData{file}.AdditionalParameters.BVAStandardDeviation = NaN(size(BurstData{file}.DataArray,1),1);
-
+            
         end
         BurstData{file}.AdditionalParameters.BVAStandardDeviation = sSelected;
         %%% Add parameters to list
