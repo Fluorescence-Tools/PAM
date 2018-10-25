@@ -1341,7 +1341,13 @@ if Mode==0 %%% Loads user values
         disp('UserValues.TauFit.use_weighted_residuals was incomplete');
     end
     P.TauFit.use_weighted_residuals = S.TauFit.use_weighted_residuals;
-    
+    %%% Checks, if TauFit.WeightedResidualsType exists
+    %%% (Options: Gaussian and Poissonian)
+    if ~isfield(S.TauFit,'WeightedResidualsType')
+        S.TauFit.WeightedResidualsType='Gaussian';
+        disp('UserValues.TauFit.WeightedResidualsType was incomplete');
+    end
+    P.TauFit.WeightedResidualsType = S.TauFit.WeightedResidualsType;
     %%% Checks, if TauFit.cleanup_IRF exists
     if ~isfield(S.TauFit,'cleanup_IRF')
         S.TauFit.cleanup_IRF=0;
