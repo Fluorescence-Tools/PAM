@@ -6404,9 +6404,9 @@ tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
 model = sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
 switch TauFitData.WeightedResidualsType
     case 'Gaussian'
-        chi2 = sum( (decay-sum(decay_ind.*repmat(tau_dist,1,numel(decay),1))).^2./error.^2)./(numel(decay));
+        chi2 = sum( (decay-model).^2./error.^2)./(numel(decay));
     case 'Poissonian'
-        chi2 = sum(MLE_w_res(sum(decay_ind.*repmat(p,1,numel(decay),1)),decay).^2)./(numel(decay));
+        chi2 = sum(MLE_w_res(model,decay).^2)./(numel(decay));
 end
 
 switch mode
