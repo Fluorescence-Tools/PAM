@@ -3228,8 +3228,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3246,9 +3251,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun); 
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
@@ -3350,8 +3360,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3368,9 +3383,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
@@ -3491,8 +3511,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3509,9 +3534,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
@@ -3617,8 +3647,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3635,9 +3670,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun); 
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
@@ -3763,8 +3803,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3781,9 +3826,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_2aniso_independent(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
