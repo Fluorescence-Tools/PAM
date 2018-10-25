@@ -1602,7 +1602,7 @@ switch Obj
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
     case h.Sim_Freq %%% Simulation Frequency changed
         SimData.General(File).Freq =  str2double(h.Sim_Freq.String);        
         for i=1:numel(h.Sim_List.String)
@@ -1777,7 +1777,7 @@ switch Obj
         SimData.Species(Sel).D=str2double(h.Sim_D.String);
     case h.Sim_N %%% Changed number of particles
         SimData.Species(Sel).N=str2double(h.Sim_N.String);
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
     case h.Sim_wr %%% Changed lateral focus size
         for i=1:4
             SimData.Species(Sel).wr(i)=str2double(h.Sim_wr{i}.String);
@@ -1910,10 +1910,10 @@ SimData.General(File).Species = SimData.Species;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Calculate the Concentration of selected Species %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_Concentration(Sel)
+function Update_Concentration(Sel,File)
 global SimData
 h = guidata(findobj('Tag','Sim'));
-c = SimData.Species(Sel).N./prod(SimData.General(Sel).BS)./1E-24./6.022E23./1E-9;
+c = SimData.Species(Sel).N./prod(SimData.General(File).BS)./1E-24./6.022E23./1E-9;
 h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -2122,7 +2122,7 @@ switch mode
 
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
