@@ -4458,7 +4458,9 @@ switch obj
         fitres = model(param,x_fit);fitres = fitres(1:(numel(Decay)-ignore+1));
         
         Decay_ignore = Decay(1:ignore);
-        
+        if poissonian_chi2
+            res = res.*sign(Decay_fit-fitres);
+        end
         TACtoTime = TauFitData.TACChannelWidth;%TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
         %%% calculate confidence intervals
