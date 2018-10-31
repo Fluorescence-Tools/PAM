@@ -1,14 +1,5 @@
-function RICS_Sim_like_gui(~,~)
+function RICSPE_GUI(~,~)
 
-clc
-
-addpath('C:\Users\longfils\Google Drive\Hasselt\PAM\PAM')
-addpath('C:\Users\longfils\Google Drive\Hasselt\PAM\PAM\functions\GUI')
-addpath('C:\Users\longfils\Google Drive\Hasselt\PAM\PAM\functions')
-
-addpath('C:\Users\Marco\Google Drive\Hasselt\PAM\PAM')
-addpath('C:\Users\Marco\Google Drive\Hasselt\PAM\PAM\functions\GUI')
-addpath('C:\Users\Marco\Google Drive\Hasselt\PAM\PAM\functions')
 
 global UserValues PathToApp
 h.Sim=findobj('Tag','Sim');
