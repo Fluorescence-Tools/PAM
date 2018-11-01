@@ -3389,7 +3389,11 @@ function jControl = findjobj_fast(hControl, jContainer)
     jControl = [];
     counter = 100;
     oldTooltip = get(hControl,'Tooltip');
-    set(hControl,'Tooltip','!@#$%^&*');
+    if verLessThan('MATLAB','9.5') %%% before 2018b
+        set(hControl,'Tooltip','!@#$%^&*');
+    else %%% after 2018b
+        set(hControl,'TooltipString','!@#$%^&*');
+    end
     while isempty(jControl) && counter>0
         counter = counter - 1;
         pause(0.001);

@@ -1602,7 +1602,7 @@ switch Obj
         for i=1:3
            SimData.General(File).BS(i) =  str2double(h.Sim_BS{i}.String);            
         end
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
     case h.Sim_Freq %%% Simulation Frequency changed
         SimData.General(File).Freq =  str2double(h.Sim_Freq.String);        
         for i=1:numel(h.Sim_List.String)
@@ -1777,7 +1777,7 @@ switch Obj
         SimData.Species(Sel).D=str2double(h.Sim_D.String);
     case h.Sim_N %%% Changed number of particles
         SimData.Species(Sel).N=str2double(h.Sim_N.String);
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
     case h.Sim_wr %%% Changed lateral focus size
         for i=1:4
             SimData.Species(Sel).wr(i)=str2double(h.Sim_wr{i}.String);
@@ -1910,10 +1910,10 @@ SimData.General(File).Species = SimData.Species;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
 %%% Calculate the Concentration of selected Species %%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Update_Concentration(Sel)
+function Update_Concentration(Sel,File)
 global SimData
 h = guidata(findobj('Tag','Sim'));
-c = SimData.Species(Sel).N./prod(SimData.General(Sel).BS)./1E-24./6.022E23./1E-9;
+c = SimData.Species(Sel).N./prod(SimData.General(File).BS)./1E-24./6.022E23./1E-9;
 h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -2122,7 +2122,7 @@ switch mode
 
         Sim_Settings(h.Sim_Color,[]); 
         Sim_Settings(h.Sim_FRET,[]);
-        Update_Concentration(Sel);
+        Update_Concentration(Sel,h.Sim_File_List.Value);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
@@ -2487,10 +2487,10 @@ if advanced
     %% Prepare input values
     
     %%% IRF values (global for all species)
-    %%% Shift is hard-coded to 1 ns
-    IRFshift = floor(MI_Bins/str2double(h.Sim_MIRange.String));
+    %%% Shift is 4*IRFwidth
+    IRFshift = 4*MI_Bins/str2double(h.Sim_MIRange.String).*str2double(h.Sim_IRF_Width_Edit.String)/1000;
     if h.Sim_UseIRF.Value
-        IRFwidth = floor(MI_Bins*str2double(h.Sim_IRF_Width_Edit.String)/1000/str2double(h.Sim_MIRange.String));
+        IRFwidth = MI_Bins*str2double(h.Sim_IRF_Width_Edit.String)/1000/str2double(h.Sim_MIRange.String);
     else
         IRFwidth = 1; %%% set to minimum
     end
@@ -2670,7 +2670,8 @@ if advanced
     for i = 1:numel(SimData.Species)
         for j = 1:4
             r = (aniso_params(16*(i-1)+4*(j-1)+1)-aniso_params(16*(i-1)+4*(j-1)+3)).*exp(-[1:MI_Bins]./aniso_params(16*(i-1)+4*(j-1)+2)) + aniso_params(16*(i-1)+4*(j-1)+3);
-            p_aniso = [p_aniso,(1+2*r)./((1+2*r)+aniso_params(16*(i-1)+4*(j-1)+4)*(1-r))];
+            %p_aniso = [p_aniso,(1+2*r)./((1+2*r)+aniso_params(16*(i-1)+4*(j-1)+4)*(1-r))];
+            p_aniso = [p_aniso,(2*r+1)/3];
         end
     end
      
@@ -2951,6 +2952,12 @@ if advanced
             Photons_total{i,8} = cell2mat(Photons4s);
             MI_total{i,8} = cell2mat(MI4s);
             clear Photons1 Photons2 Photons3 Photons4 MI1 MI2 MI3 MI4 Photons1s Photons2s Photons3s Photons4s MI1s MI2s MI3s MI4s;
+            % discard half of the perpendicular photons
+            for s = 5:8
+                valid = logical(binornd(1,0.5,size(Photons_total{i,s})));
+                Photons_total{i,s} = Photons_total{i,s}(valid);
+                MI_total{i,s} = MI_total{i,s}(valid);
+            end
         end
         stop(Update);
     end
@@ -2995,7 +3002,7 @@ if advanced
     %%% Generate IRF
     IRFTime = 600; %%% 600 second irf measurement
     IRFTimeMT = IRFTime*Freq; %%% Time in MT bins
-    N_IRF = 1E5;%floor(IRFTime*1000*noise(mod(i-1,4)+1)/4); %%% number of IRF photons
+    N_IRF = 1E6;%floor(IRFTime*1000*noise(mod(i-1,4)+1)/4); %%% number of IRF photons
     IRF_MT = cell(nChan,1);
     IRF_MI = cell(nChan,1);
     for i = 1:nChan

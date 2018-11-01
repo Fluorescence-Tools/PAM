@@ -270,8 +270,8 @@ switch (Type)
                         'Setup (.set) file not found!',...
                         1,{num2str(UserValues.Settings.Pam.DefaultTACRange*1E9)},'on');
                     if isempty(TACRange)
-                        disp('No answer given. Setting default TAC range of 40 ns.');
-                        TACRange = 40E-9;
+                        disp(sprintf('No answer given. Setting previous TAC range of %.2f ns.',1E9*UserValues.Settings.Pam.DefaultTACRange));
+                        TACRange = {num2str(UserValues.Settings.Pam.DefaultTACRange*1E9)};
                     end
                     TACRange = 1E-9*str2num(TACRange{1});
                     if ~isfinite(TACRange) | isempty(TACRange)
@@ -426,7 +426,8 @@ switch (Type)
                 'No set file found.',...
                 1,{num2str(UserValues.Settings.Pam.DefaultSyncRate*1E-6)},'on');
             if isempty(syncrate)
-                disp(sprintf('No answer given. Keeping the read-out rate of %.2f MHz.',1./FileInfo.SyncPeriod));
+                disp(sprintf('No answer given. Keeping the previously read-out rate of %.2f MHz.',1E-6*UserValues.Settings.Pam.DefaultSyncRate));
+                syncrate = {num2str(1E-6*UserValues.Settings.Pam.DefaultSyncRate)};
             end
             syncrate = 1E6*str2num(syncrate{1});
             if ~isfinite(syncrate) || isempty(syncrate)
