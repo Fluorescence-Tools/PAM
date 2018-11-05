@@ -15656,8 +15656,8 @@ switch obj
         if UserValues.BurstBrowser.Display.ColorMapInvert
             colormap(flipud(colormap));
         end
-        
-        if (h.lifetime_ind_popupmenu.Value > 4) && any(BurstData{BurstMeta.SelectedFile}.BAMethod == [1,2,5])
+        adjust_data_aspect_for_phasor = false;
+        if adjust_data_aspect_for_phasor && (h.lifetime_ind_popupmenu.Value > 4) && any(BurstData{BurstMeta.SelectedFile}.BAMethod == [1,2,5])
             %%% we have a Phasor plot, adjust the data aspect ratio
             ax2d = findobj(panel_copy.Children,'Tag','axes_lifetime_ind_2d');
             ax2d.DataAspectRatio(1:2) = [1,1];
