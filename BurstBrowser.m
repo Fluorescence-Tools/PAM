@@ -3959,11 +3959,18 @@ switch mode
         BurstMeta.Plots.Multi.Multi_histX(1) = stairs(h.axes_1d_x,0.5,1,'Color','b','LineWidth',2,'Visible','off');
         BurstMeta.Plots.Multi.Multi_histX(2) = stairs(h.axes_1d_x,0.5,1,'Color','r','LineWidth',2,'Visible','off');
         BurstMeta.Plots.Multi.Multi_histX(3) = stairs(h.axes_1d_x,0.5,1,'Color','g','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(4) = stairs(h.axes_1d_x,0.5,1,'Color','y','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(5) = stairs(h.axes_1d_x,0.5,1,'Color','k','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histX(6) = stairs(h.axes_1d_x,0.5,1,'Color','c','LineWidth',2,'Visible','off');
         BurstMeta.Plots.Multi.Multi_histY(1) = stairs(h.axes_1d_y,0.5,1,'Color','b','LineWidth',2,'Visible','off');
         BurstMeta.Plots.Multi.Multi_histY(2) = stairs(h.axes_1d_y,0.5,1,'Color','r','LineWidth',2,'Visible','off');
         BurstMeta.Plots.Multi.Multi_histY(3) = stairs(h.axes_1d_y,0.5,1,'Color','g','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(4) = stairs(h.axes_1d_y,0.5,1,'Color','y','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(5) = stairs(h.axes_1d_y,0.5,1,'Color','k','LineWidth',2,'Visible','off');
+        BurstMeta.Plots.Multi.Multi_histY(6) = stairs(h.axes_1d_y,0.5,1,'Color','c','LineWidth',2,'Visible','off');
         BurstMeta.Plots.MultiScatter.h1dx = [];
         BurstMeta.Plots.MultiScatter.h1dy = [];
+        BurstMeta.Plots.Multi.ContourPatches = [];
         %%% Plots for Gaussian mixture fitting
         [~,BurstMeta.Plots.Mixture.Main_Plot(2)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine2,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(2).UIContextMenu = h.ExportGraph_Menu;
         [~,BurstMeta.Plots.Mixture.Main_Plot(3)] = contour(zeros(2),10,'Parent',h.axes_general,'Visible','off','LineWidth',2,'LineColor',UserValues.BurstBrowser.Display.ColorLine3,'LineStyle','--');BurstMeta.Plots.Mixture.Main_Plot(3).UIContextMenu = h.ExportGraph_Menu;
@@ -6604,10 +6611,17 @@ for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
 end
 BurstMeta.Plots.MultiScatter.h1dx = [];
 BurstMeta.Plots.MultiScatter.h1dy = [];
+for i = 1:numel(BurstMeta.Plots.Multi.ContourPatches)
+    try;delete(BurstMeta.Plots.Multi.ContourPatches(i));end;   
+end
+BurstMeta.Plots.Multi.ContourPatches = [];
 %%% additionally, delete all left-over stair plots (those are multi-species
 %%% plots, which sometimes are not deleted by the above code...)
-delete(h.axes_1d_x.Children(1:end-12));
-delete(h.axes_1d_y.Children(1:end-12));
+delete(h.axes_1d_x.Children(1:end-15));
+delete(h.axes_1d_y.Children(1:end-15));
+if numel(h.axes_general.Children) > 10
+    delete(h.axes_general.Children(1:end-10));
+end
 
 legend(h.axes_1d_x,'off');
 %%% only hide fit plots if selection of parameter or species has changed,
@@ -7773,8 +7787,11 @@ if obj == h.MultiPlotButton %%% only limit species when multiplot button has bee
     if num_species == 1
         return;
     end
-    if num_species > 3
+    if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & num_species > 3
+        % more than 3 species only supported for contour plots
         num_species = 3;
+    elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & num_species > 6
+        num_species = 6;
     end
 end
 
@@ -7959,12 +7976,9 @@ if nargout > 0 %%% we requested the histogram, do not plot!
     return;
 end
 delete(BurstMeta.HexPlot.MainPlot_hex);
-%%% prepare image plot
-white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
-axes(h.axes_general);
 
-%%% mix histograms
-[zz,color] = overlay_colored(H);
+%%% prepare image plot
+axes(h.axes_general);
 
 %%% remove old plots
 for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
@@ -7973,17 +7987,24 @@ for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
 end
 BurstMeta.Plots.MultiScatter.h1dx = [];
 BurstMeta.Plots.MultiScatter.h1dy = [];
+for i = 1:numel(BurstMeta.Plots.Multi.ContourPatches)
+    try;delete(BurstMeta.Plots.Multi.ContourPatches(i));end;   
+end
+BurstMeta.Plots.Multi.ContourPatches = [];
 %%% additionally, delete all left-over stair plots (those are multi-species
 %%% plots, which sometimes are not deleted by the above code...)
-delete(h.axes_1d_x.Children(1:end-12));
-delete(h.axes_1d_y.Children(1:end-12));
-
+delete(h.axes_1d_x.Children(1:end-15));
+delete(h.axes_1d_y.Children(1:end-15));
+% the same for the axes_general
+if numel(h.axes_general.Children) > 10
+    delete(h.axes_general.Children(1:end-10));
+end
 %%% plot
 set(BurstMeta.Plots.Main_Plot,'Visible','off');
 set(BurstMeta.Plots.Main_histX,'Visible','off');
 set(BurstMeta.Plots.Main_histY,'Visible','off');
 BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'on';
-for i = 1:3
+for i = 1:numel(BurstMeta.Plots.Multi.Multi_histX)
     BurstMeta.Plots.Multi.Multi_histX(i).Visible = 'off';
     BurstMeta.Plots.Multi.Multi_histY(i).Visible = 'off';
 end
@@ -7993,23 +8014,42 @@ for i = 1:numel(BurstMeta.Plots.MultiScatter.h1dx)
 end
 BurstMeta.Plots.Multi.Main_Plot_multiple.XData = xbins;
 BurstMeta.Plots.Multi.Main_Plot_multiple.YData = ybins;
-BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;
 
-if white == 0
-    %%% set alpha property
-    BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = sum(zz,3)>0;
-    %%% change color of 1d hists
-    for i = 1:num_species
-        BurstMeta.Plots.Multi.Multi_histX(i).Color = color(i,1,:);
-        BurstMeta.Plots.Multi.Multi_histY(i).Color = color(i,1,:);
+if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+    % overlay images
+    %%% mix histograms
+    [zz,colors] = overlay_colored(H);
+    BurstMeta.Plots.Multi.Main_Plot_multiple.CData = zz;    
+    white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+    if white == 0
+        %%% set alpha property
+        BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = sum(zz,3)>0;
+    else
+        %%% set alpha property
+        BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = 1-(sum(zz,3)==3);
+        colors = [0,0,1;1,0,0;0,1,0];
     end
 else
-    %%% set alpha property
-    BurstMeta.Plots.Multi.Main_Plot_multiple.AlphaData = 1-(sum(zz,3)==3);
-    color = [0,0,1;1,0,0;0,1,0];
-    for i = 1:num_species
-        BurstMeta.Plots.Multi.Multi_histX(i).Color = color(i,:);
-        BurstMeta.Plots.Multi.Multi_histY(i).Color = color(i,:);
+    %%% hide image plot
+    BurstMeta.Plots.Multi.Main_Plot_multiple.Visible = 'off';
+    % overlay contour plots
+    colors = lines(numel(H));    
+    for i = 1:numel(H)
+        %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none'); 
+        % multiply alpha by 2 to increase opacity due to non-liner alpha blending
+        alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels); 
+        level = 1;
+        while level < size(C,2)
+            n_vertices = C(2,level);
+            if UserValues.BurstBrowser.Display.PlotContourLines
+                BurstMeta.Plots.Multi.ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+            else
+                BurstMeta.Plots.Multi.ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+            end
+            level = level + n_vertices +1;
+        end
+        delete(contour_plot);
     end
 end
 
@@ -8099,6 +8139,13 @@ end
 h.axes_1d_y.YTickMode = 'auto';
 yticks = get(h.axes_1d_y,'YTick');
 set(h.axes_1d_y,'YTick',yticks(2:end));
+
+%% change color of 1d hists
+for i = 1:num_species
+    BurstMeta.Plots.Multi.Multi_histX(i).Color = colors(i,:);
+    BurstMeta.Plots.Multi.Multi_histY(i).Color = colors(i,:);
+end
+
 %%% add legend
 str = cell(num_species,1);
 for i = 1:num_species
