@@ -12738,7 +12738,7 @@ if ~h.MultiselectOnCheckbox.UserData
     datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
 if(get(h.Hist_log10, 'Value'))
     H = log10(H);
@@ -12782,7 +12782,42 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     BurstMeta.Plots.EvsTauGG(3).YData = datapoints(:,2);
     BurstMeta.Plots.EvsTauGG(3).CData = colordata;
 end
-
+% clear patches
+if numel(h.axes_EvsTauGG.Children) > 8
+    delete(h.axes_EvsTauGG.Children(1:end-8));
+end
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    BurstMeta.Plots.EvsTauGG(2).Visible = 'off';
+    axes(h.axes_EvsTauGG);
+    % overlay contour plots
+    colors = lines(numel(H));
+    ContourPatches = [];
+    H = H_ind;
+    for i = 1:numel(H)
+        %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+        switch UserValues.BurstBrowser.Display.ContourFill
+            case 0
+                alpha = 0;
+            case 1
+                alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        end
+        level = 1;
+        while level < size(C,2)
+            n_vertices = C(2,level);
+            if UserValues.BurstBrowser.Display.PlotContourLines
+                ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+            else
+                ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+            end
+            level = level + n_vertices +1;
+        end
+        delete(contour_plot);
+    end
+elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) == 1)
+    BurstMeta.Plots.EvsTauGG(2).Visible = 'on';
+end
+            
 %%% update hex plot if selected
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     delete(BurstMeta.HexPlot.EvsTauGG);
@@ -12806,7 +12841,7 @@ if ~h.MultiselectOnCheckbox.UserData
     datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idxE)];
 else
     maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
-    [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
+    [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idxE},{[0 maxX], [-0.1 1.1]});
 end
 if(get(h.Hist_log10, 'Value'))
     H = log10(H);
@@ -12850,6 +12885,41 @@ if strcmp(UserValues.BurstBrowser.Display.PlotType,'Scatter')
     BurstMeta.Plots.EvsTauRR(3).YData = datapoints(:,2);
     BurstMeta.Plots.EvsTauRR(3).CData = colordata;
 end
+% clear patches
+if numel(h.axes_EvsTauRR.Children) > 8
+    delete(h.axes_EvsTauRR.Children(1:end-8));
+end
+if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+    BurstMeta.Plots.EvsTauRR(2).Visible = 'off';
+    axes(h.axes_EvsTauRR);
+    % overlay contour plots
+    colors = lines(numel(H));
+    ContourPatches = [];
+    H = H_ind;
+    for i = 1:numel(H)
+        %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+        switch UserValues.BurstBrowser.Display.ContourFill
+            case 0
+                alpha = 0;
+            case 1
+                alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+        end
+        level = 1;
+        while level < size(C,2)
+            n_vertices = C(2,level);
+            if UserValues.BurstBrowser.Display.PlotContourLines
+                ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+            else
+                ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+            end
+            level = level + n_vertices +1;
+        end
+        delete(contour_plot);
+    end
+elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) == 1)
+    BurstMeta.Plots.EvsTauRR(2).Visible = 'on';
+end
 %%% update hex plot if selected
 if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
     delete(BurstMeta.HexPlot.EvsTauRR);
@@ -12870,7 +12940,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         datapoints = [datatoplot(:,idx_tauGG), datatoplot(:,idx_rGG)];
     else
         maxX = BurstData{file}.Corrections.DonorLifetime+1.5;
-        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
+        [H,xbins,ybins,~,~,datapoints,n_per_species, H_ind] = MultiPlot([],[],h,NameArray{idx_tauGG},NameArray{idx_rGG},{[0 maxX], [-0.1 0.5]});
     end
     if(get(h.Hist_log10, 'Value'))
         H = log10(H);
@@ -12914,6 +12984,41 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         BurstMeta.Plots.rGGvsTauGG(3).YData = datapoints(:,2);
         BurstMeta.Plots.rGGvsTauGG(3).CData = colordata;
     end
+    % clear patches
+    if numel(h.axes_rGGvsTauGG.Children) > 8
+        delete(h.axes_rGGvsTauGG.Children(1:end-8));
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+        BurstMeta.Plots.rGGvsTauGG(2).Visible = 'off';
+        axes(h.axes_rGGvsTauGG);
+        % overlay contour plots
+        colors = lines(numel(H));
+        ContourPatches = [];
+        H = H_ind;
+        for i = 1:numel(H)
+            %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+            switch UserValues.BurstBrowser.Display.ContourFill
+                case 0
+                    alpha = 0;
+                case 1
+                    alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            end
+            level = 1;
+            while level < size(C,2)
+                n_vertices = C(2,level);
+                if UserValues.BurstBrowser.Display.PlotContourLines
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+                else
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+                end
+                level = level + n_vertices +1;
+            end
+            delete(contour_plot);
+        end
+    elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) == 1)
+        BurstMeta.Plots.rGGvsTauGG(2).Visible = 'on';
+    end
     %%% update hex plot if selected
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
         delete(BurstMeta.HexPlot.rGGvsTauGG);
@@ -12932,7 +13037,7 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         datapoints = [datatoplot(:,idx_tauRR), datatoplot(:,idx_rRR)];
     else
         maxX = BurstData{file}.Corrections.AcceptorLifetime+2;
-        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
+        [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_tauRR},NameArray{idx_rRR},{[0 maxX], [-0.1 0.5]});
     end
     if(get(h.Hist_log10, 'Value'))
         H = log10(H);
@@ -12975,6 +13080,41 @@ if BurstData{file}.BAMethod ~= 5 %ensure that polarized detection was used
         BurstMeta.Plots.rRRvsTauRR(3).XData = datapoints(:,1);
         BurstMeta.Plots.rRRvsTauRR(3).YData = datapoints(:,2);
         BurstMeta.Plots.rRRvsTauRR(3).CData = colordata;
+    end
+    % clear patches
+    if numel(h.axes_rRRvsTauRR.Children) > 8
+        delete(h.axes_rRRvsTauRR.Children(1:end-8));
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+        BurstMeta.Plots.rRRvsTauRR(2).Visible = 'off';
+        axes(h.axes_rRRvsTauRR);
+        % overlay contour plots
+        colors = lines(numel(H));
+        ContourPatches = [];
+        H = H_ind;
+        for i = 1:numel(H)
+            %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+            switch UserValues.BurstBrowser.Display.ContourFill
+                case 0
+                    alpha = 0;
+                case 1
+                    alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            end
+            level = 1;
+            while level < size(C,2)
+                n_vertices = C(2,level);
+                if UserValues.BurstBrowser.Display.PlotContourLines
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+                else
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+                end
+                level = level + n_vertices +1;
+            end
+            delete(contour_plot);
+        end
+    elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) == 1)
+        BurstMeta.Plots.rRRvsTauRR(2).Visible = 'on';
     end
     %%% update hex plot if selected
     if strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex')
@@ -13244,7 +13384,7 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         x_lim = [-0.1,1.1];
         y_lim = [0, 0.75];
         NameArray = BurstData{file}.NameArray;
-        [H,xbins,ybins,~,~,datapoints,n_per_species] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{x_lim, y_lim});
+        [H,xbins,ybins,~,~,datapoints,n_per_species,H_ind] = MultiPlot([],[],h,NameArray{idx_x},NameArray{idx_y},{x_lim, y_lim});
         if iscell(H)
             HH = zeros(numel(ybins),numel(xbins));
             for i = 1:numel(H)
@@ -13262,11 +13402,15 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
     H = H/max(max(H));
     %%% copy the E vs tauA plot as template
     origin =  h.axes_EvsTauRR;
-    plots = origin.Children;
+    plots = origin.Children;  
     for i = numel(plots):-1:1
         handle_temp = copyobj(plots(i),h.axes_lifetime_ind_2d);
         type{i} = plots(i).Type;
         handle_temp.UIContextMenu = h.ExportGraphLifetime_Menu;
+    end
+    %%% clear patches
+    if numel(h.axes_lifetime_ind_2d.Children) > 3
+        delete(h.axes_lifetime_ind_2d.Children(1:end-3));
     end
     c = flipud(h.axes_lifetime_ind_2d.Children);
     c(1).XData = xbins;
@@ -13303,6 +13447,36 @@ elseif ~isempty(strfind(paramX,'Phasor')) %%% phasor plot
         c(3).XData = datapoints(:,1);
         c(3).YData = datapoints(:,2);
         c(3).CData = colordata;
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) > 1)
+        c(2).Visible = 'off';
+        axes(h.axes_lifetime_ind_2d);
+        % overlay contour plots
+        colors = lines(numel(H_ind));
+        ContourPatches = [];
+        for i = 1:numel(H_ind)
+            %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            [C,contour_plot] = contour(xbins,ybins,H_ind{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+            switch UserValues.BurstBrowser.Display.ContourFill
+                case 0
+                    alpha = 0;
+                case 1
+                    alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+            end
+            level = 1;
+            while level < size(C,2)
+                n_vertices = C(2,level);
+                if UserValues.BurstBrowser.Display.PlotContourLines
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+                else
+                    ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+                end
+                level = level + n_vertices +1;
+            end
+            delete(contour_plot);
+        end
+    elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') & (numel(get_multiselection(h)) == 1)
+        c(2).Visible = 'on';
     end
     xlim(h.axes_lifetime_ind_2d,x_lim);
     ylim(h.axes_lifetime_ind_2d,y_lim);
@@ -13349,7 +13523,7 @@ h.axes_lifetime_ind_1d_y.XLim = origin.YLim;
 try;h.axes_lifetime_ind_1d_x.YLim = [0,max(histx)*1.05];end;
 try;h.axes_lifetime_ind_1d_y.YLim = [0,max(histy)*1.05];end;
 
-if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% multiple species selected, color automatically
+if h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% multiple species selected, color automatically
     [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h,paramX,paramY,{origin.XLim,origin.YLim});
     normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex');
     if gcbo ~= h.MultiPlotButton
@@ -13388,10 +13562,12 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
             BurstMeta.Plots.MultiScatter.h1dy_lifetime(end+1) = handle(stairs(binsy,[hy_total,hy_total(end)],'Color',[0,0,0],'LineWidth',2,'Parent',h.axes_lifetime_ind_1d_y));
         end
     elseif gcbo == h.MultiPlotButton
-        if numel(H) > 3
-            H = H(1:3);
+        if (numel(H) > 3) & ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            H = H(1:3); % limit to 3
+        elseif (numel(H) > 6) & strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            H = H(1:6); % limit to 6
         end
-        [zz,color] = overlay_colored(H);
+        
         del = false(numel(h.axes_lifetime_ind_2d.Children),1);
         for k = 1:numel(h.axes_lifetime_ind_2d.Children)
             if ~strcmp(h.axes_lifetime_ind_2d.Children(k).Type,'line')
@@ -13402,15 +13578,46 @@ if  h.MultiselectOnCheckbox.UserData && numel(get_multiselection(h)) > 1 %%% mul
         
         normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot;
         
-        multiplot = imagesc(h.axes_lifetime_ind_2d,xbins,ybins,zz);
-        uistack(multiplot,'bottom'); multiplot.UIContextMenu = h.ExportGraphLifetime_Menu;
-        white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
-        %%% set alpha property
-        if white == 0
-            multiplot.AlphaData = sum(zz,3)>0;
-        else
-            multiplot.AlphaData = 1-(sum(zz,3)==3);
+        if ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            [zz,color] = overlay_colored(H);
+            multiplot = imagesc(h.axes_lifetime_ind_2d,xbins,ybins,zz);
+            uistack(multiplot,'bottom'); multiplot.UIContextMenu = h.ExportGraphLifetime_Menu;
+            white = 1-UserValues.BurstBrowser.Display.MultiPlotMode;
+            %%% set alpha property
+            if white == 0
+                multiplot.AlphaData = sum(zz,3)>0;
+            else
+                multiplot.AlphaData = 1-(sum(zz,3)==3);
+            end
+        elseif strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour')
+            axes(h.axes_lifetime_ind_2d);
+            % overlay contour plots
+            colors = lines(numel(H));
+            ContourPatches = [];
+            for i = 1:numel(H)
+                %level_list = max(H{i}(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,UserValues.BurstBrowser.Display.PlotCutoff/100,UserValues.BurstBrowser.Display.NumberOfContourLevels);
+                [C,contour_plot] = contour(xbins,ybins,H{i},UserValues.BurstBrowser.Display.NumberOfContourLevels,'LineColor','none');
+                switch UserValues.BurstBrowser.Display.ContourFill
+                    case 0
+                        alpha = 0;
+                    case 1
+                        alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels);
+                end
+                level = 1;
+                while level < size(C,2)
+                    n_vertices = C(2,level);
+                    if UserValues.BurstBrowser.Display.PlotContourLines
+                        ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor',colors(i,:));
+                    else
+                        ContourPatches(end+1) = patch(C(1,level+1:level+n_vertices),C(2,level+1:level+n_vertices),colors(i,:),'FaceAlpha',alpha,'EdgeColor','none');
+                    end
+                    level = level + n_vertices +1;
+                end
+                delete(contour_plot);
+            end
+            color = colors;
         end
+        
         %plot first histogram
         hx = sum(H{1},1);
         if normalize
