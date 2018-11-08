@@ -6772,7 +6772,7 @@ if ~advanced
         [H, xbins,ybins,~,~,bin] = calc2dhist(datatoplot(:,x),datatoplot(:,y),[nbinsX nbinsY],xlimits,ylimits);
     else
         %%% call MultiPlot for superposition of all histograms
-        [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species] = MultiPlot([],[],h);
+        [H,xbins,ybins,xlimits,ylimits,datapoints,n_per_species,H_ind] = MultiPlot([],[],h);
     end
     if(get(h.Hist_log10, 'Value'))
         HH = log10(H);
@@ -6832,7 +6832,7 @@ if ~advanced
         BurstMeta.HexPlot.MainPlot_hex = hexscatter(datapoints(:,1),datapoints(:,2),'xlim',xlimits,'ylim',ylimits,'res',nbins);
         set(BurstMeta.HexPlot.MainPlot_hex,'UIContextMenu',h.ExportGraph_Menu);
     end
-    if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists
+    if h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, plot individual hists
         normalize = UserValues.BurstBrowser.Settings.Normalize_Multiplot && ~strcmp(UserValues.BurstBrowser.Display.PlotType,'Hex') && ~(gcbo == h.Fit_Gaussian_Button);
         %%% prepare 1d hists
         binsx = linspace(xlimits(1),xlimits(2),nbinsX+1);
@@ -6907,6 +6907,16 @@ if ~advanced
         BurstMeta.Plots.Main_Plot(3).YData = datapoints(:,2);
         BurstMeta.Plots.Main_Plot(3).CData = colordata;
         h.colorbar.Visible = 'off';
+    end
+    if strcmp(UserValues.BurstBrowser.Display.PlotType,'Contour') %%% update contour plots for multiselection
+        if  h.MultiselectOnCheckbox.UserData && numel(n_per_species) > 1 %%% multiple species selected, color automatically
+            %%% hide contour plot
+            BurstMeta.Plots.Main_Plot(2).Visible = 'off';
+            %%% plot contours
+             MultiPlot(h.MultiPlotButton,[]);
+        else
+            BurstMeta.Plots.Main_Plot(2).Visible = 'on';
+        end
     end
 else
     % histogram X vs Y parameter
@@ -7761,7 +7771,7 @@ LSUserValues(1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%% Plots the Species in one Plot (not considering GlobalCuts)  %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [HistOut,xbins,ybins,x_boundaries,y_boundaries,datapoints,n_per_species] = MultiPlot(obj,~,h,paramX,paramY,limits)
+function [HistOut,xbins,ybins,x_boundaries,y_boundaries,datapoints,n_per_species,H_ind] = MultiPlot(obj,~,h,paramX,paramY,limits)
 %%% limits is optional global max and min boundaries for x and y
 if nargin < 3
     if ishandle(obj)
@@ -7970,6 +7980,7 @@ if normalize
 end
 
 if nargout > 0 %%% we requested the histogram, do not plot!
+    H_ind = H; %%% assign cell array to last output
     if (gcbo == h.MultiPlotButton) && (h.Main_Tab.SelectedTab == h.Main_Tab_Lifetime) && (h.LifetimeTabgroup.SelectedTab == h.LifetimeTabInd)
         HistOut = H; %%% just return the cell array
     else
@@ -8060,7 +8071,7 @@ else
             case 0
                 alpha = 0;
             case 1
-                alpha = 1/(UserValues.BurstBrowser.Display.NumberOfContourLevels); 
+                alpha = 2/(UserValues.BurstBrowser.Display.NumberOfContourLevels); 
         end
         level = 1;
         while level < size(C,2)
