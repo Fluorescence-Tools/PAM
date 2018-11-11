@@ -5139,7 +5139,7 @@ elseif any(obj.Parent == [h.FRET_comp_Loaded_Menu,h.FRET_comp_selected_Menu])
     switch obj.Parent
         case h.FRET_comp_Loaded_Menu
             sel_file = BurstMeta.SelectedFile;
-            for i = 1:numel(BurstData);
+            for i = 1:numel(BurstData)
                 BurstMeta.SelectedFile = i;
                 %%% Make sure to apply corrections
                 ApplyCorrections(obj,[],h,0);
@@ -12165,14 +12165,6 @@ function Dynamic_Analysis(~,~)
 global BurstData BurstTCSPCData UserValues BurstMeta
 h = guidata(findobj('Tag','BurstBrowser'));
 file = BurstMeta.SelectedFile;
-%%% query BVA parameters
-% opts.Resize = 'off';opts.WindowStyle = 'n ormal';opts.Interpreter = 'tex';
-% bva_parameters = inputdlg({'Number of photons per window:','Burst per bin threshold:',...
-%     'Confidence sampling number:','Confidence level \alpha:'},'BVA parameters',[1 45],...
-%     {num2str(UserValues.BurstBrowser.Settings.PhotonsPerWindow_BVA),...
-%     num2str(UserValues.BurstBrowser.Settings.BurstsPerBinThreshold_BVA),...
-%     num2str(UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA),...
-%     num2str(UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA)},opts);
 
 prompt = {'Method:';'Number of bins:';'Number of photons per window (for BVA):';'Burst per bin threshold:';...
     'Confidence sampling number:';'Confidence level \alpha:';'Choose X-axis for BVA:'};
@@ -12194,7 +12186,6 @@ defaultanswer = {UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method;...
     UserValues.BurstBrowser.Settings.ConfidenceSampling_BVA;...
     UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA;...
     UserValues.BurstBrowser.Settings.BVA_X_axis};
-%opts.Resize = 'off'; opts.WindowStyle = 'normal'; opts.Interpreter = 'tex';
 [bva_parameters,canceled] = inputsdlg(prompt,name,formats,defaultanswer);
 if canceled == 1
     return;
@@ -12307,20 +12298,25 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                 X_expectedSD = PRtoFRET(X_expectedSD);
                 X_burst = BurstData{file}.DataArray(:,strcmp(BurstData{file}.NameArray,'FRET Efficiency'));
         end
-        [H,x,y] = histcounts2(X_burst,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); %H(H==0) = NaN; 
+        [H,x,y] = histcounts2(X_burst,sSelected,UserValues.BurstBrowser.Display.NumberOfBinsX); %H(H==0) = NaN;
+        
         switch UserValues.BurstBrowser.Display.PlotType
             case 'Contour'
             % contourplot of per-burst STD
                 contourf(x(1:end-1),y(1:end-1),H','LevelList',max(H(:))*linspace(UserValues.BurstBrowser.Display.ContourOffset/100,1,UserValues.BurstBrowser.Display.NumberOfContourLevels),'EdgeColor','none');
                 axis('xy')
-            case 'Image'
-                imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H'));axis('xy');        
+                caxis([0 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
+            case 'Image'       
+                Alpha = H./max(max(H)) > UserValues.BurstBrowser.Display.ImageOffset/100;
+                imagesc(x(1:end-1),y(1:end-1),H','AlphaData',Alpha');axis('xy');     
+                %imagesc(x(1:end-1),y(1:end-1),H','AlphaData',isfinite(H));axis('xy');
+                caxis([UserValues.BurstBrowser.Display.ImageOffset/100 max(H(:))*UserValues.BurstBrowser.Display.PlotCutoff/100]);
             case 'Scatter'
                 scatter(X_burst,sSelected,'.','CData',UserValues.BurstBrowser.Display.MarkerColor,'SizeData',UserValues.BurstBrowser.Display.MarkerSize);
             case 'Hex'
                 hexscatter(X_burst,sSelected,'xlim',[-0.1 1.1],'ylim',[0 max(sSelected)],'res',UserValues.BurstBrowser.Display.NumberOfBinsX);
         end        
-        patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.3,'edgecolor','none','HandleVisibility','off');
+        %patch([-0.1 1.1 1.1 -0.1],[0 0 max(sSelected) max(sSelected)],'w','FaceAlpha',0.5,'edgecolor','none','HandleVisibility','off');
         
         % Plot confidence intervals
         alpha = UserValues.BurstBrowser.Settings.ConfidenceLevelAlpha_BVA/numel(BinCenters)/100;
