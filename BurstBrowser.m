@@ -12223,6 +12223,9 @@ switch UserValues.BurstBrowser.Settings.Dynamic_Analysis_Method
                     M = reshape(channel{i,1}(1:fix(numel(channel{i,1})/n)*n),n,[]); % create photon windows
                     sPerBurst(i,1) = std(sum(M==3|M==4)/n); % observed standard deviation of E for each burst
                 end
+                
+            case 3
+                channel = cellfun(@(x) x(x < 5),photons.Channel,'UniformOutput',false);
             case 5
                 % channel : 1 Donor
                 %           2 FRET
