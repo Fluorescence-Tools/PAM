@@ -36,7 +36,8 @@ rtTimeHarp260NT3 = hex2dec('00010305');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode
 rtTimeHarp260NT2 = hex2dec('00010205');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $05 (TimeHarp260N)
 rtTimeHarp260PT3 = hex2dec('00010306');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $06 (TimeHarp260P)
 rtTimeHarp260PT2 = hex2dec('00010206');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $06 (TimeHarp260P)
-
+rtMultiHarpNT3   = hex2dec('00010307');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $03 (T3), HW: $07 (MultiHarp150N)
+rtMultiHarpNT2   = hex2dec('00010207');% (SubID = $00 ,RecFmt: $01) (V1), T-Mode: $02 (T2), HW: $07 (MultiHarp150N)
 % Globals for subroutines
 TTResultFormat_TTTRRecType = 0;
 TTResult_NumberOfRecords = 0;
@@ -127,7 +128,7 @@ while 1
                     eval([TagIdent '(:,end:numel(TagString)) = '' '''])
                 end
             end
-            eval([EvalName '=TagString;']);
+            try;eval([EvalName '=TagString;']);end;
         case tyWideString
             % Matlab does not support Widestrings at all, just read and
             % remove the 0's (up to current (2012))
@@ -156,10 +157,18 @@ Header.SyncRate = 1/MeasDesc_GlobalResolution;
 Header.Resolution = MeasDesc_Resolution./1E-12; % give in picoseconds
 Header.MeasurementTime = MeasDesc_AcquisitionTime; % in milliseconds
 nRecords = TTResult_NumberOfRecords;
-%%% check for file type
+%%% empty assignments for image-related fields
+Header.FrameStart = [];
+Header.LineStart = [];
+Header.LineStop = [];
 
+if any(TTResultFormat_TTTRRecType == [rtTimeHarp260PT3,rtHydraHarpT3,rtHydraHarp2T3,rtMultiHarpNT3])  % read out the number of microtime bins
+    Header.MI_Bins = ceil(MeasDesc_GlobalResolution./MeasDesc_Resolution);
+end
+
+%%% check for file type
 switch TTResultFormat_TTTRRecType
-    case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3}
+    case {rtHydraHarpT3,rtHydraHarp2T3,rtTimeHarp260NT3,rtTimeHarp260PT3,rtMultiHarpNT3}
         if TTResultFormat_TTTRRecType == rtHydraHarpT3
             %%% HydraHarp T3 V1 file format
             Version = 1;
@@ -171,6 +180,9 @@ switch TTResultFormat_TTTRRecType
             Version = 2;
         elseif TTResultFormat_TTTRRecType == rtTimeHarp260PT3
             %%% TimeHarp 260 pico T3 file format
+            Version = 2;
+        elseif TTResultFormat_TTTRRecType == rtMultiHarpNT3
+            %%% MultiHarp150 T3 file format
             Version = 2;
         else
             disp('Only HydraHarp T3 V1 or V2 file format supported at the moment.');

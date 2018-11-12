@@ -32,7 +32,7 @@ h.Particle = figure(...
     'UserData',[],...
     'BusyAction','cancel',...
     'OuterPosition',[0.01 0.1 0.98 0.9],...
-    'CloseRequestFcn',@Close_Particle,...
+    'CloseRequestFcn',@CloseWindow,...
     'Visible','on');
 %%% Sets background of axes and other things
 whitebg(Look.Fore);
@@ -41,7 +41,13 @@ h.Particle.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.Particle,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 13:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 13:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
+end
 
 h.Load_Particle = uimenu(...
     'Parent',h.Particle,...
@@ -262,13 +268,14 @@ h.Particle_Method_Description = uicontrol(...
     'HorizontalAlignment','left',...
     'BackgroundColor', Look.Control,...
     'ForegroundColor', Look.Fore,...
-    'Position',[0.01 0.72, 0.98 0.21],...
+    'Position',[0.01 0.73, 0.98 0.20],...
     'String','This method uses a full stack threshold to calculate a binary map. Based on this map it used the matlab "regionprops" function to detect particles. Always works with full stack.');
 
 %%% Method settings Table
 TableData = {   'Pixel Threshold [Counts]',150;...
     'Use Non-Particle',0};
 ColumnNames = {'Parameter Name', 'Value'};
+ColumnWidth = {210,70};
 ColumnEditable = [false,true];
 ColumnFormat = {'char','numeric'};
 RowNames = [];
@@ -277,10 +284,11 @@ h.Particle_Method_Settings = uitable(...
     'Parent',h.Detection_Panel,...
     'Units','normalized',...
     'FontSize',12,...
-    'Position',[0.01 0.22 0.98 0.55],...
+    'Position',[0.01 0.22 0.98 0.51],...
     'Data',TableData,...
     'ColumnName',ColumnNames,...
     'RowName',RowNames,...
+    'ColumnWidth',ColumnWidth,...
     'ColumnEditable',ColumnEditable,...
     'ColumnFormat',ColumnFormat);
 
@@ -399,8 +407,9 @@ h.Particle_Save_Method = uicontrol(...
     'ForegroundColor', Look.Fore,...
     'Position',[0.01 0.01, 0.5 0.03],...
     'Callback',{@Misc},...
-    'String',{'Save Average';...
-    'Save FLIM Trace'});
+    'String',{'Save Average',...
+    'Save FLIM Trace',...
+    'Save Text'});
 %%% Frames to use
 h.Particle_Frames_Sum_Text = uicontrol(...
     'Parent',h.Detection_Panel,...
@@ -492,26 +501,6 @@ h.Particle_Number = uicontrol(...
 guidata(h.Particle,h);
 %%% Updated method table
 Method_Update([],[],0);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Closes Particle window and clears variables %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function Close_Particle(Obj,~)
-clear global -regexp ParticleData
-Pam=findobj('Tag','Pam');
-FCSFit=findobj('Tag','FCSFit');
-MIAFit=findobj('Tag','MIAFit');
-Mia=findobj('Tag','Mia');
-Sim=findobj('Tag','Sim');
-PCF=findobj('Tag','PCF');
-BurstBrowser=findobj('Tag','BurstBrowser');
-TauFit=findobj('Tag','TauFit');
-PhasorTIFF = findobj('Tag','PhasorTIFF');
-Phasor = findobj('Tag','Phasor');
-if isempty(Pam) && isempty(FCSFit) && isempty(MIAFit) && isempty(PCF) && isempty(Mia) && isempty(Sim) && isempty(TauFit) && isempty(BurstBrowser) && isempty(PhasorTIFF)  && isempty(Phasor)
-    clear global -regexp UserValues
-end
-delete(Obj);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Loads new phasor file %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -963,7 +952,7 @@ if mode == 0
         'Gaussian filtering is applied before thresholding. '....
         'Based on this map it uses the matlab "regionprops" function to detect particles. '...
         'It uses eccentricity filtering for shape detection. ',...
-        'The data defined with the frame range in used. '];
+        'The data defined within the frame range is used. '];
     %%% Removed detected particle data
     if isfield(ParticleData,'Regions')
         ParticleData = rmfield(ParticleData,'Regions');
@@ -1080,12 +1069,13 @@ if mode == 0
     
     %%% Updates Table
     TableData = {   'Threshold Significance [0-1]',0.8;...
-        'Min Photons',500;...
+        'Min Photons',50;...
         'Max Photons',3000;...
-        'Min Size [px]:', 10;...
-        'Max Size [px]:', 100;...
+        'Min Size [px]', 10;...
+        'Max Size [px]', 100;...
         'Wavelet depth' ,3;...
-        'Eccentricity', 0.7};
+        'Eccentricity', 0.7;...
+        'Min Track Length [fr]', 1};
     ColumnNames = {'Parameter Name', 'Value'};
     
     h.Particle_Method_Settings.ColumnName = ColumnNames;
@@ -1096,7 +1086,7 @@ if mode == 0
         'Gaussian filtering is applied before thresholding. '....
         'Based on this map it uses the matlab "regionprops" function to detect particles. '...
         'It uses eccentricity filtering for shape detection. ',...
-        'The data defined with the frame range in used. '];
+        'The data defined within the frame range is used. '];
     %%% Removed detected particle data
     if isfield(ParticleData,'Regions')
         ParticleData = rmfield(ParticleData,'Regions');
@@ -1121,6 +1111,7 @@ if mode == 1
     MaxSize = h.Particle_Method_Settings.Data{5,2};
     Wavelet = h.Particle_Method_Settings.Data{6,2};
     Eccent = h.Particle_Method_Settings.Data{7,2};
+    MinLength = h.Particle_Method_Settings.Data{8,2};
     
     From = str2double(h.Particle_Frames_Start.String);
     To = str2double(h.Particle_Frames_Stop.String);
@@ -1160,7 +1151,7 @@ if mode == 1
     end
     
     for f = 1:size(Int,3)
-        %%% Wavelet filter ® P. Messer, 2016
+        %%% Wavelet filter ï¿½ P. Messer, 2016
         w(:,:,1)=Int(:,:,f);
         Int_f = w;
         for i = 1:Wavelet-1
@@ -1226,6 +1217,7 @@ if mode == 1
     %% Concatenate Particles
     % out = cellfun(@(x) horzcat(x(1:2),1,NaN),mat2cell(cat(1,ParticleData.Regions{1}.Centroid),ones(size(cat(1,ParticleData.Regions{1}.Centroid),1),1),2),'UniformOutput',false);
     Part_Array = struct2cell(STATS{1})';
+    Part_Array(:,4) = cellfun(@(x)x+(From-1).*(numel(Int_f)),Part_Array(:,4),'UniformOutput',false); % Correct PixelIdxList to apply to the whole stack instead of single frames;
     Part_Array(:,end+1) = num2cell(ones(size(Part_Array,1),1),2);
     Part_Idx = num2cell([(1:size(Part_Array,1))',ones(size(Part_Array,1),1)],2);
     if numel(STATS)==1
@@ -1266,13 +1258,24 @@ if mode == 1
             Part_Array(t_idx,:) = Frame_Array;
             Part_Array = cat(1,Part_Array,new_frame(~d,:));
         end
-            
+          
     end
+    
+    %% Remove tracks below minimmum length
+    if h.Particle_Track_Per_Frame.Value
+        cellsize = cellfun('size', Part_Array(:,10), 1);
+        Part_Array(cellsize < MinLength, :) = [];
+    end
+    %% Corrects for frame selection
+    Part_Array (:, 10) = cellfun(@(X) X+From-1, Part_Array(:, 10), 'UniformOutput',false);
+    ParticleData.Mask = cat(3, false(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Mask);
+    ParticleData.Particle = cat(3, zeros(size(ParticleData.Data.Intensity,1),size(ParticleData.Data.Intensity,2), From-1), ParticleData.Particle);
     
     %% Applies particle selection
     ParticleData.Regions = cell2struct(Part_Array,[fieldnames(STATS{1});'Frame'],2);
     Plot_Particle([],[],2,h)
-    display('Tracking Done');
+    %display('Tracking Done');
+    msgbox('Tracking Done');
     return;
 end
 
@@ -1291,6 +1294,8 @@ switch h.Particle_Save_Method.Value
         Save_Averaged
     case 2 %%% Save FLIM trace
         Save_FLIM_Trace
+    case 3 %%% Save Text
+        Save_Text
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1417,12 +1422,13 @@ for i=1:numel(ParticleData.Regions)
     % PixelId = PixelId + repmat(ParticleData.Regions(i).PixelIdxList,1,size(g,2));
     %%% 
     % Intensity(i,:)=sum(Int(PixelId),1);
+    PixelId = ParticleData.Regions(i).PixelIdxList - (From-1)*size(Int, 1)*size(Int, 2);
     Intensity(i,ParticleData.Regions(i).Frame)=ParticleData.Regions(i).TotalCounts';
-    [~,~,z] = ind2sub(size(Int),ParticleData.Regions(i).PixelIdxList);
-    G_temp = mat2cell(G(ParticleData.Regions(i).PixelIdxList),histcounts(z,[1:max(z),Inf]),1);
+    [~,~,z] = ind2sub(size(Int),PixelId);
+    G_temp = mat2cell(G(PixelId),histcounts(z,[1:max(z),Inf]),1);
     d = cellfun('isempty',G_temp);
     g(i,ParticleData.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),G_temp(~d));
-    S_temp = mat2cell(S(ParticleData.Regions(i).PixelIdxList),histcounts(z,[1:max(z),Inf]),1);
+    S_temp = mat2cell(S(PixelId),histcounts(z,[1:max(z),Inf]),1);
     ds = cellfun('isempty',S_temp);
     s(i,ParticleData.Regions(i).Frame) = cellfun(@(x)sum(x,'omitnan'),S_temp(~ds));
     % g(i,:)=sum(G(PixelId),1); %%%unnormalized g
@@ -1432,10 +1438,11 @@ for i=1:numel(ParticleData.Regions)
     %g(i,:)= squeeze(sum(sum(G(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
     %s(i,:)= squeeze(sum(sum(S(ParticleData.Regions(i).PixelList(:,2),ParticleData.Regions(i).PixelList(:,1),:),1),2));
 end
-truepart = sum(~isnan(s),2)>1;
+truepart = sum(~isnan(s),2)>0;
 Intensity(~truepart,:) = [];
 s(~truepart,:) = [];
 g(~truepart,:) = [];
+
 %%% Cuts size to a multiple of the Frames_Sum
 Intensity= Intensity(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
 g= g(:,1:(floor(size(Intensity,2)/Frames_Sum))*Frames_Sum);
@@ -1461,12 +1468,96 @@ Imagetime = ParticleData.Data.Imagetime;
 Frames = Frames_Sum;
 FileNames = ParticleData.Data.FileNames;
 Type = ParticleData.Data.Type;
-Regions =ParticleData.Regions;
+Regions =ParticleData.Regions(truepart); % removes particle regions with invalid phasor information
 Path = ParticleData.Data.Path;
 
 save(fullfile(PathName,FileName), 'g','s','Mean_LT','Fi','M','TauP','TauM','Intensity','Lines','Pixels','Freq','Imagetime','Frames','FileNames','Path','Type','Regions');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Save the particle data as a text or excel file
+function Save_Text
+h = guidata(findobj('Tag','Particle'));
+global ParticleData
+LSUserValues(0);
 
+%%% Stops execution if data is not complete
+if isempty(ParticleData) || ~isfield(ParticleData,'Regions')
+    return;
+end
+%%% Select file names for saving
+[FileName,PathName, FilterIndex] = uiputfile({'*.txt';'*.csv';'*.xlsx';},'Save Particle Data', fullfile(ParticleData.PathName, ParticleData.FileName(1:end-4)));
+%%% Checks, if selection was cancled
+if all(FileName == 0)
+    return;
+end
+
+%%% Uses summed up Image and Phasor
+From = str2double(h.Particle_Frames_Start.String);
+To = str2double(h.Particle_Frames_Stop.String);
+%%% Adjusts frame range to data
+if To>size(ParticleData.Data.Intensity,3)
+    To = size(ParticleData.Data.Intensity,3);
+    h.Particle_Frames_Stop.String = size(ParticleData.Data.Intensity,3);
+end
+if From > To
+    From = 1;
+    h.Particle_Frames_Start.String = 1;
+end
+
+Mask = logical(squeeze(sum(ParticleData.Mask,3)));
+g = sum(ParticleData.Data.g(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+s = sum(ParticleData.Data.s(:,:,From:To).*ParticleData.Data.Intensity(:,:,From:To),3)./sum(ParticleData.Data.Intensity(:,:,From:To),3);
+Intensity = sum(ParticleData.Data.Intensity(:,:,From:To),3);
+
+%%% Applies particle averaging
+G=zeros(numel(ParticleData.Regions),1);
+S=zeros(numel(ParticleData.Regions),1);
+x=zeros(numel(ParticleData.Regions),1);
+y=zeros(numel(ParticleData.Regions),1);
+for i=1:numel(ParticleData.Regions)
+    %%% Calculates mean particle phasor
+    G(i) = sum(ParticleData.Data.g(ParticleData.Regions(i).PixelIdxList).*ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList));
+    S(i) = sum(ParticleData.Data.s(ParticleData.Regions(i).PixelIdxList).*ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList))...
+        ./sum(ParticleData.Data.Intensity(ParticleData.Regions(i).PixelIdxList));
+    %%% Extracts first pixel position of each particle
+    x(i) = ParticleData.Regions(i).PixelList(1,1);
+    y(i) = ParticleData.Regions(i).PixelList(1,2);
+    %%% Calculate particle properties
+    TotalCounts(i) = sum(ParticleData.Regions(i).TotalCounts);
+    MeanIntensity(i) = mean(ParticleData.Regions(i).MeanIntensity);
+    MaxIntensity(i) = max(ParticleData.Regions(i).MaxIntensity);
+    Area(i) = mean(ParticleData.Regions(i).Area);
+end
+
+%%% Calculate lifetimes from phasor
+Freq = repmat(ParticleData.Data.Freq,size(G));
+Fi = atan(S./G);
+M = sqrt(S.^2+G.^2);
+TauP = real(tan(Fi)./(2*pi*Freq/10^9));
+TauM = real(sqrt((1./(S.^2+G.^2))-1)./(2*pi*Freq/10^9));
+
+VarNames = {'TauP','TauM','TotalPhotons','MeanPhotons','MaxPhotons','Area','x','y','s','g','Frequency'};
+%%% Creates table variable for saving
+tab = table(TauP,... Phase based lifetime
+            TauM,... Modulation based lifetime
+            TotalCounts.',... Total photons of particle
+            MeanIntensity.',... Average photons per pixel
+            MaxIntensity.',... Brightest pixel counts
+            Area.',... Particle area in photons
+            x,... x position of first pixel
+            y,... y position of first pixel
+            S,... S value of particle
+            G,... G value of particle
+            Freq,... %%% Measurement frequency, e.g. 1/TAC
+            'VariableNames',VarNames);
+
+%%% Saves data as text or table
+if FilterIndex == 1 %%% Use tab sepparation for .txt files
+    writetable(tab,fullfile(PathName,FileName),'Delimiter','tab');
+else
+    writetable(tab,fullfile(PathName,FileName));
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -167,6 +167,7 @@ switch (Type)
             
             %%% Read .set file
             fid = fopen(fullfile(Path, [FileName{1}(1:end-3) 'set']), 'r');
+            ask_syncrate = false;
             if fid~=-1 %%% .set file exists
                 Collection_Time=[];
                 %%% Reads file line by line till all parameters are found
@@ -238,7 +239,6 @@ switch (Type)
                         end
                     elseif strcmp(Card,'830')
                         Card = 'SPC-830';
-                        MI_Bins = []; %For Hasselt I have to hardcode this, since the MI_Bins is not written in the .set file
                     end
                     %%% Determines real TAC range
                     FileInfo.TACRange = TACRange/TACGain;
@@ -256,15 +256,31 @@ switch (Type)
                 end
                 
             else %if there is no set file, the B&H software was likely not used
-                h_msg = msgbox('Setup (.set) file not found!');
+                disp(sprintf('Setup (.set) file not found for file %d of %d!',i,numel(FileName)));
                 Card = 'SPC-140/150/130';
                 MI_Bins = [];
                 TACRange = [];
                 Collection_Time = NaN;
-                pause(1)
-                close(h_msg)
                 Pixel = NaN;
                 Lines = NaN;
+                ask_syncrate = true;
+                if i == numel(FileName) && isempty(TACRange)
+                    %%% ask for TAC range in nanoseconds
+                    TACRange = inputdlg('Please specify the TAC range in nanoseconds:',...
+                        'Setup (.set) file not found!',...
+                        1,{num2str(UserValues.Settings.Pam.DefaultTACRange*1E9)},'on');
+                    if isempty(TACRange)
+                        disp(sprintf('No answer given. Setting previous TAC range of %.2f ns.',1E9*UserValues.Settings.Pam.DefaultTACRange));
+                        TACRange = {num2str(UserValues.Settings.Pam.DefaultTACRange*1E9)};
+                    end
+                    TACRange = 1E-9*str2num(TACRange{1});
+                    if ~isfinite(TACRange) | isempty(TACRange)
+                        disp('Invalid answer given. Setting default TAC range of 40 ns.');
+                        TACRange = 40E-9;
+                    end
+                    UserValues.Settings.Pam.DefaultTACRange = TACRange;
+                    FileInfo.TACRange = TACRange;
+                end
             end
             
             
@@ -387,12 +403,42 @@ switch (Type)
             elseif (numel(FileInfo.ImageTimes) > 1) && ((FileInfo.ImageTimes(end)> Collection_Time) || (Collection_Time > 1.05*(max(diff(FileInfo.ImageTimes)))))
                 %%% Collection_Time was set, but it is obviously wrong
                 MaxMT = MaxMT + (mean2(diff(FileInfo.ImageTimes))+FileInfo.ImageTimes(end))/FileInfo.ClockPeriod;
-            else %%% Collection_Time is correct                 
-                MaxMT = MaxMT +ceil(Collection_Time/FileInfo.ClockPeriod);
-
+            else %%% Collection_Time is correct
+                %%% check if the user canceled before end of measurement
+                %   determine collection time as calculated from last photon
+                Collection_Time_SPC = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT)))); 
+                if (Collection_Time_SPC*FileInfo.ClockPeriod./Collection_Time) < 0.95 % User canceled earlier than 95% of the measurement time
+                    MaxMT = MaxMT + Collection_Time_SPC;
+                else % take the saved collection time from B&H software
+                    MaxMT = MaxMT +ceil(Collection_Time/FileInfo.ClockPeriod);
+                end
             end
 
         end
+        %%% check for case where the first record was NOT the sync period
+        %%% (i.e. for Seidel simulated spc data)
+        %%% if there was no set file, this is likely the case
+        if ask_syncrate
+            %%% if the sync period was less than 1 MHz, this is probably
+            %%% the case
+            %%% ask for TAC range in nanoseconds
+            syncrate = inputdlg('Please specify the laser frequency in MHz:',...
+                'No set file found.',...
+                1,{num2str(UserValues.Settings.Pam.DefaultSyncRate*1E-6)},'on');
+            if isempty(syncrate)
+                disp(sprintf('No answer given. Keeping the previously read-out rate of %.2f MHz.',1E-6*UserValues.Settings.Pam.DefaultSyncRate));
+                syncrate = {num2str(1E-6*UserValues.Settings.Pam.DefaultSyncRate)};
+            end
+            syncrate = 1E6*str2num(syncrate{1});
+            if ~isfinite(syncrate) || isempty(syncrate)
+                disp(sprintf('Invalid answer given. Keeping the read-out rate of %.2f MHz.',1./FileInfo.SyncPeriod));
+            else
+                FileInfo.SyncPeriod = 1./syncrate;
+                FileInfo.ClockPeriod = FileInfo.SyncPeriod;
+                UserValues.Settings.Pam.DefaultSyncRate = syncrate;
+            end        
+        end
+        
         
         FileInfo.MeasurementTime = MaxMT*FileInfo.ClockPeriod;
         FileInfo.ImageTimes(end+1) = FileInfo.MeasurementTime;
@@ -724,6 +770,11 @@ switch (Type)
             if isempty(FileInfo.Resolution)
                 FileInfo.Resolution = Header.Resolution;
             end
+            if isfield(Header,'MI_Bins') % only returned for TimeHarp260 T3 data
+                if isempty(FileInfo.MI_Bins)
+                    FileInfo.MI_Bins = Header.MI_Bins;
+                end
+            end
             %%% Concaternates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
@@ -793,7 +844,9 @@ switch (Type)
             end
         end
         FileInfo.TACRange = FileInfo.SyncPeriod;
-        FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        if isempty(FileInfo.MI_Bins)
+            FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+        end
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.SyncPeriod;
         
     case 7 %%% .h5 files in PhotonHDF5 file format
@@ -808,17 +861,19 @@ switch (Type)
         FileInfo.ClockPeriod= [];
         FileInfo.Resolution = [];
         FileInfo.TACRange = [];
-        FileInfo.Lines=10;
+        FileInfo.Lines=1;
         FileInfo.LineTimes=[];
-        FileInfo.Pixels=10;
+        FileInfo.Pixels=1;
         FileInfo.ScanFreq=1000;
         FileInfo.FileName=FileName;
         FileInfo.Path=Path;
         
         %%% Initializes microtime and macotime arrays
         if strcmp(UserValues.Detector.Auto,'off')
-            TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
-            TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MT=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            %TcspcData.MI=cell(max(UserValues.Detector.Det),max(UserValues.Detector.Rout));
+            TcspcData.MT=cell(10,10); %%% default to 10 channels
+            TcspcData.MI=cell(10,10); %%% default to 10 channels
         else
             TcspcData.MT=cell(10,10); %%% default to 10 channels
             TcspcData.MI=cell(10,10); %%% default to 10 channels
@@ -839,6 +894,7 @@ switch (Type)
             
             %%% Update Progress
             Progress((i-1)/numel(FileName),h.Progress.Axes, h.Progress.Text,['Loading File ' num2str(i-1) ' of ' num2str(numel(FileName))]);
+            
             %%% Reads Macrotime (MT, as double) and Microtime (MI, as uint 16) from .h5 file
             [MT,MI, PhotonHDF5_Data] = Read_PhotonHDF5(fullfile(Path,FileName{i}));
             
@@ -850,16 +906,20 @@ switch (Type)
                 FileInfo.ClockPeriod = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
             end
             if isempty(FileInfo.Resolution)
-                FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit;
+                if isfield(PhotonHDF5_Data.photon_data, 'nanotimes_specs')
+                    %%% TCSPC data
+                    FileInfo.Resolution = PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_unit*1E12;
+                else
+                    %%% usALEX data
+                    FileInfo.Resolution = PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit*1E12;
+                end
             end
+            
             %%% Finds, which routing bits to use
-            if strcmp(UserValues.Detector.Auto,'off')
-                Rout = unique(UserValues.Detector.Rout(UserValues.Detector.Det==j));
-            else
-                Rout = 1:10; %%% consider up to 10 routing channels
-            end
+            Rout = 1:10; %%% consider up to 10 routing channels
             Rout(Rout>size(MI,2))=[];
-            %%% Concaternates data to previous files and adds ImageTimes
+            
+            %%% Concatenates data to previous files and adds ImageTimes
             %%% to consecutive files
             if any(~cellfun(@isempty,MI(:)))
                 for j = 1:size(MT,1)
@@ -877,9 +937,17 @@ switch (Type)
         end
         FileInfo.MeasurementTime = PhotonHDF5_Data.acquisiton_duration; %max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTimes =  FileInfo.MeasurementTime;
-        FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
-        FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
+        FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
+        if isfield(PhotonHDF5_Data.photon_data,'nanotimes_specs')
+            %%% TCSPC data
+            FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_num_bins); %double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
+            FileInfo.TACRange =PhotonHDF5_Data.photon_data.nanotimes_specs.tcspc_range;
+        else 
+            %%% usALEX data
+            FileInfo.MI_Bins = double(PhotonHDF5_Data.photon_data.measurement_specs.alex_period);
+            FileInfo.TACRange = double(PhotonHDF5_Data.photon_data.measurement_specs.alex_period) * PhotonHDF5_Data.photon_data.timestamps_specs.timestamps_unit;
+        end
+        
     case 8 %%% *.t3r TTTR files from TimeHarp 200
         %%% Usually, here no Imaging Information is needed
         FileInfo.FileType = 'TimeHarp200';
@@ -989,7 +1057,7 @@ switch (Type)
         
         FileInfo.MeasurementTime = max(cellfun(@max,TcspcData.MT(~cellfun(@isempty,TcspcData.MT))))*FileInfo.ClockPeriod;
         FileInfo.LineTimes = [0 FileInfo.MeasurementTime];
-        FileInfo.ImageTimes =  FileInfo.MeasurementTime;
+        FileInfo.ImageTimes =  [0 FileInfo.MeasurementTime];
         FileInfo.MI_Bins = double(max(cellfun(@max,TcspcData.MI(~cellfun(@isempty,TcspcData.MI)))));
         FileInfo.TACRange = FileInfo.SyncPeriod;
     case 9 %%% Confocor3 raw data files (*.raw)

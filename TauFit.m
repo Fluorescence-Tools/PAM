@@ -55,7 +55,13 @@ h.TauFit.Color=Look.Back;
 %%% Remove unneeded items from toolbar
 toolbar = findall(h.TauFit,'Type','uitoolbar');
 toolbar_items = findall(toolbar);
-delete(toolbar_items([2:7 9 14:17]));
+if verLessThan('matlab','9.5') %%% toolbar behavior changed in MATLAB 2018b
+    delete(toolbar_items([2:7 9 14:17]));
+else %%% 2018b and upward
+    %%% just remove the tool bar since the options are now in the axis
+    %%% (e.g. axis zoom etc)
+    delete(toolbar_items);
+end
     
 %%% menu
 h.Menu.File = uimenu(h.TauFit,'Label','File');
@@ -249,7 +255,7 @@ h.Plots.AnisoResult_ignore = plot([0 1],[0 0],'LineStyle','--','Color',[0.4 0.4 
 h.Plots.FitAnisoResult = plot([0 1],[0 0],'-r','LineWidth',2,'DisplayName','Fit');
 h.Plots.FitAnisoResult_ignore = plot([0 1],[0 0],'--r','LineWidth',2,'DisplayName','Fit (ignore)');
 
-linkaxes([h.Result_Plot, h.Residuals_Plot, h.Result_Plot_Aniso],'x');
+linkaxes([h.Result_Plot, h.Residuals_Plot],'x');
 
 %%% dummy panel to hide plots
 h.HidePanel = uibuttongroup(...
@@ -743,8 +749,32 @@ if exist('ph','var')
                     'Callback',@UpdateOptions,...
                     'String','Auto-save images of plots',...
                     'Value',UserValues.BurstSearch.BurstwiseLifetime_SaveImages,...
-                    'Position',[0.55,0.05,0.5,0.12]);
-                
+                    'Position',[0.57,0.02,0.4,0.12]);
+                %%% add checkbox for burstwise phasor calculation
+                h.Calc_Burstwise_Phasor = uicontrol(...
+                    'Parent',h.PIEChannel_Panel,...
+                    'style','checkbox',...
+                    'units','normalized',...
+                    'BackgroundColor', Look.Back,...
+                    'ForegroundColor', Look.Fore,...
+                    'Callback',@UpdateOptions,...
+                    'String','Burst-wise Phasor',...
+                    'Value',UserValues.BurstSearch.CalculateBurstwisePhasor,...
+                    'Position',[0.57,0.28,0.4,0.12]);
+                %%% add popupmenu for selecting the reference for burstwise
+                %%% phasor
+                h.Select_Burstwise_Phasor_Reference = uicontrol(...
+                    'Parent',h.PIEChannel_Panel,...
+                    'style','popupmenu',...
+                    'units','normalized',...
+                    'Callback',@UpdateOptions,...
+                    'Visible','off',...
+                    'String',{'IRF reference','Lifetime reference'},...
+                    'Value',UserValues.BurstSearch.PhasorReference,...
+                    'Position',[0.57,0.15,0.4,0.12]);
+                if UserValues.BurstSearch.CalculateBurstwisePhasor
+                    h.Select_Burstwise_Phasor_Reference.Visible = 'on';
+                end
                 %%% radio buttons to select the plotted data (decay or
                 %%% anisotropy)
                 h.ShowDecay_radiobutton = uicontrol('Style','radiobutton',...
@@ -862,6 +892,18 @@ if strcmp(method,'ensemble')
         'Position',[0.35 0.25 0.5 0.12],...
         'String','Perform reconvolution fit',...
         'Callback',@Start_Fit);
+    h.Fit_Button_Menu = uicontextmenu;
+    %%% Button for Maximum Entropy Method (MEM) analysis
+    h.Fit_Button_MEM_tau = uimenu('Parent',h.Fit_Button_Menu,...
+        'Label','MEM analysis (Lifetime Distribution)',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+        h.Fit_Button_MEM_dist = uimenu('Parent',h.Fit_Button_Menu,...
+        'Label','MEM analysis (Distance Distribution)',...
+        'Checked','off',...
+        'Callback',@Start_Fit);
+    h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
+    h.Fit_Button_MEM_tau.Visible = 'off'; h.Fit_Button_MEM_dist.Visible = 'off';% only turn visible after a fit has been performed
     %%% Button to start tail fitting
     h.Fit_Tail_Button = uicontrol(...
         'Parent',h.PIEChannel_Panel,...
@@ -1019,6 +1061,18 @@ if exist('bh','var')
             'Position',[0.38 0.25 0.5 0.12],...
             'String','Perform reconvolution fit',...
             'Callback',@Start_Fit);
+        h.Fit_Button_Menu = uicontextmenu;
+        %%% Button for Maximum Entropy Method (MEM) analysis
+        h.Fit_Button_MEM_tau = uimenu('Parent',h.Fit_Button_Menu,...
+            'Label','MEM analysis (Lifetime Distribution)',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_Button_MEM_dist = uimenu('Parent',h.Fit_Button_Menu,...
+            'Label','MEM analysis (Distance Distribution)',...
+            'Checked','off',...
+            'Callback',@Start_Fit);
+        h.Fit_Button.UIContextMenu = h.Fit_Button_Menu;
+        h.Fit_Button_MEM_tau.Visible = 'off'; h.Fit_Button_MEM_dist.Visible = 'off'; % only turn visible after a fit has been performed
         %%% Button to start tail fitting
         h.Fit_Tail_Button = uicontrol(...
             'Parent',h.PIEChannel_Panel,...
@@ -1391,12 +1445,20 @@ h.UseWeightedResiduals_Menu = uicontrol(...
     'Units','normalized',...
     'BackgroundColor',Look.Back,...
     'ForegroundColor',Look.Fore,...
-    'Position',[0.05 0.3 0.6 0.05],...
+    'Position',[0.05 0.3 0.425 0.05],...
     'String','Use weighted residuals',...
     'Value',UserValues.TauFit.use_weighted_residuals,...
     'FontSize',10,...
     'Tag','UseWeightedResiduals_Menu',...
     'Callback',@UpdateOptions);
+h.WeightedResidualsType_Menu = uicontrol(...
+    'Style','popupmenu',...
+    'Parent',h.Settings_Panel,...
+    'Units','normalized',...
+    'Position',[0.525 0.3 0.425 0.05],...
+    'String',{'Gaussian','Poissonian'},...
+    'Value',find(strcmp({'Gaussian','Poissonian'},UserValues.TauFit.WeightedResidualsType)),...
+    'Tag','WeightedResidualsType_Menu');
 
 h.Cleanup_IRF_Menu = uicontrol(...
     'Style','checkbox',...
@@ -1530,7 +1592,7 @@ switch obj.Tag
             h.Microtime_Plot.YScale = 'log';
             h.Result_Plot.YScale = 'log';
             if h.Cleanup_IRF_Menu.Value
-                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData);
+                h.Result_Plot.YLim(1) = min(h.Plots.DecayResult.YData(h.Plots.DecayResult.YData > 0));
             end
             UserValues.TauFit.YScaleLog = 'on';
         elseif strcmp(obj.Checked,'on')
@@ -1590,38 +1652,50 @@ if obj == h.Menu.OpenDecayData || strcmp(TauFitData.Who, 'External')
     if obj == h.Menu.OpenDecayData
         %%% called upon loading of text-based *.dec file
         %%% load file
-        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','off');
+        [FileName, PathName, FilterIndex] = uigetfile({'*.dec','PAM decay file'},'Choose data file...',UserValues.File.TauFitPath,'Multiselect','on');
         if FilterIndex == 0
             return;
         end
         UserValues.File.TauFitPath = PathName;
-        
-        decay_data = dlmread(fullfile(PathName,FileName),'\t',6,0);
-        %%% read other data
-        fid = fopen(fullfile(PathName,FileName),'r');
-        TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
-        MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
-        TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
-        fid = fopen(fullfile(PathName,FileName),'r');
-        for i = 1:5
-            line = fgetl(fid);
+        if ~iscell(FileName)
+            FileName = {FileName};
         end
-        PIEchans = strsplit(line,'\t');
-        PIEchans(cellfun(@isempty,PIEchans)) = [];
-        %%% sort data into TauFitData structure (MI,IRF,Scat)
-        for i = 1:(size(decay_data,2)/3)
-            TauFitData.External.MI_Hist{i} = decay_data(:,3*(i-1)+1);
-            TauFitData.External.IRF{i} = decay_data(:,3*(i-1)+2);
-            TauFitData.External.Scat{i} = decay_data(:,3*(i-1)+3);
+        TauFitData.External = struct;
+        TauFitData.External.MI_Hist = {};
+        TauFitData.External.IRF = {};
+        TauFitData.External.Scat = {};
+        for j = 1:numel(FileName) %%% assumes that all loaded files have shared parameters! (i.e. TAC range etc)
+            decay_data = dlmread(fullfile(PathName,FileName{j}),'\t',6,0);
+            %%% read other data
+            fid = fopen(fullfile(PathName,FileName{j}),'r');
+            TAC = textscan(fid,'TAC range [ns]:\t%f\n'); TauFitData.TACRange = TAC{1}*1E-9;
+            MI_Bins = textscan(fid,'Microtime Bins:\t%f\n'); TauFitData.MI_Bins = MI_Bins{1};
+            TACChannelWidth = textscan(fid,'Resolution [ps]:\t%f\n'); TauFitData.TACChannelWidth = TACChannelWidth{1}*1E-3;
+            fid = fopen(fullfile(PathName,FileName{j}),'r');
+            for i = 1:5
+                line = fgetl(fid);
+            end
+            PIEchans{j} = strsplit(line,'\t');
+            PIEchans{j}(cellfun(@isempty,PIEchans{j})) = [];
+            if numel(FileName) > 1 %%% multiple files loaded, append the file name to avoid confusion of identically named PIE channels
+                for i = 1:numel(PIEchans{j})
+                    PIEchans{j}{i} = [PIEchans{j}{i} ' - ' FileName{j}(1:end-4)];
+                end
+            end
+            %%% sort data into TauFitData structure (MI,IRF,Scat)
+            for i = 1:(size(decay_data,2)/3)
+                TauFitData.External.MI_Hist{end+1} = decay_data(:,3*(i-1)+1);
+                TauFitData.External.IRF{end+1} = decay_data(:,3*(i-1)+2);
+                TauFitData.External.Scat{end+1} = decay_data(:,3*(i-1)+3);
+            end
         end
+        PIEchans = horzcat(PIEchans{:});
         %%% update PIE channel selection with available PIE channels
         h.PIEChannelPar_Popupmenu.String = PIEchans;
         h.PIEChannelPer_Popupmenu.String = PIEchans;
-        %%% show file name in GUI
-
         %%% mark TauFit mode as external
         TauFitData.Who = 'External';
-        TauFitData.FileName = fullfile(PathName,FileName);
+        TauFitData.FileName = fullfile(PathName,FileName{1});
         if numel(PIEchans) == 1
             PIEChannel_Par = 1; PIEChannel_Per = 1;
         else
@@ -1800,8 +1874,9 @@ if all(isnan(TauFitData.hIRF_Par{chan})) || all(isnan(TauFitData.hIRF_Per{chan})
     disp('IRF undefined, disabling reconvolution fitting.');
     h.Fit_Button.Enable = 'off';
 elseif all(isnan(TauFitData.hScat_Par{chan})) || all(isnan(TauFitData.hScat_Per{chan}))
-    disp('IRF undefined, disabling reconvolution fitting.');
-    h.Fit_Button.Enable = 'off';
+    disp('Scatter pattern undefined, using IRF instead.');
+    TauFitData.hScat_Par{chan} = TauFitData.hIRF_Par{chan};
+    TauFitData.hScat_Per{chan} = TauFitData.hIRF_Per{chan};
 else
     h.Fit_Button.Enable = 'on';
 end
@@ -2374,6 +2449,10 @@ end
 if h.AutoFit_Menu.Value
     Start_Fit(h.Fit_Button)
 end
+% hide MEM button
+h.Fit_Button_MEM_tau.Visible = 'off';
+h.Fit_Button_MEM_dist.Visible = 'off';
+
 drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2519,12 +2598,14 @@ end
 ignore = TauFitData.Ignore{chan};
 %% Start Fit
 %%% Update Progressbar
-h.Progress_Text.String = 'Fitting...';
+h.Progress_Text.String = 'Fitting...';drawnow;
 MI_Bins = TauFitData.MI_Bins;
-
+poissonian_chi2 = UserValues.TauFit.use_weighted_residuals && (h.WeightedResidualsType_Menu.Value == 2); % 1 for Gaussian error, 2 for Poissonian statistics
 %opts = optimoptions(@lsqcurvefit,'MaxFunctionEvaluations',1E4,'MaxIteration',1E4);
 switch obj
     case {h.Fit_Button}
+        %%% get fit type
+        TauFitData.FitType = h.FitMethod_Popupmenu.String{h.FitMethod_Popupmenu.Value};
         %%% Read out parameters
         x0 = cell2mat(h.FitPar_Table.Data(1:end-1,1))';
         lb = cell2mat(h.FitPar_Table.Data(1:end-1,2))';
@@ -2544,9 +2625,9 @@ switch obj
                 %%% taus    - Lifetimes
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
-                lb(1) = round(lb(1)/TauFitData.TACChannelWidth);
-                ub(1) = round(ub(1)/TauFitData.TACChannelWidth);
+                x0(1) = x0(1)/TauFitData.TACChannelWidth;
+                lb(1) = lb(1)/TauFitData.TACChannelWidth;
+                ub(1) = ub(1)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2562,8 +2643,12 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_1exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_1exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2577,11 +2662,14 @@ switch obj
                 end
                 
                 FitFun = fitfun_1exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
-                
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
                 FitFun = FitFun(ignore:end);
@@ -2611,9 +2699,9 @@ switch obj
                 %%% A       - Amplitude of first lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
+                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
+                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
                 
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
@@ -2630,8 +2718,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2645,9 +2738,13 @@ switch obj
                 end
                 
                 FitFun = fitfun_2exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
                 
                 %%% split by ignore region
@@ -2700,9 +2797,9 @@ switch obj
                 %%% A2      - Amplitude of first lifetime
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);
+                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2719,8 +2816,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_3exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_3exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2734,9 +2836,14 @@ switch obj
                 end
                 
                 FitFun = fitfun_3exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
                 
                 %%% split by ignore region
@@ -2806,9 +2913,9 @@ switch obj
                 %%% beta    - distribution parameter
                 %%% scatter - Scatter Background (IRF pattern)
                 %%% Convert Lifetimes
-                x0(1) = round(x0(1)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1)/TauFitData.TACChannelWidth);
+                x0(1) = x0(1)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2825,8 +2932,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_stretched_exp(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_stretched_exp(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2840,11 +2952,14 @@ switch obj
                 end
                 
                 FitFun = fitfun_stretched_exp(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
-                
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
                 FitFun = FitFun(ignore:end);
@@ -2888,9 +3003,9 @@ switch obj
                 %%% R0
                 %%% Donor only lifetime
                 %%% Convert Lifetimes
-                x0(6) = round(x0(6)/TauFitData.TACChannelWidth);
-                lb(6) = round(lb(6)/TauFitData.TACChannelWidth);
-                ub(6) = round(ub(6)/TauFitData.TACChannelWidth);
+                x0(6) = x0(6)/TauFitData.TACChannelWidth;
+                lb(6) = lb(6)/TauFitData.TACChannelWidth;
+                ub(6) = ub(6)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2907,8 +3022,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_dist(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -2922,9 +3042,13 @@ switch obj
                 end
                 
                 FitFun = fitfun_dist(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
                 
                 %%% split by ignore region
@@ -2969,9 +3093,9 @@ switch obj
                 %%% Donor only lifetime
                 
                 %%% Convert Lifetimes
-                x0(7) = round(x0(7)/TauFitData.TACChannelWidth);
-                lb(7) = round(lb(7)/TauFitData.TACChannelWidth);
-                ub(7) = round(ub(7)/TauFitData.TACChannelWidth);
+                x0(7) = x0(7)/TauFitData.TACChannelWidth;
+                lb(7) = lb(7)/TauFitData.TACChannelWidth;
+                ub(7) = ub(7)/TauFitData.TACChannelWidth;
                 %%% estimate error assuming Poissonian statistics
                 if UserValues.TauFit.use_weighted_residuals
                     sigma_est = sqrt(Decay(ignore:end));sigma_est(sigma_est == 0) = 1;
@@ -2987,8 +3111,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),i,ignore,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_dist_donly(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay(ignore:end)./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_dist_donly(interlace(x0,x,fixed),xdata),Decay(ignore:end)),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3002,9 +3131,13 @@ switch obj
                 end
                 
                 FitFun = fitfun_dist_donly(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(1:end),shift_range(best_fit),1,Conv_Type});
-                wres = (Decay-FitFun);
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay);
+                if ~poissonian_chi2
+                    wres = (Decay-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay).*sign(Decay-FitFun);
                 end
                 %%% split by ignore region
                 FitFun_ignore = FitFun(1:ignore);
@@ -3066,9 +3199,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end
                 %%% Convert Lifetimes
-                x0(1:2) = round(x0(1:2)/TauFitData.TACChannelWidth);
-                lb(1:2) = round(lb(1:2)/TauFitData.TACChannelWidth);
-                ub(1:2) = round(ub(1:2)/TauFitData.TACChannelWidth);
+                x0(1:2) = x0(1:2)/TauFitData.TACChannelWidth;
+                lb(1:2) = lb(1:2)/TauFitData.TACChannelWidth;
+                ub(1:2) = ub(1:2)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3095,8 +3228,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3113,9 +3251,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun); 
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
@@ -3188,9 +3331,9 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0([1,2,4]) = round(x0([1,2,4])/TauFitData.TACChannelWidth);
-                lb([1,2,4]) = round(lb([1,2,4])/TauFitData.TACChannelWidth);
-                ub([1,2,4]) = round(ub([1,2,4])/TauFitData.TACChannelWidth);
+                x0([1,2,4]) = x0([1,2,4])/TauFitData.TACChannelWidth;
+                lb([1,2,4]) = lb([1,2,4])/TauFitData.TACChannelWidth;
+                ub([1,2,4]) = ub([1,2,4])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3217,8 +3360,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3235,9 +3383,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_aniso(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 %%% ignore plotting is not implemented here yet!
                 FitFun_ignore = FitFun;
@@ -3329,9 +3482,9 @@ switch obj
                 end
                 
                 %%% Convert Lifetimes
-                x0(1:3) = round(x0(1:3)/TauFitData.TACChannelWidth);
-                lb(1:3) = round(lb(1:3)/TauFitData.TACChannelWidth);
-                ub(1:3) = round(ub(1:3)/TauFitData.TACChannelWidth);
+                x0(1:3) = x0(1:3)/TauFitData.TACChannelWidth;
+                lb(1:3) = lb(1:3)/TauFitData.TACChannelWidth;
+                ub(1:3) = ub(1:3)/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3358,8 +3511,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3376,9 +3534,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
@@ -3455,9 +3618,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
-                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
-                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
+                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
+                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3484,8 +3647,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_aniso_2rot(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3502,9 +3670,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_aniso_2rot(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun); 
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
@@ -3601,9 +3774,9 @@ switch obj
                     ScatterPattern{2} = ScatterPattern{2}./sum(ScatterPattern{2});
                 end 
                 %%% Convert Lifetimes
-                x0([1,2,4,5]) = round(x0([1,2,4,5])/TauFitData.TACChannelWidth);
-                lb([1,2,4,5]) = round(lb([1,2,4,5])/TauFitData.TACChannelWidth);
-                ub([1,2,4,5]) = round(ub([1,2,4,5])/TauFitData.TACChannelWidth);
+                x0([1,2,4,5]) = x0([1,2,4,5])/TauFitData.TACChannelWidth;
+                lb([1,2,4,5]) = lb([1,2,4,5])/TauFitData.TACChannelWidth;
+                ub([1,2,4,5]) = ub([1,2,4,5])/TauFitData.TACChannelWidth;
                 
                 %%% Prepare data as vector
                 Decay =  [TauFitData.FitData.Decay_Par(ignore:end); TauFitData.FitData.Decay_Per(ignore:end)];
@@ -3630,8 +3803,13 @@ switch obj
                         %%% Update Progressbar
                         Progress((count-1)/numel(shift_range),h.Progress_Axes,h.Progress_Text,'Fitting...');
                         xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,i,ignore,G,Conv_Type};
-                        [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
-                            x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        if ~poissonian_chi2
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqcurvefit(@(x,xdata) fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata)./sigma_est,...
+                                x0(~fixed),xdata,Decay_stacked./sigma_est,lb(~fixed),ub(~fixed));%,opts);
+                        else
+                            [x{count}, ~, residuals{count}, ~,~,~, jacobian{count}] = lsqnonlin(@(x) MLE_w_res(fitfun_2lt_2aniso_independent(interlace(x0,x,fixed),xdata),Decay_stacked),...
+                                x0(~fixed),lb(~fixed),ub(~fixed));
+                        end
                         x{count} = interlace(x0,x{count},fixed);
                         count = count +1;
                     end
@@ -3648,9 +3826,14 @@ switch obj
                 Decay = [TauFitData.FitData.Decay_Par; TauFitData.FitData.Decay_Per];
                 Decay_stacked = [TauFitData.FitData.Decay_Par TauFitData.FitData.Decay_Per];
                 FitFun = fitfun_2lt_2aniso_independent(x{best_fit},{ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay,shift_range(best_fit),1,G,Conv_Type});
-                wres = (Decay_stacked-FitFun); Decay = Decay_stacked;
-                if UserValues.TauFit.use_weighted_residuals
-                    wres = wres./sqrt(Decay_stacked);
+                Decay = Decay_stacked;
+                if ~poissonian_chi2
+                    wres = (Decay_stacked-FitFun);
+                    if UserValues.TauFit.use_weighted_residuals
+                        wres = wres./sqrt(Decay_stacked);
+                    end
+                else
+                    wres = MLE_w_res(FitFun,Decay_stacked).*sign(Decay_stacked-FitFun);
                 end
                 
                 %%% ignore plotting is not implemented here yet!
@@ -3819,6 +4002,9 @@ switch obj
             h.Result_Plot_Aniso.YLim(2) = 1.05*max([max(r_meas(ignore:end)) max(r_fit(ignore:end))]);
             % store FitResult TauFitData also for use in export
             TauFitData.FitResult = [Fit_par; Fit_per];
+            % change axis labels
+            h.Result_Plot_Aniso.XLabel.String = 'Time [ns]';
+            h.Result_Plot_Aniso.YLabel.String = 'Anisotropy';
             
             h.Plots.DecayResult.XData = (ignore:numel(Decay_par))*TACtoTime;
             h.Plots.DecayResult.YData = Decay_par(ignore:end);
@@ -3843,6 +4029,7 @@ switch obj
             axis(h.Result_Plot,'tight');
             h.Result_Plot.YLim(1) = min([min(Decay_par(1:end)) min(Decay_per(1:end))]);
             h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
+            h.Result_Plot_Aniso.XLim = [0, h.Result_Plot.XLim(2)];
             
             h.Plots.Residuals.XData = (ignore:numel(wres_par))*TACtoTime;
             h.Plots.Residuals.YData = wres_par(ignore:end);
@@ -3858,7 +4045,7 @@ switch obj
             h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
             
             h.Residuals_Plot.YLim = [min([min(wres_par(ignore:end)) min(wres_per(ignore:end))]) max([max(wres_par(ignore:end)) max(wres_per(ignore:end))])];
-        else
+       else
             % hide plots
             h.Plots.IRFResult_Perp.Visible = 'off';
             h.Plots.FitResult_Perp.Visible = 'off';
@@ -3914,6 +4101,143 @@ switch obj
         end
 
         h.Result_Plot.XLim(1) = 0;
+        if strcmp(h.Result_Plot.YScale,'log')
+            ydat = h.Plots.DecayResult.YData;
+            ydat = ydat(ydat > 0);
+            h.Result_Plot.YLim(1) = min(ydat);
+        end
+        
+        h.Result_Plot.YLabel.String = 'Intensity [counts]';
+        h.Fit_Button_MEM_tau.Visible = 'on';
+        h.Fit_Button_MEM_dist.Visible = 'on';
+    case {h.Fit_Button_MEM_tau,h.Fit_Button_MEM_dist}
+        TauFitData.FitType = 'MEM';
+        TauFitData.WeightedResidualsType = h.WeightedResidualsType_Menu.String{h.WeightedResidualsType_Menu.Value};
+        % initialize fit parameters
+        xdata = {ShiftParams,IRFPattern,ScatterPattern,MI_Bins,Decay(ignore:end),shift_range,ignore,Conv_Type};
+        
+        % get fit parameters (scatter,background, irfshift)
+        x0 = [ UserValues.TauFit.FitParams{chan}([6,8]) UserValues.TauFit.IRFShift{chan}];
+        switch obj
+            case h.Fit_Button_MEM_tau
+                mode = 'tau';
+            case h.Fit_Button_MEM_dist
+                mode = 'dist';
+                %%% append F?rster distance and donor-only lifetime
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(11);
+                x0(end+1) = UserValues.TauFit.FitParams{chan}(12);
+        end
+        [tau_dist, tau, FitFun, chi2] = taufit_mem(Decay,x0,xdata,mode);
+        
+        % plot the result
+        switch TauFitData.WeightedResidualsType
+            case 'Gaussian'
+                wres = (Decay(ignore:end)-FitFun)./sqrt(Decay(ignore:end));
+            case 'Poissonian'
+                 wres = MLE_w_res(FitFun,Decay(ignore:end)).*sign(Decay(ignore:end)-FitFun);
+        end
+        %%% define ignore region
+        FitFun_ignore = NaN(1,ignore);
+        wres_ignore = NaN(1,ignore);
+        Decay_ignore = Decay(1:ignore);
+        
+        %%% Update Plot
+        h.Microtime_Plot.Parent = h.HidePanel;
+        h.Result_Plot.Parent = h.TauFit_Panel;
+        h.Plots.IRFResult.Visible = 'on';
+
+        % plot chi^2 on graph
+        h.Result_Plot_Text.Visible = 'on';
+        h.Result_Plot_Text.String = ['\' sprintf('chi^2_{red.} = %.2f', chi2)];
+        h.Result_Plot_Text.Position = [0.8 0.95];
+        
+        % nanoseconds per microtime bin
+        TACtoTime = TauFitData.TACChannelWidth;
+        
+        h.Plots.DecayResult_ignore.Visible = 'on';
+        h.Plots.Residuals_ignore.Visible = 'off';
+        h.Plots.FitResult_ignore.Visible = 'off';
+       
+        % hide plots
+        h.Plots.IRFResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp.Visible = 'off';
+        h.Plots.FitResult_Perp_ignore.Visible = 'off';
+        h.Plots.DecayResult_Perp.Visible = 'off';
+        h.Plots.DecayResult_Perp_ignore.Visible = 'off';
+        h.Plots.Residuals_Perp.Visible = 'off';
+        h.Plots.Residuals_Perp_ignore.Visible = 'off';
+
+        % change colors
+        h.Plots.IRFResult.Color = [0.6 0.6 0.6];
+        h.Plots.DecayResult.Color = [0 0 0];
+        h.Plots.Residuals.Color = [0 0 0];
+        h.Plots.Residuals_ignore.Color = [0.6 0.6 0.6];
+
+        %%% hide aniso plots
+        h.Result_Plot.Position = [0.075 0.075 0.9 0.775];
+        h.Result_Plot_Aniso.Parent = h.HidePanel;
+
+        IRFPat = shift_by_fraction(IRFPattern,UserValues.TauFit.IRFShift{chan});
+        IRFPat = IRFPat((ShiftParams(1)+1):ShiftParams(4));
+        IRFPat = IRFPat./max(IRFPat).*max(Decay);
+        h.Plots.IRFResult.XData = (1:numel(IRFPat))*TACtoTime;
+        h.Plots.IRFResult.YData = IRFPat;
+        % store FitResult TauFitData also for use in export
+        if ignore > 1
+            TauFitData.FitResult = [FitFun_ignore, FitFun];
+        else
+            TauFitData.FitResult = FitFun;
+        end
+
+        h.Plots.DecayResult.XData = (ignore:Length)*TACtoTime;
+        h.Plots.DecayResult.YData = Decay(ignore:end);
+        h.Plots.FitResult.XData = (ignore:Length)*TACtoTime;
+        h.Plots.FitResult.YData = FitFun;
+
+        h.Plots.DecayResult_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.DecayResult_ignore.YData = Decay_ignore;
+        h.Plots.FitResult_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.FitResult_ignore.YData = FitFun_ignore;
+        axis(h.Result_Plot,'tight');
+        h.Result_Plot.YLim(1) = min([min(Decay) min(Decay_ignore)]);
+        h.Result_Plot.YLim(2) = h.Result_Plot.YLim(2)*1.05;
+
+        h.Plots.Residuals.XData = (ignore:Length)*TACtoTime;
+        h.Plots.Residuals.YData = wres;
+        h.Plots.Residuals_ZeroLine.XData = (1:Length)*TACtoTime;
+        h.Plots.Residuals_ZeroLine.YData = zeros(1,Length);
+        h.Plots.Residuals_ignore.XData = (1:ignore)*TACtoTime;
+        h.Plots.Residuals_ignore.YData = wres_ignore;
+        h.Residuals_Plot.YLim = [min(wres) max(wres)];
+        
+        % use anisotropy plot below axis to visualize the lifetime distribution
+        % unhide Result "Aniso" Plot
+        h.Result_Plot_Aniso.Parent = h.TauFit_Panel;
+        % change axes positions
+        h.Result_Plot.Position = [0.075 0.3 0.9 0.55];
+        h.Result_Plot_Aniso.Position = [0.075 0.075 0.9 0.15];
+        % set all unneeded plots to empty data
+        h.Plots.AnisoResult.XData = [];
+        h.Plots.AnisoResult.YData = [];
+        h.Plots.AnisoResult_ignore.XData = [];
+        h.Plots.AnisoResult_ignore.YData = [];
+        h.Plots.FitAnisoResult_ignore.XData = [];
+        h.Plots.FitAnisoResult_ignore.YData = [];
+            
+        % update plots
+        h.Plots.FitAnisoResult.XData = tau;
+        h.Plots.FitAnisoResult.YData = tau_dist;
+        h.Result_Plot_Aniso.XLim = [tau(1),tau(end)];
+        h.Result_Plot_Aniso.YLim = [0,max(tau_dist)*1.05];
+        switch obj
+            case h.Fit_Button_MEM_tau
+                h.Result_Plot_Aniso.XLabel.String = 'Lifetime [ns]';
+            case h.Fit_Button_MEM_dist
+                h.Result_Plot_Aniso.XLabel.String = 'Distance [?]';
+        end
+        h.Result_Plot_Aniso.YLabel.String = 'Probability';
+        
+        h.Result_Plot.XLim = [0, Length*TACtoTime];
         if strcmp(h.Result_Plot.YScale,'log')
             ydat = h.Plots.DecayResult.YData;
             ydat = ydat(ydat > 0);
@@ -4069,6 +4393,7 @@ switch obj
         %%% construct x axis
         Decay_fit = Decay(ignore:end);
         x_fit = 1:numel(Decay_fit);
+
         %%% Fit function
         if number_of_exponentials == 1
             %%% param is
@@ -4076,8 +4401,12 @@ switch obj
             model = @(x,xdata) (x(1)*exp(-xdata./x(2))+x(3));
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0];
             if h.UseWeightedResiduals_Menu.Value
-                weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0],[Inf,Inf,Inf]);
+                if ~poissonian_chi2
+                    weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                    [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0],[Inf,Inf,Inf]);
+                else
+                    [param,~,res,~,~,~,jacobian] = lsqnonlin(@(x) MLE_w_res(model(x,x_fit),Decay_fit),param0,[0 0 0],[Inf,Inf,Inf]);
+                end
             else
                 [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0],[Inf,Inf,Inf]);
             end
@@ -4088,8 +4417,12 @@ switch obj
             model = @(x,xdata) x(1)*(x(4)*exp(-xdata./x(2))+(1-x(4))*exp(-xdata./x(3)))+x(5);
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 0.5,0];
             if h.UseWeightedResiduals_Menu.Value
-                weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
+                if ~poissonian_chi2
+                    weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                    [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0, 0, 0,0,0],[Inf,Inf,Inf,1,Inf]);
+                else
+                    [param,~,res,~,~,~,jacobian] = lsqnonlin(@(x) MLE_w_res(model(x,x_fit),Decay_fit),param0,[0, 0, 0,0,0],[Inf,Inf,Inf,1,Inf]);
+                end
             else
                 [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0 0 0,0,0],[Inf,Inf,Inf,1,Inf]);
             end
@@ -4097,24 +4430,37 @@ switch obj
         elseif number_of_exponentials == 3
             %%% param is
             %%% I0, tau1, tau2, tau3, Fraction1, Fraction2, offset
-            model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            %model = @(x,xdata) x(1)*(x(5)*exp(-xdata./x(2))+x(6)*exp(-xdata./x(3))+max([0 (1-x(5)-x(6))])*exp(-xdata./x(4)))+x(7);
+            model = @tailfit_3exp;
             param0 = [Decay_fit(1) 1/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 2/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins, 3/(TauFitData.TACRange*1e9)*TauFitData.MI_Bins,...
                 0.3,0.3,0];
             options = optimoptions('lsqcurvefit','MaxFunctionEvaluations',1E5,'MaxIterations',1E4);
             if h.UseWeightedResiduals_Menu.Value
-                weights = sqrt(Decay_fit); weights(weights==0) = 1;
-                [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+                if ~poissonian_chi2
+                    weights = sqrt(Decay_fit); weights(weights==0) = 1;
+                    [param,~,res,~,~,~,jacobian] = lsqcurvefit(@(x,xdata) model(x,xdata)./weights,param0,x_fit,Decay_fit./weights,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+                else
+                    [param,~,res,~,~,~,jacobian] = lsqnonlin(@(x) MLE_w_res(model(x,x_fit),Decay_fit),param0,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
+                end
             else
                 [param,~,res,~,~,~,jacobian] = lsqcurvefit(model,param0,x_fit,Decay_fit,[0,0,0,0,0,0,0],[Inf,Inf,Inf,Inf,1,1,Inf],options);
             end
             parameter_names = {'I0','tau1','tau2','tau3','Fraction1','Fraction2','offset'};
+            % fix amplitudes same way as done in fit function
+            if (param(5)+param(6)) > 1
+                norm = param(5)+param(6);
+                param(5) = param(5)./norm;
+                param(6) = param(6)./norm;
+            end
         end
         
         x_fitres = ignore:numel(Decay);
         fitres = model(param,x_fit);fitres = fitres(1:(numel(Decay)-ignore+1));
         
         Decay_ignore = Decay(1:ignore);
-        
+        if poissonian_chi2
+            res = res.*sign(Decay_fit-fitres);
+        end
         TACtoTime = TauFitData.TACChannelWidth;%TauFitData.MI_Bins*TauFitData.TACRange*1e9;
         
         %%% calculate confidence intervals
@@ -4161,8 +4507,9 @@ switch obj
             switch number_of_exponentials
                 case 2
                     amp1 = param(2)*TACtoTime*param(4); amp2 = (1-param(4))*param(3)*TACtoTime;
-                    f1 = amp1./(amp1+amp2);
-                    f2 = amp2./(amp1+amp2);
+                    amp_sum = amp1+amp2;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2);
                     meanTau_Fraction = param(2)*TACtoTime*param(4) + (1-param(4))*param(3)*TACtoTime;
                     % update status text
@@ -4172,9 +4519,10 @@ switch obj
                     ['Intensity fraction of Tau2: ' sprintf('%2.2f',100*f2) ' %.']};
                 case 3
                     amp1 = param(2)*TACtoTime*param(5); amp2 = param(3)*TACtoTime*param(6); amp3 = param(4)*TACtoTime*(1-param(5)-param(6));
-                    f1 = amp1./(amp1+amp2+amp3);
-                    f2 = amp2./(amp1+amp2+amp3);
-                    f3 = amp3./(amp1+amp2+amp3);
+                    amp_sum = amp1+amp2+amp3;
+                    f1 = amp1./amp_sum;
+                    f2 = amp2./amp_sum;
+                    f3 = amp3./amp_sum;
                     meanTau = TACtoTime*(param(2)*f1+param(3)*f2+param(4)*f3);
                     meanTau_Fraction = param(2)*TACtoTime*param(5)+ param(3)*TACtoTime*param(6)+ param(4)*TACtoTime*(1-param(5)-param(6));
                     % update status text
@@ -4398,7 +4746,7 @@ for i = 1:numel(ax)
     end
 end
 
-if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
+if ~any(strcmp(TauFitData.FitType,{'Fit Anisotropy','Fit Anisotropy (2 exp rot)','Fit Anisotropy (2 exp lifetime)','Fit Anisotropy (2 exp lifetime, 2 exp rot)','Fit Anisotropy (2 exp lifetime with independent anisotropy)','MEM'})) && (h.Result_Plot_Aniso.Parent == h.HidePanel)
     %%% no anisotropy fit
     for i = 1:numel(ax)
         switch ax(i).Tag
@@ -4421,15 +4769,23 @@ else
     for i = 1:numel(ax)
         switch ax(i).Tag
             case 'Result_Plot_Aniso'
-                ax(i).Position = [0.125 0.13 0.845 0.15];
-                if strcmp(h.Microtime_Plot.YScale,'log')
-                    %ax(i).YScale = 'log';
+                if ~strcmp(TauFitData.FitType,'MEM')
+                    ax(i).Position = [0.125 0.13 0.845 0.15];
+                    if strcmp(h.Microtime_Plot.YScale,'log')
+                        %ax(i).YScale = 'log';
+                    end
+                else % MEM fit
+                    ax(i).Position = [0.125 0.10 0.845 0.14];
                 end
                 aniso_plot = i;
             case 'Microtime_Plot'
-                ax(i).Position = [0.125 0.28 0.845 0.58];
-                ax(i).XTickLabels = [];
-                ax(i).XLabel.String = '';
+                if ~strcmp(TauFitData.FitType,'MEM')
+                    ax(i).Position = [0.125 0.28 0.845 0.58];
+                     ax(i).XTickLabels = [];
+                    ax(i).XLabel.String = '';
+                else % MEM fit 
+                    ax(i).Position = [0.125 0.35 0.845 0.51];
+                end
                 if ~isequal(obj, h.Microtime_Plot_Export)
                     ax(i).Children(end).FontSize = 16; %resize the chi^2 thing
                     ax(i).Children(end).Position(2) = 0.9;
@@ -4449,6 +4805,9 @@ else
 end
 for i = 1:numel(ax)
     ax(i).Units = 'pixels';
+    if ispc
+         ax(i).FontSize =  ax(i).FontSize/1.4;
+    end
 end
 if strcmp(TauFitData.Who,'TauFit') || strcmp(TauFitData.Who,'External')
     a = ['_Decay_' h.PIEChannelPar_Popupmenu.String{h.PIEChannelPar_Popupmenu.Value}...
@@ -4485,6 +4844,9 @@ if any(strfind(TauFitData.FitType,'Anisotropy')) && ~(h.Result_Plot_Aniso.Parent
     f2 = figure('Position',[200,100,450,275],'color',[1 1 1], 'Name', 'Anisotropy');
     axes_copy = copyobj(ax(aniso_plot),f2);
     axes_copy.Position = [75,55,350,200];
+    if ispc
+        axes_copy.FontSize = axes_copy.FontSize/1.4;
+    end
     f2.PaperPositionMode = 'auto';
     print(f2, '-dtiff', '-r150', GenerateName([FileName(1:end-4) a c '_aniso' b],1))
 end
@@ -4515,11 +4877,10 @@ SA = sqrt(rinfa/r0a);
 
 %%% estimate the mean angle between the dipoles
 % Equation 20 from (1)
-try
-    cos_thetaDA = sqrt((1+2*(rinfad/SA/SD/r0a))/3);
-   
-catch
-    % division by zero occured, default to 1/3
+if ~( (SD == 0)||(SA == 0) )
+    cos_thetaDA = sqrt(abs((1+2*(rinfad/SA/SD/r0a))/3));
+else
+    % division by zero, default to 1/3
     cos_thetaDA= sqrt(1/3);
 end
 thetaDA = acos(cos_thetaDA);
@@ -4577,7 +4938,7 @@ function a = interlace( a, x, fix )
 a(~fix) = x;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%  Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Burstwise Lifetime Fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BurstWise_Fit(obj,~)
 global UserValues TauFitData PamMeta
@@ -4594,6 +4955,14 @@ StartParPool();
 h.Progress_Text.String = 'Preparing Lifetime Fit...';
 drawnow;
 
+%%% downsampling of microtime histograms to improve speed
+downsample = true;
+
+%%% also calculate the phasor?
+%%% this comes cheap since it is just a calculation on the microtime
+%%% histograms which are computed anyway
+do_phasor = (UserValues.BurstSearch.CalculateBurstwisePhasor == 1);
+use_irf_as_phasor_reference = (UserValues.BurstSearch.PhasorReference == 1);
 switch TauFitData.BAMethod
     case {1,2,5}
         %% 2 color MFD
@@ -4622,6 +4991,10 @@ switch TauFitData.BAMethod
         %%% Preallocate lifetime array
         lifetime{1} = cell(numel(parts)-1,1);
         lifetime{2} = cell(numel(parts)-1,1);
+        if do_phasor
+            phasor{1} = cell(numel(parts)-1,1);
+            phasor{2} = cell(numel(parts)-1,1);
+        end
         %%% Prepare Fit Model
         mean_tau = 5;
         range_tau = 9.98;
@@ -4680,18 +5053,47 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
                 Length{chan} = numel(Scatter)-1;
+                
+                %%% for phasor, read reference for the respective channels
+                if do_phasor
+                    if use_irf_as_phasor_reference
+                        PhasorRef{chan} = IRF{chan};
+                        PhasorReferenceLifetime(chan) = 0;
+                        %%% update the values in BurstData
+                        BurstData.Phasor.PhasorReference{chan} = PhasorRef{chan};
+                        BurstData.Phasor.PhasorReferenceLifetime(chan) = PhasorReferenceLifetime(chan);
+                    else
+                        PhasorRef_par = TauFitData.PhasorReference_Par{chan}((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
+                        %%% Apply the shift to the perpendicular IRF channel
+                        PhasorRef_per = circshift(TauFitData.PhasorReference_Per{chan},[0,TauFitData.ShiftPer{chan}]);
+                        PhasorRef_per = PhasorRef_per((TauFitData.StartPar{chan}+1):TauFitData.Length{chan});
+                        PhasorRef{chan} = G{chan}*(1-3*l2)*PhasorRef_par + (2-3*l1)*PhasorRef_per;
+                        PhasorReferenceLifetime(chan) = TauFitData.PhasorReferenceLifetime(chan);
+                    end
+                    %%% store the length of the microtime range used for
+                    %%% fitting (needed to obtain the frequency omegae at a
+                    %%% later stage)
+                    BurstData.Phasor.PhasorRange(chan) = TauFitData.Length{chan}-TauFitData.StartPar{chan};
+                end
                 
                 [tau, i] = meshgrid(mean_tau-range_tau/2:range_tau/steps_tau:mean_tau+range_tau/2, 0:Length{chan});
                 T = TauFitData.TACChannelWidth*Length{chan};
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1);   %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
@@ -4703,12 +5105,14 @@ switch TauFitData.BAMethod
                 model = c;
                 z = sum(model,1);
                 model = model./z(ones(size(model,1),1),:);
-                %%% Rebin to improve speed
-                model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
-                for i = 1:size(model,2)
-                    model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                if downsample
+                    %%% Rebin to improve speed
+                    model_dummy = zeros(floor(size(model,1)/new_bin_width),size(model,2));
+                    for i = 1:size(model,2)
+                        model_dummy(:,i) = downsamplebin(model(:,i),new_bin_width);
+                    end
+                    model = model_dummy;
                 end
-                model = model_dummy;
                 z = sum(model,1);model = model./z(ones(size(model,1),1),:);
                 MODEL{chan} = model;
                 %%% Rebin SCATTER pattern
@@ -4749,13 +5153,19 @@ switch TauFitData.BAMethod
                 Per1 = Per1(:,(TauFitData.StartPar{1}+1):TauFitData.Length{1});                
                 Mic{1} = (1-3*l2)*G{1}*Par1+(2-3*l1)*Per1;
                 clear Par1 Per1
-                
-                %%% Rebin to improve speed
-                Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
-                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
-                    Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                if do_phasor
+                    Mic_Phasor{1} = Mic{1};                    
                 end
-                Mic{1} = Mic1'; clear Mic1;
+                %%% Rebin to improve speed
+                if downsample
+                    Mic1 = zeros(numel(MI),floor(size(Mic{1},2)/new_bin_width));
+                    parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
+                        Mic1(i,:) = downsamplebin(Mic{1}(i,:),new_bin_width);
+                    end
+                    Mic{1} = Mic1'; clear Mic1;
+                else
+                    Mic{1} = Mic{1}';
+                end
             end
             if UserValues.TauFit.IncludeChannel(2)
                 %%% Create array of histogrammed microtimes
@@ -4783,19 +5193,24 @@ switch TauFitData.BAMethod
                 Per2 = Per2(:,(TauFitData.StartPar{2}+1):TauFitData.Length{2});
                 Mic{2} = (1-3*l2)*G{2}*Par2+(2-3*l1)*Per2;
                 clear Par2 Per2
-                
-                %%% Rebin to improve speed
-                Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
-                
-                parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
-                    Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                if do_phasor
+                    Mic_Phasor{2} = Mic{2};
                 end
-                Mic{2} = Mic2'; clear Mic2;
+                if downsample
+                    %%% Rebin to improve speed
+                    Mic2 = zeros(numel(MI),floor(size(Mic{2},2)/new_bin_width));
+                    parfor (i = 1:numel(MI),UserValues.Settings.Pam.ParallelProcessing)
+                        Mic2(i,:) = downsamplebin(Mic{2}(i,:),new_bin_width);
+                    end
+                    Mic{2} = Mic2'; clear Mic2;
+                else
+                    Mic{2} = Mic{2}';
+                end
             end
             
             %% Fitting...
             %%% Prepare the fit inputs
-            lt = zeros(numel(MI),2);
+            lt = zeros(numel(MI),2);            
             for chan = 1:2
                 if UserValues.TauFit.IncludeChannel(chan)
                     %%% Calculate Background fraction
@@ -4838,9 +5253,20 @@ switch TauFitData.BAMethod
                 end
             end
             lifetime{j} = lt;
+            if do_phasor; 
+                ph = zeros(numel(MI),10);
+                if UserValues.TauFit.IncludeChannel(1)
+                    ph(:,1:5) = BurstWise_Phasor(Mic_Phasor{1},PhasorRef{1},PhasorReferenceLifetime(1));
+                end
+                if UserValues.TauFit.IncludeChannel(2)
+                    ph(:,6:10) = BurstWise_Phasor(Mic_Phasor{2},PhasorRef{2},PhasorReferenceLifetime(2));
+                end
+                phasor{j} = ph;
+            end
             Progress(j/(numel(parts)-1),h.Progress_Axes,h.Progress_Text,'Fitting Data...');
         end
         lifetime = vertcat(lifetime{:});
+        if do_phasor; phasor = vertcat(phasor{:}); end
         %% Save the result
         Progress(1,h.Progress_Axes,h.Progress_Text,'Saving...');
         idx_tauGG = strcmp('Lifetime D [ns]',BurstData.NameArray);
@@ -4855,6 +5281,19 @@ switch TauFitData.BAMethod
         end
         if UserValues.TauFit.IncludeChannel(2)
             BurstData.DataArray(:,idx_tauRR) = lifetime(:,2);
+        end
+        if do_phasor
+            %%% was phasor saved before?
+            if ~all(strcmp('Phasor: gD',BurstData.NameArray) == 0)
+                %%% phasor was stored, overwrite
+                idx_gD = find(strcmp('Phasor: gD',BurstData.NameArray));
+                BurstData.DataArray(:,idx_gD:(idx_gD+size(phasor,2)-1)) = phasor;
+            else %%% no phasor stored, append to array
+                BurstData.NameArray = [BurstData.NameArray,...
+                    {'Phasor: gD','Phasor: sD','Phasor: TauP(D) [ns]','Phasor: TauM(D) [ns]','Phasor: TauMean(D) [ns]',...
+                    'Phasor: gA','Phasor: sA','Phasor: TauP(A) [ns]','Phasor: TauM(A) [ns]','Phasor: TauMean(A) [ns]'}];
+                BurstData.DataArray = [BurstData.DataArray, phasor];
+            end
         end
     case {3,4}
         %% Three-Color MFD
@@ -4946,7 +5385,7 @@ switch TauFitData.BAMethod
                 
                 %Irf = Irf-min(Irf(Irf~=0));
                 Irf = Irf./sum(Irf);
-                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-numel(Irf))];
+                IRF{chan} = [Irf zeros(1,TauFitData.Length{chan}-TauFitData.StartPar{chan}-numel(Irf))];
                 %%% Scatter is still read from the plots
                 Scatter = G{chan}*(1-3*l2)*h.Plots.Scat_Par.YData + (2-3*l1)*h.Plots.Scat_Per.YData;
                 SCATTER{chan} = Scatter./sum(Scatter);
@@ -4957,7 +5396,14 @@ switch TauFitData.BAMethod
                 GAMMA = T./tau;
                 p = exp(-i.*GAMMA/Length{chan}).*(exp(GAMMA/Length{chan})-1)./(1-exp(-GAMMA));
                 %p = p(1:length+1,:);
-                c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                if verLessThan('MATLAB','9.4') %%% before 2018a
+                    c = convnfft(p,IRF{chan}(ones(steps_tau+1,1),:)', 'full', 1); %%% Linear Convolution!
+                else %%% convnfft function does not work in 2018a
+                    c = zeros(2*size(p,1)-1,size(p,2));
+                    for k = 1:size(p,2)
+                        c(:,k) = conv(p(:,k),IRF{chan}');
+                    end                    
+                end
                 c(c<0) = 0;
                 z = sum(c,1);
                 c = c./z(ones(size(c,1),1),:);
@@ -5133,6 +5579,76 @@ handlesPam = guidata(hPam);
 handlesPam.Burst.BurstLifetime_Button.ForegroundColor = [0 0.8 0];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%  Burstwise Phasor %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [phasor] = BurstWise_Phasor(Mic,Ref,Ref_LT)
+%%% Calculates the burstwise phasor components g and s,
+%%% as well as the lifetimes from phase (TauP) and modulation (TauM)
+%%% The average lifetime TauMean = (TauP+TauM)/2 is also returned.
+%%%
+%%% Input: Mic - N_bursts X MI_Bins array of the burstwise microtime histograms
+%%%        Ref - 1 x Mi_Bins microtime hisogram of the reference
+%%%              Can be the IRF (Ref_LT = 0) or a reference sample such as
+%%%              donor only.
+%%%        Ref_LT - Lifetime of the reference sample in nanoseconds
+global TauFitData
+
+MI_Bins = size(Mic,2); % Total number of MI bins of file
+From=1; % First MI bin to used
+To=MI_Bins; % Last MI bin to be used
+Ref_MI_Bins = size(Ref,2);
+Ref_TAC = TauFitData.TACRange * 1E9 .* Ref_MI_Bins/TauFitData.MI_Bins; % in ns
+TAC= TauFitData.TACRange * 1E9  .* MI_Bins/TauFitData.MI_Bins; % Length of full MI range in ns
+
+%%% for now, we assume the background etc to be zero (can be added at a
+%%% later time)
+Background_ref = 0;
+Background = 0;       
+Afterpulsing = 0;
+Shift = 0; % Shift between reference and file in MI bins
+
+%%% Calculates theoretical phase and modulation for reference
+Fi_ref = atan(2*pi*Ref_LT/Ref_TAC);
+M_ref  = 1/sqrt(1+(2*pi*Ref_LT/Ref_TAC)^2);
+
+%%% Normalizes reference data
+Ref = Ref-sum(Ref)*Afterpulsing/Ref_MI_Bins - Background_ref;
+Ref_Mean=sum(Ref(1:Ref_MI_Bins).*(1:Ref_MI_Bins))/sum(Ref)*Ref_TAC/Ref_MI_Bins-Ref_LT;
+Ref = Ref./sum(Ref);
+
+%%% Calculates phase and modulation of the instrument
+G_inst=cos((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+S_inst=sin((2*pi./Ref_MI_Bins)*(1:Ref_MI_Bins)-Fi_ref)/M_ref;
+g_inst=sum(Ref(1:Ref_MI_Bins).*G_inst);
+s_inst=sum(Ref(1:Ref_MI_Bins).*S_inst);
+Fi_inst=atan(s_inst/g_inst);
+M_inst=sqrt(s_inst^2+g_inst^2);
+if (g_inst<0 || s_inst<0)
+    Fi_inst=Fi_inst+pi;
+end
+
+%%% these are the instrument corrected phasor components
+G = cos((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+S = sin((2*pi/MI_Bins).*(1:MI_Bins)-Fi_inst)/M_inst;
+
+%%%% calculate phasor for every burst
+g = sum(Mic.*repmat(G,size(Mic,1),1),2)./sum(Mic,2);
+s = sum(Mic.*repmat(S,size(Mic,1),1),2)./sum(Mic,2);
+%%% project values
+neg=find(g<0 & s<0);
+g(neg)=-g(neg);
+s(neg)=-s(neg);
+
+%%% calculate lifetime values
+Fi=atan(s./g); Fi(isnan(Fi))=0;
+M=sqrt(s.^2+g.^2);M(isnan(M))=0;
+TauP=real(tan(Fi)./(2*pi/TAC));TauP(isnan(TauP))=0;
+TauM=real(sqrt((1./(s.^2+g.^2))-1)/(2*pi/TAC));TauM(isnan(TauM))=0;
+TauMean = (TauP+TauM)/2;
+
+phasor = [g,s,TauP,TauM,TauMean];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Here are functions used for the fits  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [tau,Istar] = LifetimeFitMLE(SIG,model,range)
@@ -5293,7 +5809,8 @@ UserValues.TauFit.G{chan} = str2double(h.G_factor_edit.String);
 UserValues.TauFit.l1 = str2double(h.l1_edit.String);
 UserValues.TauFit.l2 = str2double(h.l2_edit.String);
 UserValues.TauFit.use_weighted_residuals = h.UseWeightedResiduals_Menu.Value;
-LSUserValues(1)
+UserValues.TauFit.WeightedResidualsType = h.WeightedResidualsType_Menu.String{h.WeightedResidualsType_Menu.Value};
+
 if obj == h.G_factor_edit
     %DetermineGFactor(obj)
 end
@@ -5303,6 +5820,15 @@ if strcmp(TauFitData.Who,'Burstwise') && obj == h.Save_Figures
 end
 UserValues.TauFit.ConvolutionType = h.ConvolutionType_Menu.String{h.ConvolutionType_Menu.Value};
 UserValues.TauFit.LineStyle = h.LineStyle_Menu.String{h.LineStyle_Menu.Value};
+
+if strcmp(TauFitData.Who,'Burstwise') && obj ==  h.Calc_Burstwise_Phasor
+    UserValues.BurstSearch.CalculateBurstwisePhasor = obj.Value;
+    if UserValues.BurstSearch.CalculateBurstwisePhasor == 1
+        h.Select_Burstwise_Phasor_Reference.Visible = 'on';
+    else
+        h.Select_Burstwise_Phasor_Reference.Visible = 'off';
+    end
+end
 
 if obj == h.LineStyle_Menu
     ChangeLineStyle(h);
@@ -5317,6 +5843,8 @@ switch obj
         UserValues.TauFit.cleanup_IRF = obj.Value;
     case h.UseWeightedResiduals_Menu
         UserValues.TauFit.use_weighted_residuals = obj.Value;
+    case h.Select_Burstwise_Phasor_Reference
+        UserValues.BurstSearch.PhasorReference = obj.Value;
 end
 LSUserValues(1);
 
@@ -5334,9 +5862,9 @@ end
 function IncludeChannel(obj,~)
 global UserValues
 h = guidata(findobj('Tag','TauFit'));
-LSUserValues(0)
+LSUserValues(0);
 UserValues.TauFit.IncludeChannel(h.ChannelSelect_Popupmenu.Value) = h.IncludeChannel_checkbox.Value;
-LSUserValues(1)
+LSUserValues(1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%  Export function for various export requests %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5352,12 +5880,12 @@ switch obj
         %%% update the plot by evaluating the model with current parameter
         %%% values
         % fix all parameters and store fixed state
-        fixed_old = h.FitPar_Table.Data(1:end-1,4);
-        h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
+        %fixed_old = h.FitPar_Table.Data(1:end-1,4);
+        %h.FitPar_Table.Data(1:end-1,4) = num2cell(true(size(h.FitPar_Table.Data,1)-1,1));
         % evaluate
-        Start_Fit(h.Fit_Button,[]);
+        %Start_Fit(h.Fit_Button,[]);
         % reset table
-        h.FitPar_Table.Data(1:end-1,4) = fixed_old;
+        %h.FitPar_Table.Data(1:end-1,4) = fixed_old;
         
         %%% read out selected PIE channels
         if strcmp(TauFitData.Who,'TauFit')
@@ -5657,18 +6185,18 @@ switch obj
         end
         %%% ensure that same type of data is loaded, remove the rest
         %%% type defined by first selected file
-        % anisotropy reconvolution fit is not supported, check for it
-        if ~isempty(strfind(filename{1},'tau_aniso'))
-            disp('Anisotropy reconvolution data not supported.');
-            return;
-        end
         if iscell(filename)
             valid = ones(numel(filename),1);
             type = strfind(filename{1},'tau');
             if isempty(type)
                 type = 'aniso';
             else
-                type = 'tau';
+                type = strfind(filename{1},'aniso');
+                if isempty(type)
+                    type = 'tau';
+                else
+                    type = 'tau_aniso';
+                end
             end
             for i = 1:numel(filename)
                 if isempty(strfind(filename{i},type))
@@ -5683,8 +6211,14 @@ switch obj
         data = {};
         for i = 1:numel(filename)
             dummy = dlmread(fullfile(pathname,filename{i}),',',1,0);
-            data{i} = dummy(:,2);
-            fit{i} = dummy(:,3);
+            switch type
+                case {'tau','aniso'}
+                    data{i} = dummy(:,2);
+                    fit{i} = dummy(:,3);
+                case 'tau_aniso'
+                    data{i} = dummy(:,8);
+                    fit{i} = dummy(:,9);
+            end
         end
         dT = mean(diff(dummy(:,1)));  
         %%% if different lengths have been loaded, truncate to shortest
@@ -5695,41 +6229,42 @@ switch obj
         end
         t = (1:minLength)*dT;
         
-        if strcmp(type,'tau') %%% normalize and shift if tau data
-            for i = 1:numel(data)
-                norm = max(smooth(data{i},10));
-                data{i} = data{i}./norm;
-                fit{i} = fit{i}./norm;
-            end
-            
-            %%% for shift, take first measurement as reference
-            [~,peakPosition] = max(smooth(data{1},10));
-            shift_left = 0;
-            shift_right = 0;
-            for i = 2:numel(data)
-                [~,peakPos] = max(smooth(data{i},10));
-                shift_left = min([shift_left, peakPosition-peakPos]);
-                shift_right = max([shift_right, peakPosition-peakPos]);
-                data{i} = circshift(data{i},[peakPosition-peakPos,0]);
-                fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
-            end
-            %%% adjust range
-            range = (shift_right+1):(minLength+shift_left);
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
-        elseif strcmp(type,'aniso') %%% modify start point if anisotropy data
-            for i = 1:numel(data)
-                [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
-            end
-            range = max([1,min(peakPos)-10]):minLength;
-            t = (0:numel(range)-1)*dT;
-            for i = 1:numel(data)
-                data{i} = data{i}(range);
-                fit{i} = fit{i}(range);
-            end
+        switch type
+            case 'tau' %%% normalize and shift if tau data
+                for i = 1:numel(data)
+                    norm = max(smooth(data{i},10));
+                    data{i} = data{i}./norm;
+                    fit{i} = fit{i}./norm;
+                end
+
+                %%% for shift, take first measurement as reference
+                [~,peakPosition] = max(smooth(data{1},10));
+                shift_left = 0;
+                shift_right = 0;
+                for i = 2:numel(data)
+                    [~,peakPos] = max(smooth(data{i},10));
+                    shift_left = min([shift_left, peakPosition-peakPos]);
+                    shift_right = max([shift_right, peakPosition-peakPos]);
+                    data{i} = circshift(data{i},[peakPosition-peakPos,0]);
+                    fit{i} = circshift(fit{i},[peakPosition-peakPos,0]);
+                end
+                %%% adjust range
+                range = (shift_right+1):(minLength+shift_left);
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
+            case {'aniso','tau_aniso'} %%% modify start point if anisotropy data
+                for i = 1:numel(data)
+                    [~,peakPos(i)] = max(smooth(data{i}(1:floor(numel(data{i})/4)),20));
+                end
+                range = max([1,min(peakPos)-10]):minLength;
+                t = (0:numel(range)-1)*dT;
+                for i = 1:numel(data)
+                    data{i} = data{i}(range);
+                    fit{i} = fit{i}(range);
+                end
         end
         
         
@@ -5745,6 +6280,9 @@ switch obj
         for i = 1:numel(data)
             plot(t,fit{i},'LineWidth',2,'Color',colors(i,:));
         end
+        for i = 1:numel(data)
+            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
+        end
         for i = 1:numel(filename)
             % remove extension
             filename{i} = filename{i}(1:end-4);
@@ -5752,17 +6290,16 @@ switch obj
             filename{i} = strrep(filename{i},'_',' ');
         end
         l = legend(filename);
-        for i = 1:numel(data)
-            plot(t,data{i},'LineStyle','none','Marker','.','Color',colors(i,:));
-        end 
+        
         ax.YLim = [minV-0.1*(maxV-minV) maxV+0.1*(maxV-minV)];
         ax.XLim = [t(1) t(end)];
         xlabel('Time [ns]');
-        if strcmp(type,'tau')
-            ylabel('Intensity [a.u.]');
-            ax.YScale = 'log';
-        else
-            ylabel('Anisotropy');
+        switch type
+            case 'tau'
+                ylabel('Intensity [a.u.]');
+                ax.YScale = 'log';
+            case {'aniso','tau_aniso'}
+                ylabel('Anisotropy');
         end
         
         ax.Layer = 'top';
@@ -5801,3 +6338,109 @@ h.Plots.IRF_cleanup.IRF_data.YData = IRF_selected;
 h.Plots.IRF_cleanup.IRF_fit.XData = (1:numel(IRF)).*TauFitData.TACChannelWidth;
 h.Plots.IRF_cleanup.IRF_fit.YData = IRF_fixed;
 h.Cleanup_IRF_axes.XLim = [0,2*TauFitData.IRFLength{chan}.*TauFitData.TACChannelWidth];
+
+
+function [tau_dist, tau, model, chi2] = taufit_mem(decay,params,static_fit_params,mode,resolution, v)
+global TauFitData
+%%% Maximum Entropy analysis to obtain model-free lifetime distribtion
+if nargin < 5
+    resolution = 300;
+end
+if nargin < 6
+    %%% scaling parameter for the entropy term
+    v = 1E-5; 
+    % this value is taken from:
+    % Vinogradov and Wilson, "Recursive Maximum Entropy Algorithm and Its Application to the Luminescence Lifetime Distribution Recovery." 
+    % where it is suggested as an "optimal" value
+end
+
+% remove ignore region from decay
+decay = decay(static_fit_params{7}:end);
+x = 1:1:numel(decay);
+
+%%% Calculate error estimate based on poissonian counting statistics
+error = sqrt(decay); error(error == 0) = 1;
+
+switch mode
+    case 'tau' % fit lifetime distribution
+        %%% vector of lifetimes to consider (up to 10 ns)
+        tau = linspace(0,ceil(7.5/TauFitData.TACChannelWidth),resolution);
+    case 'dist' % fit distance distribution
+        %%% get F?rster distance and donor-only lifetime
+        global UserValues
+        R0 = params(end-1);
+        tauD = params(end)/TauFitData.TACChannelWidth;
+        params(end-1:end) = [];
+        %%% vector of distances to consider (evaluated based on equal spacing in FRET efficiency space)
+        R = R0.*(1./linspace(1,0,resolution)-1).^(1/6);
+        R = R(2:end-1);
+        %%% calculate respective lifetime vector
+        tau = tauD.*(1+(R0./R).^6).^(-1);      
+end
+
+%%% Establish library of single exponential decays, convoluted with IRF
+decay_ind = zeros(numel(tau),numel(x));
+for i = 1:numel(tau)
+    decay_ind(i,:) = fitfun_1exp([tau(i),params],static_fit_params);
+end
+
+switch TauFitData.WeightedResidualsType
+    case 'Gaussian'
+        mem = @(p) -(v*sum(p-p.*log(p)) - sum( (decay-sum(decay_ind.*repmat(p,1,numel(decay),1))).^2./error.^2)./(numel(decay)));
+    case 'Poissonian'
+        mem = @(p) -(v*sum(p-p.*log(p)) - sum(MLE_w_res(sum(decay_ind.*repmat(p,1,numel(decay),1)),decay).^2)./(numel(decay)));
+end
+
+%%% initialize p
+p0 = ones(numel(tau),1)./numel(tau);
+p=p0;
+
+%%% initialize boundaries
+Aieq = -eye(numel(p0)); bieq = zeros(numel(p0),1);
+lb = zeros(numel(p0),1); ub = inf(numel(p0),1);
+
+%%% specify fit options
+opts = optimoptions(@fmincon,'MaxFunEvals',1E5,'Display','iter','TolFun',1E-3);
+tau_dist = fmincon(mem,p,Aieq,bieq,[],[],lb,ub,@nonlcon,opts);
+
+model = sum(decay_ind.*repmat(tau_dist,1,numel(decay),1));
+switch TauFitData.WeightedResidualsType
+    case 'Gaussian'
+        chi2 = sum( (decay-model).^2./error.^2)./(numel(decay));
+    case 'Poissonian'
+        chi2 = sum(MLE_w_res(model,decay).^2)./(numel(decay));
+end
+
+switch mode
+    case 'tau'
+        tau = tau*TauFitData.TACChannelWidth;
+    case 'dist'
+        tau = R;
+end
+
+function [c,ceq] = nonlcon(x)
+%%% nonlinear constraint for deconvolution
+c = [];
+ceq = sum(x) - 1;
+
+function w_res_MLE = MLE_w_res(model,data)
+%%% Returns the weighted residuals based on Poissonian counting statistics,
+%%% as described in Laurence TA, Chromy BA (2010) Efficient maximum likelihood estimator fitting of histograms. Nat Meth 7(5):338?339.
+%%%
+%%% The sum of the weighted residuals is then analogous to a chi2 goodness-of-fit estimator.
+
+valid = true(size(data));
+
+% filter zero bins in data to avoid divsion by zero and in model to avoid log(0)
+valid = valid & (data ~= 0) & (model ~= 0);
+
+% compute MLE residuals:
+%
+% chi2_MLE = 2 sum(data-model) -2*sum(data*log(model/data))
+%
+% For invalid bins, only compute the first summand.
+
+log_summand = zeros(size(data));
+log_summand(valid) = data(valid).*log(model(valid)./data(valid));
+
+w_res_MLE = sqrt(2*(model - data) - 2*log_summand);
