@@ -1913,7 +1913,7 @@ SimData.General(File).Species = SimData.Species;
 function Update_Concentration(Sel,File)
 global SimData
 h = guidata(findobj('Tag','Sim'));
-c = SimData.Species(Sel).N./prod(SimData.General(File).BS)./1E-24./6.022E23./1E-9;
+c = SimData.Species(Sel).N./prod(SimData.General.BS)./1E-24./6.022E23./1E-9;
 h.Sim_Concentration.String = sprintf('= %.2f nM',c);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
