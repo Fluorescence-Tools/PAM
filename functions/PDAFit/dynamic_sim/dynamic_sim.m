@@ -72,8 +72,8 @@ p1 = dynamic_rates(2,1)/(dynamic_rates(2,1)+dynamic_rates(1,2));
 initial_state = binornd(n_states-1,1-p1,1,number_of_timewindows);
 % generate seed
 seed = randi([1,2^20],1);
-% simulate states
-time_in_state2 = dyn_Sim_mac_advanced(timesteps,n_states,p,initial_state,seed,number_of_timewindows);
+% simulate states for all time windows
+time_in_state2 = dyn_Sim_array(timesteps,n_states,p,initial_state,seed,number_of_timewindows);
 % note: the function returns the sum over the state trajectory.
 % Since state1 == 0 and state2 == 1 in C, the functions thus return the
 % number of time steps in state2.
