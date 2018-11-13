@@ -3679,10 +3679,6 @@ fitpar= fitpar(1:end-1);
 %%% fitpar vector is linearized by fminsearch, restructure
 fitpar = reshape(fitpar',[3,numel(fitpar)/3]); fitpar = fitpar';
 
-%%% normalize Amplitudes
-fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
-A = fitpar(:,1);
-
 %%% if sigma is fixed at fraction of, change its value here
 if h.SettingsTab.FixSigmaAtFractionOfR.Value == 1
     fitpar(:,3) = fraction.*fitpar(:,2);
@@ -3732,34 +3728,100 @@ BSD = PDAMeta.BSD{file};
 H_meas = PDAMeta.hProx{file}';
 %pool = gcp;
 %sampling = pool.NumWorkers;
-PRH = cell(sampling,5);
-for j = PDAMeta.Comp{file}
-    if h.SettingsTab.Use_Brightness_Corr.Value
-        BSD = BSD_scaled{j};
+
+%% to do
+%     if numel(PDAMeta.Comp{i}) > 2
+%         %%% normalize Amplitudes
+%         % amplitudes of the static components are normalized to the total area 
+%         % 'norm' = area3 + area4 + area5 + k21/(k12+k21) + k12/(k12+k21) 
+%         % the k12 and k21 parameters are left untouched here so they will 
+%         % appear in the table. The area fractions are calculated in Update_Plots
+%         norm = (sum(fitpar(3*PDAMeta.Comp{i}(3:end)-2))+1);
+%         fitpar(3*PDAMeta.Comp{i}(3:end)-2) = fitpar(3*PDAMeta.Comp{i}(3:end)-2)./norm;
+%         
+%         for c = PDAMeta.Comp{i}(3:end)
+%             [Pe] = Generate_P_of_eps(fitpar(3*c-1), fitpar(3*c), i);
+%             P_eps = (fitpar(3*c-2)./norm).*Pe;
+%             hFit_Ind{c} = zeros(str2double(h.SettingsTab.NumberOfBins_Edit.String),1);
+%             for k = 1:str2double(h.SettingsTab.NumberOfBinsE_Edit.String)+1
+%                 hFit_Ind{c} = hFit_Ind{c} + P_eps(k).*PDAMeta.P{i,k};
+%             end
+%         end
+%         hFit_Dyn = hFit_Dyn./norm;
+%         hFit_Ind{1} = hFit_Ind{1}./norm;
+%         hFit_Ind{2} = hFit_Ind{2}./norm;
+%     end
+%     hFit = sum(horzcat(hFit_Dyn,horzcat(hFit_Ind{3:end})),2)';
+
+if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+    %%% normalize Amplitudes
+    fitpar(PDAMeta.Comp{file},1) = fitpar(PDAMeta.Comp{file},1)./sum(fitpar(PDAMeta.Comp{file},1));
+    A = fitpar(:,1);
+    
+    PRH = cell(sampling,5);
+    for j = PDAMeta.Comp{file}
+        if h.SettingsTab.Use_Brightness_Corr.Value
+            BSD = BSD_scaled{j};
+        end
+        if size(BSD,2) > size(BSD,1)
+            BSD = BSD';
+        end
+        for k = 1:sampling
+            r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
+            E = 1./(1+(r./R0).^6);
+            eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+            BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
+            BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
+            BSD_bg = BSD-BG_gg-BG_gr;
+            PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+        end
     end
+    H_res_dummy = zeros(numel(PDAMeta.hProx{file}),5);
+    for j = PDAMeta.Comp{file}
+        H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1))./sampling;
+    end
+    hFit = zeros(numel(PDAMeta.hProx{file}),1);
+    for j = PDAMeta.Comp{file}
+        hFit = hFit + A(j).*H_res_dummy(:,j);
+    end
+else %%% dynamic model
+    n_states = 2;
+    Freq = 1E6; % Hz
+    SimTime = dur/1000; % time bin in seconds
+    DynRates = 1000 * [0, fitpar(1,1); ...
+                fitpar(2,1), 0];  % rates in Hz
+    R = [fitpar(1,2),fitpar(2,2)];
+    sigmaR = [fitpar(1,3),fitpar(2,3)];
+    PRH = cell(sampling,5);
     if size(BSD,2) > size(BSD,1)
         BSD = BSD';
     end
     for k = 1:sampling
-        r = normrnd(fitpar(j,2),fitpar(j,3),numel(BSD),1);
-        E = 1./(1+(r./R0).^6);
-        eps = 1-(1+cr+(((de/(1-de)) + E) * gamma)./(1-E)).^(-1);
+        fracTauT = zeros(numel(BSD),1);
+        for b = 1:numel(BSD)
+            states = dynamic_sim(DynRates,SimTime,Freq);
+            fracTauT(b,1) = (sum(states==1)/numel(states));
+        end
+        % dwell times
         BG_gg = poissrnd(mBG_gg.*dur,numel(BSD),1);
         BG_gr = poissrnd(mBG_gr.*dur,numel(BSD),1);
         BSD_bg = BSD-BG_gg-BG_gr;
-        PRH{k,j} = (binornd(BSD_bg,eps)+BG_gr)./BSD;
+        f_i(:,1) = binornd(BSD_bg,fracTauT);
+        f_i(:,2) = BSD_bg - f_i(:,1);
+        a_i = zeros(numel(BSD),n_states);
+        for i = 1:n_states  
+            r = normrnd(R(i),sigmaR(i),size(BSD));
+            FRET = 1./(1+(r./R0).^6);
+            eps = 1-(1+cr+(((de/(1-de)) + FRET) * gamma)./(1-FRET)).^(-1);
+            a_i(:,i) = binornd(f_i(:,i),eps);
+        end
+        PRH{k} = (sum(a_i,2) + BG_gr)./BSD;
     end
+    hFit = histcounts(vertcat(PRH{:}),linspace(0,1,Nobins+1))./sampling; 
+    hFit = hFit';
 end
-H_res_dummy = zeros(numel(PDAMeta.hProx{file}),5);
-for j = PDAMeta.Comp{file}
-    H_res_dummy(:,j) = histcounts(vertcat(PRH{:,j}),linspace(0,1,Nobins+1))./sampling;
-end
-hFit = zeros(numel(PDAMeta.hProx{file}),1);
-for j = PDAMeta.Comp{file}
-    hFit = hFit + A(j).*H_res_dummy(:,j);
-end
-    
-%hFit = sum(H_meas)*hFit./sum(hFit);
+
+
 %%% Calculate Chi2
 switch h.SettingsTab.Chi2Method_Popupmenu.Value
     case 2 %%% Assume gaussian error on data, normal chi2
@@ -3772,7 +3834,7 @@ switch h.SettingsTab.Chi2Method_Popupmenu.Value
         log_term = -2*H_meas.*log(hFit./H_meas);
         log_term(isnan(log_term)) = 0;
         log_term(~isfinite(log_term)) = 0;
-        dev_mle = 2*(hFit-H_meas)+log_term;
+        dev_mle = 2*(hFit-H_meas)+log_term; dev_mle(dev_mle < 0) = 0;
         w_res = sign(hFit-H_meas).*sqrt(dev_mle);
 end
 usedBins = sum(H_meas ~= 0);
@@ -3786,15 +3848,20 @@ else
 end
 hFit_Ind = cell(5,1);
 for j = PDAMeta.Comp{file}
-    hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
+    if ~h.SettingsTab.DynamicModel.Value %%% no dynamic model
+        hFit_Ind{j} = sum(H_meas).*A(j).*H_res_dummy(:,j)./sum(H_res_dummy(:,1));
+    else
+        hFit_Ind{j} = hFit;
+    end        
 end
 
 PDAMeta.w_res{file} = w_res';
 PDAMeta.hFit{file} = hFit';
 PDAMeta.chi2(file) = chi2;
-for c = PDAMeta.Comp{file};
+for c = PDAMeta.Comp{file}
     PDAMeta.hFit_Ind{file,c} = hFit_Ind{c};
 end
+PDAMeta.hFit_onlyDyn{file} = zeros(size(hFit));
 set(PDAMeta.Chi2_All, 'Visible','on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 set(PDAMeta.Chi2_Single, 'Visible', 'on','String', ['\chi^2_{red.} = ' sprintf('%1.2f',chi2)]);
 
@@ -4827,8 +4894,8 @@ elseif obj == h.SettingsTab.DynamicModel
             h.FitTab.Table.ColumnWidth{2} = 70;
             h.FitTab.Table.ColumnWidth{11} = 70;
             %%% Only enable Histogram Library in PDA Method
-            h.SettingsTab.PDAMethod_Popupmenu.Value = 1;
-            h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
+            %h.SettingsTab.PDAMethod_Popupmenu.Value = 1;
+            %h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library'};
         case 0 %%% switched back to static
             %%% Revert Label of Fit Parameter Table
             h.FitTab.Table.ColumnName{2} = '<HTML><b>A<sub>1</sub></b>';
@@ -4836,9 +4903,9 @@ elseif obj == h.SettingsTab.DynamicModel
             h.FitTab.Table.ColumnWidth{2} = 40;
             h.FitTab.Table.ColumnWidth{11} = 40;
             %%% Revert to all PDA Methods
-            if ~h.SettingsTab.DeconvoluteBackground.Value
-                h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
-            end
+            %if ~h.SettingsTab.DeconvoluteBackground.Value
+            %    h.SettingsTab.PDAMethod_Popupmenu.String = {'Histogram Library','MLE','MonteCarlo'};
+            %end
     end
 end
 
